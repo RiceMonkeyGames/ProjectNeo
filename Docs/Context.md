@@ -1,6 +1,6 @@
 # 프로젝트 컨텍스트
 
-마지막 갱신: 2026-11-12. 경로는 저장소 루트 기준이다. 현재 실행 가능한 것, 코드·씬·에셋 지도, 개발 방법과 검증 근거를 이 문서에서 관리한다. 완성 목표·다음 작업·진행 상태는 [구현 로드맵](ImplementationPlan.md), 게임 규칙은 [게임 기획](GameDesign.md), 에이전트의 필수 규칙과 문서 입구는 [AGENTS.md](../AGENTS.md)가 기준이다.
+마지막 갱신: 2026-11-12 03:16:57 (KST). 경로는 저장소 루트 기준이다. 현재 실행 가능한 것, 코드·씬·에셋 지도, 개발 방법과 검증 근거를 이 문서에서 관리한다. 완성 목표·다음 작업·진행 상태는 [구현 로드맵](ImplementationPlan.md), 게임 규칙은 [게임 기획](GameDesign.md), 에이전트의 필수 규칙과 문서 입구는 [AGENTS.md](../AGENTS.md)가 기준이다.
 
 ## 찾아보기
 
@@ -712,5 +712,10 @@ unity command package add --caller plugin --skill unity-package-management --nam
 - 남은 제한: 전투 결과 형식은 팀원 확인 대기. Game 씬은 아직 런 데이터를 만들거나 쓰지 않는다. `CastleState`는 부서진 성문 자리의 신규 배치 금지를 되살리지 못한다. 조각·무기 정의를 에셋 참조로 들고 있어 파일 저장(Q-13)에는 ID가 더 필요하다.
 - 검증: 컴파일 오류 없음. EditMode 전체 158개 통과(새 `RunStateTests` 16개, `CastleStateTests` 5개). PlayMode 전체 75개 중 74개 통과. 실패한 `WallCommandPlayTests.Squad_StopsOnWallWhenStairsDisappear`는 단독 재실행 3번 중 1번 통과했고, C-1a 변경을 잠시 뺀 develop 원본에서도 3번 중 1번만 통과해 기존 불안정 테스트로 판단했다. Windows 빌드는 하지 않았다. 바깥 폴더 에디터를 처음 열 때 `Assets/Settings/UniversalRenderPipelineGlobalSettings.asset`이 저절로 바뀌었으며 이번 작업 변경이 아니다.
 - 직접 검증: 씬 동작 변화가 없는 규칙 작업이다. Unity `Window > General > Test Runner` → EditMode → `RunStateTests`, `CastleStateTests`, `GameFlowTests`를 골라 Run Selected → 모두 초록이어야 한다. 기존 게임 흐름이 그대로인지는 `Assets/_Project/Scenes/Game.unity` → Play → 건설소 F·Esc → 깃발 F → 전투 → 결과로 확인한다. CLI는 6장 EditMode 명령을 쓴다.
+
+### 2026-11-12: 마지막 갱신 시각 기록 규칙
+
+- 사용자 요청: 문서의 `마지막 갱신`을 날짜와 시·분·초까지 한국 시간으로 적는다. AGENTS 「일하는 규칙」에 형식(`마지막 갱신: YYYY-MM-DD HH:MM:SS (KST)`)과 실제 시각을 확인해 적는 방법을 기록했고, Context·ImplementationPlan·GameDesign의 머리말을 새 형식으로 바꿨다. 문서만 바꿨으며 Unity 작업은 하지 않았다.
+- 직접 확인: 세 문서 3번째 줄의 `마지막 갱신`이 시·분·초와 `(KST)`를 포함하는지, AGENTS 「일하는 규칙」 두 번째 항목에 형식이 적혀 있는지 본다.
 
 </details>

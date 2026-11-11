@@ -1,6 +1,6 @@
 # 게임 기획: 수성전 로그라이크
 
-마지막 갱신: 2026-11-12
+마지막 갱신: 2026-11-12 03:16:57 (KST)
 
 이 파일이 기획의 기준이다. 구글 독스 "쌀숭이게임즈"의 기획 본문은 사람이 읽는 참고용이고 이 파일보다 늦을 수 있다. 기획이 바뀌면 이 파일을 먼저 고친다. 구현 로드맵·의존성·구현 상태는 [ImplementationPlan.md](ImplementationPlan.md), 작업 선택·담당·진행 표시는 [공유 구글 독스 최상단 백로그 표](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0)에서 관리한다. 백로그 운영 절차는 AGENTS를 따른다(2026-11-12 사용자 결정).
 
