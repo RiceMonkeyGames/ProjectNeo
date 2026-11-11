@@ -44,9 +44,9 @@ Unity 6000.6.8f1, URP, 3D 1인칭 프로젝트다. 현재는 임시 그래픽이
 | Characters | `PlayerViewCamera`, `FirstPersonCamera` | 입력이 사용하는 시점 방향 공통 접점과 기본 1인칭 카메라. 감도·높이·상하 각도는 PlayerControlSettings를 쓰고, 활성 중 플레이어 Visual은 그림자만 보이며 종료 때 복구한다. ThirdPersonCamera 코드는 남아 있지만 현재 플레이 씬에서는 사용하지 않는다. |
 | Combat | `Health` | 일반 C# 체력 규칙. 피해·사망, 최대 체력 변경 시 제한. 스탯 이벤트 구독은 `Dispose()`로 해제한다. |
 | Combat | `CombatProfile`, `CharacterActor`, `CombatTeam` | 몸통 크기·공격 종류·선딜레이·최소 피해·투사체 설정 에셋. 영웅과 잡졸을 공통 스탯 경로로 연결하고 팀, 대상 후보, 근접·원거리 공격, 재공격 대기, 피격·사망을 처리한다. `Character`는 영웅만 가지며 공통 접근은 `Stats`를 쓴다. |
-| Combat | `DamageRules`, `CombatPhysics` | 일반 C# 피해 공식과 사거리·사선 검사. 동일 씬의 적만 공격하고 아군 충돌체는 공격을 막지 않는다. |
+| Combat | `DamageRules`, `CombatPhysics` | 일반 C# 피해 공식과 사거리·사선 검사. 동일 씬의 적만 공격하고 아군 충돌체는 공격을 막지 않는다. 원거리 공격은 쏘는 유닛이 딛고 선 물체(`GroundUnder`)에 막히지 않는다. 사선 검사와 투사체가 같은 기준을 쓴다. |
 | Combat | `CombatProjectile` | 직선 투사체. 발사 때 공격력·팀·방향을 저장하고 명중 때 방어력을 적용한다. 아군 통과, 첫 적·벽 충돌, 사거리·수명 종료를 처리한다. |
-| Combat | `UnitAISettings`, `UnitCombatAI` | 탐색 범위·판단 주기·회전·이동·도착 거리 설정. 가까운 추격 가능한 적 선택, 대상 유지, NavMesh 경로 갱신, 근접·원거리 공격, 사망 후 이동 정지. `UnitDirective`(Engage 알아서 싸움 / Hold 자리 지키며 닿는 적만 공격 / Move 적 무시하고 이동 후 Hold)로 행동을 바꾼다. 지시를 받지 않은 유닛의 기본값은 Engage다. |
+| Combat | `UnitAISettings`, `UnitCombatAI` | 탐색 범위·판단 주기·회전·이동·도착 거리 설정. 가까운 추격 가능한 적 선택, 대상 유지, NavMesh 경로 갱신, 근접·원거리 공격, 사망 후 이동 정지. `UnitDirective`(Engage 알아서 싸움 / Hold 자리(`HoldPost`) 지키기 / Move 적 무시하고 이동 후 Hold)로 행동을 바꾼다. Hold는 닿는 적을 공격하고, 근접은 자리에서 `HoldEngageRadius`(기본 6m), 원거리는 공격 사거리 + `HoldRangedChaseExtra`(기본 6m) 안의 걸어서 닿는 적에게 다가가 싸운 뒤 자리로 돌아온다(`HoldChaseRadius`). 원거리는 사거리가 닿으면 멈춰서 쏜다. 지시를 받지 않은 유닛의 기본값은 Engage다. |
 | Combat | `PlaceholderCombatView` | `Visual` 자식에서 공격·피격·사망 신호를 구독한다. 임시 색 변경, 공격 표시, 체력 막대와 사망 외형. 전투 판정을 하지 않는다. |
 | Facilities | `FacilityDefinition`, `FacilityState` | 시설별 레벨 데이터, 품목 풀, 업그레이드 비용과 스탯 효과 |
 | Squads | `SquadConfig`, `Squad<TUnit>`, `Army<TUnit>` | 부대와 군대 인원 상한, 부대장 지정. |
@@ -257,7 +257,7 @@ Q/`RotateLeft()`와 E/`RotateRight()`는 화면 속 판의 왼쪽·오른쪽 회
 브랜치 / 기준: feature/siege-prototype / main·develop의 8505401
 상태: 검증 중 (자동 테스트 통과, 사용자 직접 플레이 진행 중)
 필요한 결정: Q-09(승패 동시 성립), Q-21(수성 무기 동작). Q-27은 2026-11-12 결정·반영(공성 수단을 잃은 적의 후퇴)
-완료 기준 / 실제 검증 결과: EditMode 111개, PlayMode 52개 통과. Windows 빌드는 다시 만들지 않음
+완료 기준 / 실제 검증 결과: EditMode 111개, PlayMode 55개 통과. Windows 빌드는 다시 만들지 않음
 ```
 
 **새로 추가한 것(이 브랜치만 소유):** `Scripts/Runtime/Siege/`, `UI/SiegeHud.cs`·`SiegeStatusHud.cs`, `Combat/PlaceholderDeathHider.cs`, `Editor/SiegePrototypeSetup.cs`, `Scenes/SiegePrototype.unity`, `Data/SiegePrototype/`, `Prefabs/SiegePrototype/`, 테스트 `SiegeRulesTests`·`SiegePrototypePlayTests`, 임시 재질 `SiegeLadder`·`SiegeRam`.
@@ -268,6 +268,8 @@ Q/`RotateLeft()`와 E/`RotateRight()`는 화면 속 판의 왼쪽·오른쪽 회
 |---|---|---|
 | `Combat/CombatProfile.cs` | 직렬화 필드 `upwardShotMinimumRise`(1.5)·`upwardShotDamageRatio`(1), `Create(...)` 끝에 선택 인자 2개 | 기본값 1이라 피해 변화 없음 |
 | `Combat/CombatProjectile.cs`, `DamageRules.cs` | 발사 높이 기억, `ElevationMultiplier` | 위와 같음 |
+| `Combat/UnitCombatAI.cs`, `UnitAISettings.cs` (2026-11-12) | 중지(Hold) 행동 변경: `HoldPost`, `HoldEngageRadius`(근접 6m), `HoldRangedChaseExtra`(원거리 사거리 + 6m), 자리 주변 교전과 복귀 | **모든 씬의 중지 동작이 바뀐다.** 평지·성벽 지휘 씬의 중지 부대도 근처 적에게 다가간다(근접 6m, 원거리 사거리 + 6m). 적 AI가 내부적으로 쓰는 Hold(사다리 대기·성문 공격)는 길이 없는 적만 있어 영향이 없다 |
+| `Combat/CombatPhysics.cs`, `CombatProjectile.cs` (2026-11-12) | `GroundUnder`, 원거리 공격이 발밑 물체를 통과 | 땅 위 원거리 유닛은 변화 없음. 성벽 위 궁수가 아래를 쏠 수 있게 됨 |
 | `Squads/SquadCommandCenter.cs` | `Config`, `ConfigureRosters(...)` | 없음 |
 | `Squads/SquadCommandSettings.cs` | `ConfigureSelectKeys(...)` | 없음 |
 | `UI/SquadCommandHud.cs` | `SquadName(...)`. 부대 목록이 `1번 부대 · 근접`으로 표시됨 | 평지·성벽 지휘 씬의 목록 글자도 바뀜 |
@@ -277,7 +279,7 @@ Q/`RotateLeft()`와 E/`RotateRight()`는 화면 속 판의 왼쪽·오른쪽 회
 | `Data/SquadCommandPrototype/SquadConfig.asset` | `maxSquads` 4 → 10 (사용자 변경) | 평지·성벽 지휘 씬도 같은 에셋을 쓴다. 상한만 늘어 편성은 그대로 |
 | `ProjectSettings/EditorBuildSettings.asset` | 목록 끝에 `SiegePrototype` 씬 | 첫 씬은 그대로 |
 
-**건드리지 않은 것:** `CharacterActor.cs`, `UnitCombatAI.cs`, 기존 씬·프리팹, `Packages/`, `.asmdef`. 적의 공성 행동은 `UnitCombatAI`를 고치지 않고 `SiegeAttackerBrain`이 `UnitDirective`로 지시하는 방식이다.
+**건드리지 않은 것:** `CharacterActor.cs`, 기존 씬·프리팹, `Packages/`, `.asmdef`. 적의 공성 행동은 `UnitCombatAI`를 고치지 않고 `SiegeAttackerBrain`이 `UnitDirective`로 지시하는 방식이다. `UnitCombatAI.cs`는 2026-11-12 중지 행동 변경으로 수정했다(위 표).
 
 **병합할 때:** `.unity`·`.asset`·`.prefab`은 텍스트로 합치지 않는다. `EditorBuildSettings.asset`이 겹치면 씬 목록을 둘 다 살린다. `SquadConfig.asset`의 상한을 다른 브랜치가 다르게 바꿨으면 사용자에게 묻는다. 병합 뒤에는 EditMode·PlayMode 전체를 다시 돌린다.
 
@@ -565,5 +567,24 @@ unity command package add --caller plugin --skill unity-package-management --nam
 - 검증: 컴파일 오류 없음. EditMode 111개, PlayMode 전체 52개 통과(후퇴 규칙 1개, 막힌 성에서 후퇴·승리와 뚫린 성에서 계속 싸움 2개 추가). 에디터 Play에서 성벽을 막고 공성병 16명을 없애자 궁수 12명이 물러나 승리하는 것과 결과 문구를 화면으로 확인했다. 새 런타임 오류 없음.
 - 직접 검증: `SiegePrototype` → Play → `성벽`으로 뚫린 4·11·12번 칸을 막음 → `전투 시작` → 사다리병과 성문 파괴병을 모두 처치(성벽 위에 부대를 배치해 두면 쉽다) → 남은 궁수가 성 밖으로 물러나 사라지고 "승리! 남은 적이 물러났습니다." 표시. 뚫린 칸을 남겨 두면 궁수가 그 길로 들어와 계속 싸운다.
 - 자동 검증 재실행: Test Runner의 EditMode `SiegeRulesTests.Retreat_OnlyWhenNoBreachersAndNoWayIn`, PlayMode `SiegePrototypePlayTests.ClosedWalls_BreachersGone_RemainingArchersRetreat_AndVictory`·`OpenGap_BreachersGone_ArchersKeepFighting`.
+
+### 2026-11-12: 중지(자리 지키기) 행동 변경과 성벽 위 궁수 사선
+
+- 사용자 결정(Q-22 변경): 성벽 위에 배치한 부대가 올라온 적을 보고도 서 있는 문제를 고친다. 배너로드 2의 수성전 유닛처럼, 근접은 자리에서 6m 안의 걸어서 닿는 적에게 다가가 싸우고 돌아오며, 원거리는 자리를 지킨 채 쏜다. 길을 따라 성벽에서 내려가 쫓는 것도 허용. 새 지시를 만들지 않고 중지 규칙 자체를 바꿨다.
+- `UnitCombatAI`: `HoldPost`(중지를 받은 곳·이동이 끝난 곳·배치한 곳), 닿는 적 우선 → 근접은 자리 반경 안의 닿는 적 추격 → 없으면 자리로 복귀. 판단 주기마다 경로를 다시 구하고 길이 끊기거나 적이 반경 밖으로 나가면 놓는다. `UnitAISettings.holdEngageRadius`(기본 6m, 0이면 이전처럼 쫓지 않음). 기존 AI 에셋은 새 필드를 기본값 6으로 읽는다.
+- 사다리 밀기: "싸울 적이 없을 때 민다"는 그대로다. 걸어서 닿지 않는 성벽 아래 적은 대상이 아니므로 그런 적만 있으면 계속 민다.
+- 성벽 위 궁수: 성벽 한가운데에서 바깥면 2~3m 앞의 적을 쏘면 선이 발밑 성벽 모서리를 스쳐 막혔다. 원거리 공격이 딛고 선 물체(`CombatPhysics.GroundUnder`)를 사선 검사와 투사체 모두에서 무시하게 했다. 적 궁수가 아래에서 위로 쏠 때는 발밑이 땅이라 변화가 없다.
+- 기존 테스트 변경: `SquadCommandPlayTests`의 중지 테스트를 새 규칙(6m 안의 적은 다가가 싸움, 14m 밖의 적은 쫓지 않고 자리로 복귀)으로 바꿨다. 이름은 `MovingSquadIgnoresEnemies_HoldingSquadEngagesNearPost_ThenReturns`.
+- 검증: 컴파일 오류 없음. EditMode 111개, PlayMode 전체 54개 통과(성벽 위 궁수가 바로 아래 적을 쏨, 성벽 위 근접이 올라온 적과 싸우고 복귀 2개 추가). 에디터 Play에서 성벽을 다 막고 7개 부대를 성벽 위에 배치한 뒤 전투를 돌려 적 16명 중 14명이 처치되고 부대원이 성벽 위 자리를 지키는 것을 확인했다. 그 판은 조작하지 않은 플레이어가 안뜰에서 적 궁수에게 죽어 패배로 끝났다(기존 동작). 새 런타임 오류 없음. Windows 빌드는 다시 만들지 않았다.
+- 직접 검증: `SiegePrototype` → Play → 뚫린 칸을 막고 근접 부대를 사다리 자리 근처 성벽 위에 배치 → `전투 시작` → 사다리로 올라온 적에게 근접 부대가 다가가 싸우고, 처치 뒤 원래 자리로 돌아오는지 확인. 궁수 부대를 성벽 위에 두면 성벽 바로 아래의 적을 쏜다. 평지 지휘 씬(`SquadCommandPrototype`)에서도 중지 부대가 6m 안의 적에게 다가간다.
+- 자동 검증 재실행: PlayMode `SiegePrototypePlayTests.WallArchers_ShootEnemyRightBelowTheWall`·`WallMelee_EngagesEnemyOnWallNearPost_ThenReturns`, `SquadCommandPlayTests.MovingSquadIgnoresEnemies_HoldingSquadEngagesNearPost_ThenReturns`.
+
+### 2026-11-12: 중지 중인 원거리 유닛의 추격
+
+- 사용자 요청: 원거리 유닛도 공격 사거리 너머 일정 거리 안의 적을 쫓아가 공격한다.
+- `UnitAISettings.holdRangedChaseExtra`(기본 6m)를 추가했다. 원거리의 추격 반경은 자리에서 공격 사거리 + 이 거리이고(`UnitCombatAI.HoldChaseRadius`), 근접은 기존 `holdEngageRadius`(6m)다. 원거리는 걸어서 닿는 적에게 사거리가 닿고 사선이 열릴 때까지 다가가 멈춰서 쏘며, 적이 반경 밖으로 나가거나 길이 끊기면 자리로 돌아온다. 0으로 두면 원거리는 자리를 떠나지 않는다.
+- 해석: "쫓아간다"를 걸어서 닿는 적으로 한정했다. 막힌 성벽 밖의 적처럼 길이 없는 적에게는 다가가지 않는다. 이 해석이 다르면 사용자에게 다시 묻는다.
+- 검증: 컴파일 오류 없음. EditMode 111개, PlayMode 전체 55개 통과(`SquadCommandPlayTests.HoldingArchers_ChaseEnemyJustBeyondRange_ThenReturn` 추가: 사거리 + 3m의 적에게 다가가 쏘고, 추격 반경 밖의 적은 쫓지 않고 자리로 복귀). 실제 화면 플레이는 이번에 다시 확인하지 않았다.
+- 직접 검증: `Assets/_Project/Scenes/SquadCommandPrototype.unity` → Play → 궁수 부대(3번)는 중지 상태로 두고 1번 부대로 적 쪽 땅을 가리켜 2(공격) → 적이 끌려와 궁수 부대 사거리(11m) 조금 밖에 오면 궁수 부대가 앞으로 나와 쏘고, 적이 사라지면 원래 자리로 돌아온다. 수성전 씬에서는 성 안으로 들어온 적에게 궁수 부대가 다가가 쏜다.
 
 </details>

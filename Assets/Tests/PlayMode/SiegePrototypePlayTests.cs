@@ -138,6 +138,61 @@ namespace ProjectNeo.Tests
             Assert.IsFalse(marker.gameObject.activeSelf, "죽은 적의 종류 표시가 남아 있다.");
         }
 
+        // 정해 둔 자리에 적 하나를 꺼내 둔다. 스스로 움직이지 않게 판단과 AI를 끈다.
+        CharacterActor PlaceStillEnemy(SiegeAttackerRole role, Vector3 position)
+        {
+            SiegeAttackerBrain enemy = director.Enemies.First(unit => unit.Role == role && !unit.gameObject.activeSelf);
+            enemy.enabled = false;
+            enemy.GetComponent<UnitCombatAI>().enabled = false;
+            enemy.transform.position = position;
+            enemy.gameObject.SetActive(true);
+            Assert.IsTrue(enemy.GetComponent<NavMeshAgent>().Warp(position));
+            return enemy.Actor;
+        }
+
+        int SquadOf(AttackKind kind) => Enumerable.Range(0, center.Squads.Count)
+            .First(i => center.Squads[i].Members.All(member => member.Actor.Profile.AttackKind == kind));
+
+        Vector3 WallTop(int x) => world.WorldCenter(wall, new Vector2Int(x, WallRow), 0) + Vector3.up * wall.Height;
+
+        [UnityTest]
+        public IEnumerator WallArchers_ShootEnemyRightBelowTheWall()
+        {
+            int archers = SquadOf(AttackKind.Projectile);
+            Assert.IsTrue(prep.PlaceSquad(archers, WallTop(9)), prep.Message);
+            yield return WaitForNavigation();
+            // 성벽 바깥면에서 2m 떨어진 땅. 성벽 위 한가운데에서 내려다보면 발밑 성벽 모서리를 스치는 각도다.
+            Vector3 below = world.WorldCenter(wall, new Vector2Int(9, WallRow), 0)
+                + Vector3.forward * (world.Grid.CellSize * 0.5f + 2f);
+            CharacterActor enemy = PlaceStillEnemy(SiegeAttackerRole.GateBreaker, below);
+            int frames = 0;
+            while (enemy.Health.Current >= enemy.Health.Maximum && frames++ < 300) yield return null;
+            Assert.Less(enemy.Health.Current, enemy.Health.Maximum, "성벽 위 궁수가 성벽 바로 아래의 적을 쏘지 못했다.");
+            foreach (UnitCombatAI archer in center.Squads[archers].Members)
+                Assert.That(archer.transform.position.y, Is.EqualTo(wall.Height).Within(0.3f), "궁수가 자리를 떠났다.");
+        }
+
+        [UnityTest]
+        public IEnumerator WallMelee_EngagesEnemyOnWallNearPost_ThenReturns()
+        {
+            int melee = SquadOf(AttackKind.Melee);
+            Assert.IsTrue(prep.PlaceSquad(melee, WallTop(9)), prep.Message);
+            yield return WaitForNavigation();
+            // 성벽 위로 올라온 적. 근접 사거리 밖이지만 자리 반경(6m) 안이다.
+            CharacterActor enemy = PlaceStillEnemy(SiegeAttackerRole.Ladder, WallTop(10) + Vector3.right * 0.5f);
+            int frames = 0;
+            while (!enemy.Health.IsDead && frames++ < 900) yield return null;
+            Assert.IsTrue(enemy.Health.IsDead, "성벽 위 근접 부대가 다가가 싸우지 않았다.");
+            frames = 0;
+            while (!center.Squads[melee].Members.All(member => Vector3.Distance(member.transform.position, member.HoldPost) < 0.6f)
+                && frames++ < 300) yield return null;
+            foreach (UnitCombatAI member in center.Squads[melee].Members)
+            {
+                Assert.That(Vector3.Distance(member.transform.position, member.HoldPost), Is.LessThan(0.6f), "자리로 돌아오지 않았다.");
+                Assert.That(member.transform.position.y, Is.EqualTo(wall.Height).Within(0.3f));
+            }
+        }
+
         [UnityTest]
         public IEnumerator Preparation_PlacesSquadInstantlyOnWallTop()
         {

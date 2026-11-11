@@ -102,7 +102,41 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
-        public IEnumerator MovingSquadIgnoresEnemies_ButHoldingSquadStrikesInReachWithoutChasing()
+        public IEnumerator HoldingArchers_ChaseEnemyJustBeyondRange_ThenReturn()
+        {
+            FreezeEnemies();
+            CharacterActor enemy = enemies.First(actor => actor.Stats.GetValue(ProjectNeo.Stats.StatType.AttackRange) < 3f);
+            var enemyAgent = enemy.GetComponent<NavMeshAgent>();
+            UnitCombatAI archer = Members(2)[0];
+            float range = archer.Actor.Stats.GetValue(ProjectNeo.Stats.StatType.AttackRange);
+            Assert.That(archer.HoldChaseRadius, Is.GreaterThan(range), "원거리 중지의 추격 범위는 사거리보다 넓어야 한다.");
+            Vector3[] held = Positions(2);
+            Vector3 middle = Vector3.zero;
+            foreach (Vector3 position in held) middle += position;
+            middle /= held.Length;
+
+            // 사거리보다 3m 먼 적: 사거리가 닿을 때까지 다가가 쏜다.
+            Assert.IsTrue(enemyAgent.Warp(middle + Vector3.forward * (range + 3f)));
+            int frames = 0;
+            while (enemy.Health.Current >= enemy.Health.Maximum && frames++ < 450) yield return null;
+            Assert.Less(enemy.Health.Current, enemy.Health.Maximum, "원거리 부대가 사거리 밖의 가까운 적에게 다가가 쏘지 않았다.");
+            Assert.IsTrue(Members(2).Any(member => Vector3.Distance(member.transform.position, member.HoldPost) > 1f),
+                "원거리 부대가 자리에서 움직이지 않았다.");
+
+            // 추격 범위 밖의 적: 쫓지 않고 자리로 돌아온다.
+            Assert.IsTrue(enemyAgent.Warp(middle + Vector3.forward * (archer.HoldChaseRadius + 10f)));
+            for (int i = 0; i < 20; i++) yield return null;
+            float health = enemy.Health.Current;
+            frames = 0;
+            while (!Members(2).All(member => Vector3.Distance(member.transform.position, member.HoldPost) < 0.6f)
+                && frames++ < 450) yield return null;
+            Assert.AreEqual(health, enemy.Health.Current, "추격 범위 밖의 적을 공격했다.");
+            for (int i = 0; i < held.Length; i++)
+                Assert.That(Vector3.Distance(held[i], Positions(2)[i]), Is.LessThan(0.6f), "자리로 돌아오지 않았다.");
+        }
+
+        [UnityTest]
+        public IEnumerator MovingSquadIgnoresEnemies_HoldingSquadEngagesNearPost_ThenReturns()
         {
             FreezeEnemies();
             // 원거리 부대의 사격이 결과에 섞이지 않게 뺀다.
@@ -117,18 +151,25 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(enemy.Health.Maximum, enemy.Health.Current, "이동 중에는 적을 공격하지 않는다.");
 
             Vector3[] held = Positions(0);
-            Assert.IsTrue(enemyAgent.Warp(front.transform.position + Vector3.forward * 1.2f));
+            const float radius = 6f;
+            // 자리에서 반경(6m) 안이지만 사거리(1.5m) 밖의 적: 다가가 싸운다.
+            Assert.IsTrue(enemyAgent.Warp(front.transform.position + Vector3.forward * 4f));
             int frames = 0;
             while (enemy.Health.Current >= enemy.Health.Maximum && frames++ < 300) yield return null;
-            Assert.Less(enemy.Health.Current, enemy.Health.Maximum, "중지한 부대는 닿는 적을 공격한다.");
-            AssertStayed(0, held, "중지한 부대가 자리를 벗어났다.");
+            Assert.Less(enemy.Health.Current, enemy.Health.Maximum, "중지한 부대는 자리 근처의 적에게 다가가 싸운다.");
+            for (int i = 0; i < held.Length; i++)
+                Assert.LessOrEqual(Vector3.Distance(held[i], Positions(0)[i]), radius + 1f, "반경보다 멀리 쫓아갔다.");
 
-            Assert.IsTrue(enemyAgent.Warp(front.transform.position + Vector3.forward * 8f));
+            // 반경 밖의 적: 쫓지 않고 자리로 돌아온다.
+            Assert.IsTrue(enemyAgent.Warp(front.transform.position + Vector3.forward * 14f));
             for (int i = 0; i < 20; i++) yield return null;
             float health = enemy.Health.Current;
-            for (int i = 0; i < 90; i++) yield return null;
-            Assert.AreEqual(health, enemy.Health.Current, "닿지 않는 적은 공격하지 않는다.");
-            AssertStayed(0, held, "중지한 부대가 적을 쫓아갔다.");
+            frames = 0;
+            while (!Members(0).All(member => Vector3.Distance(member.transform.position, member.HoldPost) < 0.6f)
+                && frames++ < 300) yield return null;
+            Assert.AreEqual(health, enemy.Health.Current, "반경 밖의 적을 공격했다.");
+            for (int i = 0; i < held.Length; i++)
+                Assert.That(Vector3.Distance(held[i], Positions(0)[i]), Is.LessThan(0.6f), "싸운 뒤 자리로 돌아오지 않았다.");
             Assert.AreEqual(SquadOrderKind.Hold, center.Commander.OrderOf(0).Kind);
         }
 
