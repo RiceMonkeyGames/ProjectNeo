@@ -1,4 +1,5 @@
 using System;
+using ProjectNeo.Run;
 
 namespace ProjectNeo.Flow
 {
@@ -19,11 +20,11 @@ namespace ProjectNeo.Flow
         /// <summary>단계가 바뀐 뒤 새 단계와 함께 한 번 알린다.</summary>
         public event Action<GamePhase> PhaseChanged;
 
-        /// <summary>타이틀에서 새 런을 시작해 1스테이지 준비로 간다.</summary>
-        public bool StartRun()
+        /// <summary>타이틀에서 새 런을 시작해 1스테이지 준비로 간다. <paramref name="state"/>는 이 런이 소유할 데이터다.</summary>
+        public bool StartRun(RunState state = null)
         {
             if (Phase != GamePhase.Title) return false;
-            Run = new RunProgress();
+            Run = new RunProgress(state);
             LastOutcome = null;
             Enter(GamePhase.Preparation);
             return true;
@@ -44,6 +45,18 @@ namespace ProjectNeo.Flow
             LastOutcome = outcome;
             Enter(outcome == BattleOutcome.Victory ? GamePhase.Reward : GamePhase.RunResult);
             return true;
+        }
+
+        /// <summary>
+        /// 상세 전투 결과를 런 데이터에 반영하고 단계를 넘긴다. 전투 중이 아니거나 런 데이터가 결과를 받지 못하면
+        /// (다른 전투의 결과, 이미 반영한 결과, 모르는 유닛) 아무것도 바꾸지 않고 false다.
+        /// </summary>
+        public bool FinishBattle(BattleResult result)
+        {
+            if (result == null) throw new ArgumentNullException(nameof(result));
+            if (Phase != GamePhase.Battle) return false;
+            if (Run.State != null && Run.State.Apply(result) != BattleResultIssue.None) return false;
+            return FinishBattle(result.Outcome);
         }
 
         /// <summary>보상을 마치고 다음 스테이지 준비로 간다.</summary>
