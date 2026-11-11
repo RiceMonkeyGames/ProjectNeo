@@ -73,6 +73,11 @@ namespace ProjectNeo.Siege
         [SerializeField] float gateStandOffset = -0.3f;
         [SerializeField, Min(0f)] float gateSpread = 3f;
         [SerializeField, Range(0.1f, 1f)] float archerApproachRatio = 0.7f;
+        // 후퇴하는 적이 판 바깥 끝에서 멈출 거리와, 길이 막혀도 이 시간이 지나면 이탈로 보는 시간.
+        [SerializeField, Min(0f)] float retreatEdgeMargin = 1.5f;
+        [SerializeField, Min(0.1f)] float retreatTimeout = 20f;
+        public float RetreatEdgeMargin => retreatEdgeMargin;
+        public float RetreatTimeout => retreatTimeout;
 
         [Header("키")]
         [SerializeField] InputAction pushLadder = new InputAction("PushLadder", InputActionType.Button, "<Keyboard>/f");

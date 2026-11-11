@@ -21,7 +21,7 @@ namespace ProjectNeo.Siege
     [RequireComponent(typeof(UnitCombatAI), typeof(CharacterActor), typeof(NavMeshAgent))]
     public sealed class SiegeAttackerBrain : MonoBehaviour
     {
-        enum Mode { Deciding, Assault, ToLadder, Raising, Climbing, Falling, ToGate, Shooting }
+        enum Mode { Deciding, Assault, ToLadder, Raising, Climbing, Falling, ToGate, Shooting, Retreating }
 
         [SerializeField] SiegeAttackerRole role;
         [SerializeField] ConstructionWorld world;
@@ -44,6 +44,20 @@ namespace ProjectNeo.Siege
         public SiegeAttackerRole Role => role;
         public bool IsClimbing => mode == Mode.Climbing;
         public bool IsAssaulting => mode == Mode.Assault;
+        /// <summary>전투가 시작된 뒤 한 번이라도 할 일을 정했는지. 후퇴 판정은 모두 정한 뒤에 한다.</summary>
+        public bool HasDecided => mode != Mode.Deciding;
+        public bool IsRetreating => retreatRequested && !Fled;
+        /// <summary>후퇴해 전장을 떠났다. 승패에서는 죽은 적과 같이 남은 적 수에서 뺀다.</summary>
+        public bool Fled { get; private set; }
+        bool retreatRequested;
+        float retreatRemaining;
+
+        /// <summary>판 바깥으로 물러나게 한다. 오르거나 떨어지는 중이면 그 동작이 끝난 뒤 물러난다.</summary>
+        public void Retreat()
+        {
+            if (Fled || Actor.Health == null || Actor.Health.IsDead) return;
+            retreatRequested = true;
+        }
 
         public void Configure(SiegeAttackerRole attackerRole, ConstructionWorld owner, SiegeSettings siegeSettings,
             SiegeLadder[] ladderSpots, Vector2Int outwardDirection)
@@ -87,6 +101,7 @@ namespace ProjectNeo.Siege
                 think = 0f;
             }
             if (!agent.enabled || !agent.isOnNavMesh) return;
+            if (retreatRequested) { UpdateRetreat(); return; }
             think -= Time.deltaTime;
             if (think <= 0f)
             {
@@ -324,6 +339,49 @@ namespace ProjectNeo.Siege
             // 유닛 공격과 같은 공격 속도·선딜레이 신호를 쓴다. 성문에는 방어력이 없다.
             if (!Actor.TryAttack()) return;
             gate.ReceiveDamage(DamageRules.Calculate(Actor.Stats.GetValue(StatType.Attack), 0f, Actor.Profile.MinimumDamage));
+        }
+
+        // ── 후퇴 ────────────────────────────────────────────────
+
+        void UpdateRetreat()
+        {
+            if (mode != Mode.Retreating)
+            {
+                LeaveLadder();
+                gate = null;
+                mode = Mode.Retreating;
+                retreatRemaining = settings.RetreatTimeout;
+                if (!TryGetRetreatPoint(out Vector3 point)) { Flee(); return; }
+                // 이동 지시는 적을 무시하고 끝까지 간다. 물러나는 동안 싸우지 않는다.
+                ai.SetDirective(UnitDirective.Move, point);
+                return;
+            }
+            retreatRemaining -= Time.deltaTime;
+            // 도착하거나 더 갈 길이 없으면 이동 지시가 중지로 바뀐다. 길이 막혀 오래 걸려도 떠난 것으로 본다.
+            if (retreatRemaining <= 0f || ai.Directive != UnitDirective.Move) Flee();
+        }
+
+        // 지금 자리에서 성 바깥 방향으로 판 끝까지 간 지점.
+        bool TryGetRetreatPoint(out Vector3 point)
+        {
+            Vector3 local = world.LocalPoint(transform.position);
+            float size = world.Grid.CellSize, margin = settings.RetreatEdgeMargin;
+            if (outward.x > 0) local.x = world.Grid.Width * size - margin;
+            else if (outward.x < 0) local.x = margin;
+            else if (outward.y > 0) local.z = world.Grid.Depth * size - margin;
+            else local.z = margin;
+            local.y = 0f;
+            point = world.transform.TransformPoint(local);
+            if (!NavMesh.SamplePosition(point, out NavMeshHit hit, 4f, NavMesh.AllAreas)) return false;
+            point = hit.position;
+            return true;
+        }
+
+        void Flee()
+        {
+            Fled = true;
+            // 꺼지면 대상 후보 목록에서도 빠진다.
+            gameObject.SetActive(false);
         }
 
         // ── 궁수 ────────────────────────────────────────────────

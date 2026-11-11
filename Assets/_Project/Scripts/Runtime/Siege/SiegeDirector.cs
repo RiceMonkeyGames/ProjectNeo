@@ -206,6 +206,11 @@ namespace ProjectNeo.Siege
             }
             if (Phase == SiegePhase.Battle)
             {
+                if (!RetreatOrdered && !world.IsRebuilding && !world.RebuildPending && ShouldOrderRetreat())
+                {
+                    RetreatOrdered = true;
+                    foreach (SiegeAttackerBrain enemy in enemies) if (IsInBattle(enemy)) enemy.Retreat();
+                }
                 Outcome = SiegeOutcomeRules.Evaluate(player.Health == null || player.Health.IsDead,
                     GateDestroyed, AlliesAlive, EnemiesAlive, 0);
                 if (Outcome != SiegeOutcome.Ongoing) Phase = SiegePhase.Finished;
@@ -237,12 +242,43 @@ namespace ProjectNeo.Siege
 
         public int EnemiesAlive => CountEnemies(null);
 
+        /// <summary>남은 적에게 후퇴를 지시했는지(Q-30).</summary>
+        public bool RetreatOrdered { get; private set; }
+
+        /// <summary>후퇴해 전장을 떠난 적 수.</summary>
+        public int EnemiesFled
+        {
+            get
+            {
+                int count = 0;
+                foreach (SiegeAttackerBrain enemy in enemies) if (enemy != null && enemy.Fled) count++;
+                return count;
+            }
+        }
+
+        static bool IsInBattle(SiegeAttackerBrain enemy) => enemy != null && !enemy.Fled
+            && enemy.gameObject.activeSelf && enemy.Actor.Health != null && !enemy.Actor.Health.IsDead;
+
+        bool ShouldOrderRetreat()
+        {
+            int alive = 0, breachers = 0, assaulting = 0, undecided = 0;
+            foreach (SiegeAttackerBrain enemy in enemies)
+            {
+                if (!IsInBattle(enemy)) continue;
+                alive++;
+                if (enemy.Role != SiegeAttackerRole.Archer) breachers++;
+                if (enemy.IsAssaulting) assaulting++;
+                if (!enemy.HasDecided) undecided++;
+            }
+            return SiegeOutcomeRules.ShouldRetreat(alive, breachers, assaulting, undecided);
+        }
+
         public int CountEnemies(SiegeAttackerRole? role)
         {
             int count = 0;
             foreach (SiegeAttackerBrain enemy in enemies)
             {
-                if (enemy == null || (role.HasValue && enemy.Role != role.Value)) continue;
+                if (enemy == null || enemy.Fled || (role.HasValue && enemy.Role != role.Value)) continue;
                 // 아직 나오지 않은 적은 체력이 만들어지기 전이므로 살아 있는 것으로 센다.
                 var actor = enemy.GetComponent<CharacterActor>();
                 if (actor.Health == null || !actor.Health.IsDead) count++;

@@ -70,10 +70,10 @@ Unity 6000.6.8f1, URP, 3D 1인칭 프로젝트다. 현재는 임시 그래픽이
 | Flow | `GameSession`, `SceneCatalog`, `SceneSwitcher`, `GameDirector` | `GameSession.Flow`는 씬이 바뀌어도 유지되는 흐름 보관처로 실행을 시작할 때마다 새로 만든다. 씬 이름은 `SceneCatalog` 에셋에 둔다. 씬 전환은 `SceneSwitcher`에서만 하며 지금은 통째 교체다. `GameDirector`는 게임 씬 단독 실행 때 새 런을 시작하고 흐름이 타이틀로 가면 타이틀 씬을 부른다. 준비·전투 기능은 `GameSession.Flow.PhaseChanged`를 구독해 붙인다. |
 | Flow | `GamePhaseView` | 게임 씬에서 단계에 맞춰 시점·입력·화면을 바꾼다. 준비는 건설 카메라·배치·건설 화면, 전투는 1인칭 카메라·플레이어 입력·지휘 입력·지휘 화면과 커서 잠금, 보상·런 결과는 둘 다 끄고 커서를 푼다. 단계가 바뀌어도 지형·유닛·지시는 유지한다. World가 NavMesh를 만든 뒤 유닛을 활성화한다. `WallCommandSandbox`의 Tab 전환을 실제 단계 전환으로 바꾼 것이다. |
 | UI | `TitleScreen`, `GameFlowHud`, `RuntimeSystemFont` | 타이틀 버튼 동작, 단계 표시와 단계별 버튼을 가진 임시 화면(승리·패배는 전투 결과 자리표시), 임시 화면에 맑은 고딕을 실행 중 적용하는 공용 부품. 정식 화면이 아니다. |
-| Siege | `BuildBudget`, `SiegeOutcomeRules`, `SiegeLadderState` | 일반 C# 규칙. 임시 건설 코스트의 차감·환불, 승패 판정(동시 성립은 패배 우선, Q-09 확정 전 임시), 사다리 상태(놓임→세우는 중→세워짐, 한 명씩 오르기, 밀어서 쓰러뜨리기). |
+| Siege | `BuildBudget`, `SiegeOutcomeRules`, `SiegeLadderState` | 일반 C# 규칙. 임시 건설 코스트의 차감·환불, 승패 판정(동시 성립은 패배 우선, Q-09 확정 전 임시), 사다리 상태(놓임→세우는 중→세워짐, 한 명씩 오르기, 밀어서 쓰러뜨리기), 남은 적의 후퇴 판정(`ShouldRetreat`, Q-30). |
 | Siege | `SiegeSettings` | 코스트·사다리 시간과 거리·적 판단 주기·키(F 밀기, Tab 시점, R 다시 시작) 에셋. |
 | Siege | `SiegeLadder`, `PlaceholderLadderView` | 맵에 고정된 사다리 자리. 그 칸에 성벽이 있을 때만 쓰인다. 밑의 적이 세우고, 성벽 위 아군(싸울 적이 없는 유닛, 키를 누른 플레이어)이 민다. 올라온 적이 근처에 있으면 밀지 못한다. 외형은 Visual 자식의 임시 막대다. |
-| Siege | `SiegeAttackerBrain` | 적 하나의 공성 판단. 걸어서 닿는 아군이 있으면 기존 `UnitCombatAI`의 Engage에 맡기고, 없으면 종류(`SiegeAttackerRole`: 사다리병·성문 파괴병·궁수)에 따라 사다리·성문·사격을 고른다. 이동·공격은 `UnitDirective`로 실행한다. 쓸 사다리가 없는 사다리병은 성문으로 간다. |
+| Siege | `SiegeAttackerBrain` | 적 하나의 공성 판단. 걸어서 닿는 아군이 있으면 기존 `UnitCombatAI`의 Engage에 맡기고, 없으면 종류(`SiegeAttackerRole`: 사다리병·성문 파괴병·궁수)에 따라 사다리·성문·사격을 고른다. 이동·공격은 `UnitDirective`로 실행한다. 쓸 사다리가 없는 사다리병은 성문으로 간다. `Retreat()`를 받으면 판 바깥 끝으로 이동해 사라지고 `Fled`가 된다(`SiegeDirector`가 후퇴를 지시하고, 떠난 적은 남은 적 수에서 뺀다). |
 | Siege | `SiegePrepController`, `SiegeDirector` | 준비 단계 도구(코스트 확인, 이번에 지은 조각 철거·환불, 부대를 클릭한 자리에 바로 배치)와 한 판의 진행(시작할 때 `SiegeSettings` 편성대로 아군·적 생성, 준비→전투→결과, 시점 전환, 적 활성화, 승패). 정식 런 진행과는 연결하지 않았다. |
 | UI | `SiegeHud`, `SiegeStatusHud` | 시험용 준비 화면 패널과 단계·남은 인원·결과 표시. |
 | Meta | `PerkDefinition`, `PerkLoadout` | 퍽 정의와 스탯·특수 효과 목록, 포인트 사용, 적용 및 초기화 |
@@ -616,4 +616,16 @@ unity command package add --caller plugin --skill unity-package-management --nam
 - 검증: 컴파일 오류 없음. EditMode 131개·PlayMode 전체 60개 통과. 실제 입력 플레이와 Windows 빌드는 이번 병합에서 다시 확인하지 않았다.
 - 직접 확인: `Assets/_Project/Scenes/SiegePrototype.unity` → Play → 성벽으로 뚫린 곳을 막거나 부대 배치 → 전투 시작 → 적 진입·성문 공격·사다리와 승패를 확인한다. R 또는 Play 재시작으로 초기화한다. `Assets/_Project/Scenes/Title.unity` → Play → 새 게임 → 준비 건설 화면 → 전투 시작 → 1인칭·F1~F3·1/2/3 지휘와 자리표시 승리/패배 → 보상·타이틀 전환을 확인한다. Play 재시작으로 초기화한다.
 - 자동 재검증: Test Runner의 EditMode·PlayMode 전체 실행. 병합 접점은 `SiegePrototypePlayTests`, `StackedConstructionPlayTests`, `GameFlowPlayTests`, `ConstructionPlayTests`에서 확인한다.
+
+### 2026-11-12: 공성 수단을 잃은 적의 후퇴 (Q-30, 브랜치 작업 번호 Q-27)
+
+- 사용자 결정: 추천안 채택. 사다리병·성문 파괴병이 모두 없고, 남은 적 중 걸어서 아군에게 닿는 적(뚫린 곳·무너진 성문으로 들어오는 적)도 없으면 남은 적이 후퇴한다.
+- `SiegeOutcomeRules.ShouldRetreat`(일반 C#), `SiegeDirector`의 후퇴 지시와 `EnemiesFled`, `SiegeAttackerBrain.Retreat()`·`Fled`를 추가했다. 후퇴하는 적은 이동 지시로 판 바깥 끝까지 가고 싸우지 않으며, 도착하거나 길이 없거나 `SiegeSettings.retreatTimeout`(20초)이 지나면 사라진다. 모든 적이 첫 판단을 마친 뒤에만 판정하고, 지형 갱신 중에는 판정하지 않는다. 한 번 내린 후퇴는 되돌리지 않는다.
+- 편성에 사다리병·성문 파괴병이 하나도 없고 성이 다 막혀 있으면 전투 시작 직후 남은 적이 바로 물러나 승리한다. 규칙대로의 동작이다.
+- 상단 표시: 후퇴 중이면 "공성 수단을 잃은 적이 물러납니다", 떠난 적이 있으면 결과가 "승리! 남은 적이 물러났습니다."
+- develop 병합: feature 브랜치에서 Q-27로 작업한 결정을 develop 번호 Q-30으로 바꿔 기록했다(develop의 Q-27은 층 쌓기). 코드 충돌은 없었고 문서 세 개의 충돌만 정리했다. 병합된 develop에서 Unity 컴파일·테스트는 아직 다시 돌리지 않았다.
+- 검증(feature 브랜치 단독): 컴파일 오류 없음. EditMode 111개, PlayMode 전체 52개 통과(후퇴 규칙 1개, 막힌 성에서 후퇴·승리와 뚫린 성에서 계속 싸움 2개 추가). 에디터 Play에서 성벽을 막고 공성병 16명을 없애자 궁수 12명이 물러나 승리하는 것과 결과 문구를 화면으로 확인했다. 새 런타임 오류 없음.
+- 직접 검증: `SiegePrototype` → Play → `성벽`으로 뚫린 4·11·12번 칸을 막음 → `전투 시작` → 사다리병과 성문 파괴병을 모두 처치(성벽 위에 부대를 배치해 두면 쉽다) → 남은 궁수가 성 밖으로 물러나 사라지고 "승리! 남은 적이 물러났습니다." 표시. 뚫린 칸을 남겨 두면 궁수가 그 길로 들어와 계속 싸운다.
+- 자동 검증 재실행: Test Runner의 EditMode `SiegeRulesTests.Retreat_OnlyWhenNoBreachersAndNoWayIn`, PlayMode `SiegePrototypePlayTests.ClosedWalls_BreachersGone_RemainingArchersRetreat_AndVictory`·`OpenGap_BreachersGone_ArchersKeepFighting`.
+
 </details>
