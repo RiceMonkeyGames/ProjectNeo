@@ -49,6 +49,21 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
+        public void Retreat_OnlyWhenNoBreachersAndNoWayIn()
+        {
+            // 궁수 한 명만 남고 들어올 길이 없으면 물러난다.
+            Assert.IsTrue(SiegeOutcomeRules.ShouldRetreat(1, 0, 0, 0));
+            // 사다리병이나 성문 파괴병이 남아 있으면 계속 싸운다.
+            Assert.IsFalse(SiegeOutcomeRules.ShouldRetreat(3, 1, 0, 0));
+            // 걸어서 아군에게 닿는 적이 있으면(뚫린 곳, 무너진 성문) 계속 싸운다.
+            Assert.IsFalse(SiegeOutcomeRules.ShouldRetreat(3, 0, 1, 0));
+            // 아직 판단하지 않은 적이 있으면 기다린다.
+            Assert.IsFalse(SiegeOutcomeRules.ShouldRetreat(3, 0, 0, 1));
+            // 남은 적이 없으면 후퇴가 아니라 이미 승리다.
+            Assert.IsFalse(SiegeOutcomeRules.ShouldRetreat(0, 0, 0, 0));
+        }
+
+        [Test]
         public void Ladder_RaisesOverTime_AndFallsBackWhenRaiserLeaves()
         {
             var ladder = new SiegeLadderState(3f, 2f);

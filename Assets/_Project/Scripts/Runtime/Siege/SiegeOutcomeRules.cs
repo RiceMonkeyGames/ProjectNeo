@@ -20,5 +20,13 @@ namespace ProjectNeo.Siege
             if (enemiesAlive <= 0 && enemiesPending <= 0) return SiegeOutcome.Victory;
             return SiegeOutcome.Ongoing;
         }
+
+        /// <summary>
+        /// 남은 적이 공성 수단을 잃었는지(Q-30). 사다리병과 성문 파괴병이 모두 없고, 남은 적 중 걸어서
+        /// 아군에게 닿는 적도 없으면 후퇴한다. 아직 첫 판단을 하지 않은 적이 있으면 기다린다.
+        /// 사기·도망(B-8)이 들어오면 대체될 임시 규칙이다.
+        /// </summary>
+        public static bool ShouldRetreat(int enemiesAlive, int breachersAlive, int assaulting, int undecided) =>
+            enemiesAlive > 0 && breachersAlive <= 0 && assaulting <= 0 && undecided <= 0;
     }
 }

@@ -75,7 +75,7 @@ Unity 6000.6.8f1, URP, 3D 1인칭 프로젝트다. 현재는 임시 그래픽이
 | Siege | `BuildBudget`, `SiegeOutcomeRules`, `SiegeLadderState` | 일반 C# 규칙. 임시 건설 코스트의 차감·환불, 승패 판정(동시 성립은 패배 우선, Q-09 확정)·마지막 적 퇴각 조건, 사다리 상태(놓임→세우는 중→세워짐, 한 명씩 오르기, 밀어서 쓰러뜨리기). |
 | Siege | `SiegeSettings` | 코스트·사다리 시간과 거리·적 판단 주기·키(F 밀기, Tab 시점, R 다시 시작) 에셋. |
 | Siege | `SiegeLadder`, `PlaceholderLadderView` | 맵에 고정된 사다리 자리. 그 칸에 성벽이 있을 때만 쓰인다. 밑의 적이 세우고, 성벽 위 아군(싸울 적이 없는 유닛, 키를 누른 플레이어)이 민다. 올라온 적이 근처에 있으면 밀지 못한다. 외형은 Visual 자식의 임시 막대다. |
-| Siege | `SiegeAttackerBrain` | 적 하나의 공성 판단. 걸어서 닿는 아군이 있으면 기존 `UnitCombatAI`의 Engage에 맡기고, 없으면 종류(`SiegeAttackerRole`: 사다리병·성문 파괴병·궁수)에 따라 사다리·성문·사격을 고른다. 이동·공격은 `UnitDirective`로 실행한다. 쓸 사다리가 없는 사다리병은 성문으로 간다. |
+| Siege | `SiegeAttackerBrain` | 적 하나의 공성 판단. 걸어서 닿는 아군이 있으면 기존 `UnitCombatAI`의 Engage에 맡기고, 없으면 종류(`SiegeAttackerRole`: 사다리병·성문 파괴병·궁수)에 따라 사다리·성문·사격을 고른다. 이동·공격은 `UnitDirective`로 실행한다. 쓸 사다리가 없는 사다리병은 성문으로 간다. `Retreat()`를 받으면 판 바깥 끝으로 이동해 사라지고 `Fled`가 된다(`SiegeDirector`가 후퇴를 지시하고, 떠난 적은 남은 적 수에서 뺀다). |
 | Siege | `SiegePrepController`, `SiegeDirector` | 준비 단계 도구(코스트 확인, 이번에 지은 조각 철거·환불, 부대를 클릭한 자리에 바로 배치)와 한 판의 진행(시작할 때 `SiegeSettings` 편성대로 아군·적 생성, 준비→전투→결과, 시점 전환, 적 활성화, 승패). 정식 런 진행과는 연결하지 않았다. |
 | UI | `SiegeHud`, `SiegeStatusHud` | 시험용 준비 화면 패널과 단계·남은 인원·결과 표시. |
 | Meta | `PerkDefinition`, `PerkLoadout` | 퍽 정의와 스탯·특수 효과 목록, 포인트 사용, 적용 및 초기화 |
@@ -650,5 +650,23 @@ unity command package add --caller plugin --skill unity-package-management --nam
 - 자동 검증: EditMode 136개·PlayMode 전체 70개 통과. `SiegeRulesTests`의 퇴각 조건, `GameBattlePlayTests`의 적 접근·실제 승패·동시 패배 우선·퇴각/열린 진입로·3층 사다리·붕괴 성문 조각 공격·다음 준비 이월·HUD 배경 포함 영역 검사를 확인했다. Test Runner에서 해당 클래스 또는 전체 EditMode/PlayMode를 실행한다.
 - 에디터 직접 실행: 깃발 대상 상호작용 후 적이 북쪽에서 접근했고, 자연 진행으로 성문 파괴·아군 0명·플레이어 체력 100에서 패배 결과가 나왔다(남은 적 18명). 새 런타임 오류는 없다. F/Esc는 Input System 가상 키보드 자동 검증을 통과했으나 CUA 키 주입이 동작하지 않아 물리 키보드는 사용자 확인 대상이다. Windows 빌드는 다시 만들지 않았다.
 - 직접 확인: `Assets/_Project/Scenes/Game.unity` → Play → 1인칭으로 건설소에 접근해 몸통을 바라보고 F → 건설 후 Esc → 북쪽 중앙 길을 따라 성문 안쪽 오른편 붉은 깃발에 접근해 3.5m 안에서 바라보고 F → 적 침공·전투 HUD 확인 → F1~F3 부대 선택, 1 이동·2 공격·3 중지. 승리하면 보상 화면에서 다음 준비로, 패배하면 결과에서 타이틀로 이동한다. Play 종료 후 재시작하면 성벽·병력·스테이지가 초기화된다. Game 씬을 열어 두었다.
+
+### 2026-11-12: 공성 수단을 잃은 적의 후퇴 (Q-30, 브랜치 작업 번호 Q-27)
+
+- 사용자 결정: 추천안 채택. 사다리병·성문 파괴병이 모두 없고, 남은 적 중 걸어서 아군에게 닿는 적(뚫린 곳·무너진 성문으로 들어오는 적)도 없으면 남은 적이 후퇴한다.
+- `SiegeOutcomeRules.ShouldRetreat`(일반 C#), `SiegeDirector`의 후퇴 지시와 `EnemiesFled`, `SiegeAttackerBrain.Retreat()`·`Fled`를 추가했다. 후퇴하는 적은 이동 지시로 판 바깥 끝까지 가고 싸우지 않으며, 도착하거나 길이 없거나 `SiegeSettings.retreatTimeout`(20초)이 지나면 사라진다. 모든 적이 첫 판단을 마친 뒤에만 판정하고, 지형 갱신 중에는 판정하지 않는다. 한 번 내린 후퇴는 되돌리지 않는다.
+- 편성에 사다리병·성문 파괴병이 하나도 없고 성이 다 막혀 있으면 전투 시작 직후 남은 적이 바로 물러나 승리한다. 규칙대로의 동작이다.
+- 상단 표시: 후퇴 중이면 "공성 수단을 잃은 적이 물러납니다", 떠난 적이 있으면 결과가 "승리! 남은 적이 물러났습니다."
+- develop 병합: feature 브랜치에서 Q-27로 작업한 결정을 develop 번호 Q-30으로 바꿔 기록했다(develop의 Q-27은 층 쌓기). 코드 충돌은 없었고 문서 세 개의 충돌만 정리했다. 병합된 develop에서 Unity 컴파일·테스트는 아직 다시 돌리지 않았다.
+- 검증(feature 브랜치 단독): 컴파일 오류 없음. EditMode 111개, PlayMode 전체 52개 통과(후퇴 규칙 1개, 막힌 성에서 후퇴·승리와 뚫린 성에서 계속 싸움 2개 추가). 에디터 Play에서 성벽을 막고 공성병 16명을 없애자 궁수 12명이 물러나 승리하는 것과 결과 문구를 화면으로 확인했다. 새 런타임 오류 없음.
+- 직접 검증: `SiegePrototype` → Play → `성벽`으로 뚫린 4·11·12번 칸을 막음 → `전투 시작` → 사다리병과 성문 파괴병을 모두 처치(성벽 위에 부대를 배치해 두면 쉽다) → 남은 궁수가 성 밖으로 물러나 사라지고 "승리! 남은 적이 물러났습니다." 표시. 뚫린 칸을 남겨 두면 궁수가 그 길로 들어와 계속 싸운다.
+- 자동 검증 재실행: Test Runner의 EditMode `SiegeRulesTests.Retreat_OnlyWhenNoBreachersAndNoWayIn`, PlayMode `SiegePrototypePlayTests.ClosedWalls_BreachersGone_RemainingArchersRetreat_AndVictory`·`OpenGap_BreachersGone_ArchersKeepFighting`.
+
+### 2026-11-12: 원격 develop 후퇴 변경과 Game 전투 통합
+
+- 원격 `develop`의 `85869c6`(팀원 작업 `221bb83` 포함)을 받았다. 로컬 성 확대·준비 상호작용·전투 연결·HUD 변경은 `42222d8`에 먼저 보존한 뒤 병합했다. 공용 C#은 자동 병합 결과를 확인했고, 문서 세 개의 충돌은 현재 Game 동작과 양쪽 검증 기록을 함께 보존했다.
+- 팀원의 `SiegeDirector`·`SiegeAttackerBrain.Retreat/Fled`·후퇴 설정·안내·테스트를 유지한다. 기존 `GameBattleController`의 경로 확인·이탈 집계와 프로토타입의 판단 상태 기반 후퇴는 각 진행 담당이 실행하며, `ShouldRetreat`의 두 인자 형식을 모두 유지했다. Game의 적층 사다리·성문 자리에 내려온 조각 공격·게임 전용 설정 연결도 유지했다.
+- 통합 검증: 컴파일 오류 없음. EditMode 전체 137개, PlayMode 전체 72개 통과. 팀원의 `Retreat_OnlyWhenNoBreachersAndNoWayIn`·`ClosedWalls_BreachersGone_RemainingArchersRetreat_AndVictory`·`OpenGap_BreachersGone_ArchersKeepFighting`과 기존 `GameBattlePlayTests`를 모두 포함한다. 이번 병합에서는 물리 입력 직접 플레이와 Windows 빌드를 추가 실행하지 않았다.
+- 직접 확인: `Assets/_Project/Scenes/Game.unity` → Play → 성문 앞 붉은 깃발을 바라보고 F → 적 침공과 승패 확인. 프로토타입 후퇴는 `Assets/_Project/Scenes/SiegePrototype.unity` → Play → 빈 성벽을 막고 전투 시작 → 공성병을 처치하면 궁수가 물러나 승리, 진입로가 남으면 계속 싸워야 한다. Play 종료 후 재시작하면 초기화된다. Test Runner에서 `SiegeRulesTests`·`SiegePrototypePlayTests`·`GameBattlePlayTests`로 재검증할 수 있다. Game 씬을 비실행 상태로 열어 두었다.
 
 </details>
