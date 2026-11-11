@@ -1,0 +1,105 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &1543767155537494092
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 50873213222557923, guid: 5330be5c4882b304ca4a9749b3a9fc79, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 50873213222557923, guid: 5330be5c4882b304ca4a9749b3a9fc79, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 50873213222557923, guid: 5330be5c4882b304ca4a9749b3a9fc79, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 50873213222557923, guid: 5330be5c4882b304ca4a9749b3a9fc79, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 50873213222557923, guid: 5330be5c4882b304ca4a9749b3a9fc79, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 50873213222557923, guid: 5330be5c4882b304ca4a9749b3a9fc79, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 50873213222557923, guid: 5330be5c4882b304ca4a9749b3a9fc79, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 50873213222557923, guid: 5330be5c4882b304ca4a9749b3a9fc79, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 50873213222557923, guid: 5330be5c4882b304ca4a9749b3a9fc79, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 50873213222557923, guid: 5330be5c4882b304ca4a9749b3a9fc79, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 248562313294811707, guid: 5330be5c4882b304ca4a9749b3a9fc79, type: 3}
+      propertyPath: m_Name
+      value: enemy_archer
+      objectReference: {fileID: 0}
+    - target: {fileID: 7047762215186924844, guid: 5330be5c4882b304ca4a9749b3a9fc79, type: 3}
+      propertyPath: profile
+      value: 
+      objectReference: {fileID: 11400000, guid: 27ec692a002de014b89dfb0322bc050a, type: 2}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 248562313294811707, guid: 5330be5c4882b304ca4a9749b3a9fc79, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7217705110627482787}
+    - targetCorrespondingSourceObject: {fileID: 248562313294811707, guid: 5330be5c4882b304ca4a9749b3a9fc79, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1051244143599273748}
+  m_SourcePrefab: {fileID: 100100000, guid: 5330be5c4882b304ca4a9749b3a9fc79, type: 3}
+--- !u!1 &1594135828907872887 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 248562313294811707, guid: 5330be5c4882b304ca4a9749b3a9fc79, type: 3}
+  m_PrefabInstance: {fileID: 1543767155537494092}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &7217705110627482787
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1594135828907872887}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 97ae5ce9ad4c4fe4b9f6cc2cbb28e53c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Walls.UnitFallController
+  world: {fileID: 0}
+  settings: {fileID: 0}
+--- !u!114 &1051244143599273748
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1594135828907872887}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 12830552f83a5d24992fece31fdbe49e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Siege.SiegeAttackerBrain
+  role: 2
+  world: {fileID: 0}
+  settings: {fileID: 11400000, guid: 31a22633633ad2c4f81b6ac9d78bb27e, type: 2}
+  ladders: []
+  outward: {x: 0, y: 1}

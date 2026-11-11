@@ -54,6 +54,26 @@ namespace ProjectNeo.Tests
         PlacedStructure Lower(Vector2Int cell) => world.Structures.Single(piece => piece.Placement.Cell == cell && piece.Placement.Level == 0);
 
         [UnityTest]
+        public IEnumerator 적층_성벽은_맨_위부터_철거하고_점유와_길찾기를_갱신한다()
+        {
+            var cell = new Vector2Int(5, 17);
+            PlacedStructure lower = Lower(cell);
+            Assert.IsTrue(world.TryPlace(wall, cell, 0, out PlacedStructure upper));
+            yield return WaitForNavigation();
+            Assert.IsFalse(world.TryDismantle(lower), "위층을 공중에 남기는 철거는 거부한다.");
+            int removedId = upper.Placement.Id;
+            int revision = world.NavigationRevision;
+            Assert.IsTrue(world.TryDismantle(upper));
+            Assert.IsNull(world.Layout.Find(removedId));
+            Assert.AreSame(lower.Placement, world.Layout.Top(cell));
+            Assert.IsTrue(world.RebuildPending);
+            yield return WaitForNavigation();
+            Assert.Greater(world.NavigationRevision, revision);
+            Assert.IsTrue(world.TryPlace(wall, cell, 0, out _), "철거한 위층 자리에 다시 지을 수 있다.");
+            yield return WaitForNavigation();
+        }
+
+        [UnityTest]
         public IEnumerator 플레이어와_여러_병력이_겹쳐도_건설하고_새_성벽_위로_피해없이_옮긴다()
         {
             var player = Object.FindAnyObjectByType<ProjectNeo.Characters.PlayerInputController>();

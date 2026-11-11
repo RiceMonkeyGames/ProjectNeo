@@ -1,0 +1,263 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca9391d0bec0a9d479c286207600979e, type: 3}
+  m_Name: Command
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Squads.SquadCommandSettings
+  selectSquad:
+  - m_Name: SelectSquad1
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 70ecba0d-5cb4-4b81-a535-f1aadc944728
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 63015e66-d614-4619-802d-aa31eb5cc22c
+      m_Path: <Keyboard>/f1
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: SelectSquad1
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  - m_Name: SelectSquad2
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: deb2978f-3bcf-4d16-a8e2-1ef266f495f9
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 7174dd7b-5678-459f-a2f6-b24e1b5b1c10
+      m_Path: <Keyboard>/f2
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: SelectSquad2
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  - m_Name: SelectSquad3
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 05d22ead-ba86-485b-9017-76a61ebb00d4
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: adf8bca4-3cf9-4f9a-98c4-a624427d3720
+      m_Path: <Keyboard>/f3
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: SelectSquad3
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  - m_Name: SelectSquad4
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 6ac8a3df-a3a1-43d1-bd1f-69a2300e520a
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: c5e3bade-f91e-4326-8e5c-3a557824a7a3
+      m_Path: <Keyboard>/f4
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: SelectSquad4
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  - m_Name: SelectSquad5
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: d069824e-a66d-4649-b9b8-fbeea835a9d4
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: c8fcf119-d1ac-41a4-9d84-8669a310b799
+      m_Path: <Keyboard>/f5
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: SelectSquad5
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  - m_Name: SelectSquad6
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 4fbb0f66-32ba-442d-9435-6d372b7e6529
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 0402187e-6e47-4a24-af74-3838756a92b1
+      m_Path: <Keyboard>/f6
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: SelectSquad6
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  - m_Name: SelectSquad7
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 6e652f03-682e-412c-8bbb-4ff12fa18c00
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: ffa97030-2c74-4b05-abeb-9bc15fd095ac
+      m_Path: <Keyboard>/f7
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: SelectSquad7
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  - m_Name: SelectSquad8
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 640e980b-db4a-4c4f-a7b9-06fe6d6cb32b
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 3a77022e-a7d2-49a6-aaa6-22085c7d5ada
+      m_Path: <Keyboard>/f8
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: SelectSquad8
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  - m_Name: SelectSquad9
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 5c26e53b-c4b6-436f-9f9c-fb2fd2b3e55b
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 2d1f5883-0449-4f60-838b-cf4d4a95ac35
+      m_Path: <Keyboard>/f9
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: SelectSquad9
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  - m_Name: SelectSquad10
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 1600b228-e060-4979-9fec-3a3c80296122
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: a46aaf59-10cf-45d4-a06b-6af5ec903700
+      m_Path: <Keyboard>/f10
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: SelectSquad10
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  selectAll:
+    m_Name: SelectAll
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 143c4d11-2d16-4eb7-91dc-42740f29648e
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 997f4762-c25e-40aa-a23d-51be1fdbd8df
+      m_Path: <Keyboard>/backquote
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: SelectAll
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  move:
+    m_Name: OrderMove
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 5088baf8-6d27-432e-8f63-d24db8fbece6
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 0db4d2f1-5efe-415c-bc31-3f1f28d75394
+      m_Path: <Keyboard>/1
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: OrderMove
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  attack:
+    m_Name: OrderAttack
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 2efb66e1-e03e-4cc0-b150-dd73db8f27bd
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: ee5e6754-a590-46d4-92a5-471c0b9279ac
+      m_Path: <Keyboard>/2
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: OrderAttack
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  hold:
+    m_Name: OrderHold
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: db7e11da-b8f4-4eea-8bc9-34fb4f225cc6
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 5549d27f-daa2-44fd-a192-769ebbfd39e1
+      m_Path: <Keyboard>/3
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: OrderHold
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  formationColumns: 2
+  formationSpacing: 1.1
+  maxAimDistance: 120
+  navigationSnapDistance: 2
+  minimumSurfaceUp: 0.5
+  verticalSnapTolerance: 0.5

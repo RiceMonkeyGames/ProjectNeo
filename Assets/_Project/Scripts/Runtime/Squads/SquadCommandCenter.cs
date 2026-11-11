@@ -32,6 +32,11 @@ namespace ProjectNeo.Squads
             config = squadConfig; settings = commandSettings; rosters = squadRosters;
         }
 
+        public SquadConfig Config => config;
+
+        /// <summary>실행 중에 만든 유닛으로 편성한다. 이 컴포넌트의 Awake보다 먼저 불러야 한다.</summary>
+        public void ConfigureRosters(SquadRoster[] squadRosters) => rosters = squadRosters;
+
         void Awake()
         {
             army = new Army<UnitCombatAI>(config);

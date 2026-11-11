@@ -53,6 +53,14 @@ namespace ProjectNeo.Walls
             return found;
         }
 
+        /// <summary>성벽 붕괴 외의 이유(사다리가 밀림 등)로 지금 높이에서 떨어뜨린다.</summary>
+        public void BeginFall(bool resumeAgentAfterLanding)
+        {
+            if (IsFalling) return;
+            BeginFall();
+            resumeAgent = resumeAgentAfterLanding && agent != null;
+        }
+
         void BeginFall()
         {
             IsFalling = true; landed = false; fallStart = transform.position.y; velocity = 0f;
