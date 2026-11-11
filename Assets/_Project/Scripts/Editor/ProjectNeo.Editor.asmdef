@@ -2,7 +2,8 @@
     "name": "ProjectNeo.Editor",
     "rootNamespace": "ProjectNeo.Editor",
     "references": [
-        "ProjectNeo.Runtime"
+        "ProjectNeo.Runtime",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [
         "Editor"

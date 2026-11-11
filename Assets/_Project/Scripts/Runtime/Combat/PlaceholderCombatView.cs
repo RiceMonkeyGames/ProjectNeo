@@ -1,0 +1,68 @@
+using UnityEngine;
+
+namespace ProjectNeo.Combat
+{
+    /// <summary>신호를 받아 색과 체력 막대만 바꾸는 교체용 임시 외형.</summary>
+    public sealed class PlaceholderCombatView : MonoBehaviour
+    {
+        [SerializeField] CharacterActor actor;
+        [SerializeField] Renderer body;
+        [SerializeField] Transform healthBar;
+        [SerializeField] GameObject attackMarker;
+        Color normalColor;
+        MaterialPropertyBlock properties;
+        float flashUntil;
+        float attackUntil;
+        static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
+
+        public void Configure(CharacterActor owner, Renderer bodyRenderer, Transform bar, GameObject marker)
+        {
+            actor = owner;
+            body = bodyRenderer;
+            healthBar = bar;
+            attackMarker = marker;
+        }
+
+        void Awake()
+        {
+            properties = new MaterialPropertyBlock();
+            normalColor = body.sharedMaterial.GetColor(BaseColor);
+        }
+
+        void OnEnable()
+        {
+            actor.AttackStarted += OnAttack;
+            actor.HitReceived += OnHit;
+            actor.Died += OnDeath;
+        }
+
+        void Update()
+        {
+            if (actor.Health == null) return;
+            float ratio = actor.Health.Maximum > 0f ? actor.Health.Current / actor.Health.Maximum : 0f;
+            healthBar.localScale = new Vector3(ratio, 0.12f, 0.12f);
+            healthBar.localPosition = new Vector3((ratio - 1f) * 0.5f, actor.Profile.Height + 0.35f, 0f);
+            Color color = actor.Health.IsDead ? Color.gray : Time.time < flashUntil ? Color.white : normalColor;
+            properties.SetColor(BaseColor, color);
+            body.SetPropertyBlock(properties);
+            attackMarker.SetActive(!actor.Health.IsDead && Time.time < attackUntil);
+        }
+
+        void OnAttack() => attackUntil = Time.time + actor.Profile.ImpactDelay + 0.15f;
+        void OnHit() => flashUntil = Time.time + 0.12f;
+        void OnDeath()
+        {
+            Vector3 scale = body.transform.localScale;
+            scale.y *= 0.12f;
+            body.transform.localScale = scale;
+            body.transform.localPosition = Vector3.up * (actor.Profile.Height * 0.06f);
+        }
+
+        void OnDisable()
+        {
+            actor.AttackStarted -= OnAttack;
+            actor.HitReceived -= OnHit;
+            actor.Died -= OnDeath;
+        }
+    }
+}
