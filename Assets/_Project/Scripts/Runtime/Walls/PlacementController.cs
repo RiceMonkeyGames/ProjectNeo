@@ -26,6 +26,10 @@ namespace ProjectNeo.Walls
         public PlacedStructure PreviewSupport { get; private set; }
         public string PreviewMountId { get; private set; }
         public MountIssue MountIssue { get; private set; } = MountIssue.NoWeapon;
+        // 설치 직전에 묻는 조건(코스트 등)과 설치 결과 알림. 비어 있으면 기존처럼 항상 설치한다.
+        public System.Func<bool> ConfirmGate;
+        public event System.Action<PlacedStructure> PiecePlaced;
+        public event System.Action<PlacedSiegeWeapon> WeaponMounted;
         public bool HasSelection => Selected != null || SelectedWeapon != null;
         public bool IsPreviewVisible => ghost != null && ghost.activeSelf;
         public bool StairNeedsConnection => Selected != null && Selected.Kind == BuildPieceKind.Stairs
@@ -122,15 +126,18 @@ namespace ProjectNeo.Walls
         public bool Confirm()
         {
             if (!IsPreviewVisible) return false;
+            if (ConfirmGate != null && !ConfirmGate()) return false;
             if (SelectedWeapon != null)
             {
-                bool mounted = world.TryMount(SelectedWeapon, PreviewSupport, PreviewMountId, out _);
+                bool mounted = world.TryMount(SelectedWeapon, PreviewSupport, PreviewMountId, out PlacedSiegeWeapon weapon);
+                if (mounted) WeaponMounted?.Invoke(weapon);
                 MountIssue = world.CheckMount(SelectedWeapon, PreviewSupport, PreviewMountId);
                 Tint(MountIssue == MountIssue.None);
                 return mounted;
             }
             if (Selected == null) return false;
-            bool placed = world.TryPlace(Selected, PreviewCell, Rotation, out _);
+            bool placed = world.TryPlace(Selected, PreviewCell, Rotation, out PlacedStructure body);
+            if (placed) PiecePlaced?.Invoke(body);
             Issue = world.CheckPlacement(Selected, PreviewCell, Rotation);
             Tint(Issue == PlacementIssue.None);
             return placed;

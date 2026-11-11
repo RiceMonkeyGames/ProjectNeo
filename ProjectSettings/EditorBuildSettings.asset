@@ -23,6 +23,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/_Project/Scenes/WallCommandPrototype.unity
     guid: a2e126d953a27f64f81c67bb66dbe29b
+  - enabled: 1
+    path: Assets/_Project/Scenes/SiegePrototype.unity
+    guid: 8017cc30e390e634593a6b296be09efa
   m_configObjects:
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

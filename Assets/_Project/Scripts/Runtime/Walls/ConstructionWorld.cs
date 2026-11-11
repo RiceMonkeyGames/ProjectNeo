@@ -168,6 +168,36 @@ namespace ProjectNeo.Walls
             // 받치던 조각이 부서지면 그 위의 수성 무기도 함께 파괴된다.
             foreach (MountedWeapon mount in Mounts.RemoveSupportedBy(structure.Placement.Id))
                 Discard(weapons[mount.Id], SiegeWeaponRemoval.SupportDestroyed);
+            RemoveBody(structure);
+        }
+
+        /// <summary>
+        /// 준비 중 철거. 무너뜨리지 않고 조각만 없앤다. 고정 성문, 무기가 올라간 조각,
+        /// 유닛이 겹치거나 위에 서 있는 조각은 철거하지 않는다.
+        /// </summary>
+        public bool TryDismantle(PlacedStructure structure, float clearance = 2.5f)
+        {
+            if (!IsLive(structure) || structure.Placement.IsFixed) return false;
+            BuildPlacement placement = structure.Placement;
+            foreach (MountedWeapon mount in Mounts.Mounted)
+                if (mount.SupportId == placement.Id) return false;
+            float height = placement.Definition.Height + Mathf.Max(0f, clearance);
+            Vector3 center = WorldCenter(placement.Definition, placement.Cell, placement.Rotation) + transform.up * (height * 0.5f);
+            var half = new Vector3(placement.Definition.Footprint.x * grid.CellSize * 0.5f,
+                height * 0.5f, placement.Definition.Footprint.y * grid.CellSize * 0.5f);
+            foreach (Collider collider in Physics.OverlapBox(center, half * 0.98f,
+                transform.rotation * Quaternion.Euler(0f, placement.Rotation * 90f, 0f), ~0, QueryTriggerInteraction.Ignore))
+            {
+                var actor = collider.GetComponentInParent<CharacterActor>();
+                if (actor != null && actor.gameObject.scene == gameObject.scene
+                    && actor.Health != null && !actor.Health.IsDead) return false;
+            }
+            RemoveBody(structure);
+            return true;
+        }
+
+        void RemoveBody(PlacedStructure structure)
+        {
             foreach (Collider collider in structure.GetComponentsInChildren<Collider>()) collider.enabled = false;
             Layout.Remove(structure.Placement.Id, true);
             structures.Remove(structure.Placement.Id);

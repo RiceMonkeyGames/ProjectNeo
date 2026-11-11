@@ -41,6 +41,22 @@ namespace ProjectNeo.UI
             }
         }
 
+        /// <summary>"1번 부대 · 근접"처럼 번호와 종류를 붙인 이름. 종류는 부대원의 공격 방식에서 읽는다.</summary>
+        public static string SquadName(SquadCommandCenter center, int squad)
+        {
+            string name = (squad + 1) + "번 부대";
+            if (center == null || squad < 0 || squad >= center.Squads.Count) return name;
+            bool melee = false, ranged = false;
+            foreach (ProjectNeo.Combat.UnitCombatAI member in center.Squads[squad].Members)
+            {
+                if (member == null || member.Actor == null || member.Actor.Profile == null) continue;
+                if (member.Actor.Profile.AttackKind == ProjectNeo.Combat.AttackKind.Projectile) ranged = true;
+                else melee = true;
+            }
+            if (melee && ranged) return name + " · 혼성";
+            return melee ? name + " · 근접" : ranged ? name + " · 궁수" : name;
+        }
+
         void Update()
         {
             if (runtimeFont == null || center.Commander == null) return;
@@ -48,7 +64,7 @@ namespace ProjectNeo.UI
             for (int i = 0; i < center.Commander.SquadCount; i++)
             {
                 builder.Append(center.Commander.IsSelected(i) ? "▶ " : "    ");
-                builder.Append(i + 1).Append("번 부대  ").Append(OrderName(center.Commander.OrderOf(i).Kind));
+                builder.Append(SquadName(center, i)).Append("  ").Append(OrderName(center.Commander.OrderOf(i).Kind));
                 builder.Append("  ").Append(center.AliveCount(i)).Append("명\n");
             }
             builder.Append(input.Message);

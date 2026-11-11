@@ -37,6 +37,14 @@ namespace ProjectNeo.Squads
         public float MinimumSurfaceUp => minimumSurfaceUp;
         public float VerticalSnapTolerance => verticalSnapTolerance;
 
+        /// <summary>부대 선택 키를 통째로 바꾼다. 키 하나가 부대 하나다(예: "&lt;Keyboard&gt;/f5").</summary>
+        public void ConfigureSelectKeys(params string[] bindings)
+        {
+            selectSquad = new InputAction[bindings.Length];
+            for (int i = 0; i < bindings.Length; i++)
+                selectSquad[i] = new InputAction("SelectSquad" + (i + 1), InputActionType.Button, bindings[i]);
+        }
+
         public static SquadCommandSettings Create(int columns = 5, float spacing = 1.4f)
         {
             var value = CreateInstance<SquadCommandSettings>();

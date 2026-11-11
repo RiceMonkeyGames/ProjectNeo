@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7897d8b9bd63f76469f352bc07efaee3, type: 3}
   m_Name: SquadConfig
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Squads.SquadConfig
-  maxSquads: 4
+  maxSquads: 10
   maxMembersPerSquad: 10

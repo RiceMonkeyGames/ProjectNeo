@@ -23,6 +23,7 @@ Unity 6000.6.8f1, URP, 3D 1인칭 프로젝트다. 현재는 임시 그래픽이
 | `Assets/_Project/Scenes/UnitBattlePrototype.unity` | 아군 10명과 적 10명의 근접·원거리 자동 전투 관전 |
 | `Assets/_Project/Scenes/SquadCommandPrototype.unity` | 플레이어 직접 조작 + 부대 3개 지휘. F1~F3 부대 선택, ` 전체 선택, 1 이동(화면 가운데가 가리키는 곳)·2 공격·3 중지. 왼쪽 위에 선택·지시·남은 인원 표시 |
 | `Assets/_Project/Scenes/WallCommandPrototype.unity` | 건설·성벽 위 부대 지휘 통합. Tab 건설↔1인칭 시점, F1~F3 선택·1 이동·2 공격·3 중지. 건설 화면의 `성벽 위로 이동`은 1번 부대를 이동시키고 `발밑 조각 파괴`는 그 부대 첫 유닛의 받침을 파괴 |
+| `Assets/_Project/Scenes/SiegePrototype.unity` | 수성전 프로토타입. 준비 단계(건설·철거·부대 바로 배치, 임시 코스트) → `전투 시작` → 적 침공(뚫린 곳·사다리·성문 파괴·궁수) → 승패. 준비 중 Tab으로 건설↔1인칭, 전투 중에는 1인칭 고정. F를 누르고 있으면 가까운 사다리를 민다. 결과가 나오면 R로 다시 시작 |
 
 에디터에서 씬을 열고 Play를 누른다. 종료 후 다시 Play하면 초기 상태로 돌아온다. 아직 준비 → 수성전 → 보상으로 이어지는 전체 게임 흐름은 없다. 각 씬은 기반 기능을 확인하는 프로토타입이다. 최신 테스트 통과 기준과 남은 연결은 [로드맵 3장](ImplementationPlan.md#3-현재-상태와-출발점)을 확인한다.
 
@@ -62,6 +63,12 @@ Unity 6000.6.8f1, URP, 3D 1인칭 프로젝트다. 현재는 임시 그래픽이
 | Walls | `FallSettings`, `FallDamageRules`, `UnitFallController` | 높이별 피해 계산과 파괴 시 낙하·착지. NavMeshAgent와 CharacterController 몸통을 지원하고 착지 후 이동을 복구한다. |
 | Walls / UI | `ConstructionSandbox`, `ConstructionHud` | 시험 씬 전용 이동·발밑 조각 파괴, uGUI·TMP 건설 선택과 상태 표시. 정식 부대 지휘나 준비 화면은 아니다. |
 | Walls | `WallCommandSandbox` | 통합 시험용 Tab 시점 전환. 건설/1인칭 카메라·입력·HUD를 전환하며 지형과 지시는 유지한다. World가 NavMesh를 만든 뒤 유닛을 활성화한다. 정식 준비·전투 단계가 아니다. |
+| Siege | `BuildBudget`, `SiegeOutcomeRules`, `SiegeLadderState` | 일반 C# 규칙. 임시 건설 코스트의 차감·환불, 승패 판정(동시 성립은 패배 우선, Q-09 확정 전 임시), 사다리 상태(놓임→세우는 중→세워짐, 한 명씩 오르기, 밀어서 쓰러뜨리기). |
+| Siege | `SiegeSettings` | 코스트·사다리 시간과 거리·적 판단 주기·키(F 밀기, Tab 시점, R 다시 시작) 에셋. |
+| Siege | `SiegeLadder`, `PlaceholderLadderView` | 맵에 고정된 사다리 자리. 그 칸에 성벽이 있을 때만 쓰인다. 밑의 적이 세우고, 성벽 위 아군(싸울 적이 없는 유닛, 키를 누른 플레이어)이 민다. 올라온 적이 근처에 있으면 밀지 못한다. 외형은 Visual 자식의 임시 막대다. |
+| Siege | `SiegeAttackerBrain` | 적 하나의 공성 판단. 걸어서 닿는 아군이 있으면 기존 `UnitCombatAI`의 Engage에 맡기고, 없으면 종류(`SiegeAttackerRole`: 사다리병·성문 파괴병·궁수)에 따라 사다리·성문·사격을 고른다. 이동·공격은 `UnitDirective`로 실행한다. 쓸 사다리가 없는 사다리병은 성문으로 간다. |
+| Siege | `SiegePrepController`, `SiegeDirector` | 준비 단계 도구(코스트 확인, 이번에 지은 조각 철거·환불, 부대를 클릭한 자리에 바로 배치)와 한 판의 진행(시작할 때 `SiegeSettings` 편성대로 아군·적 생성, 준비→전투→결과, 시점 전환, 적 활성화, 승패). 정식 런 진행과는 연결하지 않았다. |
+| UI | `SiegeHud`, `SiegeStatusHud` | 시험용 준비 화면 패널과 단계·남은 인원·결과 표시. |
 | Meta | `PerkDefinition`, `PerkLoadout` | 퍽 정의와 스탯·특수 효과 목록, 포인트 사용, 적용 및 초기화 |
 | Meta | `PerkSpecialEffect`, `MoraleBoostPerkEffect` | 전투 이벤트별 특수 효과와 사기 증가 예시. 실제 전투 이벤트 연결은 후속 작업이다. |
 | Meta | `MetaProgress`, `MetaConfig`, `CommanderProgression`, `UnlockGacha` | 유지 데이터, 지휘관 경험치·퍽 포인트, 환생 보너스 환산, 중복 없는 해금 추첨과 확정 등장 표시. 파일 저장은 아직 없다. |
@@ -110,6 +117,21 @@ Play → F1~F3으로 부대 선택(` 는 전체) → 화면 가운데 점을 땅
 - `Assets/_Project/Data/WallCommandPrototype/Command.asset`: 시험용 2열·간격 1.1m와 입력. 조준은 처음 맞은 면의 위쪽 법선이 0.5 이상일 때만 허용하고 NavMesh와 높이 차이는 0.5m까지 허용한다. 옆면을 가리켜 위층·아래층이 선택되는 것을 막는다. 이 수치들은 에셋에서 조정한다.
 - 건설 화면의 `성벽 위로 이동`은 실제 1번 부대 지시를 내린다. Tab으로 1인칭에서 도착을 보거나, 다시 건설로 돌아와 `발밑 조각 파괴`로 첫 부대원의 낙하를 확인한다. 낙하 중 내린 이동 지시는 착지 후 이어진다. Play를 다시 시작하면 지형·인원·지시 모두 초기화된다.
 
+### 수성전 프로토타입 씬
+
+- `Assets/_Project/Scenes/SiegePrototype.unity`: `WallCommandPrototype`을 복사해 만들었다. 원래 씬은 그대로다. 격자 16×20칸(48m×60m), 성벽 줄은 격자 z=8이며 그보다 작은 쪽이 성 안이다. 처음에 4·11·12번 칸이 뚫려 있다. 계단 2개, 성문 1개(이 씬 전용 체력 600).
+- `Assets/_Project/Data/SiegePrototype/`: `Grid`, `Gate`, `Camera`(넓은 판용 직교 크기), `Siege`(`SiegeSettings`), `EnemyRanged`(위쪽 사격 피해 0.5배). 유닛 프리팹과 나머지 수치는 기존 시험 씬 것을 쓴다.
+- 임시 코스트: 시작 40, 성벽 2·계단 3·대포 6. 이 시험에서만 쓰는 값이다. 대포는 설치만 되고 쏘지 않는다.
+- 사다리 자리는 성벽 줄의 1·6·11번 칸이다. 11번은 처음에 뚫려 있어 성벽을 지어야 쓰인다. 세우기 3초·밀기 2초·오르기 2.5초.
+- **편성 바꾸기:** 아군 부대와 적 무리는 씬에 두지 않고 Play를 시작할 때 `Siege.asset`의 `Ally Squads`·`Enemy Groups`대로 만든다. 한 줄이 아군 부대 하나 또는 적 한 무리이고, 프리팹과 인원 수를 적는다. 줄을 더하거나 빼면 부대·무리 수가 바뀐다. 아군은 `SquadConfig` 상한(현재 4부대 × 10명)까지만 만든다. 처음 서는 자리와 줄 간격은 씬의 `SiegeDirector`에서 바꾼다. 정해 둔 자리(4곳)보다 부대가 많으면 마지막 자리의 양옆과 뒤로 세우고, 적 줄이 많으면 판 안에 들어오도록 줄 간격을 좁힌다.
+- 준비 화면의 부대 배치 버튼은 실제 부대 수만큼 실행 중에 만들어진다(`SiegeHud`가 첫 버튼을 복제). 버튼이 늘면 패널이 길어지고, 화면보다 길면 패널 전체를 줄여 넣는다. 이 씬은 전용 `Assets/_Project/Data/SiegePrototype/Command.asset`을 쓰며 부대 선택 키가 F1~F10이다. 키는 이 에셋의 `Select Squad` 목록에서 바꾼다. 다른 시험 씬은 기존 F1~F4 그대로다.
+- 부대 이름에는 종류가 붙는다(`1번 부대 · 근접`, `· 궁수`, 섞이면 `· 혼성`). `SquadCommandHud.SquadName`이 부대원의 공격 방식에서 읽으며, 준비 화면 버튼과 1인칭 부대 목록 모두 같은 이름을 쓴다. 평지·성벽 지휘 시험 씬의 목록에도 같이 표시된다.
+- 기본 편성: 아군 근접 4·근접 4·궁수 4, 적 사다리병 8·성문 파괴병 4·궁수 4. 적은 전투 시작 때 성 밖 멀리서 나타난다.
+- 적 프리팹은 `Assets/_Project/Prefabs/SiegePrototype/`의 `enemy_ladder`·`enemy_gate_breaker`·`enemy_archer`다. 기존 적 프리팹의 변형이며 `SiegeAttackerBrain`(종류)·`UnitFallController`·종류 표시를 가진다. 프리팹은 꺼진 상태로 저장돼 있어야 한다. 사다리병은 등에 갈색 널빤지, 성문 파괴병은 어깨에 검은 덩이를 임시 표시로 달고, 죽으면 `PlaceholderDeathHider`가 표시를 숨긴다.
+- 위쪽 사격 피해 비율은 `CombatProfile`의 `upwardShotDamageRatio`(기본 1, 변화 없음)와 `upwardShotMinimumRise`다. 발사자 발 높이보다 대상이 기준 이상 높을 때 적용한다.
+- 플레이어는 성문 뒤 땅에서 시작한다. 성벽 위는 적 궁수의 사거리 안이다.
+- 넣지 않은 것: 사기·도망, 대포 발사, 여러 웨이브, 보상, 일반 성벽을 부수는 적, 비행 적.
+
 ### B-4 건설 기초 씬
 
 - `Assets/_Project/Scenes/ConstructionPrototype.unity`: 현재 빌드 첫 씬. 초기 방향 45도·내려다보는 각도 30도의 직교 카메라, 성벽·계단·고정 성문, 시험 유닛, 조각 선택과 이동·붕괴 시험 버튼.
@@ -145,6 +167,9 @@ Q/`RotateLeft()`와 E/`RotateRight()`는 화면 속 판의 왼쪽·오른쪽 회
 - `Assets/_Project/Scripts/Editor/SquadCommandSetup.cs`: 메뉴 `ProjectNeo/Setup/Create Squad Command Prototype` 또는 `Create()`로 B-5 씬·수치 에셋·NavMesh·시험 HUD를 만든다. 기존 씬이나 저장하지 않은 변경이 있으면 중단한다. B-2·B-3의 프리팹이 먼저 있어야 한다. `Upgrade()`(메뉴 `Upgrade Squad Command Prototype`)는 기존 씬에 팀별 시야 에셋과 선택·목적지 표시를 더하며 여러 번 실행해도 결과가 같다. 프리팹 인스턴스의 값은 `SerializedObject`로 써야 씬에 저장된다.
 - `Assets/_Project/Scripts/Editor/WallCommandSetup.cs`: 메뉴 `ProjectNeo/Setup/Create Wall Command Prototype`으로 기존 건설 씬을 보존한 채 통합 씬을 만든다. 기존 통합 씬·저장하지 않은 변경은 덮어쓰지 않는다. B-2·B-3·건설·평지 지휘 에셋이 선행 조건이다.
 - `Assets/_Project/Scripts/Editor/FirstPersonSetup.cs`: 메뉴 `ProjectNeo/Setup/Upgrade Player Views To First Person`으로 기존 전투·평지 지휘 씬의 카메라와 플레이어 입력 참조를 1인칭으로 전환한다. 현재 두 씬 모두 적용된 상태이며 다시 실행해도 카메라를 중복 추가하지 않는다. 씬 생성 코드도 기본 1인칭을 만든다.
+- `Assets/_Project/Scripts/Editor/SiegePrototypeSetup.cs`: 메뉴 `ProjectNeo/Setup/Create Siege Prototype`. `WallCommandPrototype`을 복사해 수성전 씬을 만든다. 기존 씬·저장하지 않은 변경은 덮어쓰지 않는다. 씬을 연 뒤 `SerializedObject`로 연결할 에셋은 다시 불러와야 한다(씬을 열면 방금 만든 에셋 참조가 풀려 null로 저장된 적이 있다).
+- `Assets/Tests/EditMode/SiegeRulesTests.cs`: 코스트 차감·환불, 승패 판정, 사다리 세우기·한 명씩 오르기·밀기·막힘, 위쪽 사격 피해 배율.
+- `Assets/Tests/PlayMode/SiegePrototypePlayTests.cs`: 코스트 차감·철거 환불과 전투 시작 후 건설 잠금, 부대 즉시 배치, 뚫린 곳으로의 진입, 막힌 성에서 사다리 세우기·오르기·성문 공격, 성벽 위 아군의 사다리 밀기와 낙하 피해, 승리·패배 판정.
 - `Assets/_Project/Scripts/Editor/BuildScript.cs`: Windows 빌드. 기본 출력 `Builds/Windows/ProjectNeo.exe`.
 - `Assets/Tests/EditMode/`: 스탯, 지갑, 시설, 공사·부대, 퍽, 아이템·상점, 캐릭터, 메타 진행, 체력 규칙.
 - `Assets/Tests/PlayMode/CombatPrototypePlayTests.cs`: 실제 씬을 추가로 불러와 이동·충돌, 공격 선딜레이·사거리·가림·사망, 카메라 회전 제한과 벽 회피를 확인한다.
@@ -222,6 +247,39 @@ Q/`RotateLeft()`와 E/`RotateRight()`는 화면 속 판의 왼쪽·오른쪽 회
 완료 기준 / 실제 검증 결과:
 다음 담당자가 알아야 할 제한:
 ```
+
+### 브랜치 인계: `feature/siege-prototype` (2026-11-11)
+
+다른 브랜치에서 작업하는 사람과 에이전트가 이 브랜치의 내용을 파악하기 위한 기록이다. 병합되면 이 절은 7장 기록만 남기고 지운다.
+
+```text
+작업 ID / 제목: 수성전 프로토타입 (B-6·B-9 일부를 앞당겨 시험, Q-25·Q-26)
+브랜치 / 기준: feature/siege-prototype / main·develop의 8505401
+상태: 검증 중 (자동 테스트 통과, 사용자 직접 플레이 진행 중)
+필요한 결정: Q-27(적이 조금 남았을 때 아군 처리), Q-09(승패 동시 성립), Q-21(수성 무기 동작)
+완료 기준 / 실제 검증 결과: EditMode 110개, PlayMode 50개 통과. Windows 빌드는 다시 만들지 않음
+```
+
+**새로 추가한 것(이 브랜치만 소유):** `Scripts/Runtime/Siege/`, `UI/SiegeHud.cs`·`SiegeStatusHud.cs`, `Combat/PlaceholderDeathHider.cs`, `Editor/SiegePrototypeSetup.cs`, `Scenes/SiegePrototype.unity`, `Data/SiegePrototype/`, `Prefabs/SiegePrototype/`, 테스트 `SiegeRulesTests`·`SiegePrototypePlayTests`, 임시 재질 `SiegeLadder`·`SiegeRam`.
+
+**공용 파일에 더한 것(다른 브랜치와 겹칠 수 있음):** 모두 기존 동작을 바꾸지 않는 추가다.
+
+| 파일 | 더한 것 | 기존 씬에 주는 영향 |
+|---|---|---|
+| `Combat/CombatProfile.cs` | 직렬화 필드 `upwardShotMinimumRise`(1.5)·`upwardShotDamageRatio`(1), `Create(...)` 끝에 선택 인자 2개 | 기본값 1이라 피해 변화 없음 |
+| `Combat/CombatProjectile.cs`, `DamageRules.cs` | 발사 높이 기억, `ElevationMultiplier` | 위와 같음 |
+| `Squads/SquadCommandCenter.cs` | `Config`, `ConfigureRosters(...)` | 없음 |
+| `Squads/SquadCommandSettings.cs` | `ConfigureSelectKeys(...)` | 없음 |
+| `UI/SquadCommandHud.cs` | `SquadName(...)`. 부대 목록이 `1번 부대 · 근접`으로 표시됨 | 평지·성벽 지휘 씬의 목록 글자도 바뀜 |
+| `Walls/ConstructionWorld.cs` | `TryDismantle(...)`, 조각 제거를 `RemoveBody`로 묶음 | `Collapse` 동작 같음 |
+| `Walls/PlacementController.cs` | `ConfirmGate`, `PiecePlaced`, `WeaponMounted` | 비어 있으면 기존과 같음 |
+| `Walls/UnitFallController.cs` | `BeginFall(bool)` | 없음 |
+| `Data/SquadCommandPrototype/SquadConfig.asset` | `maxSquads` 4 → 10 (사용자 변경) | 평지·성벽 지휘 씬도 같은 에셋을 쓴다. 상한만 늘어 편성은 그대로 |
+| `ProjectSettings/EditorBuildSettings.asset` | 목록 끝에 `SiegePrototype` 씬 | 첫 씬은 그대로 |
+
+**건드리지 않은 것:** `CharacterActor.cs`, `UnitCombatAI.cs`, 기존 씬·프리팹, `Packages/`, `.asmdef`. 적의 공성 행동은 `UnitCombatAI`를 고치지 않고 `SiegeAttackerBrain`이 `UnitDirective`로 지시하는 방식이다.
+
+**병합할 때:** `.unity`·`.asset`·`.prefab`은 텍스트로 합치지 않는다. `EditorBuildSettings.asset`이 겹치면 씬 목록을 둘 다 살린다. `SquadConfig.asset`의 상한을 다른 브랜치가 다르게 바꿨으면 사용자에게 묻는다. 병합 뒤에는 EditMode·PlayMode 전체를 다시 돌린다.
 
 ## 4. 코드와 검증 원칙
 
@@ -470,5 +528,32 @@ unity command package add --caller plugin --skill unity-package-management --nam
 - 기존 `CombatPrototype`과 `SquadCommandPrototype`의 카메라를 Unity API로 교체하고 플레이어 입력 참조를 연결했다. 카메라 GameObject의 Camera·AudioListener·지휘 조준 참조는 유지했다. 두 씬의 생성 코드도 1인칭으로 바꿨다.
 - 기존 카메라 검증을 1인칭 눈높이 추적·상하 각도 제한·자기 몸이 시야를 가리지 않는지 검증하도록 변경했다. EditMode 101개, PlayMode 전체 40개 통과. 전투 씬의 실제 프레임 진행과 1인칭 화면을 확인했고 새 런타임 오류는 없었다. Windows 빌드는 다시 만들지 않았다.
 - 직접 검증: `Assets/_Project/Scenes/CombatPrototype.unity` → Play → WASD 이동·마우스 시점·허수아비 가까이서 좌클릭 공격. 눈높이에서 보이고 자기 캡슐이 화면을 가리지 않아야 한다. Esc로 커서 해제. 종료 후 다시 Play하면 초기화된다. 부대 지휘는 `Assets/_Project/Scenes/SquadCommandPrototype.unity`에서 F1~F3 선택·1 이동·2 공격·3 중지를 확인한다.
+
+### 2026-11-11: 수성전 프로토타입 (준비 단계·적 침공·사다리·승패)
+
+- 사용자 결정(Q-25·Q-26): 준비 단계에서 건설·인원 배치 후 전투 시작, 전투 중 건설 불가. 근접 적은 성벽 위 아군을 못 때리고 뚫린 곳·무너진 성문으로 들어오며, 없으면 성문 파괴 또는 사다리. 사다리는 5칸당 하나·고정 자리·세우기 3초·한 명씩·아군이 밀어냄. 적 궁수의 위쪽 사격은 피해 절반. 적은 사다리병·성문 파괴병·궁수.
+- `ProjectNeo.Siege` 폴더에 규칙·사다리·적 판단·준비 도구·진행을 추가했다. 기존 코드는 작게 확장했다: `PlacementController`의 설치 전 조건과 설치 알림, `ConstructionWorld.TryDismantle`, `UnitFallController.BeginFall(bool)`, `CombatProfile`의 위쪽 사격 비율과 `DamageRules.ElevationMultiplier`. 기본값에서는 기존 씬의 동작이 같다.
+- 근접 적이 성벽 위를 못 때리는 것은 별도 규칙 없이 근접 사거리 1.5m와 성벽 높이 3m로 성립한다. 사거리 수치가 바뀌면 다시 확인해야 한다.
+- 범위 밖: 사기·도망, 대포 발사(Q-21), 여러 웨이브, 보상, 일반 성벽 파괴 적, 비행 적, 승패 동시 성립 우선순위(Q-09, 지금은 패배 우선으로 임시 처리).
+- 검증: 컴파일 오류 없음. EditMode 110개, PlayMode 전체 48개 통과(새 EditMode 9개, PlayMode 8개). 에디터 Play에서 준비 화면 캡처, 전투 시작 후 1인칭 고정, 적 수 감소, 플레이어 사망에 따른 패배 표시를 확인했다. 새 런타임 오류는 없었다. 마우스 클릭 설치·배치·철거, Tab·F·R 키 입력은 자동 검증하지 않았고 사용자 확인 대상이다. Windows 빌드는 다시 만들지 않았다.
+- 직접 검증: `Assets/_Project/Scenes/SiegePrototype.unity` → Play → `성벽`으로 뚫린 칸을 막거나 그대로 두기 → `1번 부대` 버튼 후 성벽 위 클릭으로 배치 → `전투 시작`. 뚫린 곳이 있으면 적이 그리로 들어오고, 다 막으면 사다리를 세우고 성문을 친다. 사다리 위쪽 끝 근처에 부대를 두면 사다리를 밀어낸다. 결과가 나오면 R. Play를 다시 시작해도 초기화된다.
+- 자동 검증 재실행: Test Runner에서 EditMode `SiegeRulesTests`, PlayMode `SiegePrototypePlayTests`.
+
+### 2026-11-11: 수성전 프로토타입 편성 데이터화·죽은 적 표시 수정
+
+- 사용자 요청: 죽은 사다리병의 널빤지가 남는 문제 수정, 아군 부대 수와 적 무리를 바꿀 수 있게 하기.
+- 아군·적을 씬에 미리 두던 방식을 없애고 `SiegeDirector`가 시작할 때 `Siege.asset`의 편성대로 만든다. `SquadCommandCenter.ConfigureRosters`로 편성을 넘긴다. 적은 종류별 프리팹 변형으로 분리했다. 준비 화면의 부대 버튼은 실제 부대 수만큼 보이고 인원 수를 표시한다.
+- 종류 표시에 `PlaceholderDeathHider`를 붙여 죽으면 숨긴다.
+- 생성한 씬과 `Siege.asset`은 지우고 다시 만들었다. 다른 씬은 건드리지 않았다.
+- 검증: 컴파일 오류 없음. EditMode 110개, PlayMode 전체 50개 통과(편성이 에셋과 같은지, 죽은 적의 표시가 숨는지 2개 추가). 에디터 Play에서 준비 화면을 캡처해 부대 버튼과 패널이 잘리지 않는 것을 확인했다. Windows 빌드는 다시 만들지 않았다.
+- 직접 검증: `Assets/_Project/Data/SiegePrototype/Siege.asset`을 고르고 인스펙터의 `Ally Squads`·`Enemy Groups`에서 숫자를 바꾸거나 줄을 추가 → `SiegePrototype` Play → 준비 화면의 부대 버튼 수·인원과 `다가오는 적` 숫자가 바뀌었는지 확인. 사다리병을 죽이면 널빤지가 사라진다.
+
+### 2026-11-11: 부대 수에 맞춘 준비 화면
+
+- 사용자 요청: `SquadConfig`의 부대 수 상한을 늘렸는데 부대 배치 버튼이 4개만 나오는 문제 수정.
+- `SiegeHud`가 부대 수만큼 버튼을 만들고 패널 크기를 화면에 맞춘다. 화면 높이는 기준 해상도가 아니라 실제 캔버스 높이로 잰다(Game 창 비율에 따라 패널 위쪽이 잘리던 원인). `SiegeDirector`는 추가 부대의 시작 자리와 적 줄 간격을 판 안에 들어오게 잡는다.
+- 검증: 컴파일 오류 없음, PlayMode 전체 50개 통과. 부대 7개·적 6무리(28명) 편성으로 에디터 Play 화면을 캡처해 버튼 7개와 패널이 잘리지 않는 것, 아군·적이 판 안에 서는 것을 확인했다. 새 콘솔 오류 없음. 버튼 클릭은 사용자 확인 대상이다.
+- 이어서 사용자 요청으로 부대 선택 키를 F1~F10으로 늘리고(이 씬 전용 `Command.asset`), 부대 이름에 종류를 붙였으며, 1인칭 부대 목록 칸을 10부대까지 들어가게 키웠다. 기존 씬에는 메뉴 `ProjectNeo/Setup/Upgrade Siege Prototype`(`SiegePrototypeSetup.Upgrade`)으로 적용했다. 여러 번 실행해도 같다.
+- 검증: EditMode 110개, PlayMode 50개 통과. Play 화면 캡처로 버튼과 목록의 `N번 부대 · 근접/궁수` 표시를 확인했고, 6번 부대 선택이 동작하며 키가 10개 등록된 것을 코드로 확인했다. 실제 F5~F10 키 입력은 사용자 확인 대상이다.
 
 </details>

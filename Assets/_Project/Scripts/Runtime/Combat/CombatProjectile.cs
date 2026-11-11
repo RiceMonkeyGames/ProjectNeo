@@ -14,10 +14,12 @@ namespace ProjectNeo.Combat
         float remainingDistance;
         float remainingTime;
         bool launched;
+        float launchHeight;
 
         public void Launch(CharacterActor source, float attackPower, Vector3 flightDirection, float range)
         {
             owner = source;
+            launchHeight = source.transform.position.y;
             team = source.Team;
             profile = source.Profile;
             attack = attackPower;
@@ -69,7 +71,9 @@ namespace ProjectNeo.Combat
             if (ShouldIgnore(collider)) return false;
             var target = collider.GetComponentInParent<CharacterActor>();
             if (target != null)
-                target.ReceiveDamage(DamageRules.Calculate(attack, target.Stats.GetValue(StatType.Defense), profile.MinimumDamage));
+                target.ReceiveDamage(DamageRules.Calculate(attack, target.Stats.GetValue(StatType.Defense), profile.MinimumDamage)
+                    * DamageRules.ElevationMultiplier(target.transform.position.y - launchHeight,
+                        profile.UpwardShotMinimumRise, profile.UpwardShotDamageRatio));
             Destroy(gameObject);
             launched = false;
             return true;
