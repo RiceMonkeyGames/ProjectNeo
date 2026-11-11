@@ -24,7 +24,10 @@ Unity 6000.6.8f1, URP, 3D 1인칭 프로젝트다. 현재는 임시 그래픽이
 | `Assets/_Project/Scenes/SquadCommandPrototype.unity` | 플레이어 직접 조작 + 부대 3개 지휘. F1~F3 부대 선택, ` 전체 선택, 1 이동(화면 가운데가 가리키는 곳)·2 공격·3 중지. 왼쪽 위에 선택·지시·남은 인원 표시 |
 | `Assets/_Project/Scenes/WallCommandPrototype.unity` | 건설·성벽 위 부대 지휘 통합. Tab 건설↔1인칭 시점, F1~F3 선택·1 이동·2 공격·3 중지. 건설 화면의 `성벽 위로 이동`은 1번 부대를 이동시키고 `발밑 조각 파괴`는 그 부대 첫 유닛의 받침을 파괴 |
 
-에디터에서 씬을 열고 Play를 누른다. 종료 후 다시 Play하면 초기 상태로 돌아온다. 아직 준비 → 수성전 → 보상으로 이어지는 전체 게임 흐름은 없다. 각 씬은 기반 기능을 확인하는 프로토타입이다. 최신 테스트 통과 기준과 남은 연결은 [로드맵 3장](ImplementationPlan.md#3-현재-상태와-출발점)을 확인한다.
+| `Assets/_Project/Scenes/Title.unity` | 실제 게임의 진입 씬(G-0). `새 게임`을 누르면 게임 씬으로 가고 `종료`는 Play를 끝낸다 |
+| `Assets/_Project/Scenes/Game.unity` | 실제 게임 씬(G-0·G-1). 준비 단계는 건설 직교 시점으로 성벽·계단·대포 배치와 Q/E 회전, `전투 시작`을 누르면 1인칭 직접 조작과 F1~F3·1·2·3 부대 지휘. Esc로 커서를 풀고 위쪽 `승리`/`패배` 자리표시 → `보상 받고 다음 스테이지` 또는 `타이틀로`. 적은 아직 없다. 이 씬만 열고 Play해도 1스테이지 준비로 시작한다 |
+
+에디터에서 씬을 열고 Play를 누른다. 종료 후 다시 Play하면 초기 상태로 돌아온다. `*Prototype` 씬은 모두 기반 기능을 확인하는 데모이고, 실제 게임은 `Title`·`Game` 두 씬으로 만든다. 지금 `Game` 씬은 단계 전환 뼈대만 있고 준비·수성전·보상의 실제 내용은 아직 연결하지 않았다. 최신 테스트 통과 기준과 남은 연결은 [로드맵 3장](ImplementationPlan.md#3-현재-상태와-출발점)을 확인한다.
 
 ## 2. 코드·씬·에셋 지도
 
@@ -62,6 +65,10 @@ Unity 6000.6.8f1, URP, 3D 1인칭 프로젝트다. 현재는 임시 그래픽이
 | Walls | `FallSettings`, `FallDamageRules`, `UnitFallController` | 높이별 피해 계산과 파괴 시 낙하·착지. NavMeshAgent와 CharacterController 몸통을 지원하고 착지 후 이동을 복구한다. |
 | Walls / UI | `ConstructionSandbox`, `ConstructionHud` | 시험 씬 전용 이동·발밑 조각 파괴, uGUI·TMP 건설 선택과 상태 표시. 정식 부대 지휘나 준비 화면은 아니다. |
 | Walls | `WallCommandSandbox` | 통합 시험용 Tab 시점 전환. 건설/1인칭 카메라·입력·HUD를 전환하며 지형과 지시는 유지한다. World가 NavMesh를 만든 뒤 유닛을 활성화한다. 정식 준비·전투 단계가 아니다. |
+| Flow | `GamePhase`, `BattleOutcome`, `GameFlow`, `RunProgress` | 일반 C# 흐름 규칙. 타이틀 → 준비 → 전투 → 승리면 보상 → 다음 스테이지 준비, 패배면 런 결과 → 타이틀. 허용되지 않은 전환은 false를 돌려주고 상태를 바꾸지 않는다. `RunProgress`는 런 동안만 유지되는 진행 정보(현재 스테이지)이며 타이틀로 돌아가면 버린다. |
+| Flow | `GameSession`, `SceneCatalog`, `SceneSwitcher`, `GameDirector` | `GameSession.Flow`는 씬이 바뀌어도 유지되는 흐름 보관처로 실행을 시작할 때마다 새로 만든다. 씬 이름은 `SceneCatalog` 에셋에 둔다. 씬 전환은 `SceneSwitcher`에서만 하며 지금은 통째 교체다. `GameDirector`는 게임 씬 단독 실행 때 새 런을 시작하고 흐름이 타이틀로 가면 타이틀 씬을 부른다. 준비·전투 기능은 `GameSession.Flow.PhaseChanged`를 구독해 붙인다. |
+| Flow | `GamePhaseView` | 게임 씬에서 단계에 맞춰 시점·입력·화면을 바꾼다. 준비는 건설 카메라·배치·건설 화면, 전투는 1인칭 카메라·플레이어 입력·지휘 입력·지휘 화면과 커서 잠금, 보상·런 결과는 둘 다 끄고 커서를 푼다. 단계가 바뀌어도 지형·유닛·지시는 유지한다. World가 NavMesh를 만든 뒤 유닛을 활성화한다. `WallCommandSandbox`의 Tab 전환을 실제 단계 전환으로 바꾼 것이다. |
+| UI | `TitleScreen`, `GameFlowHud`, `RuntimeSystemFont` | 타이틀 버튼 동작, 단계 표시와 단계별 버튼을 가진 임시 화면(승리·패배는 전투 결과 자리표시), 임시 화면에 맑은 고딕을 실행 중 적용하는 공용 부품. 정식 화면이 아니다. |
 | Meta | `PerkDefinition`, `PerkLoadout` | 퍽 정의와 스탯·특수 효과 목록, 포인트 사용, 적용 및 초기화 |
 | Meta | `PerkSpecialEffect`, `MoraleBoostPerkEffect` | 전투 이벤트별 특수 효과와 사기 증가 예시. 실제 전투 이벤트 연결은 후속 작업이다. |
 | Meta | `MetaProgress`, `MetaConfig`, `CommanderProgression`, `UnlockGacha` | 유지 데이터, 지휘관 경험치·퍽 포인트, 환생 보너스 환산, 중복 없는 해금 추첨과 확정 등장 표시. 파일 저장은 아직 없다. |
@@ -145,6 +152,9 @@ Q/`RotateLeft()`와 E/`RotateRight()`는 화면 속 판의 왼쪽·오른쪽 회
 - `Assets/_Project/Scripts/Editor/SquadCommandSetup.cs`: 메뉴 `ProjectNeo/Setup/Create Squad Command Prototype` 또는 `Create()`로 B-5 씬·수치 에셋·NavMesh·시험 HUD를 만든다. 기존 씬이나 저장하지 않은 변경이 있으면 중단한다. B-2·B-3의 프리팹이 먼저 있어야 한다. `Upgrade()`(메뉴 `Upgrade Squad Command Prototype`)는 기존 씬에 팀별 시야 에셋과 선택·목적지 표시를 더하며 여러 번 실행해도 결과가 같다. 프리팹 인스턴스의 값은 `SerializedObject`로 써야 씬에 저장된다.
 - `Assets/_Project/Scripts/Editor/WallCommandSetup.cs`: 메뉴 `ProjectNeo/Setup/Create Wall Command Prototype`으로 기존 건설 씬을 보존한 채 통합 씬을 만든다. 기존 통합 씬·저장하지 않은 변경은 덮어쓰지 않는다. B-2·B-3·건설·평지 지휘 에셋이 선행 조건이다.
 - `Assets/_Project/Scripts/Editor/FirstPersonSetup.cs`: 메뉴 `ProjectNeo/Setup/Upgrade Player Views To First Person`으로 기존 전투·평지 지휘 씬의 카메라와 플레이어 입력 참조를 1인칭으로 전환한다. 현재 두 씬 모두 적용된 상태이며 다시 실행해도 카메라를 중복 추가하지 않는다. 씬 생성 코드도 기본 1인칭을 만든다.
+- `Assets/_Project/Scripts/Editor/GameFlowSetup.cs`: 메뉴 `ProjectNeo/Setup/Create Game Flow Scenes`로 `Title`·`Game` 씬과 `Assets/_Project/Data/GameFlow/SceneCatalog.asset`을 만들고 두 씬을 빌드 목록 끝에 더한다. 기존 씬이나 저장하지 않은 변경이 있으면 중단한다. 이미 실행해 두 씬이 있다. `AddCastle()`(메뉴 `Add Castle To Game Scene`)은 `WallCommandPrototype`의 성·건설·플레이어·부대를 게임 씬으로 옮겨 `GamePhaseView`에 연결한다. 프로토타입 씬은 읽기만 하고 저장하지 않는다. 프로토타입 전용 시험 버튼은 숨기고 안내 문구를 바꾼다. 이미 성이 있으면 중단하며 현재 적용된 상태다. `ApplyDefaultCastle()`(메뉴 `Apply Default Castle To Game Scene`)은 게임 전용 `Data/GameFlow/Grid.asset`(24×26칸)·`BuildCamera.asset`(직교 크기 32)을 쓰도록 바꾸고 외벽·성문·계단의 초기 배치, 바닥 크기, 부대와 플레이어 시작 위치를 다시 적용한다. 배치 수치는 이 메서드 위의 상수이며 여러 번 실행해도 결과가 같다. 조각 정의(성벽·계단·성문)는 `Data/ConstructionPrototype/`의 것을 함께 쓴다.
+- `Assets/Tests/EditMode/GameFlowTests.cs`: 흐름 단계 전환, 거부되는 전환, 전투 결과 1회 처리, 새 런의 진행 초기화, 단계 변경 알림.
+- `Assets/Tests/PlayMode/GameFlowPlayTests.cs`: 저장된 `Title`·`Game` 씬으로 새 게임 진입, 씬 전환 없는 단계 변경, 패배 후 타이틀 복귀, 게임 씬 단독 시작, 준비의 건설 시점과 전투의 1인칭 지휘 전환·보상 중 입력 정지·유닛과 지시 유지·AudioListener와 EventSystem이 하나뿐인지, 기본 성이 성문 하나와 닫힌 외벽이고 안뜰에서 성벽 위로 길이 이어지며 밖으로는 나갈 수 없는지. 씬을 통째로 바꾸므로 끝날 때 빈 씬만 남긴다. 실제 버튼 클릭은 직접 확인 대상이다.
 - `Assets/_Project/Scripts/Editor/BuildScript.cs`: Windows 빌드. 기본 출력 `Builds/Windows/ProjectNeo.exe`.
 - `Assets/Tests/EditMode/`: 스탯, 지갑, 시설, 공사·부대, 퍽, 아이템·상점, 캐릭터, 메타 진행, 체력 규칙.
 - `Assets/Tests/PlayMode/CombatPrototypePlayTests.cs`: 실제 씬을 추가로 불러와 이동·충돌, 공격 선딜레이·사거리·가림·사망, 카메라 회전 제한과 벽 회피를 확인한다.
@@ -163,7 +173,7 @@ Q/`RotateLeft()`와 E/`RotateRight()`는 화면 속 판의 왼쪽·오른쪽 회
 
 ## 3. 협업과 통합
 
-현재는 사용자 혼자 개발하며 협업은 시작하지 않았다. 사용자가 시작을 알릴 때까지 단독으로 작업한다. 아래는 향후 세 명이 참여할 때 적용할 운영 기준이다. 실제 담당자 이름과 장비 구성은 미정이고, 계획의 개발자 1·2·3은 실제 배정을 뜻하지 않는다.
+2026-11-11부터 협업 중이다. 팀원이 적 침공과 전투 단계 한 판을, 사용자가 게임 진입 씬과 전체 흐름 뼈대를 맡는다. 현재 담당과 접점은 [로드맵 6.1](ImplementationPlan.md#61-담당-자리와-공통-수정-권한)이 기준이며 아래 운영 기준을 지금부터 적용한다. 팀원과는 별도 PC·별도 브랜치에서 작업하며(Q-26), 계획의 개발자 1·2·3 표는 인원이 늘 때 참고할 제안이다.
 
 ### 작업을 나누는 단위
 
@@ -470,5 +480,28 @@ unity command package add --caller plugin --skill unity-package-management --nam
 - 기존 `CombatPrototype`과 `SquadCommandPrototype`의 카메라를 Unity API로 교체하고 플레이어 입력 참조를 연결했다. 카메라 GameObject의 Camera·AudioListener·지휘 조준 참조는 유지했다. 두 씬의 생성 코드도 1인칭으로 바꿨다.
 - 기존 카메라 검증을 1인칭 눈높이 추적·상하 각도 제한·자기 몸이 시야를 가리지 않는지 검증하도록 변경했다. EditMode 101개, PlayMode 전체 40개 통과. 전투 씬의 실제 프레임 진행과 1인칭 화면을 확인했고 새 런타임 오류는 없었다. Windows 빌드는 다시 만들지 않았다.
 - 직접 검증: `Assets/_Project/Scenes/CombatPrototype.unity` → Play → WASD 이동·마우스 시점·허수아비 가까이서 좌클릭 공격. 눈높이에서 보이고 자기 캡슐이 화면을 가리지 않아야 한다. Esc로 커서 해제. 종료 후 다시 Play하면 초기화된다. 부대 지휘는 `Assets/_Project/Scenes/SquadCommandPrototype.unity`에서 F1~F3 선택·1 이동·2 공격·3 중지를 확인한다.
+
+### 2026-11-11: 협업 시작과 G-0 게임 진입·흐름 뼈대
+
+- 사용자 결정: 협업 시작(팀원은 적 침공·전투 단계, 사용자는 진입 씬과 흐름 뼈대, 별도 PC·브랜치). 실제 게임 씬은 타이틀과 게임 두 개이며 준비·전투·보상·결과는 게임 씬 안에서 단계만 바꾼다. 기존 `*Prototype` 씬은 검증용 데모로 남긴다.
+- 추가: `ProjectNeo.Flow`의 흐름 규칙·흐름 보관처·씬 목록·씬 전환·게임 씬 연결, `TitleScreen`·`GameFlowHud`·`RuntimeSystemFont`, `GameFlowSetup`, `Title`·`Game` 씬과 `SceneCatalog.asset`. 두 씬은 빌드 목록 끝에 더했고 첫 씬은 바꾸지 않았다. 기존 코드·씬은 고치지 않았다.
+- 검증: 컴파일 오류 없음. EditMode 109개(새 8개), PlayMode 전체 43개(새 3개) 통과. 에디터 Play 화면의 배치·한글 표시·실제 버튼 클릭은 자동으로 확인하지 않았고 사용자 직접 확인 대상이다. Windows 빌드는 다시 만들지 않았다.
+- 직접 검증: `Assets/_Project/Scenes/Title.unity` → Play → `새 게임` → 게임 씬에서 `준비 · 스테이지 1` 표시 → `전투 시작` → `승리 (자리표시)` → `보상 받고 다음 스테이지` → `준비 · 스테이지 2` → `전투 시작` → `패배 (자리표시)` → `타이틀로` → 타이틀 화면 복귀 → 다시 `새 게임`을 누르면 스테이지 1부터다. `Assets/_Project/Scenes/Game.unity`만 열고 Play해도 스테이지 1 준비로 시작한다. Play를 멈추면 초기화된다.
+- 자동 검증 재실행: Test Runner → EditMode `GameFlowTests`, PlayMode `GameFlowPlayTests`. CLI는 6장 명령에 `--filter GameFlow`를 붙인다.
+
+### 2026-11-11: G-1 게임 씬에 성·건설·지휘 연결
+
+- `WallCommandPrototype`의 성(격자·성벽·계단·성문)·건설 카메라와 배치·플레이어·부대 3개×4명·지휘를 Unity API로 `Game.unity`에 옮기고 `GamePhaseView`로 단계에 연결했다. 프로토타입 씬과 기존 코드는 고치지 않았다. 맵 크기·성 배치·부대 구성은 프로토타입의 임시 값 그대로다.
+- 준비는 건설 시점, 전투는 1인칭 조작·지휘다. "준비 중에는 걸어 다니지 않고 전투 중에는 건설하지 않는다"는 프로토타입 구성을 따른 임시 동작이며 승인된 기획이 아니다. 다음 스테이지 준비로 넘어가도 유닛 위치·체력·성벽 상태는 초기화하지 않는다(이월·보충 규칙은 C-3).
+- 건설 화면은 시험용 `ConstructionHud`를 재사용했다. 이 화면이 `ConstructionSandbox`를 참조하므로 그 오브젝트는 남기고 시험 버튼 세 개와 시험 유닛 체력 표시만 숨겼다. 정식 준비 화면은 D-2다.
+- 검증: 컴파일 오류 없음. EditMode 109개, PlayMode 전체 44개(새 1개) 통과. 에디터 Play에서 준비 화면(건설 패널·단계 패널·성·부대)과 전투 화면(1인칭·지휘 표시·승리/패배 버튼)을 캡처해 한글과 배치를 확인했다. 실제 마우스·키 입력으로 하는 건설·이동·지휘·버튼 클릭은 사용자 직접 확인 대상이다. Windows 빌드는 다시 만들지 않았다.
+- 직접 검증: `Assets/_Project/Scenes/Game.unity` → Play → 왼쪽 `성벽` 선택 후 격자에 좌클릭 설치, Q/E 회전 → 위쪽 `전투 시작` → 1인칭으로 바뀌면 WASD·마우스, F1 → 땅을 보고 1로 부대 이동 → Esc로 커서 해제 → `승리 (자리표시)` → `보상 받고 다음 스테이지` → 건설 시점으로 돌아오고 방금 지은 성벽과 옮긴 부대가 그대로 → `전투 시작` → Esc → `패배 (자리표시)` → `타이틀로` → 타이틀 → `새 게임`을 누르면 성과 부대가 처음 상태다.
+
+### 2026-11-11: 게임 씬 기본 성 배치
+
+- 사용자 요청으로 기본 성을 성답게 바꿨다. 격자 24×26칸, 14×14칸 외벽, 북쪽 메인 성문, 안쪽 계단 세 개, 비워 둔 안뜰 12×12칸, 북쪽 들판. 부대는 계단 아래와 안뜰 가운데, 플레이어는 성문 위에서 북쪽을 보고 시작한다. 게임 전용 격자·건설 카메라 에셋을 만들어 프로토타입 씬과 공유 에셋은 바꾸지 않았다.
+- 적용 전 에디터의 Game 씬에 저장되지 않은 변경이 있었고 사용자 확인 후 버렸다.
+- 검증: EditMode 109개, PlayMode 전체 45개(새 1개) 통과. 에디터 Play에서 준비 화면의 성 전체 모습과 전투 화면의 성문 위 시점을 캡처해 확인했다. 실제 입력 조작과 Windows 빌드는 확인하지 않았다.
+- 직접 검증: `Assets/_Project/Scenes/Game.unity` → Play → 외벽으로 둘러싸인 성과 안뜰의 부대 셋이 보인다 → Q/E로 돌려 남쪽 계단 확인 → 안뜰에 `성벽`을 놓아 본다 → `전투 시작` → 성문 위에서 북쪽 들판을 본다 → F1 선택 후 성벽 윗면을 보고 1 → 1번 부대가 계단으로 올라온다.
 
 </details>
