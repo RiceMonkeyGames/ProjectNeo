@@ -15,11 +15,14 @@ namespace ProjectNeo.Combat
         float remainingTime;
         bool launched;
         float launchHeight;
+        Collider footing;
 
         public void Launch(CharacterActor source, float attackPower, Vector3 flightDirection, float range)
         {
             owner = source;
             launchHeight = source.transform.position.y;
+            // 쏜 유닛이 딛고 선 물체는 통과한다. 사선 검사(CombatPhysics.HasClearShot)와 같은 기준이다.
+            footing = CombatPhysics.GroundUnder(source);
             team = source.Team;
             profile = source.Profile;
             attack = attackPower;
@@ -60,7 +63,7 @@ namespace ProjectNeo.Combat
 
         bool ShouldIgnore(Collider collider)
         {
-            if (collider.gameObject.scene != gameObject.scene) return true;
+            if (collider.gameObject.scene != gameObject.scene || collider == footing) return true;
             var actor = collider.GetComponentInParent<CharacterActor>();
             return actor != null && (actor == owner || actor.Team == team
                 || actor.Health == null || actor.Health.IsDead);
