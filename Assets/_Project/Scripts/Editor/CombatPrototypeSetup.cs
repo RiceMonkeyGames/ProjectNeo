@@ -96,13 +96,13 @@ namespace ProjectNeo.Editor
             AssetDatabase.SaveAssets();
         }
 
-        static GameObject Actor(string name, HeroDefinition hero, CombatProfile profile,
+        internal static GameObject Actor(string name, HeroDefinition hero, CombatProfile profile,
             Material bodyMaterial, Material healthMaterial, Material attackMaterial, bool player)
         {
             var root = new GameObject(name);
             root.SetActive(false);
             var actor = root.AddComponent<CharacterActor>();
-            actor.Configure(hero, profile);
+            actor.Configure(hero, profile, player ? CombatTeam.Allied : CombatTeam.Hostile);
             if (player)
             {
                 var motor = root.AddComponent<CharacterController>();
@@ -139,7 +139,7 @@ namespace ProjectNeo.Editor
             return root;
         }
 
-        static GameObject Box(string name, Vector3 position, Vector3 scale, Material material)
+        internal static GameObject Box(string name, Vector3 position, Vector3 scale, Material material)
         {
             var box = GameObject.CreatePrimitive(PrimitiveType.Cube);
             box.name = name;
@@ -149,7 +149,7 @@ namespace ProjectNeo.Editor
             return box;
         }
 
-        static T Save<T>(T value, string path) where T : UnityEngine.Object
+        internal static T Save<T>(T value, string path) where T : UnityEngine.Object
         {
             var existing = AssetDatabase.LoadAssetAtPath<T>(path);
             if (existing != null) { UnityEngine.Object.DestroyImmediate(value); return existing; }
@@ -157,12 +157,12 @@ namespace ProjectNeo.Editor
             return value;
         }
 
-        static Material MaterialAsset(string name, Color color)
+        internal static Material MaterialAsset(string name, Color color)
         {
             return Save(new Material(Shader.Find("Universal Render Pipeline/Lit")) { color = color }, Art + "/" + name + ".mat");
         }
 
-        static void EnsureFolder(string path)
+        internal static void EnsureFolder(string path)
         {
             if (AssetDatabase.IsValidFolder(path)) return;
             string parent = System.IO.Path.GetDirectoryName(path).Replace('\\', '/');

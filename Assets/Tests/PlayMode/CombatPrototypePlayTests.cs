@@ -108,6 +108,37 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
+        public IEnumerator Soldier_UsesItsOwnStats_AndAppliesStatChangesToAttacks()
+        {
+            var definition = SoldierDefinition.Create("test_soldier", new ProjectNeo.Economy.Cost(0),
+                new StatValue(StatType.MaxHealth, 80f), new StatValue(StatType.Attack, 20f),
+                new StatValue(StatType.AttackSpeed, 1f), new StatValue(StatType.AttackRange, 2.5f));
+            var root = new GameObject("TestSoldier");
+            root.SetActive(false);
+            SceneManager.MoveGameObjectToScene(root, scene);
+            var soldier = root.AddComponent<CharacterActor>();
+            soldier.Configure(definition, player.Profile);
+            try
+            {
+                root.transform.position = new Vector3(-10f, 0f, 0f);
+                Place(dummy, new Vector3(-10f, 0f, 2f));
+                root.SetActive(true);
+                Assert.IsNull(soldier.Character, "잡졸을 영웅 데이터로 바꾸지 않는다.");
+                Assert.AreEqual(80f, soldier.Health.Current);
+                soldier.Stats.AddModifier(StatModifier.Flat(StatType.Attack, 10f), this);
+                Physics.SyncTransforms();
+                Assert.IsTrue(soldier.TryAttack());
+                yield return new WaitForSeconds(soldier.Profile.ImpactDelay + 0.05f);
+                Assert.AreEqual(70f, dummy.Health.Current);
+            }
+            finally
+            {
+                Object.Destroy(root);
+                Object.Destroy(definition);
+            }
+        }
+
+        [UnityTest]
         public IEnumerator Camera_ClampsPitch_AndPullsInBeforeWall()
         {
             var view = scene.GetRootGameObjects().Select(root => root.GetComponent<ThirdPersonCamera>())

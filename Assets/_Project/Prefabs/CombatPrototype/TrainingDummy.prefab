@@ -47,7 +47,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Combat.CharacterActor
   definition: {fileID: 11400000, guid: d0f91576355d5a44983cfdd082f3a2c3, type: 2}
+  soldierDefinition: {fileID: 0}
   profile: {fileID: 11400000, guid: 0d27969ced47743459e20e6438e7c4bc, type: 2}
+  team: 1
 --- !u!136 &2844459150146356034
 CapsuleCollider:
   m_ObjectHideFlags: 0

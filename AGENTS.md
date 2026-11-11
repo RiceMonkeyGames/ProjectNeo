@@ -66,7 +66,7 @@ unity command test status --caller plugin --skill unity-cli --result-only
 - PlayMode를 돌리기 전에 `editor set_auto_tick`을 부른다. 에디터 창이 뒤에 있으면 프레임이 멈추기 때문이다.
 - 이름으로 고르려면 `--filter <이름 일부>`를 쓴다. `[Explicit]` 테스트(성능 측정)는 `--include-explicit`을 붙여야 돈다.
 - `unity test`는 에디터가 열려 있으면 거부된다.
-- 지금 통과해야 하는 수: EditMode 67개, PlayMode 6개(`SetupSmokePlayTests` 1개, `CombatPrototypePlayTests` 5개). `UnitScaleBenchmark`는 Explicit라서 평소에는 돌지 않는다.
+- 지금 통과해야 하는 수: EditMode 73개, PlayMode 15개(`SetupSmokePlayTests` 1개, `CombatPrototypePlayTests` 6개, `UnitCombatPlayTests` 8개). `UnitScaleBenchmark`는 Explicit라서 평소에는 돌지 않는다.
 
 ### 빌드
 

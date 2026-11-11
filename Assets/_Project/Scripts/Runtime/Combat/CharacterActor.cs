@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using ProjectNeo.Characters;
 using ProjectNeo.Stats;
 using UnityEngine;
@@ -9,34 +10,87 @@ namespace ProjectNeo.Combat
     public sealed class CharacterActor : MonoBehaviour
     {
         [SerializeField] HeroDefinition definition;
+        [SerializeField] SoldierDefinition soldierDefinition;
         [SerializeField] CombatProfile profile;
+        [SerializeField] CombatTeam team = CombatTeam.Allied;
+        static readonly List<CharacterActor> activeActors = new List<CharacterActor>();
         float cooldown;
         float impactRemaining;
         bool pendingImpact;
+        CharacterActor attackTarget;
+        bool targetedAttack;
         public Character Character { get; private set; }
+        public StatSheet Stats { get; private set; }
         public Health Health { get; private set; }
         public CombatProfile Profile => profile;
+        public CombatTeam Team => team;
+        public Collider Body { get; private set; }
+        public Vector3 AimPoint => transform.position + Vector3.up * (profile.Height * 0.5f);
+        public bool IsAttacking => pendingImpact;
+        public static IReadOnlyList<CharacterActor> ActiveActors => activeActors;
         public event Action AttackStarted;
         public event Action HitReceived;
         public event Action Died;
 
-        public void Configure(HeroDefinition hero, CombatProfile combatProfile)
+        public void Configure(HeroDefinition hero, CombatProfile combatProfile, CombatTeam combatTeam = CombatTeam.Allied)
         {
             definition = hero;
+            soldierDefinition = null;
             profile = combatProfile;
+            team = combatTeam;
         }
+
+        public void Configure(SoldierDefinition soldier, CombatProfile combatProfile, CombatTeam combatTeam = CombatTeam.Allied)
+        {
+            definition = null;
+            soldierDefinition = soldier;
+            profile = combatProfile;
+            team = combatTeam;
+        }
+
+        public void SetTeam(CombatTeam combatTeam) => team = combatTeam;
 
         void Awake()
         {
-            if (definition == null || profile == null)
+            if ((definition == null && soldierDefinition == null) || profile == null)
             {
-                Debug.LogError("CharacterActor needs a hero definition and combat profile.", this);
+                Debug.LogError("CharacterActor needs a hero or soldier definition and combat profile.", this);
                 enabled = false;
                 return;
             }
-            Character = new Character(definition);
-            Health = new Health(Character.Stats);
+            if (definition != null)
+            {
+                Character = new Character(definition);
+                Stats = Character.Stats;
+            }
+            else Stats = soldierDefinition.CreateStats();
+            Health = new Health(Stats);
             Health.Died += OnDied;
+            Body = GetComponent<Collider>();
+        }
+
+        void OnEnable()
+        {
+            if (Health != null && !Health.IsDead && !activeActors.Contains(this)) activeActors.Add(this);
+        }
+
+        void OnDisable()
+        {
+            activeActors.Remove(this);
+            pendingImpact = false;
+        }
+
+        public bool IsEnemy(CharacterActor other) => other != null && other != this
+            && other.isActiveAndEnabled && other.gameObject.scene == gameObject.scene
+            && other.Health != null && !other.Health.IsDead && other.Team != Team;
+
+        public bool CanAttack(CharacterActor target)
+        {
+            if (Health == null || Health.IsDead || !IsEnemy(target)) return false;
+            Vector3 direction = target.transform.position - transform.position;
+            direction.y = 0f;
+            return Vector3.Angle(transform.forward, direction) <= profile.AttackHalfAngle
+                && CombatPhysics.IsInRange(this, target) && CombatPhysics.HasClearShot(this, target);
         }
 
         void Update()
@@ -50,41 +104,51 @@ namespace ProjectNeo.Combat
             ResolveImpact();
         }
 
-        public bool TryAttack()
+        public bool TryAttack(CharacterActor target = null)
         {
             if (Health == null || Health.IsDead || pendingImpact || cooldown > 0f) return false;
-            float speed = Character.Stats.GetValue(StatType.AttackSpeed);
+            if (target != null && !CanAttack(target)) return false;
+            if (profile.AttackKind == AttackKind.Projectile && profile.ProjectilePrefab == null) return false;
+            float speed = Stats.GetValue(StatType.AttackSpeed);
             if (speed <= 0f) return false;
             cooldown = Mathf.Max(1f / speed, profile.ImpactDelay);
             impactRemaining = profile.ImpactDelay;
             pendingImpact = true;
+            attackTarget = target;
+            targetedAttack = target != null;
             AttackStarted?.Invoke();
             return true;
         }
 
         void ResolveImpact()
         {
-            float range = Character.Stats.GetValue(StatType.AttackRange);
-            Vector3 origin = transform.position + Vector3.up * (profile.Height * 0.5f);
-            CharacterActor nearest = null;
+            // 입력 공격은 판정 시 전방 대상을 찾는다. AI의 지정 대상은 중간에 바꾸지 않는다.
+            CharacterActor nearest = attackTarget;
             float nearestDistance = float.PositiveInfinity;
-            foreach (Collider candidate in Physics.OverlapSphere(origin, range, ~0, QueryTriggerInteraction.Ignore))
+            if (!targetedAttack)
             {
-                var target = candidate.GetComponentInParent<CharacterActor>();
-                if (target == null || target == this || target.Health == null || target.Health.IsDead) continue;
-                Vector3 offset = candidate.ClosestPoint(origin) - origin;
-                Vector3 direction = target.transform.position - transform.position;
-                direction.y = 0f;
-                if (Vector3.Angle(transform.forward, direction) > profile.AttackHalfAngle) continue;
-                float distance = offset.sqrMagnitude;
-                if (distance >= nearestDistance) continue;
-                // 벽 너머의 대상은 때리지 않는다.
-                if (Physics.Linecast(origin, candidate.bounds.center, out RaycastHit hit, ~0,
-                    QueryTriggerInteraction.Ignore) && hit.collider.GetComponentInParent<CharacterActor>() != target) continue;
-                nearest = target;
-                nearestDistance = distance;
+                foreach (CharacterActor target in activeActors)
+                {
+                    if (!CanAttack(target)) continue;
+                    float distance = (target.Body.ClosestPoint(AimPoint) - AimPoint).sqrMagnitude;
+                    if (distance >= nearestDistance) continue;
+                    nearest = target;
+                    nearestDistance = distance;
+                }
             }
-            if (nearest != null) nearest.ReceiveDamage(Character.Stats.GetValue(StatType.Attack));
+            if (!CanAttack(nearest)) return;
+            float attack = Stats.GetValue(StatType.Attack);
+            if (profile.AttackKind == AttackKind.Melee)
+                nearest.ReceiveDamage(DamageRules.Calculate(attack, nearest.Stats.GetValue(StatType.Defense), profile.MinimumDamage));
+            else
+            {
+                GameObject shot = Instantiate(profile.ProjectilePrefab, AimPoint,
+                    Quaternion.LookRotation(nearest.AimPoint - AimPoint));
+                UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(shot, gameObject.scene);
+                shot.GetComponent<CombatProjectile>().Launch(this, attack,
+                    (nearest.AimPoint - AimPoint).normalized, Stats.GetValue(StatType.AttackRange));
+            }
+            attackTarget = null;
         }
 
         public void ReceiveDamage(float damage)
@@ -95,6 +159,7 @@ namespace ProjectNeo.Combat
         void OnDied()
         {
             pendingImpact = false;
+            activeActors.Remove(this);
             foreach (Collider body in GetComponents<Collider>()) body.enabled = false;
             Died?.Invoke();
         }
