@@ -24,6 +24,7 @@ namespace ProjectNeo.Siege
         SiegeAttackerBrain climber;
         InputAction push;
         float wallHeight = 3f;
+        int supportId;
         public SiegeLadderState State { get; private set; }
         public Vector2Int Cell => cell;
         public int Crowd => crowd.Count;
@@ -54,14 +55,23 @@ namespace ProjectNeo.Siege
         {
             get
             {
-                BuildPlacement placement = world.Layout != null ? world.Layout.At(cell) : null;
+                BuildPlacement placement = world.Layout != null ? world.Layout.Top(cell) : null;
                 if (placement == null || placement.Definition.Kind != BuildPieceKind.Wall) return false;
-                wallHeight = placement.Definition.Height;
+                float height = placement.Elevation + placement.Definition.Height;
+                if (supportId != 0 && (supportId != placement.Id || !Mathf.Approximately(wallHeight, height)))
+                    State?.Topple();
+                supportId = placement.Id;
+                wallHeight = height;
                 return true;
             }
         }
 
         public float WallHeight => wallHeight;
+        public void ResetBattle()
+        {
+            State.Topple();
+            crowd.Clear(); raiser = null; climber = null; supportId = 0; PlayerCanPush = false;
+        }
         public Vector3 OutwardWorld => world.transform.TransformDirection(new Vector3(outward.x, 0f, outward.y)).normalized;
 
         Vector3 Point(float fromCenter, float height)

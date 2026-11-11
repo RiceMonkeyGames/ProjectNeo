@@ -1,0 +1,276 @@
+using System.Collections;
+using System.Collections.Generic;
+using ProjectNeo.Combat;
+using ProjectNeo.Siege;
+using ProjectNeo.Squads;
+using ProjectNeo.Walls;
+using UnityEngine;
+using UnityEngine.AI;
+
+namespace ProjectNeo.Flow
+{
+    /// <summary>GameFlow의 전투 단계에 적 생성·공성전·결과를 연결한다. 아군·성·씬의 수명은 유지한다.</summary>
+    [DefaultExecutionOrder(-40)]
+    public sealed class GameBattleController : MonoBehaviour
+    {
+        [SerializeField] ConstructionWorld world;
+        [SerializeField] GameBattleSettings settings;
+        [SerializeField] SquadCommandCenter commander;
+        [SerializeField] CharacterActor player;
+        [SerializeField] FallSettings fallSettings;
+        [SerializeField] SiegeLadder[] ladders = new SiegeLadder[0];
+        readonly List<SiegeAttackerBrain> enemies = new List<SiegeAttackerBrain>();
+        readonly Dictionary<Behaviour, bool> frozen = new Dictionary<Behaviour, bool>();
+        readonly List<Behaviour> freezeOrder = new List<Behaviour>();
+        readonly HashSet<SiegeAttackerBrain> retreated = new HashSet<SiegeAttackerBrain>();
+        readonly Dictionary<SiegeAttackerBrain, Vector3> retreatTargets = new Dictionary<SiegeAttackerBrain, Vector3>();
+        GameFlow flow;
+        Transform enemyRoot;
+        bool battleRunning;
+        public GameBattleSettings Settings => settings;
+        public IReadOnlyList<SiegeAttackerBrain> Enemies => enemies;
+        public IReadOnlyList<SiegeLadder> Ladders => ladders;
+        public int BattleNumber { get; private set; }
+        public bool IsRunning => battleRunning;
+        public bool IsRetreating { get; private set; }
+        public int RetreatedCount => retreated.Count;
+        public bool CanStart => flow != null && flow.Phase == GamePhase.Preparation
+            && !world.IsRebuilding && !world.RebuildPending && frozen.Count == 0
+            && player.Health != null && !player.Health.IsDead;
+        public bool GateDestroyed
+        {
+            get
+            {
+                foreach (PlacedStructure piece in world.Structures)
+                    if (piece.Placement.Definition.Kind == BuildPieceKind.Gate) return false;
+                return true;
+            }
+        }
+        public int AlliesAlive
+        {
+            get { int count = 0; for (int i = 0; i < commander.Squads.Count; i++) count += commander.AliveCount(i); return count; }
+        }
+        public int EnemiesAlive
+        {
+            get
+            {
+                int count = 0;
+                foreach (SiegeAttackerBrain enemy in enemies)
+                    if (enemy != null && !retreated.Contains(enemy))
+                    {
+                        var actor = enemy.GetComponent<CharacterActor>();
+                        if (actor.Health == null || !actor.Health.IsDead) count++;
+                    }
+                return count;
+            }
+        }
+
+        public void Configure(ConstructionWorld castle, GameBattleSettings config, SquadCommandCenter center,
+            CharacterActor playerActor, FallSettings falling, SiegeLadder[] ladderSpots)
+        { world = castle; settings = config; commander = center; player = playerActor; fallSettings = falling; ladders = ladderSpots; }
+
+        void Awake()
+        {
+            flow = GameSession.Flow;
+            enemyRoot = new GameObject("BattleEnemies").transform;
+            enemyRoot.SetParent(transform, false);
+        }
+        void OnEnable() => flow.PhaseChanged += OnPhaseChanged;
+        void OnDisable() => flow.PhaseChanged -= OnPhaseChanged;
+        void Start() => OnPhaseChanged(flow.Phase);
+
+        void OnPhaseChanged(GamePhase phase)
+        {
+            if (phase == GamePhase.Preparation)
+            {
+                battleRunning = false;
+                ClearEnemies();
+                foreach (SiegeLadder ladder in ladders) { ladder.ResetBattle(); ladder.enabled = false; }
+                StartCoroutine(RestoreWhenReady());
+                SpawnEnemies();
+            }
+            else if (phase == GamePhase.Battle)
+            {
+                battleRunning = true;
+                BattleNumber++;
+                foreach (SiegeLadder ladder in ladders) ladder.enabled = true;
+                foreach (SiegeAttackerBrain enemy in enemies) enemy.gameObject.SetActive(true);
+            }
+            else if (phase == GamePhase.Reward || phase == GamePhase.RunResult)
+            {
+                battleRunning = false;
+                FreezeBattle();
+            }
+        }
+
+        public bool TryStartBattle() => CanStart && flow.StartBattle();
+
+        void LateUpdate()
+        {
+            if (!battleRunning || flow.Phase != GamePhase.Battle) return;
+            // 이 프레임의 공격·투사체 처리가 끝난 뒤 동시 성립은 패배를 우선한다.
+            SiegeOutcome outcome = Evaluate();
+            if (outcome == SiegeOutcome.Ongoing)
+            {
+                if (!IsRetreating && ShouldRetreat()) BeginRetreat();
+                if (IsRetreating) UpdateRetreat();
+                outcome = Evaluate();
+            }
+            Resolve(outcome);
+        }
+        SiegeOutcome Evaluate() => SiegeOutcomeRules.Evaluate(player.Health == null || player.Health.IsDead,
+            GateDestroyed, AlliesAlive, EnemiesAlive, 0);
+
+        bool ShouldRetreat()
+        {
+            int siegeUnits = 0;
+            foreach (SiegeAttackerBrain enemy in enemies)
+                if (enemy != null && !retreated.Contains(enemy) && enemy.Actor != null && !enemy.Actor.Health.IsDead
+                    && enemy.Role != SiegeAttackerRole.Archer) siegeUnits++;
+            if (!SiegeOutcomeRules.ShouldRetreat(EnemiesAlive, siegeUnits, false,
+                !world.IsRebuilding && !world.RebuildPending)) return false;
+            var path = new NavMeshPath();
+            foreach (SiegeAttackerBrain enemy in enemies)
+            {
+                if (enemy == null || retreated.Contains(enemy) || enemy.Actor == null || enemy.Actor.Health.IsDead) continue;
+                var agent = enemy.GetComponent<NavMeshAgent>();
+                var falling = enemy.GetComponent<UnitFallController>();
+                if (!agent.enabled || !agent.isOnNavMesh || (falling != null && falling.IsFalling)) return false;
+                foreach (CharacterActor target in CharacterActor.ActiveActors)
+                    if (enemy.Actor.IsEnemy(target) && agent.CalculatePath(target.transform.position, path)
+                        && path.status == NavMeshPathStatus.PathComplete) return false;
+            }
+            return true;
+        }
+
+        void BeginRetreat()
+        {
+            IsRetreating = true;
+            foreach (SiegeAttackerBrain enemy in enemies)
+            {
+                if (enemy == null || enemy.Actor.Health.IsDead) continue;
+                Vector3 local = world.LocalPoint(enemy.transform.position);
+                if (settings.Outward.x != 0) local.x = settings.Outward.x > 0
+                    ? world.Grid.Width * world.Grid.CellSize - settings.RetreatExitMargin : settings.RetreatExitMargin;
+                if (settings.Outward.y != 0) local.z = settings.Outward.y > 0
+                    ? world.Grid.Depth * world.Grid.CellSize - settings.RetreatExitMargin : settings.RetreatExitMargin;
+                local.y = 0f;
+                Vector3 target = world.transform.TransformPoint(local);
+                var agent = enemy.GetComponent<NavMeshAgent>();
+                var path = new NavMeshPath();
+                if (NavMesh.SamplePosition(target, out NavMeshHit exit, settings.RetreatExitMargin, NavMesh.AllAreas)
+                    && agent.CalculatePath(exit.position, path) && path.corners.Length > 0)
+                    target = path.corners[path.corners.Length - 1];
+                else target = enemy.transform.position;
+                enemy.enabled = false;
+                enemy.GetComponent<UnitCombatAI>().SetDirective(UnitDirective.Move, target);
+                retreatTargets[enemy] = target;
+            }
+        }
+        void UpdateRetreat()
+        {
+            float distance = settings.RetreatArrivalDistance;
+            foreach (var pair in retreatTargets)
+            {
+                SiegeAttackerBrain enemy = pair.Key;
+                if (enemy == null || enemy.Actor.Health.IsDead || retreated.Contains(enemy)) continue;
+                if ((enemy.transform.position - pair.Value).sqrMagnitude > distance * distance) continue;
+                retreated.Add(enemy);
+                enemy.gameObject.SetActive(false);
+            }
+        }
+
+        void SpawnEnemies()
+        {
+            Vector3 outward = world.transform.TransformDirection(new Vector3(settings.Outward.x, 0f, settings.Outward.y)).normalized;
+            Vector3 right = Vector3.Cross(Vector3.up, outward);
+            Vector3 origin = world.transform.TransformPoint(new Vector3(settings.SpawnCell.x * world.Grid.CellSize,
+                0f, settings.SpawnCell.y * world.Grid.CellSize));
+            int row = 0;
+            foreach (SiegeUnitGroup group in settings.Enemies)
+            {
+                if (group.unitPrefab == null || group.count <= 0) continue;
+                if (group.unitPrefab.activeSelf)
+                { Debug.LogError("Battle enemy prefab must be inactive: " + group.unitPrefab.name, this); continue; }
+                for (int i = 0; i < group.count; i++)
+                {
+                    int inRow = Mathf.Min(settings.Columns, group.count - i / settings.Columns * settings.Columns);
+                    Vector3 position = origin + right * ((i % settings.Columns - (inRow - 1) * 0.5f) * settings.Spacing)
+                        + outward * ((row + i / settings.Columns) * settings.RowSpacing);
+                    GameObject unit = Instantiate(group.unitPrefab, enemyRoot);
+                    unit.name = group.unitPrefab.name + "_" + enemies.Count;
+                    unit.transform.SetPositionAndRotation(position, Quaternion.LookRotation(-outward));
+                    var fall = unit.GetComponent<UnitFallController>();
+                    if (fall == null) fall = unit.AddComponent<UnitFallController>();
+                    fall.Configure(world, fallSettings);
+                    var brain = unit.GetComponent<SiegeAttackerBrain>();
+                    if (brain == null) { Debug.LogError("Battle enemy needs SiegeAttackerBrain", unit); Destroy(unit); continue; }
+                    brain.Bind(world, ladders, settings.Outward, settings.Siege);
+                    enemies.Add(brain);
+                }
+                row += (group.count + settings.Columns - 1) / settings.Columns;
+            }
+        }
+
+        void ClearEnemies()
+        {
+            foreach (SiegeAttackerBrain enemy in enemies)
+                if (enemy != null) { enemy.gameObject.SetActive(false); Destroy(enemy.gameObject); }
+            enemies.Clear();
+            retreated.Clear(); retreatTargets.Clear(); IsRetreating = false;
+        }
+
+        void Freeze(Behaviour component)
+        {
+            if (component == null || frozen.ContainsKey(component)) return;
+            frozen.Add(component, component.enabled); freezeOrder.Add(component); component.enabled = false;
+        }
+        void FreezeActor(CharacterActor actor, bool restore)
+        {
+            if (actor == null) return;
+            var agent = actor.GetComponent<NavMeshAgent>();
+            if (agent != null && agent.enabled && agent.isOnNavMesh) { agent.ResetPath(); agent.isStopped = true; }
+            if (restore)
+            {
+                Freeze(actor); Freeze(actor.GetComponent<UnitCombatAI>()); Freeze(agent); Freeze(actor.GetComponent<UnitFallController>());
+            }
+            else
+            {
+                actor.enabled = false;
+                var ai = actor.GetComponent<UnitCombatAI>(); if (ai != null) ai.enabled = false;
+                if (agent != null) agent.enabled = false;
+                var falling = actor.GetComponent<UnitFallController>(); if (falling != null) falling.enabled = false;
+            }
+        }
+        void FreezeBattle()
+        {
+            foreach (SiegeAttackerBrain enemy in enemies)
+                if (enemy != null) { enemy.enabled = false; FreezeActor(enemy.GetComponent<CharacterActor>(), false); }
+            FreezeActor(player, true);
+            foreach (var squad in commander.Squads)
+                foreach (UnitCombatAI member in squad.Members) if (member != null) FreezeActor(member.Actor, true);
+            foreach (SiegeLadder ladder in ladders) ladder.enabled = false;
+            foreach (CombatProjectile shot in Object.FindObjectsByType<CombatProjectile>())
+                if (shot.gameObject.scene == gameObject.scene) { shot.enabled = false; Destroy(shot.gameObject); }
+        }
+        IEnumerator RestoreWhenReady()
+        {
+            while (world.IsRebuilding || world.RebuildPending) yield return null;
+            if (flow.Phase != GamePhase.Preparation) yield break;
+            foreach (Behaviour component in freezeOrder)
+            {
+                if (component == null) continue;
+                var actor = component.GetComponent<CharacterActor>();
+                if (actor != null && actor.Health != null && !actor.Health.IsDead) component.enabled = frozen[component];
+            }
+            frozen.Clear(); freezeOrder.Clear();
+        }
+
+        void Resolve(SiegeOutcome outcome)
+        {
+            if (!battleRunning || outcome == SiegeOutcome.Ongoing) return;
+            battleRunning = false;
+            flow.FinishBattle(outcome == SiegeOutcome.Victory ? BattleOutcome.Victory : BattleOutcome.Defeat);
+        }
+    }
+}

@@ -65,6 +65,7 @@ namespace ProjectNeo.Walls
         public BuildPlacement At(Vector2Int cell, int level) =>
             occupied.TryGetValue(Key(cell, level), out var value) ? value : null;
         public BuildPlacement Find(int id) => placements.TryGetValue(id, out var value) ? value : null;
+        public bool IsGateCell(Vector2Int cell) => reserved.Contains(cell);
 
         /// <summary>그 칸에 쌓인 조각 수.</summary>
         public int ColumnHeight(Vector2Int cell)

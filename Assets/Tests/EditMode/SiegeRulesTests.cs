@@ -6,6 +6,17 @@ namespace ProjectNeo.Tests
 {
     public class SiegeRulesTests
     {
+        [TestCase(3, 0, false, true, true)]
+        [TestCase(3, 1, false, true, false)]
+        [TestCase(3, 0, true, true, false)]
+        [TestCase(3, 0, false, false, false)]
+        [TestCase(0, 0, false, true, false)]
+        public void Retreat_RequiresLivingEnemiesWithoutSiegeUnitsOrEntryRoute(int enemies, int siegeUnits,
+            bool route, bool navigationReady, bool expected)
+        {
+            Assert.AreEqual(expected, SiegeOutcomeRules.ShouldRetreat(enemies, siegeUnits, route, navigationReady));
+        }
+
         [Test]
         public void Budget_SpendsOnlyWhatItHas_AndRefundsUpToTotal()
         {

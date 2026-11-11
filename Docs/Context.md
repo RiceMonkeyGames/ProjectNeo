@@ -26,9 +26,9 @@ Unity 6000.6.8f1, URP, 3D 1인칭 프로젝트다. 현재는 임시 그래픽이
 | `Assets/_Project/Scenes/SiegePrototype.unity` | 수성전 프로토타입. 준비 단계(건설·철거·부대 바로 배치, 임시 코스트) → `전투 시작` → 적 침공(뚫린 곳·사다리·성문 파괴·궁수) → 승패. 준비 중 Tab으로 건설↔1인칭, 전투 중에는 1인칭 고정. F를 누르고 있으면 가까운 사다리를 민다. 결과가 나오면 R로 다시 시작 |
 
 | `Assets/_Project/Scenes/Title.unity` | 실제 게임의 진입 씬(G-0). `새 게임`을 누르면 게임 씬으로 가고 `종료`는 Play를 끝낸다 |
-| `Assets/_Project/Scenes/Game.unity` | 실제 게임 씬(G-0·G-1). 준비 단계는 건설 직교 시점으로 성벽·계단·대포 배치와 Q/E 회전, `전투 시작`을 누르면 1인칭 직접 조작과 F1~F3·1·2·3 부대 지휘. Esc로 커서를 풀고 위쪽 `승리`/`패배` 자리표시 → `보상 받고 다음 스테이지` 또는 `타이틀로`. 적은 아직 없다. 이 씬만 열고 Play해도 1스테이지 준비로 시작한다 |
+| `Assets/_Project/Scenes/Game.unity` | 실제 게임 씬(G-0·G-1). 지면 240×300m, 성 96×96m, 안뜰 90×90m와 임시 시설 다섯 곳. 중클릭 이동·휠 확대축소·Home 카메라 초기화. 준비 단계는 1인칭 WASD 이동. 건설소에 가까이 가서 바라보고 F → 건설 직교 시점으로 성벽·계단·대포 배치와 Q/E 회전, Esc로 1인칭 복귀. 성문 앞 붉은 깃발을 바라보고 F로 전투 시작 → 북쪽 들판에서 적 28명이 접근하며 1인칭 직접 조작과 F1~F3·1·2·3 부대 지휘. 적 전멸/퇴각 또는 패배 조건으로 자동 결과 → `보상 받고 다음 스테이지` 또는 `타이틀로`. 이 씬만 열고 Play해도 1스테이지 준비로 시작한다 |
 
-에디터에서 씬을 열고 Play를 누른다. 종료 후 다시 Play하면 초기 상태로 돌아온다. `*Prototype` 씬은 모두 기반 기능을 확인하는 데모이고, 실제 게임은 `Title`·`Game` 두 씬으로 만든다. 지금 `Game` 씬은 단계 전환 뼈대만 있고 준비·수성전·보상의 실제 내용은 아직 연결하지 않았다. 최신 테스트 통과 기준과 남은 연결은 [로드맵 3장](ImplementationPlan.md#3-현재-상태와-출발점)을 확인한다.
+에디터에서 씬을 열고 Play를 누른다. 종료 후 다시 Play하면 초기 상태로 돌아온다. `*Prototype` 씬은 모두 기반 기능을 확인하는 데모이고, 실제 게임은 `Title`·`Game` 두 씬으로 만든다. 지금 `Game` 씬은 건설소 방문·전투 시작·수성전·실제 승패를 연결했다. 정식 시설·웨이브·보상 지급은 미연결이다. 최신 테스트 통과 기준과 남은 연결은 [로드맵 3장](ImplementationPlan.md#3-현재-상태와-출발점)을 확인한다.
 
 ## 2. 코드·씬·에셋 지도
 
@@ -62,15 +62,17 @@ Unity 6000.6.8f1, URP, 3D 1인칭 프로젝트다. 현재는 임시 그래픽이
 | Walls | `ConstructionWorld`, `PlacedStructure` | 배치 모델과 몸통 생성, 설치 후 겹친 살아 있는 유닛을 새 조각 윗면으로 옮기기, 조각 체력·파괴 이벤트, 변경을 모아 비동기 NavMesh 갱신. |
 | Walls | `PlacementViewSettings`, `PlacementController`, `BuildGridView` | 반투명 미리보기 재질·색, 마우스 선택·설치·취소·회전, 격자 표시. 미리보기는 충돌과 점유·NavMesh에 영향을 주지 않는다. |
 | Walls | `SiegeWeaponDefinition`, `MountLayout`, `PlacedSiegeWeapon`, `ISiegeWeaponModule` | 수성 무기 공통 구조. 정의 에셋(ID·이름·크기·프리팹), 일반 C# 설치 지점 점유 규칙(지지 조각 ID + 지점 ID마다 하나), 모든 무기가 쓰는 공통 몸통, 무기별 동작을 붙이는 인터페이스. 대포 전용 클래스는 없다. |
-| Walls | `BuildCameraSettings`, `ConstructionCameraController` | 직교 카메라의 각도·크기·초기 방향·회전 단위·전환 시간 에셋. Q/E로 판 중심을 90도씩 부드럽게 돌며 월드·격자·배치 좌표는 유지한다. |
+| Walls | `BuildCameraSettings`, `ConstructionCameraController` | 직교 카메라의 각도·크기·초기 방향·회전 단위·전환 시간 에셋. Q/E로 주시점을 90도씩 부드럽게 돌며 월드·격자·배치 좌표는 유지한다. 게임 전용 에셋에서는 중클릭 드래그 이동·휠 확대축소·Home 초기화를 켜고 시작 주시점·감도·줌 한계를 데이터로 조정한다. |
 | Walls | `FallSettings`, `FallDamageRules`, `UnitFallController` | 높이별 피해 계산과 파괴 시 낙하·착지. NavMeshAgent와 CharacterController 몸통을 지원하고 착지 후 이동을 복구한다. `LiftForConstruction`은 건설 시 피해 없이 새 윗면으로 옮기고 이동을 복구한다. |
 | Walls / UI | `ConstructionSandbox`, `ConstructionHud` | 시험 씬 전용 이동·발밑 조각 파괴, uGUI·TMP 건설 선택과 상태 표시. 정식 부대 지휘나 준비 화면은 아니다. |
 | Walls | `WallCommandSandbox` | 통합 시험용 Tab 시점 전환. 건설/1인칭 카메라·입력·HUD를 전환하며 지형과 지시는 유지한다. World가 NavMesh를 만든 뒤 유닛을 활성화한다. 정식 준비·전투 단계가 아니다. |
 | Flow | `GamePhase`, `BattleOutcome`, `GameFlow`, `RunProgress` | 일반 C# 흐름 규칙. 타이틀 → 준비 → 전투 → 승리면 보상 → 다음 스테이지 준비, 패배면 런 결과 → 타이틀. 허용되지 않은 전환은 false를 돌려주고 상태를 바꾸지 않는다. `RunProgress`는 런 동안만 유지되는 진행 정보(현재 스테이지)이며 타이틀로 돌아가면 버린다. |
 | Flow | `GameSession`, `SceneCatalog`, `SceneSwitcher`, `GameDirector` | `GameSession.Flow`는 씬이 바뀌어도 유지되는 흐름 보관처로 실행을 시작할 때마다 새로 만든다. 씬 이름은 `SceneCatalog` 에셋에 둔다. 씬 전환은 `SceneSwitcher`에서만 하며 지금은 통째 교체다. `GameDirector`는 게임 씬 단독 실행 때 새 런을 시작하고 흐름이 타이틀로 가면 타이틀 씬을 부른다. 준비·전투 기능은 `GameSession.Flow.PhaseChanged`를 구독해 붙인다. |
-| Flow | `GamePhaseView` | 게임 씬에서 단계에 맞춰 시점·입력·화면을 바꾼다. 준비는 건설 카메라·배치·건설 화면, 전투는 1인칭 카메라·플레이어 입력·지휘 입력·지휘 화면과 커서 잠금, 보상·런 결과는 둘 다 끄고 커서를 푼다. 단계가 바뀌어도 지형·유닛·지시는 유지한다. World가 NavMesh를 만든 뒤 유닛을 활성화한다. `WallCommandSandbox`의 Tab 전환을 실제 단계 전환으로 바꾼 것이다. |
-| UI | `TitleScreen`, `GameFlowHud`, `RuntimeSystemFont` | 타이틀 버튼 동작, 단계 표시와 단계별 버튼을 가진 임시 화면(승리·패배는 전투 결과 자리표시), 임시 화면에 맑은 고딕을 실행 중 적용하는 공용 부품. 정식 화면이 아니다. |
-| Siege | `BuildBudget`, `SiegeOutcomeRules`, `SiegeLadderState` | 일반 C# 규칙. 임시 건설 코스트의 차감·환불, 승패 판정(동시 성립은 패배 우선, Q-09 확정 전 임시), 사다리 상태(놓임→세우는 중→세워짐, 한 명씩 오르기, 밀어서 쓰러뜨리기). |
+| Flow | `GamePhaseView` | 게임 씬에서 단계에 맞춰 시점·입력·화면을 바꾼다. 준비 기본은 1인칭 이동이고 건설소에서만 건설 카메라·배치·건설 화면으로 전환, 전투는 1인칭 카메라·플레이어 입력·지휘 입력·지휘 화면과 커서 잠금, 보상·런 결과는 둘 다 끄고 커서를 푼다. 단계가 바뀌어도 지형·유닛·지시는 유지한다. World가 NavMesh를 만든 뒤 유닛을 활성화한다. `WallCommandSandbox`의 Tab 전환을 실제 단계 전환으로 바꾼 것이다. 건설소 F 상호작용과 Esc 복귀를 연결했고 나머지 시설 기능은 후속이다. |
+| Flow | `PreparationInteractionSettings`, `PreparationInteraction`, `ConstructionStation` | 준비 중 가까이서 바라본 건설소를 F로 열고 Esc로 닫는다. 거리·입력 액션은 `Data/GameFlow/Interaction.asset`에 두고 실행 시 복제한다. 시점·입력 전환은 `GamePhaseView`, 안내·준비 조준점은 `GameFlowHud`가 맡는다. |
+| Flow | `GameBattleSettings`, `GameBattleController`, `PreparationStation`, `BattleStartStation` | GameFlow의 전투 단계에 적 생성·공성전·승패·마지막 적 퇴각을 연결한다. 전투 종료 시 AI·공격·투사체를 멈추고, 다음 준비에서 살아 있는 아군·성벽 피해를 유지하며 시험 적 편성을 새로 만든다. 성문 앞 F 상호작용으로 시작한다. 게임 전용 `Data/GameFlow/Battle.asset`·`Siege.asset`에서 편성·등장 위치·공성 수치를 조정한다. |
+| UI | `TitleScreen`, `GameFlowHud`, `RuntimeSystemFont` | 타이틀 버튼 동작, 단계 표시·건물 상호작용 안내·남은 병력·사다리 밀기·결과 화면(전투 연결 시 시작·승패 자리표시 버튼은 숨김), 임시 화면에 맑은 고딕을 실행 중 적용하는 공용 부품. 정식 화면이 아니다. |
+| Siege | `BuildBudget`, `SiegeOutcomeRules`, `SiegeLadderState` | 일반 C# 규칙. 임시 건설 코스트의 차감·환불, 승패 판정(동시 성립은 패배 우선, Q-09 확정)·마지막 적 퇴각 조건, 사다리 상태(놓임→세우는 중→세워짐, 한 명씩 오르기, 밀어서 쓰러뜨리기). |
 | Siege | `SiegeSettings` | 코스트·사다리 시간과 거리·적 판단 주기·키(F 밀기, Tab 시점, R 다시 시작) 에셋. |
 | Siege | `SiegeLadder`, `PlaceholderLadderView` | 맵에 고정된 사다리 자리. 그 칸에 성벽이 있을 때만 쓰인다. 밑의 적이 세우고, 성벽 위 아군(싸울 적이 없는 유닛, 키를 누른 플레이어)이 민다. 올라온 적이 근처에 있으면 밀지 못한다. 외형은 Visual 자식의 임시 막대다. |
 | Siege | `SiegeAttackerBrain` | 적 하나의 공성 판단. 걸어서 닿는 아군이 있으면 기존 `UnitCombatAI`의 Engage에 맡기고, 없으면 종류(`SiegeAttackerRole`: 사다리병·성문 파괴병·궁수)에 따라 사다리·성문·사격을 고른다. 이동·공격은 `UnitDirective`로 실행한다. 쓸 사다리가 없는 사다리병은 성문으로 간다. |
@@ -174,8 +176,10 @@ Q/`RotateLeft()`와 E/`RotateRight()`는 화면 속 판의 왼쪽·오른쪽 회
 - `Assets/_Project/Scripts/Editor/SquadCommandSetup.cs`: 메뉴 `ProjectNeo/Setup/Create Squad Command Prototype` 또는 `Create()`로 B-5 씬·수치 에셋·NavMesh·시험 HUD를 만든다. 기존 씬이나 저장하지 않은 변경이 있으면 중단한다. B-2·B-3의 프리팹이 먼저 있어야 한다. `Upgrade()`(메뉴 `Upgrade Squad Command Prototype`)는 기존 씬에 팀별 시야 에셋과 선택·목적지 표시를 더하며 여러 번 실행해도 결과가 같다. 프리팹 인스턴스의 값은 `SerializedObject`로 써야 씬에 저장된다.
 - `Assets/_Project/Scripts/Editor/WallCommandSetup.cs`: 메뉴 `ProjectNeo/Setup/Create Wall Command Prototype`으로 기존 건설 씬을 보존한 채 통합 씬을 만든다. 기존 통합 씬·저장하지 않은 변경은 덮어쓰지 않는다. B-2·B-3·건설·평지 지휘 에셋이 선행 조건이다.
 - `Assets/_Project/Scripts/Editor/FirstPersonSetup.cs`: 메뉴 `ProjectNeo/Setup/Upgrade Player Views To First Person`으로 기존 전투·평지 지휘 씬의 카메라와 플레이어 입력 참조를 1인칭으로 전환한다. 현재 두 씬 모두 적용된 상태이며 다시 실행해도 카메라를 중복 추가하지 않는다. 씬 생성 코드도 기본 1인칭을 만든다.
-- `Assets/_Project/Scripts/Editor/GameFlowSetup.cs`: 메뉴 `ProjectNeo/Setup/Create Game Flow Scenes`로 `Title`·`Game` 씬과 `Assets/_Project/Data/GameFlow/SceneCatalog.asset`을 만들고 두 씬을 빌드 목록 끝에 더한다. 기존 씬이나 저장하지 않은 변경이 있으면 중단한다. 이미 실행해 두 씬이 있다. `AddCastle()`(메뉴 `Add Castle To Game Scene`)은 `WallCommandPrototype`의 성·건설·플레이어·부대를 게임 씬으로 옮겨 `GamePhaseView`에 연결한다. 프로토타입 씬은 읽기만 하고 저장하지 않는다. 프로토타입 전용 시험 버튼은 숨기고 안내 문구를 바꾼다. 이미 성이 있으면 중단하며 현재 적용된 상태다. `ApplyDefaultCastle()`(메뉴 `Apply Default Castle To Game Scene`)은 게임 전용 `Data/GameFlow/Grid.asset`(24×26칸)·`BuildCamera.asset`(직교 크기 32)을 쓰도록 바꾸고 외벽·성문·계단의 초기 배치, 바닥 크기, 부대와 플레이어 시작 위치를 다시 적용한다. 플레이어는 안뜰 남쪽(격자 좌표 12, 8)에서 북쪽을 보고 시작한다. 배치 수치는 이 메서드 위의 상수이며 여러 번 실행해도 결과가 같다. 조각 정의(성벽·계단·성문)는 `Data/ConstructionPrototype/`의 것을 함께 쓴다.
+- `Assets/_Project/Scripts/Editor/GameFlowSetup.cs`: 메뉴 `ProjectNeo/Setup/Enable Preparation Interaction`은 기존 Game 씬의 건설소·입력·안내 화면을 연결한다. `ApplyDefaultCastle` 재실행 때도 이를 다시 연결한다. 메뉴 `ProjectNeo/Setup/Create Game Flow Scenes`로 `Title`·`Game` 씬과 `Assets/_Project/Data/GameFlow/SceneCatalog.asset`을 만들고 두 씬을 빌드 목록 끝에 더한다. 기존 씬이나 저장하지 않은 변경이 있으면 중단한다. 이미 실행해 두 씬이 있다. `AddCastle()`(메뉴 `Add Castle To Game Scene`)은 `WallCommandPrototype`의 성·건설·플레이어·부대를 게임 씬으로 옮겨 `GamePhaseView`에 연결한다. 프로토타입 씬은 읽기만 하고 저장하지 않는다. 프로토타입 전용 시험 버튼은 숨기고 안내 문구를 바꾼다. 이미 성이 있으면 중단하며 현재 적용된 상태다. `ApplyDefaultCastle()`(메뉴 `Apply Default Castle To Game Scene`)은 게임 전용 `Data/GameFlow/Grid.asset`(80×100칸)·`BuildCamera.asset`(직교 크기 55, 확대축소 20~180)을 쓰도록 바꾸고 외벽·성문·계단의 초기 배치, 바닥 크기, 부대와 플레이어 시작 위치를 다시 적용한다. 플레이어는 안뜰 남쪽(격자 좌표 40, 34)에서 북쪽을 보고 시작한다. 배치 수치는 이 메서드 위의 상수이며 여러 번 실행해도 결과가 같다. 조각 정의(성벽·계단·성문)는 `Data/ConstructionPrototype/`의 것을 함께 쓴다.
 - `Assets/Tests/EditMode/GameFlowTests.cs`: 흐름 단계 전환, 거부되는 전환, 전투 결과 1회 처리, 새 런의 진행 초기화, 단계 변경 알림.
+- `Assets/_Project/Scripts/Editor/GameBattleSetup.cs`: Game 씬의 공성전·깃발 상호작용을 연결하고 기존 HUD 영역을 배치한다. 메뉴 `ProjectNeo/Setup/Connect Battle To Game Scene`·`Arrange Game HUD`.
+- `Assets/Tests/PlayMode/GameBattlePlayTests.cs`: 실제 적 접근·승패·패배 우선·마지막 적 퇴각과 열린 경로·3층 사다리·성문 붕괴 조각 공격·다음 준비 이월·HUD 배경 포함 영역 분리.
 - `Assets/Tests/PlayMode/GameFlowPlayTests.cs`: 저장된 `Title`·`Game` 씬으로 새 게임 진입, 씬 전환 없는 단계 변경, 패배 후 타이틀 복귀, 게임 씬 단독 시작, 준비의 건설 시점과 전투의 1인칭 지휘 전환·보상 중 입력 정지·유닛과 지시 유지·AudioListener와 EventSystem이 하나뿐인지, 기본 성이 성문 하나와 닫힌 외벽이고 안뜰에서 성벽 위로 길이 이어지며 밖으로는 나갈 수 없는지. 씬을 통째로 바꾸므로 끝날 때 빈 씬만 남긴다. 실제 버튼 클릭은 직접 확인 대상이다.
 - `Assets/_Project/Scripts/Editor/SiegePrototypeSetup.cs`: 메뉴 `ProjectNeo/Setup/Create Siege Prototype`. `WallCommandPrototype`을 복사해 수성전 씬을 만든다. 기존 씬·저장하지 않은 변경은 덮어쓰지 않는다. 씬을 연 뒤 `SerializedObject`로 연결할 에셋은 다시 불러와야 한다(씬을 열면 방금 만든 에셋 참조가 풀려 null로 저장된 적이 있다).
 - `Assets/Tests/EditMode/SiegeRulesTests.cs`: 코스트 차감·환불, 승패 판정, 사다리 세우기·한 명씩 오르기·밀기·막힘, 위쪽 사격 피해 배율.
@@ -616,4 +620,35 @@ unity command package add --caller plugin --skill unity-package-management --nam
 - 검증: 컴파일 오류 없음. EditMode 131개·PlayMode 전체 60개 통과. 실제 입력 플레이와 Windows 빌드는 이번 병합에서 다시 확인하지 않았다.
 - 직접 확인: `Assets/_Project/Scenes/SiegePrototype.unity` → Play → 성벽으로 뚫린 곳을 막거나 부대 배치 → 전투 시작 → 적 진입·성문 공격·사다리와 승패를 확인한다. R 또는 Play 재시작으로 초기화한다. `Assets/_Project/Scenes/Title.unity` → Play → 새 게임 → 준비 건설 화면 → 전투 시작 → 1인칭·F1~F3·1/2/3 지휘와 자리표시 승리/패배 → 보상·타이틀 전환을 확인한다. Play 재시작으로 초기화한다.
 - 자동 재검증: Test Runner의 EditMode·PlayMode 전체 실행. 병합 접점은 `SiegePrototypePlayTests`, `StackedConstructionPlayTests`, `GameFlowPlayTests`, `ConstructionPlayTests`에서 확인한다.
+### 2026-11-12: 메인 성과 지면 확대·안뜰 임시 시설 배치
+
+- 사용자 승인: 전투 연결 전에 성 96×96m, 안뜰 90×90m, 전체 지면 240×300m로 확대하고 임시 시설·이동로·집결 공간을 둔다. 3m 조각·최대 3층을 유지한다. 북쪽 외벽 밖 여유는 정확히 120m다.
+- 변경: `GameFlowSetup.ApplyDefaultCastle`은 게임 전용 격자를 80×100칸으로 갱신하고 외벽을 (24,28)~(55,59)에 배치한다. 북쪽 성문은 (39,59), 계단은 (27,57)·(52,57)·(39,29)다. 플레이어는 (40,34), 부대는 북쪽 집결 공간에서 시작한다. 재실행해도 같은 배치를 만들며 기존 프로토타입 씬은 바꾸지 않았다.
+- `Geometry/CourtyardLayout` 아래에 주점·상점·훈련장·대장간·건설소 임시 건물과 십자 이동로·병력 집결 바닥을 둔다. 건물 루트가 충돌을, Visual 자식이 몸통·지붕·한글 간판 외형을 맡는다. 실제 시설 기능·방문 상호작용은 미연결이며, 현재 준비 즉시 건설 화면·전투 버튼으로 1인칭 이동하는 임시 흐름을 유지한다.
+- `BuildCameraSettings`와 `ConstructionCameraController`에 게임 전용 탐색 옵션을 추가했다. 중클릭 드래그는 화면 방향으로 이동, 휠은 20~180 범위로 확대축소, Home은 주시점·줌 초기화다. 초기 주시점은 격자 비율 (0.5,0.44), 직교 크기 55, 거리 320m이고 게임 카메라 원거리는 1000m다. 기존 에셋은 탐색 옵션 기본 꺼짐으로 Q/E 회전 동작을 유지한다.
+- 검증: PlayMode 전체 61개 통과. 확장 치수·북쪽 120m 여유·시설 5곳 앞까지의 경로·성벽 계단 경로·적층과 붕괴·카메라 이동 제한·확대축소 한계·초기화를 검증했다. 에디터 Play에서 프레임 증가와 건설·1인칭 화면을 캡처해 확인했으며 새 런타임 오류는 없다. 실제 중클릭·휠·Home 입력 검증은 완료하지 않았고 사용자 확인 대상이다. Windows 빌드는 실행하지 않았다. EditMode는 병합 당시 131개 통과 기준이며 이번에는 새 일반 C# 규칙 변경이 없어 다시 실행하지 않았다.
+- 직접 확인: `Assets/_Project/Scenes/Game.unity` → Play → 성과 건물 다섯 곳을 확인 → Q/E 회전·휠 확대축소·중클릭 드래그로 북쪽 들판 확인 → Home으로 성 중심 복귀 → `전투 시작` → WASD·마우스로 시설 사이와 중앙 길을 걸어 크기 확인 → F1 후 북쪽 성벽 위를 보고 1로 이동 지시. 적은 아직 Game 씬에 연결하지 않았다. Play 종료 후 재시작하면 원래 배치·시점으로 초기화된다.
+- 자동 재검증: Test Runner PlayMode 전체 또는 `GameFlowPlayTests`·`StackedConstructionPlayTests`. 스크린샷은 `Temp/expanded-castle-build.png`·`Temp/expanded-castle-first-person.png`에 있다.
+### 2026-11-12: 준비 기본 1인칭·건설소 F 상호작용
+
+- 사용자 요청: 준비 단계도 1인칭으로 시작하고 건설소에서 F로 건설 모드 진입. 건설 종료는 Esc로 구현했으며 플레이어 위치·카메라 방향은 유지한다. 준비/전투 단계 자체는 바꾸지 않고 준비 단계 안에서 시점만 전환한다.
+- `GamePhaseView`는 준비 기본 1인칭, `EnterConstruction`·`ExitConstruction`으로 건설 시점을 전환한다. 건설 중 플레이어·지휘 입력을 끄고 커서를 풀며, 종료하면 선택·미리보기를 취소하고 같은 위치에서 1인칭 이동을 복구한다. 전투·보상·결과 진입 시 건설 모드는 닫힌다. 다음 준비도 1인칭으로 시작한다.
+- 새 코드: `Flow/PreparationInteractionSettings.cs`(거리와 F/Esc InputAction, Create 제공), `PreparationInteraction.cs`(화면 가운데 가까운 대상 검사·입력 복제·해제), `ConstructionStation.cs`(건설소 몸통의 대상 표시). `UI/GameFlowHud.cs`에 준비 조준점과 안내 문구를 추가했다. 게임 전용 `Data/GameFlow/Interaction.asset`에서 거리(기본 3.5m)·입력을 조정한다. 기존 프로토타입에는 연결하지 않았다.
+- 씬 연결: `GameFlowSetup.EnablePreparationInteraction` 메뉴는 기존 Game 씬에 입력·건설소·안내를 연결하며 중복 생성하지 않는다. `ApplyDefaultCastle`도 임시 건설소를 다시 만든 뒤 이를 연결한다. 씬과 에셋·meta는 모두 에디터 API로 만들었다. 다른 시설은 여전히 임시 외형이다.
+- 검증: 컴파일 오류 없음. PlayMode 전체 62개 통과. `GameFlowPlayTests.건설소를_가까이_바라보고_F로_열고_Esc로_나오며_전투에서는_열리지_않는다`는 가상 키보드를 통해 실제 InputAction 경로로 F·Esc를 입력하고, 원거리·등 돌림 거부, 안내, 커서·위치 복구, 전투 중 차단을 확인한다. 준비↔건설↔전투↔다음 준비의 시점·입력·부대 유지와 기존 건설·수성전 회귀도 통과했다. EditMode는 기존 131개 통과 기준이며 이번에는 재실행하지 않았다. Windows 빌드는 하지 않았다.
+- 화면 확인: Play 프레임 증가, 준비 시작의 1인칭, 건설소 앞 `F · 건설소 이용`, 상호작용 메서드 호출 후 건설 화면과 `건설 모드 · Esc 돌아가기`, 종료 후 1인칭 복귀를 확인했다. CUA 키 주입으로는 전환을 재현하지 못해 물리 키보드의 F·Esc 조작은 사용자 확인 대상으로 남긴다. 자동 InputAction 테스트는 통과했다. 화면은 `Temp/preparation-first-person.png`·`Temp/construction-station-build.png`에 있다.
+- 직접 확인: `Assets/_Project/Scenes/Game.unity` → Play → 바로 1인칭으로 시작한다 → WASD·마우스로 시작 위치 오른쪽 앞의 `건설소` 건물까지 이동 → 건물을 가까이서 화면 가운데로 바라보면 `F · 건설소 이용` → F → 성 전체 건설 화면 → 성벽 배치·Q/E·휠·중클릭 → Esc → 원래 자리·방향에서 이동 재개. 먼 곳·다른 건물·등 돌린 상태에서는 F가 동작하지 않아야 한다. 전투 시작 버튼은 Esc로 커서를 풀어 누르며, 전투 중 F로 건설 화면을 열 수 없어야 한다. Play를 종료하고 다시 시작하면 원래 상태다.
+- 자동 재검증: Test Runner PlayMode의 `GameFlowPlayTests` 또는 PlayMode 전체. 기존 씬은 `SiegePrototypePlayTests` 등으로 함께 회귀한다.
+### 2026-11-12: Game 실제 전투 연결·HUD 겹침 정리
+
+- `Flow/GameBattleController`가 기존 `GameSession.Flow`를 구독해 전투를 시작하고 `FinishBattle`로 결과를 전달한다. 별도 SiegeDirector나 아군 복제 없이 기존 플레이어·3부대 12명을 사용한다. `PreparationStation`을 공통 대상으로 두고 건설소와 성문 앞 붉은 깃발(`BattleStartStation`)을 F로 이용한다. 전투 중 건설은 차단한다.
+- 게임 전용 `Data/GameFlow/Battle.asset`·`Siege.asset`에 시험 적 28명(사다리병 12·성문 파괴병 4·궁수 12)과 등장 위치·간격·공성 수치를 둔다. 준비 중에는 비활성 상태이며 전투 시작 때 북쪽 성벽에서 약 90m 떨어진 들판에 함께 등장해 접근한다. 한 명씩 순차 생성하는 방식은 아니다.
+- 사용자 결정 반영: 사다리는 맨 위 성벽까지 닿는다. 성문 파괴 후 위 조각은 내려앉고 성문 파괴병이 성문 자리의 조각도 공격한다. 동시 승패는 패배 우선이다. 살아 있는 공성 병력이 없고 살아 있는 아군까지 진입 경로도 없으면 남은 적이 바깥으로 퇴각해 승리한다. 퇴각은 사망과 따로 센다.
+- 전투 종료 시 공격·AI·이동·낙하를 멈추고 투사체를 정리한다. 다음 준비에는 생존 아군과 성벽 피해를 유지하고 시험 적 편성을 다시 만든다. 정식 보상 지급·스테이지별 다른 웨이브·병력 보충·성문 수리·사기는 아직 미구현이다.
+- 에디터 연결은 `Editor/GameBattleSetup.cs`의 `ProjectNeo/Setup/Connect Battle To Game Scene`이다. `GameFlowSetup.ApplyDefaultCastle`도 이를 호출한다. `ProjectNeo/Setup/Arrange Game HUD`는 기존 HUD만 재배치한다. 씬·에셋은 에디터 API로 저장했다.
+- HUD는 좌상단 부대 목록, 상단 중앙 단계, 우상단 적·아군 수와 성문 상태, 하단 두 줄 조작 안내로 분리했다. 준비 상호작용과 전투 상태는 별도 영역이며 건설 안내는 우상단, 복귀 안내는 건설 도구 오른쪽으로 둔다. 기존 임시 승리·패배 버튼 안내를 제거했다. 글자와 배경 모두 화면 비율에 맞춰 함께 배치한다. 에디터 최대화 화면과 창 복원 후 좁은 Game 뷰에서 겹침이 없음을 확인했다. 캡처는 `Temp/game-battle-hud-arranged.png`다.
+- 자동 검증: EditMode 136개·PlayMode 전체 70개 통과. `SiegeRulesTests`의 퇴각 조건, `GameBattlePlayTests`의 적 접근·실제 승패·동시 패배 우선·퇴각/열린 진입로·3층 사다리·붕괴 성문 조각 공격·다음 준비 이월·HUD 배경 포함 영역 검사를 확인했다. Test Runner에서 해당 클래스 또는 전체 EditMode/PlayMode를 실행한다.
+- 에디터 직접 실행: 깃발 대상 상호작용 후 적이 북쪽에서 접근했고, 자연 진행으로 성문 파괴·아군 0명·플레이어 체력 100에서 패배 결과가 나왔다(남은 적 18명). 새 런타임 오류는 없다. F/Esc는 Input System 가상 키보드 자동 검증을 통과했으나 CUA 키 주입이 동작하지 않아 물리 키보드는 사용자 확인 대상이다. Windows 빌드는 다시 만들지 않았다.
+- 직접 확인: `Assets/_Project/Scenes/Game.unity` → Play → 1인칭으로 건설소에 접근해 몸통을 바라보고 F → 건설 후 Esc → 북쪽 중앙 길을 따라 성문 안쪽 오른편 붉은 깃발에 접근해 3.5m 안에서 바라보고 F → 적 침공·전투 HUD 확인 → F1~F3 부대 선택, 1 이동·2 공격·3 중지. 승리하면 보상 화면에서 다음 준비로, 패배하면 결과에서 타이틀로 이동한다. Play 종료 후 재시작하면 성벽·병력·스테이지가 초기화된다. Game 씬을 열어 두었다.
+
 </details>

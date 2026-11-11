@@ -154,11 +154,10 @@ namespace ProjectNeo.Editor
             AssetDatabase.SaveAssets();
         }
 
-        // 기본 성(임시 배치). 격자 24×26칸 가운데에 14×14칸 외벽을 두르고 북쪽 가운데에 메인 성문을 둔다.
-        // 안뜰 12×12칸은 나중에 시설 건물이 들어갈 자리로 비워 둔다. 북쪽 바깥이 적이 오는 들판이다.
-        const int GridWidth = 24, GridDepth = 26, MaxLevels = 3;
+        // 지면 240×300m, 성 96×96m, 안뜰 90×90m. 북쪽 외벽에서 지면 끝까지 120m다.
+        const int GridWidth = 80, GridDepth = 100, MaxLevels = 3;
         const float CellSize = 3f;
-        const int WallWest = 5, WallEast = 18, WallSouth = 4, WallNorth = 17, GateX = 11;
+        const int WallWest = 24, WallEast = 55, WallSouth = 28, WallNorth = 59, GateX = 39;
 
         /// <summary>
         /// 게임 씬의 격자를 넓히고 기본 성 배치와 유닛 시작 위치를 적용한다. 여러 번 실행해도 같은 결과다.
@@ -177,12 +176,19 @@ namespace ProjectNeo.Editor
             var grid = CombatPrototypeSetup.Save(BuildGridDefinition.Create(GridWidth, GridDepth, CellSize), Data + "/Grid.asset");
             // 게임 씬은 층 쌓기를 쓴다. 프로토타입 격자는 1층 그대로다.
             var gridData = new SerializedObject(grid);
+            gridData.FindProperty("width").intValue = GridWidth;
+            gridData.FindProperty("depth").intValue = GridDepth;
+            gridData.FindProperty("cellSize").floatValue = CellSize;
             gridData.FindProperty("maxLevels").intValue = MaxLevels;
             gridData.ApplyModifiedPropertiesWithoutUndo();
             var cameraSettings = CombatPrototypeSetup.Save(BuildCameraSettings.Create(), Data + "/BuildCamera.asset");
             var cameraData = new SerializedObject(cameraSettings);
-            cameraData.FindProperty("orthographicSize").floatValue = 32f;
-            cameraData.FindProperty("distance").floatValue = 90f;
+            cameraData.FindProperty("orthographicSize").floatValue = 55f;
+            cameraData.FindProperty("distance").floatValue = 320f;
+            cameraData.FindProperty("navigationEnabled").boolValue = true;
+            cameraData.FindProperty("initialFocus").vector2Value = new Vector2(0.5f, 0.44f);
+            cameraData.FindProperty("minZoom").floatValue = 20f;
+            cameraData.FindProperty("maxZoom").floatValue = 180f;
             cameraData.ApplyModifiedPropertiesWithoutUndo();
 
             var seeds = new List<InitialBuildPiece>();
@@ -198,8 +204,8 @@ namespace ProjectNeo.Editor
                 seeds.Add(new InitialBuildPiece { definition = wall, cell = new Vector2Int(WallEast, z) });
             }
             // 계단은 안뜰 쪽에 둔다. 회전 0은 북쪽, 회전 2는 남쪽 성벽으로 올라간다.
-            seeds.Add(new InitialBuildPiece { definition = stairs, cell = new Vector2Int(8, WallNorth - 2) });
-            seeds.Add(new InitialBuildPiece { definition = stairs, cell = new Vector2Int(15, WallNorth - 2) });
+            seeds.Add(new InitialBuildPiece { definition = stairs, cell = new Vector2Int(WallWest + 3, WallNorth - 2) });
+            seeds.Add(new InitialBuildPiece { definition = stairs, cell = new Vector2Int(WallEast - 3, WallNorth - 2) });
             seeds.Add(new InitialBuildPiece { definition = stairs, cell = new Vector2Int(GateX, WallSouth + 1), rotation = 2 });
 
             ConstructionWorld world = FindAll<ConstructionWorld>(game)[0];
@@ -212,17 +218,21 @@ namespace ProjectNeo.Editor
             Transform ground = geometry.Find("Ground");
             ground.localScale = new Vector3(width, 1f, depth);
             ground.localPosition = new Vector3(width * 0.5f, -0.5f, depth * 0.5f);
+            ApplyCourtyard(geometry);
 
             var orbit = FindAll<ConstructionCameraController>(game)[0];
             orbit.Configure(world, cameraSettings);
             EditorUtility.SetDirty(orbit);
             var buildCamera = orbit.GetComponent<Camera>();
             buildCamera.orthographicSize = cameraSettings.OrthographicSize;
+            buildCamera.farClipPlane = 1000f;
             buildCamera.transform.rotation = Quaternion.Euler(cameraSettings.Pitch, cameraSettings.InitialYaw, 0f);
-            buildCamera.transform.position = -(buildCamera.transform.forward * cameraSettings.Distance);
+            buildCamera.transform.position = world.transform.TransformPoint(new Vector3(width * 0.5f, 0f, depth * 0.44f))
+                - buildCamera.transform.forward * cameraSettings.Distance;
+            FindAll<FirstPersonCamera>(game)[0].GetComponent<Camera>().farClipPlane = 1000f;
 
             // 부대는 계단 아래와 안뜰 가운데, 플레이어는 안뜰 남쪽에서 북쪽을 본다. 성문 위 건설 공간을 비운다.
-            Vector3[] squadCells = { new Vector3(8.5f, 0f, 13.5f), new Vector3(15.5f, 0f, 13.5f), new Vector3(12f, 0f, 11.5f) };
+            Vector3[] squadCells = { new Vector3(35f, 0f, 54f), new Vector3(45f, 0f, 54f), new Vector3(40f, 0f, 49f) };
             foreach (GameObject root in game.GetRootGameObjects())
             {
                 for (int squad = 0; squad < squadCells.Length; squad++)
@@ -231,12 +241,146 @@ namespace ProjectNeo.Editor
                             Place(root.transform, origin + squadCells[squad] * CellSize
                                 + new Vector3((i % 2 - 0.5f) * 1.1f, 0f, -(i / 2) * 1.1f), 0f);
                 if (root.name == "Player")
-                    Place(root.transform, origin + new Vector3(12f * CellSize, 0f, 8f * CellSize), 0f);
+                    Place(root.transform, origin + new Vector3(40f * CellSize, 0f, 34f * CellSize), 0f);
             }
+
+            AddNavigationHelp(FindAll<ConstructionHud>(game)[0]);
+            ConfigurePreparationInteraction(game);
+            GameBattleSetup.ConfigureScene(game);
 
             EditorSceneManager.MarkSceneDirty(game);
             EditorSceneManager.SaveScene(game);
             AssetDatabase.SaveAssets();
+        }
+
+        [MenuItem("ProjectNeo/Setup/Enable Preparation Interaction")]
+        public static void EnablePreparationInteraction()
+        {
+            if (EditorSceneManager.GetActiveScene().isDirty) throw new InvalidOperationException("Save the active scene first.");
+            Scene game = EditorSceneManager.OpenScene(GamePath, OpenSceneMode.Single);
+            ConfigurePreparationInteraction(game);
+            EditorSceneManager.MarkSceneDirty(game);
+            EditorSceneManager.SaveScene(game);
+            AssetDatabase.SaveAssets();
+        }
+
+        static void ConfigurePreparationInteraction(Scene game)
+        {
+            var world = FindAll<ConstructionWorld>(game)[0];
+            var view = FindAll<GamePhaseView>(game)[0];
+            var player = FindAll<PlayerInputController>(game)[0];
+            var camera = FindAll<FirstPersonCamera>(game)[0];
+            Transform building = world.transform.Find("Geometry/CourtyardLayout/Construction");
+            if (building == null) throw new InvalidOperationException("Apply Default Castle first to add the construction station.");
+            var settings = CombatPrototypeSetup.Save(PreparationInteractionSettings.Create(), Data + "/Interaction.asset");
+            var interaction = view.GetComponent<PreparationInteraction>();
+            if (interaction == null) interaction = view.gameObject.AddComponent<PreparationInteraction>();
+            interaction.Configure(view, camera.GetComponent<Camera>(), player.GetComponent<ProjectNeo.Combat.CharacterActor>(), settings);
+            EditorUtility.SetDirty(interaction);
+            var station = building.GetComponent<ConstructionStation>();
+            if (station == null) station = building.gameObject.AddComponent<ConstructionStation>();
+            station.Configure(view);
+            EditorUtility.SetDirty(station);
+
+            var hud = FindAll<GameFlowHud>(game)[0];
+            Transform prompt = hud.transform.Find("InteractionPrompt");
+            TMP_Text hint;
+            if (prompt == null)
+            {
+                var root = new GameObject("InteractionPrompt", typeof(RectTransform), typeof(UnityEngine.UI.Image));
+                root.transform.SetParent(hud.transform, false);
+                var rect = root.GetComponent<RectTransform>();
+                rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0f);
+                rect.anchoredPosition = new Vector2(0f, 64f); rect.sizeDelta = new Vector2(760f, 64f);
+                var background = root.GetComponent<UnityEngine.UI.Image>();
+                background.color = new Color(0.05f, 0.08f, 0.1f, 0.8f); background.raycastTarget = false;
+                hint = Label(root.transform, "WASD move - Visit the construction station and press F", 48f, 20f);
+                hint.alignment = TextAlignmentOptions.Center;
+                hint.rectTransform.anchorMin = Vector2.zero; hint.rectTransform.anchorMax = Vector2.one;
+                hint.rectTransform.offsetMin = new Vector2(12f, 4f); hint.rectTransform.offsetMax = new Vector2(-12f, -4f);
+            }
+            else hint = prompt.GetComponentInChildren<TMP_Text>(true);
+            Transform reticle = hud.transform.Find("ExplorationReticle");
+            if (reticle == null)
+            {
+                TMP_Text dot = Label(hud.transform, "+", 28f, 22f);
+                dot.name = "ExplorationReticle";
+                dot.alignment = TextAlignmentOptions.Center;
+                dot.rectTransform.anchorMin = dot.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+                dot.rectTransform.anchoredPosition = Vector2.zero; dot.rectTransform.sizeDelta = new Vector2(28f, 28f);
+                reticle = dot.transform;
+            }
+            hud.ConfigureInteraction(view, interaction, hint, reticle.gameObject);
+            EditorUtility.SetDirty(hud);
+        }
+
+        static void ApplyCourtyard(Transform geometry)
+        {
+            Transform old = geometry.Find("CourtyardLayout");
+            if (old != null) UnityEngine.Object.DestroyImmediate(old.gameObject);
+            var layout = new GameObject("CourtyardLayout");
+            layout.transform.SetParent(geometry, false);
+            Material road = CombatPrototypeSetup.MaterialAsset("CourtyardRoad", new Color(0.43f, 0.39f, 0.31f));
+            Material plaster = CombatPrototypeSetup.MaterialAsset("FacilityPlaster", new Color(0.73f, 0.65f, 0.48f));
+            Material roof = CombatPrototypeSetup.MaterialAsset("FacilityRoof", new Color(0.28f, 0.32f, 0.43f));
+            Material plaza = CombatPrototypeSetup.MaterialAsset("MusterGround", new Color(0.3f, 0.35f, 0.25f));
+            Decoration(layout.transform, "MainAvenue", new Vector3(120f, 0.035f, 132f), new Vector3(9f, 0.04f, 90f), road);
+            Decoration(layout.transform, "CrossAvenue", new Vector3(120f, 0.035f, 132f), new Vector3(90f, 0.04f, 6f), road);
+            Decoration(layout.transform, "MusterGround", new Vector3(120f, 0.03f, 157.5f), new Vector3(54f, 0.04f, 27f), plaza);
+            var labels = new List<TMP_Text>(); var captions = new List<string>();
+            Facility(layout.transform, "Tavern", "주점", new Vector3(91.5f, 0f, 112.5f), new Vector3(15f, 7f, 12f), plaster, roof, labels, captions);
+            Facility(layout.transform, "Shop", "상점", new Vector3(91.5f, 0f, 153f), new Vector3(12f, 6f, 12f), plaster, roof, labels, captions);
+            Facility(layout.transform, "Training", "훈련장", new Vector3(91.5f, 0f, 94.5f), new Vector3(15f, 5f, 9f), plaster, roof, labels, captions);
+            Facility(layout.transform, "Smithy", "대장간", new Vector3(148.5f, 0f, 112.5f), new Vector3(15f, 7f, 12f), plaster, roof, labels, captions);
+            Facility(layout.transform, "Construction", "건설소", new Vector3(148.5f, 0f, 153f), new Vector3(12f, 6f, 12f), plaster, roof, labels, captions);
+            layout.AddComponent<RuntimeSystemFont>().Configure(labels.ToArray(), captions.ToArray());
+        }
+
+        static void Decoration(Transform parent, string name, Vector3 position, Vector3 scale, Material material)
+        {
+            GameObject box = CombatPrototypeSetup.Box(name, Vector3.zero, scale, material);
+            box.transform.SetParent(parent, false);
+            box.transform.localPosition = position;
+            UnityEngine.Object.DestroyImmediate(box.GetComponent<Collider>());
+        }
+
+        static void Facility(Transform parent, string name, string caption, Vector3 position, Vector3 size,
+            Material wallMaterial, Material roofMaterial, List<TMP_Text> labels, List<string> captions)
+        {
+            var root = new GameObject(name);
+            root.transform.SetParent(parent, false);
+            root.transform.localPosition = position;
+            // 충돌은 루트, 임시 외형은 Visual 자식. 상호작용·시설 기능은 후속 연결이다.
+            var body = root.AddComponent<BoxCollider>();
+            body.center = Vector3.up * (size.y * 0.5f); body.size = size;
+            var visual = new GameObject("Visual").transform;
+            visual.SetParent(root.transform, false);
+            Decoration(visual, "Walls", Vector3.up * (size.y * 0.5f), size, wallMaterial);
+            Decoration(visual, "Roof", Vector3.up * (size.y + 0.6f), new Vector3(size.x + 1.5f, 1.2f, size.z + 1.5f), roofMaterial);
+            for (int i = 0; i < 2; i++)
+            {
+                var label = new GameObject(i == 0 ? "FrontSign" : "RoofSign").AddComponent<TextMeshPro>();
+                label.transform.SetParent(visual, false);
+                label.transform.localPosition = i == 0 ? new Vector3(0f, size.y * 0.65f, -size.z * 0.5f - 0.05f)
+                    : new Vector3(0f, size.y + 1.25f, 0f);
+                label.transform.localRotation = i == 0 ? Quaternion.identity : Quaternion.Euler(90f, 0f, 0f);
+                label.rectTransform.sizeDelta = new Vector2(size.x + 2f, 3f);
+                label.fontSize = 16f; label.alignment = TextAlignmentOptions.Center; label.text = name;
+                labels.Add(label); captions.Add(caption);
+            }
+        }
+
+        static void AddNavigationHelp(ConstructionHud hud)
+        {
+            var data = new SerializedObject(hud);
+            var captions = data.FindProperty("captions");
+            for (int i = 0; i < captions.arraySize; i++)
+            {
+                var caption = captions.GetArrayElementAtIndex(i);
+                if (!caption.stringValue.StartsWith("준비 단계")) continue;
+                caption.stringValue = "준비 단계 · 중클릭 이동 / 휠 확대·축소 / Home 초기화";
+            }
+            data.ApplyModifiedPropertiesWithoutUndo();
         }
 
         static void Place(Transform target, Vector3 position, float yaw)

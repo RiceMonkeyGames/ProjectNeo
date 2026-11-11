@@ -52,9 +52,11 @@ namespace ProjectNeo.Siege
         }
 
         /// <summary>프리팹으로 만든 적을 씬의 성과 사다리에 연결한다. 활성화하기 전에 부른다.</summary>
-        public void Bind(ConstructionWorld owner, SiegeLadder[] ladderSpots, Vector2Int outwardDirection)
+        public void Bind(ConstructionWorld owner, SiegeLadder[] ladderSpots, Vector2Int outwardDirection,
+            SiegeSettings battleSettings = null)
         {
             world = owner; ladders = ladderSpots; outward = outwardDirection;
+            if (battleSettings != null) settings = battleSettings;
         }
 
         void Awake()
@@ -289,7 +291,23 @@ namespace ProjectNeo.Siege
         {
             foreach (PlacedStructure structure in world.Structures)
                 if (structure != null && structure.Placement.Definition.Kind == BuildPieceKind.Gate) return structure;
-            return null;
+            // 성문 위에서 내려온 조각도 길을 막는 동안 성문 파괴병의 공격 대상이다.
+            PlacedStructure nearest = null;
+            float distance = float.PositiveInfinity;
+            foreach (PlacedStructure structure in world.Structures)
+            {
+                BuildPlacement placement = structure.Placement;
+                if (placement.Level != 0) continue;
+                bool onGateSite = false;
+                for (int x = 0; x < placement.Size.x; x++)
+                    for (int z = 0; z < placement.Size.y; z++)
+                        onGateSite |= world.Layout.IsGateCell(placement.Cell + new Vector2Int(x, z));
+                if (!onGateSite) continue;
+                float candidate = (structure.transform.position - transform.position).sqrMagnitude;
+                if (candidate >= distance) continue;
+                distance = candidate; nearest = structure;
+            }
+            return nearest;
         }
 
         // 성문 바깥쪽 앞. 한 점에 몰리지 않도록 유닛마다 옆으로 조금씩 벌린다.

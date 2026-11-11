@@ -4,6 +4,7 @@
     "references": [
         "ProjectNeo.Runtime",
         "UnityEngine.TestRunner",
+        "Unity.InputSystem",
         "Unity.AI.Navigation"
     ],
     "includePlatforms": [],

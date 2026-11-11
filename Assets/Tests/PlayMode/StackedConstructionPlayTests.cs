@@ -56,7 +56,7 @@ namespace ProjectNeo.Tests
         [UnityTest]
         public IEnumerator 적층_성벽은_맨_위부터_철거하고_점유와_길찾기를_갱신한다()
         {
-            var cell = new Vector2Int(5, 17);
+            var cell = new Vector2Int(24, 59);
             PlacedStructure lower = Lower(cell);
             Assert.IsTrue(world.TryPlace(wall, cell, 0, out PlacedStructure upper));
             yield return WaitForNavigation();
@@ -146,9 +146,9 @@ namespace ProjectNeo.Tests
         [UnityTest]
         public IEnumerator 이층_성벽과_이단_계단을_놓으면_안뜰에서_이층_위까지_길이_이어진다()
         {
-            // 북쪽 성벽의 서쪽 모서리 (5,17)에 2층을 올리고, (6,17)~(7,17) 위에 서쪽으로 오르는 계단을 놓는다.
-            // 땅의 계단은 (8,17) 윗면으로 올라오므로 그 옆에서 2단 계단이 시작된다.
-            var corner = new Vector2Int(5, 17);
+            // 북쪽 성벽의 서쪽 모서리 (24,59)에 2층을 올리고, (25,59)~(26,59) 위에 서쪽으로 오르는 계단을 놓는다.
+            // 땅의 계단은 (27,59) 윗면으로 올라오므로 그 옆에서 2단 계단이 시작된다.
+            var corner = new Vector2Int(24, 59);
             var controller = Object.FindAnyObjectByType<PlacementController>(FindObjectsInactive.Include);
             controller.Select(wall);
             controller.UpdatePreview(world.WorldCenter(wall, corner, 0));
@@ -159,7 +159,7 @@ namespace ProjectNeo.Tests
             PlacedStructure upperWall = world.Structures.Single(piece => piece.Placement.Cell == corner && piece.Placement.Level == 1);
             Assert.AreEqual(Lower(corner).transform.position.y + wall.Height, upperWall.transform.position.y, 0.001f);
 
-            Assert.IsTrue(world.TryPlace(stairs, new Vector2Int(6, 17), 3, out PlacedStructure upperStairs));
+            Assert.IsTrue(world.TryPlace(stairs, new Vector2Int(25, 59), 3, out PlacedStructure upperStairs));
             Assert.AreEqual(1, upperStairs.Placement.Level);
             Assert.IsTrue(world.Layout.HasLanding(upperStairs.Placement));
             yield return WaitForNavigation();
@@ -181,7 +181,7 @@ namespace ProjectNeo.Tests
         [UnityTest]
         public IEnumerator 아래_성벽이_부서지면_위_성벽과_그_위의_무기가_한_층_내려앉는다()
         {
-            var cell = new Vector2Int(14, 17);
+            var cell = new Vector2Int(45, 59);
             PlacedStructure lower = Lower(cell);
             Assert.IsTrue(world.TryPlace(wall, cell, 0, out PlacedStructure upper));
             SiegeWeaponDefinition cannon = Object.FindAnyObjectByType<ConstructionHud>(FindObjectsInactive.Include).Weapons[0];
