@@ -63,10 +63,10 @@ Unity 6000.6.8f1, URP, 3D 1인칭 프로젝트다. 현재는 임시 그래픽이
 | Walls | `FallSettings`, `FallDamageRules`, `UnitFallController` | 높이별 피해 계산과 파괴 시 낙하·착지. NavMeshAgent와 CharacterController 몸통을 지원하고 착지 후 이동을 복구한다. |
 | Walls / UI | `ConstructionSandbox`, `ConstructionHud` | 시험 씬 전용 이동·발밑 조각 파괴, uGUI·TMP 건설 선택과 상태 표시. 정식 부대 지휘나 준비 화면은 아니다. |
 | Walls | `WallCommandSandbox` | 통합 시험용 Tab 시점 전환. 건설/1인칭 카메라·입력·HUD를 전환하며 지형과 지시는 유지한다. World가 NavMesh를 만든 뒤 유닛을 활성화한다. 정식 준비·전투 단계가 아니다. |
-| Siege | `BuildBudget`, `SiegeOutcomeRules`, `SiegeLadderState` | 일반 C# 규칙. 임시 건설 코스트의 차감·환불, 승패 판정(동시 성립은 패배 우선, Q-09 확정 전 임시), 사다리 상태(놓임→세우는 중→세워짐, 한 명씩 오르기, 밀어서 쓰러뜨리기). |
+| Siege | `BuildBudget`, `SiegeOutcomeRules`, `SiegeLadderState` | 일반 C# 규칙. 임시 건설 코스트의 차감·환불, 승패 판정(동시 성립은 패배 우선, Q-09 확정 전 임시), 사다리 상태(놓임→세우는 중→세워짐, 한 명씩 오르기, 밀어서 쓰러뜨리기), 남은 적의 후퇴 판정(`ShouldRetreat`, Q-27). |
 | Siege | `SiegeSettings` | 코스트·사다리 시간과 거리·적 판단 주기·키(F 밀기, Tab 시점, R 다시 시작) 에셋. |
 | Siege | `SiegeLadder`, `PlaceholderLadderView` | 맵에 고정된 사다리 자리. 그 칸에 성벽이 있을 때만 쓰인다. 밑의 적이 세우고, 성벽 위 아군(싸울 적이 없는 유닛, 키를 누른 플레이어)이 민다. 올라온 적이 근처에 있으면 밀지 못한다. 외형은 Visual 자식의 임시 막대다. |
-| Siege | `SiegeAttackerBrain` | 적 하나의 공성 판단. 걸어서 닿는 아군이 있으면 기존 `UnitCombatAI`의 Engage에 맡기고, 없으면 종류(`SiegeAttackerRole`: 사다리병·성문 파괴병·궁수)에 따라 사다리·성문·사격을 고른다. 이동·공격은 `UnitDirective`로 실행한다. 쓸 사다리가 없는 사다리병은 성문으로 간다. |
+| Siege | `SiegeAttackerBrain` | 적 하나의 공성 판단. 걸어서 닿는 아군이 있으면 기존 `UnitCombatAI`의 Engage에 맡기고, 없으면 종류(`SiegeAttackerRole`: 사다리병·성문 파괴병·궁수)에 따라 사다리·성문·사격을 고른다. 이동·공격은 `UnitDirective`로 실행한다. 쓸 사다리가 없는 사다리병은 성문으로 간다. `Retreat()`를 받으면 판 바깥 끝으로 이동해 사라지고 `Fled`가 된다(`SiegeDirector`가 후퇴를 지시하고, 떠난 적은 남은 적 수에서 뺀다). |
 | Siege | `SiegePrepController`, `SiegeDirector` | 준비 단계 도구(코스트 확인, 이번에 지은 조각 철거·환불, 부대를 클릭한 자리에 바로 배치)와 한 판의 진행(시작할 때 `SiegeSettings` 편성대로 아군·적 생성, 준비→전투→결과, 시점 전환, 적 활성화, 승패). 정식 런 진행과는 연결하지 않았다. |
 | UI | `SiegeHud`, `SiegeStatusHud` | 시험용 준비 화면 패널과 단계·남은 인원·결과 표시. |
 | Meta | `PerkDefinition`, `PerkLoadout` | 퍽 정의와 스탯·특수 효과 목록, 포인트 사용, 적용 및 초기화 |
@@ -256,8 +256,8 @@ Q/`RotateLeft()`와 E/`RotateRight()`는 화면 속 판의 왼쪽·오른쪽 회
 작업 ID / 제목: 수성전 프로토타입 (B-6·B-9 일부를 앞당겨 시험, Q-25·Q-26)
 브랜치 / 기준: feature/siege-prototype / main·develop의 8505401
 상태: 검증 중 (자동 테스트 통과, 사용자 직접 플레이 진행 중)
-필요한 결정: Q-27(적이 조금 남았을 때 아군 처리), Q-09(승패 동시 성립), Q-21(수성 무기 동작)
-완료 기준 / 실제 검증 결과: EditMode 110개, PlayMode 50개 통과. Windows 빌드는 다시 만들지 않음
+필요한 결정: Q-09(승패 동시 성립), Q-21(수성 무기 동작). Q-27은 2026-11-12 결정·반영(공성 수단을 잃은 적의 후퇴)
+완료 기준 / 실제 검증 결과: EditMode 111개, PlayMode 52개 통과. Windows 빌드는 다시 만들지 않음
 ```
 
 **새로 추가한 것(이 브랜치만 소유):** `Scripts/Runtime/Siege/`, `UI/SiegeHud.cs`·`SiegeStatusHud.cs`, `Combat/PlaceholderDeathHider.cs`, `Editor/SiegePrototypeSetup.cs`, `Scenes/SiegePrototype.unity`, `Data/SiegePrototype/`, `Prefabs/SiegePrototype/`, 테스트 `SiegeRulesTests`·`SiegePrototypePlayTests`, 임시 재질 `SiegeLadder`·`SiegeRam`.
@@ -555,5 +555,15 @@ unity command package add --caller plugin --skill unity-package-management --nam
 - 검증: 컴파일 오류 없음, PlayMode 전체 50개 통과. 부대 7개·적 6무리(28명) 편성으로 에디터 Play 화면을 캡처해 버튼 7개와 패널이 잘리지 않는 것, 아군·적이 판 안에 서는 것을 확인했다. 새 콘솔 오류 없음. 버튼 클릭은 사용자 확인 대상이다.
 - 이어서 사용자 요청으로 부대 선택 키를 F1~F10으로 늘리고(이 씬 전용 `Command.asset`), 부대 이름에 종류를 붙였으며, 1인칭 부대 목록 칸을 10부대까지 들어가게 키웠다. 기존 씬에는 메뉴 `ProjectNeo/Setup/Upgrade Siege Prototype`(`SiegePrototypeSetup.Upgrade`)으로 적용했다. 여러 번 실행해도 같다.
 - 검증: EditMode 110개, PlayMode 50개 통과. Play 화면 캡처로 버튼과 목록의 `N번 부대 · 근접/궁수` 표시를 확인했고, 6번 부대 선택이 동작하며 키가 10개 등록된 것을 코드로 확인했다. 실제 F5~F10 키 입력은 사용자 확인 대상이다.
+
+### 2026-11-12: 공성 수단을 잃은 적의 후퇴 (Q-27)
+
+- 사용자 결정: 추천안 채택. 사다리병·성문 파괴병이 모두 없고, 남은 적 중 걸어서 아군에게 닿는 적(뚫린 곳·무너진 성문으로 들어오는 적)도 없으면 남은 적이 후퇴한다.
+- `SiegeOutcomeRules.ShouldRetreat`(일반 C#), `SiegeDirector`의 후퇴 지시와 `EnemiesFled`, `SiegeAttackerBrain.Retreat()`·`Fled`를 추가했다. 후퇴하는 적은 이동 지시로 판 바깥 끝까지 가고 싸우지 않으며, 도착하거나 길이 없거나 `SiegeSettings.retreatTimeout`(20초)이 지나면 사라진다. 모든 적이 첫 판단을 마친 뒤에만 판정하고, 지형 갱신 중에는 판정하지 않는다. 한 번 내린 후퇴는 되돌리지 않는다.
+- 편성에 사다리병·성문 파괴병이 하나도 없고 성이 다 막혀 있으면 전투 시작 직후 남은 적이 바로 물러나 승리한다. 규칙대로의 동작이다.
+- 상단 표시: 후퇴 중이면 "공성 수단을 잃은 적이 물러납니다", 떠난 적이 있으면 결과가 "승리! 남은 적이 물러났습니다."
+- 검증: 컴파일 오류 없음. EditMode 111개, PlayMode 전체 52개 통과(후퇴 규칙 1개, 막힌 성에서 후퇴·승리와 뚫린 성에서 계속 싸움 2개 추가). 에디터 Play에서 성벽을 막고 공성병 16명을 없애자 궁수 12명이 물러나 승리하는 것과 결과 문구를 화면으로 확인했다. 새 런타임 오류 없음.
+- 직접 검증: `SiegePrototype` → Play → `성벽`으로 뚫린 4·11·12번 칸을 막음 → `전투 시작` → 사다리병과 성문 파괴병을 모두 처치(성벽 위에 부대를 배치해 두면 쉽다) → 남은 궁수가 성 밖으로 물러나 사라지고 "승리! 남은 적이 물러났습니다." 표시. 뚫린 칸을 남겨 두면 궁수가 그 길로 들어와 계속 싸운다.
+- 자동 검증 재실행: Test Runner의 EditMode `SiegeRulesTests.Retreat_OnlyWhenNoBreachersAndNoWayIn`, PlayMode `SiegePrototypePlayTests.ClosedWalls_BreachersGone_RemainingArchersRetreat_AndVictory`·`OpenGap_BreachersGone_ArchersKeepFighting`.
 
 </details>

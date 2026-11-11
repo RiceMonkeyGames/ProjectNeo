@@ -208,6 +208,46 @@ namespace ProjectNeo.Tests
             Assert.IsTrue(fell, "오르던 적이 떨어져 피해를 받지 않았다.");
         }
 
+        IEnumerator KillBreachersAfterArchersDecide()
+        {
+            SiegeAttackerBrain[] archers = director.Enemies.Where(enemy => enemy.Role == SiegeAttackerRole.Archer).ToArray();
+            Assert.IsNotEmpty(archers, "설정 에셋에 궁수가 있어야 하는 시험이다.");
+            int frames = 0;
+            while (!archers.All(archer => archer.HasDecided) && frames++ < 300) yield return null;
+            Assert.IsTrue(archers.All(archer => archer.HasDecided), "궁수가 할 일을 정하지 않았다.");
+            foreach (SiegeAttackerBrain enemy in director.Enemies)
+                if (enemy.Role != SiegeAttackerRole.Archer) Kill(enemy.Actor);
+        }
+
+        [UnityTest]
+        public IEnumerator ClosedWalls_BreachersGone_RemainingArchersRetreat_AndVictory()
+        {
+            yield return CloseWalls();
+            director.StartBattle();
+            yield return KillBreachersAfterArchersDecide();
+            int frames = 0;
+            while (director.Phase == SiegePhase.Battle && frames++ < 1500) yield return null;
+            Assert.IsTrue(director.RetreatOrdered, "공성 수단을 잃은 적에게 후퇴를 지시하지 않았다.");
+            Assert.AreEqual(SiegeOutcome.Victory, director.Outcome);
+            Assert.Greater(director.EnemiesFled, 0, "물러나 떠난 적이 없다.");
+            Assert.AreEqual(0, director.EnemiesAlive);
+            foreach (SiegeAttackerBrain enemy in director.Enemies.Where(enemy => enemy.Fled))
+                Assert.IsFalse(enemy.gameObject.activeSelf, "떠난 적은 전장에서 사라져야 한다.");
+        }
+
+        [UnityTest]
+        public IEnumerator OpenGap_BreachersGone_ArchersKeepFighting()
+        {
+            director.StartBattle();
+            yield return KillBreachersAfterArchersDecide();
+            int frames = 0;
+            while (!director.Enemies.Any(enemy => enemy.Role == SiegeAttackerRole.Archer && enemy.IsAssaulting)
+                && frames++ < 300) yield return null;
+            for (int i = 0; i < 60; i++) yield return null;
+            Assert.IsFalse(director.RetreatOrdered, "들어올 길이 있으면 물러나지 않는다.");
+            Assert.AreEqual(0, director.EnemiesFled);
+        }
+
         [UnityTest]
         public IEnumerator Battle_AllEnemiesDead_IsVictory()
         {

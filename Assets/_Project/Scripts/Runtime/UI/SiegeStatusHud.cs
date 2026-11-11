@@ -36,7 +36,8 @@ namespace ProjectNeo.UI
                     break;
                 case SiegePhase.Battle:
                     string text = "전투 중 · 남은 적 " + director.EnemiesAlive + " · 남은 부대원 " + director.AlliesAlive
-                        + (director.GateDestroyed ? " · 성문 파괴됨" : "");
+                        + (director.GateDestroyed ? " · 성문 파괴됨" : "")
+                        + (director.RetreatOrdered ? "\n공성 수단을 잃은 적이 물러납니다" : "");
                     foreach (SiegeLadder ladder in ladders)
                     {
                         if (ladder == null || !ladder.PlayerCanPush) continue;
@@ -46,7 +47,8 @@ namespace ProjectNeo.UI
                     label.text = text;
                     break;
                 default:
-                    label.text = (director.Outcome == SiegeOutcome.Victory ? "승리! 적을 모두 물리쳤습니다." : "패배")
+                    label.text = (director.Outcome != SiegeOutcome.Victory ? "패배"
+                            : director.EnemiesFled > 0 ? "승리! 남은 적이 물러났습니다." : "승리! 적을 모두 물리쳤습니다.")
                         + "\nR 다시 시작";
                     break;
             }
