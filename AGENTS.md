@@ -1,26 +1,25 @@
 # ProjectNeo
 
-수성전 로그라이크. Unity 6000.6.8f1, URP, 3D 3인칭. 로우 폴리 아트이며 Synty 에셋을 쓸 예정이고 지금은 임시 그래픽으로 만든다.
+3D 3인칭 수성전 로그라이크. 다음 웨이브를 보고 영웅·병력·장비·성벽을 준비하고, 플레이어 직접 전투와 부대 지휘로 성을 지킨다. Unity 6000.6.8f1, URP를 사용한다. 로우 폴리 아트이며 Synty 에셋을 쓸 예정이고 지금은 임시 그래픽으로 만든다.
 
-이 파일은 이 저장소에서 일하는 모든 에이전트가 먼저 읽는 안내다. `CLAUDE.md`는 이 파일을 불러오기만 한다. 전체 문서의 입구는 [README.md](README.md)다.
+이 파일은 이 저장소에서 일하는 모든 에이전트가 먼저 읽는 안내다. `CLAUDE.md`는 이 파일을 불러오기만 한다. 이 파일이 문서의 입구다. Docs 문서는 컨텍스트·구현 로드맵·게임 기획 세 개로 유지한다.
 
 ## 먼저 읽을 문서
 
 기록은 저장소 Markdown이 기준이다. 구글 독스는 사람이 읽는 용도라서 읽으러 가지 않는다.
 
-1. [Docs/ImplementationPlan.md](Docs/ImplementationPlan.md): 1장 GOAL, 2장 결정 대기, 3장 현재 상태, 5장 가까운 작업, 6장 세 명의 분업. 현재 단계와 선행 조건부터 확인한다.
-2. [Docs/GameDesign.md](Docs/GameDesign.md): 기획 원문과 미정 사항. 구현할 부분을 읽는다.
-3. [Docs/CodeMap.md](Docs/CodeMap.md): 실제 코드·씬·에셋 위치와 현재 구현 범위.
-4. [Docs/DevelopmentGuide.md](Docs/DevelopmentGuide.md): 협업·통합, 코드 원칙, 아트 분리, Unity CLI 명령. 에디터를 조작하기 전에 4장을 읽는다.
+1. [Docs/Context.md](Docs/Context.md): 현재 실행 방법과 코드·씬·에셋 지도. 작업에 맞춰 개발 원칙·Unity CLI 방법을 읽고, 과거 검증은 7장이 필요할 때만 펼친다.
+2. [Docs/ImplementationPlan.md](Docs/ImplementationPlan.md): 구현 로드맵. 1장 GOAL, 2장 결정 대기, 3장 현재 상태, 5장 가까운 작업, 6장 향후 분업을 확인한다.
+3. [Docs/GameDesign.md](Docs/GameDesign.md): 게임 규칙·의도·미정 기획. 구현할 부분을 읽는다.
 
-과거 완료 결과와 성능 수치가 필요할 때만 [Docs/DevelopmentHistory.md](Docs/DevelopmentHistory.md)를 읽는다. 과거 테스트 수를 최신 기준과 혼동하지 않는다.
+문서가 엇갈리면 게임 규칙은 GameDesign, 작업 순서·상태는 ImplementationPlan, 실제 코드 설명과 개발 방법은 Context를 기준으로 잘못된 내용을 바로잡는다. CLAUDE에는 별도 규칙이나 계획을 중복해서 적지 않는다. 출시 플랫폼·시기·콘텐츠 규모는 미정이며, 먼 계획은 플레이 결과에 따라 구체화한다.
 
 ## 일하는 규칙
 
 - 사용자에게는 한국어로, 쉬운 말로 답한다.
 - 기획·동작 방식·공통 설계에서 해석이 갈리거나 의문이 생기면 임의로 결정하지 않는다. 선택지와 추천 이유를 정리해 사용자에게 먼저 의견을 묻고, 답을 받기 전에는 그 결정에 의존하는 구현을 진행하지 않는다. 영향 없는 독립 작업은 계속할 수 있다. 미정 사항과 받은 결정은 구현 계획 2장 및 해당 기획에 반영한다.
-- 사용자가 새 결정을 말하면 대화에만 남기지 않는다. 기획은 GameDesign, 구현 결정·상태·의존성은 ImplementationPlan에 바로 반영한다. 코드가 늘면 CodeMap도 갱신한다.
-- 상세 완료·검증 결과는 DevelopmentHistory에 남긴다. 현재 계획에 과거 작업 기록을 계속 쌓아두지 않는다.
+- 사용자가 새 결정을 말하면 대화에만 남기지 않는다. 기획은 GameDesign, 구현 결정·상태·의존성은 ImplementationPlan에 바로 반영한다. 코드가 늘면 Context의 코드 지도도 갱신한다.
+- 상세 완료·검증 결과는 Context 7장에 남긴다. 현재 계획에 과거 작업 기록을 계속 쌓아두지 않는다.
 - 작업이 끝나면 사용자가 직접 검증할 방법을 반드시 안내한다. 씬·파일의 정확한 경로, 조작 순서, 기대 결과와 초기화 방법을 적고 가능하면 해당 씬을 열어둔다. 규칙 작업은 테스트 이름과 Test Runner 또는 명령 실행법을 안내한다. 자동 테스트 통과만 보고하고 끝내지 않는다.
 - 커밋은 사용자가 직접 한다. 요청받지 않으면 커밋하지 않는다.
 - 현재는 사용자 혼자 개발하며 협업은 아직 시작하지 않았다. 사용자가 시작을 알릴 때까지 단독 작업 순서로 진행하고 세 명의 분업·담당 배정을 착수 조건으로 요구하지 않는다. 협업 시작 후에는 실제 담당·소유 파일·공통 계약·통합 담당을 정한다. 남의 작업이나 미완성 연결을 임의로 덮어쓰지 않는다.
@@ -33,7 +32,7 @@
 - 수치는 ScriptableObject에 둔다. 정의에는 테스트용 `Create(...)`를 제공한다.
 - ScriptableObject·MonoBehaviour는 파일 하나에 클래스 하나, 파일 이름은 클래스 이름과 같게 한다.
 - 저장되는 enum은 숫자를 명시하고 새 값은 끝에 추가한다. 랜덤은 `ProjectNeo.Core.IRandomSource`를 통한다.
-- 루트의 게임 규칙·충돌·이동과 `Visual` 자식의 외형을 분리한다. 자세한 원칙은 DevelopmentGuide 3장을 따른다.
+- 루트의 게임 규칙·충돌·이동과 `Visual` 자식의 외형을 분리한다. 자세한 원칙은 Context 5장을 따른다.
 - `.unity`, `.prefab`, `.asset`, `.meta`를 직접 고치지 않는다. 씬·에셋·폴더 생성·이동은 에디터 API로 한다. `.cs`와 `.asmdef`는 직접 작성할 수 있다.
 - Unity는 먼저 `unity status`로 연결 상태를 확인한다. 연결 실패만으로 에디터가 꺼졌다고 단정하지 말고 샌드박스 제한도 확인한다. 실제로 열려 있지 않으면 사용자에게 열어 달라고 한다.
-- 컴파일·테스트·빌드·패키지 명령과 알려진 주의사항은 DevelopmentGuide 4장을 따른다. 이 프로젝트에서 실패한 `unity recompile`, `unity command script recompile`은 쓰지 않는다.
+- 컴파일·테스트·빌드·패키지 명령과 알려진 주의사항은 Context 6장을 따른다. 이 프로젝트에서 실패한 `unity recompile`, `unity command script recompile`은 쓰지 않는다.
