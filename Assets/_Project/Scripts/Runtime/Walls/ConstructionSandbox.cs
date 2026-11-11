@@ -1,4 +1,5 @@
 using ProjectNeo.Combat;
+using ProjectNeo.Squads;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -9,9 +10,11 @@ namespace ProjectNeo.Walls
     {
         [SerializeField] ConstructionWorld world;
         [SerializeField] CharacterActor unit;
+        [SerializeField] SquadCommandCenter commandCenter;
         public CharacterActor Unit => unit;
         public string Message { get; private set; } = "성벽과 계단을 배치해 보세요.";
         public void Configure(ConstructionWorld owner, CharacterActor testUnit) { world = owner; unit = testUnit; }
+        public void ConfigureCommands(SquadCommandCenter center) => commandCenter = center;
         void Start() => unit.gameObject.SetActive(true);
 
         public void WalkToWall()
@@ -27,8 +30,16 @@ namespace ProjectNeo.Walls
                 if (!NavMesh.SamplePosition(top, out var hit, 0.5f, NavMesh.AllAreas)
                     || Mathf.Abs(hit.position.y - top.y) > 0.5f) continue;
                 if (!agent.CalculatePath(hit.position, path) || path.status != NavMeshPathStatus.PathComplete) continue;
-                agent.SetPath(path);
-                agent.isStopped = false;
+                if (commandCenter != null)
+                {
+                    commandCenter.Commander.Select(0);
+                    commandCenter.Commander.Issue(new SquadOrder(SquadOrderKind.Move, hit.position));
+                }
+                else
+                {
+                    agent.SetPath(path);
+                    agent.isStopped = false;
+                }
                 Message = "유닛이 계단을 통해 성벽 위로 이동합니다.";
                 return;
             }

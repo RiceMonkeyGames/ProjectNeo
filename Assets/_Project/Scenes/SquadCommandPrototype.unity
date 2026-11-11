@@ -2396,7 +2396,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Characters.PlayerInputController
   inputActions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-  view: {fileID: 1798665557}
+  view: {fileID: 1798665560}
   settings: {fileID: 11400000, guid: e69439fc368dd3a43b4de6cac4dd916e, type: 2}
 --- !u!1 &1636192298
 GameObject:
@@ -2789,9 +2789,9 @@ GameObject:
   - component: {fileID: 1798665559}
   - component: {fileID: 1798665556}
   - component: {fileID: 1798665558}
-  - component: {fileID: 1798665557}
+  - component: {fileID: 1798665560}
   m_Layer: 0
-  m_Name: ThirdPersonCamera
+  m_Name: FirstPersonCamera
   m_TagString: MainCamera
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2848,20 +2848,6 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!114 &1798665557
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1798665555}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8703371d6d115714584e91966b93ace9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Characters.ThirdPersonCamera
-  target: {fileID: 1609824631}
-  settings: {fileID: 11400000, guid: e69439fc368dd3a43b4de6cac4dd916e, type: 2}
 --- !u!81 &1798665558
 AudioListener:
   m_ObjectHideFlags: 0
@@ -2878,13 +2864,27 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1798665555}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: 0.15643448, y: 0, z: 0, w: 0.98768836}
+  m_LocalPosition: {x: 0, y: 1.6, z: -22}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1798665560
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1798665555}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d09978998a745e9448e70d5781210414, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Characters.FirstPersonCamera
+  target: {fileID: 1609824631}
+  settings: {fileID: 11400000, guid: e69439fc368dd3a43b4de6cac4dd916e, type: 2}
 --- !u!1 &1889098159
 GameObject:
   m_ObjectHideFlags: 0

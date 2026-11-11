@@ -14,7 +14,7 @@
 
 ## 1. 현재 실행과 확인 방법
 
-Unity 6000.6.8f1, URP, 3D 3인칭 프로젝트다. 현재는 임시 그래픽이며 Synty 에셋으로 교체할 예정이다.
+Unity 6000.6.8f1, URP, 3D 1인칭 프로젝트다. 현재는 임시 그래픽이며 Synty 에셋으로 교체할 예정이다.
 
 | 씬 경로 | 확인할 것과 조작 |
 |---|---|
@@ -22,8 +22,9 @@ Unity 6000.6.8f1, URP, 3D 3인칭 프로젝트다. 현재는 임시 그래픽이
 | `Assets/_Project/Scenes/CombatPrototype.unity` | WASD 이동, 마우스 시점, 좌클릭 근접 공격. 허수아비·체력·카메라 시험. Esc로 커서 해제 |
 | `Assets/_Project/Scenes/UnitBattlePrototype.unity` | 아군 10명과 적 10명의 근접·원거리 자동 전투 관전 |
 | `Assets/_Project/Scenes/SquadCommandPrototype.unity` | 플레이어 직접 조작 + 부대 3개 지휘. F1~F3 부대 선택, ` 전체 선택, 1 이동(화면 가운데가 가리키는 곳)·2 공격·3 중지. 왼쪽 위에 선택·지시·남은 인원 표시 |
+| `Assets/_Project/Scenes/WallCommandPrototype.unity` | 건설·성벽 위 부대 지휘 통합. Tab 건설↔1인칭 시점, F1~F3 선택·1 이동·2 공격·3 중지. 건설 화면의 `성벽 위로 이동`은 1번 부대를 이동시키고 `발밑 조각 파괴`는 그 부대 첫 유닛의 받침을 파괴 |
 
-에디터에서 씬을 열고 Play를 누른다. 종료 후 다시 Play하면 초기 상태로 돌아온다. 아직 준비 → 수성전 → 보상으로 이어지는 전체 게임 흐름은 없다. 세 씬은 기반 기능을 확인하는 프로토타입이다. 최신 테스트 통과 기준과 남은 연결은 [로드맵 3장](ImplementationPlan.md#3-현재-상태와-출발점)을 확인한다.
+에디터에서 씬을 열고 Play를 누른다. 종료 후 다시 Play하면 초기 상태로 돌아온다. 아직 준비 → 수성전 → 보상으로 이어지는 전체 게임 흐름은 없다. 각 씬은 기반 기능을 확인하는 프로토타입이다. 최신 테스트 통과 기준과 남은 연결은 [로드맵 3장](ImplementationPlan.md#3-현재-상태와-출발점)을 확인한다.
 
 ## 2. 코드·씬·에셋 지도
 
@@ -38,7 +39,8 @@ Unity 6000.6.8f1, URP, 3D 3인칭 프로젝트다. 현재는 임시 그래픽이
 | Economy | `Cost`, `Wallet`, `MaterialDefinition` | 골드와 여러 종류 재료의 비용 및 지갑 |
 | Economy | `ItemDefinition`, `Inventory`, `EconomyConfig`, `ItemShop` | 장비·소모품 정의, 아이템 개체와 보관함, 판매 비율, 매물 추첨과 거래 |
 | Characters | `HeroDefinition`, `SoldierDefinition`, `SkillDefinition`, `Character` | 영웅·잡졸·스킬 데이터. `Character`는 영웅 한 명의 스탯과 장비를 보유하며 플레이어도 같은 클래스를 쓴다. |
-| Characters | `PlayerControlSettings`, `PlayerInputController`, `ThirdPersonCamera` | 조작·카메라 설정 에셋, Input System 입력과 CharacterController 이동, 벽을 피하는 3인칭 카메라 |
+| Characters | `PlayerControlSettings`, `PlayerInputController` | 조작·카메라 설정 에셋, Input System 입력과 CharacterController 이동. 기본 시점은 FirstPersonCamera다. |
+| Characters | `PlayerViewCamera`, `FirstPersonCamera` | 입력이 사용하는 시점 방향 공통 접점과 기본 1인칭 카메라. 감도·높이·상하 각도는 PlayerControlSettings를 쓰고, 활성 중 플레이어 Visual은 그림자만 보이며 종료 때 복구한다. ThirdPersonCamera 코드는 남아 있지만 현재 플레이 씬에서는 사용하지 않는다. |
 | Combat | `Health` | 일반 C# 체력 규칙. 피해·사망, 최대 체력 변경 시 제한. 스탯 이벤트 구독은 `Dispose()`로 해제한다. |
 | Combat | `CombatProfile`, `CharacterActor`, `CombatTeam` | 몸통 크기·공격 종류·선딜레이·최소 피해·투사체 설정 에셋. 영웅과 잡졸을 공통 스탯 경로로 연결하고 팀, 대상 후보, 근접·원거리 공격, 재공격 대기, 피격·사망을 처리한다. `Character`는 영웅만 가지며 공통 접근은 `Stats`를 쓴다. |
 | Combat | `DamageRules`, `CombatPhysics` | 일반 C# 피해 공식과 사거리·사선 검사. 동일 씬의 적만 공격하고 아군 충돌체는 공격을 막지 않는다. |
@@ -59,6 +61,7 @@ Unity 6000.6.8f1, URP, 3D 3인칭 프로젝트다. 현재는 임시 그래픽이
 | Walls | `BuildCameraSettings`, `ConstructionCameraController` | 직교 카메라의 각도·크기·초기 방향·회전 단위·전환 시간 에셋. Q/E로 판 중심을 90도씩 부드럽게 돌며 월드·격자·배치 좌표는 유지한다. |
 | Walls | `FallSettings`, `FallDamageRules`, `UnitFallController` | 높이별 피해 계산과 파괴 시 낙하·착지. NavMeshAgent와 CharacterController 몸통을 지원하고 착지 후 이동을 복구한다. |
 | Walls / UI | `ConstructionSandbox`, `ConstructionHud` | 시험 씬 전용 이동·발밑 조각 파괴, uGUI·TMP 건설 선택과 상태 표시. 정식 부대 지휘나 준비 화면은 아니다. |
+| Walls | `WallCommandSandbox` | 통합 시험용 Tab 시점 전환. 건설/1인칭 카메라·입력·HUD를 전환하며 지형과 지시는 유지한다. World가 NavMesh를 만든 뒤 유닛을 활성화한다. 정식 준비·전투 단계가 아니다. |
 | Meta | `PerkDefinition`, `PerkLoadout` | 퍽 정의와 스탯·특수 효과 목록, 포인트 사용, 적용 및 초기화 |
 | Meta | `PerkSpecialEffect`, `MoraleBoostPerkEffect` | 전투 이벤트별 특수 효과와 사기 증가 예시. 실제 전투 이벤트 연결은 후속 작업이다. |
 | Meta | `MetaProgress`, `MetaConfig`, `CommanderProgression`, `UnlockGacha` | 유지 데이터, 지휘관 경험치·퍽 포인트, 환생 보너스 환산, 중복 없는 해금 추첨과 확정 등장 표시. 파일 저장은 아직 없다. |
@@ -98,7 +101,14 @@ Play → F1~F3으로 부대 선택(` 는 전체) → 화면 가운데 점을 땅
 
 **표시:** `SquadCommand/Visual`의 `PlaceholderSquadMarkers`가 선택한 부대의 살아 있는 유닛마다 발밑에 노란 원판을, 이동·공격 지시의 목적지에 청록색 원판을 띄운다. 목적지 표시는 선택을 바꿔도 남고, 이동이 끝나 중지가 되면 사라진다. 선택·지시 상태를 읽기만 하는 임시 외형이며 외곽선 등 최종 표현은 M5에서 이 부품을 바꾼다. 죽은 유닛의 임시 체력 막대는 숨긴다.
 
-대형은 지시한 순간 카메라가 보는 방향을 앞으로 삼는다. 대형 자리가 걸을 수 없는 곳이면 목적지 자체로 보낸다. 목적지까지 길이 없거나 끊기면 갈 수 있는 가장 가까운 곳에서 멈춘다(Q-23 결정). 성벽 위 지휘(B-5.4), 부대장 영웅, 정식 HUD는 아직 없다.
+대형은 지시한 순간 카메라가 보는 방향을 앞으로 삼는다. 대형 자리가 걸을 수 없는 곳이면 목적지 자체로 보낸다. 0.5m보다 높이가 다른 층으로 대형 자리를 붙이지 않는다. 목적지까지 길이 없거나 끊기면 부분 경로 끝에서 멈춘다(Q-23 결정). 목적지 자체가 사라졌으면 `UnitAISettings.DestinationRecoveryDistance`(현재 4m) 안의 남은 NavMesh로 다시 계산한다. 부대장 영웅과 정식 HUD는 아직 없다.
+
+### B-5.4 건설·성벽 지휘 통합 씬
+
+- `Assets/_Project/Scenes/WallCommandPrototype.unity`: 기존 건설 씬을 복사해 부대 3개×4명과 성문 위의 플레이어를 연결했다. 적은 없으며 부대 이동·붕괴 검증용이다. 기존 씬들과 빌드 첫 씬은 유지한다.
+- Tab으로 건설↔1인칭 지휘를 전환한다. 지휘는 F1~F3·`·1·2·3, 플레이어는 WASD·마우스·좌클릭·Esc를 쓴다. Q-24 확정으로 전투·평지 지휘 씬도 기본 1인칭을 사용한다.
+- `Assets/_Project/Data/WallCommandPrototype/Command.asset`: 시험용 2열·간격 1.1m와 입력. 조준은 처음 맞은 면의 위쪽 법선이 0.5 이상일 때만 허용하고 NavMesh와 높이 차이는 0.5m까지 허용한다. 옆면을 가리켜 위층·아래층이 선택되는 것을 막는다. 이 수치들은 에셋에서 조정한다.
+- 건설 화면의 `성벽 위로 이동`은 실제 1번 부대 지시를 내린다. Tab으로 1인칭에서 도착을 보거나, 다시 건설로 돌아와 `발밑 조각 파괴`로 첫 부대원의 낙하를 확인한다. 낙하 중 내린 이동 지시는 착지 후 이어진다. Play를 다시 시작하면 지형·인원·지시 모두 초기화된다.
 
 ### B-4 건설 기초 씬
 
@@ -133,6 +143,8 @@ Q/`RotateLeft()`와 E/`RotateRight()`는 화면 속 판의 왼쪽·오른쪽 회
 - `Assets/_Project/Scripts/Editor/ConstructionPrototypeSetup.cs`: 메뉴 `ProjectNeo/Setup/Create Construction Prototype` 또는 `Create()`로 건설 씬·에셋·프리팹·시험 UI를 Unity API로 생성한다. 기존 씬이나 저장하지 않은 변경이 있으면 중단한다. TMP 필수 리소스를 먼저 가져와야 한다.
 - `Assets/_Project/Scripts/Editor/SiegeWeaponSetup.cs`: 메뉴 `ProjectNeo/Setup/Add Siege Weapons To Construction Prototype`. 기존 건설 씬에 대포 에셋·프리팹과 시험 버튼을 추가한다. 이미 추가됐거나 저장하지 않은 변경이 있으면 중단한다. 새로 씬을 만들 때는 `ConstructionPrototypeSetup.Create()`가 함께 호출한다.
 - `Assets/_Project/Scripts/Editor/SquadCommandSetup.cs`: 메뉴 `ProjectNeo/Setup/Create Squad Command Prototype` 또는 `Create()`로 B-5 씬·수치 에셋·NavMesh·시험 HUD를 만든다. 기존 씬이나 저장하지 않은 변경이 있으면 중단한다. B-2·B-3의 프리팹이 먼저 있어야 한다. `Upgrade()`(메뉴 `Upgrade Squad Command Prototype`)는 기존 씬에 팀별 시야 에셋과 선택·목적지 표시를 더하며 여러 번 실행해도 결과가 같다. 프리팹 인스턴스의 값은 `SerializedObject`로 써야 씬에 저장된다.
+- `Assets/_Project/Scripts/Editor/WallCommandSetup.cs`: 메뉴 `ProjectNeo/Setup/Create Wall Command Prototype`으로 기존 건설 씬을 보존한 채 통합 씬을 만든다. 기존 통합 씬·저장하지 않은 변경은 덮어쓰지 않는다. B-2·B-3·건설·평지 지휘 에셋이 선행 조건이다.
+- `Assets/_Project/Scripts/Editor/FirstPersonSetup.cs`: 메뉴 `ProjectNeo/Setup/Upgrade Player Views To First Person`으로 기존 전투·평지 지휘 씬의 카메라와 플레이어 입력 참조를 1인칭으로 전환한다. 현재 두 씬 모두 적용된 상태이며 다시 실행해도 카메라를 중복 추가하지 않는다. 씬 생성 코드도 기본 1인칭을 만든다.
 - `Assets/_Project/Scripts/Editor/BuildScript.cs`: Windows 빌드. 기본 출력 `Builds/Windows/ProjectNeo.exe`.
 - `Assets/Tests/EditMode/`: 스탯, 지갑, 시설, 공사·부대, 퍽, 아이템·상점, 캐릭터, 메타 진행, 체력 규칙.
 - `Assets/Tests/PlayMode/CombatPrototypePlayTests.cs`: 실제 씬을 추가로 불러와 이동·충돌, 공격 선딜레이·사거리·가림·사망, 카메라 회전 제한과 벽 회피를 확인한다.
@@ -142,6 +154,8 @@ Q/`RotateLeft()`와 E/`RotateRight()`는 화면 속 판의 왼쪽·오른쪽 회
 - `Assets/Tests/PlayMode/ConstructionPlayTests.cs`: 카메라 4방향 회전과 픽킹 불변, 즉시 점프 없는 보간과 연속·역방향 입력, 미리보기·취소의 무영향, 회전 설치·중복 거부·비동기 갱신, 유닛 겹침·성문 영역, 실제 계단 이동·붕괴·낙하 피해와 에이전트 복귀, CharacterController 몸통의 낙하·복구, 연속 변경의 반영과 사라진 성벽 위 경로.
 - `Assets/Tests/EditMode/MountLayoutTests.cs`: 설치 지점 점유가 바닥 점유와 분리되는지, 실패 사유와 ID 보존, 서로 다른 무기 종류의 공통 규칙, 지지 조각 제거 시 그 위 무기만 해제.
 - `ConstructionPlayTests`의 수성 무기 2개: 미리보기 무영향, 성벽 위 설치 위치·크기, 중복·성벽 밖·계단 거부, 바닥 점유와 NavMesh 불변, 받침 성벽 파괴 시 동반 파괴와 무기 동작 부품(`RecordingSiegeWeaponModule`) 알림 1회, 철거.
+- `ConstructionPlayTests`의 지휘 5개: 윗면·옆면·지면 조준 구분, 실제 이동 지시로 계단 오르기와 길 단절, 처음부터 끊긴 목적지, 목적지 성벽 소실 후 재탐색, 낙하 후 지상 지시 복귀.
+- `Assets/Tests/PlayMode/WallCommandPlayTests.cs`: 입력·카메라·몸통 표시 전환과 지시 보존, 부대 전체의 성벽 도착과 다른 부대 유지, 계단 소실 후 정지, 받침 붕괴 후 부대 낙하·이동 복귀.
 - `Assets/Tests/EditMode/SquadCommanderTests.cs`: 기본 중지, 하나·전체 선택과 없는 부대 거부, 선택한 부대만 지시, 이동 도착 시 중지·공격 유지, 대형 자리의 개수·간격·방향.
 - `Assets/Tests/PlayMode/SquadCommandPlayTests.cs`: 저장된 지휘 씬에서 기본 중지, 선택한 부대만 이동 후 중지, 이동 중 적 무시, 중지 중 닿는 적만 공격하고 쫓지 않음, 공격 지시의 교전과 적이 없을 때 대기, 화면 가운데 이동 지시와 선택 없는 지시 거부. 실제 키 입력은 사용자 직접 확인 대상이다.
 - `Assets/Tests/PlayMode/SetupSmokePlayTests.cs`: 프레임 진행 확인.
@@ -440,5 +454,21 @@ unity command package add --caller plugin --skill unity-package-management --nam
 - 수정한 실수: 지휘 씬을 처음 만들 때 적의 시야 12m 설정이 씬에 저장되지 않아 적이 시작하자마자 돌진했다. `SerializedObject`로 다시 저장했고, 적이 처음에 제자리에 있는지 확인하는 검증을 PlayMode 테스트에 넣었다.
 - 검증: 컴파일 오류 없음. EditMode 101개, PlayMode 31개 전체 통과. 에디터 Play 화면 캡처로 유닛별 노란 원판·청록색 목적지 표시와 적이 멀리 서 있는 것을 확인했다. 실제 키 입력은 자동 검증하지 않았다. Windows 빌드는 다시 만들지 않았다.
 - 직접 검증: `SquadCommandPrototype` → Play → F1 → 1번 부대 유닛마다 노란 원판 확인 → 화면 가운데를 적 쪽 먼 땅에 맞추고 2 → 청록색 표시 지점으로 가다가 적이 15m 안에 들어오면 싸움 → F2 → 화면 가운데를 가까운 땅에 맞추고 1 → 2번 부대는 싸우지 않고 이동, 도착하면 표시가 사라지고 `중지`.
+
+### 2026-11-11: B-5.4 성벽 위 지휘와 1인칭 시험 시점
+
+- `WallCommandPrototype`에 기존 건설·부대 지휘를 연결했다. 시험용 3개 부대×4명이며 건설 화면의 이동·파괴 버튼은 1번 부대의 실제 지시와 첫 유닛을 사용한다. 기존 건설·전투·평지 지휘 씬을 덮어쓰지 않았다.
+- 사용자 요청에 따라 1인칭 카메라를 추가했다. Tab으로 건설↔1인칭 지휘를 전환하고 지형·지시를 유지한다. 기본 게임 시점까지 바꾸는 범위는 Q-24 확인 중이다. 정식 준비·전투 상태 전환은 후속이다.
+- 벽 옆면 조준·잘못된 층 선택을 막았다. 이동 경로를 명시적으로 계산해 부분 경로 끝에서 멈추고, 목적지 성벽이 사라졌으면 주변 NavMesh를 찾아 다시 계산한다. 낙하 중에는 AI가 기다리고 착지 후 같은 지시를 이어간다.
+- 검증: 컴파일 오류 없음. EditMode 101개, PlayMode 전체 40개 통과. 새 9개는 조준·경로 갱신·낙하 5개와 통합 씬 4개다. 에디터 Play에서 프레임 진행을 확인하고 건설·1인칭 화면 및 부대의 성벽 도착을 캡처했다. Input System에 Tab 입력을 넣어 실제 전환 액션이 동작함을 확인했다. 검증 중 새 런타임 오류 없음. Windows 빌드는 다시 만들지 않았다.
+- 직접 검증: `Assets/_Project/Scenes/WallCommandPrototype.unity` → Play → `성벽 위로 이동` → Tab → 1번 부대가 계단을 올라 성벽에 도착하면 중지 표시 → F2로 2번 부대 선택 → 마우스로 땅 또는 성벽 윗면을 가리켜 1 → Tab으로 건설 시점 복귀 → `발밑 조각 파괴` → 1번 부대원의 낙하·체력 감소 확인. Q/E 회전과 건설도 같은 씬에서 시험한다. 중지 후 다시 Play하면 전부 초기화된다.
+- 자동 검증 재실행: `Window > General > Test Runner` → PlayMode → `WallCommandPlayTests` 또는 `ConstructionPlayTests` → Run Selected. 전체는 EditMode·PlayMode 각각 Run All. CLI 명령은 6장 테스트 방법에 해당 이름을 `--filter`로 붙인다.
+
+### 2026-11-11: 게임 기본 시점을 1인칭으로 확정
+
+- Q-24 사용자 답변: 시험 씬에 한정하지 않고 게임 기본 플레이 시점을 1인칭으로 변경한다. GameDesign·ImplementationPlan·AGENTS에 반영했다. 건설은 기존 직교 시점이다.
+- 기존 `CombatPrototype`과 `SquadCommandPrototype`의 카메라를 Unity API로 교체하고 플레이어 입력 참조를 연결했다. 카메라 GameObject의 Camera·AudioListener·지휘 조준 참조는 유지했다. 두 씬의 생성 코드도 1인칭으로 바꿨다.
+- 기존 카메라 검증을 1인칭 눈높이 추적·상하 각도 제한·자기 몸이 시야를 가리지 않는지 검증하도록 변경했다. EditMode 101개, PlayMode 전체 40개 통과. 전투 씬의 실제 프레임 진행과 1인칭 화면을 확인했고 새 런타임 오류는 없었다. Windows 빌드는 다시 만들지 않았다.
+- 직접 검증: `Assets/_Project/Scenes/CombatPrototype.unity` → Play → WASD 이동·마우스 시점·허수아비 가까이서 좌클릭 공격. 눈높이에서 보이고 자기 캡슐이 화면을 가리지 않아야 한다. Esc로 커서 해제. 종료 후 다시 Play하면 초기화된다. 부대 지휘는 `Assets/_Project/Scenes/SquadCommandPrototype.unity`에서 F1~F3 선택·1 이동·2 공격·3 중지를 확인한다.
 
 </details>

@@ -89,7 +89,7 @@ namespace ProjectNeo.Combat
                 decisionRemaining = settings.DecisionInterval;
                 destinationPending = false;
                 // 길이 전혀 없으면 지금 자리에서 멈춘다. 일부만 이어진 길은 갈 수 있는 데까지 간다.
-                if (agent.SetDestination(MoveDestination)) return;
+                if (SetAdvancePath()) return;
             }
             else if (agent.pathPending || agent.remainingDistance > settings.ArrivalDistance) return;
             agent.ResetPath();
@@ -111,11 +111,30 @@ namespace ProjectNeo.Combat
             if (advanceRepathRemaining <= 0f)
             {
                 advanceRepathRemaining = settings.DecisionInterval;
-                if (agent.SetDestination(MoveDestination)) return;
+                if (SetAdvancePath()) return;
             }
             else if (agent.pathPending || agent.remainingDistance > settings.ArrivalDistance) return;
             agent.ResetPath();
             destinationPending = false;
+        }
+
+        // SetDestination은 요청 접수 여부만 돌려준다. 갱신 후의 실제 경로가 무효인지,
+        // 일부만 이어지는지 여기서 확인해 부분 경로의 끝에서도 지시를 마칠 수 있게 한다.
+        bool SetAdvancePath()
+        {
+            if (!agent.CalculatePath(MoveDestination, path) || path.status == NavMeshPathStatus.PathInvalid)
+            {
+                // 목적지 성벽 자체가 사라지면 원래 점에는 NavMesh가 없다.
+                // 주변에 남은 길까지 다시 계산하고, 연결이 끊겼으면 부분 경로를 따른다.
+                var filter = new NavMeshQueryFilter { agentTypeID = agent.agentTypeID, areaMask = agent.areaMask };
+                if (!NavMesh.SamplePosition(MoveDestination, out NavMeshHit nearby, settings.DestinationRecoveryDistance, filter)
+                    || !agent.CalculatePath(nearby.position, path) || path.status == NavMeshPathStatus.PathInvalid)
+                {
+                    agent.ResetPath();
+                    return false;
+                }
+            }
+            return agent.SetPath(path);
         }
 
         void UpdateHold()

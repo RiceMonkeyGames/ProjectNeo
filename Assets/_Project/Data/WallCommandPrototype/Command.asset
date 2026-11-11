@@ -1,0 +1,161 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca9391d0bec0a9d479c286207600979e, type: 3}
+  m_Name: Command
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Squads.SquadCommandSettings
+  selectSquad:
+  - m_Name: SelectSquad1
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 6f569261-f686-4cef-a9f5-b364f8b64e8e
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 5684e172-1b29-4f25-80e0-b7c8f8e5151a
+      m_Path: <Keyboard>/f1
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: SelectSquad1
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  - m_Name: SelectSquad2
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: fdfafd55-0ff0-4d8d-bd73-f4611719149c
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 0957672b-b63c-41bb-b4cd-cd2d3f91da01
+      m_Path: <Keyboard>/f2
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: SelectSquad2
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  - m_Name: SelectSquad3
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 535a5bd5-38ae-4c33-a5a7-40e8150be3d7
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 9c923102-54e0-432e-878a-9de120bcc82f
+      m_Path: <Keyboard>/f3
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: SelectSquad3
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  - m_Name: SelectSquad4
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 1731645b-0ee6-4e32-94c6-235ef071b68f
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 93eeee72-e5a3-44e3-8b38-71d19d24b1d2
+      m_Path: <Keyboard>/f4
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: SelectSquad4
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  selectAll:
+    m_Name: SelectAll
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 239566ad-c370-4d38-8453-24e81a608fda
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 0cc4e6e6-a3ab-42bf-811e-ca6103fa653e
+      m_Path: <Keyboard>/backquote
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: SelectAll
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  move:
+    m_Name: OrderMove
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: de957b2e-51a9-4c0e-8e1b-fd7e72df3274
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 8a9ca432-0c32-4020-8360-83bb04add567
+      m_Path: <Keyboard>/1
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: OrderMove
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  attack:
+    m_Name: OrderAttack
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 1789a105-a279-4b3a-9a25-7767cda51925
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: a58f7f21-4f54-4488-861d-bc28c331c335
+      m_Path: <Keyboard>/2
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: OrderAttack
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  hold:
+    m_Name: OrderHold
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 9594d533-5087-40f1-b9a1-571dca9f56a8
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 23d9ae4b-5f76-4a2e-8d80-2178c635ea81
+      m_Path: <Keyboard>/3
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: OrderHold
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  formationColumns: 2
+  formationSpacing: 1.1
+  maxAimDistance: 120
+  navigationSnapDistance: 2
+  minimumSurfaceUp: 0.5
+  verticalSnapTolerance: 0.5

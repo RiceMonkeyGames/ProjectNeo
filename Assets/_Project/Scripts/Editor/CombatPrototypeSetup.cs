@@ -57,16 +57,17 @@ namespace ProjectNeo.Editor
             Box("CameraAndAttackObstacle", new Vector3(6f, 1.5f, 6f), new Vector3(3f, 3f, 1f), stone);
 
             GameObject player = Actor("Player", hero, profile, blue, green, yellow, true);
-            var cameraObject = new GameObject("ThirdPersonCamera");
+            var cameraObject = new GameObject("FirstPersonCamera");
             cameraObject.SetActive(false);
             cameraObject.tag = "MainCamera";
             var camera = cameraObject.AddComponent<Camera>();
             camera.nearClipPlane = 0.05f;
             camera.farClipPlane = 150f;
             cameraObject.AddComponent<AudioListener>();
-            var view = cameraObject.AddComponent<ThirdPersonCamera>();
+            var view = cameraObject.AddComponent<FirstPersonCamera>();
             view.Configure(player.transform, settings);
-            cameraObject.transform.SetPositionAndRotation(new Vector3(0f, 3.15f, -4.76f), Quaternion.Euler(18f, 0f, 0f));
+            cameraObject.transform.SetPositionAndRotation(player.transform.position + Vector3.up * settings.CameraHeight,
+                Quaternion.Euler(settings.InitialPitch, player.transform.eulerAngles.y, 0f));
             // 카메라는 씬 참조이므로 플레이어 프리팹에는 입력 컴포넌트를 넣지 않는다.
             var playerPrefab = PrefabUtility.SaveAsPrefabAsset(player, Prefabs + "/Player.prefab");
             UnityEngine.Object.DestroyImmediate(player);

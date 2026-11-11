@@ -2,6 +2,7 @@ using System.Collections;
 using System.Linq;
 using NUnit.Framework;
 using ProjectNeo.Combat;
+using ProjectNeo.Squads;
 using ProjectNeo.Walls;
 using UnityEngine;
 using UnityEngine.AI;
@@ -171,6 +172,158 @@ namespace ProjectNeo.Tests
             gate.ReceiveDamage(gate.Health.Current);
             Assert.AreEqual(PlacementIssue.ReservedGate, world.CheckPlacement(wall, gateCell, 0));
             yield return WaitForNavigation(world);
+        }
+
+        [UnityTest]
+        public IEnumerator CommandAim_DistinguishesWallTopGroundAndVerticalFaces()
+        {
+            var root = new GameObject("AimTest");
+            SceneManager.MoveGameObjectToScene(root, scene);
+            root.SetActive(false);
+            var config = SquadConfig.Create(1, 1);
+            var settings = SquadCommandSettings.Create();
+            try
+            {
+                var center = root.AddComponent<SquadCommandCenter>();
+                center.Configure(config, settings, new SquadRoster[0]);
+                var cameraRoot = new GameObject("AimCamera");
+                cameraRoot.transform.SetParent(root.transform);
+                var camera = cameraRoot.AddComponent<Camera>();
+                camera.enabled = false;
+                var commandInput = root.AddComponent<SquadCommandInput>();
+                commandInput.Configure(center, camera);
+                root.SetActive(true);
+                yield return null;
+                var support = world.Structures.Single(piece => piece.Placement.Cell == new Vector2Int(4, 8));
+                Vector3 top = support.transform.position + Vector3.up * wall.Height;
+                camera.transform.position = top + new Vector3(0f, 10f, -10f);
+                camera.transform.LookAt(top);
+                Assert.IsTrue(commandInput.TryGetAimPoint(out Vector3 chosen));
+                Assert.That(chosen.y, Is.EqualTo(top.y).Within(0.2f), "성벽 위를 가리키면 지면을 고르면 안 된다.");
+
+                Vector3 side = support.transform.position + Vector3.up * (wall.Height * 0.5f);
+                camera.transform.position = side + Vector3.back * 6f;
+                camera.transform.LookAt(side);
+                Assert.IsFalse(commandInput.TryGetAimPoint(out _), "벽 옆면을 가리켜 윗면이나 뒤쪽 땅을 고르면 안 된다.");
+
+                Vector3 ground = new Vector3(12f, 0f, -10f);
+                camera.transform.position = ground + Vector3.up * 10f;
+                camera.transform.LookAt(ground);
+                Assert.IsTrue(commandInput.TryGetAimPoint(out chosen));
+                Assert.That(chosen.y, Is.EqualTo(0f).Within(0.2f));
+            }
+            finally { Object.Destroy(root); Object.Destroy(config); Object.Destroy(settings); }
+        }
+
+        [UnityTest]
+        public IEnumerator MoveDirective_ClimbsWall_ThenStopsAtPartialPathWhenStairsCollapse()
+        {
+            var ai = sandbox.Unit.gameObject.AddComponent<UnitCombatAI>();
+            var settings = UnitAISettings.Create();
+            ai.Configure(settings);
+            try
+            {
+                var landing = world.Structures.Single(piece => piece.Placement.Cell == new Vector2Int(5, 8));
+                Vector3 top = landing.transform.position + Vector3.up * wall.Height;
+                ai.SetDirective(UnitDirective.Move, top);
+                int frames = 0;
+                while (ai.Directive != UnitDirective.Hold && frames++ < 900) yield return null;
+                Assert.AreEqual(UnitDirective.Hold, ai.Directive);
+                Assert.That(Vector3.Distance(top, ai.transform.position), Is.LessThan(0.5f));
+
+                // 성벽 위에서 지상으로 향하는 길이 도중에 사라진다.
+                ai.SetDirective(UnitDirective.Move, new Vector3(-7.5f, 0f, -8f));
+                var staircase = world.Structures.Single(piece => piece.Placement.Definition.Kind == BuildPieceKind.Stairs);
+                staircase.ReceiveDamage(staircase.Health.Current);
+                yield return WaitForNavigation(world);
+                frames = 0;
+                while (ai.Directive != UnitDirective.Hold && frames++ < 900) yield return null;
+                Assert.AreEqual(UnitDirective.Hold, ai.Directive, "부분 경로의 끝에서 이동을 끝내야 한다.");
+                Assert.That(ai.transform.position.y, Is.GreaterThan(wall.Height - 0.2f));
+                Assert.IsFalse(sandbox.Unit.GetComponent<UnitFallController>().IsFalling);
+            }
+            finally { Object.Destroy(settings); }
+        }
+
+        [UnityTest]
+        public IEnumerator MoveDirective_ToDisconnectedWall_StopsAtClosestReachableGround()
+        {
+            var ai = sandbox.Unit.gameObject.AddComponent<UnitCombatAI>();
+            var settings = UnitAISettings.Create();
+            ai.Configure(settings);
+            try
+            {
+                var staircase = world.Structures.Single(piece => piece.Placement.Definition.Kind == BuildPieceKind.Stairs);
+                staircase.ReceiveDamage(staircase.Health.Current);
+                yield return WaitForNavigation(world);
+                var isolated = world.Structures.Single(piece => piece.Placement.Cell == new Vector2Int(10, 8));
+                Vector3 target = isolated.transform.position + Vector3.up * wall.Height;
+                var agent = sandbox.Unit.GetComponent<NavMeshAgent>();
+                var expected = new NavMeshPath();
+                Assert.IsTrue(agent.CalculatePath(target, expected));
+                Assert.AreEqual(NavMeshPathStatus.PathPartial, expected.status);
+                Vector3 end = expected.corners.Last();
+                ai.SetDirective(UnitDirective.Move, target);
+                int frames = 0;
+                while (ai.Directive != UnitDirective.Hold && frames++ < 900) yield return null;
+                Assert.AreEqual(UnitDirective.Hold, ai.Directive);
+                Assert.That(Vector3.Distance(end, ai.transform.position), Is.LessThan(0.6f));
+                Assert.That(ai.transform.position.y, Is.LessThan(0.3f));
+            }
+            finally { Object.Destroy(settings); }
+        }
+
+        [UnityTest]
+        public IEnumerator MoveDirective_ReplansWhenDestinationWallDisappears()
+        {
+            var ai = sandbox.Unit.gameObject.AddComponent<UnitCombatAI>();
+            var settings = UnitAISettings.Create();
+            ai.Configure(settings);
+            try
+            {
+                var target = world.Structures.Single(piece => piece.Placement.Cell == new Vector2Int(5, 8));
+                Vector3 destination = target.transform.position + Vector3.up * wall.Height;
+                Vector3 start = ai.transform.position;
+                ai.SetDirective(UnitDirective.Move, destination);
+                yield return null;
+                target.ReceiveDamage(target.Health.Current);
+                yield return WaitForNavigation(world);
+                int frames = 0;
+                while (ai.Directive != UnitDirective.Hold && frames++ < 900) yield return null;
+                Assert.AreEqual(UnitDirective.Hold, ai.Directive);
+                Assert.That(Vector3.Distance(start, ai.transform.position), Is.GreaterThan(1f),
+                    "목적지가 무너져도 도달 가능한 가까운 지점으로 이동해야 한다.");
+                Assert.IsTrue(ai.GetComponent<NavMeshAgent>().isOnNavMesh);
+            }
+            finally { Object.Destroy(settings); }
+        }
+
+        [UnityTest]
+        public IEnumerator MoveDirective_SurvivesSupportCollapse_AndReachesGroundDestination()
+        {
+            var ai = sandbox.Unit.gameObject.AddComponent<UnitCombatAI>();
+            var settings = UnitAISettings.Create();
+            ai.Configure(settings);
+            try
+            {
+                var landing = world.Structures.Single(piece => piece.Placement.Cell == new Vector2Int(5, 8));
+                ai.SetDirective(UnitDirective.Move, landing.transform.position + Vector3.up * wall.Height);
+                int frames = 0;
+                while (ai.Directive != UnitDirective.Hold && frames++ < 900) yield return null;
+                Assert.That(ai.transform.position.y, Is.GreaterThan(wall.Height - 0.2f));
+                Vector3 target = new Vector3(-7.5f, 0f, -8f);
+                ai.SetDirective(UnitDirective.Move, target);
+                sandbox.CollapseUnderUnit();
+                var fall = ai.GetComponent<UnitFallController>();
+                Assert.IsTrue(fall.IsFalling);
+                frames = 0;
+                while ((fall.IsFalling || ai.Directive != UnitDirective.Hold) && frames++ < 900) yield return null;
+                Assert.IsFalse(fall.IsFalling);
+                Assert.Greater(fall.LastFallDamage, 0f);
+                Assert.AreEqual(UnitDirective.Hold, ai.Directive);
+                Assert.That(Vector3.Distance(target, ai.transform.position), Is.LessThan(0.6f));
+            }
+            finally { Object.Destroy(settings); }
         }
 
         [UnityTest]

@@ -93,13 +93,17 @@ namespace ProjectNeo.Squads
             int count = Physics.RaycastNonAlloc(ray, hits, settings.MaxAimDistance, ~0, QueryTriggerInteraction.Ignore);
             float nearest = float.PositiveInfinity;
             bool found = false;
+            Vector3 normal = Vector3.zero;
             for (int i = 0; i < count; i++)
             {
                 if (hits[i].distance >= nearest || hits[i].collider.gameObject.scene != gameObject.scene) continue;
                 if (hits[i].collider.GetComponentInParent<CharacterActor>() != null) continue;
-                nearest = hits[i].distance; point = hits[i].point; found = true;
+                nearest = hits[i].distance; point = hits[i].point; normal = hits[i].normal; found = true;
             }
-            if (!found || !NavMesh.SamplePosition(point, out NavMeshHit hit, settings.NavigationSnapDistance, NavMesh.AllAreas))
+            // 벽 옆면을 가리켰을 때 지면이나 위층으로 붙이지 않는다. 처음 맞은 면을 기준으로 고른다.
+            if (!found || normal.y < settings.MinimumSurfaceUp
+                || !NavMesh.SamplePosition(point, out NavMeshHit hit, settings.NavigationSnapDistance, NavMesh.AllAreas)
+                || Mathf.Abs(hit.position.y - point.y) > settings.VerticalSnapTolerance)
                 return false;
             point = hit.position;
             return true;

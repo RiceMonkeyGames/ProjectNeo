@@ -69,13 +69,13 @@ namespace ProjectNeo.Editor
 
             var player = (GameObject)PrefabUtility.InstantiatePrefab(playerPrefab);
             player.transform.position = new Vector3(0f, 0f, -22f);
-            var cameraObject = new GameObject("ThirdPersonCamera");
+            var cameraObject = new GameObject("FirstPersonCamera");
             cameraObject.SetActive(false);
             cameraObject.tag = "MainCamera";
             var camera = cameraObject.AddComponent<Camera>();
             camera.nearClipPlane = 0.05f; camera.farClipPlane = 200f;
             cameraObject.AddComponent<AudioListener>();
-            var view = cameraObject.AddComponent<ThirdPersonCamera>();
+            var view = cameraObject.AddComponent<FirstPersonCamera>();
             view.Configure(player.transform, controls);
             player.AddComponent<PlayerInputController>().Configure(inputActions, view, controls);
             player.SetActive(true);
@@ -122,7 +122,7 @@ namespace ProjectNeo.Editor
         }
 
         // 선택한 부대와 목적지를 보여주는 임시 표시. 지휘 오브젝트의 Visual 자식에 둔다.
-        static void AddMarkers(SquadCommandCenter center)
+        internal static void AddMarkers(SquadCommandCenter center)
         {
             if (center.GetComponentInChildren<PlaceholderSquadMarkers>(true) != null) return;
             var visual = new GameObject("Visual");
@@ -179,7 +179,7 @@ namespace ProjectNeo.Editor
             return units;
         }
 
-        static void CreateHud(SquadCommandCenter center, SquadCommandInput input)
+        internal static void CreateHud(SquadCommandCenter center, SquadCommandInput input, string extraHelp = "")
         {
             var root = new GameObject("SquadCommandHUD", typeof(RectTransform), typeof(Canvas), typeof(UnityEngine.UI.CanvasScaler));
             root.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
@@ -197,7 +197,7 @@ namespace ProjectNeo.Editor
             var image = dot.GetComponent<UnityEngine.UI.Image>();
             image.color = new Color(1f, 1f, 1f, 0.85f); image.raycastTarget = false;
             root.AddComponent<SquadCommandHud>().Configure(center, input, squads, help,
-                "F1~F4 부대 선택 · ` 전체 선택\n1 이동(화면 가운데가 가리키는 곳) · 2 공격 · 3 중지\nWASD 이동 · 마우스 시점 · 좌클릭 공격 · Esc 커서 해제");
+                "F1~F4 부대 선택 · ` 전체 선택\n1 이동(화면 가운데가 가리키는 곳) · 2 공격 · 3 중지\nWASD 이동 · 마우스 시점 · 좌클릭 공격 · Esc 커서 해제" + extraHelp);
         }
 
         static TMP_Text Label(Transform parent, string name, Vector2 anchor, Vector2 position, Vector2 size, float fontSize)

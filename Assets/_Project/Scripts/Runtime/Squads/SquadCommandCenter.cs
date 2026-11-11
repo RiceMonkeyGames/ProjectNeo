@@ -76,7 +76,7 @@ namespace ProjectNeo.Squads
                 {
                     // 대형 자리가 걸을 수 없는 곳이면 목적지 자체로 보낸다.
                     Vector3 slot = NavMesh.SamplePosition(slots[i], out NavMeshHit hit, settings.NavigationSnapDistance,
-                        NavMesh.AllAreas) && Mathf.Abs(hit.position.y - order.Destination.y) <= settings.NavigationSnapDistance
+                        NavMesh.AllAreas) && Mathf.Abs(hit.position.y - order.Destination.y) <= settings.VerticalSnapTolerance
                         ? hit.position : order.Destination;
                     alive[i].SetDirective(toward, slot);
                 }

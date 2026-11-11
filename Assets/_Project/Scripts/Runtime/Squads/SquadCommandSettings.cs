@@ -22,6 +22,8 @@ namespace ProjectNeo.Squads
         [SerializeField, Min(0.1f)] float formationSpacing = 1.4f;
         [SerializeField, Min(1f)] float maxAimDistance = 120f;
         [SerializeField, Min(0.1f)] float navigationSnapDistance = 2f;
+        [SerializeField, Range(0f, 1f)] float minimumSurfaceUp = 0.5f;
+        [SerializeField, Min(0f)] float verticalSnapTolerance = 0.5f;
         public InputAction[] SelectSquad => selectSquad;
         public InputAction SelectAll => selectAll;
         public InputAction Move => move;
@@ -32,6 +34,8 @@ namespace ProjectNeo.Squads
         // 화면 가운데에서 이동 위치를 찾는 최대 거리와, 가리킨 곳을 걸을 수 있는 곳으로 맞추는 허용 거리.
         public float MaxAimDistance => maxAimDistance;
         public float NavigationSnapDistance => navigationSnapDistance;
+        public float MinimumSurfaceUp => minimumSurfaceUp;
+        public float VerticalSnapTolerance => verticalSnapTolerance;
 
         public static SquadCommandSettings Create(int columns = 5, float spacing = 1.4f)
         {

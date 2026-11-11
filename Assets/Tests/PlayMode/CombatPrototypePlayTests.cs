@@ -139,9 +139,9 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
-        public IEnumerator Camera_ClampsPitch_AndPullsInBeforeWall()
+        public IEnumerator FirstPersonCamera_ClampsPitch_AndFollowsPlayerAtEyeHeight()
         {
-            var view = scene.GetRootGameObjects().Select(root => root.GetComponent<ThirdPersonCamera>())
+            var view = scene.GetRootGameObjects().Select(root => root.GetComponent<FirstPersonCamera>())
                 .Single(camera => camera != null);
             var settings = Resources.FindObjectsOfTypeAll<PlayerControlSettings>().First();
             view.Look(new Vector2(0f, 10000f));
@@ -155,7 +155,9 @@ namespace ProjectNeo.Tests
             Physics.SyncTransforms();
             yield return null;
             Vector3 pivot = player.transform.position + Vector3.up * settings.CameraHeight;
-            Assert.Less(Vector3.Distance(view.transform.position, pivot), 2.5f);
+            Assert.That(Vector3.Distance(view.transform.position, pivot), Is.LessThan(0.01f));
+            Assert.AreEqual(UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly,
+                player.transform.Find("Visual").GetComponentInChildren<Renderer>().shadowCastingMode);
         }
 
         [UnityTest]

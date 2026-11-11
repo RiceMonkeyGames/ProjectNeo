@@ -9,7 +9,7 @@ namespace ProjectNeo.Characters
     public sealed class PlayerInputController : MonoBehaviour
     {
         [SerializeField] InputActionAsset inputActions;
-        [SerializeField] ThirdPersonCamera view;
+        [SerializeField] PlayerViewCamera view;
         [SerializeField] PlayerControlSettings settings;
         InputActionAsset actions;
         InputAction move;
@@ -28,7 +28,7 @@ namespace ProjectNeo.Characters
             verticalSpeed = 0f;
         }
 
-        public void Configure(InputActionAsset source, ThirdPersonCamera cameraView, PlayerControlSettings controlSettings)
+        public void Configure(InputActionAsset source, PlayerViewCamera cameraView, PlayerControlSettings controlSettings)
         {
             inputActions = source;
             view = cameraView;

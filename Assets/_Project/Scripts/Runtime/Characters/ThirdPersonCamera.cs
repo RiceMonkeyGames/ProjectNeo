@@ -2,12 +2,13 @@ using UnityEngine;
 
 namespace ProjectNeo.Characters
 {
-    public sealed class ThirdPersonCamera : MonoBehaviour
+    public sealed class ThirdPersonCamera : PlayerViewCamera
     {
         [SerializeField] Transform target;
         [SerializeField] PlayerControlSettings settings;
         float pitch;
-        public float Yaw { get; private set; }
+        float yaw;
+        public override float Yaw => yaw;
 
         public void Configure(Transform followTarget, PlayerControlSettings controlSettings)
         {
@@ -17,13 +18,13 @@ namespace ProjectNeo.Characters
 
         void Awake()
         {
-            Yaw = target.eulerAngles.y;
+            yaw = target.eulerAngles.y;
             pitch = settings.InitialPitch;
         }
 
-        public void Look(Vector2 delta)
+        public override void Look(Vector2 delta)
         {
-            Yaw += delta.x * settings.MouseSensitivity;
+            yaw += delta.x * settings.MouseSensitivity;
             pitch = Mathf.Clamp(pitch - delta.y * settings.MouseSensitivity,
                 settings.MinimumPitch, settings.MaximumPitch);
         }
