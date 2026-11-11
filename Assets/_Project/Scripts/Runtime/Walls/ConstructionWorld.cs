@@ -25,6 +25,8 @@ namespace ProjectNeo.Walls
         [SerializeField] InitialBuildPiece[] initialPieces;
         readonly Dictionary<int, PlacedStructure> structures = new Dictionary<int, PlacedStructure>();
         readonly Dictionary<int, PlacedSiegeWeapon> weapons = new Dictionary<int, PlacedSiegeWeapon>();
+        readonly List<BuildPlacement> settleDropped = new List<BuildPlacement>();
+        readonly List<BuildPlacement> settleUnsupported = new List<BuildPlacement>();
         Transform mountRoot;
         bool rebuildPending;
         public BuildLayout Layout { get; private set; }
@@ -37,6 +39,8 @@ namespace ProjectNeo.Walls
         public bool RebuildPending => rebuildPending;
         public int NavigationRevision { get; private set; }
         public event Action<PlacedStructure> PieceCollapsing;
+        /// <summary>받침을 잃은 조각이 한 층 내려앉기 직전에 알린다. 아직 원래 자리에 있다.</summary>
+        public event Action<PlacedStructure> PieceDropping;
         public event Action Changed;
 
         public void Configure(BuildGridDefinition definition, Transform geometryRoot,
@@ -68,19 +72,32 @@ namespace ProjectNeo.Walls
         public Vector3 WorldCenter(BuildPieceDefinition definition, Vector2Int cell, int rotation) =>
             transform.TransformPoint(Layout.Center(cell, BuildLayout.RotatedSize(definition.Footprint, rotation)));
 
-        public void SetPose(Transform body, BuildPieceDefinition definition, Vector2Int cell, int rotation)
+        public void SetPose(Transform body, BuildPieceDefinition definition, Vector2Int cell, int rotation, float elevation = 0f)
         {
-            body.SetPositionAndRotation(WorldCenter(definition, cell, rotation),
+            body.SetPositionAndRotation(WorldCenter(definition, cell, rotation) + transform.up * elevation,
                 transform.rotation * Quaternion.Euler(0f, rotation * 90f, 0f));
             body.localScale = new Vector3(definition.Footprint.x * grid.CellSize,
                 definition.Height, definition.Footprint.y * grid.CellSize);
         }
 
-        public PlacementIssue CheckPlacement(BuildPieceDefinition definition, Vector2Int cell, int rotation)
+        public PlacementIssue CheckPlacement(BuildPieceDefinition definition, Vector2Int cell, int rotation) =>
+            CheckPlacement(definition, cell, rotation, out _, out _);
+
+        /// <summary>놓일 층과 바닥 높이를 함께 돌려준다. 가리킨 칸에 조각이 있으면 그 위가 된다.</summary>
+        public PlacementIssue CheckPlacement(BuildPieceDefinition definition, Vector2Int cell, int rotation,
+            out int level, out float elevation)
         {
-            PlacementIssue issue = Layout.Check(definition, cell, rotation);
+            PlacementIssue issue = Layout.Check(definition, cell, rotation, false, out level, out elevation);
             if (issue != PlacementIssue.None) return issue;
-            Vector3 center = WorldCenter(definition, cell, rotation) + transform.up * (definition.Height * 0.5f);
+            if (level > 0)
+            {
+                // 수성 무기가 놓인 조각 위에는 쌓지 않는다.
+                Vector2Int size = BuildLayout.RotatedSize(definition.Footprint, rotation);
+                for (int x = 0; x < size.x; x++)
+                    for (int z = 0; z < size.y; z++)
+                        if (Mounts.HasWeaponOn(Layout.At(cell + new Vector2Int(x, z), level - 1).Id)) return PlacementIssue.Occupied;
+            }
+            Vector3 center = WorldCenter(definition, cell, rotation) + transform.up * (elevation + definition.Height * 0.5f);
             var half = new Vector3(definition.Footprint.x * grid.CellSize * 0.5f,
                 definition.Height * 0.5f, definition.Footprint.y * grid.CellSize * 0.5f);
             foreach (Collider collider in Physics.OverlapBox(center, half * 0.98f,
@@ -108,7 +125,7 @@ namespace ProjectNeo.Walls
         {
             GameObject body = Instantiate(placement.Definition.Prefab, geometry);
             body.name = placement.Definition.DisplayName + "_" + placement.Id;
-            SetPose(body.transform, placement.Definition, placement.Cell, placement.Rotation);
+            SetPose(body.transform, placement.Definition, placement.Cell, placement.Rotation, placement.Elevation);
             var structure = body.GetComponent<PlacedStructure>();
             structure.Initialize(this, placement);
             structures.Add(placement.Id, structure);
@@ -164,16 +181,35 @@ namespace ProjectNeo.Walls
         public void Collapse(PlacedStructure structure)
         {
             if (structure == null || !structures.ContainsKey(structure.Placement.Id)) return;
+            DestroyBody(structure);
+            Layout.Remove(structure.Placement.Id, true);
+            // 위에 쌓인 조각은 한 층 내려앉는다. 한쪽만 받쳐져 내려앉을 수 없는 조각은 함께 부서진다.
+            settleDropped.Clear(); settleUnsupported.Clear();
+            Layout.Settle(settleDropped, settleUnsupported);
+            foreach (BuildPlacement lost in settleUnsupported) DestroyBody(structures[lost.Id]);
+            foreach (BuildPlacement moved in settleDropped)
+            {
+                PlacedStructure body = structures[moved.Id];
+                PieceDropping?.Invoke(body);
+                SetPose(body.transform, moved.Definition, moved.Cell, moved.Rotation, moved.Elevation);
+                foreach (PlacedSiegeWeapon weapon in weapons.Values)
+                    if (weapon.Support == body && body.TryGetMountPose(weapon.Mount.MountId, out Pose pose))
+                        SetMountPose(weapon.transform, weapon.Definition, pose);
+            }
+            rebuildPending = true;
+            Changed?.Invoke();
+        }
+
+        // 몸통과 그 위의 수성 무기를 없앤다. 배치 모델에서 빼는 것은 부르는 쪽이 한다.
+        void DestroyBody(PlacedStructure structure)
+        {
             PieceCollapsing?.Invoke(structure);
             // 받치던 조각이 부서지면 그 위의 수성 무기도 함께 파괴된다.
             foreach (MountedWeapon mount in Mounts.RemoveSupportedBy(structure.Placement.Id))
                 Discard(weapons[mount.Id], SiegeWeaponRemoval.SupportDestroyed);
             foreach (Collider collider in structure.GetComponentsInChildren<Collider>()) collider.enabled = false;
-            Layout.Remove(structure.Placement.Id, true);
             structures.Remove(structure.Placement.Id);
             Destroy(structure.gameObject);
-            rebuildPending = true;
-            Changed?.Invoke();
         }
 
         void Update()

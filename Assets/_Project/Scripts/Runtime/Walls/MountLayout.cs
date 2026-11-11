@@ -41,6 +41,8 @@ namespace ProjectNeo.Walls
             BuildPlacement support = layout.Find(supportId);
             if (support == null) return MountIssue.NoSupport;
             if (!HasPoint(support.Definition, mountId)) return MountIssue.NoMountPoint;
+            // 위에 다른 조각이 얹힌 조각의 설치 지점은 막혀 있다.
+            if (layout.IsCovered(support)) return MountIssue.Occupied;
             return slots.ContainsKey((supportId, mountId)) ? MountIssue.Occupied : MountIssue.None;
         }
 
@@ -52,6 +54,13 @@ namespace ProjectNeo.Walls
             mounted.Add(weapon.Id, weapon);
             slots.Add((supportId, mountId), weapon);
             return true;
+        }
+
+        public bool HasWeaponOn(int supportId)
+        {
+            foreach (MountedWeapon weapon in mounted.Values)
+                if (weapon.SupportId == supportId) return true;
+            return false;
         }
 
         public bool Remove(int id)

@@ -57,7 +57,7 @@ Unity 6000.6.8f1, URP, 3D 1인칭 프로젝트다. 현재는 임시 그래픽이
 | UI | `SquadCommandHud` | 시험용 지휘 표시(선택·지시·남은 인원·안내·조준점). 정식 전투 HUD는 아니다. |
 | Morale | `SquadMorale` | 퍽 효과에서 사용할 부대 사기 값. 실제 사기 감소·도망 규칙은 B-8에서 구현한다. |
 | Walls | `ConstructionProgress` | 공사 기간과 스테이지 진행 계산. 실제 배치·런 이월과는 아직 연결하지 않았다. |
-| Walls | `BuildGridDefinition`, `BuildPieceDefinition`, `BuildLayout` | 격자 크기, 조각 종류·점유 칸·높이·체력·프리팹 정의. 일반 C# 점유·회전·경계·고정 성문 영역 검사와 독립 계단의 연결 질의. |
+| Walls | `BuildGridDefinition`, `BuildPieceDefinition`, `BuildLayout` | 격자 크기·최대 층수(`MaxLevels`, 기본 1), 조각 종류·점유 칸·높이·체력·프리팹 정의. 일반 C# 점유·회전·경계·고정 성문 영역 검사와 독립 계단의 연결 질의. 층 쌓기: 점유 키는 (x, 층, z)이고 조각은 가리킨 칸의 맨 위에 놓인다. `BuildPlacement.Level`·`Elevation`이 층과 바닥 높이다. `Check(..., out level, out elevation)`이 놓일 자리를 알려주고, `Remove` 뒤 `Settle(dropped, unsupported)`이 받침을 잃은 조각을 내려앉히거나 뺀다. `At(cell)`은 0층, `At(cell, level)`·`Top`·`ColumnHeight`·`IsCovered`로 층을 읽는다. |
 | Walls | `ConstructionWorld`, `PlacedStructure` | 배치 모델과 몸통 생성, 실제 유닛 겹침 검사, 조각 체력·파괴 이벤트, 변경을 모아 비동기 NavMesh 갱신. |
 | Walls | `PlacementViewSettings`, `PlacementController`, `BuildGridView` | 반투명 미리보기 재질·색, 마우스 선택·설치·취소·회전, 격자 표시. 미리보기는 충돌과 점유·NavMesh에 영향을 주지 않는다. |
 | Walls | `SiegeWeaponDefinition`, `MountLayout`, `PlacedSiegeWeapon`, `ISiegeWeaponModule` | 수성 무기 공통 구조. 정의 에셋(ID·이름·크기·프리팹), 일반 C# 설치 지점 점유 규칙(지지 조각 ID + 지점 ID마다 하나), 모든 무기가 쓰는 공통 몸통, 무기별 동작을 붙이는 인터페이스. 대포 전용 클래스는 없다. |
@@ -135,7 +135,7 @@ Q/`RotateLeft()`와 E/`RotateRight()`는 화면 속 판의 왼쪽·오른쪽 회
 
 `ConstructionWorld`는 스케일 1의 평평한 격자 원점을 제공한다. 조각은 `Geometry` 아래에만 생성하고 미리보기·격자선은 그 밖에 둔다. 최초 NavMesh는 시작 시 만들며 이후 요청은 한 번에 하나씩 비동기 처리한다. 진행 중 추가 변경이 생기면 한 번 더 갱신한다. 배치 ID는 현재 씬 실행 중 식별자이며 런 저장 계약은 아직 아니다.
 
-현재 점유 키는 바닥 `(x, z)`이며 한 칸에 조각을 중복하거나 높이 층을 선택할 수 없다. 조각 높이 에셋을 바꾸는 것과 블록을 적층하는 것은 다른 기능이다. 향후 수성 무기는 `BuildPieceDefinition.MountPoints`의 설치 지점을 사용해 바닥 점유와 분리한다. `PlacedStructure.TryGetMountPose()`가 조각 크기·회전을 반영한 월드 위치를 제공한다. 현재 성벽 정의에 `top` 지점 하나가 있다.
+프로토타입 씬의 격자는 최대 1층이라 한 칸에 조각을 겹쳐 놓을 수 없다. 층 쌓기는 격자 에셋의 `MaxLevels`를 2 이상으로 둔 곳에서만 동작하며 현재 `Game` 씬(3층)이 쓴다. 건설 조작은 조각을 가리키면 그 조각이 선 칸을 고르므로 성벽을 가리키면 그 위에 미리보기가 뜬다. 조각이 부서지면 `ConstructionWorld.Collapse`가 위 조각을 내려앉히며 `PieceDropping`으로 알리고, 그 위의 유닛은 `UnitFallController`가 떨어뜨린다. 수성 무기는 `BuildPieceDefinition.MountPoints`의 설치 지점을 사용해 바닥 점유와 분리한다. `PlacedStructure.TryGetMountPose()`가 조각 크기·회전을 반영한 월드 위치를 제공한다. 현재 성벽 정의에 `top` 지점 하나가 있다.
 
 **수성 무기(B-4.6):** `대포` 버튼 → 성벽을 가리키면 그 조각의 가장 가까운 설치 지점에 반투명 미리보기 → 좌클릭 설치, 우클릭 취소. 지점 하나에 무기 하나만 놓인다. 성벽이 아닌 곳·설치 지점이 없는 계단·이미 무기가 있는 자리는 빨간색으로 거부한다. `무기 받침 성벽 파괴`는 무기를 받치는 성벽을 부숴 무기가 함께 사라지는지 확인한다. `ConstructionWorld.TryMount`/`RemoveWeapon`/`Collapse`가 설치·철거·동반 파괴를 처리하고 `WeaponRemoved`로 알린다. 무기는 `Geometry` 밖의 `Mounts` 아래에 생성해 NavMesh를 바꾸지 않는다.
 
@@ -162,6 +162,8 @@ Q/`RotateLeft()`와 E/`RotateRight()`는 화면 속 판의 왼쪽·오른쪽 회
 - `Assets/Tests/PlayMode/UnitCombatPlayTests.cs`: 팀과 피해, 대상 유지·교체, 투사체 아군 통과·회피·얇은 벽 충돌, 에이전트 사망 정지, 저장된 10 대 10 씬 전투를 확인한다. 테스트용 NavMesh와 씬, 고정 시간 간격은 종료 때 정리한다.
 - `Assets/Tests/EditMode/BuildLayoutTests.cs`: 임의 격자 크기, 음수 좌표·회전 점유·실패 시 상태 보존, 독립 계단의 연결 갱신, 고정 성문 영역, 높이에 따른 낙하 피해.
 - `Assets/Tests/PlayMode/ConstructionPlayTests.cs`: 카메라 4방향 회전과 픽킹 불변, 즉시 점프 없는 보간과 연속·역방향 입력, 미리보기·취소의 무영향, 회전 설치·중복 거부·비동기 갱신, 유닛 겹침·성문 영역, 실제 계단 이동·붕괴·낙하 피해와 에이전트 복귀, CharacterController 몸통의 낙하·복구, 연속 변경의 반영과 사라진 성벽 위 경로.
+- `Assets/Tests/EditMode/BuildStackingTests.cs`: 1층 격자의 중복 거부 유지, 맨 위에 쌓기와 최대 층, 계단·성문 위 금지, 받침 높이가 다른 여러 칸 조각 거부, 2단 계단의 같은 층 연결, 내려앉기와 일부 받침 상실 시 제거, 덮인 성벽의 무기 설치 금지.
+- `Assets/Tests/PlayMode/StackedConstructionPlayTests.cs`: 게임 씬에서 미리보기 층·높이, 2층 성벽과 2단 계단을 놓은 뒤 안뜰에서 2층까지의 NavMesh 경로, 3층 상한, 아래 성벽 파괴 시 위 성벽·무기의 내려앉기와 체력 유지·길 복구.
 - `Assets/Tests/EditMode/MountLayoutTests.cs`: 설치 지점 점유가 바닥 점유와 분리되는지, 실패 사유와 ID 보존, 서로 다른 무기 종류의 공통 규칙, 지지 조각 제거 시 그 위 무기만 해제.
 - `ConstructionPlayTests`의 수성 무기 2개: 미리보기 무영향, 성벽 위 설치 위치·크기, 중복·성벽 밖·계단 거부, 바닥 점유와 NavMesh 불변, 받침 성벽 파괴 시 동반 파괴와 무기 동작 부품(`RecordingSiegeWeaponModule`) 알림 1회, 철거.
 - `ConstructionPlayTests`의 지휘 5개: 윗면·옆면·지면 조준 구분, 실제 이동 지시로 계단 오르기와 길 단절, 처음부터 끊긴 목적지, 목적지 성벽 소실 후 재탐색, 낙하 후 지상 지시 복귀.
@@ -503,5 +505,12 @@ unity command package add --caller plugin --skill unity-package-management --nam
 - 적용 전 에디터의 Game 씬에 저장되지 않은 변경이 있었고 사용자 확인 후 버렸다.
 - 검증: EditMode 109개, PlayMode 전체 45개(새 1개) 통과. 에디터 Play에서 준비 화면의 성 전체 모습과 전투 화면의 성문 위 시점을 캡처해 확인했다. 실제 입력 조작과 Windows 빌드는 확인하지 않았다.
 - 직접 검증: `Assets/_Project/Scenes/Game.unity` → Play → 외벽으로 둘러싸인 성과 안뜰의 부대 셋이 보인다 → Q/E로 돌려 남쪽 계단 확인 → 안뜰에 `성벽`을 놓아 본다 → `전투 시작` → 성문 위에서 북쪽 들판을 본다 → F1 선택 후 성벽 윗면을 보고 1 → 1번 부대가 계단으로 올라온다.
+
+### 2026-11-11: 층 쌓기(Q-27 A안)와 2단 계단
+
+- 사용자 결정: A안(지금 격자 + 층 쌓기), 2단 계단은 1층 성벽 위에 놓아 2층으로, 아래가 부서지면 위는 한 층 내려앉음, 층은 가리킨 칸 위에 자동. GameDesign 성벽 절과 로드맵 Q-27·Q-18에 반영했다.
+- 변경: `BuildLayout`(층 점유·`Settle`), `BuildGridDefinition.MaxLevels`, `ConstructionWorld`(높이 반영·내려앉기·`PieceDropping`), `MountLayout`(덮인 성벽 금지·`HasWeaponOn`), `PlacementController`(조각을 가리켜 칸 고르기·미리보기 높이), `UnitFallController`(내려앉는 조각 위 유닛 낙하), `ConstructionHud`(층 표시와 받침 높이 안내). 게임 씬 격자를 3층으로 설정했다. 프로토타입 씬과 에셋은 바꾸지 않았고 기본 1층이라 기존 테스트가 그대로 통과한다.
+- 검증: 컴파일 오류 없음. EditMode 118개(새 9개), PlayMode 전체 47개(새 2개) 통과. 에디터 Play에서 2층·3층 성벽과 2단 계단을 놓은 준비 화면을 캡처해 확인했다. 마우스로 성벽을 가리켜 쌓는 실제 조작, 내려앉는 조각 위 유닛의 낙하, Windows 빌드는 확인하지 않았다.
+- 직접 검증: `Assets/_Project/Scenes/Game.unity` → Play → `성벽` 선택 → 북쪽 성벽 조각을 가리키면 그 위에 초록 미리보기와 `2층` 표시 → 좌클릭으로 서쪽 모서리와 그 옆에 2층을 쌓는다 → `계단` 선택, R로 돌려 1층 성벽 두 칸 위에 2층 쪽으로 오르게 놓는다(연결 안내가 사라지면 이어진 것) → 같은 칸에 세 번 쌓으면 네 번째는 빨강 → `전투 시작` → F1 후 2층 윗면을 보고 1 → 부대가 땅 계단과 2단 계단으로 올라온다. 내려앉기는 지금 게임 씬에 부수는 수단이 없어 자동 테스트 `StackedConstructionPlayTests`로 확인한다.
 
 </details>

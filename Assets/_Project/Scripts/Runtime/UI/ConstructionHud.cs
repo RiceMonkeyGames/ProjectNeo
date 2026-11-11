@@ -81,9 +81,11 @@ namespace ProjectNeo.UI
                     case PlacementIssue.Occupied: issue = "다른 조각과 겹칩니다"; break;
                     case PlacementIssue.ReservedGate: issue = "고정 성문 자리입니다"; break;
                     case PlacementIssue.UnitInTheWay: issue = "유닛과 겹칩니다"; break;
+                    case PlacementIssue.UnevenSupport: issue = "받침 높이가 서로 다릅니다"; break;
                     default: issue = "위치를 고르세요"; break;
                 }
-                selection.text = placement.Selected.DisplayName + " · " + placement.Rotation * 90 + "°\n" + issue;
+                string floor = placement.PreviewLevel > 0 ? " · " + (placement.PreviewLevel + 1) + "층" : "";
+                selection.text = placement.Selected.DisplayName + " · " + placement.Rotation * 90 + "°" + floor + "\n" + issue;
                 if (placement.IsPreviewVisible && placement.StairNeedsConnection) selection.text += "\n계단이 아직 성벽과 연결되지 않았습니다";
             }
             status.text = sandbox.Message;

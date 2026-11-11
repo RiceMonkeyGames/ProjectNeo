@@ -28,8 +28,9 @@ namespace ProjectNeo.Walls
             actor = GetComponent<CharacterActor>(); agent = GetComponent<NavMeshAgent>();
             motor = GetComponent<CharacterController>(); input = GetComponent<PlayerInputController>();
         }
-        void OnEnable() => world.PieceCollapsing += OnCollapsing;
-        void OnDisable() => world.PieceCollapsing -= OnCollapsing;
+        // 발밑 조각이 부서지거나 한 층 내려앉으면 떨어진다.
+        void OnEnable() { world.PieceCollapsing += OnCollapsing; world.PieceDropping += OnCollapsing; }
+        void OnDisable() { world.PieceCollapsing -= OnCollapsing; world.PieceDropping -= OnCollapsing; }
 
         void OnCollapsing(PlacedStructure structure)
         {

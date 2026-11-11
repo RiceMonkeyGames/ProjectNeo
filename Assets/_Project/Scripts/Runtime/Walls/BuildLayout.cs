@@ -6,7 +6,7 @@ namespace ProjectNeo.Walls
     public enum PlacementIssue
     {
         None = 0, OutsideGrid = 1, Occupied = 2, ReservedGate = 3,
-        MissingLanding = 4, UnitInTheWay = 5, NoPiece = 6,
+        MissingLanding = 4, UnitInTheWay = 5, NoPiece = 6, UnevenSupport = 7,
     }
 
     public sealed class BuildPlacement
@@ -16,21 +16,33 @@ namespace ProjectNeo.Walls
         public Vector2Int Cell { get; }
         public int Rotation { get; }
         public bool IsFixed { get; }
+        /// <summary>쌓인 층. 땅 위가 0이다. 아래 조각이 부서지면 내려앉으며 줄어든다.</summary>
+        public int Level { get; internal set; }
+        /// <summary>조각 바닥의 높이. 아래에 쌓인 조각들의 높이 합이다.</summary>
+        public float Elevation { get; internal set; }
         public Vector2Int Size => BuildLayout.RotatedSize(Definition.Footprint, Rotation);
-        public BuildPlacement(int id, BuildPieceDefinition definition, Vector2Int cell, int rotation, bool isFixed)
+        public BuildPlacement(int id, BuildPieceDefinition definition, Vector2Int cell, int rotation, bool isFixed,
+            int level = 0, float elevation = 0f)
         {
             Id = id; Definition = definition; Cell = cell;
             Rotation = ((rotation % 4) + 4) % 4; IsFixed = isFixed;
+            Level = level; Elevation = elevation;
         }
     }
 
-    /// <summary>격자 점유·회전·배치 검사. 씬과 외형은 알지 않는다.</summary>
+    /// <summary>
+    /// 격자 점유·회전·층 쌓기·배치 검사. 씬과 외형은 알지 않는다.
+    /// 조각은 가리킨 칸의 맨 위에 놓인다. 여러 칸을 차지하는 조각은 모든 칸의 받침 높이가 같아야 한다.
+    /// 계단 위에는 쌓을 수 없고, 고정 성문 자리에는 어느 층에도 놓을 수 없다.
+    /// </summary>
     public sealed class BuildLayout
     {
         readonly BuildGridDefinition grid;
-        readonly Dictionary<Vector2Int, BuildPlacement> occupied = new Dictionary<Vector2Int, BuildPlacement>();
+        // 키는 (x, 층, z).
+        readonly Dictionary<Vector3Int, BuildPlacement> occupied = new Dictionary<Vector3Int, BuildPlacement>();
         readonly Dictionary<int, BuildPlacement> placements = new Dictionary<int, BuildPlacement>();
         readonly HashSet<Vector2Int> reserved = new HashSet<Vector2Int>();
+        readonly List<BuildPlacement> settleOrder = new List<BuildPlacement>();
         int nextId = 1;
         bool gateRegistered;
         public IReadOnlyCollection<BuildPlacement> Placements => placements.Values;
@@ -39,39 +51,89 @@ namespace ProjectNeo.Walls
         public static Vector2Int RotatedSize(Vector2Int size, int rotation) =>
             rotation % 2 == 0 ? size : new Vector2Int(size.y, size.x);
 
+        static Vector3Int Key(Vector2Int cell, int level) => new Vector3Int(cell.x, level, cell.y);
+        static bool CanSupport(BuildPlacement placement) => placement.Definition.Kind != BuildPieceKind.Stairs;
+
         public Vector2Int WorldToCell(Vector3 localPosition) => new Vector2Int(
             Mathf.FloorToInt(localPosition.x / grid.CellSize), Mathf.FloorToInt(localPosition.z / grid.CellSize));
 
         public Vector3 Center(Vector2Int cell, Vector2Int size) =>
             new Vector3((cell.x + size.x * 0.5f) * grid.CellSize, 0f, (cell.y + size.y * 0.5f) * grid.CellSize);
 
-        public BuildPlacement At(Vector2Int cell) => occupied.TryGetValue(cell, out var value) ? value : null;
+        /// <summary>땅 위(0층)의 조각.</summary>
+        public BuildPlacement At(Vector2Int cell) => At(cell, 0);
+        public BuildPlacement At(Vector2Int cell, int level) =>
+            occupied.TryGetValue(Key(cell, level), out var value) ? value : null;
         public BuildPlacement Find(int id) => placements.TryGetValue(id, out var value) ? value : null;
 
-        public PlacementIssue Check(BuildPieceDefinition definition, Vector2Int cell, int rotation, bool fixedGate = false)
+        /// <summary>그 칸에 쌓인 조각 수.</summary>
+        public int ColumnHeight(Vector2Int cell)
         {
+            int level = 0;
+            while (occupied.ContainsKey(Key(cell, level))) level++;
+            return level;
+        }
+
+        /// <summary>그 칸의 맨 위 조각. 비어 있으면 null.</summary>
+        public BuildPlacement Top(Vector2Int cell)
+        {
+            int height = ColumnHeight(cell);
+            return height == 0 ? null : At(cell, height - 1);
+        }
+
+        /// <summary>바로 위층에 다른 조각이 얹혀 있는지.</summary>
+        public bool IsCovered(BuildPlacement placement)
+        {
+            for (int x = 0; x < placement.Size.x; x++)
+                for (int z = 0; z < placement.Size.y; z++)
+                    if (At(placement.Cell + new Vector2Int(x, z), placement.Level + 1) != null) return true;
+            return false;
+        }
+
+        public PlacementIssue Check(BuildPieceDefinition definition, Vector2Int cell, int rotation, bool fixedGate = false) =>
+            Check(definition, cell, rotation, fixedGate, out _, out _);
+
+        /// <summary>놓일 층과 바닥 높이를 함께 돌려준다. 놓을 수 없을 때의 높이는 미리보기 위치용이다.</summary>
+        public PlacementIssue Check(BuildPieceDefinition definition, Vector2Int cell, int rotation, bool fixedGate,
+            out int level, out float elevation)
+        {
+            level = 0; elevation = 0f;
             if (definition == null) return PlacementIssue.NoPiece;
             Vector2Int size = RotatedSize(definition.Footprint, rotation);
             if (cell.x < 0 || cell.y < 0 || cell.x + size.x > grid.Width || cell.y + size.y > grid.Depth)
                 return PlacementIssue.OutsideGrid;
             if (definition.Kind == BuildPieceKind.Gate && (!fixedGate || gateRegistered)) return PlacementIssue.ReservedGate;
+            int common = -1;
+            float commonElevation = 0f;
+            bool uneven = false;
             for (int x = 0; x < size.x; x++)
                 for (int z = 0; z < size.y; z++)
                 {
                     var key = cell + new Vector2Int(x, z);
                     if (reserved.Contains(key)) return PlacementIssue.ReservedGate;
-                    if (occupied.ContainsKey(key)) return PlacementIssue.Occupied;
+                    int height = ColumnHeight(key);
+                    BuildPlacement top = height == 0 ? null : At(key, height - 1);
+                    float surface = top == null ? 0f : top.Elevation + top.Definition.Height;
+                    elevation = Mathf.Max(elevation, surface);
+                    if (height >= grid.MaxLevels || (top != null && !CanSupport(top))) return PlacementIssue.Occupied;
+                    if (common < 0) { common = height; commonElevation = surface; }
+                    else if (height != common || !Mathf.Approximately(surface, commonElevation)) uneven = true;
                 }
+            if (uneven) return PlacementIssue.UnevenSupport;
+            if (definition.Kind == BuildPieceKind.Gate && common > 0) return PlacementIssue.ReservedGate;
+            level = common; elevation = commonElevation;
             return PlacementIssue.None;
         }
 
+        /// <summary>계단의 높은 쪽이 같은 층·같은 높이의 조각에 닿아 있는지.</summary>
         public bool HasLanding(BuildPlacement placement)
         {
             foreach (Vector2Int landing in Landings(placement.Definition.Footprint, placement.Cell, placement.Rotation))
             {
-                BuildPlacement support = At(landing);
-                if (support == null || support.Definition.Kind == BuildPieceKind.Stairs
-                    || !Mathf.Approximately(support.Definition.Height, placement.Definition.Height)) return false;
+                BuildPlacement support = At(landing, placement.Level);
+                if (support == null || !CanSupport(support)
+                    || !Mathf.Approximately(support.Definition.Height, placement.Definition.Height)
+                    || !Mathf.Approximately(support.Elevation, placement.Elevation)) return false;
             }
             return true;
         }
@@ -80,27 +142,86 @@ namespace ProjectNeo.Walls
             out BuildPlacement placement, bool fixedGate = false)
         {
             placement = null;
-            if (Check(definition, cell, rotation, fixedGate) != PlacementIssue.None) return false;
-            placement = new BuildPlacement(nextId++, definition, cell, rotation, fixedGate);
+            if (Check(definition, cell, rotation, fixedGate, out int level, out float elevation) != PlacementIssue.None) return false;
+            placement = new BuildPlacement(nextId++, definition, cell, rotation, fixedGate, level, elevation);
             placements.Add(placement.Id, placement);
-            for (int x = 0; x < placement.Size.x; x++)
-                for (int z = 0; z < placement.Size.y; z++)
-                {
-                    var key = cell + new Vector2Int(x, z);
-                    occupied.Add(key, placement);
-                    if (fixedGate) reserved.Add(key);
-                }
-            if (fixedGate) gateRegistered = true;
+            Occupy(placement, true);
+            if (fixedGate)
+            {
+                for (int x = 0; x < placement.Size.x; x++)
+                    for (int z = 0; z < placement.Size.y; z++) reserved.Add(cell + new Vector2Int(x, z));
+                gateRegistered = true;
+            }
             return true;
         }
 
+        void Occupy(BuildPlacement placement, bool add)
+        {
+            for (int x = 0; x < placement.Size.x; x++)
+                for (int z = 0; z < placement.Size.y; z++)
+                {
+                    Vector3Int key = Key(placement.Cell + new Vector2Int(x, z), placement.Level);
+                    if (add) occupied.Add(key, placement); else occupied.Remove(key);
+                }
+        }
+
+        /// <summary>조각을 뺀다. 위에 쌓인 조각의 처리는 이어서 <see cref="Settle"/>을 부른다.</summary>
         public bool Remove(int id, bool destroyed = false)
         {
             if (!placements.TryGetValue(id, out var placement) || (placement.IsFixed && !destroyed)) return false;
-            for (int x = 0; x < placement.Size.x; x++)
-                for (int z = 0; z < placement.Size.y; z++) occupied.Remove(placement.Cell + new Vector2Int(x, z));
+            Occupy(placement, false);
             placements.Remove(id);
             return true;
+        }
+
+        /// <summary>
+        /// 받침을 잃은 조각을 정리한다. 아래가 모두 비었으면 한 층씩 내려앉아 <paramref name="dropped"/>에,
+        /// 일부만 받쳐지거나 계단 위에 걸리면 배치에서 빠져 <paramref name="unsupported"/>에 담긴다.
+        /// </summary>
+        public void Settle(List<BuildPlacement> dropped, List<BuildPlacement> unsupported)
+        {
+            bool changed = true;
+            while (changed)
+            {
+                changed = false;
+                settleOrder.Clear();
+                settleOrder.AddRange(placements.Values);
+                settleOrder.Sort((a, b) => a.Level.CompareTo(b.Level));
+                foreach (BuildPlacement placement in settleOrder)
+                {
+                    if (placement.Level == 0) continue;
+                    int cells = 0, supported = 0, empty = 0;
+                    for (int x = 0; x < placement.Size.x; x++)
+                        for (int z = 0; z < placement.Size.y; z++)
+                        {
+                            BuildPlacement below = At(placement.Cell + new Vector2Int(x, z), placement.Level - 1);
+                            cells++;
+                            if (below == null) empty++;
+                            else if (CanSupport(below)) supported++;
+                        }
+                    if (supported == cells) continue;
+                    changed = true;
+                    if (empty == cells)
+                    {
+                        Occupy(placement, false);
+                        placement.Level--;
+                        Occupy(placement, true);
+                        if (!dropped.Contains(placement)) dropped.Add(placement);
+                    }
+                    else
+                    {
+                        Remove(placement.Id, true);
+                        dropped.Remove(placement);
+                        unsupported.Add(placement);
+                    }
+                }
+            }
+            dropped.Sort((a, b) => a.Level.CompareTo(b.Level));
+            foreach (BuildPlacement placement in dropped)
+            {
+                BuildPlacement below = placement.Level == 0 ? null : At(placement.Cell, placement.Level - 1);
+                placement.Elevation = below == null ? 0f : below.Elevation + below.Definition.Height;
+            }
         }
 
         public static IEnumerable<Vector2Int> Landings(Vector2Int size, Vector2Int cell, int rotation)

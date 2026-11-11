@@ -156,7 +156,7 @@ namespace ProjectNeo.Editor
 
         // 기본 성(임시 배치). 격자 24×26칸 가운데에 14×14칸 외벽을 두르고 북쪽 가운데에 메인 성문을 둔다.
         // 안뜰 12×12칸은 나중에 시설 건물이 들어갈 자리로 비워 둔다. 북쪽 바깥이 적이 오는 들판이다.
-        const int GridWidth = 24, GridDepth = 26;
+        const int GridWidth = 24, GridDepth = 26, MaxLevels = 3;
         const float CellSize = 3f;
         const int WallWest = 5, WallEast = 18, WallSouth = 4, WallNorth = 17, GateX = 11;
 
@@ -175,6 +175,10 @@ namespace ProjectNeo.Editor
             var stairs = Required<BuildPieceDefinition>(pieces + "Stairs.asset");
             var gate = Required<BuildPieceDefinition>(pieces + "Gate.asset");
             var grid = CombatPrototypeSetup.Save(BuildGridDefinition.Create(GridWidth, GridDepth, CellSize), Data + "/Grid.asset");
+            // 게임 씬은 층 쌓기를 쓴다. 프로토타입 격자는 1층 그대로다.
+            var gridData = new SerializedObject(grid);
+            gridData.FindProperty("maxLevels").intValue = MaxLevels;
+            gridData.ApplyModifiedPropertiesWithoutUndo();
             var cameraSettings = CombatPrototypeSetup.Save(BuildCameraSettings.Create(), Data + "/BuildCamera.asset");
             var cameraData = new SerializedObject(cameraSettings);
             cameraData.FindProperty("orthographicSize").floatValue = 32f;

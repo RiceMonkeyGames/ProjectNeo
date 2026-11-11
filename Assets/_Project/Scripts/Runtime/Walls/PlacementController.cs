@@ -20,6 +20,9 @@ namespace ProjectNeo.Walls
         public BuildPieceDefinition Selected { get; private set; }
         public int Rotation { get; private set; }
         public Vector2Int PreviewCell { get; private set; }
+        /// <summary>미리보기가 놓일 층과 바닥 높이. 가리킨 칸에 조각이 있으면 그 위다.</summary>
+        public int PreviewLevel { get; private set; }
+        public float PreviewElevation { get; private set; }
         public PlacementIssue Issue { get; private set; } = PlacementIssue.NoPiece;
         // 수성 무기 배치. 바닥 칸이 아니라 조각의 설치 지점을 고른다.
         public SiegeWeaponDefinition SelectedWeapon { get; private set; }
@@ -29,7 +32,7 @@ namespace ProjectNeo.Walls
         public bool HasSelection => Selected != null || SelectedWeapon != null;
         public bool IsPreviewVisible => ghost != null && ghost.activeSelf;
         public bool StairNeedsConnection => Selected != null && Selected.Kind == BuildPieceKind.Stairs
-            && !world.Layout.HasLanding(new BuildPlacement(0, Selected, PreviewCell, Rotation, false));
+            && !world.Layout.HasLanding(new BuildPlacement(0, Selected, PreviewCell, Rotation, false, PreviewLevel, PreviewElevation));
 
         public void Configure(ConstructionWorld owner, Camera cameraView, PlacementViewSettings viewSettings)
         { world = owner; view = cameraView; settings = viewSettings; }
@@ -96,8 +99,9 @@ namespace ProjectNeo.Walls
         {
             if (Selected == null || ghost == null) return;
             PreviewCell = world.Layout.WorldToCell(world.LocalPoint(worldPosition));
-            Issue = world.CheckPlacement(Selected, PreviewCell, Rotation);
-            world.SetPose(ghost.transform, Selected, PreviewCell, Rotation);
+            Issue = world.CheckPlacement(Selected, PreviewCell, Rotation, out int level, out float elevation);
+            PreviewLevel = level; PreviewElevation = elevation;
+            world.SetPose(ghost.transform, Selected, PreviewCell, Rotation, elevation);
             Tint(Issue == PlacementIssue.None);
             ghost.SetActive(true);
         }
@@ -180,7 +184,12 @@ namespace ProjectNeo.Walls
                 PlacedStructure support = StructureUnder(ray, out Vector3 point);
                 UpdateWeaponPreview(support, support != null ? point : ray.GetPoint(distance));
             }
-            else UpdatePreview(ray.GetPoint(distance));
+            else
+            {
+                // 조각을 가리키면 그 조각이 선 칸을 고른다. 살짝 안쪽 점을 써서 여러 칸짜리 조각도 가리킨 칸이 잡힌다.
+                PlacedStructure pointed = StructureUnder(ray, out Vector3 point);
+                UpdatePreview(pointed != null ? point + ray.direction * 0.05f : ray.GetPoint(distance));
+            }
             if (Mouse.current.leftButton.wasPressedThisFrame) Confirm();
         }
 
