@@ -1,0 +1,159 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca9391d0bec0a9d479c286207600979e, type: 3}
+  m_Name: Command
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Squads.SquadCommandSettings
+  selectSquad:
+  - m_Name: SelectSquad1
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 36b3d822-4f0a-4fb6-9ebe-7da1c40cec95
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: d0c18290-951d-400f-8f2f-12e8f0236a4f
+      m_Path: <Keyboard>/f1
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: SelectSquad1
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  - m_Name: SelectSquad2
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 4a04e6db-190e-497b-b50c-c6c0c3c92b5e
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: d43c11aa-9205-4191-b4d3-c46e27a142b7
+      m_Path: <Keyboard>/f2
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: SelectSquad2
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  - m_Name: SelectSquad3
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 463e676e-2b60-4280-871a-adc62a475bf7
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: defbd44b-c8df-453e-8c83-9b3126fbcdb3
+      m_Path: <Keyboard>/f3
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: SelectSquad3
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  - m_Name: SelectSquad4
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: cc1e9a34-1aa7-461d-a882-2d0ba8c0a241
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: cbd0944b-dddb-4f77-817f-9d7c97c17636
+      m_Path: <Keyboard>/f4
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: SelectSquad4
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  selectAll:
+    m_Name: SelectAll
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 2957198d-444f-4a37-a83c-d1b5130bc12f
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 7b248316-390f-4430-9144-ad11c341b8e1
+      m_Path: <Keyboard>/backquote
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: SelectAll
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  move:
+    m_Name: OrderMove
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 0681f680-266a-420d-b773-220c6c5a88f0
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 353d939f-1fb3-4b86-84bd-b713a39cd3a1
+      m_Path: <Keyboard>/1
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: OrderMove
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  attack:
+    m_Name: OrderAttack
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: f61f5393-09c4-451a-b2e5-c9af14110205
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: c2112a94-1da7-4995-9772-724ca6eb0888
+      m_Path: <Keyboard>/2
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: OrderAttack
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  hold:
+    m_Name: OrderHold
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 977a878a-73a3-47d9-a438-2a66316d85ba
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 280173de-32d6-422f-aa44-3d9e6ba88b8c
+      m_Path: <Keyboard>/3
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: OrderHold
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  formationColumns: 5
+  formationSpacing: 1.4
+  maxAimDistance: 120
+  navigationSnapDistance: 2

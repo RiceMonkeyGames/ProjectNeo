@@ -46,6 +46,7 @@ namespace ProjectNeo.Walls
             new Vector3((cell.x + size.x * 0.5f) * grid.CellSize, 0f, (cell.y + size.y * 0.5f) * grid.CellSize);
 
         public BuildPlacement At(Vector2Int cell) => occupied.TryGetValue(cell, out var value) ? value : null;
+        public BuildPlacement Find(int id) => placements.TryGetValue(id, out var value) ? value : null;
 
         public PlacementIssue Check(BuildPieceDefinition definition, Vector2Int cell, int rotation, bool fixedGate = false)
         {

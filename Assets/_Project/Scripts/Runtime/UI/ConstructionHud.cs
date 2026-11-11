@@ -15,7 +15,18 @@ namespace ProjectNeo.UI
         [SerializeField] TMP_Text unitHealth;
         [SerializeField] TMP_Text[] captionLabels;
         [SerializeField] string[] captions;
+        // 시험 화면에서 고를 수성 무기 목록. 무기 종류가 늘면 에셋과 버튼만 추가한다.
+        [SerializeField] SiegeWeaponDefinition[] weapons = new SiegeWeaponDefinition[0];
         TMP_FontAsset runtimeFont;
+        public System.Collections.Generic.IReadOnlyList<SiegeWeaponDefinition> Weapons => weapons;
+
+        public void ConfigureWeapons(SiegeWeaponDefinition[] weaponChoices, TMP_Text[] addedLabels, string[] addedCaptions)
+        {
+            weapons = weaponChoices;
+            var labels = new System.Collections.Generic.List<TMP_Text>(captionLabels); labels.AddRange(addedLabels);
+            var texts = new System.Collections.Generic.List<string>(captions); texts.AddRange(addedCaptions);
+            captionLabels = labels.ToArray(); captions = texts.ToArray();
+        }
         public void Configure(PlacementController controller, ConstructionSandbox demo, BuildPieceDefinition wallPiece,
             BuildPieceDefinition stairPiece, TMP_Text selectionLabel, TMP_Text statusLabel, TMP_Text healthLabel,
             TMP_Text[] translatedLabels, string[] translatedCaptions)
@@ -41,10 +52,25 @@ namespace ProjectNeo.UI
         public void Rotate() => placement.Rotate();
         public void WalkToWall() => sandbox.WalkToWall();
         public void CollapseUnderUnit() => sandbox.CollapseUnderUnit();
+        public void SelectWeapon(int index) => placement.SelectWeapon(weapons[index]);
+        public void CollapseUnderWeapon() => sandbox.CollapseUnderWeapon();
 
         void Update()
         {
-            if (placement.Selected == null) selection.text = "지을 조각을 고르세요";
+            if (placement.SelectedWeapon != null)
+            {
+                string issue;
+                switch (placement.MountIssue)
+                {
+                    case MountIssue.None: issue = "설치 가능"; break;
+                    case MountIssue.NoSupport: issue = "성벽 위를 가리키세요"; break;
+                    case MountIssue.NoMountPoint: issue = "이 조각에는 설치할 자리가 없습니다"; break;
+                    case MountIssue.Occupied: issue = "이미 무기가 설치된 자리입니다"; break;
+                    default: issue = "위치를 고르세요"; break;
+                }
+                selection.text = placement.SelectedWeapon.DisplayName + "\n" + issue;
+            }
+            else if (placement.Selected == null) selection.text = "지을 조각을 고르세요";
             else
             {
                 string issue;

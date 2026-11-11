@@ -35,6 +35,18 @@ namespace ProjectNeo.Walls
             Message = "걸어 올라갈 성벽이 없습니다. 계단의 높은 쪽을 성벽에 연결하세요.";
         }
 
+        public void CollapseUnderWeapon()
+        {
+            foreach (PlacedSiegeWeapon weapon in world.Weapons)
+            {
+                string name = weapon.Definition.DisplayName;
+                weapon.Support.ReceiveDamage(weapon.Support.Health.Current);
+                Message = name + "을(를) 받치던 성벽이 무너져 함께 파괴됐습니다.";
+                return;
+            }
+            Message = "먼저 성벽 위에 수성 무기를 설치하세요.";
+        }
+
         public void CollapseUnderUnit()
         {
             if (unit.Health.IsDead) { Message = "시험 유닛이 사망했습니다. Play를 다시 시작하면 초기화됩니다."; return; }

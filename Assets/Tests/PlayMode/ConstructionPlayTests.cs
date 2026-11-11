@@ -234,6 +234,95 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
+        public IEnumerator SiegeWeapon_MountsOnWallTop_WithoutChangingFloorOrNavigation_AndRejectsBadSpots()
+        {
+            var hud = scene.GetRootGameObjects().Select(root => root.GetComponent<ProjectNeo.UI.ConstructionHud>())
+                .Single(value => value != null);
+            SiegeWeaponDefinition cannon = hud.Weapons[0];
+            var support = world.Structures.First(piece => piece.Placement.Definition.Kind == BuildPieceKind.Wall);
+            var ramp = world.Structures.First(piece => piece.Placement.Definition.Kind == BuildPieceKind.Stairs);
+            Assert.IsTrue(support.TryGetMountPose("top", out Pose top));
+            int pieces = world.Layout.Placements.Count;
+            int revision = world.NavigationRevision;
+
+            controller.SelectWeapon(cannon);
+            controller.UpdateWeaponPreview(null, world.WorldCenter(wall, new Vector2Int(1, 1), 0));
+            Assert.AreEqual(MountIssue.NoSupport, controller.MountIssue);
+            Assert.IsFalse(controller.Confirm());
+            controller.UpdateWeaponPreview(ramp, ramp.transform.position);
+            Assert.AreEqual(MountIssue.NoMountPoint, controller.MountIssue);
+            Assert.IsFalse(controller.Confirm());
+            Assert.AreEqual(0, world.Weapons.Count);
+
+            controller.UpdateWeaponPreview(support, support.transform.position);
+            Assert.AreEqual(MountIssue.None, controller.MountIssue);
+            Assert.AreEqual(0, world.Weapons.Count, "미리보기만으로 설치되면 안 된다.");
+            Assert.IsTrue(controller.Confirm());
+            PlacedSiegeWeapon weapon = world.Weapons.Single();
+            Assert.AreSame(cannon, weapon.Definition);
+            Assert.AreSame(support, weapon.Support);
+            Assert.That(Vector3.Distance(top.position, weapon.transform.position), Is.LessThan(0.001f));
+            Assert.AreEqual(cannon.Size, weapon.transform.localScale);
+            Assert.IsFalse(weapon.transform.IsChildOf(support.transform.parent), "무기는 길찾기 수집 대상 밖에 둔다.");
+            Assert.IsFalse(controller.Confirm());
+            Assert.AreEqual(MountIssue.Occupied, controller.MountIssue);
+            Assert.AreEqual(1, world.Weapons.Count);
+
+            Assert.AreEqual(pieces, world.Layout.Placements.Count);
+            for (int i = 0; i < 5; i++) yield return null;
+            Assert.IsFalse(world.IsRebuilding || world.RebuildPending);
+            Assert.AreEqual(revision, world.NavigationRevision);
+        }
+
+        [UnityTest]
+        public IEnumerator SupportCollapse_DestroysMountedWeapon_AndNotifiesItsModulesOnce()
+        {
+            var template = new GameObject("TestWeaponTemplate");
+            SceneManager.MoveGameObjectToScene(template, scene);
+            template.AddComponent<PlacedSiegeWeapon>();
+            template.AddComponent<RecordingSiegeWeaponModule>();
+            SiegeWeaponDefinition definition = SiegeWeaponDefinition.Create("test", "test", Vector3.one, template);
+            try
+            {
+                PlacedStructure[] walls = world.Structures
+                    .Where(piece => piece.Placement.Definition.Kind == BuildPieceKind.Wall).Take(2).ToArray();
+                Assert.IsTrue(world.TryMount(definition, walls[0], "top", out var doomed));
+                Assert.IsTrue(world.TryMount(definition, walls[1], "top", out var kept));
+                var doomedModule = doomed.GetComponent<RecordingSiegeWeaponModule>();
+                var keptModule = kept.GetComponent<RecordingSiegeWeaponModule>();
+                Assert.AreEqual(1, doomedModule.Installed);
+                int worldEvents = 0;
+                world.WeaponRemoved += (_, _) => worldEvents++;
+                int supportId = walls[0].Placement.Id;
+
+                walls[0].ReceiveDamage(walls[0].Health.Current);
+                Assert.IsTrue(doomed.IsRemoved);
+                Assert.AreEqual(1, doomedModule.Removed);
+                Assert.AreEqual(SiegeWeaponRemoval.SupportDestroyed, doomedModule.LastReason);
+                Assert.AreSame(kept, world.Weapons.Single());
+                Assert.IsNull(world.Mounts.At(supportId, "top"));
+                Assert.AreEqual(0, keptModule.Removed);
+                yield return null;
+                Assert.IsTrue(doomed == null, "받치던 성벽과 함께 무기 오브젝트도 사라져야 한다.");
+                Assert.IsFalse(world.TryMount(definition, walls[0], "top", out _), "무너진 조각에는 설치할 수 없다.");
+
+                Assert.IsTrue(world.RemoveWeapon(kept));
+                Assert.IsFalse(world.RemoveWeapon(kept));
+                Assert.AreEqual(SiegeWeaponRemoval.Dismantled, keptModule.LastReason);
+                Assert.AreEqual(1, keptModule.Removed);
+                Assert.AreEqual(2, worldEvents);
+                Assert.AreEqual(0, world.Weapons.Count);
+                Assert.AreEqual(MountIssue.None, world.CheckMount(definition, walls[1], "top"));
+                yield return WaitForNavigation(world);
+            }
+            finally
+            {
+                Object.Destroy(template);
+                Object.Destroy(definition);
+            }
+        }
+
+        [UnityTest]
         public IEnumerator ConsecutiveChanges_AreCoalesced_AndRemovedWallTopDisappears()
         {
             var target = world.Structures.First(piece => piece.Placement.Definition.Kind == BuildPieceKind.Wall);

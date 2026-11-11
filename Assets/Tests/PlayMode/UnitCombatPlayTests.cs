@@ -106,6 +106,20 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
+        public IEnumerator MoveDirective_StopsAtTheClosestReachablePoint_WhenDestinationIsCutOff()
+        {
+            var unit = Unit("Mover", CombatTeam.Allied, Vector3.zero, ai: true);
+            var ai = unit.GetComponent<UnitCombatAI>();
+            yield return null;
+            // 섬은 본토와 떨어져 있어 끝까지 갈 길이 없다.
+            ai.SetDirective(UnitDirective.Move, origin + new Vector3(30f, 0f, 0f));
+            int frames = 0;
+            while (ai.Directive == UnitDirective.Move && frames++ < 1200) yield return null;
+            Assert.AreEqual(UnitDirective.Hold, ai.Directive, "갈 수 없는 목적지에서 이동이 끝나지 않았다.");
+            Assert.That(unit.transform.position.x - origin.x, Is.InRange(15f, 20.5f));
+        }
+
+        [UnityTest]
         public IEnumerator Melee_UsesDefense_AndIgnoresFriendlyBody()
         {
             var attacker = Unit("Attacker", CombatTeam.Allied, Vector3.zero);

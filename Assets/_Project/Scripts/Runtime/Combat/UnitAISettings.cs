@@ -14,8 +14,16 @@ namespace ProjectNeo.Combat
         public float DetectionRange => detectionRange;
         public float TurnSpeed => turnSpeed;
         public float Acceleration => acceleration;
+        // 이동 지시에서 이 거리 안으로 들어오면 도착으로 본다.
+        [SerializeField, Min(0.01f)] float arrivalDistance = 0.35f;
         public float StoppingRangeRatio => stoppingRangeRatio;
+        public float ArrivalDistance => arrivalDistance;
 
-        public static UnitAISettings Create() => CreateInstance<UnitAISettings>();
+        public static UnitAISettings Create(float detectionRange = 60f)
+        {
+            var value = CreateInstance<UnitAISettings>();
+            value.detectionRange = Mathf.Max(0f, detectionRange);
+            return value;
+        }
     }
 }

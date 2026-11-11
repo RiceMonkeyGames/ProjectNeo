@@ -18,9 +18,10 @@ Unity 6000.6.8f1, URP, 3D 3인칭 프로젝트다. 현재는 임시 그래픽이
 
 | 씬 경로 | 확인할 것과 조작 |
 |---|---|
-| `Assets/_Project/Scenes/ConstructionPrototype.unity` | 현재 빌드 첫 씬. Q/E 시점 회전, 성벽·계단 선택, 격자 반투명 미리보기, 좌클릭 설치·우클릭 취소·R 조각 회전. 성벽 위 이동과 발밑 조각 파괴로 낙하 시험 |
+| `Assets/_Project/Scenes/ConstructionPrototype.unity` | 현재 빌드 첫 씬. Q/E 시점 회전, 성벽·계단 선택, 격자 반투명 미리보기, 좌클릭 설치·우클릭 취소·R 조각 회전. 성벽 위 이동과 발밑 조각 파괴로 낙하 시험. 성벽 위 대포 설치와 받침 성벽 파괴 시 동반 파괴 시험 |
 | `Assets/_Project/Scenes/CombatPrototype.unity` | WASD 이동, 마우스 시점, 좌클릭 근접 공격. 허수아비·체력·카메라 시험. Esc로 커서 해제 |
 | `Assets/_Project/Scenes/UnitBattlePrototype.unity` | 아군 10명과 적 10명의 근접·원거리 자동 전투 관전 |
+| `Assets/_Project/Scenes/SquadCommandPrototype.unity` | 플레이어 직접 조작 + 부대 3개 지휘. F1~F3 부대 선택, ` 전체 선택, 1 이동(화면 가운데가 가리키는 곳)·2 공격·3 중지. 왼쪽 위에 선택·지시·남은 인원 표시 |
 
 에디터에서 씬을 열고 Play를 누른다. 종료 후 다시 Play하면 초기 상태로 돌아온다. 아직 준비 → 수성전 → 보상으로 이어지는 전체 게임 흐름은 없다. 세 씬은 기반 기능을 확인하는 프로토타입이다. 최신 테스트 통과 기준과 남은 연결은 [로드맵 3장](ImplementationPlan.md#3-현재-상태와-출발점)을 확인한다.
 
@@ -42,15 +43,19 @@ Unity 6000.6.8f1, URP, 3D 3인칭 프로젝트다. 현재는 임시 그래픽이
 | Combat | `CombatProfile`, `CharacterActor`, `CombatTeam` | 몸통 크기·공격 종류·선딜레이·최소 피해·투사체 설정 에셋. 영웅과 잡졸을 공통 스탯 경로로 연결하고 팀, 대상 후보, 근접·원거리 공격, 재공격 대기, 피격·사망을 처리한다. `Character`는 영웅만 가지며 공통 접근은 `Stats`를 쓴다. |
 | Combat | `DamageRules`, `CombatPhysics` | 일반 C# 피해 공식과 사거리·사선 검사. 동일 씬의 적만 공격하고 아군 충돌체는 공격을 막지 않는다. |
 | Combat | `CombatProjectile` | 직선 투사체. 발사 때 공격력·팀·방향을 저장하고 명중 때 방어력을 적용한다. 아군 통과, 첫 적·벽 충돌, 사거리·수명 종료를 처리한다. |
-| Combat | `UnitAISettings`, `UnitCombatAI` | 탐색 범위·판단 주기·회전·이동 설정. 가까운 추격 가능한 적 선택, 대상 유지, NavMesh 경로 갱신, 근접·원거리 공격, 사망 후 이동 정지. |
+| Combat | `UnitAISettings`, `UnitCombatAI` | 탐색 범위·판단 주기·회전·이동·도착 거리 설정. 가까운 추격 가능한 적 선택, 대상 유지, NavMesh 경로 갱신, 근접·원거리 공격, 사망 후 이동 정지. `UnitDirective`(Engage 알아서 싸움 / Hold 자리 지키며 닿는 적만 공격 / Move 적 무시하고 이동 후 Hold)로 행동을 바꾼다. 지시를 받지 않은 유닛의 기본값은 Engage다. |
 | Combat | `PlaceholderCombatView` | `Visual` 자식에서 공격·피격·사망 신호를 구독한다. 임시 색 변경, 공격 표시, 체력 막대와 사망 외형. 전투 판정을 하지 않는다. |
 | Facilities | `FacilityDefinition`, `FacilityState` | 시설별 레벨 데이터, 품목 풀, 업그레이드 비용과 스탯 효과 |
-| Squads | `SquadConfig`, `Squad<TUnit>`, `Army<TUnit>` | 부대와 군대 인원 상한, 부대장 지정. 아직 씬 지휘·이동은 없다. |
+| Squads | `SquadConfig`, `Squad<TUnit>`, `Army<TUnit>` | 부대와 군대 인원 상한, 부대장 지정. |
+| Squads | `SquadCommander`, `SquadOrder`, `SquadFormation` | 일반 C# 지휘 규칙. 부대 선택(하나·전체), 선택한 부대에 이동·공격·중지 지시, 기본 상태 중지, 이동 도착 시 중지 전환, 줄 단위 대형 자리 계산. 씬·입력을 알지 않는다. |
+| Squads | `SquadCommandSettings`, `SquadCommandCenter`, `SquadCommandInput` | 지휘 키(`InputAction`)·대형 수치 에셋, 지시를 유닛의 `UnitDirective`와 대형 자리로 옮기고 도착을 확인하는 씬 연결, 키 입력과 화면 가운데 조준점 계산. 키는 `Command.asset` 인스펙터에서 바꾼다. |
+| UI | `SquadCommandHud` | 시험용 지휘 표시(선택·지시·남은 인원·안내·조준점). 정식 전투 HUD는 아니다. |
 | Morale | `SquadMorale` | 퍽 효과에서 사용할 부대 사기 값. 실제 사기 감소·도망 규칙은 B-8에서 구현한다. |
 | Walls | `ConstructionProgress` | 공사 기간과 스테이지 진행 계산. 실제 배치·런 이월과는 아직 연결하지 않았다. |
 | Walls | `BuildGridDefinition`, `BuildPieceDefinition`, `BuildLayout` | 격자 크기, 조각 종류·점유 칸·높이·체력·프리팹 정의. 일반 C# 점유·회전·경계·고정 성문 영역 검사와 독립 계단의 연결 질의. |
 | Walls | `ConstructionWorld`, `PlacedStructure` | 배치 모델과 몸통 생성, 실제 유닛 겹침 검사, 조각 체력·파괴 이벤트, 변경을 모아 비동기 NavMesh 갱신. |
 | Walls | `PlacementViewSettings`, `PlacementController`, `BuildGridView` | 반투명 미리보기 재질·색, 마우스 선택·설치·취소·회전, 격자 표시. 미리보기는 충돌과 점유·NavMesh에 영향을 주지 않는다. |
+| Walls | `SiegeWeaponDefinition`, `MountLayout`, `PlacedSiegeWeapon`, `ISiegeWeaponModule` | 수성 무기 공통 구조. 정의 에셋(ID·이름·크기·프리팹), 일반 C# 설치 지점 점유 규칙(지지 조각 ID + 지점 ID마다 하나), 모든 무기가 쓰는 공통 몸통, 무기별 동작을 붙이는 인터페이스. 대포 전용 클래스는 없다. |
 | Walls | `BuildCameraSettings`, `ConstructionCameraController` | 직교 카메라의 각도·크기·초기 방향·회전 단위·전환 시간 에셋. Q/E로 판 중심을 90도씩 부드럽게 돌며 월드·격자·배치 좌표는 유지한다. |
 | Walls | `FallSettings`, `FallDamageRules`, `UnitFallController` | 높이별 피해 계산과 파괴 시 낙하·착지. NavMeshAgent와 CharacterController 몸통을 지원하고 착지 후 이동을 복구한다. |
 | Walls / UI | `ConstructionSandbox`, `ConstructionHud` | 시험 씬 전용 이동·발밑 조각 파괴, uGUI·TMP 건설 선택과 상태 표시. 정식 부대 지휘나 준비 화면은 아니다. |
@@ -82,6 +87,19 @@ Unity 6000.6.8f1, URP, 3D 3인칭 프로젝트다. 현재는 임시 그래픽이
 
 원거리 공격은 선딜레이가 끝날 때 대상 위치를 향해 발사한다. 발사 뒤에는 유도하지 않으며 첫 적이나 벽에 맞으면 사라진다. 발사 전 대상이 사망·이탈했으면 발사를 취소한다. 날아가는 투사체는 발사자의 사망과 별개로 남은 사거리·수명 동안 이동한다.
 
+### B-5 부대 지휘 씬
+
+- `Assets/_Project/Scenes/SquadCommandPrototype.unity`: 평지 70m × 70m와 장애물 하나. 플레이어, 아군 부대 3개(근접 5·근접 5·원거리 4), 멀리 선 적 8명(근접 6·원거리 2). 빌드 목록의 끝에 추가했으며 첫 씬은 그대로 `ConstructionPrototype`이다.
+- `Assets/_Project/Data/SquadCommandPrototype/`: `SquadConfig`(부대 4개 × 10명), `Command`(지휘 키·대형 열 수·간격·조준 거리), `AllyAI`(시야 15m)·`EnemyAI`(시야 12m), 구운 NavMesh. 유닛·플레이어 프리팹과 수치는 B-2·B-3 시험 씬의 것을 그대로 쓴다.
+
+Play → F1~F3으로 부대 선택(` 는 전체) → 화면 가운데 점을 땅에 맞추고 1을 누르면 그곳으로 이동한다. 이동 중에는 싸우지 않고 도착하면 중지가 된다. 3 중지는 자리를 지키며 사거리 안의 적만 공격한다. 2 공격은 화면 가운데가 가리키는 지점으로 가면서 시야에 들어온 적을 쫓아가 싸우고, 처리하면 다시 지점으로 향한다. 도착했거나 적이 없으면 공격 지시를 유지한 채 기다린다. 가리킨 곳이 없으면 제자리에서 싸운다. Play를 다시 시작하면 초기 상태다.
+
+**시야:** 유닛의 시야는 `UnitAISettings.DetectionRange` 하나다. 그 거리 안에 있고 NavMesh로 끝까지 갈 수 있는 적만 발견한다. 벽에 가려 안 보이는 것이나 시야각은 없다. 이 씬은 아군 15m(`AllyAI.asset`), 적 12m(`EnemyAI.asset`)이며 임시 수치다. 적은 아군이 12m 안으로 오기 전까지 서 있으므로 지시를 차례로 시험할 수 있다. 관전 전투 씬의 `AI.asset`(60m)은 그대로다.
+
+**표시:** `SquadCommand/Visual`의 `PlaceholderSquadMarkers`가 선택한 부대의 살아 있는 유닛마다 발밑에 노란 원판을, 이동·공격 지시의 목적지에 청록색 원판을 띄운다. 목적지 표시는 선택을 바꿔도 남고, 이동이 끝나 중지가 되면 사라진다. 선택·지시 상태를 읽기만 하는 임시 외형이며 외곽선 등 최종 표현은 M5에서 이 부품을 바꾼다. 죽은 유닛의 임시 체력 막대는 숨긴다.
+
+대형은 지시한 순간 카메라가 보는 방향을 앞으로 삼는다. 대형 자리가 걸을 수 없는 곳이면 목적지 자체로 보낸다. 목적지까지 길이 없거나 끊기면 갈 수 있는 가장 가까운 곳에서 멈춘다(Q-23 결정). 성벽 위 지휘(B-5.4), 부대장 영웅, 정식 HUD는 아직 없다.
+
 ### B-4 건설 기초 씬
 
 - `Assets/_Project/Scenes/ConstructionPrototype.unity`: 현재 빌드 첫 씬. 초기 방향 45도·내려다보는 각도 30도의 직교 카메라, 성벽·계단·고정 성문, 시험 유닛, 조각 선택과 이동·붕괴 시험 버튼.
@@ -100,15 +118,21 @@ Q/`RotateLeft()`와 E/`RotateRight()`는 화면 속 판의 왼쪽·오른쪽 회
 
 `ConstructionWorld`는 스케일 1의 평평한 격자 원점을 제공한다. 조각은 `Geometry` 아래에만 생성하고 미리보기·격자선은 그 밖에 둔다. 최초 NavMesh는 시작 시 만들며 이후 요청은 한 번에 하나씩 비동기 처리한다. 진행 중 추가 변경이 생기면 한 번 더 갱신한다. 배치 ID는 현재 씬 실행 중 식별자이며 런 저장 계약은 아직 아니다.
 
-현재 점유 키는 바닥 `(x, z)`이며 한 칸에 조각을 중복하거나 높이 층을 선택할 수 없다. 조각 높이 에셋을 바꾸는 것과 블록을 적층하는 것은 다른 기능이다. 향후 수성 무기는 `BuildPieceDefinition.MountPoints`의 설치 지점을 사용해 바닥 점유와 분리한다. `PlacedStructure.TryGetMountPose()`가 조각 크기·회전을 반영한 월드 위치를 제공한다. 현재 성벽 정의에 `top` 지점 하나를 예시로 뒀으며, 슬롯 점유·실제 무기 설치·지지 조각 파괴 시 처리는 B-4.6에서 구현한다.
+현재 점유 키는 바닥 `(x, z)`이며 한 칸에 조각을 중복하거나 높이 층을 선택할 수 없다. 조각 높이 에셋을 바꾸는 것과 블록을 적층하는 것은 다른 기능이다. 향후 수성 무기는 `BuildPieceDefinition.MountPoints`의 설치 지점을 사용해 바닥 점유와 분리한다. `PlacedStructure.TryGetMountPose()`가 조각 크기·회전을 반영한 월드 위치를 제공한다. 현재 성벽 정의에 `top` 지점 하나가 있다.
 
-현재 B-4.6의 성벽 위 대포 등 구조물, 적의 성벽 공격, 재화 차감·수리·런 이월, 정식 건설/전투 전환은 연결하지 않았다. 기존 직접 조작 씬·관전 전투 씬은 계속 별도로 시험한다.
+**수성 무기(B-4.6):** `대포` 버튼 → 성벽을 가리키면 그 조각의 가장 가까운 설치 지점에 반투명 미리보기 → 좌클릭 설치, 우클릭 취소. 지점 하나에 무기 하나만 놓인다. 성벽이 아닌 곳·설치 지점이 없는 계단·이미 무기가 있는 자리는 빨간색으로 거부한다. `무기 받침 성벽 파괴`는 무기를 받치는 성벽을 부숴 무기가 함께 사라지는지 확인한다. `ConstructionWorld.TryMount`/`RemoveWeapon`/`Collapse`가 설치·철거·동반 파괴를 처리하고 `WeaponRemoved`로 알린다. 무기는 `Geometry` 밖의 `Mounts` 아래에 생성해 NavMesh를 바꾸지 않는다.
+
+새 무기를 추가하려면 `SiegeWeaponDefinition` 에셋과 프리팹(루트에 `PlacedSiegeWeapon`, 외형은 `Visual` 자식, 가로·높이·세로 1 기준)을 만든다. 무기만의 동작은 `ISiegeWeaponModule` 컴포넌트를 프리팹에 붙이면 설치·제거 때 호출된다. 시험 씬에는 `SiegeWeaponSetup.AddToOpenScene`의 무기 배열에 한 줄을 더하고 HUD의 `weapons` 목록에 넣는다. 현재 대포(`Cannon.asset`, `Cannon.prefab`)는 쏘지 않는 임시 외형이며 충돌체가 없다.
+
+현재 수성 무기의 발사·피해·자체 체력, 적의 성벽 공격, 재화 차감·수리·런 이월, 정식 건설/전투 전환은 연결하지 않았다. 기존 직접 조작 씬·관전 전투 씬은 계속 별도로 시험한다.
 
 ### 에디터와 테스트
 
 - `Assets/_Project/Scripts/Editor/CombatPrototypeSetup.cs`: 메뉴 `ProjectNeo/Setup/Create Combat Prototype` 또는 `Create()`로 씬·프리팹·에셋을 Unity API로 생성한다. 기존 씬이 있거나 현재 씬에 저장하지 않은 변경이 있으면 중단한다. 기존 테스트 수치 에셋도 덮어쓰지 않는다.
 - `Assets/_Project/Scripts/Editor/UnitBattleSetup.cs`: 메뉴 `ProjectNeo/Setup/Create Unit Battle Prototype` 또는 `Create()`로 B-3 씬·프리팹·수치 에셋·NavMesh를 생성한다. 기존 씬과 저장하지 않은 변경은 보존한다. `UpgradeTrainingTeams()`는 기존 허수아비 프리팹을 적 팀으로 갱신한다.
 - `Assets/_Project/Scripts/Editor/ConstructionPrototypeSetup.cs`: 메뉴 `ProjectNeo/Setup/Create Construction Prototype` 또는 `Create()`로 건설 씬·에셋·프리팹·시험 UI를 Unity API로 생성한다. 기존 씬이나 저장하지 않은 변경이 있으면 중단한다. TMP 필수 리소스를 먼저 가져와야 한다.
+- `Assets/_Project/Scripts/Editor/SiegeWeaponSetup.cs`: 메뉴 `ProjectNeo/Setup/Add Siege Weapons To Construction Prototype`. 기존 건설 씬에 대포 에셋·프리팹과 시험 버튼을 추가한다. 이미 추가됐거나 저장하지 않은 변경이 있으면 중단한다. 새로 씬을 만들 때는 `ConstructionPrototypeSetup.Create()`가 함께 호출한다.
+- `Assets/_Project/Scripts/Editor/SquadCommandSetup.cs`: 메뉴 `ProjectNeo/Setup/Create Squad Command Prototype` 또는 `Create()`로 B-5 씬·수치 에셋·NavMesh·시험 HUD를 만든다. 기존 씬이나 저장하지 않은 변경이 있으면 중단한다. B-2·B-3의 프리팹이 먼저 있어야 한다. `Upgrade()`(메뉴 `Upgrade Squad Command Prototype`)는 기존 씬에 팀별 시야 에셋과 선택·목적지 표시를 더하며 여러 번 실행해도 결과가 같다. 프리팹 인스턴스의 값은 `SerializedObject`로 써야 씬에 저장된다.
 - `Assets/_Project/Scripts/Editor/BuildScript.cs`: Windows 빌드. 기본 출력 `Builds/Windows/ProjectNeo.exe`.
 - `Assets/Tests/EditMode/`: 스탯, 지갑, 시설, 공사·부대, 퍽, 아이템·상점, 캐릭터, 메타 진행, 체력 규칙.
 - `Assets/Tests/PlayMode/CombatPrototypePlayTests.cs`: 실제 씬을 추가로 불러와 이동·충돌, 공격 선딜레이·사거리·가림·사망, 카메라 회전 제한과 벽 회피를 확인한다.
@@ -116,6 +140,10 @@ Q/`RotateLeft()`와 E/`RotateRight()`는 화면 속 판의 왼쪽·오른쪽 회
 - `Assets/Tests/PlayMode/UnitCombatPlayTests.cs`: 팀과 피해, 대상 유지·교체, 투사체 아군 통과·회피·얇은 벽 충돌, 에이전트 사망 정지, 저장된 10 대 10 씬 전투를 확인한다. 테스트용 NavMesh와 씬, 고정 시간 간격은 종료 때 정리한다.
 - `Assets/Tests/EditMode/BuildLayoutTests.cs`: 임의 격자 크기, 음수 좌표·회전 점유·실패 시 상태 보존, 독립 계단의 연결 갱신, 고정 성문 영역, 높이에 따른 낙하 피해.
 - `Assets/Tests/PlayMode/ConstructionPlayTests.cs`: 카메라 4방향 회전과 픽킹 불변, 즉시 점프 없는 보간과 연속·역방향 입력, 미리보기·취소의 무영향, 회전 설치·중복 거부·비동기 갱신, 유닛 겹침·성문 영역, 실제 계단 이동·붕괴·낙하 피해와 에이전트 복귀, CharacterController 몸통의 낙하·복구, 연속 변경의 반영과 사라진 성벽 위 경로.
+- `Assets/Tests/EditMode/MountLayoutTests.cs`: 설치 지점 점유가 바닥 점유와 분리되는지, 실패 사유와 ID 보존, 서로 다른 무기 종류의 공통 규칙, 지지 조각 제거 시 그 위 무기만 해제.
+- `ConstructionPlayTests`의 수성 무기 2개: 미리보기 무영향, 성벽 위 설치 위치·크기, 중복·성벽 밖·계단 거부, 바닥 점유와 NavMesh 불변, 받침 성벽 파괴 시 동반 파괴와 무기 동작 부품(`RecordingSiegeWeaponModule`) 알림 1회, 철거.
+- `Assets/Tests/EditMode/SquadCommanderTests.cs`: 기본 중지, 하나·전체 선택과 없는 부대 거부, 선택한 부대만 지시, 이동 도착 시 중지·공격 유지, 대형 자리의 개수·간격·방향.
+- `Assets/Tests/PlayMode/SquadCommandPlayTests.cs`: 저장된 지휘 씬에서 기본 중지, 선택한 부대만 이동 후 중지, 이동 중 적 무시, 중지 중 닿는 적만 공격하고 쫓지 않음, 공격 지시의 교전과 적이 없을 때 대기, 화면 가운데 이동 지시와 선택 없는 지시 거부. 실제 키 입력은 사용자 직접 확인 대상이다.
 - `Assets/Tests/PlayMode/SetupSmokePlayTests.cs`: 프레임 진행 확인.
 - `Assets/Tests/PlayMode/UnitScaleBenchmark.cs`: 명시적으로 실행하는 성능 측정. 평소 테스트에서는 제외된다.
 
@@ -384,5 +412,33 @@ unity command package add --caller plugin --skill unity-package-management --nam
 - 사용자 기대에 맞춰 Q/E 방향을 반전했다. 화면 속 판 기준으로 Q 왼쪽, E 오른쪽이다. 부드러운 전환·회전 중 재입력과 R 조각 회전은 유지한다.
 - 컴파일 오류 없음. 카메라 관련 PlayMode 2개 통과(4방향·픽킹 좌표 불변, 보간·연속·역방향 입력). 전체 테스트와 빌드는 이 작은 입력 방향 변경에서 반복하지 않았다.
 - 직접 검증: `ConstructionPrototype` → Play → Q로 왼쪽 회전, E로 오른쪽 회전 확인. 시점 전환 중 반대 키를 눌러도 부드럽게 이어져야 한다.
+
+### 2026-11-11: B-4.6 수성 무기 공통 구조·설치·동반 파괴
+
+- 사용자 결정: 건설 조작은 현재대로 유지. 받침 성벽이 부서지면 위의 대포도 함께 파괴. 수성 무기는 나중에 다양한 종류를 추가할 수 있게 확장성 있게 만든다.
+- 대포 전용 클래스 없이 `SiegeWeaponDefinition`(데이터)·`MountLayout`(점유 규칙)·`PlacedSiegeWeapon`(공통 몸통)·`ISiegeWeaponModule`(무기별 동작 자리)로 나눴다. 대포는 에셋과 임시 프리팹 하나다.
+- `ConstructionWorld`에 설치·철거·동반 파괴와 `WeaponRemoved` 이벤트, `PlacementController`에 무기 미리보기·설치, 시험 HUD에 `대포`·`무기 받침 성벽 파괴` 버튼을 추가했다. 버튼이 늘어 시험 패널의 간격과 버튼 높이를 줄였다.
+- 범위 밖(Q-21 미정): 발사·피해·조작 주체·자체 체력·설치 방향 회전·통로 차단·비용. 현재 대포는 쏘지 않고 충돌체가 없다.
+- 검증: 컴파일 오류 없음. EditMode 92개, PlayMode 25개 전체 통과. 에디터 Play에서 게임 화면을 캡처해 대포가 성벽 위에 놓이는 것과 패널 배치를 확인했고, `무기 받침 성벽 파괴` 호출로 조각 7→6개·무기 1→0개를 확인했다. 마우스로 직접 클릭하는 조작은 사용자 확인 대상이다. Windows 빌드는 다시 만들지 않았다.
+- 직접 검증(B-4.6): `Assets/_Project/Scenes/ConstructionPrototype.unity` → Play → `대포` → 성벽 위를 가리켜 초록 미리보기 확인 → 좌클릭 설치 → 같은 성벽을 다시 가리키면 빨강 → 계단·바닥도 빨강 → `무기 받침 성벽 파괴`로 성벽과 대포가 함께 사라지는지 확인. Play를 다시 시작하면 초기화된다.
+
+### 2026-11-11: B-5.1~5.3 부대 지휘 (평지 시험)
+
+- 사용자 결정: 지휘 키는 우선 F1~F4 선택·` 전체 선택·1 이동·2 공격·3 중지로 하고 불편하면 바꾼다(Q-11). 이동은 적을 무시하고 도착하면 중지, 중지는 자리를 지키며 닿는 적만 공격, 공격은 적이 없으면 지시를 유지한 채 대기, 기본 상태는 중지(Q-22).
+- 일반 C# `SquadCommander`·`SquadFormation`으로 선택·지시·대형을 만들고, `UnitCombatAI`에 `UnitDirective`를 더해 지시별 행동을 연결했다. 지시를 받지 않은 유닛(적, 관전 전투)의 행동은 그대로다. `SquadCommandCenter`가 지시를 유닛에 옮기고 `SquadCommandInput`이 키와 화면 가운데 조준점을 처리한다. 키는 `SquadCommandSettings` 에셋의 `InputAction`이라 인스펙터에서 바꾼다.
+- `SquadCommandPrototype` 씬과 시험 HUD를 Unity API로 만들었다. 빌드 목록 끝에 추가했고 첫 씬은 바꾸지 않았다.
+- 범위 밖: 성벽 위 지휘와 경로가 끊겼을 때 처리(B-5.4, Q-23), 부대장 영웅(Q-05), 정식 HUD.
+- 검증: 컴파일 오류 없음. EditMode 101개, PlayMode 29개 전체 통과. 에디터 Play에서 지시를 코드로 내려 이동과 HUD 표시를 화면 캡처로 확인했다. 실제 키를 누르는 조작은 자동 검증하지 않았다. Windows 빌드는 다시 만들지 않았다.
+- 직접 검증: `Assets/_Project/Scenes/SquadCommandPrototype.unity` → Play → F1 → 화면 가운데 점을 땅에 맞추고 1 → 1번 부대만 이동하고 도착하면 `중지`로 표시 → F2 → 2 → 2번 부대가 적을 찾아가 싸움 → ` → 3으로 전체 중지. 왼쪽 위 표시에서 선택(▶)·지시·남은 인원을 확인한다. Play를 다시 시작하면 초기화된다.
+- 자동 검증 재실행: Test Runner에서 EditMode `SquadCommanderTests`, PlayMode `SquadCommandPlayTests`.
+
+### 2026-11-11: 공격 지시 변경·시야·지휘 표시
+
+- 사용자 결정: 갈 수 없는 목적지는 갈 수 있는 가장 가까운 곳에서 멈춘다(Q-23). 공격 지시는 가리킨 지점으로 가면서 발견한 적을 쫓아가 싸운다(Q-22 변경). 선택한 부대 유닛 발밑의 임시 원판과 목적지 표시를 지금 넣는다. 외곽선은 아트 단계로 미룬다.
+- `SquadOrder`에 목적지 유무를 두고, `UnitCombatAI`의 Engage가 목적지를 받으면 "전진하며 교전"이 되게 했다. 길이 전혀 없는 이동은 제자리에서 끝낸다. 지휘 씬 아군에 시야 15m 에셋을 따로 연결했다.
+- `PlaceholderSquadMarkers`로 유닛별 선택 원판과 목적지 원판을 추가했고, 죽은 유닛의 임시 체력 막대를 숨겼다.
+- 수정한 실수: 지휘 씬을 처음 만들 때 적의 시야 12m 설정이 씬에 저장되지 않아 적이 시작하자마자 돌진했다. `SerializedObject`로 다시 저장했고, 적이 처음에 제자리에 있는지 확인하는 검증을 PlayMode 테스트에 넣었다.
+- 검증: 컴파일 오류 없음. EditMode 101개, PlayMode 31개 전체 통과. 에디터 Play 화면 캡처로 유닛별 노란 원판·청록색 목적지 표시와 적이 멀리 서 있는 것을 확인했다. 실제 키 입력은 자동 검증하지 않았다. Windows 빌드는 다시 만들지 않았다.
+- 직접 검증: `SquadCommandPrototype` → Play → F1 → 1번 부대 유닛마다 노란 원판 확인 → 화면 가운데를 적 쪽 먼 땅에 맞추고 2 → 청록색 표시 지점으로 가다가 적이 15m 안에 들어오면 싸움 → F2 → 화면 가운데를 가까운 땅에 맞추고 1 → 2번 부대는 싸우지 않고 이동, 도착하면 표시가 사라지고 `중지`.
 
 </details>

@@ -33,6 +33,18 @@ namespace ProjectNeo.Walls
             pose = default;
             return false;
         }
+        public bool TryGetNearestMount(Vector3 worldPoint, out string id, out Pose pose)
+        {
+            id = null; pose = default;
+            float nearest = float.PositiveInfinity;
+            foreach (BuildMountPoint point in Placement.Definition.MountPoints)
+            {
+                float distance = (transform.TransformPoint(point.normalizedPosition) - worldPoint).sqrMagnitude;
+                if (distance >= nearest) continue;
+                nearest = distance; id = point.id;
+            }
+            return id != null && TryGetMountPose(id, out pose);
+        }
         void Collapse() => world.Collapse(this);
 
         void OnDestroy()

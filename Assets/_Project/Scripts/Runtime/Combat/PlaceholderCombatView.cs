@@ -52,6 +52,8 @@ namespace ProjectNeo.Combat
         void OnHit() => flashUntil = Time.time + 0.12f;
         void OnDeath()
         {
+            // 길이가 0인 막대도 옆면이 얇게 보이므로 죽으면 숨긴다.
+            healthBar.gameObject.SetActive(false);
             Vector3 scale = body.transform.localScale;
             scale.y *= 0.12f;
             body.transform.localScale = scale;

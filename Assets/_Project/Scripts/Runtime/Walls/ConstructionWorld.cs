@@ -24,8 +24,13 @@ namespace ProjectNeo.Walls
         [SerializeField] NavMeshSurface surface;
         [SerializeField] InitialBuildPiece[] initialPieces;
         readonly Dictionary<int, PlacedStructure> structures = new Dictionary<int, PlacedStructure>();
+        readonly Dictionary<int, PlacedSiegeWeapon> weapons = new Dictionary<int, PlacedSiegeWeapon>();
+        Transform mountRoot;
         bool rebuildPending;
         public BuildLayout Layout { get; private set; }
+        public MountLayout Mounts { get; private set; }
+        public IReadOnlyCollection<PlacedSiegeWeapon> Weapons => weapons.Values;
+        public event Action<PlacedSiegeWeapon, SiegeWeaponRemoval> WeaponRemoved;
         public BuildGridDefinition Grid => grid;
         public IReadOnlyCollection<PlacedStructure> Structures => structures.Values;
         public bool IsRebuilding { get; private set; }
@@ -43,6 +48,10 @@ namespace ProjectNeo.Walls
         void Awake()
         {
             Layout = new BuildLayout(grid);
+            Mounts = new MountLayout(Layout);
+            // 수성 무기는 Geometry 밖에 둔다. 길찾기 수집 대상이 아니므로 설치해도 NavMesh가 바뀌지 않는다.
+            mountRoot = new GameObject("Mounts").transform;
+            mountRoot.SetParent(transform, false);
             if (initialPieces != null)
                 foreach (InitialBuildPiece seed in initialPieces)
                 {
@@ -106,10 +115,59 @@ namespace ProjectNeo.Walls
             return structure;
         }
 
+        bool IsLive(PlacedStructure structure) => structure != null
+            && structures.TryGetValue(structure.Placement.Id, out var known) && known == structure;
+
+        public MountIssue CheckMount(SiegeWeaponDefinition definition, PlacedStructure support, string mountId) =>
+            Mounts.Check(definition, IsLive(support) ? support.Placement.Id : 0, mountId);
+
+        public void SetMountPose(Transform body, SiegeWeaponDefinition definition, Pose pose)
+        {
+            body.SetPositionAndRotation(pose.position, pose.rotation);
+            body.localScale = definition.Size;
+        }
+
+        public bool TryMount(SiegeWeaponDefinition definition, PlacedStructure support, string mountId,
+            out PlacedSiegeWeapon weapon)
+        {
+            weapon = null;
+            if (!IsLive(support) || !Mounts.TryMount(definition, support.Placement.Id, mountId, out var mount)) return false;
+            support.TryGetMountPose(mountId, out Pose pose);
+            GameObject body = Instantiate(definition.Prefab, mountRoot);
+            body.name = definition.DisplayName + "_" + mount.Id;
+            SetMountPose(body.transform, definition, pose);
+            weapon = body.GetComponent<PlacedSiegeWeapon>();
+            weapon.Initialize(mount, support);
+            weapons.Add(mount.Id, weapon);
+            Changed?.Invoke();
+            return true;
+        }
+
+        public bool RemoveWeapon(PlacedSiegeWeapon weapon)
+        {
+            if (weapon == null || weapon.Mount == null || !weapons.TryGetValue(weapon.Mount.Id, out var known)
+                || known != weapon) return false;
+            Mounts.Remove(weapon.Mount.Id);
+            Discard(weapon, SiegeWeaponRemoval.Dismantled);
+            Changed?.Invoke();
+            return true;
+        }
+
+        void Discard(PlacedSiegeWeapon weapon, SiegeWeaponRemoval reason)
+        {
+            weapons.Remove(weapon.Mount.Id);
+            weapon.NotifyRemoved(reason);
+            WeaponRemoved?.Invoke(weapon, reason);
+            Destroy(weapon.gameObject);
+        }
+
         public void Collapse(PlacedStructure structure)
         {
             if (structure == null || !structures.ContainsKey(structure.Placement.Id)) return;
             PieceCollapsing?.Invoke(structure);
+            // 받치던 조각이 부서지면 그 위의 수성 무기도 함께 파괴된다.
+            foreach (MountedWeapon mount in Mounts.RemoveSupportedBy(structure.Placement.Id))
+                Discard(weapons[mount.Id], SiegeWeaponRemoval.SupportDestroyed);
             foreach (Collider collider in structure.GetComponentsInChildren<Collider>()) collider.enabled = false;
             Layout.Remove(structure.Placement.Id, true);
             structures.Remove(structure.Placement.Id);

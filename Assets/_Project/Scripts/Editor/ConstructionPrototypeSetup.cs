@@ -98,6 +98,7 @@ namespace ProjectNeo.Editor
             var sandbox = new GameObject("ConstructionSandbox").AddComponent<ConstructionSandbox>();
             sandbox.Configure(world, unitObject.GetComponent<CharacterActor>());
             CreateHud(controller, sandbox, wall, stairs);
+            SiegeWeaponSetup.AddToOpenScene(scene);
             worldObject.SetActive(true);
             EditorSceneManager.SaveScene(scene, ScenePath);
             var buildScenes = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
@@ -217,7 +218,7 @@ namespace ProjectNeo.Editor
             return label;
         }
 
-        static void Button(Transform parent, string title, string caption, UnityAction action,
+        internal static GameObject Button(Transform parent, string title, string caption, UnityAction action,
             List<TMP_Text> labels, List<string> captions)
         {
             var root = new GameObject("Button_" + title, typeof(RectTransform), typeof(UnityEngine.UI.Image),
@@ -226,11 +227,12 @@ namespace ProjectNeo.Editor
             root.GetComponent<UnityEngine.UI.LayoutElement>().preferredHeight = 38f;
             var image = root.GetComponent<UnityEngine.UI.Image>(); image.color = new Color(0.15f, 0.24f, 0.29f);
             var button = root.GetComponent<UnityEngine.UI.Button>(); button.targetGraphic = image;
-            UnityEventTools.AddPersistentListener(button.onClick, action);
+            if (action != null) UnityEventTools.AddPersistentListener(button.onClick, action);
             TMP_Text text = Label(root.transform, title, 38f, 17f, caption, labels, captions);
             var rect = text.GetComponent<RectTransform>(); rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
             rect.offsetMin = new Vector2(10f, 0f); rect.offsetMax = new Vector2(-10f, 0f);
             text.alignment = TextAlignmentOptions.MidlineLeft;
+            return root;
         }
     }
 }
