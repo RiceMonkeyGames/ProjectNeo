@@ -63,6 +63,16 @@ namespace ProjectNeo.Walls
             if (input != null) input.SetMovementSuspended(true);
         }
 
+        // 건설로 옮길 때는 피해 없이 착지 처리하고, 새 NavMesh가 준비된 뒤 이동을 복구한다.
+        public void LiftForConstruction(Vector3 position)
+        {
+            if (!IsFalling) BeginFall();
+            transform.position = position;
+            velocity = 0f;
+            LastFallDamage = 0f;
+            landed = true;
+        }
+
         void Update()
         {
             if (!IsFalling) return;

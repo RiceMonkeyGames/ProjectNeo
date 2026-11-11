@@ -161,11 +161,17 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
-        public IEnumerator UnitOverlap_IsRejected_AndGateCannotBeCovered()
+        public IEnumerator UnitOverlap_LiftsUnitOntoNewWall_AndEmptyGateSiteRemainsReserved()
         {
             Vector2Int unitCell = world.Layout.WorldToCell(world.LocalPoint(sandbox.Unit.transform.position));
-            Assert.AreEqual(PlacementIssue.UnitInTheWay, world.CheckPlacement(wall, unitCell, 0));
-            Assert.IsFalse(world.TryPlace(wall, unitCell, 0, out _));
+            float health = sandbox.Unit.GetComponent<CharacterActor>().Health.Current;
+            Assert.AreEqual(PlacementIssue.None, world.CheckPlacement(wall, unitCell, 0));
+            Assert.IsTrue(world.TryPlace(wall, unitCell, 0, out PlacedStructure built));
+            Assert.AreEqual(built.transform.position.y + wall.Height, sandbox.Unit.transform.position.y, 0.01f);
+            yield return WaitForNavigation(world);
+            yield return null;
+            Assert.IsTrue(sandbox.Unit.GetComponent<NavMeshAgent>().isOnNavMesh);
+            Assert.AreEqual(health, sandbox.Unit.GetComponent<CharacterActor>().Health.Current);
             var gate = world.Structures.Single(piece => piece.Placement.Definition.Kind == BuildPieceKind.Gate);
             Vector2Int gateCell = gate.Placement.Cell;
             Assert.IsFalse(world.Layout.Remove(gate.Placement.Id));

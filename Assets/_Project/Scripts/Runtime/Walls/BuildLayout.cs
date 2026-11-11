@@ -33,7 +33,7 @@ namespace ProjectNeo.Walls
     /// <summary>
     /// 격자 점유·회전·층 쌓기·배치 검사. 씬과 외형은 알지 않는다.
     /// 조각은 가리킨 칸의 맨 위에 놓인다. 여러 칸을 차지하는 조각은 모든 칸의 받침 높이가 같아야 한다.
-    /// 계단 위에는 쌓을 수 없고, 고정 성문 자리에는 어느 층에도 놓을 수 없다.
+    /// 계단 위에는 쌓을 수 없다. 고정 성문 자리는 바닥만 보호하며 성문 위에는 쌓을 수 있다.
     /// </summary>
     public sealed class BuildLayout
     {
@@ -110,8 +110,9 @@ namespace ProjectNeo.Walls
                 for (int z = 0; z < size.y; z++)
                 {
                     var key = cell + new Vector2Int(x, z);
-                    if (reserved.Contains(key)) return PlacementIssue.ReservedGate;
                     int height = ColumnHeight(key);
+                    // 성문 위의 적층은 허용하되, 파괴 후 빈 성문 자리에 새 바닥 조각을 놓지는 않는다.
+                    if (reserved.Contains(key) && height == 0) return PlacementIssue.ReservedGate;
                     BuildPlacement top = height == 0 ? null : At(key, height - 1);
                     float surface = top == null ? 0f : top.Elevation + top.Definition.Height;
                     elevation = Mathf.Max(elevation, surface);

@@ -54,6 +54,76 @@ namespace ProjectNeo.Tests
         PlacedStructure Lower(Vector2Int cell) => world.Structures.Single(piece => piece.Placement.Cell == cell && piece.Placement.Level == 0);
 
         [UnityTest]
+        public IEnumerator 플레이어와_여러_병력이_겹쳐도_건설하고_새_성벽_위로_피해없이_옮긴다()
+        {
+            var player = Object.FindAnyObjectByType<ProjectNeo.Characters.PlayerInputController>();
+            var playerActor = player.GetComponent<ProjectNeo.Combat.CharacterActor>();
+            var members = Object.FindAnyObjectByType<SquadCommandCenter>().Squads[0].Members.Take(2).ToArray();
+            Vector2Int cell = world.Layout.WorldToCell(world.LocalPoint(player.transform.position));
+            Vector3 center = world.transform.TransformPoint(world.Layout.Center(cell, Vector2Int.one));
+            var motor = player.GetComponent<CharacterController>();
+            motor.enabled = false;
+            player.transform.position = center;
+            motor.enabled = true;
+            for (int i = 0; i < members.Length; i++)
+                Assert.IsTrue(members[i].GetComponent<NavMeshAgent>().Warp(center + Vector3.right * (i == 0 ? -0.9f : 0.9f)));
+            float health = playerActor.Health.Current;
+            var unitHealth = members.Select(member => member.Actor.Health.Current).ToArray();
+            var controller = Object.FindAnyObjectByType<PlacementController>(FindObjectsInactive.Include);
+            controller.Select(wall);
+            controller.UpdatePreview(center);
+            Assert.AreEqual(PlacementIssue.None, controller.Issue);
+            Assert.IsTrue(controller.Confirm());
+            Assert.AreEqual(center.y + wall.Height, player.transform.position.y, 0.01f);
+            foreach (var member in members) Assert.AreEqual(center.y + wall.Height, member.transform.position.y, 0.01f);
+            yield return WaitForNavigation();
+            Assert.IsTrue(motor.enabled);
+            Assert.AreEqual(health, playerActor.Health.Current);
+            for (int i = 0; i < members.Length; i++)
+            {
+                Assert.IsTrue(members[i].GetComponent<NavMeshAgent>().enabled);
+                Assert.IsTrue(members[i].GetComponent<NavMeshAgent>().isOnNavMesh);
+                Assert.AreEqual(unitHealth[i], members[i].Actor.Health.Current);
+            }
+            // 같은 자리의 다음 층 건설도 이미 올라간 유닛을 다시 옮긴다.
+            Assert.IsTrue(world.TryPlace(wall, cell, 0, out _));
+            Assert.AreEqual(center.y + wall.Height * 2f, player.transform.position.y, 0.01f);
+            yield return WaitForNavigation();
+            Assert.IsTrue(GameSession.Flow.StartBattle());
+            Assert.IsTrue(player.enabled);
+            Assert.IsTrue(motor.enabled);
+            Assert.IsFalse(controller.enabled, "전투에서는 여전히 건설할 수 없다.");
+        }
+
+        [UnityTest]
+        public IEnumerator 성문_위에_성벽을_설치하고_성문을_부수면_내려앉아_길이_갱신된다()
+        {
+            var player = Object.FindAnyObjectByType<ProjectNeo.Characters.PlayerInputController>();
+            Assert.AreEqual(0f, world.LocalPoint(player.transform.position).y, 0.1f, "플레이어는 성문 위 대신 안뜰에서 시작한다.");
+            PlacedStructure gate = world.Structures.Single(piece => piece.Placement.Definition.Kind == BuildPieceKind.Gate);
+            Vector2Int cell = gate.Placement.Cell;
+            var controller = Object.FindAnyObjectByType<PlacementController>(FindObjectsInactive.Include);
+            controller.Select(wall);
+            controller.UpdatePreview(world.transform.TransformPoint(world.Layout.Center(cell, Vector2Int.one)));
+            Assert.AreEqual(PlacementIssue.None, controller.Issue);
+            Assert.AreEqual(1, controller.PreviewLevel);
+            Assert.AreEqual(gate.Placement.Definition.Height, controller.PreviewElevation, 0.001f);
+            Assert.IsTrue(controller.Confirm());
+            PlacedStructure upper = world.Structures.Single(piece => piece.Placement.Cell == cell && piece.Placement.Level == 1);
+            float groundY = gate.transform.position.y;
+            Assert.AreEqual(groundY + gate.Placement.Definition.Height, upper.transform.position.y, 0.001f);
+            yield return WaitForNavigation();
+            gate.ReceiveDamage(gate.Health.Current);
+            Assert.AreEqual(0, upper.Placement.Level);
+            Assert.AreEqual(groundY, upper.transform.position.y, 0.001f);
+            Assert.AreSame(upper.Placement, world.Layout.At(cell));
+            yield return WaitForNavigation();
+            Vector3 top = upper.transform.position + Vector3.up * wall.Height;
+            Assert.IsTrue(NavMesh.SamplePosition(top, out NavMeshHit hit, 0.5f, NavMesh.AllAreas));
+            Assert.AreEqual(top.y, hit.position.y, 0.5f);
+        }
+
+        [UnityTest]
         public IEnumerator 이층_성벽과_이단_계단을_놓으면_안뜰에서_이층_위까지_길이_이어진다()
         {
             // 북쪽 성벽의 서쪽 모서리 (5,17)에 2층을 올리고, (6,17)~(7,17) 위에 서쪽으로 오르는 계단을 놓는다.

@@ -61,14 +61,40 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
-        public void 계단_위와_고정_성문_위에는_쌓을_수_없다()
+        public void 계단_위에는_쌓을_수_없다()
         {
             Place(stairs, 1, 1);
             Assert.AreEqual(PlacementIssue.Occupied, layout.Check(wall, new Vector2Int(1, 1), 0));
             Assert.AreEqual(PlacementIssue.Occupied, layout.Check(wall, new Vector2Int(1, 2), 0));
-            Place(gate, 4, 4, 0, true);
-            Assert.AreEqual(PlacementIssue.ReservedGate, layout.Check(wall, new Vector2Int(4, 4), 0));
-            Assert.AreEqual(PlacementIssue.ReservedGate, layout.Check(wall, new Vector2Int(5, 4), 0));
+        }
+
+        [TestCase(0)] [TestCase(1)] [TestCase(2)] [TestCase(3)]
+        public void 고정_성문의_각_칸_위에_성벽을_쌓고_파괴하면_내려앉는다(int rotation)
+        {
+            BuildPlacement lower = Place(gate, 4, 4, rotation, true);
+            var upperWalls = new List<BuildPlacement>();
+            for (int x = 0; x < lower.Size.x; x++)
+                for (int z = 0; z < lower.Size.y; z++)
+                {
+                    BuildPlacement upper = Place(wall, 4 + x, 4 + z);
+                    upperWalls.Add(upper);
+                    Assert.AreEqual(1, upper.Level);
+                    Assert.AreEqual(gate.Height, upper.Elevation);
+                }
+            Assert.IsFalse(layout.Remove(lower.Id), "성문은 여전히 철거할 수 없다.");
+            Assert.IsTrue(layout.Remove(lower.Id, true));
+            var dropped = new List<BuildPlacement>(); var unsupported = new List<BuildPlacement>();
+            layout.Settle(dropped, unsupported);
+            CollectionAssert.AreEquivalent(upperWalls, dropped);
+            CollectionAssert.IsEmpty(unsupported);
+            foreach (BuildPlacement upper in upperWalls)
+            {
+                Assert.AreEqual(0, upper.Level);
+                Assert.AreEqual(0f, upper.Elevation);
+                Assert.AreSame(upper, layout.At(upper.Cell));
+                layout.Remove(upper.Id, true);
+                Assert.AreEqual(PlacementIssue.ReservedGate, layout.Check(wall, upper.Cell, 0));
+            }
         }
 
         [Test]

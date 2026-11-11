@@ -221,7 +221,7 @@ namespace ProjectNeo.Editor
             buildCamera.transform.rotation = Quaternion.Euler(cameraSettings.Pitch, cameraSettings.InitialYaw, 0f);
             buildCamera.transform.position = -(buildCamera.transform.forward * cameraSettings.Distance);
 
-            // 부대는 계단 아래와 안뜰 가운데, 플레이어는 성문 위에서 바깥(북쪽)을 본다.
+            // 부대는 계단 아래와 안뜰 가운데, 플레이어는 안뜰 남쪽에서 북쪽을 본다. 성문 위 건설 공간을 비운다.
             Vector3[] squadCells = { new Vector3(8.5f, 0f, 13.5f), new Vector3(15.5f, 0f, 13.5f), new Vector3(12f, 0f, 11.5f) };
             foreach (GameObject root in game.GetRootGameObjects())
             {
@@ -231,7 +231,7 @@ namespace ProjectNeo.Editor
                             Place(root.transform, origin + squadCells[squad] * CellSize
                                 + new Vector3((i % 2 - 0.5f) * 1.1f, 0f, -(i / 2) * 1.1f), 0f);
                 if (root.name == "Player")
-                    Place(root.transform, origin + new Vector3((GateX + 1) * CellSize, gate.Height, (WallNorth + 0.5f) * CellSize), 0f);
+                    Place(root.transform, origin + new Vector3(12f * CellSize, 0f, 8f * CellSize), 0f);
             }
 
             EditorSceneManager.MarkSceneDirty(game);

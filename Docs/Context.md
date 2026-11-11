@@ -58,11 +58,11 @@ Unity 6000.6.8f1, URP, 3D 1인칭 프로젝트다. 현재는 임시 그래픽이
 | Morale | `SquadMorale` | 퍽 효과에서 사용할 부대 사기 값. 실제 사기 감소·도망 규칙은 B-8에서 구현한다. |
 | Walls | `ConstructionProgress` | 공사 기간과 스테이지 진행 계산. 실제 배치·런 이월과는 아직 연결하지 않았다. |
 | Walls | `BuildGridDefinition`, `BuildPieceDefinition`, `BuildLayout` | 격자 크기·최대 층수(`MaxLevels`, 기본 1), 조각 종류·점유 칸·높이·체력·프리팹 정의. 일반 C# 점유·회전·경계·고정 성문 영역 검사와 독립 계단의 연결 질의. 층 쌓기: 점유 키는 (x, 층, z)이고 조각은 가리킨 칸의 맨 위에 놓인다. `BuildPlacement.Level`·`Elevation`이 층과 바닥 높이다. `Check(..., out level, out elevation)`이 놓일 자리를 알려주고, `Remove` 뒤 `Settle(dropped, unsupported)`이 받침을 잃은 조각을 내려앉히거나 뺀다. `At(cell)`은 0층, `At(cell, level)`·`Top`·`ColumnHeight`·`IsCovered`로 층을 읽는다. |
-| Walls | `ConstructionWorld`, `PlacedStructure` | 배치 모델과 몸통 생성, 실제 유닛 겹침 검사, 조각 체력·파괴 이벤트, 변경을 모아 비동기 NavMesh 갱신. |
+| Walls | `ConstructionWorld`, `PlacedStructure` | 배치 모델과 몸통 생성, 설치 후 겹친 살아 있는 유닛을 새 조각 윗면으로 옮기기, 조각 체력·파괴 이벤트, 변경을 모아 비동기 NavMesh 갱신. |
 | Walls | `PlacementViewSettings`, `PlacementController`, `BuildGridView` | 반투명 미리보기 재질·색, 마우스 선택·설치·취소·회전, 격자 표시. 미리보기는 충돌과 점유·NavMesh에 영향을 주지 않는다. |
 | Walls | `SiegeWeaponDefinition`, `MountLayout`, `PlacedSiegeWeapon`, `ISiegeWeaponModule` | 수성 무기 공통 구조. 정의 에셋(ID·이름·크기·프리팹), 일반 C# 설치 지점 점유 규칙(지지 조각 ID + 지점 ID마다 하나), 모든 무기가 쓰는 공통 몸통, 무기별 동작을 붙이는 인터페이스. 대포 전용 클래스는 없다. |
 | Walls | `BuildCameraSettings`, `ConstructionCameraController` | 직교 카메라의 각도·크기·초기 방향·회전 단위·전환 시간 에셋. Q/E로 판 중심을 90도씩 부드럽게 돌며 월드·격자·배치 좌표는 유지한다. |
-| Walls | `FallSettings`, `FallDamageRules`, `UnitFallController` | 높이별 피해 계산과 파괴 시 낙하·착지. NavMeshAgent와 CharacterController 몸통을 지원하고 착지 후 이동을 복구한다. |
+| Walls | `FallSettings`, `FallDamageRules`, `UnitFallController` | 높이별 피해 계산과 파괴 시 낙하·착지. NavMeshAgent와 CharacterController 몸통을 지원하고 착지 후 이동을 복구한다. `LiftForConstruction`은 건설 시 피해 없이 새 윗면으로 옮기고 이동을 복구한다. |
 | Walls / UI | `ConstructionSandbox`, `ConstructionHud` | 시험 씬 전용 이동·발밑 조각 파괴, uGUI·TMP 건설 선택과 상태 표시. 정식 부대 지휘나 준비 화면은 아니다. |
 | Walls | `WallCommandSandbox` | 통합 시험용 Tab 시점 전환. 건설/1인칭 카메라·입력·HUD를 전환하며 지형과 지시는 유지한다. World가 NavMesh를 만든 뒤 유닛을 활성화한다. 정식 준비·전투 단계가 아니다. |
 | Flow | `GamePhase`, `BattleOutcome`, `GameFlow`, `RunProgress` | 일반 C# 흐름 규칙. 타이틀 → 준비 → 전투 → 승리면 보상 → 다음 스테이지 준비, 패배면 런 결과 → 타이틀. 허용되지 않은 전환은 false를 돌려주고 상태를 바꾸지 않는다. `RunProgress`는 런 동안만 유지되는 진행 정보(현재 스테이지)이며 타이틀로 돌아가면 버린다. |
@@ -125,7 +125,7 @@ Play → F1~F3으로 부대 선택(` 는 전체) → 화면 가운데 점을 땅
 - `Assets/_Project/Art/Placeholder/Construction*`: 임시 재질과 경사로 메시. 특정 Synty 팩과 연결하지 않았다.
 - `Assets/TextMesh Pro/`: 비대화식으로 가져온 TMP 필수 리소스. 예제는 가져오지 않았다. 시험 HUD는 실행 중 Windows의 맑은 고딕을 사용하며 글꼴 원본 파일을 프로젝트에 복사하지 않는다. 다른 플랫폼용 최종 글꼴은 M5에서 확정한다.
 
-Q/E로 시점을 좌우 90도씩 돌려 높은 건물 뒤쪽을 확인한다. 조각 선택 → 마우스로 반투명 미리보기 이동 → 좌클릭 설치. R 또는 회전 버튼은 조각만 90도 회전하고 우클릭이나 취소 버튼으로 배치를 취소한다. 초록은 설치 가능, 빨강은 격자 밖·점유·고정 성문·유닛 겹침 등 설치 불가다. 계단은 성벽과 연결되지 않아도 먼저 설치할 수 있고 안내를 표시한다.
+Q/E로 시점을 좌우 90도씩 돌려 높은 건물 뒤쪽을 확인한다. 조각 선택 → 마우스로 반투명 미리보기 이동 → 좌클릭 설치. R 또는 회전 버튼은 조각만 90도 회전하고 우클릭이나 취소 버튼으로 배치를 취소한다. 초록은 설치 가능, 빨강은 격자 밖·점유·빈 고정 성문 자리 등 설치 불가다. 유닛과 겹쳐도 설치할 수 있고, 설치 후 살아 있는 유닛은 피해 없이 새 조각 윗면으로 옮긴다. 계단은 성벽과 연결되지 않아도 먼저 설치할 수 있고 안내를 표시한다.
 
 `Camera.asset`에서 현재 내려다보는 각도 30도, 초기 방향 45도, 직교 크기 20, 90도당 전환 시간 0.3초를 조정한다. 회전은 실제 시간 기준 SmoothStep 보간으로 천천히 출발·정지하며, 연속·역방향 입력에도 현재 화면 위치에서 이어진다. 연속 입력으로 회전량이 커지면 그만큼 전환 시간도 늘어난다.
 
@@ -152,7 +152,7 @@ Q/`RotateLeft()`와 E/`RotateRight()`는 화면 속 판의 왼쪽·오른쪽 회
 - `Assets/_Project/Scripts/Editor/SquadCommandSetup.cs`: 메뉴 `ProjectNeo/Setup/Create Squad Command Prototype` 또는 `Create()`로 B-5 씬·수치 에셋·NavMesh·시험 HUD를 만든다. 기존 씬이나 저장하지 않은 변경이 있으면 중단한다. B-2·B-3의 프리팹이 먼저 있어야 한다. `Upgrade()`(메뉴 `Upgrade Squad Command Prototype`)는 기존 씬에 팀별 시야 에셋과 선택·목적지 표시를 더하며 여러 번 실행해도 결과가 같다. 프리팹 인스턴스의 값은 `SerializedObject`로 써야 씬에 저장된다.
 - `Assets/_Project/Scripts/Editor/WallCommandSetup.cs`: 메뉴 `ProjectNeo/Setup/Create Wall Command Prototype`으로 기존 건설 씬을 보존한 채 통합 씬을 만든다. 기존 통합 씬·저장하지 않은 변경은 덮어쓰지 않는다. B-2·B-3·건설·평지 지휘 에셋이 선행 조건이다.
 - `Assets/_Project/Scripts/Editor/FirstPersonSetup.cs`: 메뉴 `ProjectNeo/Setup/Upgrade Player Views To First Person`으로 기존 전투·평지 지휘 씬의 카메라와 플레이어 입력 참조를 1인칭으로 전환한다. 현재 두 씬 모두 적용된 상태이며 다시 실행해도 카메라를 중복 추가하지 않는다. 씬 생성 코드도 기본 1인칭을 만든다.
-- `Assets/_Project/Scripts/Editor/GameFlowSetup.cs`: 메뉴 `ProjectNeo/Setup/Create Game Flow Scenes`로 `Title`·`Game` 씬과 `Assets/_Project/Data/GameFlow/SceneCatalog.asset`을 만들고 두 씬을 빌드 목록 끝에 더한다. 기존 씬이나 저장하지 않은 변경이 있으면 중단한다. 이미 실행해 두 씬이 있다. `AddCastle()`(메뉴 `Add Castle To Game Scene`)은 `WallCommandPrototype`의 성·건설·플레이어·부대를 게임 씬으로 옮겨 `GamePhaseView`에 연결한다. 프로토타입 씬은 읽기만 하고 저장하지 않는다. 프로토타입 전용 시험 버튼은 숨기고 안내 문구를 바꾼다. 이미 성이 있으면 중단하며 현재 적용된 상태다. `ApplyDefaultCastle()`(메뉴 `Apply Default Castle To Game Scene`)은 게임 전용 `Data/GameFlow/Grid.asset`(24×26칸)·`BuildCamera.asset`(직교 크기 32)을 쓰도록 바꾸고 외벽·성문·계단의 초기 배치, 바닥 크기, 부대와 플레이어 시작 위치를 다시 적용한다. 배치 수치는 이 메서드 위의 상수이며 여러 번 실행해도 결과가 같다. 조각 정의(성벽·계단·성문)는 `Data/ConstructionPrototype/`의 것을 함께 쓴다.
+- `Assets/_Project/Scripts/Editor/GameFlowSetup.cs`: 메뉴 `ProjectNeo/Setup/Create Game Flow Scenes`로 `Title`·`Game` 씬과 `Assets/_Project/Data/GameFlow/SceneCatalog.asset`을 만들고 두 씬을 빌드 목록 끝에 더한다. 기존 씬이나 저장하지 않은 변경이 있으면 중단한다. 이미 실행해 두 씬이 있다. `AddCastle()`(메뉴 `Add Castle To Game Scene`)은 `WallCommandPrototype`의 성·건설·플레이어·부대를 게임 씬으로 옮겨 `GamePhaseView`에 연결한다. 프로토타입 씬은 읽기만 하고 저장하지 않는다. 프로토타입 전용 시험 버튼은 숨기고 안내 문구를 바꾼다. 이미 성이 있으면 중단하며 현재 적용된 상태다. `ApplyDefaultCastle()`(메뉴 `Apply Default Castle To Game Scene`)은 게임 전용 `Data/GameFlow/Grid.asset`(24×26칸)·`BuildCamera.asset`(직교 크기 32)을 쓰도록 바꾸고 외벽·성문·계단의 초기 배치, 바닥 크기, 부대와 플레이어 시작 위치를 다시 적용한다. 플레이어는 안뜰 남쪽(격자 좌표 12, 8)에서 북쪽을 보고 시작한다. 배치 수치는 이 메서드 위의 상수이며 여러 번 실행해도 결과가 같다. 조각 정의(성벽·계단·성문)는 `Data/ConstructionPrototype/`의 것을 함께 쓴다.
 - `Assets/Tests/EditMode/GameFlowTests.cs`: 흐름 단계 전환, 거부되는 전환, 전투 결과 1회 처리, 새 런의 진행 초기화, 단계 변경 알림.
 - `Assets/Tests/PlayMode/GameFlowPlayTests.cs`: 저장된 `Title`·`Game` 씬으로 새 게임 진입, 씬 전환 없는 단계 변경, 패배 후 타이틀 복귀, 게임 씬 단독 시작, 준비의 건설 시점과 전투의 1인칭 지휘 전환·보상 중 입력 정지·유닛과 지시 유지·AudioListener와 EventSystem이 하나뿐인지, 기본 성이 성문 하나와 닫힌 외벽이고 안뜰에서 성벽 위로 길이 이어지며 밖으로는 나갈 수 없는지. 씬을 통째로 바꾸므로 끝날 때 빈 씬만 남긴다. 실제 버튼 클릭은 직접 확인 대상이다.
 - `Assets/_Project/Scripts/Editor/BuildScript.cs`: Windows 빌드. 기본 출력 `Builds/Windows/ProjectNeo.exe`.
@@ -161,9 +161,9 @@ Q/`RotateLeft()`와 E/`RotateRight()`는 화면 속 판의 왼쪽·오른쪽 회
 - `Assets/Tests/EditMode/DamageRulesTests.cs`: 방어력 차감, 최소 피해와 유효하지 않은 수치를 확인한다.
 - `Assets/Tests/PlayMode/UnitCombatPlayTests.cs`: 팀과 피해, 대상 유지·교체, 투사체 아군 통과·회피·얇은 벽 충돌, 에이전트 사망 정지, 저장된 10 대 10 씬 전투를 확인한다. 테스트용 NavMesh와 씬, 고정 시간 간격은 종료 때 정리한다.
 - `Assets/Tests/EditMode/BuildLayoutTests.cs`: 임의 격자 크기, 음수 좌표·회전 점유·실패 시 상태 보존, 독립 계단의 연결 갱신, 고정 성문 영역, 높이에 따른 낙하 피해.
-- `Assets/Tests/PlayMode/ConstructionPlayTests.cs`: 카메라 4방향 회전과 픽킹 불변, 즉시 점프 없는 보간과 연속·역방향 입력, 미리보기·취소의 무영향, 회전 설치·중복 거부·비동기 갱신, 유닛 겹침·성문 영역, 실제 계단 이동·붕괴·낙하 피해와 에이전트 복귀, CharacterController 몸통의 낙하·복구, 연속 변경의 반영과 사라진 성벽 위 경로.
-- `Assets/Tests/EditMode/BuildStackingTests.cs`: 1층 격자의 중복 거부 유지, 맨 위에 쌓기와 최대 층, 계단·성문 위 금지, 받침 높이가 다른 여러 칸 조각 거부, 2단 계단의 같은 층 연결, 내려앉기와 일부 받침 상실 시 제거, 덮인 성벽의 무기 설치 금지.
-- `Assets/Tests/PlayMode/StackedConstructionPlayTests.cs`: 게임 씬에서 미리보기 층·높이, 2층 성벽과 2단 계단을 놓은 뒤 안뜰에서 2층까지의 NavMesh 경로, 3층 상한, 아래 성벽 파괴 시 위 성벽·무기의 내려앉기와 체력 유지·길 복구.
+- `Assets/Tests/PlayMode/ConstructionPlayTests.cs`: 카메라 4방향 회전과 픽킹 불변, 즉시 점프 없는 보간과 연속·역방향 입력, 미리보기·취소의 무영향, 회전 설치·중복 거부·비동기 갱신, 겹친 유닛의 윗면 이동·성문 영역, 실제 계단 이동·붕괴·낙하 피해와 에이전트 복귀, CharacterController 몸통의 낙하·복구, 연속 변경의 반영과 사라진 성벽 위 경로.
+- `Assets/Tests/EditMode/BuildStackingTests.cs`: 1층 격자의 중복 거부 유지, 맨 위에 쌓기와 최대 층, 계단 위 금지·성문 위 허용과 성문 파괴 후 내려앉기, 받침 높이가 다른 여러 칸 조각 거부, 2단 계단의 같은 층 연결, 내려앉기와 일부 받침 상실 시 제거, 덮인 성벽의 무기 설치 금지.
+- `Assets/Tests/PlayMode/StackedConstructionPlayTests.cs`: 게임 씬에서 미리보기 층·높이, 2층 성벽과 2단 계단을 놓은 뒤 안뜰에서 2층까지의 NavMesh 경로, 3층 상한, 플레이어·여러 병력과 겹친 건설 후 윗면 이동·피해 없음·이동 복구, 성문 위 설치와 성문 파괴 후 내려앉기, 아래 성벽 파괴 시 위 성벽·무기의 내려앉기와 체력 유지·길 복구.
 - `Assets/Tests/EditMode/MountLayoutTests.cs`: 설치 지점 점유가 바닥 점유와 분리되는지, 실패 사유와 ID 보존, 서로 다른 무기 종류의 공통 규칙, 지지 조각 제거 시 그 위 무기만 해제.
 - `ConstructionPlayTests`의 수성 무기 2개: 미리보기 무영향, 성벽 위 설치 위치·크기, 중복·성벽 밖·계단 거부, 바닥 점유와 NavMesh 불변, 받침 성벽 파괴 시 동반 파괴와 무기 동작 부품(`RecordingSiegeWeaponModule`) 알림 1회, 철거.
 - `ConstructionPlayTests`의 지휘 5개: 윗면·옆면·지면 조준 구분, 실제 이동 지시로 계단 오르기와 길 단절, 처음부터 끊긴 목적지, 목적지 성벽 소실 후 재탐색, 낙하 후 지상 지시 복귀.
@@ -299,6 +299,7 @@ unity command test run --caller plugin --skill unity-cli --mode playmode --async
 unity command test status --caller plugin --skill unity-cli --result-only
 ```
 
+- PlayMode 테스트의 `test status`가 completed여도 에디터가 Play를 빠져나오는 중일 수 있다. EditMode 실행 전 `script eval`로 `UnityEditor.EditorApplication.isPlaying`이 false인지 확인한다. 전환 중 EditMode를 시작하면 Test Runner 복구 오류와 명령 대기가 발생할 수 있다. 이번 발생은 에디터의 Assets → Refresh로 스크립트를 다시 불러온 뒤 해소하고 EditMode 122개 재통과를 확인했다.
 - PlayMode를 돌리기 전에 `editor set_auto_tick`을 부른다. 에디터 창이 뒤에 있으면 프레임이 멈추기 때문이다.
 - 이름으로 고르려면 `--filter <이름 일부>`를 쓴다. `[Explicit]` 테스트(성능 측정)는 `--include-explicit`을 붙여야 돈다.
 - `unity test`는 에디터가 열려 있으면 거부된다.
@@ -417,7 +418,7 @@ unity command package add --caller plugin --skill unity-package-management --nam
 - `UnitFallController`가 NavMeshAgent·CharacterController의 낙하·피해·착지·이동 복구를 처리한다. 시험 수치는 안전 높이 1m, 미터당 피해 12이며 최종 밸런스가 아니다. 실제 시험에서는 3m 성벽의 NavMesh 위에서 떨어져 약 25 피해가 들어가 체력 100→75를 확인했다.
 - `ConstructionPrototype` 씬에 성벽·계단·고정 성문과 시험 유닛, uGUI·TMP 조각 선택·상태·이동·붕괴 시험 버튼을 만들었다. TMP 필수 리소스를 가져왔으며 시험 한글 HUD는 시스템 맑은 고딕을 사용한다.
 - 성벽 정의에 예시 `top` 설치 지점과 크기·회전을 반영한 월드 위치 조회를 추가했다. 실제 수성 무기·슬롯 점유·지지 조각 파괴 처리는 B-4.6 후속이며 아직 완료가 아니다.
-- 검증: EditMode 88개, PlayMode 21개 통과. 미리보기·취소의 무영향, 회전 점유·중복 거부·유닛 겹침·성문 영역, 계단을 통한 실제 이동, 파괴·낙하 피해와 두 이동 몸통의 복구, 연속 NavMesh 변경을 확인했다. UI 선택·미리보기·설치를 Input System 경로로 확인했고 게임 프레임 진행·화면·콘솔을 점검했다. Windows 빌드 성공.
+- 검증: EditMode 88개, PlayMode 21개 통과. 미리보기·취소의 무영향, 회전 점유·중복 거부·겹친 유닛의 윗면 이동·성문 영역, 계단을 통한 실제 이동, 파괴·낙하 피해와 두 이동 몸통의 복구, 연속 NavMesh 변경을 확인했다. UI 선택·미리보기·설치를 Input System 경로로 확인했고 게임 프레임 진행·화면·콘솔을 점검했다. Windows 빌드 성공.
 - 빌드 과정에서 URP 전역 설정과 PlayerSettings의 Input System 사전 로드 참조가 자동 갱신됐다. 기존 씬 변경을 덮어쓰지 않았고, 커밋은 하지 않았다.
 - 사용자 검증 요청에 따라 앞으로 완료 보고에 정확한 씬·테스트 경로, 조작 순서와 기대 결과, 초기화 방법을 필수로 안내하도록 AGENTS·이 문서의 개발 방법에 반영했다.
 
@@ -513,4 +514,12 @@ unity command package add --caller plugin --skill unity-package-management --nam
 - 검증: 컴파일 오류 없음. EditMode 118개(새 9개), PlayMode 전체 47개(새 2개) 통과. 에디터 Play에서 2층·3층 성벽과 2단 계단을 놓은 준비 화면을 캡처해 확인했다. 마우스로 성벽을 가리켜 쌓는 실제 조작, 내려앉는 조각 위 유닛의 낙하, Windows 빌드는 확인하지 않았다.
 - 직접 검증: `Assets/_Project/Scenes/Game.unity` → Play → `성벽` 선택 → 북쪽 성벽 조각을 가리키면 그 위에 초록 미리보기와 `2층` 표시 → 좌클릭으로 서쪽 모서리와 그 옆에 2층을 쌓는다 → `계단` 선택, R로 돌려 1층 성벽 두 칸 위에 2층 쪽으로 오르게 놓는다(연결 안내가 사라지면 이어진 것) → 같은 칸에 세 번 쌓으면 네 번째는 빨강 → `전투 시작` → F1 후 2층 윗면을 보고 1 → 부대가 땅 계단과 2단 계단으로 올라온다. 내려앉기는 지금 게임 씬에 부수는 수단이 없어 자동 테스트 `StackedConstructionPlayTests`로 확인한다.
 
+### 2026-11-11: 성문 위 건설과 겹친 유닛의 윗면 이동
+
+- 사용자 결정: 성문 위 성벽 설치 허용. 전투 중 건설 불가. 플레이어는 안뜰에서 시작한다. 준비 단계 기본도 1인칭 안뜰 이동이며 각 시설 건물에 찾아가 준비하고, 건설 담당 건물에서 선택했을 때만 건설 화면을 연다. 건물·상호작용·준비 중 직접 이동은 정식 준비 화면 작업에서 붙인다. 이번에는 현재의 준비 즉시 건설 화면 전환을 미연결 임시 구현으로 유지한다.
+- 사용자 변경: 유닛과 겹쳐도 설치하고, 겹친 살아 있는 유닛은 새 조각 윗면으로 옮긴다. 이전의 유닛 겹침 설치 거부를 대체한다. 건설 이동 자체에는 피해를 주지 않는다.
+- 변경: `BuildLayout`은 성문의 빈 바닥 자리만 보호하고 위 적층을 허용한다. `ConstructionWorld`는 설치 후 겹친 유닛을 조각 윗면(계단은 실제 발판)으로 옮긴다. `UnitFallController.LiftForConstruction`으로 낙하 피해 없이 이동하고 새 NavMesh를 기다린 뒤 이동을 복구한다. 유닛 중심이 가장자리에 걸친 경우 조각 안쪽으로 보정한다. `GameFlowSetup`과 `Game.unity`의 플레이어 시작 위치를 안뜰(12, 8)로 옮겼다. 씬은 Unity 에디터 API로 저장했다.
+- 검증: 컴파일 오류 없음. EditMode 122개, PlayMode 전체 49개 통과. `BuildStackingTests`의 성문 4방향 적층·붕괴, `StackedConstructionPlayTests`의 성문 위 미리보기·설치·성문 파괴 후 내려앉기와 길 갱신, 플레이어와 병력 2명의 겹친 건설·2층 재적층·피해 없음·이동 복구·전투 진입 시 건설 비활성화, `ConstructionPlayTests`의 겹친 병력 이동을 검증했다. 실제 마우스 입력 플레이와 Windows 빌드는 확인하지 않았다.
+- 직접 검증: `Assets/_Project/Scenes/Game.unity`를 열고 Play → `성벽` 선택 → 북쪽 성문 위를 가리켜 초록 미리보기 확인 → 좌클릭으로 설치한다. 안뜰 남쪽 플레이어나 부대가 선 칸에도 놓아 본다 → 설치가 허용되고 해당 유닛이 성벽 위로 올라가며 체력이 유지된다 → `전투 시작` → 안뜰에서 출발한 플레이어를 WASD로 움직이고 F1 후 성벽 위를 보고 1로 지휘한다. 전투 중에는 건설 화면이 사라져야 한다. Play 종료 후 다시 Play하면 초기화된다.
+- 자동 재검증: Test Runner의 EditMode에서 `BuildStackingTests`, PlayMode에서 `StackedConstructionPlayTests`와 `ConstructionPlayTests`를 실행한다. 성문 붕괴는 게임 씬에 직접 파괴 버튼이 없어 해당 PlayMode 테스트로 확인한다.
 </details>

@@ -2,8 +2,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using ProjectNeo.Combat;
+using ProjectNeo.Characters;
 using Unity.AI.Navigation;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace ProjectNeo.Walls
 {
@@ -97,16 +99,6 @@ namespace ProjectNeo.Walls
                     for (int z = 0; z < size.y; z++)
                         if (Mounts.HasWeaponOn(Layout.At(cell + new Vector2Int(x, z), level - 1).Id)) return PlacementIssue.Occupied;
             }
-            Vector3 center = WorldCenter(definition, cell, rotation) + transform.up * (elevation + definition.Height * 0.5f);
-            var half = new Vector3(definition.Footprint.x * grid.CellSize * 0.5f,
-                definition.Height * 0.5f, definition.Footprint.y * grid.CellSize * 0.5f);
-            foreach (Collider collider in Physics.OverlapBox(center, half * 0.98f,
-                transform.rotation * Quaternion.Euler(0f, rotation * 90f, 0f), ~0, QueryTriggerInteraction.Ignore))
-            {
-                var actor = collider.GetComponentInParent<CharacterActor>();
-                if (actor != null && actor.gameObject.scene == gameObject.scene
-                    && actor.Health != null && !actor.Health.IsDead) return PlacementIssue.UnitInTheWay;
-            }
             return PlacementIssue.None;
         }
 
@@ -117,8 +109,61 @@ namespace ProjectNeo.Walls
             if (!Layout.TryPlace(definition, cell, rotation, out var placement)) return false;
             body = CreateBody(placement);
             rebuildPending = true;
+            LiftOverlappingUnits(body);
             Changed?.Invoke();
             return true;
+        }
+
+        // 미리보기는 유닛을 움직이지 않고, 확정한 실제 조각과 겹친 살아 있는 몸통만 옮긴다.
+        void LiftOverlappingUnits(PlacedStructure structure)
+        {
+            Physics.SyncTransforms();
+            BuildPlacement placement = structure.Placement;
+            Transform body = structure.transform;
+            Vector3 center = body.TransformPoint(Vector3.up * 0.5f);
+            Vector3 half = body.lossyScale * 0.5f;
+            var lifted = new HashSet<CharacterActor>();
+            foreach (Collider collider in Physics.OverlapBox(center, half, body.rotation, ~0, QueryTriggerInteraction.Ignore))
+            {
+                var actor = collider.GetComponentInParent<CharacterActor>();
+                if (actor == null || actor.gameObject.scene != gameObject.scene || actor.Health == null
+                    || actor.Health.IsDead || !lifted.Add(actor)) continue;
+                Vector3 local = body.InverseTransformPoint(actor.transform.position);
+                float marginX = Mathf.Min(0.49f, actor.Profile.Radius / body.lossyScale.x);
+                float marginZ = Mathf.Min(0.49f, actor.Profile.Radius / body.lossyScale.z);
+                local.x = Mathf.Clamp(local.x, -0.5f + marginX, 0.5f - marginX);
+                local.z = Mathf.Clamp(local.z, -0.5f + marginZ, 0.5f - marginZ);
+                local.y = 1f;
+                Vector3 top = body.TransformPoint(local);
+                // 계단은 최고 높이가 아니라 해당 위치의 실제 발판 위에 놓는다.
+                float nearest = float.PositiveInfinity;
+                foreach (RaycastHit hit in Physics.RaycastAll(top + transform.up, -transform.up,
+                    placement.Definition.Height + 1f, ~0, QueryTriggerInteraction.Ignore))
+                    if (hit.collider.GetComponentInParent<PlacedStructure>() == structure && hit.distance < nearest)
+                    { top = hit.point; nearest = hit.distance; }
+                var fall = actor.GetComponent<UnitFallController>();
+                if (fall != null) fall.LiftForConstruction(top);
+                else StartCoroutine(LiftWithoutFallController(actor, top));
+            }
+            Physics.SyncTransforms();
+        }
+
+        IEnumerator LiftWithoutFallController(CharacterActor actor, Vector3 position)
+        {
+            var agent = actor.GetComponent<NavMeshAgent>();
+            var motor = actor.GetComponent<CharacterController>();
+            var input = actor.GetComponent<PlayerInputController>();
+            bool resumeAgent = agent != null && agent.enabled;
+            bool resumeMotor = motor != null && motor.enabled;
+            if (resumeAgent) agent.enabled = false;
+            if (resumeMotor) motor.enabled = false;
+            if (input != null) input.SetMovementSuspended(true);
+            actor.transform.position = position;
+            while (IsRebuilding || rebuildPending) yield return null;
+            if (actor == null || actor.Health.IsDead) yield break;
+            if (resumeAgent) agent.enabled = true;
+            if (resumeMotor) motor.enabled = true;
+            if (input != null) input.SetMovementSuspended(false);
         }
 
         PlacedStructure CreateBody(BuildPlacement placement)

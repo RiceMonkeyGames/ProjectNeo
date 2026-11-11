@@ -160,7 +160,12 @@ namespace ProjectNeo.Tests
             Assert.AreNotEqual(NavMeshPathStatus.PathComplete, path.status, "성문과 외벽이 온전하면 걸어서 밖으로 나갈 수 없다.");
 
             var player = Object.FindAnyObjectByType<PlayerInputController>(FindObjectsInactive.Include);
-            Assert.Greater(player.transform.position.y, height - 0.5f, "플레이어는 성문 위에서 시작한다.");
+            Vector3 playerLocal = world.LocalPoint(player.transform.position);
+            Assert.AreEqual(0f, playerLocal.y, 0.1f, "플레이어는 안뜰 바닥에서 시작한다.");
+            Assert.Greater(playerLocal.x, 6f * world.Grid.CellSize);
+            Assert.Less(playerLocal.x, 18f * world.Grid.CellSize);
+            Assert.Greater(playerLocal.z, 5f * world.Grid.CellSize);
+            Assert.Less(playerLocal.z, 17f * world.Grid.CellSize);
         }
 
         [UnityTest]
