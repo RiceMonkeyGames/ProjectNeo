@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e49d97490cd7c8145b0ac8870a3dce9d, type: 3}
+  m_Name: TestUnit
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Characters.HeroDefinition
+  id: construction_test_unit
+  displayName: construction_test_unit
+  unlockedByDefault: 1
+  hireCost:
+    gold: 0
+    materials: []
+  equipmentSlots: 0
+  baseStats:
+  - stat: 0
+    value: 100
+  - stat: 4
+    value: 4
+  skills: []

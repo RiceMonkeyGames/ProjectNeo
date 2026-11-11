@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/_Project/Scenes/ConstructionPrototype.unity
+    guid: b39e1fe6b13bbbf45b350931c87d753f
+  - enabled: 1
     path: Assets/_Project/Scenes/UnitBattlePrototype.unity
     guid: 2be8bc9c5a7b8d64daee97e5e2180974
   - enabled: 1

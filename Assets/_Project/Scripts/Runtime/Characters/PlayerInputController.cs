@@ -20,6 +20,13 @@ namespace ProjectNeo.Characters
         float verticalSpeed;
         CursorLockMode previousLock;
         bool previousVisible;
+        bool movementSuspended;
+
+        public void SetMovementSuspended(bool suspended)
+        {
+            movementSuspended = suspended;
+            verticalSpeed = 0f;
+        }
 
         public void Configure(InputActionAsset source, ThirdPersonCamera cameraView, PlayerControlSettings controlSettings)
         {
@@ -55,7 +62,7 @@ namespace ProjectNeo.Characters
         void Update()
         {
             if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame) SetCaptured(false);
-            if (actor.Health == null || actor.Health.IsDead) return;
+            if (movementSuspended || actor.Health == null || actor.Health.IsDead) return;
             bool captured = Cursor.lockState == CursorLockMode.Locked;
             if (!captured && Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
                 SetCaptured(true);
@@ -67,7 +74,7 @@ namespace ProjectNeo.Characters
         // 입력과 실제 이동을 나눠 PlayMode에서 같은 이동 경로를 검증한다.
         public void Move(Vector2 input, float yaw, float deltaTime)
         {
-            if (actor.Health == null || actor.Health.IsDead) return;
+            if (movementSuspended || actor.Health == null || actor.Health.IsDead) return;
             transform.rotation = Quaternion.Euler(0f, yaw, 0f);
             Vector2 clamped = Vector2.ClampMagnitude(input, 1f);
             Vector3 horizontal = transform.rotation * new Vector3(clamped.x, 0f, clamped.y);
