@@ -3,7 +3,8 @@
     "rootNamespace": "ProjectNeo.Tests",
     "references": [
         "ProjectNeo.Runtime",
-        "UnityEngine.TestRunner"
+        "UnityEngine.TestRunner",
+        "Unity.AI.Navigation"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
