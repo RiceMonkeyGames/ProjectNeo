@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-12 22:03:36 (KST)
+Last Updated: 2026-11-12 22:28:48 (KST)
 Source: [Google Docs - Development Backlog Table (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 ## Workflow & Operating Rules

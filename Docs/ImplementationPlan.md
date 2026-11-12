@@ -1,6 +1,6 @@
-# ProjectNeo Implementation Roadmap
+﻿# ProjectNeo Implementation Roadmap
 
-Last Updated: 2026-11-12 22:04:26 (KST). **Current Milestone: M1 Single Siege Battle in progress.** Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elevation, and `feature/siege-prototype` test scene (prep, assault, ladders, win/loss) into `develop`. `SiegePrototype` tests parts of B-6/B-9 separately; the actual `Game` scene links 1st-person prep / construction F interaction → gate banner F interaction → enemy assault, ladders, actual win/loss → rewards/results. Placeholder start/outcome buttons are hidden in game view. Reward payout, formal stage layouts, and casualty replenishment are follow-ups. Teammate handles enemy assault and combat execution; User handles game entry and core flow (see 6.1). Wall-destroying enemies, aerial enemies, waves, morale, and siege weapon firing (Q-21) remain pending. Q-09 resolved in favor of Defeat priority. M2 prep completed C-1a run data / combat I/O rules (5.6); Game scene integration is next.
+Last Updated: 2026-11-12 22:20:33 (KST). **Current Milestone: M1 Single Siege Battle in progress.** Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elevation, and `feature/siege-prototype` test scene (prep, assault, ladders, win/loss) into `develop`. `SiegePrototype` tests parts of B-6/B-9 separately; the actual `Game` scene links 1st-person prep / construction F interaction → gate banner F interaction → enemy assault, ladders, actual win/loss → rewards/results. Placeholder start/outcome buttons are hidden in game view. Reward payout, formal stage layouts, and casualty replenishment are follow-ups. Teammate handles enemy assault and combat execution; User handles game entry and core flow (see 6.1). Wall-destroying enemies, aerial enemies, waves, morale, and siege weapon firing (Q-21) remain pending. Q-09 resolved in favor of Defeat priority. M2 prep completed C-1a run data / combat I/O rules (5.6); Game scene integration is next.
 
 This document manages target goals, development order, current status, immediate tasks, and 3-person collaboration plans. Original game design is in [GameDesign.md](GameDesign.md); code, execution, development principles, and Unity CLI commands are in [Context.md](Context.md); past verification history is in [History.md](History.md).
 
@@ -126,7 +126,7 @@ Target release platforms, distribution channels, release dates, and final conten
 | Test Scenes | `CombatPrototype` (controls), `UnitBattlePrototype` (10v10), `ConstructionPrototype` (building/weapons), `SquadCommandPrototype` (orders), `WallCommandPrototype` (integrated), `SiegePrototype` (siege assault) | Wall-breaching/aerial enemies, multi-wave sequences, morale routs, full loop integration |
 | Art & Performance | Capsule/box placeholder visuals, dual-tier NavMesh benchmark | Production Synty packs, animations, VFX, full combat performance profiling |
 
-**Latest Test Pass Baseline:** EditMode **180 passed**, PlayMode **80 passed** (all green across active suites).
+**Latest Test Pass Baseline:** EditMode **201 passed**, PlayMode **88 passed** (across D-1, D-5, D-7 feature branches; all green).
 
 ### 3.2 Status Conventions
 
@@ -276,3 +276,4 @@ Recommended Order: D-0 → D-5 → D-1 → D-2 → D-0b → D-4 → D-8 → D-3 
 3. Update task status, Context maps, and append verification details to History.md upon task completion. Mark `Done` in backlog and sync.
 4. Detail upcoming milestones upon completing major phases based on actual playtest feedback.
 5. Explicitly differentiate automated test passes from playtest validation, individual scenes from integrated scenes, and editor execution from standalone builds.
+

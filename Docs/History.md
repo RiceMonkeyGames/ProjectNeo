@@ -1,6 +1,6 @@
 # Past Verification History
 
-Last Updated: 2026-11-12 22:05:21 (KST). Historical log of completed milestones, performance benchmarks, and manual playtest records separated from [Context.md](Context.md). Preserves historical completion scope and verification evidence; past test counts and temporary numbers do not represent current baselines or final performance guarantees. Check [ImplementationPlan Section 3](ImplementationPlan.md#3-current-status--starting-point) first for active task status. Agents should only open this file when past rationales or verification evidence are needed, searching by date or task ID.
+Last Updated: 2026-11-12 22:20:33 (KST). Historical log of completed milestones, performance benchmarks, and manual playtest records separated from [Context.md](Context.md). Preserves historical completion scope and verification evidence; past test counts and temporary numbers do not represent current baselines or final performance guarantees. Check [ImplementationPlan Section 3](ImplementationPlan.md#3-current-status--starting-point) first for active task status. Agents should only open this file when past rationales or verification evidence are needed, searching by date or task ID.
 
 New completion results must be appended to the end of this file under `### YYYY-MM-DD: Title`, updating ImplementationPlan Section 3 and Context Section 2 concurrently.
 
@@ -272,4 +272,37 @@ Method: `Assets/Tests/PlayMode/UnitScaleBenchmark.cs`. Ground 120m × 120m, 4m-h
 - Updated workflow rules in `AGENTS.md`, `Docs/Backlog.md`, `Docs/Context.md`, `Docs/ImplementationPlan.md`, and `Docs/GameDesign.md`.
 - Enforced new rule: When an agent or contributor claims an unclaimed task, they must mark it as `In Progress` with their name in `Docs/Backlog.md` and immediately commit/merge (push/sync) this change before implementing to prevent duplicate assignments and collisions.
 
+
+### 2026-11-12: D-5 Shop Buy/Sell and D-1 Facility Upgrades
+
+- Assignee: Hwang Seong-min, branch `feature/shop-and-upgrade` (based on develop `206e524`). Committed (`24ca647`), merged into develop (`681d08d`, 195 EditMode tests passing post-merge), and pushed to remote. Backlog D-5 and D-1 marked `In Progress` / Hwang Seong-min.
+- Scope: Implemented both tasks together as an extensible prototype following design specifications, leaving unspecified details open.
+- Changes: `RunState` (shop storefront `Shop`, `ShopStockedFor`, `SetupShop`, `ShopSeedFor`, `RestockShopIfNeeded`, `TryBuy`, `TrySell`, `TryUpgradeFacility`), `RunConfig.Economy`/`WithEconomy`, `GameFacilities` (upgrade button, shop stock/stash lists, result feedback), `GameFlowHud` (prep title gold updated per frame, resolving D-2 display delay), `GameFacilitySetup` (economy data, items, shop pools, and updated pop-up), `GameRewardSetup.Item` exposed internally. Assets: `Data/GameFlow/Economy.asset` (50% sell ratio), items `item_wood_shield` (25g), `item_leather_armor` (30g), `item_chain_armor` (60g), `item_steel_sword` (80g), `Facility_Shop.asset` level-based pools (Tier 1: 3 of 4, Tier 2: 4 of 6, Tier 3: 5 of 6). Re-generated `Game.unity` pop-up via Editor API.
+- Prototype Decisions: Upgrades do not re-roll current prep inventory, reflecting on the next prep instead. Each stock entry can be purchased once per prep. Selling price considers purchase gold only (per `ItemShop` rules). Tavern, Barracks, and Blacksmith level up in tier without specific perks attached yet. Re-rolling and locked slots deferred.
+- Current Limitations: Siege facility has no pop-up and cannot be upgraded. Stash displays up to 8 rows; excess items show count only. Equipping purchased items is handled in D-7.
+- Verification: EditMode 195 passed (9 new `RunShopTests`). PlayMode 85 passed (2 new `GameFacilityPlayTests`). Captured shop and blacksmith pop-up visuals in Play Mode, verifying stock, stash, upgrade button, text rendering, and HUD spacing (panel height set to 540). Physical inputs and Windows build not run.
+- Manual Verification: Open `Assets/_Project/Scenes/Game.unity` → Play → Face shop building and press F → Left `Stock` lists 3 items (e.g. Iron Sword · 40 gold) → Clicking an item deducts gold and lists it under right `Stash` with `Sell · Half gold` → Clicking it refunds half gold → Click top-right `Upgrade · 60 gold` → Displays `Level 2 / 3` and button changes to `120 gold` (stock increases to 4 on next prep) → Close with Esc, win combat, open shop next prep to see refreshed inventory. Upgrade button operates similarly on other facility buildings. Tuning values located in `Facility_Shop.asset`, `Economy.asset`, and `item_*.asset`. State resets upon exiting Play Mode.
+
+### 2026-11-12: D-7 Player Equipment
+
+- Assignee: Hwang Seong-min, branch `feature/player-equipment` (based on develop `d71f9b6`). Committed (`977878a`), merged into develop (`050948a`, 201 EditMode tests passing post-merge), and pushed to remote. Backlog D-7 marked `In Progress` / Hwang Seong-min. Scope: Player equipment only (hero equipment follows D-3; Q-31 applies to fallen heroes).
+- Changes:
+  - `RunState.AddHero(Character)`, `TryEquip`, `TryUnequip`.
+  - `RunUnitBinding.Create(..., playerCharacter)`: `GameRunLink` passes scene player `Character` so run and scene share the same character instance. `CharacterActor` untouched.
+  - `Flow/GameEquipment` (equipment UI).
+  - `PreparationInteractionSettings.Equipment` (I), `PreparationInteraction.EquipmentRequested`, `EquipmentKey`.
+  - `GameFlowHud`: Exploration prompt displays equipment hotkey; panel prompt generalized to "Esc to Close".
+  - `GameFacilitySetup`: Serializes equipment UI, item modifiers, and key bindings.
+  - Assets: `Interaction.asset` (equipment key), `Rewards/item_*` equip stat modifiers.
+  - `Game.unity`: `EquipmentPanel` and component wiring (saved via Editor API).
+- Prototype Decisions: Equipment slots are generic 3 slots per character definition. Max HP modifier omitted for now because equipping mid-prep does not automatically refill current HP. Equipment cannot be changed during combat.
+- Verification: EditMode 201 passed (6 new `RunEquipmentTests`). PlayMode 88 passed (3 new `GameEquipmentPlayTests`). Physical inputs and Windows build not run.
+- Manual Verification:
+  1. Open `Assets/_Project/Scenes/Game.unity` → Play.
+  2. Buy equipment (e.g. Iron Sword) from Shop (starts with 100 gold). Close with Esc.
+  3. Press I. Equipment panel shows `Equipment Slots 0 / 3` with attack/defense stats, and right `Stash Equipment` lists purchased item.
+  4. Clicking the item moves it to left `Equipped` and increases attack (Iron Sword +4) or defense immediately.
+  5. Clicking equipped item unequips it, restoring baseline stats.
+  6. Close with Esc. I key is disabled during combat.
+  7. Modifier values tuned in `Rewards/item_*.asset` Equip Modifiers, hotkeys in `Data/GameFlow/Interaction.asset`. Resets upon exiting Play Mode.
 

@@ -21,7 +21,15 @@ MonoBehaviour:
     soldierModifiers: []
     recruitableSoldiers: []
     offerCount: 3
-    itemPool: []
+    itemPool:
+    - item: {fileID: 11400000, guid: 933d722ec8cf9574fa5b174621ec4fa5, type: 2}
+      weight: 2
+    - item: {fileID: 11400000, guid: f199196ca1dd9d8458335b9110821698, type: 2}
+      weight: 1
+    - item: {fileID: 11400000, guid: 82f91b232b8d1fc4fb04fbebf5e77a88, type: 2}
+      weight: 1
+    - item: {fileID: 11400000, guid: 460dfb0830ad07e44b81096701286eeb, type: 2}
+      weight: 1
     heroPool: []
   - upgradeCost:
       gold: 60
@@ -30,7 +38,19 @@ MonoBehaviour:
     soldierModifiers: []
     recruitableSoldiers: []
     offerCount: 4
-    itemPool: []
+    itemPool:
+    - item: {fileID: 11400000, guid: 933d722ec8cf9574fa5b174621ec4fa5, type: 2}
+      weight: 2
+    - item: {fileID: 11400000, guid: f199196ca1dd9d8458335b9110821698, type: 2}
+      weight: 1
+    - item: {fileID: 11400000, guid: 82f91b232b8d1fc4fb04fbebf5e77a88, type: 2}
+      weight: 1
+    - item: {fileID: 11400000, guid: 460dfb0830ad07e44b81096701286eeb, type: 2}
+      weight: 1
+    - item: {fileID: 11400000, guid: 67d0133c1953fa84c81f67a15984ec45, type: 2}
+      weight: 1
+    - item: {fileID: 11400000, guid: b916f3e660b272b4791179bd0f5b8dc5, type: 2}
+      weight: 0.5
     heroPool: []
   - upgradeCost:
       gold: 120
@@ -39,6 +59,18 @@ MonoBehaviour:
     soldierModifiers: []
     recruitableSoldiers: []
     offerCount: 5
-    itemPool: []
+    itemPool:
+    - item: {fileID: 11400000, guid: 933d722ec8cf9574fa5b174621ec4fa5, type: 2}
+      weight: 1
+    - item: {fileID: 11400000, guid: f199196ca1dd9d8458335b9110821698, type: 2}
+      weight: 1
+    - item: {fileID: 11400000, guid: 82f91b232b8d1fc4fb04fbebf5e77a88, type: 2}
+      weight: 0.5
+    - item: {fileID: 11400000, guid: 460dfb0830ad07e44b81096701286eeb, type: 2}
+      weight: 1
+    - item: {fileID: 11400000, guid: 67d0133c1953fa84c81f67a15984ec45, type: 2}
+      weight: 1.5
+    - item: {fileID: 11400000, guid: b916f3e660b272b4791179bd0f5b8dc5, type: 2}
+      weight: 1.5
     heroPool: []
   displayName: "\uC0C1\uC810"

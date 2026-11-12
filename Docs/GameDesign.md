@@ -1,6 +1,6 @@
 # Game Design: Siege Defense Roguelike
 
-Last Updated: 2026-11-12 22:05:11 (KST)
+Last Updated: 2026-11-12 22:20:33 (KST)
 
 This file is the ground truth for game design. The design text in Google Docs is legacy human-readable reference only and may lag behind this file. When game design changes, update this file first. Implementation roadmap, dependencies, and implementation status are managed in [ImplementationPlan.md](ImplementationPlan.md); task selection, assignment, and progress tracking are managed in [Docs/Backlog.md](Backlog.md). Backlog operating procedures follow AGENTS.md (user decision on 2026-11-12).
 
@@ -197,6 +197,9 @@ Enemies can be routed rather than slain. Thresholds and values undecided. Morale
 - Facilities upgradable with data-driven benefits.
 - Facility UIs (confirmed on 2026-11-12): Facing building and pressing F opens pop-up; closed via Esc or close button. Player movement/look frozen while open. Placeholder UIs display title, facility level, held gold, and materials. Disabled during combat.
 - Shop and Tavern refresh inventories upon entering preparation phase (confirmed on 2026-11-12). Gold re-rolling is a follow-up.
+- Facility Upgrades (2026-11-12 prototype): Pay next-level cost in facility UI to upgrade. Upgrades rejected if at max level or lacking funds. Shop inventory tier reflects upgraded level starting from the next preparation phase (does not re-roll within current phase). Tavern, Barracks, and Blacksmith level benefits attach alongside their respective feature implementations.
+- Shop (2026-11-12 prototype): Inventory items roll from shop tier item tables; locked items do not appear. Purchased items disappear from stock for current preparation phase. Selling price defaults to 50% of purchase gold price (configurable via data).
+- Equipment (2026-11-12 prototype): Press I during preparation to open equipment UI, equipping/unequipping items between stash and player inventory (3 generic slots). Equipping immediately modifies stats; locked during combat. Hero equipment integration follows Tavern implementation.
 - Selling price is fixed percentage of purchase price. Items obtained via combat or other means can be sold.
 
 ## Currencies & Items
