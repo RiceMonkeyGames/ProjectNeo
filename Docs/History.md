@@ -1,6 +1,6 @@
 # 과거 검증 기록
 
-마지막 갱신: 2026-11-12 20:28:19 (KST). [Context.md](Context.md)에서 분리한 완료 결과·성능 측정·직접 검증 기록이다. 당시 완료 범위와 검증 근거를 보존하며, 과거 테스트 개수·임시 수치는 최신 기준이나 최종 성능 보장이 아니다. 현재 작업 상태는 [로드맵 3장](ImplementationPlan.md#3-현재-상태와-출발점)을 먼저 읽는다. 에이전트는 과거 결정의 이유나 검증 근거가 필요할 때만 이 파일을 연다. 필요한 날짜·작업 ID를 검색해서 해당 부분만 읽는다.
+마지막 갱신: 2026-11-12 21:38:56 (KST). [Context.md](Context.md)에서 분리한 완료 결과·성능 측정·직접 검증 기록이다. 당시 완료 범위와 검증 근거를 보존하며, 과거 테스트 개수·임시 수치는 최신 기준이나 최종 성능 보장이 아니다. 현재 작업 상태는 [로드맵 3장](ImplementationPlan.md#3-현재-상태와-출발점)을 먼저 읽는다. 에이전트는 과거 결정의 이유나 검증 근거가 필요할 때만 이 파일을 연다. 필요한 날짜·작업 ID를 검색해서 해당 부분만 읽는다.
 
 새 완료 결과는 이 파일 맨 끝에 `### 날짜: 제목` 형식으로 추가하고, 현재 상태는 로드맵 3장, 코드 위치는 Context 2장도 함께 갱신한다.
 
@@ -406,4 +406,27 @@
 - 남은 제한: 수성 시설은 팝업이 없어 업그레이드 화면이 없다. 보관함은 8줄까지 보이고 나머지는 개수만 표시한다. 산 장비를 착용하는 기능은 D-7이다.
 - 검증: 컴파일 오류 없음. EditMode 195개 전체 통과(새 `RunShopTests` 9개). PlayMode 85개 전체 통과(`GameFacilityPlayTests` 2개 추가). Play 중 상점·대장간 팝업 화면을 캡처해 매물·보관함·업그레이드 버튼과 한글 표시, HUD와의 겹침을 확인하고 패널 높이를 540으로 줄였다. 물리 키보드·마우스 직접 플레이와 Windows 빌드는 하지 않았다.
 - 직접 검증: `Assets/_Project/Scenes/Game.unity` → Play → 상점 건물을 바라보고 F → 왼쪽 `매물`에 3개(예: 철검 · 40골드)가 보인다 → 하나를 클릭하면 위쪽 골드가 줄고 오른쪽 `보관함`에 `… 팔기 · 절반 골드`가 생긴다 → 그것을 클릭하면 절반 값이 돌아온다 → 오른쪽 위 `업그레이드 · 60골드` 클릭 → `레벨 2 / 3`, 버튼이 `120골드`로 바뀐다(매물은 다음 준비부터 4개) → Esc로 닫고 전투를 이긴 뒤 다음 준비에서 상점을 다시 열면 매물이 새로 바뀐다. 다른 건물에서도 업그레이드 버튼이 동작한다. 값은 `Assets/_Project/Data/GameFlow/Facilities/Facility_Shop.asset`(풀·매물 수·업그레이드 비용), `Economy.asset`(판매 비율), `Rewards/item_*.asset`(가격)에서 바꾼다. Play를 멈추면 초기화된다.
+
+### 2026-11-12: D-7 플레이어 장비 착용
+
+- 담당 황성민, 브랜치 `feature/player-equipment`(develop `d71f9b6` 기준). 백로그 D-7을 `작업중`·황성민으로 표시하고 다시 읽어 확인했다. 범위: 플레이어 장비만(영웅은 D-3 이후, Q-31은 죽은 영웅에만 해당).
+- 추가·변경:
+  - `RunState.AddHero(Character)`·`TryEquip`·`TryUnequip`.
+  - `RunUnitBinding.Create(..., playerCharacter)`. `GameRunLink`가 씬 플레이어 `Character`를 넘겨 런과 씬이 같은 캐릭터를 쓴다. `CharacterActor`는 바꾸지 않았다.
+  - `Flow/GameEquipment`(장비 화면).
+  - `PreparationInteractionSettings.Equipment`(I)·`PreparationInteraction.EquipmentRequested`·`EquipmentKey`.
+  - `GameFlowHud`: 탐색 안내에 장비 키, 팝업 중 안내는 "Esc 닫기"로 일반화.
+  - `GameFacilitySetup`: 장비 화면·아이템 효과·키 저장.
+  - 에셋: `Interaction.asset`(장비 키), `Rewards/item_*` 장비 효과.
+  - `Game.unity`: `EquipmentPanel`·컴포넌트(에디터 API 저장).
+- 구현 판단: 칸은 종류 구분 없이 영웅 정의의 칸 수다. 최대 체력 효과는 준비 중 착용 시 현재 체력이 가득 차지 않아 이번 값에서는 쓰지 않았다. 전투 중에는 장비를 바꿀 수 없다.
+- 검증: 컴파일 오류 없음. EditMode 201개 전체 통과(새 `RunEquipmentTests` 6개). PlayMode 88개 전체 통과(새 `GameEquipmentPlayTests` 3개). 장비 화면 캡처와 물리 키보드·마우스 직접 플레이, Windows 빌드는 하지 않았다.
+- 직접 검증:
+  1. `Assets/_Project/Scenes/Game.unity` → Play.
+  2. 상점에서 철검 등 장비를 산다(시작 100골드). Esc로 닫는다.
+  3. I를 누른다. 장비 화면에 `장비 칸 0 / 3`과 공격력·방어력이 보이고, 오른쪽 `보관함 장비`에 산 장비가 있다.
+  4. 장비를 클릭하면 왼쪽 `착용 중`으로 옮겨지고 공격력(철검 +4)이나 방어력이 오른다.
+  5. 착용 중 장비를 클릭하면 벗겨지고 스탯이 돌아온다.
+  6. Esc로 닫는다. 전투 중에는 I가 동작하지 않는다.
+  7. 효과 값은 `Assets/_Project/Data/GameFlow/Rewards/item_*.asset`의 Equip Modifiers, 키는 `Data/GameFlow/Interaction.asset`에서 바꾼다. Play를 멈추면 초기화된다.
 
