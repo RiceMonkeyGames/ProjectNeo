@@ -1,6 +1,6 @@
 # 프로젝트 컨텍스트
 
-마지막 갱신: 2026-11-12 15:15:20 (KST). 경로는 저장소 루트 기준이다. 현재 실행 가능한 것, 코드·씬·에셋 지도, 개발 방법과 검증 근거를 이 문서에서 관리한다. 완성 목표·다음 작업·진행 상태는 [구현 로드맵](ImplementationPlan.md), 게임 규칙은 [게임 기획](GameDesign.md), 에이전트의 필수 규칙과 문서 입구는 [AGENTS.md](../AGENTS.md)가 기준이다.
+마지막 갱신: 2026-11-12 15:29:23 (KST). 경로는 저장소 루트 기준이다. 현재 실행 가능한 것, 코드·씬·에셋 지도, 개발 방법과 검증 근거를 이 문서에서 관리한다. 완성 목표·다음 작업·진행 상태는 [구현 로드맵](ImplementationPlan.md), 게임 규칙은 [게임 기획](GameDesign.md), 에이전트의 필수 규칙과 문서 입구는 [AGENTS.md](../AGENTS.md)가 기준이다.
 
 ## 찾아보기
 
@@ -774,7 +774,7 @@ unity command package add --caller plugin --skill unity-package-management --nam
 
 ### 2026-11-12: D-0 시설 공통 틀
 
-- 담당 황성민, 브랜치 `feature/facility-frame`(develop `d46804f` 기준). 백로그 D-0을 `작업중`·황성민으로 표시하고 다시 읽어 확인했다.
+- 담당 황성민, 브랜치 `feature/facility-frame`(develop `d46804f` 기준). 사용자 요청으로 커밋(`3ac3962`)해 develop에 병합(`d146f35`, 병합 후 EditMode 181개 통과)하고 원격에 올렸다. 백로그 D-0을 `작업중`·황성민으로 표시하고 다시 읽어 확인했다.
 - 사용자 결정: Q-33 지금 HUD와 같은 uGUI+TMP 임시 팝업, Q-34 상점·주점 매물은 준비마다 새로 뽑고 골드 리롤은 후속.
 - 추가: `Flow/GameFacilities`·`FacilityStation`, `Editor/GameFacilitySetup`, 시설 정의 에셋 5개 `Data/GameFlow/Facilities/Facility_{Tavern,Shop,TrainingGround,Smithy,Defense}.asset`(레벨 3단계, 업그레이드 골드 60·120, 매물 수 3·4·5, 풀은 비어 있음). 변경: `RunState`(시설 상태), `RunConfig`(시설 목록·`Create` 오버로드), `FacilityDefinition`(표시 이름), `Wallet.Materials`, `GamePhaseView`(팝업 화면 상태), `PreparationInteraction`(팝업 Esc 닫기), `GameFlowHud`(팝업 중 안내). 에디터 메뉴로 `RunStart.asset`에 시설을 넣고 `Game.unity`에 컴포넌트·건물 상호작용·`FacilityPanel`을 더했다(에디터 API 저장).
 - 남은 제한: 팝업 본문은 자리표시다(업그레이드 D-1, 각 시설 기능 D-3~6). 수성 시설은 상태만 있고 화면은 기존 건설소다. 팝업 글자는 한글로 고정이며 한글 글꼴은 HUD의 `RuntimeSystemFont`가 실행 중에 바꿔 준다.
