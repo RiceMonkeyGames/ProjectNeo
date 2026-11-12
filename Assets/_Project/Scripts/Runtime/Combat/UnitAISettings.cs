@@ -25,6 +25,17 @@ namespace ProjectNeo.Combat
         // 0이면 원거리는 자리를 떠나지 않는다.
         [SerializeField, Min(0f)] float holdRangedChaseExtra = 6f;
         public float HoldRangedChaseExtra => holdRangedChaseExtra;
+        // 이동이 막혔을 때의 도착 판정. 목적지까지 이 거리 안에서 이 시간 동안 이만큼도 더 가까워지지 못하면 도착으로 본다.
+        // 길이 끊긴 이동에서 여러 유닛의 끝점이 겹쳐 서로 막을 때 이동 지시가 끝나지 않는 것을 막는다.
+        [SerializeField, Min(0.01f)] float moveStallDistance = 1.5f;
+        [SerializeField, Min(0.01f)] float moveStallSeconds = 0.5f;
+        [SerializeField, Min(0f)] float moveStallProgress = 0.1f;
+        // 중지 중 자리에서 이 거리보다 멀리 밀려났을 때만 자리로 돌아간다. 살짝 밀린 정도로 자리 다툼을 하지 않게 한다.
+        [SerializeField, Min(0.01f)] float holdReturnDistance = 1f;
+        public float MoveStallDistance => moveStallDistance;
+        public float MoveStallSeconds => moveStallSeconds;
+        public float MoveStallProgress => moveStallProgress;
+        public float HoldReturnDistance => Mathf.Max(holdReturnDistance, arrivalDistance);
         public float StoppingRangeRatio => stoppingRangeRatio;
         public float ArrivalDistance => arrivalDistance;
         public float DestinationRecoveryDistance => destinationRecoveryDistance;
