@@ -1,6 +1,6 @@
 # 프로젝트 컨텍스트
 
-마지막 갱신: 2026-11-12 12:25:15 (KST). 경로는 저장소 루트 기준이다. 현재 실행 가능한 것, 코드·씬·에셋 지도, 개발 방법과 검증 근거를 이 문서에서 관리한다. 완성 목표·다음 작업·진행 상태는 [구현 로드맵](ImplementationPlan.md), 게임 규칙은 [게임 기획](GameDesign.md), 에이전트의 필수 규칙과 문서 입구는 [AGENTS.md](../AGENTS.md)가 기준이다.
+마지막 갱신: 2026-11-12 12:28:25 (KST). 경로는 저장소 루트 기준이다. 현재 실행 가능한 것, 코드·씬·에셋 지도, 개발 방법과 검증 근거를 이 문서에서 관리한다. 완성 목표·다음 작업·진행 상태는 [구현 로드맵](ImplementationPlan.md), 게임 규칙은 [게임 기획](GameDesign.md), 에이전트의 필수 규칙과 문서 입구는 [AGENTS.md](../AGENTS.md)가 기준이다.
 
 ## 찾아보기
 
@@ -760,7 +760,7 @@ unity command package add --caller plugin --skill unity-package-management --nam
 
 ### 2026-11-12: D-2 건설·수리 비용
 
-- 담당 황성민, 브랜치 `feature/build-costs`(develop `1d69e4d` 기준, 커밋 전 D-3~8 분해 문서 변경을 함께 가져옴). 백로그 D-2를 `작업중`·황성민으로 표시했다.
+- 담당 황성민, 브랜치 `feature/build-costs`(develop `1d69e4d` 기준, 커밋 전 D-3~8 분해 문서 변경을 함께 가져옴). 사용자 요청으로 D-3~8 분해와 함께 커밋(`61b5648`)해 develop에 병합(`1870a3b`)하고 원격에 올렸다. 백로그 D-2를 `작업중`·황성민으로 표시했다.
 - 사용자 결정: 철거는 성문을 뺀 모든 조각·대포, 이번 준비에 지은 것은 전액·그 전 것은 비율 환불. 수리는 "모두 수리" 버튼. 부서진 성문 재건은 이번에 다루지 않음. 값은 프로토타입 임의 값을 데이터에 둔다.
 - 추가: `Run/BuildCostTable`·`PieceGoldCost`·`WeaponGoldCost`·`BuildEconomy`, `Flow/GameBuildEconomy`, `Editor/GameBuildEconomySetup`, 에셋 `Data/GameFlow/Build/BuildCosts.asset`(성벽 10·계단 15·대포 30골드, 지난 것 50% 환불, 체력 1당 0.2골드)·`RunStart.asset`(시작 100골드). 에디터 메뉴로 `Game.unity`에 컴포넌트와 건설 화면 버튼 2개·안내 칸을 더했다(에디터 API 저장). 다른 코드 파일은 C-4 보상 테스트의 골드 비교만 시작 골드를 고려하도록 고쳤다.
 - 남은 제한: 부서진 성문 재건 없음. 건설 조각이 안뜰 시설 건물과 겹치는지는 검사하지 않는다(기존과 같음). 준비 제목의 골드는 단계가 바뀔 때만 다시 그려 첫 준비 제목에는 시작 골드가 늦게 보일 수 있고, 건설 화면 안내 칸은 매 프레임 갱신된다.
