@@ -1,6 +1,6 @@
 # 프로젝트 컨텍스트
 
-마지막 갱신: 2026-11-12 11:29:57 (KST). 경로는 저장소 루트 기준이다. 현재 실행 가능한 것, 코드·씬·에셋 지도, 개발 방법과 검증 근거를 이 문서에서 관리한다. 완성 목표·다음 작업·진행 상태는 [구현 로드맵](ImplementationPlan.md), 게임 규칙은 [게임 기획](GameDesign.md), 에이전트의 필수 규칙과 문서 입구는 [AGENTS.md](../AGENTS.md)가 기준이다.
+마지막 갱신: 2026-11-12 11:32:51 (KST). 경로는 저장소 루트 기준이다. 현재 실행 가능한 것, 코드·씬·에셋 지도, 개발 방법과 검증 근거를 이 문서에서 관리한다. 완성 목표·다음 작업·진행 상태는 [구현 로드맵](ImplementationPlan.md), 게임 규칙은 [게임 기획](GameDesign.md), 에이전트의 필수 규칙과 문서 입구는 [AGENTS.md](../AGENTS.md)가 기준이다.
 
 ## 찾아보기
 
@@ -723,7 +723,7 @@ unity command package add --caller plugin --skill unity-package-management --nam
 
 ### 2026-11-12: C-1~2 런 데이터의 Game 씬 연결
 
-- 담당 황성민, 브랜치 `feature/run-scene-connection`(develop `833ca46` 기준). 백로그 C-1~2·C-1a-confirm을 `작업중`·황성민으로 표시하고, 결과 형식 확인은 진행하며 함께 하기로 했다(사용자 결정).
+- 담당 황성민, 브랜치 `feature/run-scene-connection`(develop `833ca46` 기준). 사용자 요청으로 커밋(`2f2fd79`)해 develop에 병합(`22253a4`)하고 원격에 올렸다. 백로그 C-1~2·C-1a-confirm을 `작업중`·황성민으로 표시하고, 결과 형식 확인은 진행하며 함께 하기로 했다(사용자 결정).
 - 사용자 결정: 씬에 놓인 유닛에 런 번호를 붙이는 방식(매번 새로 만들지 않음). 죽은 아군의 몸은 다음 준비에도 남긴다. 살아남은 유닛 회복은 C-1a 결정을 따른다.
 - 추가: `Run/RunUnitBinding.cs`, `Flow/GameRunLink.cs`, `GameFlow.AttachRunState`, `RunProgress.Attach`, `Health.RestoreFull`, `CharacterActor.SoldierDefinition`. `GameBattleController`에 `RunLink`, 준비·전투 시작 호출, 적 프리팹 이름별 처치 수, 종료 이유를 더했다. 씬·프리팹·에셋은 바꾸지 않았다.
 - 남은 제한: 적 ID는 임시로 프리팹 이름이다. 런 영웅과 씬 플레이어의 `Character`가 별개다. 고용·모집·저장 복원·도망은 범위 밖이다. `RunConfig`의 시작 재화는 아직 쓰지 않는다. 결과 형식은 팀원 확인 대기다.
