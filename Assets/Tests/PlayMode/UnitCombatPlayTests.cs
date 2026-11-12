@@ -133,6 +133,53 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
+        public IEnumerator Hold_FindsEnemyWhoseOffsetColliderIsInRange_WhenRootIsFarAway()
+        {
+            var actor = Unit("Holder", CombatTeam.Allied, Vector3.zero, ai: true);
+            actor.Stats.SetBase(StatType.MoveSpeed, 0f);
+            var enemy = Unit("OffsetBody", CombatTeam.Hostile, new Vector3(0f, 0f, 10f));
+            // Root is outside both attack range and Hold chase radius, but the actual body is in reach.
+            var body = enemy.GetComponent<CapsuleCollider>();
+            body.center = new Vector3(0f, 1f, -8f);
+            Physics.SyncTransforms();
+            var ai = actor.GetComponent<UnitCombatAI>();
+            ai.SetDirective(UnitDirective.Hold);
+            yield return Frames(3);
+            Assert.AreSame(enemy, ai.Target, "Broad-phase filtering must retain an in-range offset collider.");
+        }
+
+        [UnityTest]
+        public IEnumerator Hold_EmptyTargetSearch_UsesDecisionInterval_AndReacquiresAfterDeath()
+        {
+            yield return CheckEmptyTargetSearch(UnitDirective.Hold);
+        }
+
+        [UnityTest]
+        public IEnumerator Engage_EmptyTargetSearch_UsesDecisionInterval_AndReacquiresAfterDeath()
+        {
+            yield return CheckEmptyTargetSearch(UnitDirective.Engage);
+        }
+
+        IEnumerator CheckEmptyTargetSearch(UnitDirective directive)
+        {
+            var actor = Unit("WaitingAI", CombatTeam.Allied, Vector3.zero, ai: true);
+            actor.Stats.SetBase(StatType.MoveSpeed, 0f);
+            var ai = actor.GetComponent<UnitCombatAI>();
+            ai.SetDirective(directive);
+            yield return Frames(3);
+            Assert.IsNull(ai.Target);
+            var first = Unit("FirstArrival", CombatTeam.Hostile, new Vector3(0f, 0f, 4f));
+            yield return Frames(2);
+            Assert.IsNull(ai.Target, "Empty-target scans must honor the configured decision interval.");
+            yield return Frames(Mathf.CeilToInt(aiSettings.DecisionInterval / Time.captureDeltaTime) + 2);
+            Assert.AreSame(first, ai.Target, "A new enemy must be acquired on the next decision tick.");
+            var second = Unit("Replacement", CombatTeam.Hostile, new Vector3(3f, 0f, 0f));
+            first.ReceiveDamage(1000f);
+            yield return Frames(2);
+            Assert.AreSame(second, ai.Target, "A dead existing target must be replaced without waiting for the next tick.");
+        }
+
+        [UnityTest]
         public IEnumerator Target_RemainsLockedUntilDeath_ThenChanges()
         {
             var actor = Unit("AI", CombatTeam.Allied, Vector3.zero, ai: true);
