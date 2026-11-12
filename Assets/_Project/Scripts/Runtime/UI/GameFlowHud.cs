@@ -101,6 +101,8 @@ namespace ProjectNeo.UI
             prompt.sizeDelta = new Vector2(-32f, 64f);
             interactionHint.text = phaseView.IsBuildView
                 ? (korean ? $"건설 모드 · {interaction.CloseKey} 돌아가기" : $"Construction - {interaction.CloseKey} to return")
+                : phaseView.IsPanelView
+                ? (korean ? $"시설 화면 · {interaction.CloseKey} 닫기" : $"Facility - {interaction.CloseKey} to close")
                 : interaction.Target != null
                     ? $"{interaction.InteractKey} · {interaction.Target.Prompt}"
                     : (korean ? $"WASD 이동 · {interaction.InteractKey} 상호작용 · 성문 앞 깃발에서 전투 시작"

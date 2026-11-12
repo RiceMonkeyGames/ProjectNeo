@@ -1,6 +1,6 @@
 # 프로젝트 컨텍스트
 
-마지막 갱신: 2026-11-12 12:28:25 (KST). 경로는 저장소 루트 기준이다. 현재 실행 가능한 것, 코드·씬·에셋 지도, 개발 방법과 검증 근거를 이 문서에서 관리한다. 완성 목표·다음 작업·진행 상태는 [구현 로드맵](ImplementationPlan.md), 게임 규칙은 [게임 기획](GameDesign.md), 에이전트의 필수 규칙과 문서 입구는 [AGENTS.md](../AGENTS.md)가 기준이다.
+마지막 갱신: 2026-11-12 15:15:20 (KST). 경로는 저장소 루트 기준이다. 현재 실행 가능한 것, 코드·씬·에셋 지도, 개발 방법과 검증 근거를 이 문서에서 관리한다. 완성 목표·다음 작업·진행 상태는 [구현 로드맵](ImplementationPlan.md), 게임 규칙은 [게임 기획](GameDesign.md), 에이전트의 필수 규칙과 문서 입구는 [AGENTS.md](../AGENTS.md)가 기준이다.
 
 ## 찾아보기
 
@@ -77,6 +77,8 @@ Unity 6000.6.8f1, URP, 3D 1인칭 프로젝트다. 현재는 임시 그래픽이
 | Run | `CastleState`, `BattleInput`, `BattleResult` | 성 배치·층·회전·체력·수성 무기 기록(`Capture`/`TryRestore`로 BuildLayout·MountLayout과 왕복, 아래층부터 정렬). 전투 입력은 전투 번호·스테이지·플레이어·부대·성 복사본. 결과 초안은 같은 전투 번호, 승패, 종료 이유, 유닛별 생존/사망/도망, 전투 후 성 기록, 처치한 적 종류별 수. `RunState.Apply`가 번호를 확인해 한 번만 반영하고, 틀린 결과는 아무것도 바꾸지 않는다. 죽은 잡졸은 사라지고 죽은 영웅은 장비를 가진 채 `FallenHeroes`로 간다. 결과 형식은 팀원 확인 대기이고 Game 씬은 아직 쓰지 않는다. |
 | Flow | `GameRewardController` | C-4 승리 보상. `GameBattleController`와 같은 오브젝트에 붙는다. 보상 단계에 들어오면 마지막 승리 결과와 런 시드로 `StageReward`를 정해 런 지갑·보관함에 한 번 넣고, 지휘관 경험치·해금 포인트를 `GameSession.Meta`(실행 중에만 남는 `MetaProgress`)에 더한다. 수치는 `Data/GameFlow/Rewards/StageRewards.asset`, 레벨 규칙은 같은 폴더 `Meta.asset`에서 바꾼다. |
 | Flow | `GameBuildEconomy` | D-2 건설·수리 비용. `GameBattleController`와 같은 오브젝트에 붙는다. 첫 준비에 `RunStart.asset`의 시작 골드를 주고, `PlacementController.ConfirmGate`로 골드가 모자란 설치를 막으며 설치 알림으로 비용을 낸다. 건설 화면의 `철거` 버튼(조각 클릭, 우클릭 끝)과 `모두 수리` 버튼, 골드·선택 비용·수리 비용 안내 칸(`EconomyStatus`)을 맡는다. 준비 단계에서만 동작한다. |
+| Flow | `GameFacilities`, `FacilityStation` | D-0 시설 공통 틀. `GameFacilities`는 `GameBattleController`와 같은 오브젝트에 붙어 런 데이터에 `RunStart.asset`의 시설을 시작 레벨로 붙이고, 시설 팝업(`FacilityPanel`: 제목·레벨·골드·재료·본문·닫기)을 열고 닫는다. 열 때 `GamePhaseView.EnterPanel`로 이동·시점을 멈추고 커서를 푼다. Esc는 `PreparationInteraction`이 `ExitPanel`로 닫고, 단계가 바뀌면 팝업도 닫힌다. `FacilityStation`은 안뜰 주점·상점·훈련장·대장간 건물 루트에 붙는 F 상호작용 대상이다. 각 시설 기능은 아직 없다. |
+| Run·Facilities | `RunState.Facilities`, `FacilityDefinition.DisplayName` | 런이 가진 시설 상태(`FacilityState`, 종류마다 하나, 새 런은 레벨 0). `RunConfig.Facilities`로 시작 시설을 정한다. 시설 정의 에셋은 `Data/GameFlow/Facilities/Facility_*.asset`(프로토타입 값). `Wallet.Materials`로 가진 재료를 나열한다. |
 | Run | `BuildCostTable`, `PieceGoldCost`, `WeaponGoldCost`, `BuildEconomy` | 건설 비용 표 에셋(조각·무기 골드, 지난 것 환불 비율, 체력당 수리 골드)과 일반 C# 규칙. 결제·이번 준비 기록, 환불(이번 준비 전액·그 전 비율 내림), 수리 비용(올림)과 가진 골드로 가장 많이 깎인 조각부터 고르는 수리 계획. |
 | Run | `StageRewardTable`, `KillReward`, `StageReward` | 보상 표 에셋(기본·스테이지 가산 골드, 적 종류별 골드·재료, 아이템 확률·횟수·가중치 풀, 경험치·해금 포인트)과 한 번의 보상 내역. `StageReward.Roll`은 승리 결과·스테이지·`IRandomSource`로 보상을 정하며 같은 시드면 같다. `RunState.ApplyReward`는 마지막 승리 전투의 보상만 한 번 지급하고, `RunState.Seed`·`SeedFor`가 전투별 시드를 만든다. |
 | UI | `TitleScreen`, `GameFlowHud`, `RuntimeSystemFont` | 타이틀 버튼 동작, 단계 표시·건물 상호작용 안내·남은 병력·사다리 밀기·결과 화면(전투 연결 시 시작·승패 자리표시 버튼은 숨김), 임시 화면에 맑은 고딕을 실행 중 적용하는 공용 부품. 보상 단계에는 전투 상태 칸에 지급 내역을, 준비 제목에 보유 골드를 보여준다. 정식 화면이 아니다. |
@@ -193,6 +195,9 @@ Q/`RotateLeft()`와 E/`RotateRight()`는 화면 속 판의 왼쪽·오른쪽 회
 - `Assets/_Project/Scripts/Editor/GameRewardSetup.cs`: 메뉴 `ProjectNeo/Setup/Connect Rewards To Game Scene`. `Data/GameFlow/Rewards/`에 프로토타입 재료 3종(뼈 조각·질긴 가죽·깃털)·아이템 2종(철검·회복약)·`StageRewards`·`Meta` 에셋을 만들고 Game 씬 전투 오브젝트에 `GameRewardController`를 붙인다. 이미 있는 에셋은 덮어쓰지 않아 인스펙터에서 바꾼 값이 남고, 여러 번 실행해도 결과가 같다. 씬을 연 뒤 에셋을 경로로 다시 불러와 연결한다.
 - `Assets/_Project/Scripts/Editor/GameBuildEconomySetup.cs`: 메뉴 `ProjectNeo/Setup/Connect Build Costs To Game Scene`. `Data/GameFlow/Build/`에 `BuildCosts`·`RunStart` 에셋을 만들고(이미 있으면 그대로), Game 씬 전투 오브젝트에 `GameBuildEconomy`를 붙여 건설 화면 `BuildPanel`에 `Button_Dismantle`·`Button_Repair all`·`EconomyStatus`를 더한다. 여러 번 실행해도 중복으로 만들지 않는다.
 - `Assets/Tests/EditMode/BuildEconomyTests.cs`: 비용 표 조회, 결제와 부족 시 거부, 이번 준비 전액·그 전 비율 환불과 기록 해제, 수리 비용 올림, 수리 계획(많이 깎인 순·부족하면 건너뜀·지갑 불변).
+- `Assets/_Project/Scripts/Editor/GameFacilitySetup.cs`: 메뉴 `ProjectNeo/Setup/Connect Facilities To Game Scene`. `Data/GameFlow/Facilities/`에 시설 정의 5개를 만들고(이미 있으면 그대로) `RunStart.asset`의 시설 목록에 넣으며, Game 씬 전투 오브젝트에 `GameFacilities`, 안뜰 건물 4곳에 `FacilityStation`, `GameFlowHud` 아래에 `FacilityPanel`을 만든다. 팝업은 매번 새로 만들고 나머지는 중복으로 만들지 않는다. `Connect Build Costs To Game Scene`을 먼저 실행해야 한다.
+- `Assets/Tests/EditMode/RunFacilityTests.cs`: 새 런 시설 시작 레벨·빈 칸 건너뜀, 런마다 따로인 레벨과 새 런 초기화, 같은 종류 중복 거부, 업그레이드 변경 알림, 시설 이름, 지갑 재료 나열.
+- `Assets/Tests/PlayMode/GameFacilityPlayTests.cs`: Game 씬 런 데이터의 시설 5곳, 건물 4곳 팝업 열기·닫기와 이동 정지·커서·제목·레벨·골드, 상점을 바라보고 실제 F/Esc 입력으로 열고 닫기, 전투 시작 시 닫힘과 전투 중 열기 거부.
 - `Assets/Tests/PlayMode/GameBuildEconomyPlayTests.cs`: Game 씬 시작 골드, 설치 결제와 전액·비율 환불, 성문 철거 거부, 골드 부족 시 설치 거부, 모두 수리 결제와 체력 회복, 전투 중 철거·수리 불가.
 - `Assets/Tests/EditMode/StageRewardTests.cs`: 골드·재료 계산과 표에 없는 적 무시, 아이템 확률·가중치 추첨, 같은 시드 재현과 패배 거부, 런 보상 1회 지급·결과 반영 전/패배/다른 번호 거부, 전투별 시드.
 - `Assets/Tests/EditMode/RunUnitBindingTests.cs`: 씬 편성으로 런 데이터·번호 만들기, 정의 없음·상한 초과·중복 거부, 결과의 생사·처치 수와 이미 빠진 유닛 제외, `GameFlow.AttachRunState`.
@@ -766,4 +771,13 @@ unity command package add --caller plugin --skill unity-package-management --nam
 - 남은 제한: 부서진 성문 재건 없음. 건설 조각이 안뜰 시설 건물과 겹치는지는 검사하지 않는다(기존과 같음). 준비 제목의 골드는 단계가 바뀔 때만 다시 그려 첫 준비 제목에는 시작 골드가 늦게 보일 수 있고, 건설 화면 안내 칸은 매 프레임 갱신된다.
 - 검증: 컴파일 오류 없음. EditMode 175개 전체 통과(새 `BuildEconomyTests` 6개). PlayMode 80개 중 79개 통과(새 `GameBuildEconomyPlayTests` 3개 통과). 실패는 기존 불안정 테스트 `WallCommandPlayTests.Squad_StopsOnWallWhenStairsDisappear`다. 처음 실행에서 C-4 보상 테스트가 시작 골드 때문에 실패해 테스트를 고쳤고, `GameBattlePlayTests` 10개를 다시 돌려 모두 통과했다. 물리 입력 직접 플레이와 Windows 빌드는 하지 않았다.
 - 직접 검증: `Assets/_Project/Scenes/Game.unity` → Play → 건설소에서 F → 건설 화면 왼쪽 패널 아래 노란 글씨가 `골드 100` → `성벽`을 골라 놓으면 골드가 10 줄고 안내에 비용이 보인다 → `철거 (클릭)` 버튼 → 방금 지은 성벽 클릭 → 10골드 환불(처음부터 있던 성벽은 5골드), 성문은 거부 → 우클릭으로 철거 끝 → 전투 후 다음 준비에서 깎인 성벽이 있으면 `모두 수리`로 골드를 내고 체력 막대가 가득 찬다. 값은 `Assets/_Project/Data/GameFlow/Build/BuildCosts.asset`·`RunStart.asset`에서 바꾼다. Play를 멈추면 초기화된다.
+
+### 2026-11-12: D-0 시설 공통 틀
+
+- 담당 황성민, 브랜치 `feature/facility-frame`(develop `d46804f` 기준). 백로그 D-0을 `작업중`·황성민으로 표시하고 다시 읽어 확인했다.
+- 사용자 결정: Q-33 지금 HUD와 같은 uGUI+TMP 임시 팝업, Q-34 상점·주점 매물은 준비마다 새로 뽑고 골드 리롤은 후속.
+- 추가: `Flow/GameFacilities`·`FacilityStation`, `Editor/GameFacilitySetup`, 시설 정의 에셋 5개 `Data/GameFlow/Facilities/Facility_{Tavern,Shop,TrainingGround,Smithy,Defense}.asset`(레벨 3단계, 업그레이드 골드 60·120, 매물 수 3·4·5, 풀은 비어 있음). 변경: `RunState`(시설 상태), `RunConfig`(시설 목록·`Create` 오버로드), `FacilityDefinition`(표시 이름), `Wallet.Materials`, `GamePhaseView`(팝업 화면 상태), `PreparationInteraction`(팝업 Esc 닫기), `GameFlowHud`(팝업 중 안내). 에디터 메뉴로 `RunStart.asset`에 시설을 넣고 `Game.unity`에 컴포넌트·건물 상호작용·`FacilityPanel`을 더했다(에디터 API 저장).
+- 남은 제한: 팝업 본문은 자리표시다(업그레이드 D-1, 각 시설 기능 D-3~6). 수성 시설은 상태만 있고 화면은 기존 건설소다. 팝업 글자는 한글로 고정이며 한글 글꼴은 HUD의 `RuntimeSystemFont`가 실행 중에 바꿔 준다.
+- 검증: 컴파일 오류 없음. EditMode 181개 전체 통과(새 `RunFacilityTests` 6개). PlayMode 83개 전체 통과(새 `GameFacilityPlayTests` 3개, 이번에는 불안정 테스트 BUG-wall-hold도 통과). 물리 키보드·마우스 직접 플레이와 Windows 빌드는 하지 않았다.
+- 직접 검증: `Assets/_Project/Scenes/Game.unity` → Play → 안뜰의 `상점`(또는 주점·훈련장·대장간) 건물 앞에서 건물을 바라보면 아래 안내가 `F · 상점 이용` → F → 화면 가운데 팝업에 `상점`, `레벨 1 / 3`, `골드 100`이 보이고 마우스 커서가 나타나며 WASD·시점이 멈춘다 → Esc 또는 `닫기 (Esc)` 버튼 → 원래 자리에서 다시 이동 → 성문 앞 깃발로 전투를 시작하면 건물에서 F를 눌러도 열리지 않는다. 시설 이름·레벨 값은 `Assets/_Project/Data/GameFlow/Facilities/`, 시설 목록은 `Assets/_Project/Data/GameFlow/Build/RunStart.asset`에서 바꾼다. Play를 멈추면 초기화된다.
 </details>

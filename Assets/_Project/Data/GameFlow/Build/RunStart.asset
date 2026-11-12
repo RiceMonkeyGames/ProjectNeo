@@ -17,3 +17,9 @@ MonoBehaviour:
   startingGold: 100
   startingMaterials: []
   startingSquads: []
+  facilities:
+  - {fileID: 11400000, guid: 25cfea06566930b4fbb224a7f99c2268, type: 2}
+  - {fileID: 11400000, guid: 9a6e6b167c154b74884a5db34daa1681, type: 2}
+  - {fileID: 11400000, guid: cd6e5e680e227f340a15247d70650475, type: 2}
+  - {fileID: 11400000, guid: 10546d1e498a7934e9af2b30d644886e, type: 2}
+  - {fileID: 11400000, guid: 34bc9f3a4931a764a826204aa679a5be, type: 2}

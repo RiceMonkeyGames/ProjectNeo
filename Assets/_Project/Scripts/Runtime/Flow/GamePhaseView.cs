@@ -20,11 +20,13 @@ namespace ProjectNeo.Flow
         [SerializeField] GameObject constructionHud, commandHud;
         [SerializeField] GameObject[] actors;
         GameFlow flow;
-        bool constructionOpen;
+        bool constructionOpen, panelOpen;
 
         public bool IsBuildView { get; private set; }
         public bool IsBattleView { get; private set; }
         public bool IsExplorationView { get; private set; }
+        /// <summary>준비 중 시설 팝업 같은 화면이 열려 1인칭 이동·시점을 멈추고 커서를 푼 상태(D-0).</summary>
+        public bool IsPanelView { get; private set; }
 
         public void Configure(Camera buildCamera, FirstPersonCamera firstPersonCamera, PlacementController placementController,
             PlayerInputController playerController, SquadCommandInput squadInput, GameObject buildHud, GameObject squadHud,
@@ -55,13 +57,30 @@ namespace ProjectNeo.Flow
         void Apply(GamePhase phase)
         {
             constructionOpen = false;
+            panelOpen = false;
             placement.Cancel();
             Refresh(phase);
         }
 
+        /// <summary>준비 중 1인칭 탐색에서 팝업 화면을 연다. 건설 중이거나 이미 열려 있으면 false.</summary>
+        public bool EnterPanel()
+        {
+            if (flow.Phase != GamePhase.Preparation || constructionOpen || panelOpen) return false;
+            panelOpen = true;
+            Refresh(flow.Phase);
+            return true;
+        }
+
+        public void ExitPanel()
+        {
+            if (!panelOpen) return;
+            panelOpen = false;
+            Refresh(flow.Phase);
+        }
+
         public bool EnterConstruction()
         {
-            if (flow.Phase != GamePhase.Preparation || constructionOpen) return false;
+            if (flow.Phase != GamePhase.Preparation || constructionOpen || panelOpen) return false;
             constructionOpen = true;
             Refresh(flow.Phase);
             return true;
@@ -81,12 +100,13 @@ namespace ProjectNeo.Flow
             bool preparation = phase == GamePhase.Preparation || phase == GamePhase.Title;
             bool build = preparation && constructionOpen;
             bool battle = phase == GamePhase.Battle;
-            bool exploration = preparation && !build;
+            bool panel = preparation && panelOpen && !build;
+            bool exploration = preparation && !build && !panel;
             placement.enabled = false; playerInput.enabled = false; commandInput.enabled = false;
             constructionCamera.gameObject.SetActive(build);
             battleCamera.gameObject.SetActive(!build);
             constructionHud.SetActive(build); commandHud.SetActive(battle);
-            IsBuildView = build; IsBattleView = battle; IsExplorationView = exploration;
+            IsBuildView = build; IsBattleView = battle; IsExplorationView = exploration; IsPanelView = panel;
             placement.enabled = build;
             playerInput.enabled = battle || exploration;
             commandInput.enabled = battle;
