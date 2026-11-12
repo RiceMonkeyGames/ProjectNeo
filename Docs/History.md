@@ -1,6 +1,6 @@
 # Past Verification History
 
-Last Updated: 2026-11-12 23:12:25 (KST). Historical log of completed milestones, performance benchmarks, and manual playtest records separated from [Context.md](Context.md). Preserves historical completion scope and verification evidence; past test counts and temporary numbers do not represent current baselines or final performance guarantees. Check [ImplementationPlan Section 3](ImplementationPlan.md#3-current-status--starting-point) first for active task status. Agents should only open this file when past rationales or verification evidence are needed, searching by date or task ID.
+Last Updated: 2026-11-12 23:27:12 (KST). Historical log of completed milestones, performance benchmarks, and manual playtest records separated from [Context.md](Context.md). Preserves historical completion scope and verification evidence; past test counts and temporary numbers do not represent current baselines or final performance guarantees. Check [ImplementationPlan Section 3](ImplementationPlan.md#3-current-status--starting-point) first for active task status. Agents should only open this file when past rationales or verification evidence are needed, searching by date or task ID.
 
 New completion results must be appended to the end of this file under `### YYYY-MM-DD: Title`, updating ImplementationPlan Section 3 and Context Section 2 concurrently.
 
@@ -313,6 +313,23 @@ Method: `Assets/Tests/PlayMode/UnitScaleBenchmark.cs`. Ground 120m × 120m, 4m-h
 - Updated AGENTS.md, Backlog.md, Context.md Section 3, and ImplementationPlan.md Sections 2 and 7. No game rules changed.
 - Verification: Documentation consistency and `git diff --check`. No Unity execution or tests required; no actual branches created or deleted for this documentation update.
 - Manual verification: Read the workflow in AGENTS.md, Backlog.md, Context.md Section 3, and ImplementationPlan.md Sections 2 and 7. Confirm claim sync -> latest develop -> feature branch -> implementation/verification -> user merge -> confirmed remote integration -> remote task branch deletion. No runtime reset required.
+
+### 2026-11-12: TOOL-claude-read-deny - Claude Code Read Exclusions
+
+- Added shared `.claude/settings.json` with `permissions.deny` `Read(...)` rules to cut token usage across three Claude Code users. `.claudeignore` is not supported by Claude Code, so it was not used.
+- Blocked: `Library/`, `Temp/`, `Logs/`, `UserSettings/`, `obj/`, `Build(s)/`, `*.csproj`, `*.sln(x)`, `Assets/TextMesh Pro/`, `*.meta`, `*.unity`, `*.prefab`, `*.mat`, `*.shadergraph`, `*.fbx`, `*.blend`, `*.psd`. Kept readable: `.cs`, `.asmdef`, ScriptableObject `.asset`, `ProjectSettings/`, `Docs/`.
+- Updated Context.md Section 3 (Work Environments). No game code or Unity assets changed.
+- Verification: JSON syntax parse only. Claude Code behavior must be confirmed manually.
+- Manual verification: Restart Claude Code at the repository root, run `/permissions` and confirm the deny rules are listed; ask it to read a `.unity` or `.meta` file and confirm it is refused; confirm `.cs` files still read normally.
+
+### 2026-11-12: TOOL-claude-read-deny (revision) - Deny List Review for Claude-Led Development
+
+- Fixed: `Logs/**` block broke the documented compile check (`Logs/Editor.log` search for `error CS`). Now only `*-prev.log`, `AssetImportWorker*`, `*.jsonl` in `Logs/` are blocked.
+- `Library/` narrowed to generated subfolders so `Library/PackageCache/` package source can be read by explicit path (gitignored, so not hit by default searches).
+- Unblocked `.prefab` and `.mat` (project files are small; needed for reference debugging). Kept `.unity` blocked (`Game.unity` ≈ 596 KB).
+- Added pre-emptive blocks for art phase: `Assets/Synty/`, `Assets/Polygon*/`, `Assets/Plugins/`, `Assets/Samples/`, textures under `Assets/`, models, audio, fonts, video, `*.anim`, `*SDF.asset`, `LightingData.asset`, `NavMesh*.asset`, binaries.
+- Added `Edit(...)` deny for `*.unity`, `*.prefab`, `*.asset`, `*.meta`, `*.mat`, `*.controller`, `*.anim` to enforce the Editor-API-only rule.
+- Verification: JSON parse only. Manual: restart Claude Code, run `/permissions`; confirm `.unity`/`.meta` reads and `.asset` edits are refused, while `.cs`, `.prefab`, and a `Grep` for `error CS` in `Logs/Editor.log` work.
 
 ### 2026-11-12: PERF-nav-query - Real AI Benchmark and Search Cost Reduction
 

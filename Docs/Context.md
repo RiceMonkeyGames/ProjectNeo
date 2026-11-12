@@ -1,6 +1,6 @@
 # Project Context
 
-Last Updated: 2026-11-12 23:04:12 (KST). All paths are relative to repository root. This document maintains currently executable scenes, code/scene/asset maps, development practices, and verification evidence. Target goals, upcoming tasks, and progress tracking are managed in [ImplementationPlan.md](ImplementationPlan.md); game rules in [GameDesign.md](GameDesign.md); active backlog in [Backlog.md](Backlog.md); required agent rules and documentation entry points in [AGENTS.md](../AGENTS.md).
+Last Updated: 2026-11-12 23:27:12 (KST). All paths are relative to repository root. This document maintains currently executable scenes, code/scene/asset maps, development practices, and verification evidence. Target goals, upcoming tasks, and progress tracking are managed in [ImplementationPlan.md](ImplementationPlan.md); game rules in [GameDesign.md](GameDesign.md); active backlog in [Backlog.md](Backlog.md); required agent rules and documentation entry points in [AGENTS.md](../AGENTS.md).
 
 ## Table of Contents
 
@@ -239,6 +239,12 @@ Active collaboration since 2026-11-11. Teammate manages enemy assault and combat
 | Shared Folder & Editor | Authoring code/docs in pre-allocated files | Asset creation, scene saves, compilation/refresh, PlayMode, tests, builds, package updates |
 
 Avoid opening a single project folder concurrently across multiple editor instances. Use `--project-path` when multiple editors run on one machine. Only one person operates a shared editor at a time.
+
+**Claude Code read/edit exclusions (token saving)**: Shared `.claude/settings.json` uses `permissions.deny` (Claude Code does not support `.claudeignore`).
+- Read blocked: `Library/` except `Library/PackageCache/` (package source lookup allowed by explicit path), `Temp/`, old/worker logs in `Logs/` (`*-prev.log`, `AssetImportWorker*`, `*.jsonl`), `UserSettings/`, `obj/`, `Build(s)/`, `*.csproj`, `*.sln(x)`; third-party folders `Assets/TextMesh Pro/`, `Assets/Synty/`, `Assets/Polygon*/`, `Assets/Plugins/`, `Assets/Samples/`; `*.meta`, `*.unity`, `*.shadergraph`, `*.anim`, `*SDF.asset`, `LightingData.asset`, `NavMesh*.asset`; textures under `Assets/`, models, audio, fonts, video, `*.dll`, `*.pdb`, `*.unitypackage`.
+- Read allowed: `.cs`, `.asmdef`, `.prefab`, `.mat`, `.controller`, ScriptableObject `.asset`, `ProjectSettings/`, `Packages/`, `Docs/`, `Logs/Editor.log` (search `error CS` only; do not read whole file), images outside `Assets/` (save verification screenshots outside `Assets/`, `Temp/`, `Logs/`).
+- Edit/Write blocked: `*.unity`, `*.prefab`, `*.asset`, `*.meta`, `*.mat`, `*.controller`, `*.anim` (enforces Editor-API-only asset changes).
+- Inspect scenes, GUIDs, and serialized references via `script eval` (`EditorSceneManager`, `AssetDatabase.GUIDToAssetPath`). If a Synty pack imports under a different root folder, add that folder to the shared deny list.
 
 ### High-Contention Shared Areas
 
