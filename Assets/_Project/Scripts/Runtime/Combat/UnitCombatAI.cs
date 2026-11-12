@@ -173,11 +173,18 @@ namespace ProjectNeo.Combat
             agent.stoppingDistance = 0f;
             bool chases = HoldChaseRadius > 0f;
             bool refreshed = false;
-            if (decisionRemaining <= 0f || !IsHoldTarget(Target, chases))
+            // 기존 대상의 무효화는 즉시 처리하되, 대상이 없는 동안에도 탐색 주기를 지킨다.
+            // null을 무효 대상으로 매 프레임 처리하면 대기 중인 전 부대가 매번 전체 목록을 훑는다.
+            if (!ReferenceEquals(Target, null) && !IsHoldTarget(Target, chases))
+            {
+                Target = null;
+                decisionRemaining = 0f;
+            }
+            if (decisionRemaining <= 0f)
             {
                 decisionRemaining = settings.DecisionInterval;
                 refreshed = true;
-                if (!IsHoldTarget(Target, chases))
+                if (Target == null)
                 {
                     Target = FindTargetInReach();
                     if (Target == null && chases) Target = FindTargetNearPost();
@@ -251,7 +258,7 @@ namespace ProjectNeo.Combat
             float nearestDistance = float.PositiveInfinity;
             foreach (CharacterActor candidate in CharacterActor.ActiveActors)
             {
-                if (!actor.IsEnemy(candidate) || !IsNearPost(candidate)) continue;
+                if (candidate.Team == actor.Team || !IsNearPost(candidate) || !actor.IsEnemy(candidate)) continue;
                 float distance = (candidate.transform.position - transform.position).sqrMagnitude;
                 if (distance >= nearestDistance || !CanReach(candidate)) continue;
                 nearestDistance = distance;
@@ -263,14 +270,20 @@ namespace ProjectNeo.Combat
         void UpdateEngage()
         {
             agent.stoppingDistance = actor.Stats.GetValue(StatType.AttackRange) * settings.StoppingRangeRatio;
-            if (!actor.IsEnemy(Target) || decisionRemaining <= 0f)
+            if (!ReferenceEquals(Target, null) && !actor.IsEnemy(Target))
+            {
+                Target = null;
+                decisionRemaining = 0f;
+            }
+            if (decisionRemaining <= 0f)
             {
                 decisionRemaining = settings.DecisionInterval;
-                if (!actor.IsEnemy(Target) || !CanReach(Target)) Target = FindTarget();
-                if (Target != null)
+                if (Target != null && CanReach(Target)) agent.SetPath(path);
+                else
                 {
+                    Target = FindTarget();
                     // 대상을 고르는 동안 path가 바뀔 수 있으므로 선택된 대상의 경로를 다시 얻는다.
-                    if (CanReach(Target)) agent.SetPath(path);
+                    if (Target != null && CanReach(Target)) agent.SetPath(path);
                 }
             }
             if (Target == null)
@@ -312,10 +325,16 @@ namespace ProjectNeo.Combat
         {
             CharacterActor nearest = null;
             float nearestDistance = float.PositiveInfinity;
+            Vector3 position = transform.position;
+            Vector3 aim = actor.AimPoint;
+            float range = actor.Stats.GetValue(StatType.AttackRange);
             foreach (CharacterActor candidate in CharacterActor.ActiveActors)
             {
-                if (!actor.IsEnemy(candidate)) continue;
-                float distance = (candidate.transform.position - transform.position).sqrMagnitude;
+                if (candidate.Team == actor.Team || candidate.Body == null) continue;
+                // AABB는 실제 콜라이더를 포함하므로 범위 밖 후보만 안전하게 제외한다.
+                // 큰/오프셋 콜라이더는 통과시키고 기존 정밀 판정과 시야 검사를 그대로 적용한다.
+                if (candidate.Body.bounds.SqrDistance(aim) > range * range) continue;
+                float distance = (candidate.transform.position - position).sqrMagnitude;
                 if (distance >= nearestDistance || !CanStrikeFromHere(candidate)) continue;
                 nearestDistance = distance;
                 nearest = candidate;
@@ -329,9 +348,9 @@ namespace ProjectNeo.Combat
             float nearestDistance = settings.DetectionRange * settings.DetectionRange;
             foreach (CharacterActor candidate in CharacterActor.ActiveActors)
             {
-                if (!actor.IsEnemy(candidate)) continue;
+                if (candidate.Team == actor.Team) continue;
                 float distance = (candidate.transform.position - transform.position).sqrMagnitude;
-                if (distance >= nearestDistance || !CanReach(candidate)) continue;
+                if (distance >= nearestDistance || !actor.IsEnemy(candidate) || !CanReach(candidate)) continue;
                 nearestDistance = distance;
                 nearest = candidate;
             }
