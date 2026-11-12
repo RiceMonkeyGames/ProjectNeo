@@ -1,6 +1,6 @@
 # Game Design: Siege Defense Roguelike
 
-Last Updated: 2026-11-12 22:20:33 (KST)
+Last Updated: 2026-11-12 23:42:21 (KST)
 
 This file is the ground truth for game design. The design text in Google Docs is legacy human-readable reference only and may lag behind this file. When game design changes, update this file first. Implementation roadmap, dependencies, and implementation status are managed in [ImplementationPlan.md](ImplementationPlan.md); task selection, assignment, and progress tracking are managed in [Docs/Backlog.md](Backlog.md). Backlog operating procedures follow AGENTS.md (user decision on 2026-11-12).
 
@@ -50,7 +50,7 @@ The core gameplay loop centers on "counter-building" by scouting upcoming waves:
   - If destination is unreachable or path breaks mid-way, units advance to closest reachable position and halt. If multiple units cluster and get blocked near destination, they are considered arrived and halt.
   - Squads without orders at battle start begin in Hold state.
 - Squad count and member caps are data-driven. Default squad size is 10+ members.
-- Effects on squad upon captain hero death remain undecided.
+- Captain hero death lowers the squad's morale by a large fixed amount (2026-11-12, see Morale).
 
 ### Basic Combat Rules
 
@@ -173,7 +173,48 @@ Applies to both allies and enemies, managed per squad.
 | Increase | Boosted by player skills, captain traits, perk effects. Slight combat buff. |
 | Rally | Routed ally units return for subsequent battles. |
 
-Enemies can be routed rather than slain. Thresholds and values undecided. Morale boosts implemented via perks or skills rather than standalone systems.
+Enemies can be routed rather than slain. Detailed rules below (2026-11-12). Morale boosts implemented via perks or skills rather than standalone systems.
+
+#### Ally Morale: Breaking Point (User decision on 2026-11-12)
+
+Combines Bannerlord-style squad morale with a Darkest Dungeon-style resolve check. Exact values live in data assets and remain undecided.
+
+All numbers below are starting values kept in data assets and tuned through play.
+
+- **Scale:** Morale ranges 0–200 per squad. A new squad starts at 150.
+- **Breaking point check:** When morale falls to 100, a check occurs **once per battle**: the squad **Collapses** (negative effect) or, at a 25% base chance, **Awakens** (positive effect). Captain traits and perks can change the chance. No further check that battle even if morale rises above 100 and falls again.
+- **Effect duration:** Collapse and Awaken last until the battle ends. An Awakened squad still routs at 0.
+- **Rout:** At 0 the whole squad routs, captain hero included. The player character has no morale. Routing allies run to a fixed retreat point inside the courtyard (e.g., rear of the castle) and leave the battle there; they do not go out the gate. Routing units (ally or enemy) can still be attacked and killed.
+- **Starting below 100:** A squad entering battle below 100 gets one Collapse effect at reduced strength from the start and gets no breaking point check that battle (no chance to Awaken).
+- **Stat modifier by morale band:** 150 or above: attack +10%. Below 100: attack −10%.
+- **Morale loss causes (allies):**
+  - Squad member death: proportional to the share of starting members lost.
+  - Main gate destroyed: all ally squads, fixed amount.
+  - Wall piece collapse: only squads near the collapse, fixed amount.
+  - Nearby squad routing: fixed amount.
+  - Squad captain death: fixed amount, the largest of these.
+  - Not used: enemy hero/boss approach, large explosions (cannon, corpse explosion), continuous ladder climbing, being surrounded.
+- **Morale gain during battle:** Only perks/skills and Awaken. No natural recovery over time.
+- **"Nearby":** Distance in data, starting at 15m.
+- **Awaken effect:** Raises morale of the squad and nearby squads. The earlier "war cry rallying routed allies" idea was dropped as too strong. Last Stand (stronger with fewer members) and Steadfast (never routs) are deferred as possible later Awaken types.
+- **Collapse effects (one chosen at random):**
+  - Fear: each order is ignored at a chance (start 50%).
+  - Panic: periodically leaves its position and falls back toward the castle interior (away from the walls).
+  - Contagion: periodically lowers morale of nearby squads by a small amount.
+  - Berserk (charging out the gate) was dropped because the gate would have to open.
+- **Persistence across battles:** Morale belongs to the squad, not to individual soldiers, and carries over between battles. After each battle, every squad's morale rises by a fixed amount (start +20), capped at 200, like Darkest Dungeon stress relief.
+- **Routed squads next battle:** A squad that routed starts the next battle at a floor value (start 80) instead of 0 + recovery. It is still below 100, so it keeps the starting debuff and gets no check, but can recover.
+- **Squad reorganization:** Moving soldiers between squads does not change either squad's morale. A newly created squad starts at 150. A squad left with no members is removed along with its morale.
+- **Display (minimum, for testing):** The test squad list (`SquadCommandHud`) shows each ally squad's morale number and state (Normal, Collapse: type, Awaken), with a one-line notice when a check happens. Enemy morale is not shown. Final HUD follows Q-11.
+- **Later design only:** Prep-phase facilities that restore morale (e.g., tavern). Player character presence affecting the check.
+
+#### Enemy Morale (User decision on 2026-11-12)
+
+- Enemies are handled separately: no breaking point check, no Collapse or Awaken effects. An enemy squad routs when its morale reaches 0, using the same retreat-off-map movement as the last-enemy retreat (Q-30).
+- **Morale loss causes (enemies):** Squad member death (proportional), nearby enemy squad routing, enemy hero or squad captain death. Siege failure (ladder toppled, climbers falling) is not used.
+- **Starting morale:** Set per enemy type and stage in data. Showing it in the wave preview is decided later.
+- **Stat modifier:** Enemies get only the below-100 band (attack −10%), so shaken enemies visibly weaken. No above-150 bonus.
+- **Exit counting:** Enemies routed by morale and enemies retreating under Q-30 both count as exited and are excluded from the victory count. The battle result records the two reasons separately.
 
 ### Wave Preview
 
@@ -279,8 +320,7 @@ Development proceeds prior to pack selection: Grid scale, cell footprints, heigh
 
 - Run length (max stage count, boss pacing) and ending specifics. Clearing all stages triggers ending is decided.
 - Specific perk varieties and scouting perk categorization.
-- Exact morale formulas (rout thresholds, decay rates).
-- Impact of captain death on squad performance.
+- Morale tuning values beyond the starting values in "Ally Morale: Breaking Point" (rules decided 2026-11-12). Prep-phase morale recovery facilities.
 - Combat/building tuning values (fall damage coefficients, etc.).
 - Feasibility of mid-combat perk allocation.
 - Metrics determining run score.

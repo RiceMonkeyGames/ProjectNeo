@@ -306,3 +306,11 @@ Method: `Assets/Tests/PlayMode/UnitScaleBenchmark.cs`. Ground 120m × 120m, 4m-h
   6. Close with Esc. I key is disabled during combat.
   7. Modifier values tuned in `Rewards/item_*.asset` Equip Modifiers, hotkeys in `Data/GameFlow/Interaction.asset`. Resets upon exiting Play Mode.
 
+
+### 2026-11-12: Q-04·05 Morale, Rout, and Captain Death Rules
+
+- Assignee: youngho. Doc-only decision task; no code or Unity changes.
+- Decided with user: Bannerlord-style squad morale combined with a Darkest Dungeon-style breaking point check. Scale 0–200 (start 150), once-per-battle check at 100 (Collapse or 25% Awaken), whole-squad rout at 0 to a courtyard retreat point, squad-held morale carried between battles (+20 after battle, routed squads restart at 80), starting-below-100 debuff, stat bands, ally/enemy loss causes, Collapse types (Fear, Panic, Contagion), Awaken raises own and nearby squad morale. Enemies: no check or effects, rout at 0, counted as exit alongside Q-30.
+- Rejected or deferred: war cry rallying routed units, Berserk, enemy hero/boss approach, explosions, ladder pressure, being surrounded, siege-failure loss for enemies, player presence modifying the check, prep-phase recovery facilities (later design), Last Stand / Steadfast Awaken types (later).
+- Recorded in: GameDesign "Ally Morale: Breaking Point" / "Enemy Morale", ImplementationPlan Q-04·Q-05, Backlog Q-04·05 (Done) and B-8.1 (prerequisite resolved).
+- Verification: Document review only. Values are starting points for data assets and need playtesting after B-8.1/B-8.2.

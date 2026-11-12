@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-12 22:28:48 (KST)
+Last Updated: 2026-11-12 23:42:21 (KST)
 Source: [Google Docs - Development Backlog Table (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 ## Workflow & Operating Rules
@@ -28,12 +28,12 @@ Source: [Google Docs - Development Backlog Table (Legacy)](https://docs.google.c
 |---|---|---|---|---|
 | B-9.3-play | Manual Playtest of Current Game Scene | Waiting for Verification | Unassigned | Title → Prep → F Construction / Esc Return → F Battle → Win/Loss → Next Prep loop. Document camera, squad commanding, input glitches, and reproduction steps. |
 | C-1a | Agree on Run Data & Combat Outcome Boundary | Done | Hwang Seong-min | Agree on data ownership and IDs for wallet, troops, castle, battle I/O, single result processing. Mid-run saves remain undecided. Outcome (2026-11-12): Merged to develop (9429e85); documented in Context Section 7 "C-1a". Teammate sign-off and scene wiring are follow-up tasks. |
-| Q-04·05 | Finalize Morale, Rout, and Captain Death Rules | In Progress | youngho | Confirm decay, recovery, stat debuffs, rout thresholds, escape paths, and squad captain death impact with user; reflect in design and roadmap. |
+| Q-04·05 | Finalize Morale, Rout, and Captain Death Rules | Done | youngho | Confirm decay, recovery, stat debuffs, rout thresholds, escape paths, and squad captain death impact with user; reflect in design and roadmap. Outcome (2026-11-12): Decided with user (Bannerlord-style squad morale + Darkest Dungeon-style breaking point check). Recorded in GameDesign "Ally Morale: Breaking Point" / "Enemy Morale" and ImplementationPlan Q-04·Q-05. Doc-only; no code. Deferred: prep-phase morale recovery facilities. |
 | Q-21 | Finalize Siege Weapon Mechanics | Pending Decision | Unassigned | Confirm auto/unit/player control, range, damage, HP, rotation, passage blocking, and costs with user. Cannons currently mountable only. |
 | B-6.1 | Scope & Contract for Additional Enemy Behaviors | Pending Decision | Unassigned | Agree on targeting, movement, and failure handling for wall-destroying and aerial enemies. Existing ladder and gate assault logic will not be re-implemented. |
 | B-7.1 | Formal Wave Data & Spawning Rules | Waiting for Prerequisite | Unassigned | After enemy definitions and spawn/termination contracts are agreed upon, spawn according to configured types, counts, and timings. No duplicates on pause/restart. |
 | B-9.2-wave | Link Pending Spawns to Win/Loss Evaluation | Waiting for Prerequisite | Unassigned | After B-7.1, prevent premature victory if enemies remain to spawn; ensure battle termination and outcomes trigger exactly once. |
-| B-8.1 | Squad Morale Calculations & Rout Transitions | Waiting for Prerequisite | youngho | Following Q-04·05 resolution, verify casualties, boosts, stat debuffs, thresholds, and rout transitions in pure C# EditMode. |
+| B-8.1 | Squad Morale Calculations & Rout Transitions | Waiting | youngho | Prerequisite Q-04·05 resolved 2026-11-12 (rules in GameDesign "Ally Morale: Breaking Point"); reserved by youngho, not started. Following Q-04·05 resolution, verify casualties, boosts, stat debuffs, thresholds, and rout transitions in pure C# EditMode. |
 | B-8.2 | Rout Movement, Exit, and Outcome Wiring | Waiting for Prerequisite | Unassigned | Following B-8.1 and outcome contracts, differentiate death vs routing vs battlefield exit to avoid double-counting. Distinguish from final enemy retreat. |
 | B-4.6-action | Siege Weapon Actions & Combat Integration | Waiting for Prerequisite | Unassigned | Following Q-21 resolution, wire agreed behaviors and verify hits, damage, and concurrent destruction upon supporting wall collapse. |
 | C-3 | Run Carry-over of Troop Casualties & Wall HP | Waiting for Prerequisite | Unassigned | Following C-1a and rout outcome contracts, carry over deaths, rout returns, and wall damage into subsequent battles without duplicate accounting. |
