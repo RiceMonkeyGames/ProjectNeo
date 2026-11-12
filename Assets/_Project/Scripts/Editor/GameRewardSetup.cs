@@ -83,7 +83,7 @@ namespace ProjectNeo.Editor
             });
         }
 
-        static ItemDefinition Item(string id, string name, ItemKind kind, int gold)
+        internal static ItemDefinition Item(string id, string name, ItemKind kind, int gold)
         {
             return LoadOrCreate(Folder + "/" + id + ".asset", () =>
             {

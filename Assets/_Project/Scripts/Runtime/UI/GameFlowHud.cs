@@ -64,6 +64,8 @@ namespace ProjectNeo.UI
 
         void LateUpdate()
         {
+            // 준비 중에는 건설·상점·업그레이드로 골드가 바뀌므로 제목의 골드를 매 프레임 맞춘다.
+            if (flow.Phase == GamePhase.Preparation) Refresh(flow.Phase);
             if (interactionHint == null || interaction == null || phaseView == null) return;
             bool preparation = flow.Phase == GamePhase.Preparation;
             bool fighting = flow.Phase == GamePhase.Battle && battle != null;

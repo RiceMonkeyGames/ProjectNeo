@@ -101,6 +101,7 @@ namespace ProjectNeo.Run
                 if (entry.material != null && entry.amount > 0) state.Wallet.AddMaterial(entry.material, entry.amount);
             state.AddHero(config.PlayerHero, true);
             state.AddFacilities(config.Facilities);
+            state.SetupShop(config.Economy);
 
             foreach (RunSquadSetup setup in config.StartingSquads)
             {
@@ -115,6 +116,50 @@ namespace ProjectNeo.Run
                 }
             }
             return state;
+        }
+
+        /// <summary>이 런의 상점 매물·거래 창구. <see cref="SetupShop"/> 전에는 null.</summary>
+        public ItemShop Shop { get; private set; }
+        /// <summary>상점 매물을 마지막으로 뽑은 준비 번호(그때까지 치른 전투 수). 아직 안 뽑았으면 -1.</summary>
+        public int ShopStockedFor { get; private set; } = -1;
+
+        /// <summary>거래 수치로 상점 창구를 만든다. 이미 있거나 설정이 없으면 아무것도 하지 않는다.</summary>
+        public void SetupShop(EconomyConfig config)
+        {
+            if (Shop != null || config == null) return;
+            Shop = new ItemShop(config);
+            Shop.Changed += () => Changed?.Invoke();
+        }
+
+        /// <summary>준비 번호별 상점 시드. 보상 시드와 겹치지 않게 섞는다.</summary>
+        public int ShopSeedFor(int preparation) => unchecked(SeedFor(preparation) * 92821 + 1442695);
+
+        /// <summary>
+        /// 이번 준비의 상점 매물을 아직 뽑지 않았으면 상점 시설의 현재 레벨 품목 풀에서 매물 수만큼 뽑는다(D-5).
+        /// 준비마다 한 번 새로 뽑고(Q-34) 같은 시드면 같은 매물이다. isAvailable로 해금 안 된 아이템을 뺀다.
+        /// 뽑았으면 true. 시설 업그레이드는 다음 준비의 매물부터 반영된다.
+        /// </summary>
+        public bool RestockShopIfNeeded(Func<ItemDefinition, bool> isAvailable = null)
+        {
+            FacilityState shop = Facility(FacilityType.Shop);
+            if (Shop == null || shop == null || ShopStockedFor == BattlesFought) return false;
+            Shop.Restock(shop.Current.itemPool, shop.Current.offerCount,
+                new Core.SeededRandom(ShopSeedFor(BattlesFought)), isAvailable);
+            ShopStockedFor = BattlesFought;
+            return true;
+        }
+
+        /// <summary>매물을 런 지갑으로 사서 보관함에 넣는다.</summary>
+        public bool TryBuy(ItemDefinition item) => Shop != null && Shop.TryBuy(item, Wallet, Inventory);
+
+        /// <summary>보관함의 아이템을 판다. 보상 등 다른 경로로 얻은 아이템도 팔 수 있다.</summary>
+        public bool TrySell(ItemInstance item) => Shop != null && Shop.TrySell(item, Wallet, Inventory);
+
+        /// <summary>시설을 런 지갑으로 한 레벨 올린다(D-1). 없는 시설·최대 레벨·비용 부족이면 false.</summary>
+        public bool TryUpgradeFacility(FacilityType type)
+        {
+            FacilityState facility = Facility(type);
+            return facility != null && facility.TryUpgrade(Wallet);
         }
 
         /// <summary>종류로 시설 상태를 찾는다. 없으면 null.</summary>

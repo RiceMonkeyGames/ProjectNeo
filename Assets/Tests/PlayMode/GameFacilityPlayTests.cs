@@ -88,6 +88,53 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
+        public IEnumerator 상점_팝업에서_매물을_사고_보관함_아이템을_판다()
+        {
+            var state = GameSession.Flow.Run.State;
+            Assert.IsTrue(Station(FacilityType.Shop).Interact());
+            Assert.IsNotNull(state.Shop, "시작 설정의 거래 수치로 상점 창구가 생긴다.");
+            Assert.AreEqual(3, state.Shop.Stock.Count, "상점 1레벨 매물 수");
+            Assert.AreEqual(0, state.ShopStockedFor);
+            Assert.AreEqual(3, facilities.OfferRows);
+            Assert.AreEqual(1, facilities.InventoryRows, "빈 보관함 안내 한 줄");
+            var item = state.Shop.Stock[0];
+            int gold = state.Wallet.Gold;
+            Assert.IsTrue(facilities.TryBuy(0));
+            Assert.AreEqual(gold - item.Price.gold, state.Wallet.Gold);
+            Assert.AreEqual(1, state.Inventory.CountOf(item));
+            Assert.AreEqual(2, facilities.OfferRows);
+            StringAssert.Contains("구매", facilities.BodyText);
+            int sell = state.Shop.GetSellPrice(item);
+            Assert.IsTrue(facilities.TrySell(0));
+            Assert.AreEqual(gold - item.Price.gold + sell, state.Wallet.Gold);
+            Assert.AreEqual(0, state.Inventory.Items.Count);
+            facilities.Close();
+            yield return null;
+            Assert.IsTrue(Station(FacilityType.Shop).Interact());
+            Assert.AreEqual(2, state.Shop.Stock.Count, "같은 준비에서는 다시 열어도 새로 뽑지 않는다.");
+        }
+
+        [UnityTest]
+        public IEnumerator 시설_팝업에서_업그레이드하고_비용이_모자라면_거부한다()
+        {
+            var state = GameSession.Flow.Run.State;
+            Assert.IsTrue(Station(FacilityType.Tavern).Interact());
+            StringAssert.Contains("60골드", facilities.UpgradeText);
+            Assert.AreEqual(100, state.Wallet.Gold);
+            Assert.IsTrue(facilities.TryUpgrade());
+            Assert.AreEqual(1, state.Facility(FacilityType.Tavern).Level);
+            Assert.AreEqual(40, state.Wallet.Gold);
+            StringAssert.Contains("레벨 2 / 3", facilities.StatusText);
+            StringAssert.Contains("120골드", facilities.UpgradeText);
+            Assert.IsFalse(facilities.TryUpgrade(), "골드가 모자라다.");
+            Assert.AreEqual(1, state.Facility(FacilityType.Tavern).Level);
+            Assert.AreEqual(40, state.Wallet.Gold);
+            StringAssert.Contains("모자랍니다", facilities.BodyText);
+            Assert.AreEqual(0, facilities.OfferRows,"상점이 아닌 시설은 거래 줄이 없다.");
+            yield break;
+        }
+
+        [UnityTest]
         public IEnumerator 상점을_바라보고_F로_열고_Esc로_닫으며_전투_중에는_열리지_않는다()
         {
             var interaction = Object.FindAnyObjectByType<PreparationInteraction>();
