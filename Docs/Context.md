@@ -1,6 +1,6 @@
 # 프로젝트 컨텍스트
 
-마지막 갱신: 2026-11-12 11:45:46 (KST). 경로는 저장소 루트 기준이다. 현재 실행 가능한 것, 코드·씬·에셋 지도, 개발 방법과 검증 근거를 이 문서에서 관리한다. 완성 목표·다음 작업·진행 상태는 [구현 로드맵](ImplementationPlan.md), 게임 규칙은 [게임 기획](GameDesign.md), 에이전트의 필수 규칙과 문서 입구는 [AGENTS.md](../AGENTS.md)가 기준이다.
+마지막 갱신: 2026-11-12 11:48:17 (KST). 경로는 저장소 루트 기준이다. 현재 실행 가능한 것, 코드·씬·에셋 지도, 개발 방법과 검증 근거를 이 문서에서 관리한다. 완성 목표·다음 작업·진행 상태는 [구현 로드맵](ImplementationPlan.md), 게임 규칙은 [게임 기획](GameDesign.md), 에이전트의 필수 규칙과 문서 입구는 [AGENTS.md](../AGENTS.md)가 기준이다.
 
 ## 찾아보기
 
@@ -737,7 +737,7 @@ unity command package add --caller plugin --skill unity-package-management --nam
 
 ### 2026-11-12: C-4 승리 보상 지급(프로토타입 값)
 
-- 담당 황성민, 브랜치 `feature/stage-rewards`(develop `bec2a78` 기준). 백로그 C-4를 `작업중`·황성민으로 표시했다.
+- 담당 황성민, 브랜치 `feature/stage-rewards`(develop `bec2a78` 기준). 사용자 요청으로 커밋(`c63747c`)해 develop에 병합(`f9f79cf`)하고 원격에 올렸다. 백로그 C-4를 `작업중`·황성민으로 표시했다.
 - 사용자 결정: 프로토타입이라 보상 값은 임의로 정하고, 나중을 위해 모든 값을 데이터 에셋에서 바꿀 수 있게 한다.
 - 추가: `Run/StageRewardTable`·`KillReward`·`StageReward`, `RunState.ApplyReward`·`Seed`·`SeedFor`·`LastReward`, `Flow/GameRewardController`, `GameSession.Meta`, `GameFlowHud`의 보상 내역·보유 골드 표시와 `PhaseText`·`StatusText`, `Editor/GameRewardSetup`. `GameRunLink`는 런마다 시드를 정한다. 에디터 메뉴로 `Data/GameFlow/Rewards/` 에셋 9개를 만들고 `Game.unity`의 `GameBattleController` 오브젝트에 컴포넌트를 붙였다(씬은 에디터 API로 저장).
 - 프로토타입 값: 기본 50골드 + 스테이지마다 10, 사다리병 3골드·뼈 조각 1, 성문 파괴병 5골드·질긴 가죽 2, 궁수 3골드·깃털 1, 아이템 60% 확률로 1개(철검 1 : 회복약 2), 지휘관 경험치 40 + 스테이지마다 10, 해금 포인트 5. 지휘관 레벨 규칙은 `Meta.asset` 기본값(레벨당 100 + 50씩 증가, 레벨당 퍽 포인트 1).
