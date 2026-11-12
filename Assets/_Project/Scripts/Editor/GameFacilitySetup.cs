@@ -4,6 +4,7 @@ using ProjectNeo.Economy;
 using ProjectNeo.Facilities;
 using ProjectNeo.Flow;
 using ProjectNeo.Run;
+using ProjectNeo.Stats;
 using ProjectNeo.UI;
 using ProjectNeo.Walls;
 using TMPro;
@@ -58,6 +59,17 @@ namespace ProjectNeo.Editor
             facilities.Configure(start, view, popup.panel, popup.title, popup.status, popup.body);
             facilities.ConfigureActions(popup.upgrade, popup.upgradeLabel, popup.trade, popup.offers, popup.inventory, popup.row);
             EditorUtility.SetDirty(facilities);
+
+            // D-7 장비 화면(I 키). 상호작용 설정 에셋에 새 키 칸을 저장한다.
+            var interaction = Find<PreparationInteraction>(scene);
+            var interactionSettings = (PreparationInteractionSettings)new SerializedObject(interaction)
+                .FindProperty("settings").objectReferenceValue;
+            if (interactionSettings != null) EditorUtility.SetDirty(interactionSettings);
+            var equipment = battle.GetComponent<GameEquipment>();
+            if (equipment == null) equipment = battle.gameObject.AddComponent<GameEquipment>();
+            Popup gear = BuildEquipmentPopup(hud, equipment);
+            equipment.Configure(view, interaction, gear.panel, gear.status, gear.body, gear.offers, gear.inventory, gear.row);
+            EditorUtility.SetDirty(equipment);
 
             ConstructionWorld world = Find<ConstructionWorld>(scene);
             foreach (var entry in Facilities)
@@ -135,6 +147,13 @@ namespace ProjectNeo.Editor
             ItemDefinition leather = GameRewardSetup.Item("item_leather_armor", "가죽 갑옷", ItemKind.Equipment, 30);
             ItemDefinition chain = GameRewardSetup.Item("item_chain_armor", "사슬 갑옷", ItemKind.Equipment, 60);
             ItemDefinition steel = GameRewardSetup.Item("item_steel_sword", "강철검", ItemKind.Equipment, 80);
+            // D-7 장비 효과(프로토타입 임의 값). 이미 효과가 있으면 인스펙터에서 바꾼 값을 둔다.
+            // 최대 체력은 준비 중 착용하면 현재 체력이 가득 차지 않아 이번에는 공격력·방어력만 쓴다.
+            SetModifiers(sword, StatModifier.Flat(StatType.Attack, 4f));
+            SetModifiers(steel, StatModifier.Flat(StatType.Attack, 8f));
+            SetModifiers(shield, StatModifier.Flat(StatType.Defense, 2f));
+            SetModifiers(leather, StatModifier.Flat(StatType.Defense, 3f));
+            SetModifiers(chain, StatModifier.Flat(StatType.Defense, 6f), StatModifier.Percent(StatType.MoveSpeed, -0.1f));
 
             var shop = AssetDatabase.LoadAssetAtPath<FacilityDefinition>(PathOf(FacilityType.Shop));
             if (shop != null)
@@ -184,6 +203,65 @@ namespace ProjectNeo.Editor
             public TMP_Text title, status, body, upgradeLabel;
             public Button upgrade, row;
             public RectTransform offers, inventory;
+        }
+
+        static void SetModifiers(ItemDefinition item, params StatModifier[] modifiers)
+        {
+            var data = new SerializedObject(item);
+            SerializedProperty list = data.FindProperty("equipModifiers");
+            if (list.arraySize > 0) return;
+            foreach (StatModifier modifier in modifiers)
+            {
+                list.InsertArrayElementAtIndex(list.arraySize);
+                SerializedProperty entry = list.GetArrayElementAtIndex(list.arraySize - 1);
+                entry.FindPropertyRelative("stat").enumValueIndex = (int)modifier.stat;
+                entry.FindPropertyRelative("kind").enumValueIndex = (int)modifier.kind;
+                entry.FindPropertyRelative("value").floatValue = modifier.value;
+            }
+            data.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(item);
+        }
+
+        /// <summary>D-7 장비 화면. 시설 팝업과 같은 모양으로 착용 중·보관함 장비 두 목록을 둔다.</summary>
+        static Popup BuildEquipmentPopup(GameFlowHud hud, GameEquipment equipment)
+        {
+            var font = (RuntimeSystemFont)new SerializedObject(hud).FindProperty("font").objectReferenceValue;
+            Transform parent = font != null && !hud.transform.IsChildOf(font.transform) ? font.transform : hud.transform;
+            Transform existing = parent.Find("EquipmentPanel");
+            if (existing != null) UnityEngine.Object.DestroyImmediate(existing.gameObject);
+
+            var popup = new Popup();
+            popup.panel = new GameObject("EquipmentPanel", typeof(RectTransform), typeof(Image));
+            popup.panel.transform.SetParent(parent, false);
+            var rect = popup.panel.GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = new Vector2(780f, 540f);
+            popup.panel.GetComponent<Image>().color = new Color(0.06f, 0.08f, 0.1f, 0.94f);
+            popup.title = Text(popup.panel.transform, "Title", "장비 · 플레이어", 32f, new Vector2(24f, -20f), new Vector2(-24f, -66f));
+            popup.title.fontStyle = FontStyles.Bold;
+            popup.status = Text(popup.panel.transform, "Status", "Slots", 18f, new Vector2(24f, -70f), new Vector2(-24f, -122f));
+            popup.status.color = new Color(1f, 0.9f, 0.55f);
+            popup.body = Text(popup.panel.transform, "Body", "", 17f, new Vector2(24f, -126f), new Vector2(-24f, -180f));
+
+            popup.trade = new GameObject("Lists", typeof(RectTransform));
+            popup.trade.transform.SetParent(popup.panel.transform, false);
+            var listsRect = popup.trade.GetComponent<RectTransform>();
+            listsRect.anchorMin = Vector2.zero; listsRect.anchorMax = Vector2.one;
+            listsRect.offsetMin = new Vector2(24f, 84f); listsRect.offsetMax = new Vector2(-24f, -188f);
+            popup.offers = Column(popup.trade.transform, "Equipped", "착용 중 (클릭해서 벗기)", 0f, 0.5f);
+            popup.inventory = Column(popup.trade.transform, "Gear", "보관함 장비 (클릭해서 착용)", 0.5f, 1f);
+
+            popup.row = ButtonAt(popup.panel.transform, "RowTemplate", "Item", new Vector2(0.5f, 0.5f), Vector2.zero,
+                new Vector2(340f, 34f), null, out TMP_Text rowLabel);
+            rowLabel.fontSize = 16f; rowLabel.alignment = TextAlignmentOptions.MidlineLeft;
+            rowLabel.rectTransform.offsetMin = new Vector2(10f, 0f);
+            popup.row.gameObject.AddComponent<LayoutElement>().preferredHeight = 34f;
+            popup.row.gameObject.SetActive(false);
+
+            ButtonAt(popup.panel.transform, "Button_Close", "닫기 (Esc)", new Vector2(0.5f, 0f), new Vector2(0f, 20f),
+                new Vector2(200f, 48f), equipment.Close, out _);
+            popup.panel.SetActive(false);
+            return popup;
         }
 
         static Popup BuildPopup(GameFlowHud hud, GameFacilities facilities)

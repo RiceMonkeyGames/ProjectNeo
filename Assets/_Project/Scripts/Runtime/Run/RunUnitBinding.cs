@@ -25,14 +25,20 @@ namespace ProjectNeo.Run
         /// 정의가 없는 유닛은 런에 넣을 수 없어 예외다.
         /// </summary>
         public static RunUnitBinding<T> Create(SquadConfig config, HeroDefinition playerHero, T player,
-            IReadOnlyList<IReadOnlyList<KeyValuePair<T, SoldierDefinition>>> squads, int seed = 0)
+            IReadOnlyList<IReadOnlyList<KeyValuePair<T, SoldierDefinition>>> squads, int seed = 0,
+            Character playerCharacter = null)
         {
             if (playerHero == null) throw new ArgumentNullException(nameof(playerHero));
             if (player == null) throw new ArgumentNullException(nameof(player));
             if (squads == null) throw new ArgumentNullException(nameof(squads));
+            if (playerCharacter != null && playerCharacter.Definition != playerHero)
+                throw new ArgumentException("플레이어 캐릭터의 영웅 정의가 다르다.", nameof(playerCharacter));
 
             var binding = new RunUnitBinding<T>(new RunState(config, seed));
-            binding.Bind(player, binding.State.AddHero(playerHero, true));
+            // 씬 플레이어의 캐릭터를 그대로 런 영웅으로 쓰면 런에서 끼운 장비가 씬 스탯에 바로 붙는다(D-7).
+            RunHero hero = playerCharacter != null ? binding.State.AddHero(playerCharacter, true)
+                : binding.State.AddHero(playerHero, true);
+            binding.Bind(player, hero);
             foreach (IReadOnlyList<KeyValuePair<T, SoldierDefinition>> members in squads)
             {
                 Squad<RunUnit> squad = binding.State.Army.TryAddSquad()

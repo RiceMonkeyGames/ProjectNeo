@@ -95,7 +95,9 @@ namespace ProjectNeo.Flow
                 lines.Add(members);
             }
             // 런마다 다른 시드. 같은 런 안의 추첨은 이 시드로 재현한다.
-            return RunUnitBinding<CharacterActor>.Create(squads.Config, hero, player, lines, System.Environment.TickCount);
+            // 씬 플레이어의 캐릭터를 런 영웅과 공유한다(D-7 장비 착용이 씬 스탯에 바로 반영).
+            return RunUnitBinding<CharacterActor>.Create(squads.Config, hero, player, lines, System.Environment.TickCount,
+                player.Character);
         }
 
         CastleState CaptureCastle()

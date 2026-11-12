@@ -49,3 +49,21 @@ MonoBehaviour:
       m_Flags: 0
     m_Flags: 0
     m_Priority: 0
+  equipment:
+    m_Name: OpenEquipment
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 7d1204b1-36dd-4c40-bbf7-e53ea2578296
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 29d34e65-e7a6-4fed-8f6e-36566e717ed3
+      m_Path: <Keyboard>/i
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: OpenEquipment
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0

@@ -19,4 +19,7 @@ MonoBehaviour:
     gold: 80
     materials: []
   unlockedByDefault: 1
-  equipModifiers: []
+  equipModifiers:
+  - stat: 1
+    kind: 0
+    value: 8

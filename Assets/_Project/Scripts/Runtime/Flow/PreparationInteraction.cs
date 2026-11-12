@@ -12,10 +12,13 @@ namespace ProjectNeo.Flow
         [SerializeField] Camera playerCamera;
         [SerializeField] CharacterActor player;
         [SerializeField] PreparationInteractionSettings settings;
-        InputAction interact, close;
+        InputAction interact, close, equipment;
         public PreparationStation Target { get; private set; }
         public string InteractKey => interact.GetBindingDisplayString();
         public string CloseKey => close.GetBindingDisplayString();
+        public string EquipmentKey => equipment != null ? equipment.GetBindingDisplayString() : string.Empty;
+        /// <summary>1인칭 탐색 중 장비 키를 눌렀다(D-7). 장비 화면이 듣는다.</summary>
+        public event System.Action EquipmentRequested;
 
         public void Configure(GamePhaseView view, Camera camera, CharacterActor actor, PreparationInteractionSettings config)
         { phaseView = view; playerCamera = camera; player = actor; settings = config; }
@@ -24,10 +27,11 @@ namespace ProjectNeo.Flow
         {
             interact = settings.Interact.Clone();
             close = settings.Close.Clone();
+            equipment = settings.Equipment?.Clone();
         }
-        void OnEnable() { interact.Enable(); close.Enable(); }
-        void OnDisable() { interact?.Disable(); close?.Disable(); Target = null; }
-        void OnDestroy() { interact?.Dispose(); close?.Dispose(); }
+        void OnEnable() { interact.Enable(); close.Enable(); equipment?.Enable(); }
+        void OnDisable() { interact?.Disable(); close?.Disable(); equipment?.Disable(); Target = null; }
+        void OnDestroy() { interact?.Dispose(); close?.Dispose(); equipment?.Dispose(); }
 
         public void RefreshTarget()
         {
@@ -66,6 +70,7 @@ namespace ProjectNeo.Flow
             }
             RefreshTarget();
             if (interact.WasPressedThisFrame()) TryInteract();
+            else if (phaseView.IsExplorationView && equipment != null && equipment.WasPressedThisFrame()) EquipmentRequested?.Invoke();
         }
     }
 }

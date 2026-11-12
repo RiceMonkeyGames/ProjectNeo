@@ -155,6 +155,27 @@ namespace ProjectNeo.Run
         /// <summary>보관함의 아이템을 판다. 보상 등 다른 경로로 얻은 아이템도 팔 수 있다.</summary>
         public bool TrySell(ItemInstance item) => Shop != null && Shop.TrySell(item, Wallet, Inventory);
 
+        /// <summary>
+        /// 보관함의 장비를 런 영웅에게 끼운다(D-7). 이 런의 영웅·보관함 아이템이고 장비이며 빈 칸이 있어야 한다.
+        /// 스탯 수정값은 영웅의 <see cref="Character"/>에 붙는다.
+        /// </summary>
+        public bool TryEquip(RunHero hero, ItemInstance item)
+        {
+            if (hero == null || Find(hero.Id) != hero || item == null || !Inventory.Contains(item)) return false;
+            if (!hero.Character.TryEquip(item, Inventory)) return false;
+            Changed?.Invoke();
+            return true;
+        }
+
+        /// <summary>런 영웅이 착용한 장비를 벗겨 보관함에 돌려놓는다(D-7).</summary>
+        public bool TryUnequip(RunHero hero, ItemInstance item)
+        {
+            if (hero == null || Find(hero.Id) != hero) return false;
+            if (!hero.Character.TryUnequip(item, Inventory)) return false;
+            Changed?.Invoke();
+            return true;
+        }
+
         /// <summary>시설을 런 지갑으로 한 레벨 올린다(D-1). 없는 시설·최대 레벨·비용 부족이면 false.</summary>
         public bool TryUpgradeFacility(FacilityType type)
         {
@@ -196,8 +217,20 @@ namespace ProjectNeo.Run
         public RunHero AddHero(HeroDefinition definition, bool isPlayer = false)
         {
             if (definition == null) throw new ArgumentNullException(nameof(definition));
+            return AddHero(new Character(definition), isPlayer);
+        }
+
+        /// <summary>
+        /// 이미 있는 캐릭터를 영웅으로 런에 더한다. 씬 캐릭터와 같은 <see cref="Character"/>를 쓰면 런에서 바꾼 장비·스탯이
+        /// 씬에 바로 반영된다(D-7). 같은 캐릭터를 두 번 더하지 않는다.
+        /// </summary>
+        public RunHero AddHero(Character character, bool isPlayer = false)
+        {
+            if (character == null) throw new ArgumentNullException(nameof(character));
             if (isPlayer && Player != null) throw new InvalidOperationException("플레이어 영웅은 이미 있다.");
-            var hero = new RunHero(nextUnitId++, new Character(definition), isPlayer);
+            foreach (RunHero existing in heroes)
+                if (existing.Character == character) throw new ArgumentException("이미 런에 있는 캐릭터다.", nameof(character));
+            var hero = new RunHero(nextUnitId++, character, isPlayer);
             units.Add(hero.Id, hero);
             heroes.Add(hero);
             if (isPlayer) Player = hero;
