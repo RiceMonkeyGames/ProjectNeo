@@ -1,6 +1,6 @@
 # ProjectNeo
 
-Last Updated: 2026-11-12 22:42:41 (KST)
+Last Updated: 2026-11-12 23:08:04 (KST)
 
 A 3D first-person siege defense roguelike. Scout the upcoming wave, prepare heroes, troops, equipment, and walls, and defend the castle through direct player combat and unit commanding. Built with Unity 6000.6.8f1 and URP. Low-poly art style; Synty assets planned, currently using placeholder graphics.
 
@@ -54,5 +54,6 @@ If documents conflict, GameDesign takes precedence for game rules, Implementatio
 - Explicitly assign numeric values to persistent enums; add new values to the end. Route random generation through `ProjectNeo.Core.IRandomSource`.
 - Separate gameplay rules, collision, and movement on the root from visual representation under a `Visual` child. Follow principles in Context Section 5.
 - Do not edit `.unity`, `.prefab`, `.asset`, or `.meta` files directly. Create/move scenes, assets, and folders via Editor APIs. `.cs` and `.asmdef` files may be authored directly.
+- Shared `.claude/settings.json` blocks Claude Code from reading generated/third-party/binary files (e.g. `Library/`, `Temp/`, `*.meta`, `*.unity`, art and audio) and from editing serialized Unity files. Do not work around these blocks with shell commands; inspect scenes, GUIDs, and references via Editor `script eval` instead, and search `Logs/Editor.log` for `error CS` rather than reading it whole. Agents other than Claude Code (e.g. Codex) are not bound by that file and must follow the same limits by convention. Full list in Context Section 3.
 - Always check Unity connection status first with `unity status`. Do not assume the editor is closed solely from connection failures; verify sandbox constraints as well. If not open, ask the user to open it.
 - Follow compilation, testing, build, and package commands and caveats in Context Section 6. Do not use `unity recompile` or `unity command script recompile`, which failed in this project.
