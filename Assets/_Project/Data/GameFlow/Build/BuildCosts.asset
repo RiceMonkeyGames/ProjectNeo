@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 269e3042bfd4ad242ab5e3461c5da81d, type: 3}
+  m_Name: BuildCosts
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Run.BuildCostTable
+  pieces:
+  - piece: {fileID: 11400000, guid: c1c038f7a168fe347bc9a0582b3d05bf, type: 2}
+    gold: 10
+  - piece: {fileID: 11400000, guid: 9bec35695a6f5a848b88ce14e4da5884, type: 2}
+    gold: 15
+  weapons:
+  - weapon: {fileID: 11400000, guid: dcd5362db7ff6a84db2f93ac232125a8, type: 2}
+    gold: 30
+  olderRefundRatio: 0.5
+  repairGoldPerHealth: 0.2
