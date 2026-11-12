@@ -1,6 +1,6 @@
 # Past Verification History
 
-Last Updated: 2026-11-12 22:20:33 (KST). Historical log of completed milestones, performance benchmarks, and manual playtest records separated from [Context.md](Context.md). Preserves historical completion scope and verification evidence; past test counts and temporary numbers do not represent current baselines or final performance guarantees. Check [ImplementationPlan Section 3](ImplementationPlan.md#3-current-status--starting-point) first for active task status. Agents should only open this file when past rationales or verification evidence are needed, searching by date or task ID.
+Last Updated: 2026-11-12 22:42:57 (KST). Historical log of completed milestones, performance benchmarks, and manual playtest records separated from [Context.md](Context.md). Preserves historical completion scope and verification evidence; past test counts and temporary numbers do not represent current baselines or final performance guarantees. Check [ImplementationPlan Section 3](ImplementationPlan.md#3-current-status--starting-point) first for active task status. Agents should only open this file when past rationales or verification evidence are needed, searching by date or task ID.
 
 New completion results must be appended to the end of this file under `### YYYY-MM-DD: Title`, updating ImplementationPlan Section 3 and Context Section 2 concurrently.
 
@@ -306,3 +306,10 @@ Method: `Assets/Tests/PlayMode/UnitScaleBenchmark.cs`. Ground 120m × 120m, 4m-h
   6. Close with Esc. I key is disabled during combat.
   7. Modifier values tuned in `Rewards/item_*.asset` Equip Modifiers, hotkeys in `Data/GameFlow/Interaction.asset`. Resets upon exiting Play Mode.
 
+### 2026-11-12: DOC-workflow-branches - Task Branch Lifecycle
+
+- User decision: Select and claim a backlog task, sync latest shared `develop`, then create `feature/<task-description>` and record the branch in the backlog before implementation.
+- After user-owned code merge into `develop` is confirmed remotely, delete the corresponding remote task branch. Retain unmerged work. Purpose: Keep branch references manageable across agents. Immediate backlog claim/completion synchronization remains the existing exception to user-owned commits and merges.
+- Updated AGENTS.md, Backlog.md, Context.md Section 3, and ImplementationPlan.md Sections 2 and 7. No game rules changed.
+- Verification: Documentation consistency and `git diff --check`. No Unity execution or tests required; no actual branches created or deleted for this documentation update.
+- Manual verification: Read the workflow in AGENTS.md, Backlog.md, Context.md Section 3, and ImplementationPlan.md Sections 2 and 7. Confirm claim sync -> latest develop -> feature branch -> implementation/verification -> user merge -> confirmed remote integration -> remote task branch deletion. No runtime reset required.

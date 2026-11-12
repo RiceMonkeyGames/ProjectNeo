@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-12 22:28:48 (KST)
+Last Updated: 2026-11-12 22:42:41 (KST)
 Source: [Google Docs - Development Backlog Table (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 ## Workflow & Operating Rules
@@ -10,8 +10,9 @@ Source: [Google Docs - Development Backlog Table (Legacy)](https://docs.google.c
    - Mark the task as `In Progress` with your assignee name.
    - **Immediately commit and merge (push/sync) this file to the shared branch so all teammates and other agents are immediately aware of the active assignment to prevent duplicate work.**
    - Begin implementation only after the in-progress change is recorded and synced.
+   - After claiming, sync the latest shared `develop`, create `feature/<task-description>` from it, and record the branch here before implementation.
 2. **Coordination**: Never modify or take over tasks marked `In Progress` by another assignee. Coordinate in advance if modifying shared files or shared assets.
-3. **Completion**: Update repository markdown docs, document verification evidence and results in this file, change status to `Done`, and merge/sync the updated backlog. Do not conceal incomplete scopes.
+3. **Completion**: Update repository markdown docs, document verification evidence and results in this file, change status to `Done`, and merge/sync the updated backlog. Do not conceal incomplete scopes. After the user merges the work into `develop` and remote integration is confirmed, delete the corresponding remote task branch; retain unmerged branches. This keeps cross-agent branch references manageable. General code commits and merges remain user-owned.
 4. **Status Definitions**:
    - `Waiting`: Not started / unclaimed.
    - `In Progress`: Currently being actively worked on by assignee.
@@ -26,6 +27,7 @@ Source: [Google Docs - Development Backlog Table (Legacy)](https://docs.google.c
 
 | Task ID | Description | Status | Assignee | Completion Criteria & Prerequisites |
 |---|---|---|---|---|
+| DOC-workflow-branches | Document task branch creation and remote cleanup workflow | Done | Codex | User decision (2026-11-12): Create a feature branch from latest shared develop after claiming; delete remote task branch after confirmed remote develop integration. Updated AGENTS, Backlog, Context, ImplementationPlan; verification recorded in History. Documentation only. |
 | B-9.3-play | Manual Playtest of Current Game Scene | Waiting for Verification | Unassigned | Title → Prep → F Construction / Esc Return → F Battle → Win/Loss → Next Prep loop. Document camera, squad commanding, input glitches, and reproduction steps. |
 | C-1a | Agree on Run Data & Combat Outcome Boundary | Done | Hwang Seong-min | Agree on data ownership and IDs for wallet, troops, castle, battle I/O, single result processing. Mid-run saves remain undecided. Outcome (2026-11-12): Merged to develop (9429e85); documented in Context Section 7 "C-1a". Teammate sign-off and scene wiring are follow-up tasks. |
 | Q-04·05 | Finalize Morale, Rout, and Captain Death Rules | In Progress | youngho | Confirm decay, recovery, stat debuffs, rout thresholds, escape paths, and squad captain death impact with user; reflect in design and roadmap. |

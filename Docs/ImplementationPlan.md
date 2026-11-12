@@ -1,6 +1,6 @@
 ﻿# ProjectNeo Implementation Roadmap
 
-Last Updated: 2026-11-12 22:20:33 (KST). **Current Milestone: M1 Single Siege Battle in progress.** Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elevation, and `feature/siege-prototype` test scene (prep, assault, ladders, win/loss) into `develop`. `SiegePrototype` tests parts of B-6/B-9 separately; the actual `Game` scene links 1st-person prep / construction F interaction → gate banner F interaction → enemy assault, ladders, actual win/loss → rewards/results. Placeholder start/outcome buttons are hidden in game view. Reward payout, formal stage layouts, and casualty replenishment are follow-ups. Teammate handles enemy assault and combat execution; User handles game entry and core flow (see 6.1). Wall-destroying enemies, aerial enemies, waves, morale, and siege weapon firing (Q-21) remain pending. Q-09 resolved in favor of Defeat priority. M2 prep completed C-1a run data / combat I/O rules (5.6); Game scene integration is next.
+Last Updated: 2026-11-12 22:43:05 (KST). **Current Milestone: M1 Single Siege Battle in progress.** Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elevation, and `feature/siege-prototype` test scene (prep, assault, ladders, win/loss) into `develop`. `SiegePrototype` tests parts of B-6/B-9 separately; the actual `Game` scene links 1st-person prep / construction F interaction → gate banner F interaction → enemy assault, ladders, actual win/loss → rewards/results. Placeholder start/outcome buttons are hidden in game view. Reward payout, formal stage layouts, and casualty replenishment are follow-ups. Teammate handles enemy assault and combat execution; User handles game entry and core flow (see 6.1). Wall-destroying enemies, aerial enemies, waves, morale, and siege weapon firing (Q-21) remain pending. Q-09 resolved in favor of Defeat priority. M2 prep completed C-1a run data / combat I/O rules (5.6); Game scene integration is next.
 
 This document manages target goals, development order, current status, immediate tasks, and 3-person collaboration plans. Original game design is in [GameDesign.md](GameDesign.md); code, execution, development principles, and Unity CLI commands are in [Context.md](Context.md); past verification history is in [History.md](History.md).
 
@@ -70,7 +70,9 @@ Target release platforms, distribution channels, release dates, and final conten
 
 ## 2. Pending Decisions & Decision Points
 
-**Backlog Operation Decision (2026-11-12):** Select an unclaimed task from [Docs/Backlog.md](Backlog.md), mark `In Progress` with assignee name, and immediately commit/merge (push/sync) the file before starting implementation to prevent collisions. Never touch another assignee's in-progress tasks. Update docs and backlog upon completion. Operational rules follow AGENTS.md; assignments and contracts follow Section 6.
+**Backlog Operation Decision (2026-11-12):** Select an unclaimed task from [Docs/Backlog.md](Backlog.md), mark `In Progress` with assignee name, and immediately commit/merge (push/sync) the file before starting implementation to prevent collisions. Never touch another assignee's in-progress tasks. Update docs and backlog upon completion.
+
+**Branch Lifecycle Decision (2026-11-12):** After selecting and claiming a backlog task, sync the latest shared `develop` (including the claim) and create a dedicated `feature/<task-description>` branch from it before implementation. Record the branch name in the backlog. After the user merges the work into `develop` and the merge is confirmed on the remote, delete the corresponding remote task branch. Retain unmerged work branches. This keeps the remote branch list small and makes cross-agent references easier. General code commits and merges remain user-owned. Operational rules follow AGENTS.md; assignments and contracts follow Section 6.
 
 | ID | Decision Topic | Needed By / Blocking | Current Status |
 |---|---|---|---|
@@ -273,7 +275,7 @@ Recommended Order: D-0 → D-5 → D-1 → D-2 → D-0b → D-4 → D-8 → D-3 
 
 1. Check current milestones, recent decisions, and [Docs/Backlog.md](Backlog.md) before picking a task. Mark `In Progress` with assignee name and immediately commit/sync to prevent collisions.
 2. User decisions must be recorded immediately in GameDesign.md and reflected in this roadmap.
-3. Update task status, Context maps, and append verification details to History.md upon task completion. Mark `Done` in backlog and sync.
+3. Update task status, Context maps, and append verification details to History.md upon task completion. Mark `Done` in backlog and sync. After the user merges the work and remote `develop` integration is confirmed, delete the corresponding remote task branch.
 4. Detail upcoming milestones upon completing major phases based on actual playtest feedback.
 5. Explicitly differentiate automated test passes from playtest validation, individual scenes from integrated scenes, and editor execution from standalone builds.
 

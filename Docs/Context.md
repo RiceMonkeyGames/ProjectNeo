@@ -1,6 +1,6 @@
 # Project Context
 
-Last Updated: 2026-11-12 22:20:33 (KST). All paths are relative to repository root. This document maintains currently executable scenes, code/scene/asset maps, development practices, and verification evidence. Target goals, upcoming tasks, and progress tracking are managed in [ImplementationPlan.md](ImplementationPlan.md); game rules in [GameDesign.md](GameDesign.md); active backlog in [Backlog.md](Backlog.md); required agent rules and documentation entry points in [AGENTS.md](../AGENTS.md).
+Last Updated: 2026-11-12 22:42:41 (KST). All paths are relative to repository root. This document maintains currently executable scenes, code/scene/asset maps, development practices, and verification evidence. Target goals, upcoming tasks, and progress tracking are managed in [ImplementationPlan.md](ImplementationPlan.md); game rules in [GameDesign.md](GameDesign.md); active backlog in [Backlog.md](Backlog.md); required agent rules and documentation entry points in [AGENTS.md](../AGENTS.md).
 
 ## Table of Contents
 
@@ -217,6 +217,8 @@ Camera smooths rotation via SmoothStep; continuous inputs chain smoothly without
 - `Assets/Tests/PlayMode/UnitScaleBenchmark.cs`: Explicit performance benchmark (excluded from standard runs).
 
 ## 3. Collaboration & Integration
+
+**Task Branch Lifecycle**: After selecting and claiming a backlog task, sync the latest shared `develop` (including the claim) and create a dedicated `feature/<task-description>` branch from it before implementation. Record the branch name in the backlog. After the user merges the work into `develop` and the merge is confirmed on the remote, delete the corresponding remote task branch. Retain unmerged work branches. This keeps the remote branch list small and makes cross-agent references easier. General code commits and merges remain user-owned.
 
 Active collaboration since 2026-11-11. Teammate manages enemy assault and combat execution; User manages game entry and core flow loop. Assignments follow [ImplementationPlan Section 6.1](ImplementationPlan.md#61-assignment-matrix--shared-modification-rights). Teammates work on separate PCs/branches (Q-26).
 

@@ -1,5 +1,7 @@
 # ProjectNeo
 
+Last Updated: 2026-11-12 22:42:41 (KST)
+
 A 3D first-person siege defense roguelike. Scout the upcoming wave, prepare heroes, troops, equipment, and walls, and defend the castle through direct player combat and unit commanding. Built with Unity 6000.6.8f1 and URP. Low-poly art style; Synty assets planned, currently using placeholder graphics.
 
 This file is the primary entry point for all agents working in this repository. `CLAUDE.md` simply references this file. The repository maintains four core documentation files—Backlog, Context, Implementation Plan, and Game Design—plus one past verification log (History). History is not read routinely.
@@ -23,6 +25,7 @@ If documents conflict, GameDesign takes precedence for game rules, Implementatio
   2. Mark the task as `In Progress` with your assignee name in `Docs/Backlog.md`.
   3. **Immediately commit and merge (or push/sync) this backlog change to the shared branch so that other teammates and agents are immediately notified of the assignment to avoid collisions.**
   4. Begin implementation only after the in-progress marking is recorded and synced.
+- **Task Branch Lifecycle**: After selecting and claiming a backlog task, sync the latest shared `develop` (including the claim) and create a dedicated `feature/<task-description>` branch from it before implementation. Record the branch name in the backlog. After the user merges the work into `develop` and the merge is confirmed on the remote, delete the corresponding remote task branch. Retain unmerged work branches. This keeps the remote branch list small and makes cross-agent references easier. General code commits and merges remain user-owned.
 - **Strict Collision Avoidance**: Never modify or take over items marked `In Progress` by another assignee. Even if tasks differ, coordinate order if modifying the same file or shared asset. Refer to Section 6 of ImplementationPlan for actual assignment, file ownership, and shared contracts.
 - **Task Completion**: After finishing work, update relevant Markdown docs, record results, verification details, or doc paths in `Docs/Backlog.md`, and change status to `Done`. Sync/merge the updated backlog. Do not conceal incomplete scopes or unverified items.
 - **Registering New Items**: If you discover new tasks, bugs, or follow-ups during work, check for duplication with existing entries and add them to `Docs/Backlog.md`. If design or shared architecture is undecided, note that user confirmation is required rather than treating it as a finalized task.
