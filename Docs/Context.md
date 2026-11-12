@@ -1,6 +1,6 @@
 # 프로젝트 컨텍스트
 
-마지막 갱신: 2026-11-12 12:28:25 (KST). 경로는 저장소 루트 기준이다. 현재 실행 가능한 것, 코드·씬·에셋 지도, 개발 방법과 검증 근거를 이 문서에서 관리한다. 완성 목표·다음 작업·진행 상태는 [구현 로드맵](ImplementationPlan.md), 게임 규칙은 [게임 기획](GameDesign.md), 에이전트의 필수 규칙과 문서 입구는 [AGENTS.md](../AGENTS.md)가 기준이다.
+마지막 갱신: 2026-11-12 16:00:11 (KST). 경로는 저장소 루트 기준이다. 현재 실행 가능한 것, 코드·씬·에셋 지도, 개발 방법과 검증 근거를 이 문서에서 관리한다. 완성 목표·다음 작업·진행 상태는 [구현 로드맵](ImplementationPlan.md), 게임 규칙은 [게임 기획](GameDesign.md), 에이전트의 필수 규칙과 문서 입구는 [AGENTS.md](../AGENTS.md)가 기준이다.
 
 ## 찾아보기
 
@@ -49,7 +49,7 @@ Unity 6000.6.8f1, URP, 3D 1인칭 프로젝트다. 현재는 임시 그래픽이
 | Combat | `CombatProfile`, `CharacterActor`, `CombatTeam` | 몸통 크기·공격 종류·선딜레이·최소 피해·투사체 설정 에셋. 영웅과 잡졸을 공통 스탯 경로로 연결하고 팀, 대상 후보, 근접·원거리 공격, 재공격 대기, 피격·사망을 처리한다. `Character`는 영웅만 가지며 공통 접근은 `Stats`를 쓴다. |
 | Combat | `DamageRules`, `CombatPhysics` | 일반 C# 피해 공식과 사거리·사선 검사. 동일 씬의 적만 공격하고 아군 충돌체는 공격을 막지 않는다. 원거리 공격은 쏘는 유닛이 딛고 선 물체(`GroundUnder`)에 막히지 않는다. 사선 검사와 투사체가 같은 기준을 쓴다. |
 | Combat | `CombatProjectile` | 직선 투사체. 발사 때 공격력·팀·방향을 저장하고 명중 때 방어력을 적용한다. 아군 통과, 첫 적·벽 충돌, 사거리·수명 종료를 처리한다. |
-| Combat | `UnitAISettings`, `UnitCombatAI` | 탐색 범위·판단 주기·회전·이동·도착 거리 설정. 가까운 추격 가능한 적 선택, 대상 유지, NavMesh 경로 갱신, 근접·원거리 공격, 사망 후 이동 정지. `UnitDirective`(Engage 알아서 싸움 / Hold 자리(`HoldPost`) 지키기 / Move 적 무시하고 이동 후 Hold)로 행동을 바꾼다. Hold는 닿는 적을 공격하고, 근접은 자리에서 `HoldEngageRadius`(기본 6m), 원거리는 공격 사거리 + `HoldRangedChaseExtra`(기본 6m) 안의 걸어서 닿는 적에게 다가가 싸운 뒤 자리로 돌아온다(`HoldChaseRadius`). 원거리는 사거리가 닿으면 멈춰서 쏜다. 지시를 받지 않은 유닛의 기본값은 Engage다. |
+| Combat | `UnitAISettings`, `UnitCombatAI` | 탐색 범위·판단 주기·회전·이동·도착 거리 설정. 가까운 추격 가능한 적 선택, 대상 유지, NavMesh 경로 갱신, 근접·원거리 공격, 사망 후 이동 정지. `UnitDirective`(Engage 알아서 싸움 / Hold 자리(`HoldPost`) 지키기 / Move 적 무시하고 이동 후 Hold)로 행동을 바꾼다. Hold는 닿는 적을 공격하고, 근접은 자리에서 `HoldEngageRadius`(기본 6m), 원거리는 공격 사거리 + `HoldRangedChaseExtra`(기본 6m) 안의 걸어서 닿는 적에게 다가가 싸운 뒤 자리로 돌아온다(`HoldChaseRadius`). 원거리는 사거리가 닿으면 멈춰서 쏜다. 이동과 지점 공격의 도착은 남은 거리 `ArrivalDistance`(0.35m) 이하이거나, `MoveStallTracker`가 목적지 근처(`MoveStallDistance` 1.5m)에서 `MoveStallSeconds`(0.5초) 동안 `MoveStallProgress`(0.1m)도 줄지 않으면 막힌 것으로 보아 도착으로 친다. 중지 중 자리 복귀는 `HoldReturnDistance`(1m)보다 밀렸을 때만 하고, 자리가 막히면 같은 막힘 판정으로 멈춘다. 막힘 판정은 경로 탐색을 하지 않는다. 지시를 받지 않은 유닛의 기본값은 Engage다. |
 | Combat | `PlaceholderCombatView` | `Visual` 자식에서 공격·피격·사망 신호를 구독한다. 임시 색 변경, 공격 표시, 체력 막대와 사망 외형. 전투 판정을 하지 않는다. |
 | Facilities | `FacilityDefinition`, `FacilityState` | 시설별 레벨 데이터, 품목 풀, 업그레이드 비용과 스탯 효과 |
 | Squads | `SquadConfig`, `Squad<TUnit>`, `Army<TUnit>` | 부대와 군대 인원 상한, 부대장 지정. |
@@ -214,6 +214,7 @@ Q/`RotateLeft()`와 E/`RotateRight()`는 화면 속 판의 왼쪽·오른쪽 회
 - `ConstructionPlayTests`의 지휘 5개: 윗면·옆면·지면 조준 구분, 실제 이동 지시로 계단 오르기와 길 단절, 처음부터 끊긴 목적지, 목적지 성벽 소실 후 재탐색, 낙하 후 지상 지시 복귀.
 - `Assets/Tests/PlayMode/WallCommandPlayTests.cs`: 입력·카메라·몸통 표시 전환과 지시 보존, 부대 전체의 성벽 도착과 다른 부대 유지, 계단 소실 후 정지, 받침 붕괴 후 부대 낙하·이동 복귀.
 - `Assets/Tests/EditMode/SquadCommanderTests.cs`: 기본 중지, 하나·전체 선택과 없는 부대 거부, 선택한 부대만 지시, 이동 도착 시 중지·공격 유지, 대형 자리의 개수·간격·방향.
+- `Assets/Tests/EditMode/MoveStallTrackerTests.cs`: 목적지 근처에서 나아가지 못하면 막힘, 꾸준히 가까워지거나 멀리서 막힌 것은 막힘 아님, 제자리 흔들림은 막힘, 다시 가까워지면 시간 초기화.
 - `Assets/Tests/PlayMode/SquadCommandPlayTests.cs`: 저장된 지휘 씬에서 기본 중지, 선택한 부대만 이동 후 중지, 이동 중 적 무시, 중지 중 닿는 적만 공격하고 쫓지 않음, 공격 지시의 교전과 적이 없을 때 대기, 화면 가운데 이동 지시와 선택 없는 지시 거부. 실제 키 입력은 사용자 직접 확인 대상이다.
 - `Assets/Tests/PlayMode/SetupSmokePlayTests.cs`: 프레임 진행 확인.
 - `Assets/Tests/PlayMode/UnitScaleBenchmark.cs`: 명시적으로 실행하는 성능 측정. 평소 테스트에서는 제외된다.
@@ -766,4 +767,15 @@ unity command package add --caller plugin --skill unity-package-management --nam
 - 남은 제한: 부서진 성문 재건 없음. 건설 조각이 안뜰 시설 건물과 겹치는지는 검사하지 않는다(기존과 같음). 준비 제목의 골드는 단계가 바뀔 때만 다시 그려 첫 준비 제목에는 시작 골드가 늦게 보일 수 있고, 건설 화면 안내 칸은 매 프레임 갱신된다.
 - 검증: 컴파일 오류 없음. EditMode 175개 전체 통과(새 `BuildEconomyTests` 6개). PlayMode 80개 중 79개 통과(새 `GameBuildEconomyPlayTests` 3개 통과). 실패는 기존 불안정 테스트 `WallCommandPlayTests.Squad_StopsOnWallWhenStairsDisappear`다. 처음 실행에서 C-4 보상 테스트가 시작 골드 때문에 실패해 테스트를 고쳤고, `GameBattlePlayTests` 10개를 다시 돌려 모두 통과했다. 물리 입력 직접 플레이와 Windows 빌드는 하지 않았다.
 - 직접 검증: `Assets/_Project/Scenes/Game.unity` → Play → 건설소에서 F → 건설 화면 왼쪽 패널 아래 노란 글씨가 `골드 100` → `성벽`을 골라 놓으면 골드가 10 줄고 안내에 비용이 보인다 → `철거 (클릭)` 버튼 → 방금 지은 성벽 클릭 → 10골드 환불(처음부터 있던 성벽은 5골드), 성문은 거부 → 우클릭으로 철거 끝 → 전투 후 다음 준비에서 깎인 성벽이 있으면 `모두 수리`로 골드를 내고 체력 막대가 가득 찬다. 값은 `Assets/_Project/Data/GameFlow/Build/BuildCosts.asset`·`RunStart.asset`에서 바꾼다. Play를 멈추면 초기화된다.
+### 2026-11-12: BUG-wall-hold 계단 소실 후 부대가 이동 상태로 남는 문제
+
+- 백로그 `BUG-wall-hold`(담당 youngho, 브랜치 `fix/wall-hold-stall`, 기준 develop `d46804f`).
+- 재현: `WallCommandPlayTests.Squad_StopsOnWallWhenStairsDisappear`가 develop에서 5번 중 5번 실패. 앞줄 두 명은 성벽 가장자리(z 3.67)에서 중지, 뒷줄 두 명은 그 바로 뒤(z 4.1~4.3)에서 이동 상태로 남았다.
+- 원인: 계단이 사라지면 성벽 위에서 땅으로 가는 길이 끊겨 유닛마다 부분 경로를 받는데, 2열 대형의 같은 열 유닛은 끝점이 거의 같다. 앞 유닛이 그 점을 차지하면 뒤 유닛은 남은 거리 0.35m 이하가 될 수 없어 이동 지시가 끝나지 않았다. 중지 유닛이 0.35m만 밀려도 자리로 돌아가던 동작(2026-11-12 중지 변경)이 자리 다툼을 굳힌 것으로 본다.
+- 수정: 일반 C# `MoveStallTracker`(남은 거리만 보는 막힘 판정)를 추가하고 `UnitCombatAI`의 이동 도착·지점 공격 도착·중지 복귀에 썼다. 목적지 근처 1.5m 안에서 0.5초 동안 0.1m도 줄지 않으면 도착으로 본다. 중지 복귀는 자리에서 1m보다 밀렸을 때만 시작한다. 수치는 `UnitAISettings`(`moveStallDistance`·`moveStallSeconds`·`moveStallProgress`·`holdReturnDistance`)이며 기존 AI 에셋은 기본값으로 읽는다. 경로 탐색 호출은 늘지 않았다.
+- 남은 것(별도 작업 후보): 이동 중 0.25초마다 경로 재계산, 중지 중 반경 안의 적마다 경로 확인은 유닛 수가 많아지면 비용이 커질 수 있다. 지형이 바뀔 때만 재계산·판단 시점 분산·가까운 몇 명만 경로 확인 등으로 줄일 수 있다.
+- 검증: 컴파일 오류 없음. 해당 테스트 단독 6번 연속 통과. EditMode 180개(새 `MoveStallTrackerTests` 5개), PlayMode 전체 80개 통과. 직접 플레이와 Windows 빌드는 하지 않았다.
+- 직접 검증: 계단만 지우는 시험 버튼이 없어 원래 상황은 자동 테스트로 확인한다. 같은 원리의 일반 확인: `Assets/_Project/Scenes/SquadCommandPrototype.unity` → Play → ` 로 전체 선택 → 화면 가운데를 가운데 장애물 바로 앞 땅에 맞추고 1(이동) → 부대원이 몰려도 모두 근처에서 멈추고 왼쪽 위 지시가 전부 `중지`로 바뀌어야 한다. Play를 다시 시작하면 초기화된다.
+- 자동 검증 재실행: Test Runner → PlayMode → `WallCommandPlayTests.Squad_StopsOnWallWhenStairsDisappear` 여러 번 Run Selected, EditMode `MoveStallTrackerTests`.
+
 </details>

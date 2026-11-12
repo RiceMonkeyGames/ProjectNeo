@@ -23,6 +23,8 @@ namespace ProjectNeo.Combat
         float decisionRemaining;
         bool destinationPending;
         float advanceRepathRemaining;
+        readonly MoveStallTracker stall = new MoveStallTracker();
+        bool returningToPost;
         public CharacterActor Target { get; private set; }
         // 지시를 받지 않은 유닛(적, 관전 전투)은 기존처럼 알아서 싸운다.
         public UnitDirective Directive { get; private set; } = UnitDirective.Engage;
@@ -44,6 +46,8 @@ namespace ProjectNeo.Combat
             destinationPending = false;
             Target = null;
             decisionRemaining = 0f;
+            stall.Reset();
+            returningToPost = false;
             if (directive == UnitDirective.Hold) HoldPost = transform.position;
         }
 
@@ -96,10 +100,24 @@ namespace ProjectNeo.Combat
                 // 길이 전혀 없으면 지금 자리에서 멈춘다. 일부만 이어진 길은 갈 수 있는 데까지 간다.
                 if (SetAdvancePath()) return;
             }
-            else if (agent.pathPending || agent.remainingDistance > settings.ArrivalDistance) return;
+            else if (!HasArrived()) return;
             agent.ResetPath();
             Directive = UnitDirective.Hold;
             HoldPost = transform.position;
+            stall.Reset();
+            returningToPost = false;
+        }
+
+        // 목적지에 닿았거나, 목적지 근처에서 다른 유닛 등에 막혀 더 나아가지 못하면 도착으로 본다.
+        bool HasArrived()
+        {
+            if (agent.pathPending) return false;
+            float remaining = agent.remainingDistance;
+            if (remaining <= settings.ArrivalDistance) return true;
+            // 공격 판정을 기다리느라 멈춘 시간은 막힌 것으로 세지 않는다.
+            if (actor.IsAttacking) { stall.Reset(); return false; }
+            return stall.IsStuck(remaining, Time.deltaTime, settings.MoveStallDistance,
+                settings.MoveStallProgress, settings.MoveStallSeconds);
         }
 
         // 싸울 적이 없을 때: 지정한 지점이 있으면 그곳으로 가고, 도착했거나 지점이 없으면 기다린다.
@@ -119,9 +137,10 @@ namespace ProjectNeo.Combat
                 advanceRepathRemaining = settings.DecisionInterval;
                 if (SetAdvancePath()) return;
             }
-            else if (agent.pathPending || agent.remainingDistance > settings.ArrivalDistance) return;
+            else if (!HasArrived()) return;
             agent.ResetPath();
             destinationPending = false;
+            stall.Reset();
         }
 
         // SetDestination은 요청 접수 여부만 돌려준다. 갱신 후의 실제 경로가 무효인지,
@@ -177,6 +196,7 @@ namespace ProjectNeo.Combat
             agent.isStopped = actor.IsAttacking;
             if (Target != null)
             {
+                stall.Reset();
                 // 움직이는 적을 따라가도록 판단 주기마다 경로를 다시 구한다. 길이 끊겼으면 놓아준다.
                 if (refreshed)
                 {
@@ -185,9 +205,19 @@ namespace ProjectNeo.Combat
                 }
                 if (Target != null) return;
             }
+            // 자리로 돌아가기. 여유 거리(HoldReturnDistance)보다 멀리 밀려났을 때만 출발하고, 출발하면 도착 거리까지 붙는다.
+            // 자리가 다른 유닛에 막혀 더 못 가면 거기서 멈춘다. 살짝 밀린 정도로 자리 다툼을 하지 않는다.
             Vector3 offset = HoldPost - transform.position;
             offset.y = 0f;
-            if (offset.magnitude <= settings.ArrivalDistance)
+            float away = offset.magnitude;
+            if (!returningToPost && away > settings.HoldReturnDistance)
+            {
+                returningToPost = true;
+                stall.Reset();
+            }
+            if (returningToPost && (away <= settings.ArrivalDistance || HasArrivedAtPost(away)))
+                returningToPost = false;
+            if (!returningToPost)
             {
                 if (agent.hasPath) agent.ResetPath();
                 agent.isStopped = true;
@@ -195,6 +225,13 @@ namespace ProjectNeo.Combat
                 return;
             }
             if (refreshed || !agent.hasPath) agent.SetDestination(HoldPost);
+        }
+
+        bool HasArrivedAtPost(float away)
+        {
+            if (actor.IsAttacking) { stall.Reset(); return false; }
+            return stall.IsStuck(away, Time.deltaTime, settings.MoveStallDistance,
+                settings.MoveStallProgress, settings.MoveStallSeconds);
         }
 
         bool IsHoldTarget(CharacterActor target, bool chases) => actor.IsEnemy(target)
@@ -243,6 +280,7 @@ namespace ProjectNeo.Combat
             }
             // 적을 쫓느라 경로가 바뀌었으므로, 처리한 뒤에는 지점으로 가는 길을 바로 다시 구한다.
             advanceRepathRemaining = 0f;
+            stall.Reset();
             bool inRange = CombatPhysics.IsInRange(actor, Target);
             if (inRange) Face(Target);
             bool canAttack = actor.CanAttack(Target);
