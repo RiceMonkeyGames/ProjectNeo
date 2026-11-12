@@ -9854,6 +9854,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1251469580}
   - component: {fileID: 1251469579}
+  - component: {fileID: 1251469581}
   m_Layer: 0
   m_Name: GameBattleController
   m_TagString: Untagged
@@ -9900,6 +9901,20 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1251469581
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1251469578}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 990cef8b4807b1740a3ae461ea758510, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Flow.GameRewardController
+  table: {fileID: 11400000, guid: af8522ff9bd41e9439ad08f9c25b3abe, type: 2}
+  metaConfig: {fileID: 11400000, guid: 56b531c0b18d0d0468190d6458c2bae0, type: 2}
 --- !u!1 &1252913542
 GameObject:
   m_ObjectHideFlags: 0

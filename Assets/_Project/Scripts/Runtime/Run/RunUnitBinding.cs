@@ -25,13 +25,13 @@ namespace ProjectNeo.Run
         /// 정의가 없는 유닛은 런에 넣을 수 없어 예외다.
         /// </summary>
         public static RunUnitBinding<T> Create(SquadConfig config, HeroDefinition playerHero, T player,
-            IReadOnlyList<IReadOnlyList<KeyValuePair<T, SoldierDefinition>>> squads)
+            IReadOnlyList<IReadOnlyList<KeyValuePair<T, SoldierDefinition>>> squads, int seed = 0)
         {
             if (playerHero == null) throw new ArgumentNullException(nameof(playerHero));
             if (player == null) throw new ArgumentNullException(nameof(player));
             if (squads == null) throw new ArgumentNullException(nameof(squads));
 
-            var binding = new RunUnitBinding<T>(new RunState(config));
+            var binding = new RunUnitBinding<T>(new RunState(config, seed));
             binding.Bind(player, binding.State.AddHero(playerHero, true));
             foreach (IReadOnlyList<KeyValuePair<T, SoldierDefinition>> members in squads)
             {

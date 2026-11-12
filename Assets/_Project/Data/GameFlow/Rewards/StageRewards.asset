@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7d8cda47aa9ddc4781bce4c6d2c1557, type: 3}
+  m_Name: StageRewards
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Run.StageRewardTable
+  baseGold: 50
+  goldPerStage: 10
+  killRewards:
+  - enemyId: enemy_ladder
+    goldPerKill: 3
+    material: {fileID: 11400000, guid: d8a422bc2c200bc4098f7e97952c696e, type: 2}
+    materialPerKill: 1
+  - enemyId: enemy_gate_breaker
+    goldPerKill: 5
+    material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+    materialPerKill: 2
+  - enemyId: enemy_archer
+    goldPerKill: 3
+    material: {fileID: 11400000, guid: 983096480f690a248a516a89f583ca4f, type: 2}
+    materialPerKill: 1
+  itemChance: 0.6
+  itemRolls: 1
+  itemPool:
+  - item: {fileID: 11400000, guid: f199196ca1dd9d8458335b9110821698, type: 2}
+    weight: 1
+  - item: {fileID: 11400000, guid: 933d722ec8cf9574fa5b174621ec4fa5, type: 2}
+    weight: 2
+  commanderXp: 40
+  commanderXpPerStage: 10
+  unlockPoints: 5

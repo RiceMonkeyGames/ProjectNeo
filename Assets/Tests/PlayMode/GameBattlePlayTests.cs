@@ -293,5 +293,40 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(2, battle.RunLink.CurrentInput.BattleNumber);
             Assert.AreEqual(soldiers - 1, battle.RunLink.CurrentInput.Squads.Sum(squad => squad.Members.Count));
         }
+
+        [UnityTest]
+        public IEnumerator 승리하면_보상_표대로_골드_재료_메타를_한_번_지급하고_보상_화면과_다음_준비에_보인다()
+        {
+            var rewards = battle.GetComponent<GameRewardController>();
+            Assert.IsNotNull(rewards, "Game 씬의 전투 오브젝트에 보상 컴포넌트가 있어야 한다.");
+            Assert.IsNotNull(rewards.Table);
+            RunState state = GameSession.Flow.Run.State;
+            int ladders = battle.Enemies.Count(enemy => enemy.Role == SiegeAttackerRole.Ladder);
+            Assert.IsTrue(battle.TryStartBattle());
+            foreach (var enemy in battle.Enemies) Kill(enemy.Actor);
+            yield return null; yield return null;
+
+            Assert.AreEqual(GamePhase.Reward, GameSession.Flow.Phase);
+            StageReward reward = rewards.LastReward;
+            Assert.IsNotNull(reward);
+            Assert.AreEqual(1, reward.BattleNumber);
+            Assert.AreEqual(reward.Gold, state.Wallet.Gold);
+            Assert.Greater(reward.Gold, rewards.Table.BaseGold, "처치 골드가 더해진다.");
+            KillReward ladderRule = rewards.Table.KillRewards.First(rule => rule.enemyId == "enemy_ladder");
+            Assert.AreEqual(ladders * ladderRule.materialPerKill, state.Wallet.GetMaterial(ladderRule.material));
+            Assert.AreEqual(rewards.Table.UnlockPoints, GameSession.Meta.unlockPoints);
+            Assert.IsFalse(rewards.TryGrant(), "같은 승리의 보상은 다시 주지 않는다.");
+            Assert.AreEqual(reward.Gold, state.Wallet.Gold);
+
+            yield return null;
+            var hud = Object.FindAnyObjectByType<GameFlowHud>();
+            Transform status = hud.transform.Find("BattleStatus");
+            Assert.IsTrue(status.gameObject.activeSelf, "보상 화면에 지급 내역을 보여준다.");
+            StringAssert.Contains(reward.Gold.ToString(), hud.StatusText);
+
+            Assert.IsTrue(GameSession.Flow.ContinueToNextStage());
+            yield return null;
+            StringAssert.Contains(state.Wallet.Gold.ToString(), hud.PhaseText, "준비 제목에 보유 골드가 보인다.");
+        }
     }
 }

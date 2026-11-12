@@ -26,6 +26,9 @@ namespace ProjectNeo.UI
         [SerializeField] TMP_Text battleStatus;
         GameFlow flow;
         public string InteractionHint => interactionHint != null ? interactionHint.text : string.Empty;
+        public string PhaseText => phaseLabel != null ? phaseLabel.text : string.Empty;
+        /// <summary>전투 상태 또는 보상 내역 칸의 글.</summary>
+        public string StatusText => battleStatus != null ? battleStatus.text : string.Empty;
         public void ConfigureBattle(GameBattleController controller, TMP_Text status)
         { battle = controller; battleStatus = status; }
 
@@ -64,10 +67,18 @@ namespace ProjectNeo.UI
             if (interactionHint == null || interaction == null || phaseView == null) return;
             bool preparation = flow.Phase == GamePhase.Preparation;
             bool fighting = flow.Phase == GamePhase.Battle && battle != null;
+            GameRewardController rewards = battle != null ? battle.GetComponent<GameRewardController>() : null;
+            bool rewarding = flow.Phase == GamePhase.Reward && rewards != null && rewards.LastReward != null;
             interactionHint.transform.parent.gameObject.SetActive(preparation);
-            if (battleStatus != null) battleStatus.transform.parent.gameObject.SetActive(fighting);
+            if (battleStatus != null) battleStatus.transform.parent.gameObject.SetActive(fighting || rewarding);
             explorationReticle.SetActive(preparation && phaseView.IsExplorationView);
             bool korean = font != null && font.Available;
+            if (rewarding)
+            {
+                // 전투 상태 자리에 이번 승리의 보상 내역을 보여준다.
+                if (battleStatus != null) battleStatus.text = rewards.Describe(korean);
+                return;
+            }
             if (fighting)
             {
                 if (battleStatus == null) return;
@@ -105,9 +116,12 @@ namespace ProjectNeo.UI
             returnToTitleButton.SetActive(phase == GamePhase.RunResult);
             int stage = flow.Run != null ? flow.Run.StageNumber : 0;
             bool korean = font != null && font.Available;
+            // 런 데이터가 붙어 있으면 준비 중 보유 골드를 함께 보여준다.
+            int? gold = flow.Run != null && flow.Run.State != null ? flow.Run.State.Wallet.Gold : (int?)null;
+            string goldLabel = gold.HasValue ? (korean ? $" · 골드 {gold}" : $" - Gold {gold}") : string.Empty;
             phaseLabel.text = phase switch
             {
-                GamePhase.Preparation => korean ? $"준비 · 스테이지 {stage}" : $"Preparation - Stage {stage}",
+                GamePhase.Preparation => (korean ? $"준비 · 스테이지 {stage}" : $"Preparation - Stage {stage}") + goldLabel,
                 GamePhase.Battle => korean ? $"전투 · 스테이지 {stage}" : $"Battle - Stage {stage}",
                 GamePhase.Reward => korean ? $"승리 · 보상 (스테이지 {stage})" : $"Victory - Reward (Stage {stage})",
                 GamePhase.RunResult => korean ? $"패배 · 런 결과 (도달 스테이지 {stage})" : $"Defeat - Run result (Stage {stage})",

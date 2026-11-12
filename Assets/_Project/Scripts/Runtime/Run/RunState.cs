@@ -48,12 +48,40 @@ namespace ProjectNeo.Run
         public int BattlesFought { get; private set; }
         public BattleResult LastBattleResult { get; private set; }
         public bool HasPendingBattle => pendingBattle > 0;
+        /// <summary>보상을 지급한 마지막 전투 번호. 같은 전투의 보상은 두 번 받지 않는다.</summary>
+        public int LastRewardedBattle { get; private set; }
+        public StageReward LastReward { get; private set; }
+        /// <summary>이 런의 랜덤 시드. 보상 등 런 안의 추첨은 이 값과 전투 번호로 시드를 만들어 재현한다.</summary>
+        public int Seed { get; }
 
         public event Action Changed;
 
-        public RunState(SquadConfig squadConfig)
+        public RunState(SquadConfig squadConfig, int seed = 0)
         {
             Army = new Army<RunUnit>(squadConfig);
+            Seed = seed;
+        }
+
+        /// <summary>전투 하나에 쓸 랜덤 시드. 같은 런·같은 전투면 같다.</summary>
+        public int SeedFor(int battleNumber) => unchecked(Seed * 486187739 + battleNumber * 16777619);
+
+        /// <summary>
+        /// 보상을 지급한다. 마지막으로 반영한 승리 전투의 보상이고 아직 받지 않았을 때만 지갑·보관함에 넣고 true다.
+        /// 지휘관 경험치·해금 포인트는 메타 진행이라 여기서 다루지 않는다.
+        /// </summary>
+        public bool ApplyReward(StageReward reward)
+        {
+            if (reward == null) throw new ArgumentNullException(nameof(reward));
+            if (LastBattleResult == null || LastBattleResult.Outcome != Flow.BattleOutcome.Victory) return false;
+            if (reward.BattleNumber != BattlesFought || LastRewardedBattle >= reward.BattleNumber) return false;
+            Wallet.AddGold(reward.Gold);
+            foreach (KeyValuePair<MaterialDefinition, int> material in reward.Materials)
+                Wallet.AddMaterial(material.Key, material.Value);
+            foreach (ItemDefinition item in reward.Items) Inventory.Add(item);
+            LastRewardedBattle = reward.BattleNumber;
+            LastReward = reward;
+            Changed?.Invoke();
+            return true;
         }
 
         /// <summary>설정의 시작 재화·플레이어·부대로 새 런을 만든다.</summary>
