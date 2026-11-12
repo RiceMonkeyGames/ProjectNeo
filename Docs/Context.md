@@ -1,6 +1,6 @@
 # 프로젝트 컨텍스트
 
-마지막 갱신: 2026-11-12 11:32:51 (KST). 경로는 저장소 루트 기준이다. 현재 실행 가능한 것, 코드·씬·에셋 지도, 개발 방법과 검증 근거를 이 문서에서 관리한다. 완성 목표·다음 작업·진행 상태는 [구현 로드맵](ImplementationPlan.md), 게임 규칙은 [게임 기획](GameDesign.md), 에이전트의 필수 규칙과 문서 입구는 [AGENTS.md](../AGENTS.md)가 기준이다.
+마지막 갱신: 2026-11-12 11:45:46 (KST). 경로는 저장소 루트 기준이다. 현재 실행 가능한 것, 코드·씬·에셋 지도, 개발 방법과 검증 근거를 이 문서에서 관리한다. 완성 목표·다음 작업·진행 상태는 [구현 로드맵](ImplementationPlan.md), 게임 규칙은 [게임 기획](GameDesign.md), 에이전트의 필수 규칙과 문서 입구는 [AGENTS.md](../AGENTS.md)가 기준이다.
 
 ## 찾아보기
 
@@ -75,7 +75,9 @@ Unity 6000.6.8f1, URP, 3D 1인칭 프로젝트다. 현재는 임시 그래픽이
 | Run | `RunState`, `RunUnit`·`RunHero`·`RunSoldier`, `RunConfig`, `RunSquadSetup` | 일반 C# 런 소유 데이터(C-1a). 지갑·보관함·영웅·잡졸·부대(`Army<RunUnit>`)·성 기록을 가진다. 유닛은 런 안 고유 번호(`Id`)와 정의 에셋을 구분한다. 잡졸은 한 부대에만 들어가고 옮길 수 있으며, 영웅은 한 부대만 맡는다. 유닛 체력은 다음 전투 전 모두 회복하므로 담지 않는다. 시작 재화·플레이어·부대는 `RunConfig` 에셋(아직 Game 씬용 에셋은 없음). `GameFlow.StartRun(RunState)`로 `RunProgress.State`에 담기며, 타이틀로 가면 버린다. |
 | Run | `RunUnitBinding<T>` | 씬 유닛과 런 유닛 번호의 짝. 씬 편성으로 `RunState`를 만들고, 씬 생사로 `BattleResult`를 만든다. 런에서 이미 빠진 유닛은 결과에 넣지 않는다. 씬을 알지 않아 EditMode로 검증한다. |
 | Run | `CastleState`, `BattleInput`, `BattleResult` | 성 배치·층·회전·체력·수성 무기 기록(`Capture`/`TryRestore`로 BuildLayout·MountLayout과 왕복, 아래층부터 정렬). 전투 입력은 전투 번호·스테이지·플레이어·부대·성 복사본. 결과 초안은 같은 전투 번호, 승패, 종료 이유, 유닛별 생존/사망/도망, 전투 후 성 기록, 처치한 적 종류별 수. `RunState.Apply`가 번호를 확인해 한 번만 반영하고, 틀린 결과는 아무것도 바꾸지 않는다. 죽은 잡졸은 사라지고 죽은 영웅은 장비를 가진 채 `FallenHeroes`로 간다. 결과 형식은 팀원 확인 대기이고 Game 씬은 아직 쓰지 않는다. |
-| UI | `TitleScreen`, `GameFlowHud`, `RuntimeSystemFont` | 타이틀 버튼 동작, 단계 표시·건물 상호작용 안내·남은 병력·사다리 밀기·결과 화면(전투 연결 시 시작·승패 자리표시 버튼은 숨김), 임시 화면에 맑은 고딕을 실행 중 적용하는 공용 부품. 정식 화면이 아니다. |
+| Flow | `GameRewardController` | C-4 승리 보상. `GameBattleController`와 같은 오브젝트에 붙는다. 보상 단계에 들어오면 마지막 승리 결과와 런 시드로 `StageReward`를 정해 런 지갑·보관함에 한 번 넣고, 지휘관 경험치·해금 포인트를 `GameSession.Meta`(실행 중에만 남는 `MetaProgress`)에 더한다. 수치는 `Data/GameFlow/Rewards/StageRewards.asset`, 레벨 규칙은 같은 폴더 `Meta.asset`에서 바꾼다. |
+| Run | `StageRewardTable`, `KillReward`, `StageReward` | 보상 표 에셋(기본·스테이지 가산 골드, 적 종류별 골드·재료, 아이템 확률·횟수·가중치 풀, 경험치·해금 포인트)과 한 번의 보상 내역. `StageReward.Roll`은 승리 결과·스테이지·`IRandomSource`로 보상을 정하며 같은 시드면 같다. `RunState.ApplyReward`는 마지막 승리 전투의 보상만 한 번 지급하고, `RunState.Seed`·`SeedFor`가 전투별 시드를 만든다. |
+| UI | `TitleScreen`, `GameFlowHud`, `RuntimeSystemFont` | 타이틀 버튼 동작, 단계 표시·건물 상호작용 안내·남은 병력·사다리 밀기·결과 화면(전투 연결 시 시작·승패 자리표시 버튼은 숨김), 임시 화면에 맑은 고딕을 실행 중 적용하는 공용 부품. 보상 단계에는 전투 상태 칸에 지급 내역을, 준비 제목에 보유 골드를 보여준다. 정식 화면이 아니다. |
 | Siege | `BuildBudget`, `SiegeOutcomeRules`, `SiegeLadderState` | 일반 C# 규칙. 임시 건설 코스트의 차감·환불, 승패 판정(동시 성립은 패배 우선, Q-09 확정)·마지막 적 퇴각 조건, 사다리 상태(놓임→세우는 중→세워짐, 한 명씩 오르기, 밀어서 쓰러뜨리기). |
 | Siege | `SiegeSettings` | 코스트·사다리 시간과 거리·적 판단 주기·키(F 밀기, Tab 시점, R 다시 시작) 에셋. |
 | Siege | `SiegeLadder`, `PlaceholderLadderView` | 맵에 고정된 사다리 자리. 그 칸에 성벽이 있을 때만 쓰인다. 밑의 적이 세우고, 성벽 위 아군(싸울 적이 없는 유닛, 키를 누른 플레이어)이 민다. 올라온 적이 근처에 있으면 밀지 못한다. 외형은 Visual 자식의 임시 막대다. |
@@ -185,7 +187,9 @@ Q/`RotateLeft()`와 E/`RotateRight()`는 화면 속 판의 왼쪽·오른쪽 회
 - `Assets/Tests/EditMode/RunStateTests.cs`: 시작 설정, 유닛 번호, 부대 배정·이동·상한, 부대장, 전투 입력, 사망·도망·영웅 영구 사망 반영, 결과 1회 반영과 잘못된 결과 거부, 성 기록·처치 수, GameFlow의 런 데이터 수명과 결과 전달.
 - `Assets/Tests/EditMode/CastleStateTests.cs`: 성문·적층·회전·체력·무기 기록과 빈 격자 복원, 내려앉은 조각 기록, 체력 범위, 비어 있지 않은 격자 거부.
 - `Assets/_Project/Scripts/Editor/GameBattleSetup.cs`: Game 씬의 공성전·깃발 상호작용을 연결하고 기존 HUD 영역을 배치한다. 메뉴 `ProjectNeo/Setup/Connect Battle To Game Scene`·`Arrange Game HUD`.
-- `Assets/Tests/PlayMode/GameBattlePlayTests.cs`: 실제 적 접근·승패·패배 우선·마지막 적 퇴각과 열린 경로·3층 사다리·성문 붕괴 조각 공격·다음 준비 이월·HUD 배경 포함 영역 분리, 런 데이터 연결(씬 편성으로 생성, 결과 반영·처치 수, 다음 준비 생존자 회복과 죽은 몸 유지, 두 번째 전투 입력).
+- `Assets/Tests/PlayMode/GameBattlePlayTests.cs`: 실제 적 접근·승패·패배 우선·마지막 적 퇴각과 열린 경로·3층 사다리·성문 붕괴 조각 공격·다음 준비 이월·HUD 배경 포함 영역 분리, 런 데이터 연결(씬 편성으로 생성, 결과 반영·처치 수, 다음 준비 생존자 회복과 죽은 몸 유지, 두 번째 전투 입력), 승리 보상(표대로 골드·재료·메타 1회 지급, 보상 화면 내역과 준비 제목의 골드).
+- `Assets/_Project/Scripts/Editor/GameRewardSetup.cs`: 메뉴 `ProjectNeo/Setup/Connect Rewards To Game Scene`. `Data/GameFlow/Rewards/`에 프로토타입 재료 3종(뼈 조각·질긴 가죽·깃털)·아이템 2종(철검·회복약)·`StageRewards`·`Meta` 에셋을 만들고 Game 씬 전투 오브젝트에 `GameRewardController`를 붙인다. 이미 있는 에셋은 덮어쓰지 않아 인스펙터에서 바꾼 값이 남고, 여러 번 실행해도 결과가 같다. 씬을 연 뒤 에셋을 경로로 다시 불러와 연결한다.
+- `Assets/Tests/EditMode/StageRewardTests.cs`: 골드·재료 계산과 표에 없는 적 무시, 아이템 확률·가중치 추첨, 같은 시드 재현과 패배 거부, 런 보상 1회 지급·결과 반영 전/패배/다른 번호 거부, 전투별 시드.
 - `Assets/Tests/EditMode/RunUnitBindingTests.cs`: 씬 편성으로 런 데이터·번호 만들기, 정의 없음·상한 초과·중복 거부, 결과의 생사·처치 수와 이미 빠진 유닛 제외, `GameFlow.AttachRunState`.
 - `Assets/Tests/PlayMode/GameFlowPlayTests.cs`: 저장된 `Title`·`Game` 씬으로 새 게임 진입, 씬 전환 없는 단계 변경, 패배 후 타이틀 복귀, 게임 씬 단독 시작, 준비의 건설 시점과 전투의 1인칭 지휘 전환·보상 중 입력 정지·유닛과 지시 유지·AudioListener와 EventSystem이 하나뿐인지, 기본 성이 성문 하나와 닫힌 외벽이고 안뜰에서 성벽 위로 길이 이어지며 밖으로는 나갈 수 없는지. 씬을 통째로 바꾸므로 끝날 때 빈 씬만 남긴다. 실제 버튼 클릭은 직접 확인 대상이다.
 - `Assets/_Project/Scripts/Editor/SiegePrototypeSetup.cs`: 메뉴 `ProjectNeo/Setup/Create Siege Prototype`. `WallCommandPrototype`을 복사해 수성전 씬을 만든다. 기존 씬·저장하지 않은 변경은 덮어쓰지 않는다. 씬을 연 뒤 `SerializedObject`로 연결할 에셋은 다시 불러와야 한다(씬을 열면 방금 만든 에셋 참조가 풀려 null로 저장된 적이 있다).
@@ -730,4 +734,15 @@ unity command package add --caller plugin --skill unity-package-management --nam
 - 검증: 컴파일 오류 없음. EditMode 163개 전체 통과(새 `RunUnitBindingTests` 4개, `HealthTests.RestoreFull_HealsLivingToMaximum_ButNeverResurrects`). PlayMode 76개 중 75개 통과(새 `GameBattlePlayTests.런_데이터가_씬_편성으로_만들어지고_전투_결과를_반영하며_다음_준비에_생존자를_회복한다` 통과). 실패는 기존 불안정 테스트 `WallCommandPlayTests.Squad_StopsOnWallWhenStairsDisappear`(BUG-wall-hold)다. 물리 입력 직접 플레이와 Windows 빌드는 하지 않았다.
 - 직접 검증: `Assets/_Project/Scenes/Game.unity` → Play → 성문 앞 붉은 깃발에서 F로 전투 → F1~F3으로 부대를 성 밖으로 보내 일부가 죽게 한 뒤 승리 → `보상 받고 다음 스테이지` → 다친 부대원과 플레이어의 체력 막대가 가득 차고, 죽은 부대원은 쓰러진 채 남으며 부대 목록 인원은 줄어 있어야 한다. 런 데이터 값은 화면에 아직 표시하지 않으므로 Test Runner의 위 PlayMode 테스트로 확인한다. Play를 멈추면 초기화된다.
 
+
+### 2026-11-12: C-4 승리 보상 지급(프로토타입 값)
+
+- 담당 황성민, 브랜치 `feature/stage-rewards`(develop `bec2a78` 기준). 백로그 C-4를 `작업중`·황성민으로 표시했다.
+- 사용자 결정: 프로토타입이라 보상 값은 임의로 정하고, 나중을 위해 모든 값을 데이터 에셋에서 바꿀 수 있게 한다.
+- 추가: `Run/StageRewardTable`·`KillReward`·`StageReward`, `RunState.ApplyReward`·`Seed`·`SeedFor`·`LastReward`, `Flow/GameRewardController`, `GameSession.Meta`, `GameFlowHud`의 보상 내역·보유 골드 표시와 `PhaseText`·`StatusText`, `Editor/GameRewardSetup`. `GameRunLink`는 런마다 시드를 정한다. 에디터 메뉴로 `Data/GameFlow/Rewards/` 에셋 9개를 만들고 `Game.unity`의 `GameBattleController` 오브젝트에 컴포넌트를 붙였다(씬은 에디터 API로 저장).
+- 프로토타입 값: 기본 50골드 + 스테이지마다 10, 사다리병 3골드·뼈 조각 1, 성문 파괴병 5골드·질긴 가죽 2, 궁수 3골드·깃털 1, 아이템 60% 확률로 1개(철검 1 : 회복약 2), 지휘관 경험치 40 + 스테이지마다 10, 해금 포인트 5. 지휘관 레벨 규칙은 `Meta.asset` 기본값(레벨당 100 + 50씩 증가, 레벨당 퍽 포인트 1).
+- 수정한 실수: 처음 연결 때 씬을 연 뒤 방금 만든 에셋 참조가 풀려 표가 빈 값으로 저장됐다. 씬을 연 뒤 경로로 다시 불러오도록 고쳐 다시 실행했고 연결을 확인했다.
+- 남은 제한: 포로 병력, 해금 포인트 사용·지급 정책(Q-07), 메타 파일 저장, 골드·재료 사용처는 없다. 적 ID는 프리팹 이름이다.
+- 검증: 컴파일 오류 없음. EditMode 169개 전체 통과(새 `StageRewardTests` 6개). PlayMode 77개 중 76개 통과(새 `GameBattlePlayTests.승리하면_보상_표대로_골드_재료_메타를_한_번_지급하고_보상_화면과_다음_준비에_보인다` 통과). 실패는 기존 불안정 테스트 `WallCommandPlayTests.Squad_StopsOnWallWhenStairsDisappear`다. 물리 입력 직접 플레이와 Windows 빌드는 하지 않았다.
+- 직접 검증: `Assets/_Project/Scenes/Game.unity` → Play → 성문 앞 붉은 깃발에서 F → 적을 물리쳐 승리 → 보상 화면 오른쪽 위 칸에 `골드 +N (보유 N)`, 재료별 획득·보유 수, 아이템(뽑혔을 때), 지휘관 경험치·해금 포인트가 보인다 → `보상 받고 다음 스테이지` → 위쪽 제목이 `준비 · 스테이지 2 · 골드 N`. 값을 바꾸려면 `Assets/_Project/Data/GameFlow/Rewards/StageRewards.asset`을 고르고 인스펙터에서 수정한 뒤 다시 Play한다. Play를 멈추면 런·메타 모두 초기화된다.
 </details>

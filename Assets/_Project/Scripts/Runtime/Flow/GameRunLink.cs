@@ -94,7 +94,8 @@ namespace ProjectNeo.Flow
                         members.Add(new KeyValuePair<CharacterActor, SoldierDefinition>(member.Actor, member.Actor.SoldierDefinition));
                 lines.Add(members);
             }
-            return RunUnitBinding<CharacterActor>.Create(squads.Config, hero, player, lines);
+            // 런마다 다른 시드. 같은 런 안의 추첨은 이 시드로 재현한다.
+            return RunUnitBinding<CharacterActor>.Create(squads.Config, hero, player, lines, System.Environment.TickCount);
         }
 
         CastleState CaptureCastle()
