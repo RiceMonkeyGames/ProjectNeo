@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using ProjectNeo.Characters;
 using ProjectNeo.Economy;
+using ProjectNeo.Facilities;
 using ProjectNeo.Squads;
 using UnityEngine;
 
@@ -15,8 +16,11 @@ namespace ProjectNeo.Run
         [SerializeField, Min(0)] int startingGold;
         [SerializeField] List<MaterialAmount> startingMaterials = new List<MaterialAmount>();
         [SerializeField] List<RunSquadSetup> startingSquads = new List<RunSquadSetup>();
+        [Tooltip("이 런에서 쓰는 시설. 종류마다 하나이며 새 런은 모두 시작 레벨이다.")]
+        [SerializeField] List<FacilityDefinition> facilities = new List<FacilityDefinition>();
 
         public SquadConfig SquadConfig => squadConfig;
+        public IReadOnlyList<FacilityDefinition> Facilities => facilities;
         public HeroDefinition PlayerHero => playerHero;
         public int StartingGold => startingGold;
         public IReadOnlyList<MaterialAmount> StartingMaterials => startingMaterials;
@@ -32,6 +36,15 @@ namespace ProjectNeo.Run
             config.startingGold = Mathf.Max(0, startingGold);
             config.startingMaterials = new List<MaterialAmount>(startingMaterials ?? new MaterialAmount[0]);
             config.startingSquads = new List<RunSquadSetup>(startingSquads);
+            return config;
+        }
+
+        /// <summary>시설까지 정한 설정을 만든다(테스트용).</summary>
+        public static RunConfig Create(SquadConfig squadConfig, HeroDefinition playerHero, int startingGold,
+            MaterialAmount[] startingMaterials, FacilityDefinition[] facilities, params RunSquadSetup[] startingSquads)
+        {
+            RunConfig config = Create(squadConfig, playerHero, startingGold, startingMaterials, startingSquads);
+            config.facilities = new List<FacilityDefinition>(facilities ?? new FacilityDefinition[0]);
             return config;
         }
     }

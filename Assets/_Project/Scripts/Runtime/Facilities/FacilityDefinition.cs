@@ -46,15 +46,21 @@ namespace ProjectNeo.Facilities
     {
         [SerializeField] FacilityType type;
         [SerializeField] List<FacilityLevel> levels = new List<FacilityLevel>();
+        [SerializeField] string displayName;
 
         public FacilityType Type => type;
         public IReadOnlyList<FacilityLevel> Levels => levels;
+        /// <summary>화면에 보여줄 이름. 비어 있으면 종류 이름을 쓴다.</summary>
+        public string DisplayName => string.IsNullOrEmpty(displayName) ? type.ToString() : displayName;
 
         /// <summary>코드에서 시설을 만든다(테스트용).</summary>
-        public static FacilityDefinition Create(FacilityType type, params FacilityLevel[] levels)
+        public static FacilityDefinition Create(FacilityType type, params FacilityLevel[] levels) => Create(type, null, levels);
+
+        public static FacilityDefinition Create(FacilityType type, string displayName, params FacilityLevel[] levels)
         {
             var facility = CreateInstance<FacilityDefinition>();
             facility.type = type;
+            facility.displayName = displayName;
             facility.levels = new List<FacilityLevel>(levels);
             return facility;
         }

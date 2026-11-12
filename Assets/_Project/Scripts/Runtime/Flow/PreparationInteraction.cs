@@ -58,6 +58,12 @@ namespace ProjectNeo.Flow
                 if (close.WasPressedThisFrame()) phaseView.ExitConstruction();
                 return;
             }
+            if (phaseView.IsPanelView)
+            {
+                Target = null;
+                if (close.WasPressedThisFrame()) phaseView.ExitPanel();
+                return;
+            }
             RefreshTarget();
             if (interact.WasPressedThisFrame()) TryInteract();
         }

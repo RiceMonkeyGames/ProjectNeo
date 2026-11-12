@@ -12,6 +12,9 @@ namespace ProjectNeo.Economy
 
         public event Action Changed;
 
+        /// <summary>가진 재료와 수. 0개인 재료도 한 번 가졌으면 들어 있다.</summary>
+        public IEnumerable<KeyValuePair<MaterialDefinition, int>> Materials => materials;
+
         public int GetMaterial(MaterialDefinition material)
         {
             return material != null && materials.TryGetValue(material, out int amount) ? amount : 0;

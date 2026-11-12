@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using ProjectNeo.Characters;
 using ProjectNeo.Economy;
+using ProjectNeo.Facilities;
 using ProjectNeo.Squads;
 
 namespace ProjectNeo.Run
@@ -29,6 +30,7 @@ namespace ProjectNeo.Run
         readonly List<RunHero> heroes = new List<RunHero>();
         readonly List<RunSoldier> soldiers = new List<RunSoldier>();
         readonly List<RunHero> fallenHeroes = new List<RunHero>();
+        readonly List<FacilityState> facilities = new List<FacilityState>();
         int nextUnitId = 1;
         int pendingBattle;
 
@@ -44,6 +46,8 @@ namespace ProjectNeo.Run
         /// </summary>
         public IReadOnlyList<RunHero> FallenHeroes => fallenHeroes;
         public CastleState Castle { get; private set; } = new CastleState();
+        /// <summary>이 런의 시설 상태. 새 런은 모두 시작 레벨(0)에서 시작한다(D-0).</summary>
+        public IReadOnlyList<FacilityState> Facilities => facilities;
         /// <summary>결과까지 반영한 전투 수.</summary>
         public int BattlesFought { get; private set; }
         public BattleResult LastBattleResult { get; private set; }
@@ -96,6 +100,7 @@ namespace ProjectNeo.Run
             foreach (MaterialAmount entry in config.StartingMaterials)
                 if (entry.material != null && entry.amount > 0) state.Wallet.AddMaterial(entry.material, entry.amount);
             state.AddHero(config.PlayerHero, true);
+            state.AddFacilities(config.Facilities);
 
             foreach (RunSquadSetup setup in config.StartingSquads)
             {
@@ -110,6 +115,34 @@ namespace ProjectNeo.Run
                 }
             }
             return state;
+        }
+
+        /// <summary>종류로 시설 상태를 찾는다. 없으면 null.</summary>
+        public FacilityState Facility(FacilityType type)
+        {
+            foreach (FacilityState facility in facilities) if (facility.Definition.Type == type) return facility;
+            return null;
+        }
+
+        /// <summary>시설을 시작 레벨로 더한다. 같은 종류가 이미 있으면 예외를 던진다.</summary>
+        public FacilityState AddFacility(FacilityDefinition definition)
+        {
+            if (definition == null) throw new ArgumentNullException(nameof(definition));
+            if (Facility(definition.Type) != null)
+                throw new ArgumentException("같은 종류의 시설이 이미 있다: " + definition.Type, nameof(definition));
+            var facility = new FacilityState(definition);
+            facility.Upgraded += () => Changed?.Invoke();
+            facilities.Add(facility);
+            Changed?.Invoke();
+            return facility;
+        }
+
+        /// <summary>목록의 시설 중 아직 없는 종류만 더한다. 빈 칸은 건너뛴다.</summary>
+        public void AddFacilities(IEnumerable<FacilityDefinition> definitions)
+        {
+            if (definitions == null) return;
+            foreach (FacilityDefinition definition in definitions)
+                if (definition != null && Facility(definition.Type) == null) AddFacility(definition);
         }
 
         public RunUnit Find(int id) => units.TryGetValue(id, out RunUnit unit) ? unit : null;
