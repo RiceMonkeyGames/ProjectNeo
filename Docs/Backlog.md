@@ -1,0 +1,69 @@
+# ProjectNeo Development Backlog
+
+Last Updated: 2026-11-12 22:03:36 (KST)
+Source: [Google Docs - Development Backlog Table (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
+
+## Workflow & Operating Rules
+
+1. **Claiming Tasks & Immediate Sync**:
+   - Inspect this file (`Docs/Backlog.md`) and pick an unclaimed (`Waiting`) task.
+   - Mark the task as `In Progress` with your assignee name.
+   - **Immediately commit and merge (push/sync) this file to the shared branch so all teammates and other agents are immediately aware of the active assignment to prevent duplicate work.**
+   - Begin implementation only after the in-progress change is recorded and synced.
+2. **Coordination**: Never modify or take over tasks marked `In Progress` by another assignee. Coordinate in advance if modifying shared files or shared assets.
+3. **Completion**: Update repository markdown docs, document verification evidence and results in this file, change status to `Done`, and merge/sync the updated backlog. Do not conceal incomplete scopes.
+4. **Status Definitions**:
+   - `Waiting`: Not started / unclaimed.
+   - `In Progress`: Currently being actively worked on by assignee.
+   - `Pending Decision`: Blocked pending user design decisions.
+   - `Waiting for Prerequisite`: Blocked pending upstream features.
+   - `Waiting for Verification`: Implementation done; pending manual playtest or teammate review.
+   - `Done`: Implementation, verification, and documentation updates complete.
+
+---
+
+## Backlog Tasks
+
+| Task ID | Description | Status | Assignee | Completion Criteria & Prerequisites |
+|---|---|---|---|---|
+| B-9.3-play | Manual Playtest of Current Game Scene | Waiting for Verification | Unassigned | Title → Prep → F Construction / Esc Return → F Battle → Win/Loss → Next Prep loop. Document camera, squad commanding, input glitches, and reproduction steps. |
+| C-1a | Agree on Run Data & Combat Outcome Boundary | Done | Hwang Seong-min | Agree on data ownership and IDs for wallet, troops, castle, battle I/O, single result processing. Mid-run saves remain undecided. Outcome (2026-11-12): Merged to develop (9429e85); documented in Context Section 7 "C-1a". Teammate sign-off and scene wiring are follow-up tasks. |
+| Q-04·05 | Finalize Morale, Rout, and Captain Death Rules | In Progress | youngho | Confirm decay, recovery, stat debuffs, rout thresholds, escape paths, and squad captain death impact with user; reflect in design and roadmap. |
+| Q-21 | Finalize Siege Weapon Mechanics | Pending Decision | Unassigned | Confirm auto/unit/player control, range, damage, HP, rotation, passage blocking, and costs with user. Cannons currently mountable only. |
+| B-6.1 | Scope & Contract for Additional Enemy Behaviors | Pending Decision | Unassigned | Agree on targeting, movement, and failure handling for wall-destroying and aerial enemies. Existing ladder and gate assault logic will not be re-implemented. |
+| B-7.1 | Formal Wave Data & Spawning Rules | Waiting for Prerequisite | Unassigned | After enemy definitions and spawn/termination contracts are agreed upon, spawn according to configured types, counts, and timings. No duplicates on pause/restart. |
+| B-9.2-wave | Link Pending Spawns to Win/Loss Evaluation | Waiting for Prerequisite | Unassigned | After B-7.1, prevent premature victory if enemies remain to spawn; ensure battle termination and outcomes trigger exactly once. |
+| B-8.1 | Squad Morale Calculations & Rout Transitions | Waiting for Prerequisite | youngho | Following Q-04·05 resolution, verify casualties, boosts, stat debuffs, thresholds, and rout transitions in pure C# EditMode. |
+| B-8.2 | Rout Movement, Exit, and Outcome Wiring | Waiting for Prerequisite | Unassigned | Following B-8.1 and outcome contracts, differentiate death vs routing vs battlefield exit to avoid double-counting. Distinguish from final enemy retreat. |
+| B-4.6-action | Siege Weapon Actions & Combat Integration | Waiting for Prerequisite | Unassigned | Following Q-21 resolution, wire agreed behaviors and verify hits, damage, and concurrent destruction upon supporting wall collapse. |
+| C-3 | Run Carry-over of Troop Casualties & Wall HP | Waiting for Prerequisite | Unassigned | Following C-1a and rout outcome contracts, carry over deaths, rout returns, and wall damage into subsequent battles without duplicate accounting. |
+| C-4 | Runtime Reward Payout & Prep Phase Linking | Waiting for Verification | Hwang Seong-min | Following run/reward contracts, verify gold/materials distribution and reflection into subsequent prep. Unresolved reward policies clarified first. Outcome (2026-11-12): Branch `feature/stage-rewards`. `Data/GameFlow/Rewards/StageRewards.asset` distributes victory rewards once; HUD displays payouts and gold balance. EditMode 169 passed; PlayMode 76/77 passed. Merged to develop (f9f79cf). Excludes prisoner troops, unlock point utility (Q-07), and meta file saves. |
+| C-5 | Wave Preview & Hidden Enemy Intel | Waiting for Prerequisite | Unassigned | Following B-7.1 and run contracts, display upcoming enemy types, counts, and hidden indicators in prep UI. Scouting rules clarified first. |
+| D-3~8-plan | Decompose Facility & Squad Tasks into Actionable Units | Done | Hwang Seong-min | Following run contracts, break tavern, barracks, shop, blacksmith, equipment, and squad setup into standalone tasks with completion criteria and owned files. Outcome (2026-11-12): Registered D-0, D-5, D-1, D-2, D-0b, D-4, D-8, D-3, D-7, D-6; added Q-33~Q-36 decisions. Recommended order: D-0 → D-5 → D-1 → D-2 → D-0b → D-4 → D-8 → D-3 → D-7 → D-6. Detailed in ImplementationPlan 4.2.1 and Context Section 7. |
+| B-9.3 | M1 Full Integration, Iteration & Build Verification | Waiting for Prerequisite | Unassigned | Following B-4~8 integration, test repeated cycles of destruction, enemy variants, waves, morale, and outcomes; verify regressions and standalone build startup flow. |
+| C-1a-confirm | Teammate Review of Combat Outcome Format | In Progress | Hwang Seong-min | Review C-1a `BattleResult` draft (outcome, end reason, per-unit status, castle snapshot, kill counts) with combat lead; update code, tests, docs. Prerequisites: C-1a (Done). Decision (2026-11-12): Proceed concurrently with C-1~2. |
+| C-1~2 | Link Run Data to Game Scene | Waiting for Verification | Hwang Seong-min | Construct `RunState` from `RunConfig` in new run; build units and castle from battle input; write `BattleResult` to `GameFlow.FinishBattle(result)` once. Reconstruct prep from run data and restore survivor HP. Outcome (2026-11-12): Branch `feature/run-scene-connection`. Connected via runtime instance IDs (applies results, restores survivors, retains corpses). EditMode 163 passed; PlayMode 75/76 passed. Merged to develop (22253a4). |
+| BUG-wall-hold | Flaky PlayMode Test: Squad Stops on Wall After Stair Disappears | Done | youngho | Repro: `WallCommandPlayTests.Squad_StopsOnWallWhenStairsDisappear` failed 2/3 times on develop (362cccf). Expected: All squad 1 units hold on wall after stair loss. Actual: Some units remained in Move state. Cause: Same-rank units contested identical partial path endpoints, failing arrival threshold (0.35m). Fix: Pure C# `MoveStallTracker` marks arrival if stalled within 1.5m without 0.1m progress over 0.5s; Hold return requires >1m displacement. Outcome (2026-11-12): Branch `fix/wall-hold-stall`, commit 63bc842 merged to develop. Test passed 6 consecutive runs; EditMode 180, PlayMode 80 passed. |
+| PERF-nav-query | Profile & Optimize Unit AI Path Calculation Overhead | Waiting | Unassigned | Discovered during BUG-wall-hold investigation. `UnitCombatAI` recalculates paths every 0.25s during move/attack, and checks reachable paths for each enemy within radius during hold. Costs may scale with high headcounts. Completion: Benchmark high unit counts (e.g. 200v200); optimize by recalculating only on terrain mutation, staggering evaluation ticks, or filtering closest targets. Prerequisite: None. Coordinate before editing shared `UnitCombatAI`. |
+| D-0 | Facility Common Framework (State & Building Pop-ups) | Waiting for Verification | Hwang Seong-min | Decision (2026-11-12): Q-33 uGUI+TMP pop-ups; Q-34 inventory refresh per prep. Branch `feature/facility-frame`. Outcome: 5 facility states in `RunState`, definitions, F interaction pop-ups (title, level, gold, materials, close) with Esc exit, movement freezing, battle lock. EditMode 181, PlayMode 83 passed. Merged to develop (d146f35). |
+| D-5 | Shop Buying & Selling | Waiting for Verification | Hwang Seong-min | Branch `feature/shop-and-upgrade` (Q-34: refresh per prep). Outcome: Rolls inventory per tier via run seed (excluding locked items); buy/sell in shop pop-up (50% sell price); added assets. EditMode 195, PlayMode 85 passed. Merged to develop (681d08d). Re-roll and lock slots deferred. |
+| D-1 | Facility Upgrades | Waiting for Verification | Hwang Seong-min | Branch `feature/shop-and-upgrade`. Outcome: Upgrade button in facility pop-up (next cost, max level/cost checks) deducts gold from wallet to level up. Shop reflects inventory changes in next prep. EditMode 195, PlayMode 85 passed. Merged to develop (681d08d). |
+| D-2 | Construction & Repair Costs | Waiting for Verification | Hwang Seong-min | Prerequisite: C-1~2. Outcome: Branch `feature/build-costs`. Build, demolish (100% current prep, 50% past prep), and single `Repair All` button spend run gold; locked during battle. EditMode 175, PlayMode 79/80 passed. Merged to develop (1870a3b). |
+| D-0b | Instantiate Run Units into Scene | Pending Decision | Unassigned | Prerequisite: C-1~2. Decision: Q-36 deployment rules. Completion: Units added to run appear in scene during next prep; join commands and combat tallies. Shared data change adding prefab slots to definitions; notify teammates. |
+| D-4 | Barracks Recruitment & Training | Waiting for Prerequisite | Unassigned | Prerequisites: D-0, D-0b, D-1. Decision: Q-36. Completion: Recruited grunts enter next battle; training stat buffs apply to existing and new grunts. |
+| D-8 | Squad Organization | Waiting for Prerequisite | Unassigned | Prerequisites: D-0, D-0b. Decisions: Q-32, Q-36. Completion: Squad reorganization UI (reassign grunts, assign captains, display headcount limits) reflects directly into battle commands and combat inputs. |
+| D-3 | Tavern Hero Hiring | Waiting for Prerequisite | Unassigned | Prerequisites: D-0, D-0b, D-8. Decisions: Q-34, Q-36. Completion: Hire heroes appearing from unlocked pools per tier; join squads and combat. Permadeath applies upon falling. |
+| D-7 | Equipment System | Waiting for Verification | Hwang Seong-min | Branch `feature/player-equipment`. Outcome: Player equipment UI opened via I key during prep (equip/unequip, slot/stat displays); stats reflect directly into player `Character`. EditMode 201, PlayMode 88 passed. Hero equipment deferred post-D-3. |
+| D-6 | Blacksmith Crafting, Upgrades & Sales | Pending Decision | Unassigned | Prerequisites: D-0, D-1, D-7. Decision: Q-35 crafting model and upgrade definitions. Completion: Obtain equipment via materials/gold; upgrades boost item stats; sellable. |
+
+---
+
+## When to Add or Update Backlog Items
+
+1. **New Feature Requests / Design Decisions**: Register necessary tasks. Mark open questions as `Pending Decision`.
+2. **Discovering Bugs, Missing Items, or Dependencies During Implementation**: Check for duplicates and register immediately with Task ID, symptoms, and impact.
+3. **Issues Found in Tests, Playtests, or Teammate Feedback**: Record reproduction steps, expected results, and actual results.
+4. **Task Completion or Integration**: Register remaining linkages, unverified areas, and follow-ups; update status of existing items.
+5. **Approaching Subsequent Milestones**: Break down roadmap feature bundles into actionable, verifiable units.
+
+*Update existing rows rather than creating duplicates. Registration does not imply immediate approval, assignment, or start.*

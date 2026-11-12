@@ -1,290 +1,289 @@
-# 게임 기획: 수성전 로그라이크
+# Game Design: Siege Defense Roguelike
 
-마지막 갱신: 2026-11-12 17:05:27 (KST)
+Last Updated: 2026-11-12 22:05:11 (KST)
 
-이 파일이 기획의 기준이다. 구글 독스 "쌀숭이게임즈"의 기획 본문은 사람이 읽는 참고용이고 이 파일보다 늦을 수 있다. 기획이 바뀌면 이 파일을 먼저 고친다. 구현 로드맵·의존성·구현 상태는 [ImplementationPlan.md](ImplementationPlan.md), 작업 선택·담당·진행 표시는 [공유 구글 독스 최상단 백로그 표](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0)에서 관리한다. 백로그 운영 절차는 AGENTS를 따른다(2026-11-12 사용자 결정).
+This file is the ground truth for game design. The design text in Google Docs is legacy human-readable reference only and may lag behind this file. When game design changes, update this file first. Implementation roadmap, dependencies, and implementation status are managed in [ImplementationPlan.md](ImplementationPlan.md); task selection, assignment, and progress tracking are managed in [Docs/Backlog.md](Backlog.md). Backlog operating procedures follow AGENTS.md (user decision on 2026-11-12).
 
-완성 목표와 단계별 완료 기준, 세 명의 분업은 구현 계획에서 관리한다. 출시 플랫폼·시기·최종 콘텐츠 규모는 아직 미정이며, 장기 계획의 제안이나 기술 후보를 확정 기획으로 취급하지 않는다.
+Completion targets, milestone criteria, and 3-person division of labor are managed in the implementation plan. Release platform, timing, and final content scale remain undecided; suggestions or technology candidates in long-term plans are not treated as finalized design.
 
-## 개요
+## Overview
 
-준비 단계에서 영웅, 잡졸, 무기, 성벽을 갖추고 전투에서 적 웨이브를 막아내는 수성전 로그라이크다. 스테이지는 고정이고, 영웅·보상·상점 매물은 판마다 랜덤이다.
+A siege defense roguelike where players prepare heroes, minions, weapons, and castle walls during the Preparation phase, and defend against enemy waves in the Battle phase. Stages are fixed, while heroes, rewards, and shop inventories are randomized per run.
 
-다음 웨이브를 미리 보고 준비하는 "답 맞추기"가 핵심 재미다. 적이 특성으로 문제를 내고, 플레이어가 준비 단계에서 골드와 몬스터 재료로 답을 짠다.
+The core gameplay loop centers on "counter-building" by scouting upcoming waves: enemies pose challenges via their traits, and players craft solutions during preparation using gold and monster materials.
 
-## 핵심 루프
+## Core Loop
 
-- 한 런 안: 준비 → 웨이브 미리보기 → 전투 → 랜덤 보상 → 다음 스테이지 준비. 성벽 체력은 다음 전투로 이어진다.
-- 전투에서 패배하면 런이 끝난다. 찍은 퍽 내역이 초기화되고, 환생 보너스를 받은 뒤 새 런을 시작한다.
-- 런에는 최대 스테이지가 있고, 모두 클리어하면 엔딩이 나온다(2026-11-11 사용자 방향 확정, 구현은 나중). 스테이지 수, 보스 등장 시점, 엔딩의 내용은 미정이다.
-- 화면 구성(2026-11-11 사용자 확정): 타이틀과 게임 두 장면이다. 게임은 성 하나를 배경으로 준비·전투·보상·결과가 장면 전환 없이 이어진다. 성은 내성, 외벽, 성 밖의 적이 오는 곳까지 포함해 클 수 있다. 상점 같은 시설은 팝업 화면으로 연다.
+- Within a run: Preparation → Wave Preview → Battle → Random Rewards → Next Stage Preparation. Castle wall HP carries over to the next battle.
+- Defeat in battle ends the run. Active perks reset, reincarnation bonuses are awarded, and a new run begins.
+- A run has a maximum stage limit; clearing all stages triggers the ending (direction confirmed on 2026-11-11, implementation later). Number of stages, boss timing, and ending content remain undecided.
+- Scene layout (confirmed on 2026-11-11): Title scene and Game scene. The Game scene uses a single castle backdrop where preparation, battle, reward, and results transition seamlessly without scene reloading. The castle encompasses inner courtyard, outer walls, and exterior enemy approach zones. Facilities like shops open as pop-up windows.
 
-## 런 구조
+## Run Structure
 
-| 요소 | 고정 / 랜덤 | 비고 |
+| Element | Fixed / Random | Notes |
 |---|---|---|
-| 스테이지 (웨이브 구성) | 고정 | 외워서 공략하는 재미 |
-| 성과 맵 | 고정 | 런 내내 성 하나에서 싸운다 |
-| 주점 영웅 | 랜덤 | 판마다 빌드가 달라지는 주요 원인 |
-| 전투 보상 | 랜덤 | 아래 "보상" 참고 |
-| 상점 매물 | 랜덤 | 고정이면 정답 빌드가 굳어진다 |
+| Stage (Wave composition) | Fixed | Mastery through memorization and strategic counterplay |
+| Castle & Map | Fixed | Entire run takes place in a single castle |
+| Tavern Heroes | Random | Primary driver of build variety across runs |
+| Battle Rewards | Random | See "Rewards" below |
+| Shop Inventory | Random | Fixed shop would lead to static optimal builds |
 
-## 전투
+## Combat
 
-- 게임의 기본 플레이 시점은 3D 1인칭이다(2026-11-11 사용자 확정). 플레이어 캐릭터를 직접 조종하고 부대를 지휘한다. 이전 3인칭 기획을 대체한다.
-- 성벽 지휘 통합 시험 씬에서 Tab으로 건설 직교 시점과 1인칭 지휘를 전환한다. 이 전환은 시험용이며 최종 준비·전투 단계 전환 규칙은 아직 아니다.
-- 첫 전투 프로토타입은 WASD 이동, 마우스 시점, 좌클릭 전방 근접 공격으로 만든다. 점프, 방어, 방향별 공격은 후속 작업이다.
-- 플레이어는 부대를 편성하고 영웅을 부대장으로 지정한다. 영웅에게 따로 내리는 지시는 없다.
-- 지시는 부대 단위로 내린다: 이동, 공격, 중지. 부대장이 없는 부대도 같은 지시를 받는다.
-- 지휘 조작(우선 이렇게 쓰고 불편하면 바꾼다): F1~F4로 부대 선택, 숫자 1 왼쪽의 ` 키로 전체 부대 선택. 숫자 1 이동, 2 공격, 3 중지. 이동은 화면 가운데가 가리키는 땅이나 성벽 위로 간다. 공격은 대상을 지정하지 않고 부대가 가까운 적을 찾아 싸운다.
-- 지시별 행동:
-  - 이동: 적을 무시하고 목적지까지 간다. 가는 동안에는 싸우지 않는다. 도착하면 중지와 같은 상태가 된다.
-  - 중지: 그 자리를 지킨다(2026-11-12 변경, 배너로드 2의 수성전 유닛처럼). 지킬 자리는 중지를 받은 곳이나 이동이 끝난 곳이다.
-    - 근접 유닛은 자리에서 일정 거리(현재 6m, 데이터로 조정) 안에 들어온 적에게 걸어서 닿을 수 있으면 다가가 싸운다. 적이 그 거리 밖으로 나가거나 길이 끊기면 쫓지 않는다. 길을 따라 쫓으므로 성벽 위 부대가 계단으로 들어온 가까운 적을 잡으러 내려갈 수 있다.
-    - 원거리 유닛은 사거리 안의 적을 쏜다. 사거리 밖이라도 자리에서 (사거리 + 일정 거리, 현재 6m, 데이터로 조정) 안에 있고 걸어서 닿을 수 있는 적이면 사거리가 닿을 때까지 다가가 쏜다(2026-11-12 사용자 요청). 성 밖처럼 걸어서 닿지 않는 적에게는 다가가지 않는다. 성벽 위 궁수는 성벽 바로 아래의 적도 내려다보고 쏠 수 있다.
-    - 싸울 적이 없으면 자리로 돌아온다. 다른 유닛에 살짝 밀린 정도(1m 이내)로는 돌아가지 않고, 자리가 막혀 있으면 근처에서 멈춘다.
-    - 성벽 아래처럼 걸어서 닿지 않는 적은 싸울 상대로 치지 않는다. 그래서 그런 적만 있을 때는 사다리를 밀어낸다.
-    - 이전 규칙(쫓지 않고 사거리 안의 적만 공격)은 성벽 위 부대가 올라온 적을 보고도 서 있는 문제가 있어 바꿨다.
-  - 공격: 이동처럼 화면 가운데가 가리키는 지점으로 가되, 가는 동안 시야에 들어온 적을 발견하면 쫓아가 싸운다. 그 적을 처리하면 다시 지점으로 향한다. 싸울 적이 없으면 공격 지시를 유지한 채 그 자리에서 기다리고, 새 적이 시야에 들어오면 다시 싸운다.
-  - 시야: 유닛은 일정 거리 안의 적을 발견한다. 거리는 데이터로 조정한다. 벽에 가려 안 보이는 것이나 시야각은 현재 따지지 않는다.
-  - 목적지까지 갈 길이 없거나 도중에 끊기면 갈 수 있는 가장 가까운 곳까지 가서 멈춘다. 여러 유닛이 같은 곳으로 몰려 다른 유닛에 막히면, 목적지 근처에서 더 나아가지 못할 때 도착한 것으로 보고 그 자리에서 멈춘다.
-  - 전투 시작 때 아무 지시도 받지 않은 부대는 중지 상태다.
-- 부대 수와 부대당 인원 상한은 데이터로 바꾼다. 기본 부대 인원은 10명 이상이다.
-- 부대장 영웅이 죽었을 때 부대에 주는 영향은 미정이다.
+- Default perspective is 3D first-person (confirmed on 2026-11-11). Direct player control combined with squad commanding. Replaces previous third-person plan.
+- In the wall-command integration test scene, Tab toggles between orthographic construction view and first-person command view. This toggle is for testing; final preparation/battle phase transition rules are not yet finalized.
+- Initial combat prototype uses WASD movement, mouse look, and left-click frontal melee attack. Jump, guard, and directional attacks are follow-ups.
+- Player forms squads and assigns heroes as squad captains. No separate commands are given directly to heroes.
+- Commands are issued at the squad level: Move, Attack, Hold. Squads without captains receive the same commands.
+- Command controls (subject to iteration based on feel): F1–F4 to select squads, backtick (`) to select all squads. Number 1 for Move, 2 for Attack, 3 for Hold. Move targets the ground or wall pointed at by the screen center. Attack commands squads to engage nearby enemies without targeting specific individuals.
+- Command Behaviors:
+  - **Move**: Disregards enemies and moves to destination. Does not fight during transit. Upon arrival, defaults to Hold behavior.
+  - **Hold**: Defends current position (revised on 2026-11-12, inspired by Bannerlord 2 siege defenders). Guard position is where Hold was issued or where Move completed.
+    - Melee units: If an enemy comes within a certain distance (currently 6m, data-configurable) and can be reached on foot, units advance to engage. If enemies leave range or path is broken, units do not pursue. Pursuit follows walkable paths, so units atop walls can descend stairs to engage enemies that breached inside.
+    - Ranged units: Shoot enemies within range. If outside range but within (range + margin, currently 6m, data-configurable) and walkable on foot, units advance until within firing range (user request on 2026-11-12). Units do not advance toward unreachable enemies (e.g. outside walls). Archers on walls can shoot downward at enemies right beneath the wall.
+    - Units return to their post when no valid targets remain. Minor displacement by other units (within 1m) does not trigger return, and units halt nearby if their spot is blocked.
+    - Unreachable enemies (e.g., foot of wall without walkable path) are not treated as combat targets. Thus, units push ladders when only unreachable enemies exist.
+    - Previous rule (no pursuit, attacking only targets within range) was replaced because units on walls stood idle despite breaches.
+  - **Attack**: Advances toward screen-center target point like Move, but engages any enemies spotted in visual range during transit. Resumes march toward target once engaged enemies are eliminated. If no enemies are present, waits at position maintaining Attack posture, engaging new targets as they enter sight.
+  - **Vision**: Units detect enemies within a configurable radius. Line of sight occlusion by walls and field-of-view angles are currently omitted.
+  - If destination is unreachable or path breaks mid-way, units advance to closest reachable position and halt. If multiple units cluster and get blocked near destination, they are considered arrived and halt.
+  - Squads without orders at battle start begin in Hold state.
+- Squad count and member caps are data-driven. Default squad size is 10+ members.
+- Effects on squad upon captain hero death remain undecided.
 
-### 기본 공격 규칙
+### Basic Combat Rules
 
-- 피해는 `공격력 − 방어력`이며 최소 피해는 1이다.
-- 자동 전투는 가장 가까운 적을 대상으로 잡고, 대상이 죽거나 추격할 수 없을 때 다시 고른다.
-- 아군에게는 피해를 주지 않는다.
-- 원거리 공격은 발사 후 직선으로 날아가는 투사체다. 발사 뒤에 피할 수 있으며, 벽에는 막히고 아군은 통과한다.
+- Damage formula: `Attack − Defense`, minimum damage is 1.
+- Auto-targeting acquires closest enemy, re-evaluating when target dies or becomes unreachable.
+- No friendly fire.
+- Ranged attacks fire linear projectiles upon release. Dodgeable post-launch; blocked by walls, passes through allies.
 
-### 유닛
+### Units
 
-| 종류 | 설명 |
+| Category | Description |
 |---|---|
-| 플레이어 캐릭터 | 조종할 수 있는 영웅이다. 영웅과 똑같이 스탯, 스킬, 아이템을 가진다. |
-| 영웅 | 주점에서 고용한다. 부대장이 될 수 있다. 전투에서 죽으면 영구 사망하고 되살릴 수단이 없다. |
-| 잡졸 | 훈련장에서 모집한다. 죽으면 사라지고, 도망간 잡졸만 다음 전투에 돌아온다. |
+| Player Character | Controllable hero. Possesses stats, skills, and items identical to heroes. |
+| Hero | Hired at tavern. Can act as squad captains. Permadeath upon falling in battle; cannot be revived. |
+| Minion (Grunt) | Recruited at barracks. Eliminated upon death; only fleeing minions return for the next battle. |
 
-누구를 살릴지 고르는 긴장감이 전투의 핵심이다.
+Tension of deciding whom to protect and sacrifice is central to combat.
 
-- 전투에서 살아남은 영웅·잡졸은 다음 전투 전에 체력이 모두 회복된다(2026-11-12 사용자 결정). 깎인 체력이 다음 전투로 이어지는 것은 성벽뿐이다.
-- 영구 사망한 영웅이 착용하던 장비를 잃는지 돌려받는지는 미정이다.
-- 전투에서 죽은 아군의 몸은 다음 준비 단계에도 쓰러진 채 그 자리에 남는다(2026-11-12 사용자 결정). 부대와 런에서는 빠진다.
+- Surviving heroes and minions fully recover HP before the next battle (user decision on 2026-11-12). Only wall HP damage carries over.
+- Whether fallen heroes' equipment is lost or recovered remains undecided.
+- Fallen ally corpses remain on the ground during the next preparation phase (user decision on 2026-11-12). Excluded from squads and the run.
 
-### 승패 조건
+### Win/Loss Conditions
 
-- 2026-11-12 사용자 확정: 승리와 패배가 같은 순간 성립하면 패배를 우선한다. 공성 가능한 적이 없고 살아 있는 아군까지 진입할 경로도 없으면 남은 적이 성 밖으로 퇴각한다. 퇴각해 전투에서 이탈한 적도 승리 집계에서 제외한다.
+- Confirmed on 2026-11-12: If victory and defeat occur simultaneously, defeat takes priority. If no siege-capable enemies remain and no walkable path exists to surviving allies, remaining enemies retreat outside the castle. Retreating enemies exited from combat are excluded from victory tallies.
 
-| 결과 | 조건 |
+| Result | Conditions |
 |---|---|
-| 승리 | 적 전원이 죽거나 도망감 |
-| 패배 | 메인 성문이 부서지고 아군 전원이 사망(또는 도망), 또는 플레이어 캐릭터 사망 |
+| Victory | All enemies killed or routed |
+| Defeat | Main gate destroyed AND all allies killed (or routed), OR Player character dies |
 
-메인 성문이 부서져도 아군이 남아 있으면 전투는 계속된다.
+Combat continues even if main gate is destroyed, provided surviving allies remain.
 
-### 성벽
+### Castle Walls
 
-- 메인 성문은 하나이고 자리가 고정이다. 메인 성문이 부서지면 "성벽 완파"다.
-- 맵 크기 시험 기준(2026-11-12 사용자 승인): 전체 지면 240×300m, 외벽을 포함한 성 96×96m, 안뜰 90×90m, 북쪽 외벽 밖 접근 공간 120m. 한 칸 3m와 최대 3층은 유지한다. 안뜰에는 임시 시설 건물·중앙 이동로·병력 집결 공간을 두고 걸어 보며 규모를 조정한다.
-- 나머지 성벽과 구조물은 격자 위에 자유롭게 배치한다. 건설은 준비 단계에서만 가능하며 전투 중에는 건설할 수 없다(2026-11-11 사용자 확인).
-- 건설은 바닥 격자 위에 조각을 층으로 쌓는다(2026-11-11 사용자 확정, 이전의 "적층 미구현"을 대체). 1m 복셀처럼 잘게 쪼개지 않고 지금의 3m 조각을 위로 올린다.
-  - 마우스로 가리킨 칸에 조각이 있으면 그 위에, 없으면 땅에 놓는다. 층을 고르는 키는 없다.
-  - 계단을 1층 성벽 위에 놓으면 2층으로 오르는 2단 계단이 된다. 땅의 계단과 이어 놓아 2층까지 걸어 올라간다.
-  - 아래 조각이 부서지면 위에 쌓인 조각은 한 층 내려앉는다. 그 위에 서 있던 유닛은 떨어져 낙하 피해를 받는다.
-  - 쌓을 수 있는 최대 층수는 데이터로 조정한다. 현재 게임 씬은 3층이다.
-  - 아래는 구현하며 정한 세부 규칙으로, 불편하면 바꾼다: 계단 위에는 쌓지 않는다. 메인 성문 위에는 성벽을 쌓을 수 있다(2026-11-11 사용자 변경). 플레이어는 안뜰에서 시작한다(같은 날 사용자 선택). 성문이 파괴되면 위 성벽도 기존 규칙대로 내려앉는다. 성문의 고정 위치와 철거 금지, 파괴 후 빈 바닥 자리의 신규 배치 금지는 유지한다. 여러 칸을 차지하는 조각은 모든 칸의 받침 높이가 같아야 한다. 수성 무기가 놓인 조각 위에는 쌓지 않고, 위에 조각이 얹힌 성벽에는 무기를 놓지 않는다. 내려앉는 조각은 체력과 그 위의 무기를 그대로 가지고 내려온다. 여러 칸짜리 조각이 받침을 일부만 잃어 내려앉을 수 없으면 함께 부서진다.
-- 공중 옆면 확장(받침 없이 옆으로 내밀기)은 하지 않는다.
-- 건설할 조각은 격자에 맞춘 반투명 미리보기로 표시한다. 두 격자 축이 대각선으로 보이는 직교 건설 카메라를 쓴다. 현재는 방향 45도·내려다보는 각도 30도로 두고 에셋에서 조정한다. Q/E로 판 중심 주위를 좌우 90도씩 부드럽게 돌려 건물 뒤쪽을 확인한다. 회전은 천천히 시작하고 멈추며 전환 시간은 에셋에서 조정한다. 건물·유닛·격자 자체의 좌표는 바뀌지 않는다.
-- 마우스로 위치를 고르고 좌클릭으로 설치·우클릭으로 취소·R로 조각을 회전한다. 배치 가능 여부를 미리 확인할 수 있게 표시한다. Q/E 시점 회전과 R 조각 회전은 별개다.
-- 시점 회전 방향은 화면 속 판을 기준으로 Q가 왼쪽, E가 오른쪽이다. 카메라 공전의 각도 부호가 아니라 플레이어가 보는 방향에 맞춘다.
-- 아군은 성벽 위에 올라가 싸운다. 성 안쪽에서 성벽으로 오르는 길이 있어야 한다.
-- 계단은 플레이어가 성 안쪽에 직접 배치한다.
-- 계단은 성벽과 연결되지 않은 상태에서도 먼저 배치할 수 있다. 연결되지 않았다는 안내를 표시하고 나중에 성벽을 이어 놓을 수 있게 한다.
-- 유닛과 겹쳐도 건설할 수 있다(2026-11-11 사용자 변경). 설치 후 겹친 살아 있는 유닛은 피해 없이 새로 지어진 조각의 윗면으로 옮긴다. 계단은 해당 위치의 발판 위로 옮긴다.
-- 성벽에 구조물(대포, 아티팩트 등 수성 무기)을 설치한다.
-- 수성 무기는 나중에 성벽 위에 배치할 수 있어야 한다. 성벽 자체의 바닥 점유와 무기의 설치 지점은 별도로 다뤄 성벽과 무기를 같은 바닥 칸의 중복 배치로 판정하지 않는다. 구체적인 무기 종류와 동작은 해당 작업 전에 정한다.
-- 대포는 수성 무기의 한 종류다. 이후 여러 종류의 수성 무기를 계속 추가할 수 있어야 한다.
-- 수성 무기를 받치는 성벽 조각이 부서지면 그 위의 수성 무기도 함께 파괴된다. 땅으로 떨어져 남지 않는다.
-- 깎인 성벽 체력은 다음 전투로 이어진다.
-- 수리, 강화, 변경이 가능하다. 수리 비용은 우선 골드만 받는다.
-- 준비 단계 건설·수리 비용(2026-11-12 사용자 결정, D-2): 조각·대포를 지을 때 골드를 낸다. 철거는 성문을 뺀 모든 조각·대포가 가능하며, 이번 준비 단계에 지은 것은 전액, 그 전에 지은 것(처음부터 있던 성 포함)은 일정 비율만 돌려받는다. 수리는 "모두 수리" 한 번으로 하며 깎인 체력에 비례한 골드를 내고, 골드가 모자라면 가장 많이 깎인 조각부터 살 수 있는 만큼 고친다. 전투 중에는 건설·철거·수리를 하지 않는다. 런은 시작 골드를 받고 시작한다. 비용·비율·시작 골드는 데이터 에셋에서 바꾸며 지금 값은 프로토타입 임의 값이다. 완전히 부서진 성문의 재건은 아직 다루지 않는다.
-- 지금은 모든 공사가 바로 끝난다. 공사 기간은 나중에 붙일 수 있게 만든다. 붙이면 전투 스테이지를 몇 번 거친 뒤 완성되고, 덜 지은 성벽은 체력이 덜 찬 상태로 전투에 들어간다.
+- One main gate at a fixed location. Destroying the main gate counts as "Wall Breached".
+- Map scale test standard (user approved on 2026-11-12): Total ground 240×300m; castle including outer walls 96×96m; courtyard 90×90m; northern approach area 120m. 3m grid cells and maximum 3 vertical tiers maintained. Courtyard features placeholder facility buildings, central transit corridors, and troop assembly areas for walk-testing scale.
+- Other walls and structures placed freely on the grid. Construction allowed only during preparation; prohibited during combat (confirmed on 2026-11-11).
+- Construction stacks pieces into vertical layers on the floor grid (confirmed on 2026-11-11, replacing previous non-stacking rule). Stacks 3m pieces upward rather than fine 1m voxels.
+  - Placed on existing piece if mouse points at one; placed on ground if empty. No layer selection hotkey.
+  - Placing stairs on tier-1 wall creates a 2-tier staircase to tier-2. Connecting ground stairs enables walking to tier-2.
+  - If a lower piece is destroyed, pieces stacked above drop down one level. Units standing on top fall and suffer falling damage.
+  - Maximum build height is data-driven. Currently 3 tiers in game scene.
+  - Detailed rules: No stacking on stairs. Walls can be stacked above main gate (user revision on 2026-11-11). Player starts in courtyard. If gate is destroyed, walls above drop per standard rules. Gate has fixed position, cannot be demolished, and empty floor cannot receive new placement after destruction. Multi-cell pieces require uniform foundation height across all cells. No stacking on pieces holding siege weapons; no siege weapons placed on walls supporting upper pieces. Dropping pieces retain their HP and mounted weapons. Multi-cell pieces collapsing unevenly due to partial foundation loss are destroyed together.
+- No aerial cantilevering (no outward lateral expansion without foundation).
+- Pieces to construct show translucent grid-aligned preview. Orthographic construction camera views two grid axes diagonally. Default 45-degree azimuth and 30-degree elevation, tunable via asset. Q/E rotates smoothly by 90 degrees around center to inspect occluded areas. Smooth acceleration/deceleration with tunable transition time. World coordinates of buildings, units, and grid remain unchanged.
+- Mouse positioning with Left-click to place, Right-click to cancel, R to rotate piece. Visual feedback indicates placement validity. Q/E camera orbit and R piece rotation are distinct.
+- Camera rotation direction matches screen orientation: Q rotates left, E rotates right, aligning with player viewing perspective rather than mathematical angle signs.
+- Allies fight atop walls. Walkable paths from courtyard to wall tops are required.
+- Stairs are placed manually by the player inside the castle.
+- Stairs can be placed prior to connecting to walls. Warning prompt displays lack of connection, allowing subsequent wall attachments.
+- Construction permitted even when overlapping units (user revision on 2026-11-11). Living units overlapping placement are moved to top surface of newly built piece without damage. For stairs, moved to corresponding step platform.
+- Wall structures (cannons, artifacts, siege weapons) mountable on walls.
+- Siege weapon ground footprint handled distinctly from mount point to prevent collision false positives. Specific weapon types and mechanics defined prior to respective tasks.
+- Cannons are one type of siege weapon; system must remain extensible for additional weapons.
+- If supporting wall piece is destroyed, mounted siege weapons are destroyed simultaneously. They do not drop to ground.
+- Reduced wall HP persists into next combat.
+- Repair, reinforce, and modify operations supported. Repair initially costs gold only.
+- Preparation construction/repair economy (user decision on 2026-11-12, D-2): Gold spent for building pieces and cannons. Demolition available for all pieces/cannons except main gate: 100% refund for pieces built in current preparation phase, partial percentage refund for pieces built earlier (including starting walls). Repair executed via single "Repair All" button costing gold proportional to missing HP; if gold is insufficient, repairs greatest damaged pieces first up to affordable amount. No building/demolishing/repairing during battle. Runs start with starting gold. Costs, refund ratios, and starting gold tuned via data assets; current numbers are prototype placeholders. Rebuilding fully destroyed main gate not yet supported.
+- Instant construction currently. Delayed construction timeline architecture planned for future integration (completing after several combat stages; unfinished walls enter combat with partial HP).
+- Falling from destroyed walls inflicts fall damage proportional to height. Values tuned via data assets.
 
-성벽이 부서지면 그 위의 유닛은 아래로 떨어지고, 낙하 높이에 따라 피해를 받는다. 피해 수치는 에셋에서 조정한다.
+### Enemies
 
-### 적
-
-| 항목 | 내용 |
+| Category | Description |
 |---|---|
-| 지상 적 | 성벽을 부수거나, 성벽을 타고 올라와서 싸운다 |
-| 공중 적 | 성벽 위 아군을 바로 공격한다 |
-| 특성 | 공중, 시체폭발 등 |
-| 적 영웅 | 강한 개체 |
-| 보스 | 전용 AI를 가진다 |
+| Ground | Destroys walls or scales walls with ladders to fight |
+| Flying | Directly attacks allies atop walls |
+| Traits | Aerial, corpse explosion, etc. |
+| Enemy Hero | Elite units with enhanced capabilities |
+| Boss | Dedicated custom AI |
 
-적도 부대 단위로 움직인다. 적 AI는 종류를 계속 늘릴 수 있게 확장성 있게 만든다.
+Enemies maneuver in squads. Enemy AI designed for extensible categorization.
 
-### 적의 성 공략 (2026-11-11 사용자 결정)
+### Enemy Siege Strategy (User decision on 2026-11-11)
 
-- 근접 적은 성벽 위의 아군을 아래에서 공격할 수 없다. 성벽 위로 올라와야 한다.
-- 성벽이 뚫린 곳, 수리하지 못한 곳, 무너진 성문이 있으면 그곳으로 들어온다.
-- 2026-11-12 사용자 결정: 실제 Game 씬의 전투는 성문 앞 시작 지점에서 F로 시작한다. 사다리는 해당 칸에 쌓인 맨 위 성벽까지 연결한다. 성문 파괴 후 그 위 성벽은 기존처럼 내려앉고, 적은 성문 자리에서 내려온 조각도 계속 공격해 길을 뚫는다.
-- 들어갈 곳이 없으면 성문을 부수거나 사다리로 성벽을 오른다. 적 종류를 나눈다: 성문을 부수는 적과 사다리를 쓰는 적.
-- 일반 성벽을 부수는 적은 나중에 별도 종류로 추가한다. 그때까지 적이 부수는 것은 성문뿐이다.
-- 사다리:
-  - 성벽 5칸당 하나 정도다. 전투 시작 때 사다리가 미리 놓여 있다(마운트 앤 블레이드 배너로드와 같은 방식).
-  - 세우는 데 3초 정도 걸린다. 수치는 데이터로 조정한다.
-  - 한 번에 한 명만 오를 수 있다.
-  - 사다리에 체력은 없다. 아군이 밀어내서 쓰러뜨린다. 사다리로 올라온 적이 있으면 아군은 그 적과 싸우느라 밀어내지 못한다.
-  - 사다리가 밀려 쓰러지면 오르던 적은 떨어져 낙하 피해를 받는다. 오르는 중에도 원거리 공격을 받는다.
-  - 사다리 자리는 맵에 고정이다. 성벽 줄을 따라 5칸마다 하나이고 준비 단계에서 보인다. 그 자리에 성벽이 없으면 그 사다리는 쓰이지 않는다.
-  - 성벽 위 사다리 근처의 아군 유닛은 싸울 적이 없으면 알아서 민다. 플레이어도 가까이서 키를 눌러 민다. 미는 데 2초 정도 걸린다.
-  - 쓰러진 사다리는 적이 다시 3초 걸려 세울 수 있다.
-  - 한 명이 다 오를 때까지 나머지는 아래에서 기다린다.
-- 원거리: 적 궁수는 아래에서 성벽 위 아군을 쏠 수 있지만 피해가 절반이다. 아군 궁수는 성벽 위에서 아래의 적을 공격할 수 있다. 아래에서 위로 쏘는 경우에 적용하며 비율은 데이터로 둔다.
-- 적 종류(수성전 프로토타입): 사다리병(근접), 성문 파괴병(근접), 궁수.
-  - 사다리병: 뚫린 곳이 있으면 그리로 들어오고, 없으면 사다리를 세우고 오른다.
-  - 성문 파괴병: 뚫린 곳이 있으면 그리로 들어오고, 없으면 성문만 공격한다. 사다리는 타지 않는다.
-  - 궁수: 아래에서 성벽 위 아군을 쏜다. 길이 열리면 안으로 들어온다.
-  - 성문이 부서지면 종류에 상관없이 각자 가까운 길로 들어온다.
-  - 성벽 위로 올라온 적은 성벽 위 아군과 싸우고 계단으로 성 안에 내려올 수 있다.
+- Melee enemies cannot attack allies on walls from ground level; must scale walls.
+- Enemies breach through gaps, un-repaired segments, or collapsed gates.
+- User decision on 2026-11-12: In Game scene, battle begins by pressing F at starting point before gate. Ladders attach to top-most stacked wall at corresponding cell. Upon gate destruction, upper walls drop; enemies continue attacking dropped pieces at gate cell to carve a passage.
+- If no opening exists, enemies breach gates or climb walls via ladders. Segregated roles: Gate-breakers and Ladder-climbers.
+- Wall-destroying enemies will be added as a separate unit type later; until then, only gates can be breached.
+- Ladders:
+  - Spaced roughly every 5 wall cells. Pre-placed at battle start (Bannerlord style).
+  - Erecting ladder takes ~3s (data-configurable).
+  - Climbed by one unit at a time.
+  - Ladders have no HP; toppled by allies. If climbed by enemies, allies prioritize combat over toppling.
+  - Toppling drops climbing enemy, causing fall damage. Climbers remain vulnerable to ranged attacks.
+  - Ladder positions fixed on map along wall perimeter. Inactive if no wall piece exists at position.
+  - Allies near ladders atop walls topple them autonomously when clear of enemies. Player can also topple with interact key. Toppling takes ~2s.
+  - Toppled ladders can be re-erected by enemies in ~3s.
+  - Remaining units wait at ladder base until active climber reaches top.
+- Ranged combat: Enemy archers can shoot allies atop walls from ground at 50% damage reduction. Ally archers shoot downward with full damage. Ratios data-configurable.
+- Enemy archetypes (Siege Prototype): Ladder Grunt (melee), Gate Breaker (melee), Archer.
+  - Ladder Grunt: Enters breaches; otherwise raises and climbs ladders.
+  - Gate Breaker: Enters breaches; otherwise attacks main gate exclusively. Does not climb ladders.
+  - Archer: Fires upward at wall defenders; enters castle once path opens.
+  - Upon gate breach, all types charge through closest open routes.
+  - Enemies reaching wall top engage defenders and can descend via stairs into courtyard.
 
-### 수성전 프로토타입 범위 (2026-11-11 사용자 결정)
+### Siege Defense Prototype Scope (User decision on 2026-11-11)
 
-`WallCommandPrototype`을 복사한 새 씬으로 만든다. 기존 씬은 그대로 둔다.
+Implemented in new scene copied from `WallCommandPrototype`. Original scene preserved.
 
-- 전투 준비 단계에서 건설과 인원 배치를 한다. 인원 배치는 지금의 1인칭 이동 지시도 쓰고, 건설 시점에서 부대를 고른 뒤 땅이나 성벽 위를 클릭해 그 자리에 배치하는 방식도 추가한다.
-- 전투를 시작하면 건설과 수리를 할 수 없다. 적이 아군을 공격하러 쳐들어온다.
-- 성벽이 뚫린 채로 시작하고 건설에 쓸 코스트를 준다. 이 코스트는 이 프로토타입에서만 쓰는 임시 값이며, 나중에 런 동안 쓰는 코스트를 따로 만든다. 지금은 넉넉하게 준다. 코스트로 성벽을 다 막을지 대포를 놓을지 고른다. 대포는 아직 동작하지 않는다.
-- 승패는 위 "승패 조건"을 따른다.
-- 이번에 넣지 않는 것: 사기와 도망, 대포 발사, 여러 번의 웨이브, 보상. 적은 한 방향에서 한 번에 온다.
-- 아군 부대 수·인원과 적 무리는 프로토타입 설정에서 바꿔 가며 시험한다. 부대 상한을 10으로 올려 시험 중이며, 이 씬에서는 F1~F10으로 부대를 고른다. 부대 이름에는 근접·궁수 종류를 함께 표시한다. 최종 부대 수와 키는 미정이다.
-- 마지막 적의 퇴각 조건은 위 승패 조건과 구현 계획 Q-30을 따른다.
+- Preparation phase includes building and troop placement. Placement utilizes first-person move commands and top-down click-placement on ground/walls.
+- Construction and repairs locked once combat commences. Enemies assault player defenses.
+- Starts with breached wall segments and temporary building budget. Budget is prototype-only; persistent run economy developed later. Ample budget provided to test sealing walls vs placing cannons (cannons non-functional currently).
+- Win/loss evaluated per Win/Loss Conditions.
+- Excluded from initial prototype: Morale/routing, cannon firing, multi-wave sequences, rewards. Enemies arrive in single wave from single direction.
+- Squad/troop counts and enemy waves tested via prototype config. Squad limit raised to 10 for testing; selectable via F1–F10. Squad UI indicates Melee/Archer type. Final squad counts and keys undecided.
+- Last enemy retreat follows Win/Loss Conditions and Q-30 in ImplementationPlan.
 
-### 사기
+### Morale
 
-아군과 적에 모두 적용하고, 부대 단위로 관리한다.
+Applies to both allies and enemies, managed per squad.
 
-| 변화 | 원인과 결과 |
+| Change | Cause & Effect |
 |---|---|
-| 감소 | 부대원이 많이 죽으면 그 부대의 사기가 떨어진다. 능력이 줄어든다. |
-| 도망 | 사기가 기준값 아래로 내려가면 부대원이 도망간다. |
-| 증가 | 플레이어 스킬, 부대장 영웅의 특성, 퍽 효과로 오른다. 능력이 조금 늘어난다. |
-| 복귀 | 도망간 아군 부대원은 다음 전투에 돌아온다. |
+| Decrease | Sustaining heavy casualties drops squad morale, reducing combat efficiency. |
+| Routing | Drops below threshold cause units to flee battlefield. |
+| Increase | Boosted by player skills, captain traits, perk effects. Slight combat buff. |
+| Rally | Routed ally units return for subsequent battles. |
 
-적을 모두 죽이지 않고 사기를 꺾어 이길 수 있다. 도망 기준값 같은 수치는 미정이다. 사기진작은 별도 시스템이 아니라 퍽이나 스킬의 한 종류다.
+Enemies can be routed rather than slain. Thresholds and values undecided. Morale boosts implemented via perks or skills rather than standalone systems.
 
-### 웨이브 미리보기
+### Wave Preview
 
-- 다음 웨이브의 적 종류와 수를 기본으로 보여준다.
-- 일부는 "?"로 표시되는 히든 적이다. 전장에 나타나거나 플레이어가 발견하면 공개된다.
-- 정찰 특성이 좋은 영웅(예: 궁수)이 있거나 관련 퍽을 찍었으면, 히든 적이 도착하기 전에 정체를 안다.
+- Displays upcoming enemy types and headcounts by default.
+- Certain enemies obscured as hidden ("?"), revealed upon appearing or scouting.
+- High reconnaissance traits (e.g., archer heroes) or scouting perks identify hidden enemies prior to arrival.
 
-## 준비
+## Preparation Phase
 
-- 준비 단계의 기본 시점도 1인칭이다(2026-11-11 사용자 확정). 플레이어가 성 안뜰을 직접 돌아다니며 주점·상점·훈련장·대장간·건설 담당 건물 등 각 건물에 가서 준비한다. 준비 단계 자체가 건설 모드는 아니다.
-- 건설은 안뜰의 건설 담당 건물에서 선택했을 때 건설 시점으로 들어간다. 시설 기능은 해당 건물에서 화면을 열어 사용한다. 건설소 상호작용은 F로 한다(2026-11-12 사용자 요청). 가까이에서 화면 가운데로 건설소를 바라보면 안내가 뜨고 F로 건설 모드에 들어간다. Esc로 건설 모드를 닫고 같은 위치·시점의 1인칭 이동으로 돌아온다. 상호작용 거리와 키는 데이터로 조정하며, 다른 시설의 기능은 후속 작업이다.
+- Default perspective is 1st-person (confirmed on 2026-11-11). Player traverses courtyard to interact with Tavern, Shop, Barracks, Blacksmith, and Construction facilities. Preparation phase is not top-down by default.
+- Construction mode entered by interacting with courtyard Construction building via F key (user request on 2026-11-12). Center-screen cursor proximity triggers interaction prompt. Esc exits construction mode back to 1st-person navigation at matching location/orientation. Interaction range and keybindings data-configurable. Other facilities developed as follow-ups.
 
-| 시설 | 하는 일 | 업그레이드 효과 |
+| Facility | Function | Upgrade Benefit |
 |---|---|---|
-| 주점 | 영웅 고용. 랜덤으로 등장한다. | 더 좋은 영웅이 등장 |
-| 상점 | 아이템 구매와 판매. 매물은 랜덤이다. | 판매 품목 변화 |
-| 훈련장 | 잡졸 모집과 강화 | 잡졸 스탯 상승 |
-| 대장간 | 영웅 장비 생산, 업그레이드, 판매 | 더 좋은 장비 생산 |
-| 수성 | 성벽과 무기 준비: 성벽 추가, 구조물, 수리, 강화 | |
+| Tavern | Hire randomly appearing heroes | Higher tier heroes appear |
+| Shop | Buy and sell items; randomized inventory | Inventory variety changes |
+| Barracks | Recruit and train grunts | Grunt stat enhancements |
+| Blacksmith | Craft, upgrade, sell hero equipment | Higher tier equipment crafting |
+| Siege | Wall/weapon management: add segments, mount weapons, repair, reinforce | Facility-specific data modules |
 
-- 각 시설은 업그레이드할 수 있다. 효과는 계속 추가할 예정이라 시설마다 데이터로 붙인다.
-- 시설 화면(2026-11-12 사용자 확정): 건물을 바라보고 F로 팝업을 열고 Esc나 닫기 버튼으로 닫는다. 팝업이 열린 동안 이동·시점은 멈춘다. 지금은 임시 화면이며 제목·시설 레벨·보유 골드와 재료를 보여준다. 전투 중에는 열리지 않는다.
-- 상점·주점 매물은 준비 단계에 들어올 때마다 새로 뽑는다(2026-11-12 사용자 확정). 골드를 내고 다시 뽑기(리롤)는 후속이다.
-- 판매가는 구매가의 일정 비율이다. 전투 등 다른 경로로 얻은 아이템도 팔 수 있다.
+- Facilities upgradable with data-driven benefits.
+- Facility UIs (confirmed on 2026-11-12): Facing building and pressing F opens pop-up; closed via Esc or close button. Player movement/look frozen while open. Placeholder UIs display title, facility level, held gold, and materials. Disabled during combat.
+- Shop and Tavern refresh inventories upon entering preparation phase (confirmed on 2026-11-12). Gold re-rolling is a follow-up.
+- Selling price is fixed percentage of purchase price. Items obtained via combat or other means can be sold.
 
-## 재화와 아이템
+## Currencies & Items
 
-| 종류 | 설명 |
+| Category | Description |
 |---|---|
-| 골드 | 기본 재화 |
-| 몬스터 재료 | 두 번째 재화. 종류가 여러 가지다. 스테이지를 깨면 그 스테이지에서 잡은 몬스터의 재료가 나온다. 보상의 "재료 아이템"과 같은 것이다. |
-| 아이템 | 장비와 1회성 아이템 |
+| Gold | Primary currency |
+| Monster Materials | Secondary currency with multiple sub-types. Dropped by defeated monsters upon stage completion. Equivalent to "Material Items". |
+| Items | Equipment and consumable items |
 
-- 모든 사용처의 비용에 골드 칸과 재료 칸을 둘 다 둔다. 필요 없는 칸은 0으로 둔다. 그래서 골드만, 재료만, 둘 다 받는 사용처를 같은 구조로 만든다.
-- 장비는 플레이어 캐릭터와 영웅이 같이 쓴다.
+- All cost requirements feature dual slots: Gold and Materials (unused slots set to 0), maintaining unified structure for gold-only, material-only, or hybrid costs.
+- Equipment shared interchangeably between player character and heroes.
 
-## 보상
+## Rewards
 
-전투에서 이기면 랜덤으로 받는다: 골드, 몬스터 재료, 완성품 아이템, 포로로 잡혀 있던 병력, 지휘관 경험치, 해금 포인트.
+Awarded randomly upon victory: Gold, Monster Materials, Finished Equipment, Rescued Prisoners, Commander EXP, Unlock Points.
 
-- 프로토타입 보상(2026-11-12 사용자 결정): 지금은 임의 값으로 정하되 모든 값을 데이터 에셋에서 바꿀 수 있게 한다. 승리하면 기본 골드에 스테이지마다 늘어나는 골드, 처치한 적 종류마다 정한 골드·몬스터 재료, 확률로 뽑는 완성품 아이템, 지휘관 경험치(스테이지마다 증가)·해금 포인트를 준다. 같은 승리의 보상은 한 번만 받는다.
-- 포로 병력 보상은 새 병력을 만드는 기능(고용·모집)이 생긴 뒤 붙인다. 해금 포인트를 어디에 쓰는지와 지급 정책(Q-07)은 아직 미정이며 지금은 쌓기만 한다.
+- Prototype rewards (user decision on 2026-11-12): Placeholder data-driven asset values. Victory awards base gold + stage scaling, per-enemy bounty gold/materials, drop-chance items, stage-scaling Commander EXP, and Unlock Points. Single victory rewards granted once.
+- Prisoner rescue rewards deferred until recruitment systems are online. Unlock point utility and distribution policy (Q-07) pending decision; accumulated only for now.
 
-## 메타 진행
+## Meta Progression
 
-런이 끝나도(죽어도) 유지되는 것은 두 가지다.
+Two persistent elements survive run failure (death):
 
-| 유지되는 것 | 설명 |
+| Retained Element | Description |
 |---|---|
-| 퍽 포인트 개수 | 찍은 퍽 내역은 런이 끝나면 초기화되고, 포인트 개수는 남는다. 새 런에서 다시 찍는다. |
-| 해금 정보 | 아이템, 영웅 등. 영웅이 전투에서 죽어도 해금은 사라지지 않는다. |
+| Perk Point Count | Spent perk allocations reset upon death; accumulated point pool persists for re-allocation in new runs. |
+| Unlocks | Items, heroes, etc. Unlocks persist even if corresponding hero dies in combat. |
 
-### 퍽 포인트와 지휘관 레벨
+### Perk Points & Commander Level
 
-- 퍽 포인트는 지휘관 레벨 등으로 얻는다.
-- 지휘관 레벨은 여러 방법으로 올릴 수 있다.
-  - 스테이지가 끝날 때마다 지휘관 경험치를 받는다. 런 도중에 레벨이 오르면 바로 퍽 포인트를 받아서 그 런 안에서 강해진다.
-  - 환생 보너스: 런이 끝날 때 이번 런 점수의 일정 비율을 지휘관 경험치로 환산해 준다.
-- 퍽은 런 시작 때만이 아니라 언제나 찍을 수 있다.
-- 판마다 다른 방향으로 퍽을 찍으면서 플레이 방식을 넓히게 하려는 의도다.
+- Perk points earned via Commander Level and related milestones.
+- Commander Level raised through:
+  - Stage completion Commander EXP. Leveling mid-run grants instant perk points for current run power spikes.
+  - Reincarnation Bonus: Percentage of run score converted into Commander EXP upon run termination.
+- Perks allocatable at any time during a run, not just at start.
+- Encourages diverse build paths and strategic adaptation per run.
 
-미정: 전투 중에도 퍽을 찍을 수 있는지. 런 점수를 무엇으로 매기는지.
+Undecided: Allocating perks mid-combat; specific scoring metrics for runs.
 
-### 해금
+### Unlocks
 
-- 해금 포인트를 모아서 랜덤으로 해금한다. 예: 해금 포인트 100을 써서 영웅 하나를 해금하면, 그 영웅이 앞으로 주점에 등장할 수 있다.
-- 중복은 없다. 이미 해금한 것은 다시 나오지 않는다.
-- 새로 해금한 것을 첫 등장 때 확정으로 내보내는 요소를 넣을 수 있다.
-- 퍽을 해금하면 고를 수 있는 퍽 종류가 늘어난다.
+- Spend unlock points for randomized unlocks. E.g., spending 100 points unlocks a hero to appear in tavern pools.
+- Duplicate protection: Already unlocked elements do not reappear.
+- Guaranteed appearance on initial unlock may be implemented.
+- Unlocking perks expands available perk talent pool.
 
-### 퍽
+### Perks
 
-| 분류 | 효과 | 성격 |
+| Category | Effect | Profile |
 |---|---|---|
-| 전투 | 플레이어 캐릭터가 강해짐 | 즉시 체감 |
-| 내실 | 골드, 아이템 등 준비 요소에 도움 | 후반 왕귀형 |
-| 유닛 강화 | 잡졸 또는 영웅 강화 | 부대 중심 |
+| Combat | Enhances player character directly | Immediate power spike |
+| Economy | Boosts gold, items, preparation mechanics | Late-game scaling |
+| Unit Enhancement | Buffs minions or heroes | Squad-centric |
 
-- 퍽 효과는 단순 스탯 증가만이 아니다. 특수 효과(예: 부대 사기 증진)도 있다.
-- 퍽의 종류는 미정이다. 히든 적을 미리 아는 정찰 퍽을 어느 분류에 넣을지도 미정이다.
+- Perks encompass stat buffs as well as unique active/passive traits (e.g., squad morale boost).
+- Specific perk varieties undecided. Categorization of scouting perks undecided.
 
-### 주의할 점
+### Design Considerations
 
-- 해금할수록 랜덤 풀이 커져 원하는 영웅이 덜 나온다. 주점 리롤이나 고정 슬롯으로 보완할 수 있다.
-- 해금이 계속 쌓이면 고정 스테이지가 점점 쉬워진다. 포인트 상한이나 스탯보다 특성 위주의 퍽으로 조절할 수 있다.
+- Pool dilution: Excessive unlocks dilute hero pools, making specific heroes harder to roll. Mitigate with tavern re-rolls or locked slots.
+- Power creep: Accumulating unlocks trivialize fixed stages. Mitigate with point caps or trait-oriented rather than stat-oriented perks.
 
-## 아트
+## Art Style
 
-로우 폴리 스타일이고, Synty 에셋을 쓴다. 지금은 임시 그래픽으로 만들고 나중에 Synty 에셋으로 갈아 끼운다. 어떤 Synty 팩을 쓸지는 미정이다.
+Low-poly aesthetic using Synty assets. Built with placeholder graphics initially, swapped with Synty assets later. Specific Synty packs undecided.
 
-팩 선정 전에도 개발을 진행한다. 격자 크기·조각의 점유 칸·높이·외형 참조를 데이터로 분리하고 특정 팩의 조각 규격에 고정하지 않는다. 팩을 넣을 때 필요한 크기·외형 조정을 할 수 있게 만든다.
+Development proceeds prior to pack selection: Grid scale, cell footprints, heights, and visual references are decoupled into data assets rather than hardcoded to specific asset dimensions. Allows seamless scaling and aesthetic adjustments upon asset import.
 
-## 나중에 추가할 것
+## Future Additions
 
-- 파밍: 성 밖으로 나가 위험을 지고 몬스터 재료를 얻는다. 개발 기한 때문에 뒤로 미뤘다.
-- 영웅 충성도
-- 난이도 모드
+- Foraging / Expeditions: Venturing outside walls to harvest monster materials at risk. Deferred due to timeline.
+- Hero Loyalty
+- Difficulty Modes
 
-## 미정 사항 모음
+## Open Design Questions
 
-- 런의 길이 (최대 스테이지 수, 보스 등장 시점)와 엔딩의 내용. 최대 스테이지를 모두 클리어하면 엔딩이 나온다는 방향은 정해졌다.
-- 퍽의 종류, 정찰 퍽의 분류
-- 사기 수치 (도망 기준값, 감소량 등)
-- 부대장 영웅이 죽었을 때 부대에 주는 영향
-- 낙하 피해 등 전투·건설 수치의 실제 값
-- 전투 중 퍽 찍기 가능 여부
-- 런 점수의 기준
-- 부대 수와 부대당 인원의 실제 값
-- 층 쌓기의 세부 규칙(계단 위 금지, 일부 받침을 잃은 조각의 파괴 등)과 최대 층수의 실제 값
-- 영구 사망한 영웅의 장비 처리, 플레이어 캐릭터가 부대장을 맡을 수 있는지
-- 상점·주점 골드 리롤의 비용과 고정 슬롯(매물은 준비마다 새로 뽑기로 결정, 2026-11-12)
-- 대장간의 생산 방식(매물 판매 또는 재료 레시피)과 장비 업그레이드의 뜻
-- 고용한 영웅이 전투에 등장하는 방식, 모집한 잡졸을 넣을 부대
+- Run length (max stage count, boss pacing) and ending specifics. Clearing all stages triggers ending is decided.
+- Specific perk varieties and scouting perk categorization.
+- Exact morale formulas (rout thresholds, decay rates).
+- Impact of captain death on squad performance.
+- Combat/building tuning values (fall damage coefficients, etc.).
+- Feasibility of mid-combat perk allocation.
+- Metrics determining run score.
+- Actual values for squad counts and squad member caps.
+- Layered building edge cases (stairs constraints, partial foundation collapse) and max vertical tiers.
+- Equipment handling on hero permadeath; whether player character can serve as squad captain.
+- Shop/tavern gold re-roll costs and locking slots (inventory refreshing per prep phase decided on 2026-11-12).
+- Blacksmith crafting format (direct purchase vs material recipes) and upgrade definitions.
+- Spawn mechanisms for recruited heroes/grunts into squads during combat.

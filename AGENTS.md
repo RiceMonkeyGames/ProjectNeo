@@ -1,51 +1,55 @@
 # ProjectNeo
 
-3D 1인칭 수성전 로그라이크. 다음 웨이브를 보고 영웅·병력·장비·성벽을 준비하고, 플레이어 직접 전투와 부대 지휘로 성을 지킨다. Unity 6000.6.8f1, URP를 사용한다. 로우 폴리 아트이며 Synty 에셋을 쓸 예정이고 지금은 임시 그래픽으로 만든다.
+A 3D first-person siege defense roguelike. Scout the upcoming wave, prepare heroes, troops, equipment, and walls, and defend the castle through direct player combat and unit commanding. Built with Unity 6000.6.8f1 and URP. Low-poly art style; Synty assets planned, currently using placeholder graphics.
 
-이 파일은 이 저장소에서 일하는 모든 에이전트가 먼저 읽는 안내다. `CLAUDE.md`는 이 파일을 불러오기만 한다. 이 파일이 문서의 입구다. Docs 문서는 컨텍스트·구현 로드맵·게임 기획 세 개와 과거 검증 기록(History) 하나로 유지한다. History는 평소에 읽지 않는다.
+This file is the primary entry point for all agents working in this repository. `CLAUDE.md` simply references this file. The repository maintains four core documentation files—Backlog, Context, Implementation Plan, and Game Design—plus one past verification log (History). History is not read routinely.
 
-## 먼저 읽을 문서
+## Documents to Read First
 
-게임 규칙·구현 설명·검증 근거는 저장소 Markdown이 기준이다. 작업 선택·담당·진행 표시는 아래 구글 독스의 최상단 백로그 표를 기준으로 확인하고 갱신한다. 구글 독스의 기획 본문은 사람이 읽는 참고용이며 저장소 기획보다 늦을 수 있다.
+Repository Markdown files serve as the ground truth for game rules, implementation details, verification evidence, task selection, assignment, and progress tracking.
 
-1. [Docs/Context.md](Docs/Context.md): 현재 실행 방법과 코드·씬·에셋 지도. 작업에 맞춰 개발 원칙·Unity CLI 방법을 읽는다. 과거 검증 기록은 [Docs/History.md](Docs/History.md)에 있고, 과거 결정의 이유나 검증 근거가 필요할 때만 날짜·작업 ID로 검색해 해당 부분만 읽는다.
-2. [Docs/ImplementationPlan.md](Docs/ImplementationPlan.md): 구현 로드맵. 1장 GOAL, 2장 결정 대기, 3장 현재 상태, 5장 가까운 작업, 6장 향후 분업을 확인한다.
-3. [Docs/GameDesign.md](Docs/GameDesign.md): 게임 규칙·의도·미정 기획. 구현할 부분을 읽는다.
+1. [Docs/Backlog.md](Docs/Backlog.md): Development backlog. The Single Source of Truth for task selection, status tracking, and assignment. Check this first to pick tasks.
+2. [Docs/Context.md](Docs/Context.md): Execution guide, code/scene/asset map. Read development principles and Unity CLI usage as relevant to your task. Past verification logs are in [Docs/History.md](Docs/History.md); search by date or task ID only when past rationales or verification evidence are needed.
+3. [Docs/ImplementationPlan.md](Docs/ImplementationPlan.md): Implementation roadmap. Review Section 1 (GOAL), Section 2 (Pending Decisions), Section 3 (Current Status), Section 5 (Immediate Tasks), and Section 6 (Future Division of Labor).
+4. [Docs/GameDesign.md](Docs/GameDesign.md): Game rules, design intent, and pending designs. Read the sections relevant to your implementation.
 
-문서가 엇갈리면 게임 규칙은 GameDesign, 구현 로드맵·의존성·구현 상태는 ImplementationPlan, 실제 코드 설명과 개발 방법은 Context를 기준으로 잘못된 내용을 바로잡는다. 작업 선택·담당·진행 표시는 공유 백로그를 확인하고 아래 절차에 따라 맞춘다. CLAUDE에는 별도 규칙이나 계획을 중복해서 적지 않는다. 출시 플랫폼·시기·콘텐츠 규모는 미정이며, 먼 계획은 플레이 결과에 따라 구체화한다.
+If documents conflict, GameDesign takes precedence for game rules, ImplementationPlan for roadmap/dependencies/implementation status, Context for code explanations and development workflows, and Backlog for task claiming and progress. Do not duplicate separate rules or plans into CLAUDE. Release platform, timing, and content scale remain undecided; long-term plans will be refined based on playtest results.
 
-## 백로그와 작업 흐름
+## Backlog & Workflow
 
-- 공유 백로그: [구글 독스 최상단 개발 백로그 표](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0).
-- 작업을 시작할 때 저장소 문서와 공유 백로그를 확인하고, 아직 착수하지 않은 작업 하나를 선택한다. 백로그에 `작업중`과 담당자를 표시한 뒤 다시 읽어 반영 여부와 다른 담당자의 동시 착수를 확인하고 구현을 시작한다.
-- 다른 담당자의 `작업중` 항목을 임의로 수정하거나 가져오지 않는다. 별도 작업이어도 같은 파일·공용 에셋을 수정하면 먼저 담당자와 순서를 조율한다. 실제 담당·소유 파일·공통 계약은 ImplementationPlan 6장도 확인한다.
-- 작업 후 관련 Markdown을 갱신하고 구글 독스 백로그에 결과·검증 내용 또는 저장소 문서 경로를 기록한 뒤 `완료`로 바꾼다. 미완료 범위나 미검증 사항을 숨기지 않는다. 커밋·병합은 별도이며 사용자가 직접 한다.
-- 작업 중 새 할 일·버그·후속 작업을 발견하면 기존 항목과 중복되는지 확인하고 백로그에 추가한다. 기획이나 공통 설계가 미정이면 확정된 작업으로 취급하지 않고 사용자 확인이 필요함을 적는다.
-- 백로그를 추가·갱신하는 시점은 새 기능 요청·기획 결정, 구현 중 버그·누락·의존성 발견, 테스트·직접 플레이·팀원 피드백, 작업 완료·통합 시 남은 연결·미검증 범위 확인, 다음 로드맵 단계의 작업 분해다. 발견한 시점에 기록하고, 완료 보고 전 누락을 다시 확인한다. 이미 있는 작업은 새로 만들지 않고 기존 항목을 갱신한다.
-- 새 항목에는 작업 ID·할 일·현재 상태·완료 기준과 선행 조건을 적고, 버그에는 재현 방법·기대 결과·실제 결과를 남긴다. 기획이 미정이면 `결정 대기`, 선행 기능이 없으면 `선행 작업 대기`로 구분한다. 등록만으로 구현 승인·착수·담당 배정이 되지는 않는다. 먼 로드맵은 기능 묶음으로 유지하고 가까워졌을 때 실행 단위로 나눈다.
-- 구글 독스 접근·수정이 안 되면 `작업중` 표시나 동기화를 완료했다고 보고하지 않는다. 착수 표시를 확인할 수 없는 작업의 구현은 보류하고, 접근 문제와 필요한 조치를 사용자에게 알린다. 다른 작업의 담당 범위를 건드리지 않는 독립적인 조사·문서 준비는 할 수 있다.
-- 백로그는 작업 선택·담당·진행 표시, ImplementationPlan은 로드맵·결정·의존성·구현 상태를 관리한다. 두 곳이 엇갈리면 작업중인 담당과 실제 변경·검증 근거를 확인해 맞추고, 다른 담당자의 작업중 표시를 오래된 로컬 문서로 덮어쓰지 않는다.
+- Backlog Location: [Docs/Backlog.md](Docs/Backlog.md).
+- **Task Claiming & Immediate Merge**:
+  1. Inspect `Docs/Backlog.md` and select an unclaimed (`Waiting`) task.
+  2. Mark the task as `In Progress` with your assignee name in `Docs/Backlog.md`.
+  3. **Immediately commit and merge (or push/sync) this backlog change to the shared branch so that other teammates and agents are immediately notified of the assignment to avoid collisions.**
+  4. Begin implementation only after the in-progress marking is recorded and synced.
+- **Strict Collision Avoidance**: Never modify or take over items marked `In Progress` by another assignee. Even if tasks differ, coordinate order if modifying the same file or shared asset. Refer to Section 6 of ImplementationPlan for actual assignment, file ownership, and shared contracts.
+- **Task Completion**: After finishing work, update relevant Markdown docs, record results, verification details, or doc paths in `Docs/Backlog.md`, and change status to `Done`. Sync/merge the updated backlog. Do not conceal incomplete scopes or unverified items.
+- **Registering New Items**: If you discover new tasks, bugs, or follow-ups during work, check for duplication with existing entries and add them to `Docs/Backlog.md`. If design or shared architecture is undecided, note that user confirmation is required rather than treating it as a finalized task.
+- **When to Add / Update Backlog**: New feature requests / design decisions, discovering bugs/missing items/dependencies during implementation, feedback from tests/playtests/teammates, checking remaining linkages/unverified scope upon completion/integration, breaking down subsequent roadmap milestones. Record as soon as discovered; re-check before reporting completion. Do not create duplicates for existing tasks; update existing items.
+- **Format for New Items**: In new items, document Task ID, description, current status, completion criteria, and prerequisites. For bugs, include reproduction steps, expected results, and actual results. Distinguish `Pending Decision` (undecided design) and `Waiting for Prerequisite` (missing upstream feature). Registration alone does not imply approval, start, or assignment. Keep distant roadmap items as feature bundles, breaking them down into actionable units as they draw near.
+- **Backlog vs Implementation Plan**: `Docs/Backlog.md` manages task selection, assignment, and progress, while `ImplementationPlan.md` manages roadmaps, decisions, dependencies, and implementation status. If they diverge, reconcile by verifying the active assignee and actual changes/verification evidence. Never overwrite another assignee's in-progress status with an outdated local document.
 
-## 일하는 규칙
+## Working Rules
 
-- 사용자에게는 한국어로, 쉬운 말로 답한다.
-- 문서의 `마지막 갱신`은 날짜와 시·분·초를 한국 시간으로 `마지막 갱신: 2026-11-12 03:16:41 (KST)` 형식으로 적는다. 문서를 고칠 때마다 저장 직전의 실제 시각(예: `date "+%Y-%m-%d %H:%M:%S"`)으로 바꾸고, 시각을 짐작해 쓰지 않는다.
-- 기획·동작 방식·공통 설계에서 해석이 갈리거나 의문이 생기면 임의로 결정하지 않는다. 선택지와 추천 이유를 정리해 사용자에게 먼저 의견을 묻고, 답을 받기 전에는 그 결정에 의존하는 구현을 진행하지 않는다. 영향 없는 독립 작업은 계속할 수 있다. 미정 사항과 받은 결정은 구현 계획 2장 및 해당 기획에 반영한다.
-- 사용자가 새 결정을 말하면 대화에만 남기지 않는다. 기획은 GameDesign, 구현 결정·상태·의존성은 ImplementationPlan에 바로 반영한다. 코드가 늘면 Context의 코드 지도도 갱신한다.
-- 상세 완료·검증 결과는 Docs/History.md 맨 끝에 날짜와 함께 남긴다. 현재 계획에 과거 작업 기록을 계속 쌓아두지 않는다.
-- 작업이 끝나면 사용자가 직접 검증할 방법을 반드시 안내한다. 씬·파일의 정확한 경로, 조작 순서, 기대 결과와 초기화 방법을 적고 가능하면 해당 씬을 열어둔다. 규칙 작업은 테스트 이름과 Test Runner 또는 명령 실행법을 안내한다. 자동 테스트 통과만 보고하고 끝내지 않는다.
-- 커밋은 사용자가 직접 한다. 요청받지 않으면 커밋하지 않는다.
-- 2026-11-11부터 협업 중이다. 팀원은 적이 쳐들어와 전투 단계를 한 번 수행하는 기능을, 사용자는 게임 진입 씬과 전체 흐름 뼈대를 맡는다. 실제 담당·소유 파일·공통 계약·통합 담당은 ImplementationPlan 6장을 따른다. 남의 작업이나 미완성 연결을 임의로 덮어쓰지 않는다.
-- 같은 파일·공용 프리팹·통합 씬·프로젝트 설정의 수정은 차례로 반영한다. 같은 Unity 에디터에서 컴파일·PlayMode·테스트·빌드·에셋 조작을 동시에 실행하지 않는다.
-- 문서만 바꾸는 작업에 게임 코드 변경이나 불필요한 Unity 작업을 섞지 않는다. 기능 완료는 규칙·통합·직접 플레이·필요한 빌드 검증 범위를 구분해서 기록한다.
+- Respond to the user in Korean, using clear and simple language.
+- Document last updated timestamp must use the format: `Last Updated: YYYY-MM-DD HH:MM:SS (KST)` (or `마지막 갱신: YYYY-MM-DD HH:MM:SS (KST)`). Whenever modifying a document, update it to the exact current time right before saving (e.g., using `Get-Date` or `date "+%Y-%m-%d %H:%M:%S"`); never guess the timestamp.
+- If ambiguous requirements, divergent interpretations, or questions arise regarding design, behavior, or shared architecture, do not decide arbitrarily. Present options with rationale and ask the user first. Do not proceed with implementation dependent on that decision until answered. Independent work with no impact may continue. Reflect undecided items and received decisions in ImplementationPlan Section 2 and corresponding design docs.
+- When the user makes a new decision, do not leave it only in chat. Update GameDesign for design, ImplementationPlan for implementation decisions/status/dependencies immediately. Update Context's code map as codebase grows.
+- Log detailed completion and verification results at the end of Docs/History.md along with the date. Do not accumulate past logs in current planning documents.
+- Always guide the user on how to verify manually upon completion: exact scene/file paths, control steps, expected results, and reset procedures. Open relevant scenes when possible. For rule/logic tasks, guide test names and Test Runner or CLI commands. Never stop at merely reporting passing automated tests.
+- General commits and code merges are made directly by the user, except for immediate backlog in-progress/done claim synchronization as specified in the Backlog & Workflow rules.
+- Collaborating since 2026-11-11: Teammate handles enemy assault and single battle phase execution; User handles game entry scene and core loop scaffolding. Actual assignments, owned files, shared contracts, and integration responsibilities follow Section 6 of ImplementationPlan. Never overwrite others' work or unverified connections.
+- Apply modifications sequentially when touching identical files, shared prefabs, integration scenes, or project settings. Never run compilation, PlayMode, tests, builds, or asset modifications simultaneously in the same Unity editor.
+- Do not mix game code changes or unnecessary Unity operations into doc-only tasks. Differentiate and record completion scope: rules, integration, manual play, required builds.
 
-## 구현 시 반드시 지킬 것
+## Implementation Principles
 
-- 규칙과 계산은 일반 C#으로 화면과 분리하고 EditMode로, 씬 동작은 PlayMode와 직접 플레이로 검증한다.
-- 수치는 ScriptableObject에 둔다. 정의에는 테스트용 `Create(...)`를 제공한다.
-- ScriptableObject·MonoBehaviour는 파일 하나에 클래스 하나, 파일 이름은 클래스 이름과 같게 한다.
-- 저장되는 enum은 숫자를 명시하고 새 값은 끝에 추가한다. 랜덤은 `ProjectNeo.Core.IRandomSource`를 통한다.
-- 루트의 게임 규칙·충돌·이동과 `Visual` 자식의 외형을 분리한다. 자세한 원칙은 Context 5장을 따른다.
-- `.unity`, `.prefab`, `.asset`, `.meta`를 직접 고치지 않는다. 씬·에셋·폴더 생성·이동은 에디터 API로 한다. `.cs`와 `.asmdef`는 직접 작성할 수 있다.
-- Unity는 먼저 `unity status`로 연결 상태를 확인한다. 연결 실패만으로 에디터가 꺼졌다고 단정하지 말고 샌드박스 제한도 확인한다. 실제로 열려 있지 않으면 사용자에게 열어 달라고 한다.
-- 컴파일·테스트·빌드·패키지 명령과 알려진 주의사항은 Context 6장을 따른다. 이 프로젝트에서 실패한 `unity recompile`, `unity command script recompile`은 쓰지 않는다.
+- Separate rules and calculations from visual presentation using plain C# and verify via EditMode. Verify scene behavior via PlayMode and manual play.
+- Store numerical parameters in ScriptableObjects. Provide `Create(...)` factory methods for testing in definitions.
+- Maintain one class per file for ScriptableObjects and MonoBehaviours; match file name to class name.
+- Explicitly assign numeric values to persistent enums; add new values to the end. Route random generation through `ProjectNeo.Core.IRandomSource`.
+- Separate gameplay rules, collision, and movement on the root from visual representation under a `Visual` child. Follow principles in Context Section 5.
+- Do not edit `.unity`, `.prefab`, `.asset`, or `.meta` files directly. Create/move scenes, assets, and folders via Editor APIs. `.cs` and `.asmdef` files may be authored directly.
+- Always check Unity connection status first with `unity status`. Do not assume the editor is closed solely from connection failures; verify sandbox constraints as well. If not open, ask the user to open it.
+- Follow compilation, testing, build, and package commands and caveats in Context Section 6. Do not use `unity recompile` or `unity command script recompile`, which failed in this project.
