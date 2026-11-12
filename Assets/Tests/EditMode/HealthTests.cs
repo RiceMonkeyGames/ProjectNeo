@@ -54,5 +54,22 @@ namespace ProjectNeo.Tests
             Assert.IsTrue(health.IsDead);
             Assert.AreEqual(0f, health.Current);
         }
+
+        [Test]
+        public void RestoreFull_HealsLivingToMaximum_ButNeverResurrects()
+        {
+            int changes = 0;
+            health.Changed += () => changes++;
+            health.TakeDamage(30f);
+            Assert.AreEqual(30f, health.RestoreFull());
+            Assert.AreEqual(100f, health.Current);
+            Assert.AreEqual(0f, health.RestoreFull(), "이미 가득 찼으면 아무것도 하지 않는다.");
+            Assert.AreEqual(2, changes);
+
+            health.TakeDamage(999f);
+            Assert.AreEqual(0f, health.RestoreFull());
+            Assert.IsTrue(health.IsDead);
+            Assert.AreEqual(0f, health.Current);
+        }
     }
 }

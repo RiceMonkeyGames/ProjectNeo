@@ -11,11 +11,14 @@ namespace ProjectNeo.Flow
         public int StageNumber { get; private set; } = 1;
 
         /// <summary>
-        /// 런이 소유하는 지갑·영웅·잡졸·부대·성 기록. 게임 씬에 아직 연결하지 않아 지금은 null일 수 있다(C-1~2에서 연결).
+        /// 런이 소유하는 지갑·영웅·잡졸·부대·성 기록. 타이틀에서 시작하면 게임 씬이 씬 편성으로 만들어 붙이며,
+        /// 붙기 전에는 null이다.
         /// </summary>
-        public RunState State { get; }
+        public RunState State { get; private set; }
 
         internal RunProgress(RunState state = null) => State = state;
+
+        internal void Attach(RunState state) => State = state;
 
         internal void AdvanceStage() => StageNumber++;
     }

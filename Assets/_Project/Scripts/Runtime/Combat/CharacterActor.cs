@@ -20,6 +20,8 @@ namespace ProjectNeo.Combat
         CharacterActor attackTarget;
         bool targetedAttack;
         public Character Character { get; private set; }
+        /// <summary>잡졸이면 그 정의. 영웅이면 null이다.</summary>
+        public SoldierDefinition SoldierDefinition => soldierDefinition;
         public StatSheet Stats { get; private set; }
         public Health Health { get; private set; }
         public CombatProfile Profile => profile;

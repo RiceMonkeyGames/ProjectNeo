@@ -32,6 +32,20 @@ namespace ProjectNeo.Combat
             return applied;
         }
 
+        /// <summary>
+        /// 살아 있으면 최대 체력까지 회복하고 회복량을 돌려준다. 죽은 유닛은 되살리지 않는다.
+        /// 다음 전투 전 생존 유닛의 전체 회복(2026-11-12 결정)에 쓴다.
+        /// </summary>
+        public float RestoreFull()
+        {
+            if (dead) return 0f;
+            float restored = Maximum - current;
+            if (restored <= 0f) return 0f;
+            current = Maximum;
+            Changed?.Invoke();
+            return restored;
+        }
+
         void OnStatChanged(StatType stat)
         {
             if (stat != StatType.MaxHealth) return;

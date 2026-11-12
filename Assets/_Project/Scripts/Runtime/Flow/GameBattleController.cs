@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using ProjectNeo.Combat;
+using ProjectNeo.Run;
 using ProjectNeo.Siege;
 using ProjectNeo.Squads;
 using ProjectNeo.Walls;
@@ -24,12 +25,17 @@ namespace ProjectNeo.Flow
         readonly List<Behaviour> freezeOrder = new List<Behaviour>();
         readonly HashSet<SiegeAttackerBrain> retreated = new HashSet<SiegeAttackerBrain>();
         readonly Dictionary<SiegeAttackerBrain, Vector3> retreatTargets = new Dictionary<SiegeAttackerBrain, Vector3>();
+        // 처치 수를 적 종류별로 세기 위한 적 ID. 지금은 적 프리팹 이름을 쓴다.
+        readonly Dictionary<SiegeAttackerBrain, string> enemyIds = new Dictionary<SiegeAttackerBrain, string>();
         GameFlow flow;
+        GameRunLink runLink;
         Transform enemyRoot;
         bool battleRunning;
         public GameBattleSettings Settings => settings;
         public IReadOnlyList<SiegeAttackerBrain> Enemies => enemies;
         public IReadOnlyList<SiegeLadder> Ladders => ladders;
+        /// <summary>런 데이터 연결(C-1~2). 씬 유닛의 런 번호와 이번 전투 입력을 읽을 때 쓴다.</summary>
+        public GameRunLink RunLink => runLink ??= new GameRunLink(flow, commander, player, world);
         public int BattleNumber { get; private set; }
         public bool IsRunning => battleRunning;
         public bool IsRetreating { get; private set; }
@@ -85,6 +91,7 @@ namespace ProjectNeo.Flow
             {
                 battleRunning = false;
                 ClearEnemies();
+                RunLink.OnPreparation();
                 foreach (SiegeLadder ladder in ladders) { ladder.ResetBattle(); ladder.enabled = false; }
                 StartCoroutine(RestoreWhenReady());
                 SpawnEnemies();
@@ -93,6 +100,7 @@ namespace ProjectNeo.Flow
             {
                 battleRunning = true;
                 BattleNumber++;
+                RunLink.OnBattleStart();
                 foreach (SiegeLadder ladder in ladders) ladder.enabled = true;
                 foreach (SiegeAttackerBrain enemy in enemies) enemy.gameObject.SetActive(true);
             }
@@ -207,6 +215,7 @@ namespace ProjectNeo.Flow
                     if (brain == null) { Debug.LogError("Battle enemy needs SiegeAttackerBrain", unit); Destroy(unit); continue; }
                     brain.Bind(world, ladders, settings.Outward, settings.Siege);
                     enemies.Add(brain);
+                    enemyIds[brain] = group.unitPrefab.name;
                 }
                 row += (group.count + settings.Columns - 1) / settings.Columns;
             }
@@ -217,6 +226,7 @@ namespace ProjectNeo.Flow
             foreach (SiegeAttackerBrain enemy in enemies)
                 if (enemy != null) { enemy.gameObject.SetActive(false); Destroy(enemy.gameObject); }
             enemies.Clear();
+            enemyIds.Clear();
             retreated.Clear(); retreatTargets.Clear(); IsRetreating = false;
         }
 
@@ -270,7 +280,29 @@ namespace ProjectNeo.Flow
         {
             if (!battleRunning || outcome == SiegeOutcome.Ongoing) return;
             battleRunning = false;
-            flow.FinishBattle(outcome == SiegeOutcome.Victory ? BattleOutcome.Victory : BattleOutcome.Defeat);
+            BattleOutcome result = outcome == SiegeOutcome.Victory ? BattleOutcome.Victory : BattleOutcome.Defeat;
+            // 런 데이터에 결과를 반영하고 단계를 넘긴다. 연결이 없으면 기존처럼 승패만 넘긴다.
+            if (!RunLink.TryFinish(result, EndReason(result), CountKills())) flow.FinishBattle(result);
+        }
+
+        BattleEndReason EndReason(BattleOutcome outcome)
+        {
+            if (outcome == BattleOutcome.Victory)
+                return retreated.Count > 0 ? BattleEndReason.EnemiesRetreated : BattleEndReason.EnemiesDefeated;
+            return player.Health == null || player.Health.IsDead ? BattleEndReason.PlayerDied : BattleEndReason.GateAndAlliesLost;
+        }
+
+        Dictionary<string, int> CountKills()
+        {
+            var kills = new Dictionary<string, int>();
+            foreach (SiegeAttackerBrain enemy in enemies)
+            {
+                if (enemy == null || enemy.Actor == null || enemy.Actor.Health == null || !enemy.Actor.Health.IsDead) continue;
+                if (!enemyIds.TryGetValue(enemy, out string id)) continue;
+                kills.TryGetValue(id, out int count);
+                kills[id] = count + 1;
+            }
+            return kills;
         }
     }
 }

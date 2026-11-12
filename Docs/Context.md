@@ -1,6 +1,6 @@
 # 프로젝트 컨텍스트
 
-마지막 갱신: 2026-11-12 03:16:57 (KST). 경로는 저장소 루트 기준이다. 현재 실행 가능한 것, 코드·씬·에셋 지도, 개발 방법과 검증 근거를 이 문서에서 관리한다. 완성 목표·다음 작업·진행 상태는 [구현 로드맵](ImplementationPlan.md), 게임 규칙은 [게임 기획](GameDesign.md), 에이전트의 필수 규칙과 문서 입구는 [AGENTS.md](../AGENTS.md)가 기준이다.
+마지막 갱신: 2026-11-12 11:29:57 (KST). 경로는 저장소 루트 기준이다. 현재 실행 가능한 것, 코드·씬·에셋 지도, 개발 방법과 검증 근거를 이 문서에서 관리한다. 완성 목표·다음 작업·진행 상태는 [구현 로드맵](ImplementationPlan.md), 게임 규칙은 [게임 기획](GameDesign.md), 에이전트의 필수 규칙과 문서 입구는 [AGENTS.md](../AGENTS.md)가 기준이다.
 
 ## 찾아보기
 
@@ -45,7 +45,7 @@ Unity 6000.6.8f1, URP, 3D 1인칭 프로젝트다. 현재는 임시 그래픽이
 | Characters | `HeroDefinition`, `SoldierDefinition`, `SkillDefinition`, `Character` | 영웅·잡졸·스킬 데이터. `Character`는 영웅 한 명의 스탯과 장비를 보유하며 플레이어도 같은 클래스를 쓴다. |
 | Characters | `PlayerControlSettings`, `PlayerInputController` | 조작·카메라 설정 에셋, Input System 입력과 CharacterController 이동. 기본 시점은 FirstPersonCamera다. |
 | Characters | `PlayerViewCamera`, `FirstPersonCamera` | 입력이 사용하는 시점 방향 공통 접점과 기본 1인칭 카메라. 감도·높이·상하 각도는 PlayerControlSettings를 쓰고, 활성 중 플레이어 Visual은 그림자만 보이며 종료 때 복구한다. ThirdPersonCamera 코드는 남아 있지만 현재 플레이 씬에서는 사용하지 않는다. |
-| Combat | `Health` | 일반 C# 체력 규칙. 피해·사망, 최대 체력 변경 시 제한. 스탯 이벤트 구독은 `Dispose()`로 해제한다. |
+| Combat | `Health` | 일반 C# 체력 규칙. 피해·사망, 최대 체력 변경 시 제한, 살아 있을 때만 전체 회복(`RestoreFull`, 죽은 유닛은 되살리지 않음). 스탯 이벤트 구독은 `Dispose()`로 해제한다. `CharacterActor.SoldierDefinition`은 잡졸 정의를 읽는다. |
 | Combat | `CombatProfile`, `CharacterActor`, `CombatTeam` | 몸통 크기·공격 종류·선딜레이·최소 피해·투사체 설정 에셋. 영웅과 잡졸을 공통 스탯 경로로 연결하고 팀, 대상 후보, 근접·원거리 공격, 재공격 대기, 피격·사망을 처리한다. `Character`는 영웅만 가지며 공통 접근은 `Stats`를 쓴다. |
 | Combat | `DamageRules`, `CombatPhysics` | 일반 C# 피해 공식과 사거리·사선 검사. 동일 씬의 적만 공격하고 아군 충돌체는 공격을 막지 않는다. 원거리 공격은 쏘는 유닛이 딛고 선 물체(`GroundUnder`)에 막히지 않는다. 사선 검사와 투사체가 같은 기준을 쓴다. |
 | Combat | `CombatProjectile` | 직선 투사체. 발사 때 공격력·팀·방향을 저장하고 명중 때 방어력을 적용한다. 아군 통과, 첫 적·벽 충돌, 사거리·수명 종료를 처리한다. |
@@ -70,8 +70,10 @@ Unity 6000.6.8f1, URP, 3D 1인칭 프로젝트다. 현재는 임시 그래픽이
 | Flow | `GameSession`, `SceneCatalog`, `SceneSwitcher`, `GameDirector` | `GameSession.Flow`는 씬이 바뀌어도 유지되는 흐름 보관처로 실행을 시작할 때마다 새로 만든다. 씬 이름은 `SceneCatalog` 에셋에 둔다. 씬 전환은 `SceneSwitcher`에서만 하며 지금은 통째 교체다. `GameDirector`는 게임 씬 단독 실행 때 새 런을 시작하고 흐름이 타이틀로 가면 타이틀 씬을 부른다. 준비·전투 기능은 `GameSession.Flow.PhaseChanged`를 구독해 붙인다. |
 | Flow | `GamePhaseView` | 게임 씬에서 단계에 맞춰 시점·입력·화면을 바꾼다. 준비 기본은 1인칭 이동이고 건설소에서만 건설 카메라·배치·건설 화면으로 전환, 전투는 1인칭 카메라·플레이어 입력·지휘 입력·지휘 화면과 커서 잠금, 보상·런 결과는 둘 다 끄고 커서를 푼다. 단계가 바뀌어도 지형·유닛·지시는 유지한다. World가 NavMesh를 만든 뒤 유닛을 활성화한다. `WallCommandSandbox`의 Tab 전환을 실제 단계 전환으로 바꾼 것이다. 건설소 F 상호작용과 Esc 복귀를 연결했고 나머지 시설 기능은 후속이다. |
 | Flow | `PreparationInteractionSettings`, `PreparationInteraction`, `ConstructionStation` | 준비 중 가까이서 바라본 건설소를 F로 열고 Esc로 닫는다. 거리·입력 액션은 `Data/GameFlow/Interaction.asset`에 두고 실행 시 복제한다. 시점·입력 전환은 `GamePhaseView`, 안내·준비 조준점은 `GameFlowHud`가 맡는다. |
-| Flow | `GameBattleSettings`, `GameBattleController`, `PreparationStation`, `BattleStartStation` | GameFlow의 전투 단계에 적 생성·공성전·승패·마지막 적 퇴각을 연결한다. 전투 종료 시 AI·공격·투사체를 멈추고, 다음 준비에서 살아 있는 아군·성벽 피해를 유지하며 시험 적 편성을 새로 만든다. 성문 앞 F 상호작용으로 시작한다. 게임 전용 `Data/GameFlow/Battle.asset`·`Siege.asset`에서 편성·등장 위치·공성 수치를 조정한다. |
+| Flow | `GameBattleSettings`, `GameBattleController`, `PreparationStation`, `BattleStartStation` | GameFlow의 전투 단계에 적 생성·공성전·승패·마지막 적 퇴각을 연결한다. 전투 종료 시 AI·공격·투사체를 멈추고, 다음 준비에서 살아 있는 아군·성벽 피해를 유지하며 시험 적 편성을 새로 만든다. 성문 앞 F 상호작용으로 시작한다. 게임 전용 `Data/GameFlow/Battle.asset`·`Siege.asset`에서 편성·등장 위치·공성 수치를 조정한다. 끝날 때 종료 이유와 적 프리팹 이름별 처치 수를 세어 `GameRunLink`로 결과를 넘기고, 연결이 없으면 승패만 넘긴다. |
+| Flow | `GameRunLink` | Game 씬과 런 데이터 연결(C-1~2, 일반 C#, `GameBattleController.RunLink`). 첫 준비에 씬 플레이어·부대 편성으로 `RunState`를 만들어 `GameFlow.AttachRunState`로 붙이고, 전투 시작에 성을 기록해 `BattleInput`을 만들며, 끝나면 `BattleResult`를 한 번 반영한다. 다음 준비에 생존 유닛은 `Health.RestoreFull`로 회복하고 죽은 유닛의 몸은 남긴다. 씬 유닛 생성·저장 복원은 하지 않는다. |
 | Run | `RunState`, `RunUnit`·`RunHero`·`RunSoldier`, `RunConfig`, `RunSquadSetup` | 일반 C# 런 소유 데이터(C-1a). 지갑·보관함·영웅·잡졸·부대(`Army<RunUnit>`)·성 기록을 가진다. 유닛은 런 안 고유 번호(`Id`)와 정의 에셋을 구분한다. 잡졸은 한 부대에만 들어가고 옮길 수 있으며, 영웅은 한 부대만 맡는다. 유닛 체력은 다음 전투 전 모두 회복하므로 담지 않는다. 시작 재화·플레이어·부대는 `RunConfig` 에셋(아직 Game 씬용 에셋은 없음). `GameFlow.StartRun(RunState)`로 `RunProgress.State`에 담기며, 타이틀로 가면 버린다. |
+| Run | `RunUnitBinding<T>` | 씬 유닛과 런 유닛 번호의 짝. 씬 편성으로 `RunState`를 만들고, 씬 생사로 `BattleResult`를 만든다. 런에서 이미 빠진 유닛은 결과에 넣지 않는다. 씬을 알지 않아 EditMode로 검증한다. |
 | Run | `CastleState`, `BattleInput`, `BattleResult` | 성 배치·층·회전·체력·수성 무기 기록(`Capture`/`TryRestore`로 BuildLayout·MountLayout과 왕복, 아래층부터 정렬). 전투 입력은 전투 번호·스테이지·플레이어·부대·성 복사본. 결과 초안은 같은 전투 번호, 승패, 종료 이유, 유닛별 생존/사망/도망, 전투 후 성 기록, 처치한 적 종류별 수. `RunState.Apply`가 번호를 확인해 한 번만 반영하고, 틀린 결과는 아무것도 바꾸지 않는다. 죽은 잡졸은 사라지고 죽은 영웅은 장비를 가진 채 `FallenHeroes`로 간다. 결과 형식은 팀원 확인 대기이고 Game 씬은 아직 쓰지 않는다. |
 | UI | `TitleScreen`, `GameFlowHud`, `RuntimeSystemFont` | 타이틀 버튼 동작, 단계 표시·건물 상호작용 안내·남은 병력·사다리 밀기·결과 화면(전투 연결 시 시작·승패 자리표시 버튼은 숨김), 임시 화면에 맑은 고딕을 실행 중 적용하는 공용 부품. 정식 화면이 아니다. |
 | Siege | `BuildBudget`, `SiegeOutcomeRules`, `SiegeLadderState` | 일반 C# 규칙. 임시 건설 코스트의 차감·환불, 승패 판정(동시 성립은 패배 우선, Q-09 확정)·마지막 적 퇴각 조건, 사다리 상태(놓임→세우는 중→세워짐, 한 명씩 오르기, 밀어서 쓰러뜨리기). |
@@ -183,7 +185,8 @@ Q/`RotateLeft()`와 E/`RotateRight()`는 화면 속 판의 왼쪽·오른쪽 회
 - `Assets/Tests/EditMode/RunStateTests.cs`: 시작 설정, 유닛 번호, 부대 배정·이동·상한, 부대장, 전투 입력, 사망·도망·영웅 영구 사망 반영, 결과 1회 반영과 잘못된 결과 거부, 성 기록·처치 수, GameFlow의 런 데이터 수명과 결과 전달.
 - `Assets/Tests/EditMode/CastleStateTests.cs`: 성문·적층·회전·체력·무기 기록과 빈 격자 복원, 내려앉은 조각 기록, 체력 범위, 비어 있지 않은 격자 거부.
 - `Assets/_Project/Scripts/Editor/GameBattleSetup.cs`: Game 씬의 공성전·깃발 상호작용을 연결하고 기존 HUD 영역을 배치한다. 메뉴 `ProjectNeo/Setup/Connect Battle To Game Scene`·`Arrange Game HUD`.
-- `Assets/Tests/PlayMode/GameBattlePlayTests.cs`: 실제 적 접근·승패·패배 우선·마지막 적 퇴각과 열린 경로·3층 사다리·성문 붕괴 조각 공격·다음 준비 이월·HUD 배경 포함 영역 분리.
+- `Assets/Tests/PlayMode/GameBattlePlayTests.cs`: 실제 적 접근·승패·패배 우선·마지막 적 퇴각과 열린 경로·3층 사다리·성문 붕괴 조각 공격·다음 준비 이월·HUD 배경 포함 영역 분리, 런 데이터 연결(씬 편성으로 생성, 결과 반영·처치 수, 다음 준비 생존자 회복과 죽은 몸 유지, 두 번째 전투 입력).
+- `Assets/Tests/EditMode/RunUnitBindingTests.cs`: 씬 편성으로 런 데이터·번호 만들기, 정의 없음·상한 초과·중복 거부, 결과의 생사·처치 수와 이미 빠진 유닛 제외, `GameFlow.AttachRunState`.
 - `Assets/Tests/PlayMode/GameFlowPlayTests.cs`: 저장된 `Title`·`Game` 씬으로 새 게임 진입, 씬 전환 없는 단계 변경, 패배 후 타이틀 복귀, 게임 씬 단독 시작, 준비의 건설 시점과 전투의 1인칭 지휘 전환·보상 중 입력 정지·유닛과 지시 유지·AudioListener와 EventSystem이 하나뿐인지, 기본 성이 성문 하나와 닫힌 외벽이고 안뜰에서 성벽 위로 길이 이어지며 밖으로는 나갈 수 없는지. 씬을 통째로 바꾸므로 끝날 때 빈 씬만 남긴다. 실제 버튼 클릭은 직접 확인 대상이다.
 - `Assets/_Project/Scripts/Editor/SiegePrototypeSetup.cs`: 메뉴 `ProjectNeo/Setup/Create Siege Prototype`. `WallCommandPrototype`을 복사해 수성전 씬을 만든다. 기존 씬·저장하지 않은 변경은 덮어쓰지 않는다. 씬을 연 뒤 `SerializedObject`로 연결할 에셋은 다시 불러와야 한다(씬을 열면 방금 만든 에셋 참조가 풀려 null로 저장된 적이 있다).
 - `Assets/Tests/EditMode/SiegeRulesTests.cs`: 코스트 차감·환불, 승패 판정, 사다리 세우기·한 명씩 오르기·밀기·막힘, 위쪽 사격 피해 배율.
@@ -717,5 +720,14 @@ unity command package add --caller plugin --skill unity-package-management --nam
 
 - 사용자 요청: 문서의 `마지막 갱신`을 날짜와 시·분·초까지 한국 시간으로 적는다. AGENTS 「일하는 규칙」에 형식(`마지막 갱신: YYYY-MM-DD HH:MM:SS (KST)`)과 실제 시각을 확인해 적는 방법을 기록했고, Context·ImplementationPlan·GameDesign의 머리말을 새 형식으로 바꿨다. 문서만 바꿨으며 Unity 작업은 하지 않았다.
 - 직접 확인: 세 문서 3번째 줄의 `마지막 갱신`이 시·분·초와 `(KST)`를 포함하는지, AGENTS 「일하는 규칙」 두 번째 항목에 형식이 적혀 있는지 본다.
+
+### 2026-11-12: C-1~2 런 데이터의 Game 씬 연결
+
+- 담당 황성민, 브랜치 `feature/run-scene-connection`(develop `833ca46` 기준). 백로그 C-1~2·C-1a-confirm을 `작업중`·황성민으로 표시하고, 결과 형식 확인은 진행하며 함께 하기로 했다(사용자 결정).
+- 사용자 결정: 씬에 놓인 유닛에 런 번호를 붙이는 방식(매번 새로 만들지 않음). 죽은 아군의 몸은 다음 준비에도 남긴다. 살아남은 유닛 회복은 C-1a 결정을 따른다.
+- 추가: `Run/RunUnitBinding.cs`, `Flow/GameRunLink.cs`, `GameFlow.AttachRunState`, `RunProgress.Attach`, `Health.RestoreFull`, `CharacterActor.SoldierDefinition`. `GameBattleController`에 `RunLink`, 준비·전투 시작 호출, 적 프리팹 이름별 처치 수, 종료 이유를 더했다. 씬·프리팹·에셋은 바꾸지 않았다.
+- 남은 제한: 적 ID는 임시로 프리팹 이름이다. 런 영웅과 씬 플레이어의 `Character`가 별개다. 고용·모집·저장 복원·도망은 범위 밖이다. `RunConfig`의 시작 재화는 아직 쓰지 않는다. 결과 형식은 팀원 확인 대기다.
+- 검증: 컴파일 오류 없음. EditMode 163개 전체 통과(새 `RunUnitBindingTests` 4개, `HealthTests.RestoreFull_HealsLivingToMaximum_ButNeverResurrects`). PlayMode 76개 중 75개 통과(새 `GameBattlePlayTests.런_데이터가_씬_편성으로_만들어지고_전투_결과를_반영하며_다음_준비에_생존자를_회복한다` 통과). 실패는 기존 불안정 테스트 `WallCommandPlayTests.Squad_StopsOnWallWhenStairsDisappear`(BUG-wall-hold)다. 물리 입력 직접 플레이와 Windows 빌드는 하지 않았다.
+- 직접 검증: `Assets/_Project/Scenes/Game.unity` → Play → 성문 앞 붉은 깃발에서 F로 전투 → F1~F3으로 부대를 성 밖으로 보내 일부가 죽게 한 뒤 승리 → `보상 받고 다음 스테이지` → 다친 부대원과 플레이어의 체력 막대가 가득 차고, 죽은 부대원은 쓰러진 채 남으며 부대 목록 인원은 줄어 있어야 한다. 런 데이터 값은 화면에 아직 표시하지 않으므로 Test Runner의 위 PlayMode 테스트로 확인한다. Play를 멈추면 초기화된다.
 
 </details>
