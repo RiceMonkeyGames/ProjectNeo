@@ -30,6 +30,18 @@ namespace ProjectNeo.Flow
             return true;
         }
 
+        /// <summary>
+        /// 런 데이터 없이 시작한 런에 데이터를 붙인다. 런이 없거나 이미 데이터가 있으면 false이고 바꾸지 않는다.
+        /// 타이틀 씬은 게임 씬의 편성을 모르므로 게임 씬이 첫 준비 때 붙인다.
+        /// </summary>
+        public bool AttachRunState(RunState state)
+        {
+            if (state == null) throw new ArgumentNullException(nameof(state));
+            if (Run == null || Run.State != null) return false;
+            Run.Attach(state);
+            return true;
+        }
+
         /// <summary>준비를 끝내고 전투를 시작한다.</summary>
         public bool StartBattle()
         {

@@ -4,6 +4,7 @@ using NUnit.Framework;
 using ProjectNeo.Characters;
 using ProjectNeo.Combat;
 using ProjectNeo.Flow;
+using ProjectNeo.Run;
 using ProjectNeo.Siege;
 using ProjectNeo.Squads;
 using ProjectNeo.Walls;
@@ -236,6 +237,61 @@ namespace ProjectNeo.Tests
             for (int i = 0; i < 600 && left != null && right != null
                 && left.Health.Current + right.Health.Current == total; i++) yield return null;
             Assert.IsTrue(left == null || right == null || left.Health.Current + right.Health.Current < total);
+        }
+
+        [UnityTest]
+        public IEnumerator 런_데이터가_씬_편성으로_만들어지고_전투_결과를_반영하며_다음_준비에_생존자를_회복한다()
+        {
+            RunState state = GameSession.Flow.Run.State;
+            Assert.IsNotNull(state, "첫 준비에서 씬 편성으로 런 데이터를 붙여야 한다.");
+            var center = Object.FindAnyObjectByType<SquadCommandCenter>();
+            int soldiers = center.Squads.Sum(squad => squad.Members.Count);
+            Assert.AreEqual(soldiers, state.Soldiers.Count);
+            Assert.AreEqual(center.Squads.Count, state.Army.Squads.Count);
+            Assert.AreEqual(state.Player.Id, battle.RunLink.IdOf(player));
+            Assert.AreEqual(world.Structures.Count, state.Castle.Pieces.Count);
+
+            var fallen = center.Squads[0].Members[0].Actor;
+            var wounded = center.Squads[0].Members[1].Actor;
+            int fallenId = battle.RunLink.IdOf(fallen);
+            Assert.Greater(fallenId, 0);
+            Assert.IsTrue(battle.TryStartBattle());
+            Assert.IsNotNull(battle.RunLink.CurrentInput);
+            Assert.AreEqual(1, battle.RunLink.CurrentInput.BattleNumber);
+
+            var wall = world.Structures.First(piece => piece.Placement.Definition.Kind == BuildPieceKind.Wall);
+            wall.ReceiveDamage(15f);
+            Kill(fallen);
+            wounded.ReceiveDamage(10f);
+            player.ReceiveDamage(5f);
+            string ladderName = battle.Enemies.First(enemy => enemy.Role == SiegeAttackerRole.Ladder).name;
+            string ladderId = ladderName.Substring(0, ladderName.LastIndexOf('_'));
+            int killed = battle.Enemies.Count;
+            foreach (var enemy in battle.Enemies) Kill(enemy.Actor);
+            yield return null; yield return null;
+
+            Assert.AreEqual(GamePhase.Reward, GameSession.Flow.Phase);
+            Assert.AreEqual(1, state.BattlesFought);
+            BattleResult result = state.LastBattleResult;
+            Assert.AreEqual(BattleOutcome.Victory, result.Outcome);
+            Assert.AreEqual(BattleEndReason.EnemiesDefeated, result.EndReason);
+            Assert.AreEqual(killed, result.EnemiesKilled.Values.Sum());
+            Assert.IsTrue(result.EnemiesKilled.ContainsKey(ladderId), "적 프리팹 이름으로 종류별 처치 수를 센다.");
+            Assert.IsNull(state.Find(fallenId), "죽은 잡졸은 런에서 빠진다.");
+            Assert.AreEqual(soldiers - 1, state.Soldiers.Count);
+            Assert.IsTrue(state.Castle.Pieces.Any(piece => piece.Health < piece.Definition.MaxHealth), "성벽 피해를 기록한다.");
+
+            Assert.IsTrue(GameSession.Flow.ContinueToNextStage());
+            yield return Navigation();
+            Assert.AreEqual(wounded.Health.Maximum, wounded.Health.Current, "살아남은 잡졸은 다음 준비에 회복한다.");
+            Assert.AreEqual(player.Health.Maximum, player.Health.Current);
+            Assert.IsTrue(fallen.Health.IsDead, "죽은 유닛은 되살리지 않는다.");
+            Assert.IsNotNull(fallen, "죽은 유닛의 몸은 씬에 남긴다.");
+            Assert.Less(wall.Health.Current, wall.Health.Maximum, "성벽 피해는 회복하지 않는다.");
+
+            Assert.IsTrue(battle.TryStartBattle());
+            Assert.AreEqual(2, battle.RunLink.CurrentInput.BattleNumber);
+            Assert.AreEqual(soldiers - 1, battle.RunLink.CurrentInput.Squads.Sum(squad => squad.Members.Count));
         }
     }
 }
