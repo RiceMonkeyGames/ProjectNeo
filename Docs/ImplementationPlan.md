@@ -1,6 +1,6 @@
 ﻿# ProjectNeo Implementation Roadmap
 
-Last Updated: 2026-11-12 22:43:05 (KST). **Current Milestone: M1 Single Siege Battle in progress.** Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elevation, and `feature/siege-prototype` test scene (prep, assault, ladders, win/loss) into `develop`. `SiegePrototype` tests parts of B-6/B-9 separately; the actual `Game` scene links 1st-person prep / construction F interaction → gate banner F interaction → enemy assault, ladders, actual win/loss → rewards/results. Placeholder start/outcome buttons are hidden in game view. Reward payout, formal stage layouts, and casualty replenishment are follow-ups. Teammate handles enemy assault and combat execution; User handles game entry and core flow (see 6.1). Wall-destroying enemies, aerial enemies, waves, morale, and siege weapon firing (Q-21) remain pending. Q-09 resolved in favor of Defeat priority. M2 prep completed C-1a run data / combat I/O rules (5.6); Game scene integration is next.
+Last Updated: 2026-11-12 22:46:47 (KST). **Current Milestone: M1 Single Siege Battle in progress; M2 Repeatable Run Loop in progress in parallel.** Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elevation, and `feature/siege-prototype` test scene (prep, assault, ladders, win/loss) into `develop`. `SiegePrototype` tests parts of B-6/B-9 separately; the actual `Game` scene links 1st-person prep / construction F interaction → gate banner F interaction → enemy assault, ladders, actual win/loss → rewards/results. Placeholder start/outcome buttons are hidden in game view. On the M2 side, run data is linked to the Game scene (C-1~2), victory rewards are paid out (C-4), and prep has build/repair costs (D-2), facility pop-ups (D-0), facility upgrades (D-1), the shop (D-5), and player equipment (D-7); everything except C-1a still awaits a manual playtest (5.6). Formal stage/wave layouts, casualty replenishment, and spawning newly hired/recruited units into the scene (D-0b) are follow-ups. Teammate handles enemy assault and combat execution; User handles game entry and core flow (see 6.1). Wall-destroying enemies, aerial enemies, waves, morale, and siege weapon firing (Q-21) remain pending. Q-09 resolved in favor of Defeat priority.
 
 This document manages target goals, development order, current status, immediate tasks, and 3-person collaboration plans. Original game design is in [GameDesign.md](GameDesign.md); code, execution, development principles, and Unity CLI commands are in [Context.md](Context.md); past verification history is in [History.md](History.md).
 
@@ -113,6 +113,17 @@ Target release platforms, distribution channels, release dates, and final conten
 | Q-35 | Blacksmith crafting model (storefront sales vs recipe crafting) and upgrades | D-6 blacksmith | Undecided. Requires crafting recipes and gear enhancement state definitions. |
 | Q-36 | Deployment mechanics for hired heroes and recruited grunts | D-0b spawning, D-3 tavern, D-4 barracks | Undecided. Clarify auto-assignment vs manual squad allocation. |
 
+### 2.1 Decision Records Outside the Table
+
+- **Stacking on the gate (2026-11-11, user request):** Walls may be stacked on top of the main gate during prep. No building during battle (user confirmed). When the gate is destroyed, pieces above it drop by the normal settle rule. The gate's fixed floor position, demolition ban, and ban on new placement into its empty floor slot after destruction remain.
+- **Player start position (2026-11-11):** User chose the courtyard. Overlapping units no longer block placement; they are lifted onto the new piece. Applied in `GameFlowSetup.ApplyDefaultCastle` and `Game.unity`.
+- **Entering construction and unit handling (2026-11-11, wired 2026-11-12):** Prep defaults to walking the courtyard in 1st-person; the prep phase itself is not a build mode. Construction view opens only from the construction building: look at it up close and press F, Esc returns to the same position and view. Range and keys live in `Assets/_Project/Data/GameFlow/Interaction.asset`. Overlapping units are lifted onto the new piece without damage and their movement resumes after the NavMesh update (replaces the old Q-17 overlap rejection).
+- **Real battle wiring (2026-11-12):** Battle starts with F at the starting point in front of the gate. Ladders reach the top of stacked walls. Walls above the gate drop when it falls, and gate breakers keep attacking pieces that dropped into the gate cell. `GameFlow` stays the single source of phase truth and the existing Game squads/castle are used. Simultaneous win/loss → defeat (Q-09); with no siege-capable enemies and no path to allies, remaining enemies retreat and victory follows (Q-30). `SiegePrototype` is kept as a separate test scene.
+- **Map expansion (2026-11-12, user approved):** Before wiring battle into Game, the castle grew to 96×96m, courtyard 90×90m, ground 240×300m, with a 120m northern approach, five placeholder facilities, walkways, assembly space, and build-camera pan/zoom. The 3m wall unit stays. Exact layout values are test values; current state is tracked in 6.1 and Context.
+- **Q-27 option A details (2026-11-11):** `BuildLayout` tracks layers per cell. Game grid (`Data/GameFlow/Grid.asset`) allows 3 tiers; prototype grids default to 1 tier, so older behavior and tests are unchanged. Detail rules made during implementation (not yet approved, listed in GameDesign walls section): no stacking on stairs, multi-cell pieces need equal support height, no stacking on weapon-holding pieces and no weapons on covered walls, dropped pieces keep HP and weapons, multi-cell pieces losing only part of their support are destroyed. Dropping is instant with no animation. Teammate note: breaking a wall makes the upper tier drop and refill the gap, so a 2-tier wall must be broken twice. Read layer via `BuildPlacement.Level` and floor height via `Elevation`. Options B (smaller cells + height steps) and C (1m voxels) were considered and rejected for cost; C would have required a new castle system and did not fit Synty wall assets.
+- **C-1a decisions (2026-11-12, user chose all recommendations):** Scope is run data, combat I/O format, rules, and EditMode tests; Game scene wiring happens in C-1~2. Surviving heroes/grunts fully heal before the next battle, so run data stores no unit HP. Each grunt gets a unique in-run ID. The battle result format is a draft pending the combat teammate's review.
+- **Current temporary implementation:** B-2/B-3 move speed, HP, attack, defense, range, windup, AI tick, detection range, projectile values, and camera settings are test asset values. B-3 "unreachable" means no complete NavMesh path. Final siege decisions for breaking, climbing, and flying expand in B-6.
+
 ## 3. Current Status & Starting Point
 
 ### 3.1 Implemented vs Pending Real Connections
@@ -128,7 +139,7 @@ Target release platforms, distribution channels, release dates, and final conten
 | Test Scenes | `CombatPrototype` (controls), `UnitBattlePrototype` (10v10), `ConstructionPrototype` (building/weapons), `SquadCommandPrototype` (orders), `WallCommandPrototype` (integrated), `SiegePrototype` (siege assault) | Wall-breaching/aerial enemies, multi-wave sequences, morale routs, full loop integration |
 | Art & Performance | Capsule/box placeholder visuals, dual-tier NavMesh benchmark | Production Synty packs, animations, VFX, full combat performance profiling |
 
-**Latest Test Pass Baseline:** EditMode **201 passed**, PlayMode **88 passed** (across D-1, D-5, D-7 feature branches; all green).
+**Latest Test Pass Baseline:** EditMode **201 passed**, PlayMode **88 passed** on the D-7 branch `feature/player-equipment` (based on develop `d71f9b6`, which already contained D-5, D-1, and the BUG-wall-hold fix). After the D-7 merge (`050948a`), develop only received doc changes, but the suite has not been re-run on the merged develop itself. Physical F/Esc/I, middle-click, wheel, Home input and the Windows build remain for manual verification. Explicit performance tests are separate. Per-branch results are in History.md.
 
 ### 3.2 Status Conventions
 
@@ -140,7 +151,7 @@ Target release platforms, distribution channels, release dates, and final conten
 |---|---|---|---|---|
 | M0 Foundation & Combat Core | Data structures, player controls, baseline combat, initial performance profiling | Project setup | Verified A, B-1~3 deliverables | Done |
 | M1 Single Siege Battle | Walls, placement, dual-tier navigation, squad commands, enemy siege AI, ladders, win/loss | M0, core contracts | Defend castle via direct combat and commands; structural collapse and outcomes verified | In Progress (Prototypes operational; Game scene integrated) |
-| M2 Repeatable Run Loop | Run state, prep facilities, squad setup, wave preview, rewards, casualty carry-over, minimal skills/perks | M1 integration | 3-stage loop: Prep → Combat → Rewards → Next Stage / Defeat Results | In Progress (C-1a, C-1~2, C-4, D-0, D-2 verified) |
+| M2 Repeatable Run Loop | Run state, prep facilities, squad setup, wave preview, rewards, casualty carry-over, minimal skills/perks | M1 integration | 3-stage loop: Prep → Combat → Rewards → Next Stage / Defeat Results | In Progress (C-1a Done; C-1~2, C-4, D-0, D-1, D-2, D-5, D-7 implemented and awaiting manual verification) |
 | M3 Meta Progression & Saves | Disk persistence, unlocks, perk loadouts, run score, reincarnation bonuses | M2 contracts | Persistent meta across sessions; perk re-allocation; dynamic unlock pools | Core rules drafted |
 | M4 Content & Strategic Depth | Content scope finalization, hero/enemy/item/stage rosters, boss encounters, economy tuning | M2 playtest feedback, M3 progression | Viable multi-build strategies across full run lengths | High-level planning |
 | M5 Art, Audio & UX Polish | Synty asset swap, animations, VFX, audio, production UI, tutorialization | M2 stable loop, Q-15 | Intuitive onboarding and polished sensory feedback | High-level planning |
@@ -190,7 +201,18 @@ Transition requires full cohesion: player, squads, walls, enemies, morale, and w
 | D-6 | Blacksmith: Craft, upgrade, sell equipment | D-0, D-1, D-7 / Q-35 | Craft items via materials/gold; upgrades boost item stats | `ItemInstance` |
 | D-2 | Build Economy: Spend run gold on construction/repairs | C-1~2 / Costs | Build, demolish, and repair spend run gold; locked during battle | `ConstructionWorld`, `PlacementController` |
 
-Recommended Order: D-0 → D-5 → D-1 → D-2 → D-0b → D-4 → D-8 → D-3 → D-7 → D-6.
+Recommended Order: D-0 → D-5 → D-1 → D-2 → D-0b → D-4 → D-8 → D-3 → D-7 → D-6. D-5 and D-2 do not share files with D-0b and could be split between people. Consumable use (Q-12) and unlock point spending (Q-07) are not in this batch.
+
+Rules that already existed before this batch: facility levels, upgrade costs, item/hero pools, barracks stat modifiers (`FacilityDefinition`, `FacilityState`), shop rolls/buy/sell/sale ratio (`ItemShop`, `EconomyConfig`), equipping (`Character.TryEquip`), hire/recruit cost slots (`HeroDefinition.HireCost`, `SoldierDefinition.RecruitCost`), unlock gacha (`UnlockGacha`). Still missing: spawning new units into the scene, blacksmith crafting/upgrade data, and linking hired heroes to scene characters.
+
+### 4.3 When to Detail M3 and Later
+
+- Before M3: break down save targets, timing, versioning, and failure handling, plus unlock and perk UI flows. Keep E-1~4 as tracking IDs for this stage.
+- Before M4: agree with the user on final content counts, run length, whether bosses exist, and target play time. Do not pre-create production tasks for undecided counts.
+- Before M5: decide production and optimization approach from swap tests of a representative character, wall, and UI plus profiling results. Do not add new input devices or languages automatically.
+- Before M6: fix measurement conditions (hardware, troop count, frame rate, memory) and defect priorities. Do not pass on test counts or editor average frame rate alone.
+- Before M7: once a distribution channel is chosen, build a checklist for install, save paths, permissions, versioning, credits, and store materials. Paid services or platform integrations are planned only after a separate decision.
+- Foraging, loyalty, and difficulty modes are separate scope reviews after M7. Old F-stage content/art/balance items were split into M4~6.
 
 ## 5. M1 Detailed Plan
 
@@ -208,7 +230,7 @@ Recommended Order: D-0 → D-5 → D-1 → D-2 → D-0b → D-4 → D-8 → D-3 
 - **B-4.3**: Wall/gate/stairs entities, health, destruction events, visual decoupling. (Verified)
 - **B-4.4**: Ground-to-wall connectivity, stair climbing, vertical path queries. (Verified)
 - **B-4.5**: Async NavMesh updates on collapse, fall damage, landing recovery. (Verified)
-- **B-4.6**: Siege weapon mount points, support validation, concurrent destruction. (Verified)
+- **B-4.6**: Siege weapon mount points, support validation, concurrent destruction. (Mounting and collapse verified; Waiting for Link because firing, damage, and weapon HP depend on Q-21)
 - **B-4.7**: Placement controls, preview rendering, integrated test scene. (Verified)
 
 ### 5.3 B-5 Squads & Commanding
@@ -218,23 +240,31 @@ Recommended Order: D-0 → D-5 → D-1 → D-2 → D-0b → D-4 → D-8 → D-3 
 - **B-5.3**: Input bindings (F1–F4, `, 1, 2, 3) and HUD indicators. (Verified)
 - **B-5.4**: Wall-top commanding, stair traversal, path breakage, stall recovery. (Verified)
 
+B-4/B-5 "Verified" means checked in the prototype scenes (`ConstructionPrototype`, `SquadCommandPrototype`, `WallCommandPrototype`). It does not mark B-4, B-5, or M1 as done. Captain heroes (Q-05) and final squad markers (M5) are later links. How to add a new siege weapon and current test values are in Context.
+
 ### 5.4 B-6 Enemy Siege Behaviors
 
-- **B-6.1**: Enemy archetypes, behavior trees, targeting priority contracts.
-- **B-6.2**: Ground melee assault on gates/breaches.
-- **B-6.3**: Ladder climbing and aerial assault behaviors.
-- **B-6.4**: Data-driven archetype composition and integrated 3-role combat.
+The siege prototype and Game scene already cover ladder grunts, gate breakers, and archers. The items below are the remaining scope; see Backlog B-6.1.
+
+| ID | Deliverable | Prerequisites | Completion Criteria |
+|---|---|---|---|
+| B-6.1 | Enemy archetypes and behavior list, target priority and switching contract | B-0.2~3, B-3, enemy behavior details confirmed | Entry, exit, and failure conditions are written for chase, unit attack, wall attack, climbing, and flying |
+| B-6.2 | Ground enemies attacking walls/gates and entering breaches | B-6.1, B-4.3~5 | Enemies find a wall to attack even with no full path to a unit, then enter through the opened path. Conflicts with the existing unreachable rule, so the combat integration owner merges it |
+| B-6.3 | Climbing and flying enemy movement and attacks | B-6.1, B-4.4~5, climb/flight rules confirmed | Enemies do not give up on wall-top targets just because there is no ground NavMesh path; collision and range verified per movement type |
+| B-6.4 | Data composition and three-type integration test | B-6.2~3 | Breakers, climbers, and flyers approach differently; a new type built from existing behaviors is added through data only. New behaviors themselves still need code |
 
 ### 5.5 B-7 Waves, B-8 Morale, B-9 Outcomes
 
-- **B-7.1**: Wave timetables, spawn points, spawning coordinator.
-- **B-7.2**: Enemy squad grouping, corpse explosion, post-battle cleanup.
-- **B-8.1**: Squad morale calculations, combat stat debuffs, rout thresholds.
-- **B-8.2**: Rout navigation, battlefield exit, casualty categorization.
-- **B-8.3**: Morale skill/perk event hooks.
-- **B-9.1**: Pure C# win/loss evaluation rules (defeat prioritizes simultaneous victory).
-- **B-9.2**: Scene outcome aggregation, single payout execution, result creation.
-- **B-9.3**: M1 integrated verification and regression suite.
+| ID | Deliverable | Prerequisites | Completion Criteria |
+|---|---|---|---|
+| B-7.1 | Wave, spawn point, and timetable data plus spawn rules | B-6.1 enemy definition contract, B-0.3 | Spawns the configured types, counts, and timings from the same data; no duplicate spawns on pause/restart |
+| B-7.2 | Enemy squad linking, corpse explosion, post-battle cleanup | B-7.1, B-6, B-8 result contract, explosion details | Spawning, enemy squads, and death effects apply once each in the real scene; no spawn state leaks into the next battle |
+| B-8.1 | Squad morale, stat modifiers, rout transition math | Q-04~05, B-0.2~3 | Losses, boosts, limits, and rout transitions verified in EditMode |
+| B-8.2 | Rout movement, exit, and result separation | B-8.1, command/movement wiring, Q-04 | Dead, routing, and exited are distinct and never double-counted; same rules for allies and enemies |
+| B-8.3 | Hooks for morale skills, captains, and perk effects | B-8.1~2, effect event contract | A sample morale boost applies once to a real squad and its subscription is cleaned up. Full skill execution belongs to C-X |
+| B-9.1 | Pure win/loss rules | Q-09, B-0.3 | All enemies dead/fled, gate-only destroyed, gate + allies wiped, player death, and simultaneous cases verified (defeat wins ties). Done in `SiegeOutcomeRules` |
+| B-9.2 | Scene tallies, single end handling, result creation | B-9.1, B-4 gate, B-7, B-8.2 | Several deaths in one frame still produce one result and one reward request; no early victory while enemies are still scheduled to spawn |
+| B-9.3 | M1 integration scene, repeated play, standalone build check | B-4~8 linked, B-9.2 | Prepare castle → direct combat + squad commands → destruction, morale, different enemy approaches → win/loss, repeated; B-2/B-3 regressions and build checked |
 
 ### 5.6 Early M2 Deliverables in M1
 
@@ -242,7 +272,11 @@ Recommended Order: D-0 → D-5 → D-1 → D-2 → D-0b → D-4 → D-8 → D-3 
 - **C-1~2 Status**: In Verification (`feature/run-scene-connection`). Binds Game scene units to run IDs; records post-battle results; restores survivor HP.
 - **C-4 Status**: In Verification (`feature/stage-rewards`). Payouts gold, materials, items, Commander EXP, and unlock points per victory.
 - **D-2 Status**: In Verification (`feature/build-costs`). Build gold deductions, demolition refunds, repair execution.
-- **D-0 Status**: In Verification (`feature/facility-frame`). Courtyard modal pop-ups (F/Esc), input freezing, currency displays.
+- **D-0 Status**: In Verification (`feature/facility-frame`, merged `d146f35`). Courtyard modal pop-ups (F/Esc), input freezing, currency displays. The Siege facility has state only; its screen is the existing construction station.
+- **D-5 / D-1 Status**: In Verification (`feature/shop-and-upgrade`, merged `681d08d`). User instruction: follow the design and leave unclear parts empty, adding only prototype functionality. `ItemShop` is attached to the run as `RunState.Shop` (`SetupShop`, `RestockShopIfNeeded`, `TryBuy`, `TrySell`). Stock rolls once per prep (per battles fought) from the current shop level's pool via the run seed, excluding locked items (Q-34). Sale price = gold price × sale ratio (`Data/GameFlow/Economy.asset`, 50%); reward items can be sold too. `RunState.TryUpgradeFacility` upgrades any facility from the run wallet; the pop-up shows the next cost or max level. Implementation choice: an upgrade does not re-roll this prep's stock and applies from the next prep (prevents free re-rolls). Tavern, barracks, and blacksmith only gain levels; their effects come with D-3, D-4, D-6. Shop items (wooden shield 25, leather armor 30, chain armor 60, steel sword 80 gold) and level pools are placeholder values. Out of scope: re-rolls, locked slots, material-cost goods, stock quantities above 1.
+- **D-7 Status**: In Verification (`feature/player-equipment`, merged `050948a`). Player equipment only; hero equipment comes after D-3, and Q-31 affects heroes only. The run player hero reuses the scene player's `Character` (`RunUnitBinding.Create(..., playerCharacter)`, `RunState.AddHero(Character)`), so equipped stats apply in the scene without changing `CharacterActor`. `RunState.TryEquip`/`TryUnequip` accept only this run's heroes and stash items. Press I during prep (`PreparationInteractionSettings.Equipment`) to open `GameEquipment`. Implementation choice: slots are untyped and use the hero definition's slot count (player 3). Item effects are prototype values (iron sword attack +4, steel sword +8, wooden shield defense +2, leather armor +3, chain armor +6 and move speed −10%). Max HP effects are not used because equipping during prep would leave current HP below max. Out of scope: hero equipment, weapon/armor slot types, equipping in battle, equipment visuals.
+
+Even with Q-13 undecided, keeping meta, run, and battle lifetimes separate is fine. Do not implement mid-run saves or unconfirmed result policies. Test with agreed result data instead of referencing wall or rout objects that do not exist yet.
 
 ## 6. Team Division of Labor
 
@@ -252,6 +286,20 @@ Recommended Order: D-0 → D-5 → D-1 → D-2 → D-0b → D-4 → D-8 → D-3 
 |---|---|---|
 | Teammate | Enemy assault, siege behavior execution (B-6, B-7, B-8, B-9). | Scene flow framework, game entry scenes (`Title`, `Game`). |
 | User | Game entry and loop architecture (G-0, G-1): Scene switches, Title → Prep → Combat → Reward/Results phases, run data lifecycle (C-1a, C-1~2). | Shared combat core (`CharacterActor`, `UnitCombatAI`), isolated enemy test scenes. |
+
+The teammate scope (B-6~B-9) is our interpretation; confirm exact boundaries with the teammate. Design questions still go to the user first. The Developer 1/2/3 table in 6.2 is a reference for when the team grows.
+
+**Prototype vs real scenes (2026-11-11, user confirmed):** All `*Prototype` scenes are mechanism demos. The real loop is built in new scenes (`Title`, `Game`) rather than chaining prototypes; prototypes stay as test scenes.
+
+**G-0 / G-1 status: wired, awaiting manual playtest.** `Title` and `Game` scenes and flow rules (`ProjectNeo.Flow`) exist (G-0); the castle, construction, player, and squads are wired into Game (G-1). Prep is 1st-person walking with construction-station F and Esc back; battle is 1st-person control and commanding started from the gate banner F, with real enemy assault and win/loss through `GameBattleController`; rewards are paid out (C-4). Both scenes were appended to the build list; the first build scene is still `ConstructionPrototype`.
+
+**Default castle (2026-11-12, user approved expansion):** Grid 80×100 cells (240×300m), 3m cells, up to 3 tiers. Outer wall 32×32 cells (96×96m), courtyard 30×30 cells (90×90m), northern field depth 120m. North gate, three stairs, placeholder tavern/shop/barracks/blacksmith/construction buildings, central walkway, and assembly area. The player starts at the south courtyard (40, 34); squads start at the northern assembly area. Build camera pan/zoom/Home reset is enabled in the game-only asset. Layout will be tuned through real play.
+
+**Temporary in G-1 (not approved design):** 3 squads × 4 units are prototype values. Units, positions, and walls are not reset or replenished between stages except for survivor healing. The construction screen reuses the test `ConstructionHud`. No building during battle is a confirmed rule.
+
+**Remaining:** formal waves, morale, and result data expansion; real map layout (inner keep, etc.); casualty carry-over (C-3); remaining facility features (D-0b, D-3, D-4, D-6, D-8); deciding whether Title becomes the first build scene and whether prototypes leave the build; run abandon / pause menu (no design yet).
+
+**Battle–flow interface (2026-11-12):** `GameBattleController` starts on entering `GamePhase.Battle` via `GameSession.Flow.PhaseChanged` and calls `GameSession.Flow.FinishBattle` once when it ends; calls outside battle and second calls are ignored. With `GameRunLink` attached it passes a `BattleResult`; otherwise a plain `BattleOutcome`. Change the build list's first scene only after telling the teammate. Only one person edits `Game.unity` at a time. Generic frameworks (service locator, event bus) and save features (Q-13) are out of G-0 scope.
 
 ### 6.2 Parallel Workflow Matrix
 
