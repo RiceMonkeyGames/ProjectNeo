@@ -42,6 +42,7 @@ namespace ProjectNeo.Editor
             if (EditorSceneManager.GetActiveScene().isDirty) throw new InvalidOperationException("Save the active scene first.");
             Scene scene = EditorSceneManager.OpenScene(GameFlowSetup.GamePath, OpenSceneMode.Single);
             CreateData();
+            CreateShopData();
             AssetDatabase.SaveAssets();
             // 씬을 연 뒤 만든 에셋은 경로로 다시 불러와 연결한다(C-4 GameRewardSetup과 같은 주의).
             var start = AssetDatabase.LoadAssetAtPath<RunConfig>(StartPath)
@@ -53,8 +54,9 @@ namespace ProjectNeo.Editor
             if (facilities == null) facilities = battle.gameObject.AddComponent<GameFacilities>();
             GamePhaseView view = Find<GamePhaseView>(scene);
             GameFlowHud hud = Find<GameFlowHud>(scene);
-            BuildPopup(hud, facilities, out GameObject panel, out TMP_Text title, out TMP_Text status, out TMP_Text body);
-            facilities.Configure(start, view, panel, title, status, body);
+            Popup popup = BuildPopup(hud, facilities);
+            facilities.Configure(start, view, popup.panel, popup.title, popup.status, popup.body);
+            facilities.ConfigureActions(popup.upgrade, popup.upgradeLabel, popup.trade, popup.offers, popup.inventory, popup.row);
             EditorUtility.SetDirty(facilities);
 
             ConstructionWorld world = Find<ConstructionWorld>(scene);
@@ -116,41 +118,156 @@ namespace ProjectNeo.Editor
             EditorUtility.SetDirty(start);
         }
 
-        static void BuildPopup(GameFlowHud hud, GameFacilities facilities, out GameObject panel, out TMP_Text title,
-            out TMP_Text status, out TMP_Text body)
+        const string EconomyPath = "Assets/_Project/Data/GameFlow/Economy.asset";
+
+        /// <summary>
+        /// D-5 상점 프로토타입 데이터. 거래 수치(판매 50%)와 아이템 4종을 더 만들고, 상점 시설 정의의 품목 풀이 모두 비어 있을 때만
+        /// 레벨별 풀을 채운다(인스펙터에서 바꾼 값은 덮어쓰지 않는다). 시작 설정에 거래 수치를 넣는다.
+        /// </summary>
+        public static void CreateShopData()
         {
-            // 한글 글꼴(RuntimeSystemFont)이 실행 중에 바꿔 주는 범위 안에 둔다.
+            if (AssetDatabase.LoadAssetAtPath<EconomyConfig>(EconomyPath) == null)
+                AssetDatabase.CreateAsset(EconomyConfig.Create(0.5f), EconomyPath);
+            // 프로토타입 임의 값(2026-11-12). 철검·회복약은 C-4 보상 아이템을 같이 쓴다.
+            ItemDefinition potion = GameRewardSetup.Item("item_potion", "회복약", ItemKind.Consumable, 10);
+            ItemDefinition sword = GameRewardSetup.Item("item_iron_sword", "철검", ItemKind.Equipment, 40);
+            ItemDefinition shield = GameRewardSetup.Item("item_wood_shield", "나무 방패", ItemKind.Equipment, 25);
+            ItemDefinition leather = GameRewardSetup.Item("item_leather_armor", "가죽 갑옷", ItemKind.Equipment, 30);
+            ItemDefinition chain = GameRewardSetup.Item("item_chain_armor", "사슬 갑옷", ItemKind.Equipment, 60);
+            ItemDefinition steel = GameRewardSetup.Item("item_steel_sword", "강철검", ItemKind.Equipment, 80);
+
+            var shop = AssetDatabase.LoadAssetAtPath<FacilityDefinition>(PathOf(FacilityType.Shop));
+            if (shop != null)
+            {
+                var data = new SerializedObject(shop);
+                SerializedProperty levels = data.FindProperty("levels");
+                bool empty = true;
+                for (int i = 0; i < levels.arraySize; i++)
+                    if (levels.GetArrayElementAtIndex(i).FindPropertyRelative("itemPool").arraySize > 0) empty = false;
+                if (empty)
+                {
+                    var pools = new[]
+                    {
+                        new[] { (potion, 2f), (sword, 1f), (shield, 1f), (leather, 1f) },
+                        new[] { (potion, 2f), (sword, 1f), (shield, 1f), (leather, 1f), (chain, 1f), (steel, 0.5f) },
+                        new[] { (potion, 1f), (sword, 1f), (shield, 0.5f), (leather, 1f), (chain, 1.5f), (steel, 1.5f) },
+                    };
+                    for (int i = 0; i < levels.arraySize && i < pools.Length; i++)
+                    {
+                        SerializedProperty pool = levels.GetArrayElementAtIndex(i).FindPropertyRelative("itemPool");
+                        foreach ((ItemDefinition item, float weight) in pools[i])
+                        {
+                            pool.InsertArrayElementAtIndex(pool.arraySize);
+                            SerializedProperty entry = pool.GetArrayElementAtIndex(pool.arraySize - 1);
+                            entry.FindPropertyRelative("item").objectReferenceValue = item;
+                            entry.FindPropertyRelative("weight").floatValue = weight;
+                        }
+                    }
+                    data.ApplyModifiedPropertiesWithoutUndo();
+                    EditorUtility.SetDirty(shop);
+                }
+            }
+
+            var start = AssetDatabase.LoadAssetAtPath<RunConfig>(StartPath);
+            if (start != null)
+            {
+                var startData = new SerializedObject(start);
+                startData.FindProperty("economy").objectReferenceValue = AssetDatabase.LoadAssetAtPath<EconomyConfig>(EconomyPath);
+                startData.ApplyModifiedPropertiesWithoutUndo();
+                EditorUtility.SetDirty(start);
+            }
+        }
+
+        struct Popup
+        {
+            public GameObject panel, trade;
+            public TMP_Text title, status, body, upgradeLabel;
+            public Button upgrade, row;
+            public RectTransform offers, inventory;
+        }
+
+        static Popup BuildPopup(GameFlowHud hud, GameFacilities facilities)
+        {
+            // 한글 글꼴(RuntimeSystemFont)이 실행 중에 바꿔 주는 범위 안에 둔다. 매물 줄은 실행 중 rowTemplate을 복제한다.
             var font = (RuntimeSystemFont)new SerializedObject(hud).FindProperty("font").objectReferenceValue;
             Transform parent = font != null && !hud.transform.IsChildOf(font.transform) ? font.transform : hud.transform;
             Transform existing = parent.Find("FacilityPanel");
             if (existing != null) UnityEngine.Object.DestroyImmediate(existing.gameObject);
 
-            panel = new GameObject("FacilityPanel", typeof(RectTransform), typeof(Image));
-            panel.transform.SetParent(parent, false);
-            var rect = panel.GetComponent<RectTransform>();
+            var popup = new Popup();
+            popup.panel = new GameObject("FacilityPanel", typeof(RectTransform), typeof(Image));
+            popup.panel.transform.SetParent(parent, false);
+            var rect = popup.panel.GetComponent<RectTransform>();
             rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.sizeDelta = new Vector2(640f, 420f);
-            panel.GetComponent<Image>().color = new Color(0.06f, 0.08f, 0.1f, 0.94f);
+            rect.sizeDelta = new Vector2(780f, 540f);
+            popup.panel.GetComponent<Image>().color = new Color(0.06f, 0.08f, 0.1f, 0.94f);
 
-            title = Text(panel.transform, "Title", "Facility", 32f, new Vector2(24f, -20f), new Vector2(-24f, -70f));
-            title.fontStyle = FontStyles.Bold;
-            status = Text(panel.transform, "Status", "Level", 18f, new Vector2(24f, -76f), new Vector2(-24f, -136f));
-            status.color = new Color(1f, 0.9f, 0.55f);
-            body = Text(panel.transform, "Body", "", 20f, new Vector2(24f, -146f), new Vector2(-24f, -330f));
+            popup.title = Text(popup.panel.transform, "Title", "Facility", 32f, new Vector2(24f, -20f), new Vector2(-270f, -66f));
+            popup.title.fontStyle = FontStyles.Bold;
+            popup.status = Text(popup.panel.transform, "Status", "Level", 18f, new Vector2(24f, -70f), new Vector2(-24f, -122f));
+            popup.status.color = new Color(1f, 0.9f, 0.55f);
+            popup.body = Text(popup.panel.transform, "Body", "", 17f, new Vector2(24f, -126f), new Vector2(-24f, -196f));
 
-            var close = new GameObject("Button_Close", typeof(RectTransform), typeof(Image), typeof(Button));
-            close.transform.SetParent(panel.transform, false);
-            var closeRect = close.GetComponent<RectTransform>();
-            closeRect.anchorMin = closeRect.anchorMax = closeRect.pivot = new Vector2(0.5f, 0f);
-            closeRect.anchoredPosition = new Vector2(0f, 20f); closeRect.sizeDelta = new Vector2(200f, 48f);
-            var image = close.GetComponent<Image>(); image.color = new Color(0.15f, 0.24f, 0.29f);
-            var button = close.GetComponent<Button>(); button.targetGraphic = image;
-            UnityEventTools.AddPersistentListener(button.onClick, facilities.Close);
-            TMP_Text label = Text(close.transform, "Label", "닫기 (Esc)", 20f, Vector2.zero, Vector2.zero);
+            popup.upgrade = ButtonAt(popup.panel.transform, "Button_Upgrade", "Upgrade", new Vector2(1f, 1f),
+                new Vector2(-24f, -20f), new Vector2(230f, 44f), facilities.TryUpgradeFromButton, out popup.upgradeLabel);
+
+            popup.trade = new GameObject("Trade", typeof(RectTransform));
+            popup.trade.transform.SetParent(popup.panel.transform, false);
+            var tradeRect = popup.trade.GetComponent<RectTransform>();
+            tradeRect.anchorMin = Vector2.zero; tradeRect.anchorMax = Vector2.one;
+            tradeRect.offsetMin = new Vector2(24f, 84f); tradeRect.offsetMax = new Vector2(-24f, -204f);
+            popup.offers = Column(popup.trade.transform, "Offers", "매물 (클릭해서 구매)", 0f, 0.5f);
+            popup.inventory = Column(popup.trade.transform, "Inventory", "보관함 (클릭해서 판매)", 0.5f, 1f);
+
+            popup.row = ButtonAt(popup.panel.transform, "RowTemplate", "Item", new Vector2(0.5f, 0.5f), Vector2.zero,
+                new Vector2(340f, 34f), null, out TMP_Text rowLabel);
+            rowLabel.fontSize = 16f; rowLabel.alignment = TextAlignmentOptions.MidlineLeft;
+            rowLabel.rectTransform.offsetMin = new Vector2(10f, 0f);
+            popup.row.gameObject.AddComponent<LayoutElement>().preferredHeight = 34f;
+            popup.row.gameObject.SetActive(false);
+
+            ButtonAt(popup.panel.transform, "Button_Close", "닫기 (Esc)", new Vector2(0.5f, 0f), new Vector2(0f, 20f),
+                new Vector2(200f, 48f), facilities.Close, out _);
+            popup.panel.SetActive(false);
+            return popup;
+        }
+
+        static RectTransform Column(Transform parent, string name, string header, float left, float right)
+        {
+            var column = new GameObject(name + "Column", typeof(RectTransform));
+            column.transform.SetParent(parent, false);
+            var rect = column.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(left, 0f); rect.anchorMax = new Vector2(right, 1f);
+            rect.offsetMin = new Vector2(left > 0f ? 8f : 0f, 0f); rect.offsetMax = new Vector2(right < 1f ? -8f : 0f, 0f);
+            TMP_Text title = Text(column.transform, "Header", header, 17f, Vector2.zero, new Vector2(0f, -26f));
+            title.color = new Color(0.7f, 0.85f, 1f);
+            var list = new GameObject(name, typeof(RectTransform), typeof(VerticalLayoutGroup));
+            list.transform.SetParent(column.transform, false);
+            var listRect = list.GetComponent<RectTransform>();
+            listRect.anchorMin = Vector2.zero; listRect.anchorMax = Vector2.one;
+            listRect.offsetMin = Vector2.zero; listRect.offsetMax = new Vector2(0f, -30f);
+            var layout = list.GetComponent<VerticalLayoutGroup>();
+            layout.spacing = 4f; layout.childControlHeight = true; layout.childControlWidth = true;
+            layout.childForceExpandHeight = false; layout.childForceExpandWidth = true;
+            return listRect;
+        }
+
+        static Button ButtonAt(Transform parent, string name, string text, Vector2 anchor, Vector2 position, Vector2 size,
+            UnityEngine.Events.UnityAction action, out TMP_Text label)
+        {
+            var root = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
+            root.transform.SetParent(parent, false);
+            var rect = root.GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = rect.pivot = anchor;
+            rect.anchoredPosition = position; rect.sizeDelta = size;
+            var image = root.GetComponent<Image>(); image.color = new Color(0.15f, 0.24f, 0.29f);
+            var button = root.GetComponent<Button>(); button.targetGraphic = image;
+            if (action != null) UnityEventTools.AddPersistentListener(button.onClick, action);
+            label = Text(root.transform, "Label", text, 18f, Vector2.zero, Vector2.zero);
             label.alignment = TextAlignmentOptions.Center;
             label.rectTransform.anchorMin = Vector2.zero; label.rectTransform.anchorMax = Vector2.one;
             label.rectTransform.offsetMin = label.rectTransform.offsetMax = Vector2.zero;
-            panel.SetActive(false);
+            return button;
         }
 
         /// <summary>패널 위쪽 기준으로 왼쪽 위·오른쪽 아래 여백을 받아 글 칸을 만든다.</summary>

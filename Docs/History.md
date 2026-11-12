@@ -1,6 +1,6 @@
 # 과거 검증 기록
 
-마지막 갱신: 2026-11-12 17:41:49 (KST). [Context.md](Context.md)에서 분리한 완료 결과·성능 측정·직접 검증 기록이다. 당시 완료 범위와 검증 근거를 보존하며, 과거 테스트 개수·임시 수치는 최신 기준이나 최종 성능 보장이 아니다. 현재 작업 상태는 [로드맵 3장](ImplementationPlan.md#3-현재-상태와-출발점)을 먼저 읽는다. 에이전트는 과거 결정의 이유나 검증 근거가 필요할 때만 이 파일을 연다. 필요한 날짜·작업 ID를 검색해서 해당 부분만 읽는다.
+마지막 갱신: 2026-11-12 20:00:44 (KST). [Context.md](Context.md)에서 분리한 완료 결과·성능 측정·직접 검증 기록이다. 당시 완료 범위와 검증 근거를 보존하며, 과거 테스트 개수·임시 수치는 최신 기준이나 최종 성능 보장이 아니다. 현재 작업 상태는 [로드맵 3장](ImplementationPlan.md#3-현재-상태와-출발점)을 먼저 읽는다. 에이전트는 과거 결정의 이유나 검증 근거가 필요할 때만 이 파일을 연다. 필요한 날짜·작업 ID를 검색해서 해당 부분만 읽는다.
 
 새 완료 결과는 이 파일 맨 끝에 `### 날짜: 제목` 형식으로 추가하고, 현재 상태는 로드맵 3장, 코드 위치는 Context 2장도 함께 갱신한다.
 
@@ -396,4 +396,14 @@
 - 검증: 컴파일 오류 없음. 해당 테스트 단독 6번 연속 통과. EditMode 180개(새 `MoveStallTrackerTests` 5개), PlayMode 전체 80개 통과. 직접 플레이와 Windows 빌드는 하지 않았다.
 - 직접 검증: 계단만 지우는 시험 버튼이 없어 원래 상황은 자동 테스트로 확인한다. 같은 원리의 일반 확인: `Assets/_Project/Scenes/SquadCommandPrototype.unity` → Play → ` 로 전체 선택 → 화면 가운데를 가운데 장애물 바로 앞 땅에 맞추고 1(이동) → 부대원이 몰려도 모두 근처에서 멈추고 왼쪽 위 지시가 전부 `중지`로 바뀌어야 한다. Play를 다시 시작하면 초기화된다.
 - 자동 검증 재실행: Test Runner → PlayMode → `WallCommandPlayTests.Squad_StopsOnWallWhenStairsDisappear` 여러 번 Run Selected, EditMode `MoveStallTrackerTests`.
+
+### 2026-11-12: D-5 상점 구매·판매와 D-1 시설 업그레이드
+
+- 담당 황성민, 브랜치 `feature/shop-and-upgrade`(develop `206e524` 기준). 백로그 D-5·D-1을 `작업중`·황성민으로 표시하고 다시 읽어 확인했다.
+- 사용자 지시: 두 작업을 함께 하고, 확장성 있게 기획대로 만들되 기획이 자세하지 않은 부분은 비워 두고 기능만 넣는다(프로토타입).
+- 추가·변경: `RunState`(상점 창구 `Shop`, `ShopStockedFor`, `SetupShop`, `ShopSeedFor`, `RestockShopIfNeeded`, `TryBuy`, `TrySell`, `TryUpgradeFacility`), `RunConfig.Economy`·`WithEconomy`, `GameFacilities`(업그레이드 버튼, 상점 매물·보관함 목록, 결과 안내), `GameFlowHud`(준비 중 제목 골드를 매 프레임 갱신해 D-2의 늦은 골드 표시 제한 해소), `GameFacilitySetup`(거래 수치·아이템·상점 풀 데이터와 새 팝업), `GameRewardSetup.Item`을 내부 공개로. 에셋 `Data/GameFlow/Economy.asset`(판매 50%), 아이템 `item_wood_shield` 25·`item_leather_armor` 30·`item_chain_armor` 60·`item_steel_sword` 80골드, `Facility_Shop.asset` 레벨별 풀(1레벨 4종 중 3개, 2레벨 6종 중 4개, 3레벨 6종 중 5개, 가중치 임의 값). 에디터 메뉴로 `Game.unity` 팝업을 다시 만들었다(에디터 API 저장).
+- 구현 판단(기획 미정 부분): 업그레이드는 이번 준비의 매물을 다시 뽑지 않고 다음 준비부터 반영한다. 같은 매물은 한 개씩만 판다. 판매가는 구매가의 골드만 기준으로 한다(기존 `ItemShop` 규칙). 주점·훈련장·대장간은 레벨만 오르고 효과는 각 시설 작업에서 붙인다. 리롤·고정 슬롯은 후속.
+- 남은 제한: 수성 시설은 팝업이 없어 업그레이드 화면이 없다. 보관함은 8줄까지 보이고 나머지는 개수만 표시한다. 산 장비를 착용하는 기능은 D-7이다.
+- 검증: 컴파일 오류 없음. EditMode 195개 전체 통과(새 `RunShopTests` 9개). PlayMode 85개 전체 통과(`GameFacilityPlayTests` 2개 추가). Play 중 상점·대장간 팝업 화면을 캡처해 매물·보관함·업그레이드 버튼과 한글 표시, HUD와의 겹침을 확인하고 패널 높이를 540으로 줄였다. 물리 키보드·마우스 직접 플레이와 Windows 빌드는 하지 않았다.
+- 직접 검증: `Assets/_Project/Scenes/Game.unity` → Play → 상점 건물을 바라보고 F → 왼쪽 `매물`에 3개(예: 철검 · 40골드)가 보인다 → 하나를 클릭하면 위쪽 골드가 줄고 오른쪽 `보관함`에 `… 팔기 · 절반 골드`가 생긴다 → 그것을 클릭하면 절반 값이 돌아온다 → 오른쪽 위 `업그레이드 · 60골드` 클릭 → `레벨 2 / 3`, 버튼이 `120골드`로 바뀐다(매물은 다음 준비부터 4개) → Esc로 닫고 전투를 이긴 뒤 다음 준비에서 상점을 다시 열면 매물이 새로 바뀐다. 다른 건물에서도 업그레이드 버튼이 동작한다. 값은 `Assets/_Project/Data/GameFlow/Facilities/Facility_Shop.asset`(풀·매물 수·업그레이드 비용), `Economy.asset`(판매 비율), `Rewards/item_*.asset`(가격)에서 바꾼다. Play를 멈추면 초기화된다.
 
