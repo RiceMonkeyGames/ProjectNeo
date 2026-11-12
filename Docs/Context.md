@@ -1,6 +1,6 @@
 # 프로젝트 컨텍스트
 
-마지막 갱신: 2026-11-12 11:48:17 (KST). 경로는 저장소 루트 기준이다. 현재 실행 가능한 것, 코드·씬·에셋 지도, 개발 방법과 검증 근거를 이 문서에서 관리한다. 완성 목표·다음 작업·진행 상태는 [구현 로드맵](ImplementationPlan.md), 게임 규칙은 [게임 기획](GameDesign.md), 에이전트의 필수 규칙과 문서 입구는 [AGENTS.md](../AGENTS.md)가 기준이다.
+마지막 갱신: 2026-11-12 12:25:15 (KST). 경로는 저장소 루트 기준이다. 현재 실행 가능한 것, 코드·씬·에셋 지도, 개발 방법과 검증 근거를 이 문서에서 관리한다. 완성 목표·다음 작업·진행 상태는 [구현 로드맵](ImplementationPlan.md), 게임 규칙은 [게임 기획](GameDesign.md), 에이전트의 필수 규칙과 문서 입구는 [AGENTS.md](../AGENTS.md)가 기준이다.
 
 ## 찾아보기
 
@@ -76,6 +76,8 @@ Unity 6000.6.8f1, URP, 3D 1인칭 프로젝트다. 현재는 임시 그래픽이
 | Run | `RunUnitBinding<T>` | 씬 유닛과 런 유닛 번호의 짝. 씬 편성으로 `RunState`를 만들고, 씬 생사로 `BattleResult`를 만든다. 런에서 이미 빠진 유닛은 결과에 넣지 않는다. 씬을 알지 않아 EditMode로 검증한다. |
 | Run | `CastleState`, `BattleInput`, `BattleResult` | 성 배치·층·회전·체력·수성 무기 기록(`Capture`/`TryRestore`로 BuildLayout·MountLayout과 왕복, 아래층부터 정렬). 전투 입력은 전투 번호·스테이지·플레이어·부대·성 복사본. 결과 초안은 같은 전투 번호, 승패, 종료 이유, 유닛별 생존/사망/도망, 전투 후 성 기록, 처치한 적 종류별 수. `RunState.Apply`가 번호를 확인해 한 번만 반영하고, 틀린 결과는 아무것도 바꾸지 않는다. 죽은 잡졸은 사라지고 죽은 영웅은 장비를 가진 채 `FallenHeroes`로 간다. 결과 형식은 팀원 확인 대기이고 Game 씬은 아직 쓰지 않는다. |
 | Flow | `GameRewardController` | C-4 승리 보상. `GameBattleController`와 같은 오브젝트에 붙는다. 보상 단계에 들어오면 마지막 승리 결과와 런 시드로 `StageReward`를 정해 런 지갑·보관함에 한 번 넣고, 지휘관 경험치·해금 포인트를 `GameSession.Meta`(실행 중에만 남는 `MetaProgress`)에 더한다. 수치는 `Data/GameFlow/Rewards/StageRewards.asset`, 레벨 규칙은 같은 폴더 `Meta.asset`에서 바꾼다. |
+| Flow | `GameBuildEconomy` | D-2 건설·수리 비용. `GameBattleController`와 같은 오브젝트에 붙는다. 첫 준비에 `RunStart.asset`의 시작 골드를 주고, `PlacementController.ConfirmGate`로 골드가 모자란 설치를 막으며 설치 알림으로 비용을 낸다. 건설 화면의 `철거` 버튼(조각 클릭, 우클릭 끝)과 `모두 수리` 버튼, 골드·선택 비용·수리 비용 안내 칸(`EconomyStatus`)을 맡는다. 준비 단계에서만 동작한다. |
+| Run | `BuildCostTable`, `PieceGoldCost`, `WeaponGoldCost`, `BuildEconomy` | 건설 비용 표 에셋(조각·무기 골드, 지난 것 환불 비율, 체력당 수리 골드)과 일반 C# 규칙. 결제·이번 준비 기록, 환불(이번 준비 전액·그 전 비율 내림), 수리 비용(올림)과 가진 골드로 가장 많이 깎인 조각부터 고르는 수리 계획. |
 | Run | `StageRewardTable`, `KillReward`, `StageReward` | 보상 표 에셋(기본·스테이지 가산 골드, 적 종류별 골드·재료, 아이템 확률·횟수·가중치 풀, 경험치·해금 포인트)과 한 번의 보상 내역. `StageReward.Roll`은 승리 결과·스테이지·`IRandomSource`로 보상을 정하며 같은 시드면 같다. `RunState.ApplyReward`는 마지막 승리 전투의 보상만 한 번 지급하고, `RunState.Seed`·`SeedFor`가 전투별 시드를 만든다. |
 | UI | `TitleScreen`, `GameFlowHud`, `RuntimeSystemFont` | 타이틀 버튼 동작, 단계 표시·건물 상호작용 안내·남은 병력·사다리 밀기·결과 화면(전투 연결 시 시작·승패 자리표시 버튼은 숨김), 임시 화면에 맑은 고딕을 실행 중 적용하는 공용 부품. 보상 단계에는 전투 상태 칸에 지급 내역을, 준비 제목에 보유 골드를 보여준다. 정식 화면이 아니다. |
 | Siege | `BuildBudget`, `SiegeOutcomeRules`, `SiegeLadderState` | 일반 C# 규칙. 임시 건설 코스트의 차감·환불, 승패 판정(동시 성립은 패배 우선, Q-09 확정)·마지막 적 퇴각 조건, 사다리 상태(놓임→세우는 중→세워짐, 한 명씩 오르기, 밀어서 쓰러뜨리기). |
@@ -189,6 +191,9 @@ Q/`RotateLeft()`와 E/`RotateRight()`는 화면 속 판의 왼쪽·오른쪽 회
 - `Assets/_Project/Scripts/Editor/GameBattleSetup.cs`: Game 씬의 공성전·깃발 상호작용을 연결하고 기존 HUD 영역을 배치한다. 메뉴 `ProjectNeo/Setup/Connect Battle To Game Scene`·`Arrange Game HUD`.
 - `Assets/Tests/PlayMode/GameBattlePlayTests.cs`: 실제 적 접근·승패·패배 우선·마지막 적 퇴각과 열린 경로·3층 사다리·성문 붕괴 조각 공격·다음 준비 이월·HUD 배경 포함 영역 분리, 런 데이터 연결(씬 편성으로 생성, 결과 반영·처치 수, 다음 준비 생존자 회복과 죽은 몸 유지, 두 번째 전투 입력), 승리 보상(표대로 골드·재료·메타 1회 지급, 보상 화면 내역과 준비 제목의 골드).
 - `Assets/_Project/Scripts/Editor/GameRewardSetup.cs`: 메뉴 `ProjectNeo/Setup/Connect Rewards To Game Scene`. `Data/GameFlow/Rewards/`에 프로토타입 재료 3종(뼈 조각·질긴 가죽·깃털)·아이템 2종(철검·회복약)·`StageRewards`·`Meta` 에셋을 만들고 Game 씬 전투 오브젝트에 `GameRewardController`를 붙인다. 이미 있는 에셋은 덮어쓰지 않아 인스펙터에서 바꾼 값이 남고, 여러 번 실행해도 결과가 같다. 씬을 연 뒤 에셋을 경로로 다시 불러와 연결한다.
+- `Assets/_Project/Scripts/Editor/GameBuildEconomySetup.cs`: 메뉴 `ProjectNeo/Setup/Connect Build Costs To Game Scene`. `Data/GameFlow/Build/`에 `BuildCosts`·`RunStart` 에셋을 만들고(이미 있으면 그대로), Game 씬 전투 오브젝트에 `GameBuildEconomy`를 붙여 건설 화면 `BuildPanel`에 `Button_Dismantle`·`Button_Repair all`·`EconomyStatus`를 더한다. 여러 번 실행해도 중복으로 만들지 않는다.
+- `Assets/Tests/EditMode/BuildEconomyTests.cs`: 비용 표 조회, 결제와 부족 시 거부, 이번 준비 전액·그 전 비율 환불과 기록 해제, 수리 비용 올림, 수리 계획(많이 깎인 순·부족하면 건너뜀·지갑 불변).
+- `Assets/Tests/PlayMode/GameBuildEconomyPlayTests.cs`: Game 씬 시작 골드, 설치 결제와 전액·비율 환불, 성문 철거 거부, 골드 부족 시 설치 거부, 모두 수리 결제와 체력 회복, 전투 중 철거·수리 불가.
 - `Assets/Tests/EditMode/StageRewardTests.cs`: 골드·재료 계산과 표에 없는 적 무시, 아이템 확률·가중치 추첨, 같은 시드 재현과 패배 거부, 런 보상 1회 지급·결과 반영 전/패배/다른 번호 거부, 전투별 시드.
 - `Assets/Tests/EditMode/RunUnitBindingTests.cs`: 씬 편성으로 런 데이터·번호 만들기, 정의 없음·상한 초과·중복 거부, 결과의 생사·처치 수와 이미 빠진 유닛 제외, `GameFlow.AttachRunState`.
 - `Assets/Tests/PlayMode/GameFlowPlayTests.cs`: 저장된 `Title`·`Game` 씬으로 새 게임 진입, 씬 전환 없는 단계 변경, 패배 후 타이틀 복귀, 게임 씬 단독 시작, 준비의 건설 시점과 전투의 1인칭 지휘 전환·보상 중 입력 정지·유닛과 지시 유지·AudioListener와 EventSystem이 하나뿐인지, 기본 성이 성문 하나와 닫힌 외벽이고 안뜰에서 성벽 위로 길이 이어지며 밖으로는 나갈 수 없는지. 씬을 통째로 바꾸므로 끝날 때 빈 씬만 남긴다. 실제 버튼 클릭은 직접 확인 대상이다.
@@ -745,4 +750,20 @@ unity command package add --caller plugin --skill unity-package-management --nam
 - 남은 제한: 포로 병력, 해금 포인트 사용·지급 정책(Q-07), 메타 파일 저장, 골드·재료 사용처는 없다. 적 ID는 프리팹 이름이다.
 - 검증: 컴파일 오류 없음. EditMode 169개 전체 통과(새 `StageRewardTests` 6개). PlayMode 77개 중 76개 통과(새 `GameBattlePlayTests.승리하면_보상_표대로_골드_재료_메타를_한_번_지급하고_보상_화면과_다음_준비에_보인다` 통과). 실패는 기존 불안정 테스트 `WallCommandPlayTests.Squad_StopsOnWallWhenStairsDisappear`다. 물리 입력 직접 플레이와 Windows 빌드는 하지 않았다.
 - 직접 검증: `Assets/_Project/Scenes/Game.unity` → Play → 성문 앞 붉은 깃발에서 F → 적을 물리쳐 승리 → 보상 화면 오른쪽 위 칸에 `골드 +N (보유 N)`, 재료별 획득·보유 수, 아이템(뽑혔을 때), 지휘관 경험치·해금 포인트가 보인다 → `보상 받고 다음 스테이지` → 위쪽 제목이 `준비 · 스테이지 2 · 골드 N`. 값을 바꾸려면 `Assets/_Project/Data/GameFlow/Rewards/StageRewards.asset`을 고르고 인스펙터에서 수정한 뒤 다시 Play한다. Play를 멈추면 런·메타 모두 초기화된다.
+
+### 2026-11-12: D-3~8 시설·편성 작업 분해
+
+- 담당 황성민, 브랜치 `feature/facility-plan`(develop `1d69e4d` 기준). 공유 백로그 D-3~8-plan을 `작업중`·황성민으로 표시했다. 문서만 바꿨고 게임 코드·씬·에셋과 Unity 작업은 없다.
+- 기존 시설·경제·캐릭터·흐름 코드를 점검해 있는 규칙과 없는 연결을 정리하고, ImplementationPlan 4.2.1에 D-0(시설 공통 틀)·D-1(업그레이드)·D-2(건설·수리 비용)·D-0b(런 유닛 씬 생성)·D-3(주점)·D-4(훈련장)·D-5(상점)·D-6(대장간)·D-7(장비)·D-8(편성)의 선행·필요한 결정·완료 기준·공용 파일과 추천 순서를 적었다.
+- 새 미정 항목 Q-33(시설 화면 방식)·Q-34(매물 갱신·리롤)·Q-35(대장간 생산·강화)·Q-36(고용 영웅 등장·모집 잡졸 배정)을 ImplementationPlan 2장과 GameDesign 미정 목록에 추가했다. 결정 전에는 해당 작업을 구현하지 않는다.
+- 직접 확인: `Docs/ImplementationPlan.md`의 「4.2.1 D 시설·편성 실행 작업」 표와 2장의 Q-33~Q-36, 공유 백로그 맨 아래 새 D 항목들을 읽는다.
+
+### 2026-11-12: D-2 건설·수리 비용
+
+- 담당 황성민, 브랜치 `feature/build-costs`(develop `1d69e4d` 기준, 커밋 전 D-3~8 분해 문서 변경을 함께 가져옴). 백로그 D-2를 `작업중`·황성민으로 표시했다.
+- 사용자 결정: 철거는 성문을 뺀 모든 조각·대포, 이번 준비에 지은 것은 전액·그 전 것은 비율 환불. 수리는 "모두 수리" 버튼. 부서진 성문 재건은 이번에 다루지 않음. 값은 프로토타입 임의 값을 데이터에 둔다.
+- 추가: `Run/BuildCostTable`·`PieceGoldCost`·`WeaponGoldCost`·`BuildEconomy`, `Flow/GameBuildEconomy`, `Editor/GameBuildEconomySetup`, 에셋 `Data/GameFlow/Build/BuildCosts.asset`(성벽 10·계단 15·대포 30골드, 지난 것 50% 환불, 체력 1당 0.2골드)·`RunStart.asset`(시작 100골드). 에디터 메뉴로 `Game.unity`에 컴포넌트와 건설 화면 버튼 2개·안내 칸을 더했다(에디터 API 저장). 다른 코드 파일은 C-4 보상 테스트의 골드 비교만 시작 골드를 고려하도록 고쳤다.
+- 남은 제한: 부서진 성문 재건 없음. 건설 조각이 안뜰 시설 건물과 겹치는지는 검사하지 않는다(기존과 같음). 준비 제목의 골드는 단계가 바뀔 때만 다시 그려 첫 준비 제목에는 시작 골드가 늦게 보일 수 있고, 건설 화면 안내 칸은 매 프레임 갱신된다.
+- 검증: 컴파일 오류 없음. EditMode 175개 전체 통과(새 `BuildEconomyTests` 6개). PlayMode 80개 중 79개 통과(새 `GameBuildEconomyPlayTests` 3개 통과). 실패는 기존 불안정 테스트 `WallCommandPlayTests.Squad_StopsOnWallWhenStairsDisappear`다. 처음 실행에서 C-4 보상 테스트가 시작 골드 때문에 실패해 테스트를 고쳤고, `GameBattlePlayTests` 10개를 다시 돌려 모두 통과했다. 물리 입력 직접 플레이와 Windows 빌드는 하지 않았다.
+- 직접 검증: `Assets/_Project/Scenes/Game.unity` → Play → 건설소에서 F → 건설 화면 왼쪽 패널 아래 노란 글씨가 `골드 100` → `성벽`을 골라 놓으면 골드가 10 줄고 안내에 비용이 보인다 → `철거 (클릭)` 버튼 → 방금 지은 성벽 클릭 → 10골드 환불(처음부터 있던 성벽은 5골드), 성문은 거부 → 우클릭으로 철거 끝 → 전투 후 다음 준비에서 깎인 성벽이 있으면 `모두 수리`로 골드를 내고 체력 막대가 가득 찬다. 값은 `Assets/_Project/Data/GameFlow/Build/BuildCosts.asset`·`RunStart.asset`에서 바꾼다. Play를 멈추면 초기화된다.
 </details>

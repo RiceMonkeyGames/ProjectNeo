@@ -302,6 +302,7 @@ namespace ProjectNeo.Tests
             Assert.IsNotNull(rewards.Table);
             RunState state = GameSession.Flow.Run.State;
             int ladders = battle.Enemies.Count(enemy => enemy.Role == SiegeAttackerRole.Ladder);
+            int goldBefore = state.Wallet.Gold; // 시작 골드(D-2)가 먼저 들어와 있을 수 있다.
             Assert.IsTrue(battle.TryStartBattle());
             foreach (var enemy in battle.Enemies) Kill(enemy.Actor);
             yield return null; yield return null;
@@ -310,13 +311,13 @@ namespace ProjectNeo.Tests
             StageReward reward = rewards.LastReward;
             Assert.IsNotNull(reward);
             Assert.AreEqual(1, reward.BattleNumber);
-            Assert.AreEqual(reward.Gold, state.Wallet.Gold);
+            Assert.AreEqual(goldBefore + reward.Gold, state.Wallet.Gold);
             Assert.Greater(reward.Gold, rewards.Table.BaseGold, "처치 골드가 더해진다.");
             KillReward ladderRule = rewards.Table.KillRewards.First(rule => rule.enemyId == "enemy_ladder");
             Assert.AreEqual(ladders * ladderRule.materialPerKill, state.Wallet.GetMaterial(ladderRule.material));
             Assert.AreEqual(rewards.Table.UnlockPoints, GameSession.Meta.unlockPoints);
             Assert.IsFalse(rewards.TryGrant(), "같은 승리의 보상은 다시 주지 않는다.");
-            Assert.AreEqual(reward.Gold, state.Wallet.Gold);
+            Assert.AreEqual(goldBefore + reward.Gold, state.Wallet.Gold);
 
             yield return null;
             var hud = Object.FindAnyObjectByType<GameFlowHud>();
