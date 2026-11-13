@@ -117,6 +117,65 @@ namespace ProjectNeo.Flow
             return unit;
         }
 
+        /// <summary>런과 씬 부대가 같은 순서로 맞물려 있고 준비 중이면 true(D-8 편성 조건).</summary>
+        bool CanOrganize()
+        {
+            if (squads == null || binding == null || flow.Run == null || flow.Run.State != binding.State) return false;
+            if (flow.Phase != GamePhase.Preparation) return false;
+            if (squads.Squads.Count == binding.State.Army.Squads.Count) return true;
+            Debug.LogWarning("씬 부대 수와 런 부대 수가 달라 편성을 바꾸지 않는다.");
+            return false;
+        }
+
+        /// <summary>
+        /// 준비 중에 잡졸 하나를 다른 부대로 옮긴다(D-8, Q-45·Q-47). <paramref name="targetSquad"/>가 -1이면 새 부대로 옮긴다.
+        /// 런·씬 부대를 함께 바꾸고, 원래 부대가 비면 둘 다에서 없앤다(대장은 대기). 옮긴 유닛은 받은 부대가 모인 곳으로 걸어간다.
+        /// 런이 받지 않으면 <see cref="OrganizeCheck"/> 이유를 돌려주고 아무것도 바뀌지 않는다.
+        /// </summary>
+        public OrganizeCheck TryMoveSoldier(RunSoldier soldier, int targetSquad, out int movedTo)
+        {
+            movedTo = -1;
+            if (!CanOrganize()) return OrganizeCheck.NotInRun;
+            RunState state = binding.State;
+            if (targetSquad < -1 || targetSquad >= state.Army.Squads.Count) return OrganizeCheck.NotInRun;
+            Squad<RunUnit> target = targetSquad < 0 ? null : state.Army.Squads[targetSquad];
+            OrganizeCheck check = state.CheckMoveSoldier(soldier, target);
+            if (check != OrganizeCheck.Ok) return check;
+            CharacterActor actor = binding.ObjectOf(soldier.Id);
+            UnitCombatAI unit = actor != null ? actor.GetComponent<UnitCombatAI>() : null;
+            if (unit == null) { Debug.LogWarning("옮길 잡졸의 씬 유닛이 없다: " + soldier.Id); return OrganizeCheck.NotInRun; }
+            if (targetSquad < 0 && squads.AddSquad() != state.Army.Squads.Count)
+                Debug.LogError("새 씬 부대 번호가 런 부대 번호와 다르다.");
+            int sceneTarget = targetSquad < 0 ? squads.Squads.Count - 1 : targetSquad;
+            bool hasGather = squads.TryGetGatherPoint(sceneTarget, out Vector3 gather);
+            if (!squads.MoveMember(unit, sceneTarget))
+            {
+                if (targetSquad < 0) squads.RemoveSquad(sceneTarget);
+                Debug.LogWarning("씬 부대에 자리가 없어 옮기지 않는다: " + sceneTarget);
+                return OrganizeCheck.SquadFull;
+            }
+            state.TryMoveSoldier(soldier, target, out movedTo, out int removed);
+            if (removed >= 0 && !squads.RemoveSquad(removed)) Debug.LogError("빈 씬 부대를 없애지 못했다: " + removed);
+            if (hasGather) unit.SetDirective(UnitDirective.Move, gather);
+            return OrganizeCheck.Ok;
+        }
+
+        /// <summary>
+        /// 준비 중에 부대 대장을 정한다(D-8). hero가 null이면 비운다. 영웅의 씬 유닛이 있으면 씬 부대장도 바꾼다.
+        /// </summary>
+        public OrganizeCheck TrySetCaptain(int squad, RunHero hero)
+        {
+            if (!CanOrganize()) return OrganizeCheck.NotInRun;
+            RunState state = binding.State;
+            if (squad < 0 || squad >= state.Army.Squads.Count) return OrganizeCheck.NotInRun;
+            OrganizeCheck check = state.CheckSetCaptain(state.Army.Squads[squad], hero);
+            if (check != OrganizeCheck.Ok) return check;
+            state.TrySetCaptain(state.Army.Squads[squad], hero);
+            CharacterActor actor = hero != null ? binding.ObjectOf(hero.Id) : null;
+            squads.SetLeader(squad, actor != null ? actor.GetComponent<UnitCombatAI>() : null);
+            return OrganizeCheck.Ok;
+        }
+
         /// <summary>전투 단계에 들어올 때 부른다. 준비에서 바뀐 성을 기록하고 전투 입력을 만든다.</summary>
         public void OnBattleStart()
         {

@@ -82,6 +82,69 @@ namespace ProjectNeo.Squads
         }
 
         /// <summary>
+        /// 부대원을 다른 부대로 옮긴다(D-8 편성). 받을 부대가 꽉 찼으면 그 부대의 죽은 부대원(남아 있는 몸)을 먼저 빼서 자리를 만든다.
+        /// 그래도 자리가 없거나 부대원이 아니면 false이고 바뀌지 않는다. 지시는 바꾸지 않으므로 부르는 쪽이 유닛을 부대 쪽으로 보낸다.
+        /// </summary>
+        public bool MoveMember(UnitCombatAI member, int squad)
+        {
+            if (member == null || squad < 0 || squad >= army.Squads.Count) return false;
+            Squad<UnitCombatAI> source = SquadOf(member);
+            Squad<UnitCombatAI> target = army.Squads[squad];
+            if (source == null) return false;
+            if (source == target) return true;
+            if (target.IsFull) RemoveDead(target);
+            if (target.IsFull) return false;
+            source.Remove(member);
+            target.TryAdd(member);
+            return true;
+        }
+
+        /// <summary>
+        /// 부대 하나를 없앤다(D-8 편성으로 빈 부대가 생길 때). 살아 있는 부대원이 남아 있으면 false. 남은 몸은 부대에서 빠진다.
+        /// 뒤의 부대 번호는 하나씩 당겨진다.
+        /// </summary>
+        public bool RemoveSquad(int squad)
+        {
+            if (squad < 0 || squad >= army.Squads.Count) return false;
+            Squad<UnitCombatAI> target = army.Squads[squad];
+            foreach (UnitCombatAI member in target.Members) if (!IsDeadBody(member)) return false;
+            if (target.Leader != null && !IsDeadBody(target.Leader)) return false;
+            army.RemoveSquad(target);
+            return Commander.RemoveSquad(squad);
+        }
+
+        /// <summary>부대 대장을 정한다(D-8). null이면 비운다. 없는 번호면 false.</summary>
+        public bool SetLeader(int squad, UnitCombatAI leader)
+        {
+            if (squad < 0 || squad >= army.Squads.Count) return false;
+            army.Squads[squad].Leader = leader;
+            return true;
+        }
+
+        Squad<UnitCombatAI> SquadOf(UnitCombatAI member)
+        {
+            foreach (Squad<UnitCombatAI> squad in army.Squads)
+                foreach (UnitCombatAI existing in squad.Members)
+                    if (existing == member) return squad;
+            return null;
+        }
+
+        // 준비 중에는 유닛 컴포넌트가 꺼져 있을 수 있어 켜짐 여부가 아니라 체력으로만 죽음을 본다.
+        static bool IsDeadBody(UnitCombatAI member)
+        {
+            if (member == null) return true;
+            CharacterActor actor = member.Actor != null ? member.Actor : member.GetComponent<CharacterActor>();
+            return actor == null || actor.Health == null || actor.Health.IsDead;
+        }
+
+        static void RemoveDead(Squad<UnitCombatAI> squad)
+        {
+            var dead = new List<UnitCombatAI>();
+            foreach (UnitCombatAI member in squad.Members) if (IsDeadBody(member)) dead.Add(member);
+            foreach (UnitCombatAI member in dead) squad.Remove(member);
+        }
+
+        /// <summary>
         /// 부대가 모여 있는 곳. 지시한 목적지가 있으면 그곳, 없으면 살아 있는 부대원의 평균 위치다. 아무도 없으면 false.
         /// </summary>
         public bool TryGetGatherPoint(int squad, out Vector3 point)

@@ -379,7 +379,7 @@ namespace ProjectNeo.Editor
             return popup;
         }
 
-        static RectTransform Column(Transform parent, string name, string header, float left, float right)
+        internal static RectTransform Column(Transform parent, string name, string header, float left, float right)
         {
             var column = new GameObject(name + "Column", typeof(RectTransform));
             column.transform.SetParent(parent, false);
@@ -399,7 +399,7 @@ namespace ProjectNeo.Editor
             return listRect;
         }
 
-        static Button ButtonAt(Transform parent, string name, string text, Vector2 anchor, Vector2 position, Vector2 size,
+        internal static Button ButtonAt(Transform parent, string name, string text, Vector2 anchor, Vector2 position, Vector2 size,
             UnityEngine.Events.UnityAction action, out TMP_Text label)
         {
             var root = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
@@ -418,7 +418,7 @@ namespace ProjectNeo.Editor
         }
 
         /// <summary>패널 위쪽 기준으로 왼쪽 위·오른쪽 아래 여백을 받아 글 칸을 만든다.</summary>
-        static TMP_Text Text(Transform parent, string name, string text, float size, Vector2 topLeft, Vector2 bottomRight)
+        internal static TMP_Text Text(Transform parent, string name, string text, float size, Vector2 topLeft, Vector2 bottomRight)
         {
             var root = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI));
             root.transform.SetParent(parent, false);
@@ -432,7 +432,7 @@ namespace ProjectNeo.Editor
             return label;
         }
 
-        static T Find<T>(Scene scene) where T : Component
+        internal static T Find<T>(Scene scene) where T : Component
         {
             foreach (GameObject root in scene.GetRootGameObjects())
             {

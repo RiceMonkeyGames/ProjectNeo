@@ -425,6 +425,100 @@ namespace ProjectNeo.Run
             return -1;
         }
 
+        /// <summary>
+        /// 플레이어가 부대 대장을 맡을 수 있는지(Q-32). 지금은 막아 두고(2026-11-13 임시 결정), 나중에 켤 수 있게 남겨 둔다.
+        /// </summary>
+        public bool AllowPlayerCaptain { get; set; }
+
+        /// <summary>
+        /// 대기 중인 영웅: 플레이어가 아니고 어느 부대의 대장도 아닌 살아 있는 영웅(D-8, Q-36). 지금은 전투에 나가지 않는다(Q-48).
+        /// </summary>
+        public IReadOnlyList<RunHero> ReserveHeroes
+        {
+            get
+            {
+                var reserve = new List<RunHero>();
+                foreach (RunHero hero in heroes)
+                    if (!hero.IsPlayer && LeadingSquadOf(hero) == null) reserve.Add(hero);
+                return reserve;
+            }
+        }
+
+        /// <summary>이 영웅이 대장인 부대. 없으면 null.</summary>
+        public Squad<RunUnit> LeadingSquadOf(RunHero hero)
+        {
+            if (hero == null) return null;
+            foreach (Squad<RunUnit> squad in Army.Squads)
+                if (squad.Leader == hero) return squad;
+            return null;
+        }
+
+        /// <summary>
+        /// 잡졸 하나를 <paramref name="target"/> 부대로 옮길 수 있는지(D-8, Q-45·Q-47). target이 null이면 새 부대로 옮긴다.
+        /// 전투 대기 → 런 소속 → 같은 부대 → 자리 순으로 처음 걸린 이유를 돌려준다. 런을 바꾸지 않는다.
+        /// </summary>
+        public OrganizeCheck CheckMoveSoldier(RunSoldier soldier, Squad<RunUnit> target)
+        {
+            if (HasPendingBattle) return OrganizeCheck.BattlePending;
+            if (soldier == null || Find(soldier.Id) != soldier || (target != null && !Owns(target))) return OrganizeCheck.NotInRun;
+            Squad<RunUnit> source = SquadOf(soldier);
+            if (source == target || (target == null && source != null && source.Members.Count == 1)) return OrganizeCheck.SameSquad;
+            if (target == null ? !Army.CanAddSquad : target.IsFull) return OrganizeCheck.SquadFull;
+            return OrganizeCheck.Ok;
+        }
+
+        /// <summary>
+        /// 잡졸 하나를 옮긴다(D-8). target이 null이면 맨 뒤에 새 부대를 만들어 넣는다. 받는 부대의 사기는 그대로다.
+        /// 원래 부대가 비면 그 부대를 없애고(사기도 함께 없어진다) 대장은 대기 영웅이 된다(Q-45).
+        /// <paramref name="targetIndex"/>는 옮긴 뒤 받은 부대 순번, <paramref name="removedIndex"/>는 없앤 부대의 옮기기 전 순번(없으면 -1)이다.
+        /// <see cref="CheckMoveSoldier"/>가 Ok가 아니면 false이고 런은 바뀌지 않는다.
+        /// </summary>
+        public bool TryMoveSoldier(RunSoldier soldier, Squad<RunUnit> target, out int targetIndex, out int removedIndex)
+        {
+            targetIndex = -1; removedIndex = -1;
+            if (CheckMoveSoldier(soldier, target) != OrganizeCheck.Ok) return false;
+            Squad<RunUnit> source = SquadOf(soldier);
+            if (target == null) target = Army.TryAddSquad();
+            source?.Remove(soldier);
+            target.TryAdd(soldier);
+            if (source != null && source.Members.Count == 0)
+            {
+                removedIndex = IndexOf(source);
+                source.Leader = null;
+                Army.RemoveSquad(source);
+            }
+            targetIndex = IndexOf(target);
+            Changed?.Invoke();
+            return true;
+        }
+
+        /// <summary>
+        /// 부대 대장을 정할 수 있는지(D-8). hero가 null이면 대장을 비우는 것이다. 대기 중인 영웅만 대장이 되고, 플레이어는
+        /// <see cref="AllowPlayerCaptain"/>이 켜졌을 때만 된다. 런을 바꾸지 않는다.
+        /// </summary>
+        public OrganizeCheck CheckSetCaptain(Squad<RunUnit> squad, RunHero hero)
+        {
+            if (HasPendingBattle) return OrganizeCheck.BattlePending;
+            if (squad == null || !Owns(squad) || (hero != null && Find(hero.Id) != hero)) return OrganizeCheck.NotInRun;
+            if (squad.Leader == hero) return OrganizeCheck.SameSquad;
+            if (hero == null) return OrganizeCheck.Ok;
+            if (hero.IsPlayer && !AllowPlayerCaptain) return OrganizeCheck.PlayerNotAllowed;
+            if (LeadingSquadOf(hero) != null) return OrganizeCheck.NotReserve;
+            return OrganizeCheck.Ok;
+        }
+
+        /// <summary>
+        /// 부대 대장을 정한다(D-8). 원래 대장은 대기 영웅이 된다. hero가 null이면 대장을 비운다.
+        /// <see cref="CheckSetCaptain"/>이 Ok가 아니면 false이고 런은 바뀌지 않는다.
+        /// </summary>
+        public bool TrySetCaptain(Squad<RunUnit> squad, RunHero hero)
+        {
+            if (CheckSetCaptain(squad, hero) != OrganizeCheck.Ok) return false;
+            squad.Leader = hero;
+            Changed?.Invoke();
+            return true;
+        }
+
         /// <summary>영웅을 부대장으로 정한다. null이면 부대장을 비운다. 한 영웅은 한 부대만 맡는다.</summary>
         public bool TrySetLeader(Squad<RunUnit> squad, RunHero hero)
         {

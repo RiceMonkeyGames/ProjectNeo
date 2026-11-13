@@ -60,6 +60,29 @@ namespace ProjectNeo.Squads
             return index;
         }
 
+        /// <summary>부대가 줄었다. 인자는 없앤 부대의 옛 번호이며, 뒤의 부대 번호는 하나씩 당겨진다.</summary>
+        public event Action<int> SquadRemoved;
+
+        /// <summary>
+        /// 부대 하나를 없앤다(D-8 편성으로 빈 부대가 생길 때). 뒤의 부대는 번호가 하나씩 당겨지고 지시·선택은 따라간다.
+        /// 없는 번호면 false.
+        /// </summary>
+        public bool RemoveSquad(int squad)
+        {
+            if (squad < 0 || squad >= orders.Length) return false;
+            bool wasSelected = selected[squad];
+            for (int i = squad; i < orders.Length - 1; i++)
+            {
+                orders[i] = orders[i + 1];
+                selected[i] = selected[i + 1];
+            }
+            Array.Resize(ref orders, orders.Length - 1);
+            Array.Resize(ref selected, selected.Length - 1);
+            SquadRemoved?.Invoke(squad);
+            if (wasSelected) SelectionChanged?.Invoke();
+            return true;
+        }
+
         public SquadOrder OrderOf(int squad) => orders[squad];
         public bool IsSelected(int squad) => squad >= 0 && squad < selected.Length && selected[squad];
 
