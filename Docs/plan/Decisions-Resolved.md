@@ -1,6 +1,6 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-13 13:29:50 (KST)
+Last Updated: 2026-11-13 13:54:51 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
@@ -35,6 +35,10 @@ Last Updated: 2026-11-13 13:29:50 (KST)
 | Q-39 | Post-battle morale recovery floor | B-8.1, C-3 | Resolved (2026-11-13): After each battle morale = max(current + 20, 80), capped at 200, so surviving squads never end below routed squads; replaces the separate routed floor rule. Amends Q-04. See [MoraleAndWave](../design/MoraleAndWave.md). |
 
 ## Detailed Decision Records
+
+- **Q-42 (2026-11-13)**: User selected 1×1 footprint ascending one full 3m tier. Design decision resolved; implementation tracked by SIEGE-03. [History](../history/Q/Q-42.md).
+- **Q-40 (2026-11-13)**: User selected starting battle at the desired current position after preparation, without returning to the gate. Design direction resolved; trigger UI/input details are pending under FLOW-01. [History](../history/Q/Q-40.md).
+- **Q-41 approved scope (2026-11-13)**: Both allies and player may ascend/descend ladders. Full interaction/traffic/combat rules remain partial in Decisions-Pending. [History](../history/Q/Q-41.md).
 
 - **Stacking on the gate (2026-11-11)**: Walls stack on main gate during prep; drop by settle rule when gate breaks; gate floor remains fixed/non-demolishable/unbuildable once destroyed.
 - **Player start & construction station (2026-11-11, wired 2026-11-12)**: Player starts in south courtyard. Prep defaults to 1st-person walking; build view opens via F at construction building (`Data/GameFlow/Interaction.asset`), Esc returns to matching pose. Overlapping units lift harmlessly (`LiftForConstruction`).

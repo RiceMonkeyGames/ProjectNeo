@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-13 13:29:50 (KST)
+Last Updated: 2026-11-13 13:54:51 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -19,7 +19,15 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 | Task ID | Description | Status | Assignee | Completion Criteria & Prerequisites |
 |---|---|---|---|---|
 | C-1a-confirm | Teammate Review of Combat Outcome Format | In Progress | Hwang Seong-min | Review C-1a `BattleResult` draft (outcome, end reason, per-unit status, castle snapshot, kill counts) with combat lead; update code, tests, docs. Prerequisites: C-1a (Done). Decision (2026-11-12): Proceed concurrently with C-1~2. |
-| QA-game-loop | Manual Playtest of Current Game Scene | Waiting for Verification | Unassigned | Formerly `B-9.3-play`. Title → Prep → F Construction / Esc Return → F Battle → Win/Loss → Next Prep loop. Document camera, squad commanding, input glitches, and reproduction steps. |
+| QA-game-loop | Manual Playtest of Current Game Scene | Waiting for Verification | Unassigned | Formerly `B-9.3-play`. First user playtest reported 2026-11-13; findings in [QA history](history/QA/QA-game-loop.md). Victory and next-prep flow remain unverified because user could not win. Recheck construction and combat after follow-ups below. |
+| BUG-build-camera-zoom | Construction wheel zoom barely changes view | In Progress | Codex | Planned branch: `fix/bug-build-camera-zoom`. Owned files: ConstructionCameraController.cs, targeted camera input tests, related docs. User report: enter Game construction mode and scroll; expected useful zoom, actual negligible change. Investigate input units (`scroll / 120f`) and zoom settings; verify physical wheel input, both directions and Home reset. |
+| BUG-build-grid-lines | Construction grid lines intermittently disappear | Waiting | Unassigned | User report + screenshot: grid loses rows while viewing construction. Expected stable readable grid; actual broken/missing lines. Check thin-line aliasing and depth overlap; cause not confirmed. Verify zoom, pan and Q/E rotation. |
+| ART-01 | Flatten placeholder stair shading | Waiting | Unassigned | User requests flat appearance like walls; current ramp shading looks unnatural. Inspect mesh normals/material, retain gameplay shape for this visual task. Verify Game construction and first-person views. |
+| SIEGE-03 | Implement one-cell full-tier stairs | Waiting | Unassigned | Q-42 approved 2026-11-13: 1×1 cells, full 3m rise. Update geometry/footprint through Editor APIs; verify player and unit ascent/descent, rotations, stacked placement and existing layouts. Coordinate shared assets; ART-01 handles shading. |
+| FLOW-01 | Start battle from desired current position | Pending Decision | Unassigned | Q-40 direction approved 2026-11-13: move to desired position in prep, then start there without banner return or relocation. Agree trigger UI/input details, then verify phase guards, modal conflicts and single battle start. |
+| Q-41 | Define shared ladder traversal details | Pending Decision | Unassigned | Approved 2026-11-13: allies AND player ascend/descend. Decide controls, opposing traffic/queues, commands, combat/toppling behavior; coordinate combat owner before shared edits. Current climb API takes SiegeAttackerBrain only. |
+| QA-opening-battle-balance | Review opening battle difficulty | Waiting | Unassigned | User could not win current battle; record as feedback, not proven numerical imbalance. Evaluate after start-position/access fixes; distinguish encounter tuning from temporary victory-flow verification aids. |
+| ART-02 | Review missing soldier shadows | Waiting | Unassigned | User reports soldiers have no visible shadows; explicitly low priority for prototype. Check render/light/shadow settings and camera distance before changes; verify near and far views. |
 | Q-21 | Finalize Siege Weapon Mechanics | Pending Decision | Unassigned | Confirm auto/unit/player control, range, damage, HP, rotation, passage blocking, and costs with user. Cannons currently mountable only. |
 | B-6.1 | Scope & Contract for Additional Enemy Behaviors | Pending Decision | Unassigned | Agree on targeting, movement, and failure handling for wall-destroying and aerial enemies. Existing ladder and gate assault logic will not be re-implemented. |
 | B-7.1 | Formal Wave Data & Spawning Rules | Waiting for Prerequisite | Unassigned | After enemy definitions and spawn/termination contracts are agreed upon, spawn according to configured types, counts, and timings. No duplicates on pause/restart. |

@@ -1,10 +1,13 @@
 # Game Design: Castle Walls, Enemies & Siege Strategy
 
-Last Updated: 2026-11-13 13:17:37 (KST)
+Last Updated: 2026-11-13 13:49:25 (KST)
 
 > Purpose: Construction stacking, build economy, enemy roles, and siege/ladder rules. | Parent: [design/README](README.md) | Related: [Combat](Combat.md), [MoraleAndWave](MoraleAndWave.md)
 
 ## Castle Walls & Construction
+
+- **One-cell stairs (approved 2026-11-13, Q-42)**: Stairs occupy 1×1 grid cell (3×3m) and ascend one full tier (3m). This replaces the existing 1×2 footprint when implemented. Player and unit traversal must remain usable; prefab geometry, navigation and existing placements require migration/verification. Implementation pending.
+- **Battle start (approved 2026-11-13, Q-40)**: Player moves to the desired position during preparation and starts battle there. Battle start must not require returning to the gate banner or automatically relocate the player. Trigger UI/input remains to be specified; current banner interaction is the old implementation.
 
 - **Map scale standard** (approved 2026-11-12): Total ground 240×300m, castle w/ outer walls 96×96m, courtyard 90×90m, northern approach 120m; 3m grid cells, up to 3 vertical tiers. One fixed main gate ("Wall Breached" on destruction).
 - **Phase restriction**: Construction/demolition/repair allowed only during Preparation; prohibited during battle (2026-11-11).
@@ -19,6 +22,8 @@ Last Updated: 2026-11-13 13:17:37 (KST)
 - **Construction Economy** (2026-11-12, D-2): Spend run gold on walls/stairs/cannons. Demolishing refunds 100% for current-prep builds and partial percentage for past-prep/starting walls (gate non-demolishable). Single `Repair All` button spends gold proportional to missing HP (prioritizes heaviest damaged if funds low). Instant construction currently; delayed multi-stage construction planned later.
 
 ## Enemies & Siege Strategy
+
+- **Shared ladder traversal (approved scope 2026-11-13, Q-41)**: Allies and player can both ascend and descend ladders. Current enemy-only ascent is an implementation limitation. Player controls, allied path/command integration, opposing traffic/queues, combat and toppling during traversal remain pending decisions; existing enemy-only details below are not a finalized shared traversal contract.
 
 | Category | Description |
 |---|---|
