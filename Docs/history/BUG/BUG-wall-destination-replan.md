@@ -1,6 +1,6 @@
 # BUG-wall-destination-replan | 2026-11-13 | Combat - Recover Path After Destination Collapse
 
-Last Updated: 2026-11-13 13:25:55 (KST)
+Last Updated: 2026-11-13 13:26:25 (KST)
 
 > Purpose: Diagnosis, fix, regression evidence, and manual repeat steps. | Parent: [history/README](../README.md) | Related: [Backlog-Done](../../archive/Backlog-Done.md), [Status](../../plan/Status.md)
 
@@ -14,3 +14,4 @@ Last Updated: 2026-11-13 13:25:55 (KST)
 - Cleanup: playing=False, captureDeltaTime=0, Application.runInBackground=False observed at suite exit; auto-tick already enabled before work. git diff --check passed. EditMode not rerun because no pure calculation/rule model changed. Standalone build and physical input playtest excluded.
 - Manual verification: Window > General > Test Runner > PlayMode; filter ReplansWhenDestinationWallDisappears and Run Selected on both methods/all 16 cases. Scene Assets/_Project/Scenes/ConstructionPrototype.unity loads automatically. Expected: the unit continues toward the exposed floor after the aimed wall disappears, arrives within 0.6m, Move returns to Hold, Engage stops while retaining its directive, all 16 cases pass. Stop Play Mode if interrupted and reopen ConstructionPrototype to reset. Exact CLI repeat: [UnityCLI](../../workflow/UnityCLI.md#destination-wall-collapse-regression); code map: [CombatAndSquads](../../codemap/CombatAndSquads.md).
 - Shared integration recheck: while finishing, remote develop added D-0b/D-4 and Docs tree migration. Preserved own work in stash `5c0888e74b0a3a8db41300664b1d8b590fcd4417`, fast-forwarded this branch to shared `e79fd46`, restored the two implementation files, and migrated completion records into the new tree. Full PlayMode then passed 112/112 (46.03s); playing=False, captureDeltaTime=0, Application.runInBackground=False. Old planning files were not recreated. Backlog completion/archive and this evidence log are synced independently of uncommitted implementation; remote feature branch remains unpublished.
+- Finalization (2026-11-13, user requested): implementation and supporting docs committed as `f2b2d15`, fast-forwarded into develop and pushed. Remote ancestry confirmed via fetch; local `feature/wall-destination-replan` deleted, no remote task branch existed. No code changed after the recorded 112/112 run; commit/branch operations did not require rerunning tests. Working tree clean before final documentation update.
