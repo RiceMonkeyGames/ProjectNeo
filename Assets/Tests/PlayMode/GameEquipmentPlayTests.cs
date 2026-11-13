@@ -64,6 +64,7 @@ namespace ProjectNeo.Tests
             state.Inventory.Add(sword);
             float attack = player.Stats.GetValue(StatType.Attack);
 
+            using var inputScope = new FocusIndependentInputScope();
             Keyboard originalKeyboard = Keyboard.current;
             var keyboard = InputSystem.AddDevice<Keyboard>();
             try

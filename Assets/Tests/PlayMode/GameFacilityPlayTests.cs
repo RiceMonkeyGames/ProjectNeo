@@ -142,6 +142,7 @@ namespace ProjectNeo.Tests
             var hud = Object.FindAnyObjectByType<GameFlowHud>();
             var motor = player.GetComponent<CharacterController>();
             FacilityStation shop = Station(FacilityType.Shop);
+            using var inputScope = new FocusIndependentInputScope();
             Keyboard originalKeyboard = Keyboard.current;
             var keyboard = InputSystem.AddDevice<Keyboard>();
             try

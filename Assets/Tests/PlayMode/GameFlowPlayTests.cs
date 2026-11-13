@@ -239,6 +239,7 @@ namespace ProjectNeo.Tests
             var camera = Object.FindAnyObjectByType<FirstPersonCamera>();
             var hud = Object.FindAnyObjectByType<GameFlowHud>();
             var motor = player.GetComponent<CharacterController>();
+            using var inputScope = new FocusIndependentInputScope();
             Keyboard originalKeyboard = Keyboard.current;
             var keyboard = InputSystem.AddDevice<Keyboard>();
             try
