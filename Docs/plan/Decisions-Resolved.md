@@ -1,6 +1,6 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-13 20:10:36 (KST)
+Last Updated: 2026-11-13 20:37:08 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
@@ -10,7 +10,7 @@ Last Updated: 2026-11-13 20:10:36 (KST)
 |---|---|---|---|
 | Q-02 | Fall damage on wall collapse | B-4.5 | Resolved: Height-proportional fall damage; tuned in assets. |
 | Q-03 | Stair placement for wall ascent | B-4.1, B-4.4 | Resolved: Placed manually by player inside castle. |
-| Q-04 | Morale decay, rout thresholds, retreat | B-8.1, B-8.2 | Resolved (2026-11-12): 0–200 scale, start 150, once-per-battle check at 100 (Collapse / 25% Awaken), rout at 0 to courtyard point, after battle max(current + 20, 80) capped 200 (Q-39), enemy rout at 0 counted as exit w/ Q-30. See [MoraleAndWave](../design/MoraleAndWave.md). |
+| Q-04 | Morale decay, rout thresholds, retreat | B-8.1, B-8.2 | Resolved (2026-11-12): 0–200 scale, start 150, once-per-battle check at 100 (Collapse / 25% Awaken), rout at 0 to courtyard point, after battle max(current + 20, 80) capped 200 (Q-39), enemy morale removed by Q-44. See [MoraleAndWave](../design/MoraleAndWave.md). |
 | Q-05 | Squad captain death impact | B-5, B-8 | Resolved (2026-11-12): Largest fixed morale drop; captain routs with squad; captain-less squads still obey orders. |
 | Q-09 | Simultaneous victory and defeat | B-9.1 | Resolved (2026-11-12): Defeat takes precedence. |
 | Q-16 | Build camera & placement controls | B-4.7 | Resolved: 45-deg diagonal ortho camera, translucent preview, Left place, Right cancel, R rotate. |
@@ -36,9 +36,11 @@ Last Updated: 2026-11-13 20:10:36 (KST)
 | Q-43 | Wall-breaker & flyer behavior contract | B-6.1~4, B-7.1 | Resolved (2026-11-13): Modular target/movement strategies; Wall Breaker hits nearest wall piece (gate included), then assaults once path opens; Flyer hovers to melee wall-top allies first; flyers take 100% from below; ally melee hits flyers in range. See [WallsAndSiege](../design/WallsAndSiege.md). |
 | Q-21 | Siege weapon (cannon) mechanics | SIEGE-02 | Resolved (2026-11-13): Auto-fire + player manual control; ballistic area damage; ±45° arc; own HP (repairable); no passage blocking; no friendly fire (switchable); nearest-enemy targeting as swappable strategy; temporary values in data. See [WallsAndSiege](../design/WallsAndSiege.md). |
 | Q-41 | Shared ladder traversal interaction rules | SIEGE-04 | Resolved (2026-11-13): Ally/player ascent and descent; tap F boards, hold F at top topples, W/S traverses; one occupant with FIFO traffic and no player priority; allied routes use ladders and defer new orders until endpoint; no attacks aboard, damage/death falls allowed; friendly use blocks automatic toppling; allies/player can raise ladders. User confirmed shared-code edits. See [WallsAndSiege](../design/WallsAndSiege.md). |
+| Q-44 | Rout wiring & enemy morale | B-8.2, COMBAT-03, C-3 | Resolved (2026-11-13): Enemies have no morale; ally death loss proportional to battle-start size (150 → 0 at 90% deaths); morale on run squads (new squads 150); computed courtyard retreat point; exit on arrival or after 20s; fled units return next prep; exited allies excluded from defeat count. See [MoraleAndWave](../design/MoraleAndWave.md). |
 
 ## Detailed Decision Records
 
+- **Q-44 (2026-11-13)**: B-8.2 preparation decided by user: enemies have no morale (Q-30 retreat only); ally member-death loss proportional to battle-start size (150 → 0 at 90% deaths); morale stored on run squads; retreat point computed at the courtyard edge away from enemies; exit on arrival or after 20s; fled units return next prep; B-8.2 split with new COMBAT-03. Squad merging deferred as Q-45. [History](../history/Q/Q-44.md).
 - **Q-21 (2026-11-13)**: Cannon mechanics decided by user with extensibility required for friendly fire and targeting. Temporary numbers and control/scatter/enemy-targeting detail defaults proposed by agent and confirmed by user the same day. [History](../history/Q/Q-21.md).
 
 - **Q-43 (2026-11-13)**: B-6.1 contract decided by user, with modular extensibility required for future flying variants. Agent-proposed failure-handling defaults confirmed by user the same day. [History](../history/Q/Q-43.md).

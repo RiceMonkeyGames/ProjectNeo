@@ -29,6 +29,9 @@ namespace ProjectNeo.Morale
             Changed?.Invoke();
         }
 
-        float Clamp(float value) => value < 0f ? 0f : value > Max ? Max : value;
+        // 비율 감소를 여러 번 더하면 부동소수 오차로 0 근처의 아주 작은 값이 남을 수 있어 0으로 본다.
+        const float ZeroTolerance = 0.001f;
+
+        float Clamp(float value) => value < ZeroTolerance ? 0f : value > Max ? Max : value;
     }
 }

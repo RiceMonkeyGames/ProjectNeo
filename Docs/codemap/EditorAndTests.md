@@ -1,6 +1,6 @@
 # Editor Setup & Test Scripts
 
-Last Updated: 2026-11-13 17:20:01 (KST)
+Last Updated: 2026-11-13 20:37:08 (KST)
 
 > Purpose: Map of Editor setup menus, build scripts, and EditMode/PlayMode test suites. | Parent: [codemap/README](README.md) | Related: [UnityCLI](../workflow/UnityCLI.md), [Status](../plan/Status.md)
 
@@ -35,7 +35,9 @@ Last Updated: 2026-11-13 17:20:01 (KST)
 - `SquadCommanderTests.cs`: Selection, orders, arrival transitions, formation geometries, runtime `AddSquad`.
 - `MoveStallTrackerTests.cs`: Destination stall detection and progress tracking.
 - `SiegeRulesTests.cs`: Cost deductions, win/loss, ladder mechanics, upward damage reduction.
-- `MoraleRulesTests.cs`: B-8.1 morale: proportional/fixed losses, ally-only gate/wall, once-per-battle check (collapse/awaken, chance bonus), start-below-100 weak collapse, rout once at 0, Rally/Last Stand/Steadfast, attack bands (enemy low band only), Fear/Panic/Contagion strength, dispose, post-battle recovery max(+20, 80).
+- `MoraleRulesTests.cs`: B-8.1 morale: proportional/fixed losses, ally-only gate/wall, once-per-battle check (collapse/awaken, chance bonus), start-below-100 weak collapse, rout once at 0, Rally/Last Stand/Steadfast, attack bands (enemy low band only), Fear/Panic/Contagion strength, dispose, post-battle recovery max(+20, 80). B-8.2: squad at 150 routs exactly at 90% battle-start deaths (5/10/20 members).
+- `RunUnitBindingTests.cs` (B-8.2 additions): `Fled` fate with death precedence, per-type enemy retreats separate from kills, run squad `Morale` survives result apply.
+- `GameMoralePlayTests.cs` (PlayMode, Game scene, B-8.2): member death/nearby wall/gate morale loss; routed squad ignores orders, exits at the retreat point (south of castle), drops from `AlliesAlive`, records `Fled` (exited and still running), recovers to 80, reappears next prep and rejoins, next battle starts shaken at 80; all squads exited with gate intact keeps battle running.
 - `GameFlowTests.cs`: Phase transitions, invalid rejections, single battle result handling, run reset, phase change events.
 - `RunStateTests.cs`: Start config, unit IDs, squad caps, captains, battle inputs, death/rout/permadeath, single result processing, castle persistence.
 - `CastleStateTests.cs`: Gate, stacking, rotation, HP, mounted weapons persistence, empty grid restoration.

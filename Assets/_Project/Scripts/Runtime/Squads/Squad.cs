@@ -15,6 +15,13 @@ namespace ProjectNeo.Squads
         public TUnit Leader { get; set; }
         public IReadOnlyList<TUnit> Members => members;
 
+        /// <summary>
+        /// 부대의 사기(Q-44). 런 부대가 전투 사이에 들고 다닌다. null이면 아직 전투에 나간 적이 없는 새 부대이며,
+        /// 처음 쓰는 쪽이 <see cref="ProjectNeo.Morale.MoraleSettings.CreateSquadMorale"/>로 시작값(150)을 넣는다.
+        /// 부대가 없어지면 사기도 함께 없어진다.
+        /// </summary>
+        public ProjectNeo.Morale.SquadMorale Morale { get; set; }
+
         public Squad(int capacity)
         {
             if (capacity < 1) throw new ArgumentOutOfRangeException(nameof(capacity));

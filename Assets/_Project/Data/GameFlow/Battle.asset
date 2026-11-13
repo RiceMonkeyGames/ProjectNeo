@@ -27,3 +27,4 @@ MonoBehaviour:
   rowSpacing: 2.5
   retreatExitMargin: 5
   retreatArrivalDistance: 2
+  morale: {fileID: 11400000, guid: 049c6238fd8ffa14692cba68aa640f29, type: 2}

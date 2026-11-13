@@ -79,9 +79,24 @@ namespace ProjectNeo.Tests
             ten.OnMemberDied();
             five.OnMemberDied();
 
-            Assert.AreEqual(140f, ten.Morale.Value, 0.001f);
-            Assert.AreEqual(130f, five.Morale.Value, 0.001f);
+            Assert.AreEqual(150f - settings.FullSquadLoss / 10f, ten.Morale.Value, 0.001f);
+            Assert.AreEqual(150f - settings.FullSquadLoss / 5f, five.Morale.Value, 0.001f);
             Assert.AreEqual(1, ten.LostMembers);
+        }
+
+        [TestCase(10)]
+        [TestCase(5)]
+        [TestCase(20)]
+        public void SquadAt150_RoutsWhenNinetyPercentDie_NotBefore(int members)
+        {
+            // Q-44: 사기 150 부대는 이번 전투 시작 인원의 90%가 죽으면 0이 된다. 한계 판정은 붕괴로 고정한다.
+            var random = new ScriptedRandom().Floats(0.9f).Ints(0);
+            BattleSquadMorale battle = Battle(150f, members: members, random: random);
+            int routAt = (int)System.Math.Ceiling(members * 0.9 - 0.0001);
+            for (int i = 0; i < routAt - 1; i++) battle.OnMemberDied();
+            Assert.IsFalse(battle.IsRouted, (routAt - 1) + "명 사망에서는 도망치지 않는다.");
+            battle.OnMemberDied();
+            Assert.IsTrue(battle.IsRouted, routAt + "명 사망에서 도망친다.");
         }
 
         [Test]

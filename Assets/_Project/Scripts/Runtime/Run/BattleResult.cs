@@ -35,6 +35,7 @@ namespace ProjectNeo.Run
     {
         readonly Dictionary<int, UnitFate> fates = new Dictionary<int, UnitFate>();
         readonly Dictionary<string, int> enemiesKilled = new Dictionary<string, int>();
+        readonly Dictionary<string, int> enemiesRetreated = new Dictionary<string, int>();
 
         public int BattleNumber { get; }
         public BattleOutcome Outcome { get; }
@@ -44,6 +45,11 @@ namespace ProjectNeo.Run
         public IReadOnlyDictionary<int, UnitFate> Fates => fates;
         /// <summary>처치한 적 종류별 수. 키는 적 정의의 ID다. 재료 보상(C-4)이 읽는다.</summary>
         public IReadOnlyDictionary<string, int> EnemiesKilled => enemiesKilled;
+        /// <summary>
+        /// 퇴각(Q-30)으로 전투에서 빠진 적 종류별 수. 처치 수와 따로 센다(Q-44). 키는 적 정의의 ID다.
+        /// 적은 사기가 없어 사기 도망은 없다.
+        /// </summary>
+        public IReadOnlyDictionary<string, int> EnemiesRetreated => enemiesRetreated;
 
         public BattleResult(int battleNumber, BattleOutcome outcome, BattleEndReason endReason)
         {
@@ -63,6 +69,14 @@ namespace ProjectNeo.Run
             if (count <= 0) throw new ArgumentOutOfRangeException(nameof(count));
             enemiesKilled.TryGetValue(enemyId, out int current);
             enemiesKilled[enemyId] = current + count;
+        }
+
+        public void AddRetreat(string enemyId, int count = 1)
+        {
+            if (string.IsNullOrEmpty(enemyId)) throw new ArgumentException("적 ID가 비어 있다.", nameof(enemyId));
+            if (count <= 0) throw new ArgumentOutOfRangeException(nameof(count));
+            enemiesRetreated.TryGetValue(enemyId, out int current);
+            enemiesRetreated[enemyId] = current + count;
         }
     }
 }
