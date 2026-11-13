@@ -3,8 +3,8 @@ using System;
 namespace ProjectNeo.Morale
 {
     /// <summary>
-    /// 부대 하나의 사기 값. 0과 최대값 사이로 유지된다.
-    /// 감소, 도망 같은 규칙은 전투 프로토타입에서 이 값 위에 붙인다.
+    /// 부대 하나의 사기 값. 0과 최대값 사이로 유지되며 런 동안 부대에 붙어 다음 전투로 이어진다.
+    /// 전투 중 감소·한계 판정·도망 규칙은 <see cref="BattleSquadMorale"/>, 전투 후 회복은 <see cref="MoraleRules"/>.
     /// </summary>
     public sealed class SquadMorale
     {

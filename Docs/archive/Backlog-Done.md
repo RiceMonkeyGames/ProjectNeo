@@ -1,11 +1,12 @@
 # Completed Backlog Archive (Done)
 
-Last Updated: 2026-11-13 15:19:13 (KST)
+Last Updated: 2026-11-13 15:42:47 (KST)
 
 > Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
 | Task ID | Description | Assignee | Outcome & History Link |
 |---|---|---|---|
+| B-8.1 | Squad Morale Calculations & Rout Transitions | youngho | Done 2026-11-13. Branch `feature/b-8.1`. Pure C# `MoraleSettings`, `MoraleTypes`, `BattleSquadMorale`, `MoraleRules` implementing Q-04/Q-05/Q-38/Q-39; EditMode 248/248 (`MoraleRulesTests` 32). Not wired to scenes; wiring scope recorded on B-8.2. [History](../history/B/B-8.1.md) |
 | ART-01 | Flatten placeholder stair shading | Claude | Done; branch `feature/art-01` (`e58a411`). Ramp mesh rebuilt with per-face vertices (flat normals) in place via Editor API; shape/collider/GUID unchanged. Compile passed, EditMode 216/216, PlayMode `Construction` 41/41. User confirmed in Game scene on 2026-11-13. Standalone build unverified. [History](../history/ART/ART-01.md) |
 | ART-02 | Review missing soldier shadows | Claude | Done; branch `feature/art-02` (`f933c7a`). Cause: scene Sun lights had LightShadows.None. Setup generators emit Soft shadows; 7 scenes migrated via Editor API. Compile passed, EditMode 216/216, PlayMode 118/118; near/far render shows soldier shadows. User manually verified and confirmed completion on 2026-11-13. Large-battle frame rate and standalone build unverified. [History](../history/ART/ART-02.md) |
 | SIEGE-03 | Implement one-cell full-tier stairs | Codex | Done; branch `feature/siege-03`. 1×1 cells, full 3m rise; 7 stairs migrated in 4 scenes through Editor APIs. Compile passed, EditMode 216/216, PlayMode 118/118. User confirmed stair feel and authorized completion on 2026-11-13. Standalone build unverified. [History](../history/SIEGE/SIEGE-03.md) |
