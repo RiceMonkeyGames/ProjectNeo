@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-13 15:19:13 (KST)
+Last Updated: 2026-11-13 15:25:39 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -20,7 +20,6 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 |---|---|---|---|---|
 | C-1a-confirm | Teammate Review of Combat Outcome Format | In Progress | Hwang Seong-min | Review C-1a `BattleResult` draft (outcome, end reason, per-unit status, castle snapshot, kill counts) with combat lead; update code, tests, docs. Prerequisites: C-1a (Done). Decision (2026-11-12): Proceed concurrently with C-1~2. |
 | QA-game-loop | Manual Playtest of Current Game Scene | Waiting for Verification | Unassigned | Formerly `B-9.3-play`. First user playtest reported 2026-11-13; findings in [QA history](history/QA/QA-game-loop.md). Victory and next-prep flow remain unverified because user could not win. Recheck construction and combat after follow-ups below. |
-| FLOW-01 | Start battle from desired current position | In Progress | Codex | Branch `feature/flow-01`. Approved 2026-11-13: hold B for 1 second in prep exploration, show hold progress, block in construction/facility/equipment panels, preserve position/view and start once. |
 | Q-41 | Define shared ladder traversal details | Pending Decision | Unassigned | Approved 2026-11-13: allies AND player ascend/descend. Decide controls, opposing traffic/queues, commands, combat/toppling behavior; coordinate combat owner before shared edits. Current climb API takes SiegeAttackerBrain only. |
 | QA-opening-battle-balance | Review opening battle difficulty | Waiting | Unassigned | User could not win current battle; record as feedback, not proven numerical imbalance. Evaluate after start-position/access fixes; distinguish encounter tuning from temporary victory-flow verification aids. |
 | Q-21 | Finalize Siege Weapon Mechanics | Pending Decision | Unassigned | Confirm auto/unit/player control, range, damage, HP, rotation, passage blocking, and costs with user. Cannons currently mountable only. |

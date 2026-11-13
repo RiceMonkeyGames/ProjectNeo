@@ -91,7 +91,7 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
-        public IEnumerator 성문_앞_F_대상에서_시작하면_먼_들판의_적이_활성화되고_성을_향해_온다()
+        public IEnumerator 기존_깃발은_즉시_시작하지_않고_전투_시작_후_먼_들판의_적이_성을_향해_온다()
         {
             Assert.AreEqual(GamePhase.Preparation, GameSession.Flow.Phase);
             Assert.Greater(battle.Enemies.Count, 0);
@@ -109,8 +109,11 @@ namespace ProjectNeo.Tests
             camera.transform.rotation = Quaternion.LookRotation(Vector3.forward);
             Physics.SyncTransforms();
             interaction.RefreshTarget();
-            Assert.AreSame(station, interaction.Target);
-            Assert.IsTrue(interaction.TryInteract());
+            Assert.IsNull(interaction.Target);
+            Assert.IsFalse(interaction.TryInteract());
+            Assert.IsFalse(station.Interact());
+            Assert.AreEqual(GamePhase.Preparation, GameSession.Flow.Phase);
+            Assert.IsTrue(battle.TryStartBattle());
             Assert.AreEqual(GamePhase.Battle, GameSession.Flow.Phase);
             Assert.IsTrue(battle.IsRunning);
             Assert.IsTrue(battle.Enemies.All(enemy => enemy.gameObject.activeSelf));

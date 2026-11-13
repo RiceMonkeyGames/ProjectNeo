@@ -12,7 +12,14 @@ namespace ProjectNeo.Flow
         [SerializeField] Camera playerCamera;
         [SerializeField] CharacterActor player;
         [SerializeField] PreparationInteractionSettings settings;
-        InputAction interact, close, equipment;
+        [SerializeField] GameBattleController battle;
+        InputAction interact, close, equipment, startBattle;
+        float battleStartElapsed;
+        bool holdingBattleStart;
+        public float BattleStartProgress => Mathf.Clamp01(battleStartElapsed / settings.BattleStartHoldSeconds);
+        public string BattleStartKey => startBattle != null ? startBattle.GetBindingDisplayString() : string.Empty;
+        public bool CanStartBattle => battle != null && battle.CanStart && phaseView.IsExplorationView
+            && Cursor.lockState == CursorLockMode.Locked;
         public PreparationStation Target { get; private set; }
         public string InteractKey => interact.GetBindingDisplayString();
         public string CloseKey => close.GetBindingDisplayString();
@@ -22,16 +29,34 @@ namespace ProjectNeo.Flow
 
         public void Configure(GamePhaseView view, Camera camera, CharacterActor actor, PreparationInteractionSettings config)
         { phaseView = view; playerCamera = camera; player = actor; settings = config; }
+        public void ConfigureBattle(GameBattleController controller) => battle = controller;
 
         void Awake()
         {
             interact = settings.Interact.Clone();
             close = settings.Close.Clone();
             equipment = settings.Equipment?.Clone();
+            startBattle = settings.StartBattle.Clone();
         }
-        void OnEnable() { interact.Enable(); close.Enable(); equipment?.Enable(); }
-        void OnDisable() { interact?.Disable(); close?.Disable(); equipment?.Disable(); Target = null; }
-        void OnDestroy() { interact?.Dispose(); close?.Dispose(); equipment?.Dispose(); }
+        void OnEnable() { interact.Enable(); close.Enable(); equipment?.Enable(); startBattle.Enable(); }
+        void OnDisable() { interact?.Disable(); close?.Disable(); equipment?.Disable(); startBattle?.Disable(); Target = null; CancelBattleStart(); }
+        void OnDestroy() { interact?.Dispose(); close?.Dispose(); equipment?.Dispose(); startBattle?.Dispose(); }
+
+        void CancelBattleStart() { holdingBattleStart = false; battleStartElapsed = 0f; }
+
+        void UpdateBattleStart()
+        {
+            if (!CanStartBattle || !startBattle.IsPressed()) { CancelBattleStart(); return; }
+            // A key held through a modal, focus loss or phase transition must be released and pressed again.
+            if (startBattle.WasPressedThisFrame()) holdingBattleStart = true;
+            if (!holdingBattleStart) return;
+            battleStartElapsed += Time.unscaledDeltaTime;
+            if (battleStartElapsed < settings.BattleStartHoldSeconds) return;
+            CancelBattleStart();
+            battle.TryStartBattle();
+        }
+
+        void OnApplicationFocus(bool focused) { if (!focused) CancelBattleStart(); }
 
         public void RefreshTarget()
         {
@@ -42,7 +67,7 @@ namespace ProjectNeo.Flow
                 out RaycastHit hit, settings.Distance, ~0, QueryTriggerInteraction.Ignore))
             {
                 var station = hit.collider.GetComponentInParent<PreparationStation>();
-                if (station != null && station.PhaseView == phaseView) Target = station;
+                if (station != null && !(station is BattleStartStation) && station.PhaseView == phaseView) Target = station;
             }
         }
 
@@ -58,19 +83,23 @@ namespace ProjectNeo.Flow
         {
             if (phaseView.IsBuildView)
             {
+                CancelBattleStart();
                 Target = null;
                 if (close.WasPressedThisFrame()) phaseView.ExitConstruction();
                 return;
             }
             if (phaseView.IsPanelView)
             {
+                CancelBattleStart();
                 Target = null;
                 if (close.WasPressedThisFrame()) phaseView.ExitPanel();
                 return;
             }
             RefreshTarget();
-            if (interact.WasPressedThisFrame()) TryInteract();
-            else if (phaseView.IsExplorationView && equipment != null && equipment.WasPressedThisFrame()) EquipmentRequested?.Invoke();
+            if (interact.WasPressedThisFrame()) { CancelBattleStart(); TryInteract(); }
+            else if (phaseView.IsExplorationView && equipment != null && equipment.WasPressedThisFrame())
+            { CancelBattleStart(); EquipmentRequested?.Invoke(); }
+            else UpdateBattleStart();
         }
     }
 }

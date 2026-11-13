@@ -42,6 +42,9 @@ namespace ProjectNeo.Editor
             var falling = AssetDatabase.LoadAssetAtPath<FallSettings>("Assets/_Project/Data/ConstructionPrototype/Fall.asset");
             var controller = Find<GameBattleController>(scene);
             if (controller == null) controller = new GameObject("GameBattleController").AddComponent<GameBattleController>();
+            var interaction = Find<PreparationInteraction>(scene);
+            interaction.ConfigureBattle(controller);
+            EditorUtility.SetDirty(interaction);
 
             // 초기 외벽 줄에서 사다리 자리를 찾으므로 이전 프로토타입의 좌표에 의존하지 않는다.
             var worldData = new SerializedObject(world);

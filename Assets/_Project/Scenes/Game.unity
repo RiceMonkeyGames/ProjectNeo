@@ -3850,6 +3850,7 @@ MonoBehaviour:
   playerCamera: {fileID: 855889650}
   player: {fileID: 287700702}
   settings: {fileID: 11400000, guid: 17c6b3d198e6b874191f332c721b441c, type: 2}
+  battle: {fileID: 1251469579}
 --- !u!1 &382021820
 GameObject:
   m_ObjectHideFlags: 0
