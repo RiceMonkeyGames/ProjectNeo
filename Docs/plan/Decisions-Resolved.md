@@ -1,6 +1,6 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-13 15:56:45 (KST)
+Last Updated: 2026-11-13 17:29:40 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
@@ -35,6 +35,7 @@ Last Updated: 2026-11-13 15:56:45 (KST)
 | Q-39 | Post-battle morale recovery floor | B-8.1, C-3 | Resolved (2026-11-13): After each battle morale = max(current + 20, 80), capped at 200, so surviving squads never end below routed squads; replaces the separate routed floor rule. Amends Q-04. See [MoraleAndWave](../design/MoraleAndWave.md). |
 | Q-43 | Wall-breaker & flyer behavior contract | B-6.1~4, B-7.1 | Resolved (2026-11-13): Modular target/movement strategies; Wall Breaker hits nearest wall piece (gate included), then assaults once path opens; Flyer hovers to melee wall-top allies first; flyers take 100% from below; ally melee hits flyers in range. See [WallsAndSiege](../design/WallsAndSiege.md). |
 | Q-21 | Siege weapon (cannon) mechanics | SIEGE-02 | Resolved (2026-11-13): Auto-fire + player manual control; ballistic area damage; ±45° arc; own HP (repairable); no passage blocking; no friendly fire (switchable); nearest-enemy targeting as swappable strategy; temporary values in data. See [WallsAndSiege](../design/WallsAndSiege.md). |
+| Q-41 | Shared ladder traversal interaction rules | SIEGE-04 | Resolved (2026-11-13): Ally/player ascent and descent; tap F boards, hold F at top topples, W/S traverses; one occupant with FIFO traffic and no player priority; allied routes use ladders and defer new orders until endpoint; no attacks aboard, damage/death falls allowed; friendly use blocks automatic toppling; allies/player can raise ladders. User confirmed shared-code edits. See [WallsAndSiege](../design/WallsAndSiege.md). |
 
 ## Detailed Decision Records
 
@@ -44,7 +45,7 @@ Last Updated: 2026-11-13 15:56:45 (KST)
 
 - **Q-42 (2026-11-13)**: User selected 1×1 footprint ascending one full 3m tier. Design decision resolved; implementation tracked by SIEGE-03. [History](../history/Q/Q-42.md).
 - **Q-40 (2026-11-13)**: User selected starting battle at the desired current position after preparation, without returning to the gate. FLOW-01 input also approved: hold B for 1 second, display progress, cancel on release or modal entry, block construction/facility/equipment screens, preserve pose, and start once. [History](../history/Q/Q-40.md).
-- **Q-41 approved scope (2026-11-13)**: Both allies and player may ascend/descend ladders. Full interaction/traffic/combat rules remain partial in Decisions-Pending. [History](../history/Q/Q-41.md).
+- **Q-41 (2026-11-13)**: User approved the proposed control, FIFO traffic, allied command, combat, toppling safety and raising rules after approving both allies and player ascending/descending. Subsequently confirmed shared-code edits and selected tap F boarding / hold F toppling rather than a separate key. Runtime implementation is SIEGE-04. [History](../history/Q/Q-41.md).
 
 - **Stacking on the gate (2026-11-11)**: Walls stack on main gate during prep; drop by settle rule when gate breaks; gate floor remains fixed/non-demolishable/unbuildable once destroyed.
 - **Player start & construction station (2026-11-11, wired 2026-11-12)**: Player starts in south courtyard. Prep defaults to 1st-person walking; build view opens via F at construction building (`Data/GameFlow/Interaction.asset`), Esc returns to matching pose. Overlapping units lift harmlessly (`LiftForConstruction`).

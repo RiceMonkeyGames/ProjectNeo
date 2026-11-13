@@ -44,6 +44,13 @@ namespace ProjectNeo.UI
                         text += "\nF 누르고 있기: 사다리 밀기  " + Mathf.RoundToInt(ladder.State.PushProgress * 100f) + "%";
                         break;
                     }
+                    foreach (var actor in ProjectNeo.Combat.CharacterActor.ActiveActors)
+                    {
+                        if (actor.gameObject.scene != gameObject.scene || actor.GetComponent<ProjectNeo.Characters.PlayerInputController>() == null) continue;
+                        var traveller = actor.GetComponent<LadderTraveller>();
+                        if (traveller != null && traveller.PlayerHint.Length > 0) text += "\n" + traveller.PlayerHint;
+                        break;
+                    }
                     label.text = text;
                     break;
                 default:

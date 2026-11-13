@@ -29,6 +29,12 @@ namespace ProjectNeo.Combat
         public Collider Body { get; private set; }
         public Vector3 AimPoint => transform.position + Vector3.up * (profile.Height * 0.5f);
         public bool IsAttacking => pendingImpact;
+        public bool IsOnLadder { get; private set; }
+        public void SetOnLadder(bool value)
+        {
+            IsOnLadder = value;
+            if (value) pendingImpact = false;
+        }
         public static IReadOnlyList<CharacterActor> ActiveActors => activeActors;
         public event Action AttackStarted;
         public event Action HitReceived;
@@ -88,7 +94,7 @@ namespace ProjectNeo.Combat
 
         public bool CanAttack(CharacterActor target)
         {
-            if (Health == null || Health.IsDead || !IsEnemy(target)) return false;
+            if (IsOnLadder || Health == null || Health.IsDead || !IsEnemy(target)) return false;
             Vector3 direction = target.transform.position - transform.position;
             direction.y = 0f;
             return Vector3.Angle(transform.forward, direction) <= profile.AttackHalfAngle
@@ -108,7 +114,7 @@ namespace ProjectNeo.Combat
 
         public bool TryAttack(CharacterActor target = null)
         {
-            if (Health == null || Health.IsDead || pendingImpact || cooldown > 0f) return false;
+            if (IsOnLadder || Health == null || Health.IsDead || pendingImpact || cooldown > 0f) return false;
             if (target != null && !CanAttack(target)) return false;
             if (profile.AttackKind == AttackKind.Projectile && profile.ProjectilePrefab == null) return false;
             float speed = Stats.GetValue(StatType.AttackSpeed);

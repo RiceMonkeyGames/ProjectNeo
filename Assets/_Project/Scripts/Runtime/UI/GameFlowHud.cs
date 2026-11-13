@@ -88,6 +88,13 @@ namespace ProjectNeo.UI
                     ? $"남은 적 {battle.EnemiesAlive} · 부대원 {battle.AlliesAlive}\n성문: " + (battle.GateDestroyed ? "파괴됨" : "정상")
                     : $"Enemies {battle.EnemiesAlive} - Allies {battle.AlliesAlive}\nGate: " + (battle.GateDestroyed ? "Destroyed" : "Intact");
                 if (battle.IsRetreating) battleStatus.text += korean ? " · 적 퇴각 중" : " - Retreating";
+                foreach (var actor in ProjectNeo.Combat.CharacterActor.ActiveActors)
+                {
+                    if (actor.gameObject.scene != gameObject.scene || actor.GetComponent<ProjectNeo.Characters.PlayerInputController>() == null) continue;
+                    var traveller = actor.GetComponent<ProjectNeo.Siege.LadderTraveller>();
+                    if (traveller != null && traveller.PlayerHint.Length > 0) battleStatus.text += "\n" + traveller.PlayerHint;
+                    break;
+                }
                 foreach (var ladder in battle.Ladders)
                     if (ladder.PlayerCanPush)
                     { battleStatus.text += $"\n{battle.Settings.Siege.PushLadder.GetBindingDisplayString()} · 사다리 밀기 {Mathf.RoundToInt(ladder.State.PushProgress * 100f)}%"; break; }

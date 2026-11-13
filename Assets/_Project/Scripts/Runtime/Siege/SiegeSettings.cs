@@ -54,6 +54,7 @@ namespace ProjectNeo.Siege
         [SerializeField, Min(0.01f)] float ladderRaiseSeconds = 3f;
         [SerializeField, Min(0.01f)] float ladderPushSeconds = 2f;
         [SerializeField, Min(0.01f)] float ladderClimbSeconds = 2.5f;
+        [SerializeField, Min(0.05f)] float ladderTapSeconds = 0.25f;
         // 사다리 밑에서 세우기·오르기를 시작할 수 있는 거리.
         [SerializeField, Min(0.1f)] float ladderUseRadius = 3.5f;
         // 성벽 위에서 사다리를 밀 수 있는 거리와, 올라온 적이 밀기를 막는 거리.
@@ -88,6 +89,7 @@ namespace ProjectNeo.Siege
         public float LadderRaiseSeconds => ladderRaiseSeconds;
         public float LadderPushSeconds => ladderPushSeconds;
         public float LadderClimbSeconds => ladderClimbSeconds;
+        public float LadderTapSeconds => ladderTapSeconds;
         public float LadderUseRadius => ladderUseRadius;
         public float LadderPushRadius => ladderPushRadius;
         public float LadderBlockRadius => ladderBlockRadius;

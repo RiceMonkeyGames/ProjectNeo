@@ -31,6 +31,7 @@ namespace ProjectNeo.Combat
         public UnitDirective Directive { get; private set; } = UnitDirective.Engage;
         public Vector3 MoveDestination { get; private set; }
         public CharacterActor Actor => actor;
+        public float DecisionInterval => settings.DecisionInterval;
 
         public void Configure(UnitAISettings aiSettings) => settings = aiSettings;
 
@@ -42,6 +43,7 @@ namespace ProjectNeo.Combat
 
         public void SetDirective(UnitDirective directive)
         {
+            if (GetComponent<ProjectNeo.Siege.LadderTraveller>()?.Defer(directive, false, default) == true) return;
             Directive = directive;
             HasAdvancePoint = false;
             destinationPending = false;
@@ -55,6 +57,7 @@ namespace ProjectNeo.Combat
 
         public void SetDirective(UnitDirective directive, Vector3 destination)
         {
+            if (GetComponent<ProjectNeo.Siege.LadderTraveller>()?.Defer(directive, true, destination) == true) return;
             SetDirective(directive);
             if (directive == UnitDirective.Hold) HoldPost = destination;
             MoveDestination = destination;
@@ -74,6 +77,7 @@ namespace ProjectNeo.Combat
 
         void Update()
         {
+            if (actor.Health != null && !actor.Health.IsDead && ProjectNeo.Siege.LadderTraveller.HandleAI(this)) return;
             if (actor.Health == null || actor.Health.IsDead || !agent.enabled || !agent.isOnNavMesh) return;
             agent.speed = actor.Stats.GetValue(StatType.MoveSpeed);
             agent.acceleration = settings.Acceleration;
@@ -382,6 +386,7 @@ namespace ProjectNeo.Combat
 
         void OnDisable()
         {
+            GetComponent<ProjectNeo.Siege.LadderTraveller>()?.Interrupt();
             actor.Died -= OnDied;
             Target = null;
             if (agent.enabled && agent.isOnNavMesh)

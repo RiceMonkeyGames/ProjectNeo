@@ -22,6 +22,15 @@ namespace ProjectNeo.Siege
         readonly HashSet<SiegeAttackerBrain> crowd = new HashSet<SiegeAttackerBrain>();
         SiegeAttackerBrain raiser;
         SiegeAttackerBrain climber;
+        readonly LadderTraffic<CharacterActor> traffic = new LadderTraffic<CharacterActor>();
+        readonly List<CharacterActor> removedRequests = new List<CharacterActor>();
+        CharacterActor sharedRaiser;
+        static readonly List<SiegeLadder> active = new List<SiegeLadder>();
+        public static IReadOnlyList<SiegeLadder> Active => active;
+        public SiegeSettings Settings => settings;
+        public ConstructionWorld World => world;
+        public CharacterActor Occupant => traffic.Occupant;
+        public IReadOnlyList<CharacterActor> Waiting => traffic.Waiting;
         InputAction push;
         float wallHeight = 3f;
         int supportId;
@@ -43,8 +52,15 @@ namespace ProjectNeo.Siege
             push = settings.PushLadder.Clone();
         }
 
-        void OnEnable() => push.Enable();
-        void OnDisable() => push.Disable();
+        void OnEnable() { push.Enable(); active.Add(this); }
+        void OnDisable()
+        {
+            active.Remove(this);
+            push.Disable();
+            State.Topple();
+            traffic.Clear();
+            sharedRaiser = null;
+        }
         void OnDestroy()
         {
             if (State != null) State.Toppled -= OnToppled;
@@ -70,6 +86,7 @@ namespace ProjectNeo.Siege
         public void ResetBattle()
         {
             State.Topple();
+            traffic.Clear(); sharedRaiser = null;
             crowd.Clear(); raiser = null; climber = null; supportId = 0; PlayerCanPush = false;
         }
         public Vector3 OutwardWorld => world.transform.TransformDirection(new Vector3(outward.x, 0f, outward.y)).normalized;
@@ -92,6 +109,7 @@ namespace ProjectNeo.Siege
 
         public void Leave(SiegeAttackerBrain unit)
         {
+            if (unit != null) Leave(unit.Actor);
             crowd.Remove(unit);
             if (raiser == unit) raiser = null;
             if (climber == unit) { climber = null; State.EndClimb(); }
@@ -103,6 +121,7 @@ namespace ProjectNeo.Siege
         public bool TryRaise(SiegeAttackerBrain unit)
         {
             if (!HasWall || State.Phase == LadderPhase.Up) return false;
+            if (Alive(sharedRaiser) && IsNear(sharedRaiser, false)) return false;
             if (raiser != null && raiser != unit && IsNearBase(raiser)) return false;
             raiser = unit;
             return true;
@@ -110,9 +129,67 @@ namespace ProjectNeo.Siege
 
         public bool TryBeginClimb(SiegeAttackerBrain unit)
         {
-            if (!HasWall || !State.TryBeginClimb()) return false;
+            if (unit == null || !TryEnter(unit.Actor)) return false;
             climber = unit;
+            unit.Actor.SetOnLadder(true);
             return true;
+        }
+
+        public bool IsNear(CharacterActor actor, bool upper)
+        {
+            if (actor == null) return false;
+            Vector3 delta = actor.transform.position - (upper ? TopPoint : BasePoint);
+            float height = Mathf.Abs(delta.y); delta.y = 0f;
+            return height <= settings.LadderHeightTolerance && delta.sqrMagnitude <= settings.LadderUseRadius * settings.LadderUseRadius;
+        }
+
+        public bool TryEnter(CharacterActor actor)
+        {
+            if (!HasWall || !Alive(actor) || (!IsNear(actor, false) && !IsNear(actor, true))) return false;
+            traffic.Join(actor);
+            if (State.Phase != LadderPhase.Up || State.HasClimber || !traffic.TryEnter(actor)) return false;
+            if (State.TryBeginClimb()) return true;
+            traffic.Leave(actor);
+            return false;
+        }
+
+        public void Leave(CharacterActor actor)
+        {
+            bool occupied = traffic.Occupant == actor;
+            traffic.Leave(actor);
+            if (actor != null) actor.SetOnLadder(false);
+            if (occupied) State.EndClimb();
+            if (sharedRaiser == actor) sharedRaiser = null;
+        }
+
+        public bool TryRaise(CharacterActor actor)
+        {
+            if (!HasWall || !Alive(actor) || !IsNear(actor, false) || State.Phase == LadderPhase.Up) return false;
+            if (raiser != null && IsNearBase(raiser)) return false;
+            if (Alive(sharedRaiser) && sharedRaiser != actor && IsNear(sharedRaiser, false)) return false;
+            sharedRaiser = actor;
+            return true;
+        }
+
+        public void StopRaising(CharacterActor actor) { if (sharedRaiser == actor) sharedRaiser = null; }
+        static bool Alive(CharacterActor actor) => actor != null && actor.isActiveAndEnabled && actor.Health != null && !actor.Health.IsDead;
+        bool FriendlyUse
+        {
+            get
+            {
+                if (Alive(traffic.Occupant) && traffic.Occupant.Team == CombatTeam.Allied) return true;
+                foreach (var actor in traffic.Waiting) if (Alive(actor) && actor.Team == CombatTeam.Allied) return true;
+                return false;
+            }
+        }
+
+        void CleanTraffic()
+        {
+            removedRequests.Clear();
+            foreach (var actor in traffic.Waiting)
+                if (!Alive(actor) || (!IsNear(actor, false) && !IsNear(actor, true))) removedRequests.Add(actor);
+            foreach (var actor in removedRequests) Leave(actor);
+            if (!ReferenceEquals(traffic.Occupant, null) && !Alive(traffic.Occupant)) Leave(traffic.Occupant);
         }
 
         bool IsNearBase(SiegeAttackerBrain unit)
@@ -126,6 +203,7 @@ namespace ProjectNeo.Siege
         void Update()
         {
             PlayerCanPush = false;
+            CleanTraffic();
             if (!HasWall)
             {
                 // 받치던 성벽이 사라지면 사다리도 쓰러지고 오르던 유닛은 떨어진다.
@@ -134,10 +212,11 @@ namespace ProjectNeo.Siege
                 return;
             }
             if (raiser != null && !IsNearBase(raiser)) raiser = null;
+            if (!Alive(sharedRaiser) || !IsNear(sharedRaiser, false)) sharedRaiser = null;
             bool pusher = false, blocked = false;
             if (State.Phase == LadderPhase.Up) FindPushers(out pusher, out blocked);
-            State.Tick(Time.deltaTime, raiser != null, pusher, blocked);
-            if (State.Phase == LadderPhase.Up) raiser = null;
+            State.Tick(Time.deltaTime, raiser != null || sharedRaiser != null, pusher, blocked);
+            if (State.Phase == LadderPhase.Up) { raiser = null; sharedRaiser = null; }
         }
 
         void FindPushers(out bool pusher, out bool blocked)
@@ -162,23 +241,32 @@ namespace ProjectNeo.Siege
                 if (actor.GetComponent<PlayerInputController>() != null)
                 {
                     PlayerCanPush = true;
-                    if (push.IsPressed()) pusher = true;
+                    var traversal = actor.GetComponent<LadderTraveller>();
+                    if (traversal != null && traversal.IsHoldingTopple(this) && !FriendlyUse) pusher = true;
                 }
                 else
                 {
                     var ai = actor.GetComponent<UnitCombatAI>();
-                    if (ai != null && ai.Target == null && !actor.IsAttacking) pusher = true;
+                    if (ai != null && ai.Target == null && !actor.IsAttacking && !FriendlyUse) pusher = true;
                 }
             }
             if (blocked) PlayerCanPush = false;
+            if (FriendlyUse) PlayerCanPush = false;
         }
 
         void OnToppled(bool hadClimber)
         {
+            CharacterActor occupant = traffic.Occupant;
+            traffic.Clear(); sharedRaiser = null;
             SiegeAttackerBrain fallen = climber;
             climber = null;
             raiser = null;
             if (hadClimber && fallen != null) fallen.OnLadderToppled();
+            if (occupant != null)
+            {
+                occupant.SetOnLadder(false);
+                occupant.GetComponent<LadderTraveller>()?.OnToppled();
+            }
         }
     }
 }

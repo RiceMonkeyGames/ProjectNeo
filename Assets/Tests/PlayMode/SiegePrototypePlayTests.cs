@@ -9,6 +9,9 @@ using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
+using ProjectNeo.Characters;
 
 namespace ProjectNeo.Tests
 {
@@ -261,6 +264,221 @@ namespace ProjectNeo.Tests
             }
             Assert.IsTrue(toppled, "성벽 위 아군이 사다리를 밀어내지 못했다.");
             Assert.IsTrue(fell, "오르던 적이 떨어져 피해를 받지 않았다.");
+        }
+
+        UnitCombatAI IsolateSharedLadder()
+        {
+            foreach (var unit in center.Squads.SelectMany(squad => squad.Members)) unit.enabled = false;
+            return center.Squads[0].Members[0];
+        }
+
+        [UnityTest]
+        public IEnumerator SharedLadder_AlliedOrdersGoBothDirections_AndDeferUntilEndpoint()
+        {
+            yield return CloseWalls();
+            UnitCombatAI unit = IsolateSharedLadder();
+            SiegeLadder ladder = ladders[0];
+            ladder.State.Tick(0.1f, true, false, false);
+            ladder.State.Tick(ladder.Settings.LadderRaiseSeconds, true, false, false);
+            var agent = unit.GetComponent<NavMeshAgent>();
+            Assert.IsTrue(agent.Warp(ladder.BasePoint));
+            unit.SetDirective(UnitDirective.Move, ladder.TopPoint);
+            unit.enabled = true;
+            int frames = 0;
+            while (!unit.Actor.IsOnLadder && frames++ < 300) yield return null;
+            Assert.IsTrue(unit.Actor.IsOnLadder, "아군 이동 명령이 사다리를 이용하지 않았다.");
+            Vector3 original = unit.MoveDestination;
+            unit.SetDirective(UnitDirective.Hold);
+            Assert.AreEqual(UnitDirective.Move, unit.Directive, "등반 중 새 명령이 즉시 적용됐다.");
+            Assert.AreEqual(original, unit.MoveDestination);
+            Assert.IsFalse(unit.Actor.TryAttack(), "등반 중 공격을 시작했다.");
+            float hp = unit.Actor.Health.Current;
+            unit.Actor.ReceiveDamage(1f);
+            Assert.Less(unit.Actor.Health.Current, hp, "등반 중 피해를 받지 않았다.");
+            frames = 0;
+            while (unit.Actor.IsOnLadder && frames++ < 300) yield return null;
+            Assert.IsFalse(unit.Actor.IsOnLadder);
+            Assert.AreEqual(UnitDirective.Hold, unit.Directive);
+            Assert.That(unit.transform.position.y, Is.EqualTo(ladder.TopPoint.y).Within(0.2f));
+            unit.SetDirective(UnitDirective.Move, ladder.BasePoint);
+            frames = 0;
+            while (!unit.Actor.IsOnLadder && frames++ < 300) yield return null;
+            Assert.IsTrue(unit.Actor.IsOnLadder, "아군이 사다리 하강을 시작하지 않았다.");
+            frames = 0;
+            while (unit.Actor.IsOnLadder && frames++ < 300) yield return null;
+            Assert.That(unit.transform.position.y, Is.EqualTo(ladder.BasePoint.y).Within(0.2f));
+            Assert.IsTrue(agent.enabled && agent.isOnNavMesh);
+        }
+
+        [UnityTest]
+        public IEnumerator SharedLadder_MixedQueuesKeepArrivalOrder_AndDeadWaiterIsRemoved()
+        {
+            yield return CloseWalls();
+            UnitCombatAI first = IsolateSharedLadder();
+            UnitCombatAI second = center.Squads[0].Members[1];
+            SiegeLadder ladder = ladders[0];
+            first.GetComponent<NavMeshAgent>().Warp(ladder.BasePoint);
+            second.GetComponent<NavMeshAgent>().Warp(ladder.TopPoint);
+            var enemy = PlaceStillEnemy(SiegeAttackerRole.Ladder, ladder.BasePoint);
+            ladder.State.Tick(0.1f, true, false, false);
+            ladder.State.Tick(ladder.Settings.LadderRaiseSeconds, true, false, false);
+            Assert.IsTrue(ladder.TryEnter(first.Actor));
+            Assert.IsFalse(ladder.TryEnter(second.Actor));
+            Assert.IsFalse(ladder.TryEnter(enemy));
+            ladder.Leave(first.Actor);
+            Assert.IsFalse(ladder.TryEnter(enemy), "뒤에 온 적이 앞선 아군을 추월했다.");
+            Kill(second.Actor);
+            yield return null;
+            Assert.IsTrue(ladder.TryEnter(enemy), "죽은 대기자가 대기열을 막았다.");
+            Object.Destroy(enemy.gameObject);
+            yield return null;
+            yield return null;
+            Assert.IsFalse(ladder.State.HasClimber, "파괴된 탑승자가 점유를 남겼다.");
+            Assert.IsTrue(ladder.TryEnter(first.Actor));
+            ladder.Leave(first.Actor);
+        }
+
+        [UnityTest]
+        public IEnumerator SharedLadder_CollapseReleasesOccupancy_AndRestoresNavigation()
+        {
+            yield return CloseWalls();
+            UnitCombatAI unit = IsolateSharedLadder();
+            SiegeLadder ladder = ladders[0];
+            unit.GetComponent<NavMeshAgent>().Warp(ladder.BasePoint);
+            unit.SetDirective(UnitDirective.Move, ladder.TopPoint);
+            unit.enabled = true;
+            int frames = 0;
+            while (!unit.Actor.IsOnLadder && frames++ < 400) yield return null;
+            Assert.IsTrue(unit.Actor.IsOnLadder, "아군이 사다리를 세우고 탑승하지 않았다.");
+            for (int i = 0; i < 30; i++) yield return null;
+            var support = world.Structures.First(piece => piece.Placement.Cell == ladder.Cell);
+            support.ReceiveDamage(1000000f);
+            yield return null;
+            Assert.IsFalse(unit.Actor.IsOnLadder);
+            Assert.IsNull(ladder.Occupant);
+            frames = 0;
+            while (unit.GetComponent<UnitFallController>().IsFalling && frames++ < 600) yield return null;
+            Assert.IsFalse(unit.GetComponent<UnitFallController>().IsFalling);
+            Assert.IsTrue(unit.GetComponent<NavMeshAgent>().enabled);
+            Assert.That(unit.transform.position.y, Is.EqualTo(ladder.BasePoint.y).Within(0.2f));
+        }
+
+        [UnityTest]
+        public IEnumerator SharedLadder_PlayerTapBoards_HoldRaises_AndWSMovesBothDirections()
+        {
+            using var scope = new FocusIndependentInputScope();
+            Keyboard original = Keyboard.current;
+            var keyboard = InputSystem.AddDevice<Keyboard>();
+            try
+            {
+                yield return CloseWalls();
+                IsolateSharedLadder();
+                var player = Find<PlayerInputController>();
+                SiegeLadder ladder = ladders[0];
+                director.SetConstructionView(false);
+                var motor = player.GetComponent<CharacterController>();
+                motor.enabled = false; player.transform.position = ladder.BasePoint; motor.enabled = true;
+                Cursor.lockState = CursorLockMode.Locked;
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.F));
+                int frames = 0;
+                while (ladder.State.Phase != LadderPhase.Up && frames++ < 300) yield return null;
+                Assert.AreEqual(LadderPhase.Up, ladder.State.Phase, "플레이어 F 유지로 세워지지 않았다.");
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState()); yield return null;
+                Assert.IsFalse(player.GetComponent<CharacterActor>().IsOnLadder, "세우기 유지 입력이 탑승으로 이어졌다.");
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.F)); yield return null;
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState()); yield return null;
+                Assert.IsTrue(player.GetComponent<CharacterActor>().IsOnLadder);
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.W));
+                frames = 0;
+                while (player.GetComponent<CharacterActor>().IsOnLadder && frames++ < 300) yield return null;
+                Assert.That(player.transform.position.y, Is.EqualTo(ladder.TopPoint.y).Within(0.2f));
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState()); yield return null;
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.F)); yield return null;
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState()); yield return null;
+                Assert.IsTrue(player.GetComponent<CharacterActor>().IsOnLadder);
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.S));
+                frames = 0;
+                while (player.GetComponent<CharacterActor>().IsOnLadder && frames++ < 300) yield return null;
+                Assert.That(player.transform.position.y, Is.EqualTo(ladder.BasePoint.y).Within(0.2f));
+                Assert.IsTrue(motor.enabled);
+            }
+            finally
+            {
+                InputSystem.RemoveDevice(keyboard);
+                if (original != null && original.added) original.MakeCurrent();
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator SharedLadder_FriendlyQueuePreventsAutomaticToppling_ThenHoldFTopplesWithoutBoarding()
+        {
+            using var scope = new FocusIndependentInputScope();
+            Keyboard original = Keyboard.current;
+            var keyboard = InputSystem.AddDevice<Keyboard>();
+            try
+            {
+                yield return CloseWalls();
+                UnitCombatAI waiting = IsolateSharedLadder();
+                var player = Find<PlayerInputController>();
+                SiegeLadder ladder = ladders[0];
+                var defender = center.Squads[0].Members[1];
+                defender.GetComponent<NavMeshAgent>().Warp(ladder.TopPoint);
+                waiting.GetComponent<NavMeshAgent>().Warp(ladder.BasePoint);
+                ladder.State.Tick(0.1f, true, false, false);
+                ladder.State.Tick(ladder.Settings.LadderRaiseSeconds, true, false, false);
+                var enemy = PlaceStillEnemy(SiegeAttackerRole.Ladder, ladder.BasePoint);
+                Assert.IsTrue(ladder.TryEnter(enemy));
+                Assert.IsFalse(ladder.TryEnter(waiting.Actor));
+                for (int i = 0; i < 90; i++) yield return null;
+                Assert.AreEqual(LadderPhase.Up, ladder.State.Phase, "아군 이용 대기 중 자동으로 밀었다.");
+                ladder.Leave(enemy); ladder.Leave(waiting.Actor);
+                defender.GetComponent<NavMeshAgent>().Warp(ladder.BasePoint + Vector3.right * 10f);
+                enemy.gameObject.SetActive(false);
+                director.SetConstructionView(false);
+                var motor = player.GetComponent<CharacterController>();
+                motor.enabled = false; player.transform.position = ladder.TopPoint; motor.enabled = true;
+                Cursor.lockState = CursorLockMode.Locked;
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.F));
+                int frames = 0;
+                while (ladder.State.Phase == LadderPhase.Up && frames++ < 180) yield return null;
+                Assert.AreEqual(LadderPhase.Down, ladder.State.Phase, "플레이어 F 유지로 넘어뜨리지 못했다.");
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState()); yield return null;
+                Assert.IsFalse(player.GetComponent<CharacterActor>().IsOnLadder, "F 유지 해제가 탑승으로 처리됐다.");
+            }
+            finally
+            {
+                InputSystem.RemoveDevice(keyboard);
+                if (original != null && original.added) original.MakeCurrent();
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator SharedLadder_DeathAndDisabledControllerReleaseOccupancy()
+        {
+            yield return CloseWalls();
+            UnitCombatAI unit = IsolateSharedLadder();
+            SiegeLadder ladder = ladders[0];
+            unit.GetComponent<NavMeshAgent>().Warp(ladder.BasePoint);
+            unit.SetDirective(UnitDirective.Move, ladder.TopPoint);
+            unit.enabled = true;
+            int frames = 0;
+            while (!unit.Actor.IsOnLadder && frames++ < 400) yield return null;
+            Assert.IsTrue(unit.Actor.IsOnLadder);
+            for (int i = 0; i < 30; i++) yield return null;
+            Kill(unit.Actor);
+            Assert.IsNull(ladder.Occupant);
+            Assert.IsFalse(unit.Actor.IsOnLadder);
+            for (int i = 0; i < 120; i++) yield return null;
+            Assert.That(unit.transform.position.y, Is.EqualTo(ladder.BasePoint.y).Within(0.2f));
+            var other = center.Squads[0].Members[1];
+            other.GetComponent<NavMeshAgent>().Warp(ladder.BasePoint);
+            other.SetDirective(UnitDirective.Move, ladder.TopPoint); other.enabled = true;
+            frames = 0;
+            while (!other.Actor.IsOnLadder && frames++ < 400) yield return null;
+            Assert.IsTrue(other.Actor.IsOnLadder);
+            other.enabled = false;
+            Assert.IsNull(ladder.Occupant, "컨트롤러 비활성화가 점유를 남겼다.");
+            Assert.IsFalse(other.Actor.IsOnLadder);
         }
 
         IEnumerator KillBreachersAfterArchersDecide()

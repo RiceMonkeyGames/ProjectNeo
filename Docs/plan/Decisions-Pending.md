@@ -1,6 +1,6 @@
 # Pending Decisions & Active Operational Policies
 
-Last Updated: 2026-11-13 15:54:34 (KST)
+Last Updated: 2026-11-13 17:29:40 (KST)
 
 > Purpose: Undecided or partial design/implementation decisions (`Q-*`) and active operational rules. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Resolved](Decisions-Resolved.md), [OpenQuestions](../design/OpenQuestions.md)
 
@@ -29,4 +29,5 @@ Last Updated: 2026-11-13 15:54:34 (KST)
 | Q-31 | Equipment retention upon hero permadeath | `C-3` casualty carry-over | Undecided. `C-1a` preserves fallen hero gear in `RunState.FallenHeroes`. |
 | Q-32 | Can player character serve as squad captain | `D-8` squad setup UI | Undecided. `C-1a` `TrySetLeader` permits assigning player character. |
 | Q-35 | Blacksmith crafting model (storefront vs recipes) and upgrades | `D-6` blacksmith | Undecided. Requires crafting recipes and gear enhancement definitions. |
-| Q-41 | Shared ladder traversal interaction rules | Shared siege/combat movement | Partial (2026-11-13): User approved allies AND player ascending/descending. Controls, opposing traffic/queues, commands, combat and toppling rules still pending. Coordinate combat owner before implementation. |
+
+Q-41 shared ladder interaction rules were approved on 2026-11-13 and moved to [Decisions-Resolved](Decisions-Resolved.md). The user subsequently confirmed shared-code edits and tap F boarding / hold F toppling. Runtime implementation is tracked as SIEGE-04.

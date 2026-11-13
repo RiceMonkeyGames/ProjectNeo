@@ -63,11 +63,13 @@ namespace ProjectNeo.Characters
         void Update()
         {
             if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame) SetCaptured(false);
-            if (movementSuspended || actor.Health == null || actor.Health.IsDead) return;
+            if (actor.Health == null || actor.Health.IsDead) return;
             bool captured = Cursor.lockState == CursorLockMode.Locked;
             if (!captured && Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
                 SetCaptured(true);
             if (captured) view.Look(look.ReadValue<Vector2>());
+            if (ProjectNeo.Siege.LadderTraveller.HandlePlayer(this, captured, move.ReadValue<Vector2>().y)) return;
+            if (movementSuspended) return;
             Move(captured ? move.ReadValue<Vector2>() : Vector2.zero, view.Yaw, Time.deltaTime);
             if (captured && attack.WasPressedThisFrame()) actor.TryAttack();
         }
@@ -92,6 +94,7 @@ namespace ProjectNeo.Characters
 
         void OnDisable()
         {
+            GetComponent<ProjectNeo.Siege.LadderTraveller>()?.Interrupt();
             if (actions != null) actions.Disable();
             Cursor.lockState = previousLock;
             Cursor.visible = previousVisible;

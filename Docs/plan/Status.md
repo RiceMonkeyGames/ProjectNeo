@@ -1,6 +1,6 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-13 16:45:54 (KST)
+Last Updated: 2026-11-13 17:33:45 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
@@ -9,6 +9,10 @@ Last Updated: 2026-11-13 16:45:54 (KST)
 Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elevation, and `feature/siege-prototype` test scene into `develop`. `Game` scene links 1st-person prep / construction F interaction → hold B for 1 second at current position (FLOW-01) → enemy assault, ladders, actual win/loss → rewards/results. On the M2 side, run data (`C-1~2`), victory rewards (`C-4`), build/repair costs (`D-2`), facility pop-ups (`D-0`), upgrades (`D-1`), shop (`D-5`), player equipment (`D-7`), grunt spawning (`D-0b`), and barracks recruitment/training (`D-4`) are implemented; formal stage/wave layouts, casualty carry-over (`C-3`), tavern (`D-3`), squad org (`D-8`), and blacksmith (`D-6`) remain follow-ups. Wall-breaker behavior is complete on `feature/b-6.2`, pending develop merge; mixed encounter integration, aerial enemies, morale scene wiring, and siege weapon firing (`Q-21`) remain pending.
 
 ## Implemented vs Pending Real Connections
+
+Q-41 and SIEGE-04 completion/commit/push were authorized by the user on 2026-11-13 and archived as Done on `feature/siege-04`; develop integration remains pending user merge. Physical-key/HUD manual review and standalone build remain unverified.
+
+**Shared ladders (Q-41 / SIEGE-04, 2026-11-13; on `feature/siege-04`)**: Ally/player bidirectional traversal, tap F boarding, hold F toppling/raising, W/S climbing, FIFO single occupancy, endpoint-deferred orders, combat restrictions and friendly-use topple protection are implemented. User confirmed shared-code edit availability. Compile and full EditMode 252/252 / PlayMode 132/132 (79.2s) passed; after final destroyed-occupant cleanup, compile and SharedLadder PlayMode 6/6 (4.11s) passed. Physical-key/HUD manual review and standalone build are not verified. [History](../history/SIEGE/SIEGE-04.md), [design](../design/WallsAndSiege.md).
 
 | Domain | Verified Current State | Remaining Integration Scope |
 |---|---|---|
