@@ -1,6 +1,6 @@
 # Editor Setup & Test Scripts
 
-Last Updated: 2026-11-13 22:49:00 (KST)
+Last Updated: 2026-11-13 23:03:41 (KST)
 
 > Purpose: Map of Editor setup menus, build scripts, and EditMode/PlayMode test suites. | Parent: [codemap/README](README.md) | Related: [UnityCLI](../workflow/UnityCLI.md), [Status](../plan/Status.md)
 
@@ -20,7 +20,7 @@ Last Updated: 2026-11-13 22:49:00 (KST)
 - `GameRewardSetup.cs`: Menu `ProjectNeo/Setup/Connect Rewards To Game Scene`. Generates materials, items, and reward controllers.
 - `GameBuildEconomySetup.cs`: Menu `ProjectNeo/Setup/Connect Build Costs To Game Scene`. Connects build costs, demolition, and repairs.
 - `GameFacilitySetup.cs`: Menu `ProjectNeo/Setup/Connect Facilities To Game Scene`. Generates 5 facility definitions, `GameFacilities`, `FacilityStation` on 4 courtyard buildings, `FacilityPanel`, D-5 `Economy.asset` (50% sell), 4 shop items (`Data/GameFlow/Rewards/item_*`), level stock pools, and D-7 `EquipmentPanel` / `GameEquipment` / `I` key.
-- `SquadOrganizationSetup.cs`: Menu `ProjectNeo/Setup/Connect Squad Organization To Game Scene`. D-8 `OrganizationPanel` (reuses `GameFacilitySetup` popup helpers) and `GameSquadOrganization` on the battle object; marks `Interaction.asset` dirty to save the new `O` key.
+- `SquadOrganizationSetup.cs`: Menu `ProjectNeo/Setup/Connect Squad Organization To Game Scene`. D-8 `OrganizationPanel` (UI-01: horizontal card scroll, card template with Header button + List, row template) (reuses `GameFacilitySetup` popup helpers) and `GameSquadOrganization` on the battle object; marks `Interaction.asset` dirty to save the new `O` key.
 - `TavernSetup.cs`: Menu `ProjectNeo/Setup/Create Tavern Heroes`. D-3 hero assets in `Data/GameFlow/Heroes/` (swordsman/archer tier 1 60g, knight tier 2 120g, paladin tier 3 200g; grunt prefabs as bodies) and `Facility_Tavern.asset` level hero pools (only when empty). No scene edits.
 - `GameUnitSpawnSetup.cs`: Menu `ProjectNeo/Setup/Connect Unit Spawning To Game Scene`. Wires `GameUnitSpawner` and fills soldier prefab slots.
 - `BarracksSetup.cs`: Menu `ProjectNeo/Setup/Configure Barracks Data`. Configures `Facility_TrainingGround.asset` and `allied_melee`/`allied_ranged` recruit costs/names.
@@ -72,7 +72,7 @@ Last Updated: 2026-11-13 22:49:00 (KST)
 - `GameEquipmentPlayTests.cs`: Shared Character, `I`/`Esc` input toggles, immediate stat reflection, battle lock.
 - `GameUnitSpawnPlayTests.cs`: D-0b Game scene recruit spawn in front of barracks, walk to squad, battle input/commands/result, new squad creation.
 - `GameBarracksPlayTests.cs`: D-4 Game scene barracks popup recruit with cost/squad choice, insufficient funds, battle input, upgrade bonus on existing/new grunts.
-- `GameOrganizationPlayTests.cs`: D-8 Game scene organization window moves a grunt to a new squad and back (run + scene squads + commander stay aligned, emptied squad removed); closed during battle.
+- `GameOrganizationPlayTests.cs`: D-8 Game scene organization window moves a grunt to a new squad and back via cards (UI-01), hired hero to captain, to another squad and back to reserve, (run + scene squads + commander stay aligned, emptied squad removed); closed during battle.
 - `GameTavernPlayTests.cs`: D-3 Game scene tavern hire as captain and reserve, shared scene/run character, equipment hero selector, reserve hero deactivated in battle.
 - `FocusIndependentInputScopeTests.cs`: Normal/exception restoration of InputSettings via `FocusIndependentInputScope`.
 - `SetupSmokePlayTests.cs`: Basic frame tick verification.

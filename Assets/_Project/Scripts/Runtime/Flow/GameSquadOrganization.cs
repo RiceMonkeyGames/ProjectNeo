@@ -8,10 +8,11 @@ using UnityEngine.UI;
 namespace ProjectNeo.Flow
 {
     /// <summary>
-    /// Game 씬 준비 단계의 부대 편성 화면(D-8, Q-45·Q-47). 1인칭 탐색 중 편성 키(기본 O)로 열고 Esc나 닫기 버튼으로 닫는다.
-    /// 왼쪽 열은 보낼 부대(맨 위 줄을 눌러 바꾼다)의 잡졸이고, 잡졸을 누르면 오른쪽 열에서 고른 받을 부대로 한 명 옮긴다.
-    /// 오른쪽 열은 받을 부대(또는 새 부대) 선택과 보낼 부대의 대장 지정·해제다. 대장은 대기 영웅만 맡는다(플레이어 제외, Q-32 임시).
-    /// 원래 부대가 비면 그 부대는 없어지고 대장은 대기로 돌아간다. 런과 씬 부대는 <see cref="GameRunLink"/>가 함께 바꾼다.
+    /// Game 씬 준비 단계의 부대 편성 화면(D-8, UI-01 카드 배치 Q-49). 1인칭 탐색 중 편성 키(기본 O)로 열고 Esc나 닫기 버튼으로 닫는다.
+    /// 부대마다 카드 한 장(맨 위 대장 칸, 아래 잡졸)을 가로로 나란히 두고, 옆에 "새 부대" 카드와 "대기 영웅" 카드를 둔다.
+    /// 잡졸이나 영웅 줄을 눌러 고른 뒤 보낼 카드의 머리 버튼을 누르면 옮긴다: 잡졸은 그 부대(새 부대)로 한 명, 영웅은 그 부대의 대장으로,
+    /// 대기 카드는 대장에서 뺀다. 같은 줄을 다시 누르면 선택을 푼다. 규칙은 D-8 그대로이며(<see cref="GameRunLink"/>가 런과 씬을 함께 바꾼다)
+    /// 원래 부대가 비면 없어지고 대장은 대기로 간다. 플레이어는 대장이 될 수 없어 카드에 나오지 않는다(Q-32 임시).
     /// <see cref="GameBattleController"/>와 같은 오브젝트에 붙어 그 런 연결을 쓴다.
     /// </summary>
     [RequireComponent(typeof(GameBattleController))]
@@ -24,10 +25,12 @@ namespace ProjectNeo.Flow
         [SerializeField] GameObject panel;
         [SerializeField] TMP_Text status;
         [SerializeField] TMP_Text body;
-        [SerializeField] RectTransform sourceList;
-        [SerializeField] RectTransform targetList;
+        [Tooltip("카드를 가로로 늘어놓는 곳(스크롤 내용).")]
+        [SerializeField] RectTransform cardArea;
+        [Tooltip("카드 한 장의 틀. 자식으로 Header 버튼과 List 세로 목록이 있다.")]
+        [SerializeField] RectTransform cardTemplate;
         [SerializeField] Button rowTemplate;
-        readonly List<Button> rows = new List<Button>();
+        readonly List<GameObject> cards = new List<GameObject>();
         GameBattleController battle;
         GameFlow flow;
 
@@ -35,18 +38,16 @@ namespace ProjectNeo.Flow
         public string Message { get; private set; } = string.Empty;
         public string StatusText => status != null ? status.text : string.Empty;
         public string BodyText => body != null ? body.text : string.Empty;
-        /// <summary>보낼 부대 순번.</summary>
-        public int Source { get; private set; }
-        /// <summary>받을 부대 순번. -1이면 새 부대.</summary>
-        public int Target { get; private set; }
-        public int SourceRows => sourceList != null ? ActiveChildren(sourceList) : 0;
-        public int TargetRows => targetList != null ? ActiveChildren(targetList) : 0;
+        /// <summary>고른 잡졸이나 영웅. 없으면 null.</summary>
+        public RunUnit Selected { get; private set; }
+        /// <summary>지금 보이는 카드 수(부대 카드 + 새 부대 카드 + 대기 카드).</summary>
+        public int CardCount { get { int count = 0; foreach (GameObject card in cards) if (card != null && card.activeSelf) count++; return count; } }
 
         public void Configure(GamePhaseView view, PreparationInteraction input, GameObject popup, TMP_Text statusLabel,
-            TMP_Text bodyLabel, RectTransform source, RectTransform target, Button template)
+            TMP_Text bodyLabel, RectTransform cardsParent, RectTransform card, Button row)
         {
             phaseView = view; interaction = input; panel = popup; status = statusLabel; body = bodyLabel;
-            sourceList = source; targetList = target; rowTemplate = template;
+            cardArea = cardsParent; cardTemplate = card; rowTemplate = row;
         }
 
         void Awake()
@@ -54,6 +55,7 @@ namespace ProjectNeo.Flow
             battle = GetComponent<GameBattleController>();
             flow = GameSession.Flow;
             if (panel != null) panel.SetActive(false);
+            if (cardTemplate != null) cardTemplate.gameObject.SetActive(false);
             if (rowTemplate != null) rowTemplate.gameObject.SetActive(false);
         }
 
@@ -72,8 +74,7 @@ namespace ProjectNeo.Flow
             if (state.Army.Squads.Count == 0 || !phaseView.EnterPanel()) return false;
             IsOpen = true;
             Message = string.Empty;
-            Source = 0;
-            Target = state.Army.Squads.Count > 1 ? 1 : NewSquad;
+            Selected = null;
             panel.SetActive(true);
             Rebuild();
             return true;
@@ -85,83 +86,68 @@ namespace ProjectNeo.Flow
             Hide();
         }
 
-        /// <summary>보낼 부대를 고른다. 받을 부대와 같으면 받을 부대를 다른 곳으로 바꾼다.</summary>
-        public bool SelectSource(int squad)
+        /// <summary>잡졸이나 영웅을 고른다. 이미 고른 것을 다시 고르면 선택을 푼다. 이 런의 것이 아니면 false.</summary>
+        public bool Select(RunUnit unit)
         {
             RunState state = State;
-            if (!IsOpen || state == null || squad < 0 || squad >= state.Army.Squads.Count) return false;
-            Source = squad;
-            if (Target == Source) Target = FirstOther(state, Source);
-            Message = string.Empty;
+            if (!IsOpen || state == null || unit == null || state.Find(unit.Id) != unit) return false;
+            if (unit is RunHero hero && hero.IsPlayer && !state.AllowPlayerCaptain) return false;
+            Selected = Selected == unit ? null : unit;
+            Message = Selected == null ? string.Empty : $"{NameOf(Selected)} 선택 → 보낼 카드의 머리 버튼을 누르세요.";
             Rebuild();
             return true;
         }
 
-        /// <summary>보낼 부대를 다음 부대로 바꾼다(맨 위 줄).</summary>
-        public bool NextSource()
+        /// <summary>고른 것을 index번째 부대 카드에 놓는다(-1이면 새 부대 카드). 잡졸은 그 부대로, 영웅은 그 부대 대장으로.</summary>
+        public bool DropOnSquad(int index)
         {
             RunState state = State;
-            return state != null && state.Army.Squads.Count > 0 && SelectSource((Source + 1) % state.Army.Squads.Count);
-        }
-
-        /// <summary>받을 부대를 고른다. -1이면 새 부대. 보낼 부대와 같으면 false.</summary>
-        public bool SelectTarget(int squad)
-        {
-            RunState state = State;
-            if (!IsOpen || state == null || squad < NewSquad || squad >= state.Army.Squads.Count || squad == Source) return false;
-            Target = squad;
-            Message = string.Empty;
-            Rebuild();
-            return true;
-        }
-
-        /// <summary>보낼 부대의 index번째 잡졸을 받을 부대로 옮긴다.</summary>
-        public bool TryMove(int index)
-        {
-            RunState state = State;
-            if (!IsOpen || state == null || Source >= state.Army.Squads.Count) return false;
-            List<RunSoldier> soldiers = SoldiersOf(state.Army.Squads[Source]);
-            if (index < 0 || index >= soldiers.Count) return false;
-            RunSoldier soldier = soldiers[index];
-            int sourceCount = state.Army.Squads.Count;
-            OrganizeCheck check = battle.RunLink.TryMoveSoldier(soldier, Target, out int movedTo);
-            if (check == OrganizeCheck.Ok)
+            if (!IsOpen || state == null || Selected == null || index < NewSquad || index >= state.Army.Squads.Count) return false;
+            bool done;
+            if (Selected is RunSoldier soldier)
             {
-                bool removed = state.Army.Squads.Count < sourceCount + (Target == NewSquad ? 1 : 0);
-                Message = $"{soldier.Definition.DisplayName} → 부대 {movedTo + 1}" + (removed ? " · 빈 부대를 없앴습니다(대장은 대기)" : string.Empty);
-                if (removed)
-                {
-                    Source = Mathf.Clamp(movedTo, 0, state.Army.Squads.Count - 1);
-                    Target = FirstOther(state, Source);
-                }
-                else Target = movedTo;
+                int before = state.Army.Squads.Count;
+                OrganizeCheck check = battle.RunLink.TryMoveSoldier(soldier, index, out int movedTo);
+                done = check == OrganizeCheck.Ok;
+                bool removed = done && state.Army.Squads.Count < before + (index == NewSquad ? 1 : 0);
+                Message = done ? $"{NameOf(soldier)} → 부대 {movedTo + 1}" + (removed ? " · 빈 부대를 없앴습니다(대장은 대기)" : string.Empty)
+                    : Reason(check);
             }
-            else Message = Reason(check);
+            else if (Selected is RunHero hero)
+            {
+                if (index == NewSquad) { Message = "영웅은 잡졸이 있는 부대의 대장만 맡을 수 있습니다."; done = false; }
+                else
+                {
+                    Squad<RunUnit> leading = state.LeadingSquadOf(hero);
+                    OrganizeCheck check = leading == state.Army.Squads[index] ? OrganizeCheck.SameSquad : OrganizeCheck.Ok;
+                    if (check == OrganizeCheck.Ok && leading != null) check = battle.RunLink.TrySetCaptain(state.IndexOf(leading), null);
+                    if (check == OrganizeCheck.Ok) check = battle.RunLink.TrySetCaptain(index, hero);
+                    done = check == OrganizeCheck.Ok;
+                    Message = done ? $"부대 {index + 1} 대장: {NameOf(hero)}" : Reason(check);
+                }
+            }
+            else done = false;
+            if (done) Selected = null;
             Rebuild();
-            return check == OrganizeCheck.Ok;
+            return done;
         }
 
-        /// <summary>대기 영웅의 index번째를 보낼 부대의 대장으로 정한다. 원래 대장은 대기로 돌아간다.</summary>
-        public bool TryAssignCaptain(int index)
+        /// <summary>고른 영웅을 대장에서 빼 대기로 보낸다. 잡졸이나 이미 대기인 영웅이면 false.</summary>
+        public bool DropOnReserve()
         {
             RunState state = State;
-            if (!IsOpen || state == null) return false;
-            IReadOnlyList<RunHero> reserve = state.ReserveHeroes;
-            if (index < 0 || index >= reserve.Count) return false;
-            OrganizeCheck check = battle.RunLink.TrySetCaptain(Source, reserve[index]);
-            Message = check == OrganizeCheck.Ok ? $"부대 {Source + 1} 대장: {reserve[index].Character.Definition.DisplayName}" : Reason(check);
+            if (!IsOpen || state == null || Selected == null) return false;
+            bool done = false;
+            if (Selected is RunHero hero && state.LeadingSquadOf(hero) is Squad<RunUnit> leading)
+            {
+                OrganizeCheck check = battle.RunLink.TrySetCaptain(state.IndexOf(leading), null);
+                done = check == OrganizeCheck.Ok;
+                Message = done ? $"{NameOf(hero)}을(를) 대기로 돌렸습니다." : Reason(check);
+            }
+            else Message = Selected is RunSoldier ? "잡졸은 대기로 보낼 수 없습니다. 다른 부대 카드에 놓으세요." : "이미 대기 중입니다.";
+            if (done) Selected = null;
             Rebuild();
-            return check == OrganizeCheck.Ok;
-        }
-
-        /// <summary>보낼 부대의 대장을 비운다. 대장은 대기 영웅이 된다.</summary>
-        public bool TryClearCaptain()
-        {
-            if (!IsOpen || State == null) return false;
-            OrganizeCheck check = battle.RunLink.TrySetCaptain(Source, null);
-            Message = check == OrganizeCheck.Ok ? $"부대 {Source + 1} 대장을 대기로 돌렸습니다." : Reason(check);
-            Rebuild();
-            return check == OrganizeCheck.Ok;
+            return done;
         }
 
         static string Reason(OrganizeCheck check) => check switch
@@ -174,22 +160,17 @@ namespace ProjectNeo.Flow
             _ => "편성을 바꾸지 못했습니다.",
         };
 
-        static int FirstOther(RunState state, int source)
+        static string NameOf(RunUnit unit) => unit switch
         {
-            for (int i = 0; i < state.Army.Squads.Count; i++) if (i != source) return i;
-            return NewSquad;
-        }
-
-        static List<RunSoldier> SoldiersOf(Squad<RunUnit> squad)
-        {
-            var soldiers = new List<RunSoldier>();
-            foreach (RunUnit member in squad.Members) if (member is RunSoldier soldier) soldiers.Add(soldier);
-            return soldiers;
-        }
+            RunSoldier soldier => $"{soldier.Definition.DisplayName} #{soldier.Id}",
+            RunHero hero => hero.Definition.DisplayName,
+            _ => string.Empty,
+        };
 
         void Hide()
         {
             IsOpen = false;
+            Selected = null;
             if (panel != null) panel.SetActive(false);
         }
 
@@ -205,79 +186,74 @@ namespace ProjectNeo.Flow
             if (state == null) return;
             IReadOnlyList<Squad<RunUnit>> squads = state.Army.Squads;
             if (squads.Count == 0) { Close(); return; }
-            Source = Mathf.Clamp(Source, 0, squads.Count - 1);
-            if (Target >= squads.Count || Target == Source) Target = FirstOther(state, Source);
-            if (Target == NewSquad && !state.Army.CanAddSquad && squads.Count > 1) Target = FirstOther(state, Source);
+            if (Selected != null && state.Find(Selected.Id) != Selected) Selected = null;
             IReadOnlyList<RunHero> reserve = state.ReserveHeroes;
             if (status != null)
-                status.text = $"부대 {squads.Count}개 · 대기 영웅 {reserve.Count}명\n보내는 부대 {Source + 1} → 받는 부대 "
-                    + (Target == NewSquad ? "새 부대" : (Target + 1).ToString());
+                status.text = $"부대 {squads.Count}개 · 대기 영웅 {reserve.Count}명 · 선택: " + (Selected != null ? NameOf(Selected) : "없음");
             if (body != null)
                 body.text = (string.IsNullOrEmpty(Message) ? string.Empty : Message + "\n")
-                    + "왼쪽 잡졸을 누르면 오른쪽에서 고른 부대로 한 명씩 옮깁니다. 빈 부대는 없어집니다.";
-            ClearRows();
-            if (rowTemplate == null) return;
+                    + "잡졸·영웅을 눌러 고른 뒤, 보낼 카드의 머리 버튼을 누르세요. 다시 누르면 선택을 풉니다. 빈 부대는 없어집니다.";
+            ClearCards();
+            if (cardTemplate == null || rowTemplate == null) return;
 
-            Squad<RunUnit> source = squads[Source];
-            AddRow(sourceList, $"▶ 보내는 부대 {Source + 1} · {source.Members.Count}/{source.Capacity}명 (눌러서 바꾸기)", () => NextSource());
-            List<RunSoldier> soldiers = SoldiersOf(source);
-            if (soldiers.Count == 0) AddRow(sourceList, "잡졸이 없습니다.", null);
-            for (int i = 0; i < soldiers.Count; i++)
-            {
-                int index = i;
-                AddRow(sourceList, $"{soldiers[i].Definition.DisplayName} #{soldiers[i].Id} 옮기기", () => TryMove(index));
-            }
-
+            string hint = Selected != null ? "\n▼ 여기로 보내기" : string.Empty;
             for (int i = 0; i < squads.Count; i++)
             {
-                if (i == Source) continue;
                 int index = i;
-                string mark = i == Target ? "[받음] " : string.Empty;
-                AddRow(targetList, $"{mark}부대 {i + 1} · {squads[i].Members.Count}/{squads[i].Capacity}명 · 대장 {LeaderName(squads[i])}",
-                    () => SelectTarget(index));
+                Squad<RunUnit> squad = squads[i];
+                RectTransform list = AddCard($"부대 {i + 1} · {squad.Members.Count}/{squad.Capacity}명" + hint, () => DropOnSquad(index));
+                if (squad.Leader is RunHero leader) AddRow(list, Mark(leader) + "대장: " + NameOf(leader), () => Select(leader));
+                else AddRow(list, "대장: 없음", null);
+                foreach (RunUnit member in squad.Members)
+                    if (member is RunSoldier soldier) AddRow(list, Mark(soldier) + NameOf(soldier), () => Select(soldier));
             }
             if (state.Army.CanAddSquad)
-                AddRow(targetList, (Target == NewSquad ? "[받음] " : string.Empty) + "새 부대 만들기", () => SelectTarget(NewSquad));
-            AddRow(targetList, $"부대 {Source + 1} 대장: {LeaderName(source)}" + (source.Leader != null ? " (눌러서 대기로)" : string.Empty),
-                source.Leader != null ? () => TryClearCaptain() : (UnityEngine.Events.UnityAction)null);
-            if (reserve.Count == 0) AddRow(targetList, "대기 영웅이 없습니다(주점에서 고용).", null);
-            for (int i = 0; i < reserve.Count; i++)
             {
-                int index = i;
-                AddRow(targetList, $"대장으로 지정: {reserve[i].Character.Definition.DisplayName}", () => TryAssignCaptain(index));
+                RectTransform list = AddCard("새 부대 만들기" + hint, () => DropOnSquad(NewSquad));
+                AddRow(list, "잡졸을 고르고 이 카드를 누르면 새 부대로 옮깁니다.", null);
             }
+            RectTransform reserveList = AddCard("대기 영웅 (전투 제외)" + (Selected is RunHero ? "\n▼ 대장에서 빼기" : string.Empty), () => DropOnReserve());
+            if (reserve.Count == 0) AddRow(reserveList, "대기 영웅이 없습니다(주점에서 고용).", null);
+            foreach (RunHero hero in reserve) AddRow(reserveList, Mark(hero) + NameOf(hero), () => Select(hero));
         }
 
-        static string LeaderName(Squad<RunUnit> squad) =>
-            squad.Leader is RunHero hero ? hero.Character.Definition.DisplayName : "없음";
+        string Mark(RunUnit unit) => unit == Selected ? "▶ " : string.Empty;
+
+        RectTransform AddCard(string header, UnityEngine.Events.UnityAction onHeader)
+        {
+            RectTransform card = Instantiate(cardTemplate, cardArea);
+            card.gameObject.SetActive(true);
+            cards.Add(card.gameObject);
+            Transform headerTransform = card.Find("Header");
+            var button = headerTransform != null ? headerTransform.GetComponent<Button>() : null;
+            if (button != null)
+            {
+                button.GetComponentInChildren<TMP_Text>(true).text = header;
+                button.onClick.RemoveAllListeners();
+                button.onClick.AddListener(onHeader);
+            }
+            return card.Find("List") as RectTransform ?? card;
+        }
 
         void AddRow(RectTransform list, string text, UnityEngine.Events.UnityAction action)
         {
-            if (list == null) return;
             Button row = Instantiate(rowTemplate, list);
             row.gameObject.SetActive(true);
             row.GetComponentInChildren<TMP_Text>(true).text = text;
             row.interactable = action != null;
             if (action != null) row.onClick.AddListener(action);
-            rows.Add(row);
         }
 
-        void ClearRows()
+        void ClearCards()
         {
-            foreach (Button row in rows)
+            foreach (GameObject card in cards)
             {
-                if (row == null) continue;
-                row.gameObject.SetActive(false);
-                Destroy(row.gameObject);
+                if (card == null) continue;
+                // 같은 프레임에 다시 그리므로 카드 수가 바로 맞도록 먼저 끈다.
+                card.SetActive(false);
+                Destroy(card);
             }
-            rows.Clear();
-        }
-
-        static int ActiveChildren(Transform parent)
-        {
-            int count = 0;
-            foreach (Transform child in parent) if (child.gameObject.activeSelf) count++;
-            return count;
+            cards.Clear();
         }
     }
 }
