@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-13 16:09:26 (KST)
+Last Updated: 2026-11-13 16:14:57 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -21,7 +21,7 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 | C-1a-confirm | Teammate Review of Combat Outcome Format | In Progress | Hwang Seong-min | Review C-1a `BattleResult` draft (outcome, end reason, per-unit status, castle snapshot, kill counts) with combat lead; update code, tests, docs. Prerequisites: C-1a (Done). Decision (2026-11-12): Proceed concurrently with C-1~2. |
 | QA-game-loop | Manual Playtest of Current Game Scene | Waiting for Verification | Unassigned | Formerly `B-9.3-play`. First user playtest reported 2026-11-13; findings in [QA history](history/QA/QA-game-loop.md). Victory and next-prep flow remain unverified because user could not win. Recheck construction and combat after follow-ups below. |
 | Q-41 | Define shared ladder traversal details | Pending Decision | Unassigned | Approved 2026-11-13: allies AND player ascend/descend. Decide controls, opposing traffic/queues, commands, combat/toppling behavior; coordinate combat owner before shared edits. Current climb API takes SiegeAttackerBrain only. |
-| B-6.2 | Wall Breaker Enemy (Wall Attack & Breach Entry) | Waiting | Unassigned | Per Q-43 ([WallsAndSiege](design/WallsAndSiege.md)): new role with swappable wall-target strategy (first: nearest piece, gate included, bottom of stacked column); switch to Engage once a path opens; hold/retry when no wall base reachable. Keep existing ladder/gate/archer. Enemy-assault owner scope ([Team](plan/Team.md)). |
+| B-6.2 | Wall Breaker Enemy (Wall Attack & Breach Entry) | In Progress | Codex | Branch `feature/b-6.2`. Per Q-43 ([WallsAndSiege](design/WallsAndSiege.md)): new role with swappable wall-target strategy (first: nearest piece, gate included, bottom of stacked column); switch to Engage once a path opens; hold/retry when no wall base reachable. Keep existing ladder/gate/archer. Enemy-assault owner scope ([Team](plan/Team.md)). |
 | B-6.3 | Flyer Enemy Movement & Attacks | Waiting | Unassigned | Per Q-43: modular/polymorphic flying movement + attack for many future variants; flies over walls without ground NavMesh, hovers at human height to melee; wall-top allies first, then castle allies; allies/player deal 100% (no upward penalty); ally melee hits within range of ground projection; holds above courtyard with no target. Enemy-assault owner scope. |
 | B-6.4 | Enemy Data Composition & Three-type Integration Test | Waiting for Prerequisite | Unassigned | After B-6.2~3: breakers, climbers, flyers approach differently; a new variant is addable by data/module combination only. |
 | B-7.1 | Formal Wave Data & Spawning Rules | Waiting for Prerequisite | Unassigned | After enemy definitions and spawn/termination contracts are agreed upon, spawn according to configured types, counts, and timings. No duplicates on pause/restart. |
