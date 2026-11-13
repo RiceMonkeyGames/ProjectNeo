@@ -11,6 +11,14 @@ namespace ProjectNeo.Characters
         ShadowCastingMode[] originalShadows;
         float yaw, pitch;
         public override float Yaw => yaw;
+        public float Pitch => pitch;
+
+        /// <summary>시점을 직접 정한다. 대포 조작처럼 회전 범위를 따로 자를 때 쓴다. 위아래 한계는 설정을 따른다.</summary>
+        public void SetOrientation(float newYaw, float newPitch)
+        {
+            yaw = newYaw;
+            pitch = Mathf.Clamp(newPitch, settings.MinimumPitch, settings.MaximumPitch);
+        }
 
         public void Configure(Transform followTarget, PlayerControlSettings controlSettings)
         { target = followTarget; settings = controlSettings; }

@@ -1,6 +1,6 @@
 # Game Design: Castle Walls, Enemies & Siege Strategy
 
-Last Updated: 2026-11-13 16:25:49 (KST)
+Last Updated: 2026-11-13 17:08:13 (KST)
 
 > Purpose: Construction stacking, build economy, enemy roles, and siege/ladder rules. | Parent: [design/README](README.md) | Related: [Combat](Combat.md), [MoraleAndWave](MoraleAndWave.md)
 
@@ -30,6 +30,7 @@ Last Updated: 2026-11-13 16:25:49 (KST)
   - **Extensibility**: Behavior lives in `ISiegeWeaponModule` components configured by data; new weapon types reuse the shared body and mount rules.
   - **Temporary values (data asset, tune after playtest; user had no preference)**: Range 6–60m, blast radius 3m, center damage 40 (50% at edge), reload 6s (same when manned), HP 150, cost 30 gold (unchanged).
   - **Detail defaults (confirmed 2026-11-13)**: Man/leave with the interact key (F) near the cannon, also leave with Esc; mouse aims within the arc, left-click fires. Auto-fire impact scatters up to 2m (via `IRandomSource`); manual fire has no scatter. Enemies target a cannon only when no ally is within their reach.
+  - **SIEGE-02 scope decisions (2026-11-13)**: R rotates a selected cannon in 4 directions (90° steps) at placement; facing is saved in the castle record. Cannon HP carries over between battles like walls (fixed by `Repair All`). SIEGE-02 also wires wall-top ladder climbers to attack a cannon when no ally is in reach (coordinate shared enemy AI edits with the enemy-assault owner); flyer targeting stays with B-6.3. Blast damage applies target defense (`DamageRules.Calculate`, minimum 1) after distance falloff.
 - **Construction Economy** (2026-11-12, D-2): Spend run gold on walls/stairs/cannons. Demolishing refunds 100% for current-prep builds and partial percentage for past-prep/starting walls (gate non-demolishable). Single `Repair All` button spends gold proportional to missing HP (prioritizes heaviest damaged if funds low). Instant construction currently; delayed multi-stage construction planned later.
 
 ## Enemies & Siege Strategy

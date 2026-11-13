@@ -189,20 +189,36 @@ namespace ProjectNeo.Walls
             body.localScale = definition.Size;
         }
 
+        /// <summary>설치 지점 자세를 90도 단위로 더 돌린다. 무기의 정면(사격 기준 방향)이 된다.</summary>
+        public static Pose RotateMountPose(Pose pose, int rotation) =>
+            new Pose(pose.position, pose.rotation * Quaternion.Euler(0f, MountedWeapon.NormalizeRotation(rotation) * 90f, 0f));
+
         public bool TryMount(SiegeWeaponDefinition definition, PlacedStructure support, string mountId,
-            out PlacedSiegeWeapon weapon)
+            out PlacedSiegeWeapon weapon, int rotation = 0)
         {
             weapon = null;
-            if (!IsLive(support) || !Mounts.TryMount(definition, support.Placement.Id, mountId, out var mount)) return false;
+            if (!IsLive(support) || !Mounts.TryMount(definition, support.Placement.Id, mountId, out var mount, rotation))
+                return false;
             support.TryGetMountPose(mountId, out Pose pose);
             GameObject body = Instantiate(definition.Prefab, mountRoot);
             body.name = definition.DisplayName + "_" + mount.Id;
-            SetMountPose(body.transform, definition, pose);
+            SetMountPose(body.transform, definition, RotateMountPose(pose, mount.Rotation));
             weapon = body.GetComponent<PlacedSiegeWeapon>();
             weapon.Initialize(mount, support);
+            weapon.HealthDepleted += DestroyWeapon;
             weapons.Add(mount.Id, weapon);
             Changed?.Invoke();
             return true;
+        }
+
+        /// <summary>체력이 다한 무기를 파괴한다. 받침 성벽은 그대로 남는다.</summary>
+        void DestroyWeapon(PlacedSiegeWeapon weapon)
+        {
+            if (weapon == null || weapon.Mount == null || !weapons.TryGetValue(weapon.Mount.Id, out var known)
+                || known != weapon) return;
+            Mounts.Remove(weapon.Mount.Id);
+            Discard(weapon, SiegeWeaponRemoval.Destroyed);
+            Changed?.Invoke();
         }
 
         public bool RemoveWeapon(PlacedSiegeWeapon weapon)
@@ -218,6 +234,7 @@ namespace ProjectNeo.Walls
         void Discard(PlacedSiegeWeapon weapon, SiegeWeaponRemoval reason)
         {
             weapons.Remove(weapon.Mount.Id);
+            weapon.HealthDepleted -= DestroyWeapon;
             weapon.NotifyRemoved(reason);
             WeaponRemoved?.Invoke(weapon, reason);
             Destroy(weapon.gameObject);
@@ -239,7 +256,7 @@ namespace ProjectNeo.Walls
                 SetPose(body.transform, moved.Definition, moved.Cell, moved.Rotation, moved.Elevation);
                 foreach (PlacedSiegeWeapon weapon in weapons.Values)
                     if (weapon.Support == body && body.TryGetMountPose(weapon.Mount.MountId, out Pose pose))
-                        SetMountPose(weapon.transform, weapon.Definition, pose);
+                        SetMountPose(weapon.transform, weapon.Definition, RotateMountPose(pose, weapon.Mount.Rotation));
             }
             rebuildPending = true;
             Changed?.Invoke();

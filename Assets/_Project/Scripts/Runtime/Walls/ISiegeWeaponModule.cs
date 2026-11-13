@@ -1,6 +1,6 @@
 namespace ProjectNeo.Walls
 {
-    public enum SiegeWeaponRemoval { SupportDestroyed = 0, Dismantled = 1 }
+    public enum SiegeWeaponRemoval { SupportDestroyed = 0, Dismantled = 1, Destroyed = 2 }
 
     /// <summary>
     /// 무기별 동작을 붙이는 자리. 발사·조준·충전 같은 동작은 이 인터페이스를 구현한 컴포넌트로 만들어

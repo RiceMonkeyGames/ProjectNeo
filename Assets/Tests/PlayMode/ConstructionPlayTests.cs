@@ -466,6 +466,35 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
+        public IEnumerator SiegeWeapon_RotateSetsFacingInQuarterTurns_AndKeepsItWhenSupportDrops()
+        {
+            var hud = scene.GetRootGameObjects().Select(root => root.GetComponent<ProjectNeo.UI.ConstructionHud>())
+                .Single(value => value != null);
+            SiegeWeaponDefinition cannon = hud.Weapons[0];
+            var support = world.Structures.First(piece => piece.Placement.Definition.Kind == BuildPieceKind.Wall
+                && !world.Layout.IsCovered(piece.Placement));
+            Assert.IsTrue(support.TryGetMountPose("top", out Pose top));
+
+            controller.SelectWeapon(cannon);
+            Assert.AreEqual(0, controller.Rotation, "무기를 고르면 방향은 처음부터다.");
+            controller.Rotate();
+            controller.Rotate();
+            controller.Rotate();
+            controller.UpdateWeaponPreview(support, support.transform.position);
+            Assert.AreEqual(MountIssue.None, controller.MountIssue);
+            Assert.IsTrue(controller.Confirm());
+            PlacedSiegeWeapon weapon = world.Weapons.Single();
+            Assert.AreEqual(3, weapon.Mount.Rotation);
+            Vector3 expected = top.rotation * Quaternion.Euler(0f, 270f, 0f) * Vector3.forward;
+            Assert.That(Vector3.Angle(expected, weapon.transform.forward), Is.LessThan(0.01f));
+
+            controller.SelectWeapon(cannon);
+            Assert.AreEqual(0, controller.Rotation, "다시 고르면 방향을 처음으로 되돌린다.");
+            controller.Cancel();
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator SupportCollapse_DestroysMountedWeapon_AndNotifiesItsModulesOnce()
         {
             var template = new GameObject("TestWeaponTemplate");
@@ -505,6 +534,54 @@ namespace ProjectNeo.Tests
                 Assert.AreEqual(0, world.Weapons.Count);
                 Assert.AreEqual(MountIssue.None, world.CheckMount(definition, walls[1], "top"));
                 yield return WaitForNavigation(world);
+            }
+            finally
+            {
+                Object.Destroy(template);
+                Object.Destroy(definition);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator WeaponHealthDepleted_DestroysOnlyWeapon_AndKeepsSupport()
+        {
+            var template = new GameObject("TestWeaponTemplate");
+            SceneManager.MoveGameObjectToScene(template, scene);
+            template.AddComponent<PlacedSiegeWeapon>();
+            template.AddComponent<RecordingSiegeWeaponModule>();
+            SiegeWeaponDefinition definition = SiegeWeaponDefinition.Create("test", "test", Vector3.one, template, 150f);
+            try
+            {
+                PlacedStructure wall = world.Structures.First(piece => piece.Placement.Definition.Kind == BuildPieceKind.Wall);
+                float wallHealth = wall.Health.Current;
+                int supportId = wall.Placement.Id;
+                Assert.IsTrue(world.TryMount(definition, wall, "top", out var weapon));
+                var module = weapon.GetComponent<RecordingSiegeWeaponModule>();
+                Assert.AreEqual(150f, weapon.Health.Maximum);
+                Assert.AreEqual(150f, weapon.Health.Current);
+                int worldEvents = 0;
+                SiegeWeaponRemoval worldReason = SiegeWeaponRemoval.Dismantled;
+                world.WeaponRemoved += (_, reason) => { worldEvents++; worldReason = reason; };
+
+                Assert.AreEqual(100f, weapon.ReceiveDamage(100f));
+                Assert.IsFalse(weapon.IsRemoved);
+                Assert.AreEqual(50f, weapon.ReceiveDamage(80f), "남은 체력만큼만 깎인다.");
+                Assert.IsTrue(weapon.IsRemoved);
+                Assert.AreEqual(1, module.Removed);
+                Assert.AreEqual(SiegeWeaponRemoval.Destroyed, module.LastReason);
+                Assert.AreEqual(1, worldEvents);
+                Assert.AreEqual(SiegeWeaponRemoval.Destroyed, worldReason);
+                Assert.AreEqual(0, world.Weapons.Count);
+                Assert.IsNull(world.Mounts.At(supportId, "top"));
+                Assert.AreEqual(0f, weapon.ReceiveDamage(10f), "파괴된 무기는 더 피해를 받지 않는다.");
+                Assert.AreEqual(1, worldEvents);
+
+                Assert.AreSame(wall, world.Structures.First(piece => piece.Placement.Id == supportId),
+                    "무기만 부서지고 받침 성벽은 남는다.");
+                Assert.AreEqual(wallHealth, wall.Health.Current);
+                yield return null;
+                Assert.IsTrue(weapon == null, "파괴된 무기 오브젝트는 사라져야 한다.");
+                Assert.AreEqual(MountIssue.None, world.CheckMount(definition, wall, "top"), "같은 자리에 다시 설치할 수 있다.");
             }
             finally
             {

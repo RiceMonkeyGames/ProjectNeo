@@ -73,6 +73,49 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
+        public void 무기의_방향과_깎인_체력을_기록하고_방향대로_되살린다()
+        {
+            SiegeWeaponDefinition sturdy = SiegeWeaponDefinition.Create("sturdy", "sturdy", Vector3.one, null, 150f);
+            try
+            {
+                var layout = new BuildLayout(grid);
+                var mounts = new MountLayout(layout);
+                Assert.IsTrue(layout.TryPlace(wall, new Vector2Int(1, 1), 0, out BuildPlacement first));
+                Assert.IsTrue(layout.TryPlace(wall, new Vector2Int(4, 4), 0, out BuildPlacement second));
+                Assert.IsTrue(mounts.TryMount(sturdy, first.Id, "top", out MountedWeapon damaged, 3));
+                Assert.IsTrue(mounts.TryMount(sturdy, second.Id, "top", out MountedWeapon intact, 5));
+                Assert.AreEqual(1, intact.Rotation, "회전은 0~3으로 맞춘다.");
+
+                CastleState state = CastleState.Capture(layout, mounts, null,
+                    weapon => weapon.Id == damaged.Id ? 40f : weapon.Definition.MaxHealth);
+                Assert.AreEqual(2, state.Weapons.Count);
+                Assert.AreEqual(3, state.Weapons[0].Rotation);
+                Assert.AreEqual(40f, state.Weapons[0].Health);
+                Assert.AreEqual(1, state.Weapons[1].Rotation);
+                Assert.AreEqual(150f, state.Weapons[1].Health);
+
+                CastleState withoutHealth = CastleState.Capture(layout, mounts);
+                Assert.AreEqual(150f, withoutHealth.Weapons[0].Health, "체력을 주지 않으면 최대 체력으로 기록한다.");
+
+                var restoredLayout = new BuildLayout(grid);
+                var restoredMounts = new MountLayout(restoredLayout);
+                Assert.IsTrue(state.TryRestore(restoredLayout, restoredMounts, out List<BuildPlacement> placed));
+                Assert.AreEqual(3, restoredMounts.At(placed[state.Weapons[0].SupportIndex].Id, "top").Rotation);
+                Assert.AreEqual(1, restoredMounts.At(placed[state.Weapons[1].SupportIndex].Id, "top").Rotation);
+            }
+            finally { Object.DestroyImmediate(sturdy); }
+        }
+
+        [Test]
+        public void 무기_기록의_체력은_0과_최대_체력_사이로_맞춘다()
+        {
+            Assert.AreEqual(100f, new CastleWeaponState(cannon, 0, "top", 0, 500f).Health);
+            Assert.AreEqual(0f, new CastleWeaponState(cannon, 0, "top", 0, -5f).Health);
+            Assert.AreEqual(100f, new CastleWeaponState(cannon, 0, "top").Health);
+            Assert.AreEqual(2, new CastleWeaponState(cannon, 0, "top", -2).Rotation);
+        }
+
+        [Test]
         public void 내려앉은_조각은_바뀐_층으로_기록되고_부서진_조각은_없다()
         {
             var layout = new BuildLayout(grid);

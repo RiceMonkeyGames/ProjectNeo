@@ -1,11 +1,12 @@
 # Completed Backlog Archive (Done)
 
-Last Updated: 2026-11-13 16:45:54 (KST)
+Last Updated: 2026-11-13 17:25:48 (KST)
 
 > Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
 | Task ID | Description | Assignee | Outcome & History Link |
 |---|---|---|---|
+| SIEGE-02 | Siege Weapon Actions & Combat Integration | Hwang Seong-min (agent: Claude) | Done 2026-11-13; branch `feature/siege-02`. Q-21 cannon: pure rules (ballistics, ±45° arc, 6–60m, blast falloff with defense, friendly-fire switch off, nearest-target strategy, scatter, reload), weapon HP 150 with Destroyed removal, R facing + rotation/HP in CastleState, Repair All includes cannons, auto-fire while armed in battle, player manning (F, crosshair fire, F/Esc leave), wall-top climbers strike reachable cannons, Game scene wired via `CannonSetup`. Compile passed, EditMode 303/303, PlayMode 141/141; user playtested Game scene with no issues. Standalone build not run. [History](../history/SIEGE/SIEGE-02.md) |
 | B-6.2 | Wall Breaker Enemy (Wall Attack & Breach Entry) | Codex | Done 2026-11-13; branch `feature/b-6.2`. Asset-selected wall/gate bottom attacks, settled-piece re-selection, breach Engage, unreachable Hold/retry; prefab/settings and opt-in prototype roster. Corrected SiegePrototype grid/generators to 3 tiers. Agent visibly placed 3 tiers and demonstrated real attack/settling; user confirmed verification/completion. Final compile/scoped PlayMode 6/6; earlier full EditMode 250/250, PlayMode 126/126 predate grid correction. Standalone unverified; mixed encounters B-6.4. [History](../history/B/B-6.2.md) |
 | QA-opening-battle-balance | Review opening battle difficulty | Codex | Done 2026-11-13. Branch `feature/qa-opening-battle-balance`. Game debug enemies reduced 28 → 12 (6 ladder / 2 gate breakers / 4 archers); setup generator retains roster. Compile passed, GameBattlePlayTests 10/10; two passive courtyard observations naturally won. User confirmed manual verification and authorized completion/commit/push. Formal stage tuning deferred to B-7.1; standalone unverified. [History](../history/QA/QA-opening-battle-balance.md) |
 | Q-21 | Finalize Siege Weapon Mechanics | User decision / Claude documentation | Decided 2026-11-13. Cannon: auto-fire + player manning, ballistic area damage, ±45° arc, own HP, no passage block, no friendly fire (switchable), nearest-enemy strategy, temporary values in data; detail defaults confirmed. Implementation SIEGE-02. Doc-only; no Unity verification. [History](../history/Q/Q-21.md) |
