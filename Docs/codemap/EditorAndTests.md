@@ -1,6 +1,6 @@
 # Editor Setup & Test Scripts
 
-Last Updated: 2026-11-13 16:42:47 (KST)
+Last Updated: 2026-11-13 17:20:01 (KST)
 
 > Purpose: Map of Editor setup menus, build scripts, and EditMode/PlayMode test suites. | Parent: [codemap/README](README.md) | Related: [UnityCLI](../workflow/UnityCLI.md), [Status](../plan/Status.md)
 
@@ -9,7 +9,8 @@ Last Updated: 2026-11-13 16:42:47 (KST)
 - `CombatPrototypeSetup.cs`: Menu `ProjectNeo/Setup/Create Combat Prototype`. Generates B-2 scene, prefabs, and assets.
 - `UnitBattleSetup.cs`: Menu `ProjectNeo/Setup/Create Unit Battle Prototype`. Generates B-3 scene, prefabs, assets, and NavMesh.
 - `ConstructionPrototypeSetup.cs`: Menu `ProjectNeo/Setup/Create Construction Prototype`. Generates B-4 construction scene and assets.
-- `SiegeWeaponSetup.cs`: Menu `ProjectNeo/Setup/Add Siege Weapons To Construction Prototype`. Adds cannon assets and buttons.
+- `SiegeWeaponSetup.cs`: Menu `ProjectNeo/Setup/Add Siege Weapons To Construction Prototype`. Adds cannon assets and buttons. Menu `ProjectNeo/Setup/Apply Cannon Health (Q-21)` sets `Cannon.asset` HP to 150 (idempotent).
+- `CannonSetup.cs` (`SIEGE-02`): Menu `ProjectNeo/Setup/Connect Cannon Firing (SIEGE-02)`. Idempotently creates `Data/ConstructionPrototype/CannonSettings.asset`, `Prefabs/ConstructionPrototype/CannonShell.prefab` (placeholder ball + blast view), adds/configures `CannonModule` on `Cannon.prefab`, creates `Data/GameFlow/CannonOperator.asset`, and wires `CannonOperator` on the Game player and `GameFlowHud`. Tests: EditMode `CannonRulesTests`; PlayMode `CannonPlayTests` (ConstructionPrototype), `CannonAttackPlayTests` (SiegePrototype), `GameCannonPlayTests` (Game).
 - `WallBreakerSetup.cs`: Menu `ProjectNeo/Setup/Add Wall Breaker Assets`. Idempotently creates target-strategy/settings assets and an inactive wall-breaker prefab, ensures SiegePrototype grid supports at least three tiers, then registers the prefab in its roster at count 0. Existing positive counts/configuration are retained.
 - `SquadCommandSetup.cs`: Menu `ProjectNeo/Setup/Create Squad Command Prototype`. Generates B-5 scene and HUD (`Upgrade()` adds team vision and markers).
 - `WallCommandSetup.cs`: Menu `ProjectNeo/Setup/Create Wall Command Prototype`. Creates B-5.4 integrated scene.

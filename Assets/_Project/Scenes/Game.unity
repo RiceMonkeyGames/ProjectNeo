@@ -2661,6 +2661,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 6007155175347715798, guid: 174b1cb885419454d99bddaa975789ce, type: 3}
       insertIndex: -1
       addedObject: {fileID: 287700701}
+    - targetCorrespondingSourceObject: {fileID: 6007155175347715798, guid: 174b1cb885419454d99bddaa975789ce, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 287700703}
   m_SourcePrefab: {fileID: 100100000, guid: 174b1cb885419454d99bddaa975789ce, type: 3}
 --- !u!4 &287700698 stripped
 Transform:
@@ -2712,6 +2715,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3095057c1c5eba940b84d30cac753ffb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Combat.CharacterActor
+--- !u!114 &287700703
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 287700699}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 980796e63d77b7a469b0794eae77de4a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Siege.CannonOperator
+  settings: {fileID: 11400000, guid: 61c1afb7787523a43b168f879dae8750, type: 2}
+  world: {fileID: 340332242}
+  view: {fileID: 855889651}
+  viewCamera: {fileID: 855889650}
 --- !u!1 &287720207
 GameObject:
   m_ObjectHideFlags: 0
@@ -10025,6 +10044,7 @@ MonoBehaviour:
   explorationReticle: {fileID: 246543882}
   battle: {fileID: 1251469579}
   battleStatus: {fileID: 1034285017}
+  cannonOperator: {fileID: 287700703}
 --- !u!114 &1033697231
 MonoBehaviour:
   m_ObjectHideFlags: 0

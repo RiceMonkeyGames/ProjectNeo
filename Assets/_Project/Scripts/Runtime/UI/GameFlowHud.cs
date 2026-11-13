@@ -1,4 +1,5 @@
 using ProjectNeo.Flow;
+using ProjectNeo.Siege;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -24,6 +25,7 @@ namespace ProjectNeo.UI
         [SerializeField] GameObject explorationReticle;
         [SerializeField] GameBattleController battle;
         [SerializeField] TMP_Text battleStatus;
+        [SerializeField] CannonOperator cannonOperator;
         GameFlow flow;
         public string InteractionHint => interactionHint != null ? interactionHint.text : string.Empty;
         public string PhaseText => phaseLabel != null ? phaseLabel.text : string.Empty;
@@ -31,6 +33,9 @@ namespace ProjectNeo.UI
         public string StatusText => battleStatus != null ? battleStatus.text : string.Empty;
         public void ConfigureBattle(GameBattleController controller, TMP_Text status)
         { battle = controller; battleStatus = status; }
+
+        /// <summary>전투 중 대포 탑승·조작 안내(SIEGE-02).</summary>
+        public void ConfigureCannon(CannonOperator controller) => cannonOperator = controller;
 
         public void ConfigureInteraction(GamePhaseView view, PreparationInteraction controller, TMP_Text hint, GameObject reticle)
         { phaseView = view; interaction = controller; interactionHint = hint; explorationReticle = reticle; }
@@ -91,6 +96,9 @@ namespace ProjectNeo.UI
                 foreach (var ladder in battle.Ladders)
                     if (ladder.PlayerCanPush)
                     { battleStatus.text += $"\n{battle.Settings.Siege.PushLadder.GetBindingDisplayString()} · 사다리 밀기 {Mathf.RoundToInt(ladder.State.PushProgress * 100f)}%"; break; }
+                string cannon = CannonHint(korean);
+                if (cannon.Length > 0) battleStatus.text += "\n" + cannon;
+                explorationReticle.SetActive(cannonOperator != null && cannonOperator.Manned != null);
                 return;
             }
             if (!preparation) return;
@@ -117,6 +125,27 @@ namespace ProjectNeo.UI
                 if (interaction.BattleStartProgress > 0f) startHint += $" · {Mathf.FloorToInt(interaction.BattleStartProgress * 100f)}%";
                 interactionHint.text += "\n" + startHint;
             }
+        }
+
+        /// <summary>대포 안내 한 줄. 타고 있으면 조작법과 장전 상태, 가까이 있으면 타는 키를 보여준다.</summary>
+        public string CannonHint(bool korean)
+        {
+            if (cannonOperator == null) return string.Empty;
+            CannonModule manned = cannonOperator.Manned;
+            if (manned != null)
+            {
+                string reload = manned.Reload.IsReady
+                    ? (korean ? "장전 완료" : "Loaded")
+                    : (korean ? $"재장전 {Mathf.FloorToInt(manned.Reload.Progress * 100f)}%" : $"Reloading {Mathf.FloorToInt(manned.Reload.Progress * 100f)}%");
+                string text = korean
+                    ? $"대포 조작 · 좌클릭 발사 · {cannonOperator.InteractKey}/Esc 내리기 · {reload}"
+                    : $"Cannon - Click fire - {cannonOperator.InteractKey}/Esc leave - {reload}";
+                if (!string.IsNullOrEmpty(cannonOperator.Message)) text += "\n" + cannonOperator.Message;
+                return text;
+            }
+            return cannonOperator.Nearby != null
+                ? (korean ? $"{cannonOperator.InteractKey} · 대포 조작" : $"{cannonOperator.InteractKey} - Man cannon")
+                : string.Empty;
         }
 
         void Refresh(GamePhase phase)
