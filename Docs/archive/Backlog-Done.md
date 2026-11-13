@@ -1,6 +1,6 @@
 # Completed Backlog Archive (Done)
 
-Last Updated: 2026-11-13 20:53:03 (KST)
+Last Updated: 2026-11-13 21:16:37 (KST)
 
 > Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
@@ -49,4 +49,5 @@ Last Updated: 2026-11-13 20:53:03 (KST)
 | D-2 | Construction & Repair Costs | Hwang Seong-min | Branch `feature/build-costs`, merged (`1870a3b`). EditMode 175, PlayMode 79/80. [History](../history/D/D-2.md) |
 | D-0b | Instantiate Run Units into Scene | Hwang Seong-min | Branch `feature/run-unit-spawn`, merged. EditMode 210, PlayMode 93. [History](../history/D/D-0b.md) |
 | D-4 | Barracks Recruitment & Training | Hwang Seong-min | Branch `feature/barracks-recruit`, merged (`06baa0b`). EditMode 216, PlayMode 97. [History](../history/D/D-4.md) |
+| D-6 | Blacksmith Fixed-Recipe Crafting & Sales | Hwang Seong-min | Branch `feature/d-6`. EditMode 327, PlayMode 164. Manual play skipped by user (QA-smithy-popup). [History](../history/D/D-6.md) |
 | D-7 | Equipment System | Hwang Seong-min | Branch `feature/player-equipment`, merged (`050948a`). EditMode 201, PlayMode 88. [History](../history/D/D-7.md) |

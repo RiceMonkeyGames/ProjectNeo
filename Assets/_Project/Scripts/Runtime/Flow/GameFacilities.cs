@@ -17,7 +17,8 @@ namespace ProjectNeo.Flow
     /// Game 씬 준비 단계의 시설 팝업(D-0·D-1·D-5). 런 데이터에 시설 상태·상점 창구를 붙이고, 건물에서 F로 시설 팝업을 열며
     /// Esc나 닫기 버튼으로 닫는다. 팝업이 열린 동안은 <see cref="GamePhaseView.IsPanelView"/>로 이동·시점을 멈춘다.
     /// 모든 시설은 팝업에서 업그레이드하고, 상점은 매물 구매와 보관함 판매를 한다. 병영(D-4)은 잡졸을 모집하고 넣을 부대를 고르며,
-    /// 레벨에 따른 훈련 보너스를 보여 준다. 다른 시설의 기능은 후속 작업이다.
+    /// 레벨에 따른 훈련 보너스를 보여 준다. 대장간(D-6)은 레벨의 고정 레시피로 장비를 만들고 보관함 장비를 판다.
+    /// 다른 시설의 기능은 후속 작업이다.
     /// 시설 목록·거래 수치는 <see cref="RunConfig"/> 에셋, 레벨·매물 풀은 시설 정의 에셋에서 바꾼다.
     /// <see cref="GameBattleController"/>와 같은 오브젝트에 붙어 그 런 연결을 쓴다.
     /// </summary>
@@ -183,6 +184,54 @@ namespace ProjectNeo.Flow
             return sold;
         }
 
+        static bool IsUnlocked(ItemDefinition item) => GameSession.Meta.IsUnlocked(item);
+
+        /// <summary>대장간 레시피의 index번째 장비를 만든다(D-6). 비용을 내고 보관함에 넣는다.</summary>
+        public bool TryCraft(int index)
+        {
+            RunState state = State;
+            if (OpenFacility != FacilityType.Smithy || state == null || flow.Phase != GamePhase.Preparation) return false;
+            IReadOnlyList<CraftingRecipe> recipes = state.CraftableRecipes(IsUnlocked);
+            if (index < 0 || index >= recipes.Count) return false;
+            CraftingRecipe recipe = recipes[index];
+            CraftCheck check = state.CheckCraft(recipe.item, IsUnlocked);
+            bool crafted = check == CraftCheck.Ok && state.TryCraft(recipe.item, IsUnlocked) != null;
+            Message = crafted ? $"{recipe.item.DisplayName} 제작 · {Describe(recipe.cost)}" : $"{recipe.item.DisplayName}: " + Reason(check);
+            Rebuild();
+            return crafted;
+        }
+
+        /// <summary>대장간에서 보관함 장비의 index번째(장비만 센 순번)를 판다(D-6).</summary>
+        public bool TrySellEquipment(int index)
+        {
+            RunState state = State;
+            if (OpenFacility != FacilityType.Smithy || state?.Shop == null) return false;
+            List<ItemInstance> equipment = EquipmentIn(state.Inventory);
+            if (index < 0 || index >= equipment.Count) return false;
+            ItemInstance item = equipment[index];
+            int price = state.Shop.GetSellPrice(item.Definition);
+            bool sold = state.TrySellAtSmithy(item);
+            if (sold) Message = $"{item.Definition.DisplayName} 판매 · {price}골드";
+            Rebuild();
+            return sold;
+        }
+
+        static List<ItemInstance> EquipmentIn(Inventory inventory)
+        {
+            var equipment = new List<ItemInstance>();
+            foreach (ItemInstance item in inventory.Items)
+                if (item.Definition.Kind == ItemKind.Equipment) equipment.Add(item);
+            return equipment;
+        }
+
+        static string Reason(CraftCheck check) => check switch
+        {
+            CraftCheck.BattlePending => "전투 중에는 만들 수 없습니다.",
+            CraftCheck.NotCraftable => "지금 대장간 레벨에서는 만들 수 없습니다.",
+            CraftCheck.NotEnoughFunds => "비용이 모자랍니다.",
+            _ => "만들지 못했습니다.",
+        };
+
         /// <summary>병영에서 모집할 수 있는 잡졸의 index번째를 고른 부대(없으면 자동 배치)로 모집한다(D-4). 비용을 낸다.</summary>
         public bool TryRecruit(int index)
         {
@@ -249,19 +298,24 @@ namespace ProjectNeo.Flow
             if (upgradeButton != null) upgradeButton.interactable = !facility.IsMaxLevel;
             bool shop = type == FacilityType.Shop && state.Shop != null;
             bool barracks = type == FacilityType.TrainingGround;
+            bool smithy = type == FacilityType.Smithy && state.Shop != null;
             if (body != null)
             {
                 string text = shop ? "매물은 준비 단계마다 새로 바뀝니다. 업그레이드는 다음 준비의 매물부터 반영됩니다."
                     : barracks ? DescribeTraining(facility)
+                    : smithy ? DescribeSmithy(facility)
                     : Purpose(type) + "\n이 시설의 기능과 업그레이드 효과는 다음 작업에서 붙습니다.";
                 body.text = string.IsNullOrEmpty(Message) ? text : Message + "\n" + text;
             }
-            if (tradeArea != null) tradeArea.SetActive(shop || barracks);
-            if (offerHeader != null) offerHeader.text = barracks ? "모집 (클릭해서 모집)" : shopOfferHeader;
-            if (inventoryHeader != null) inventoryHeader.text = barracks ? "넣을 부대 (클릭해서 선택)" : shopInventoryHeader;
+            if (tradeArea != null) tradeArea.SetActive(shop || barracks || smithy);
+            if (offerHeader != null)
+                offerHeader.text = barracks ? "모집 (클릭해서 모집)" : smithy ? "제작 (클릭해서 제작)" : shopOfferHeader;
+            if (inventoryHeader != null)
+                inventoryHeader.text = barracks ? "넣을 부대 (클릭해서 선택)" : smithy ? "장비 판매 (클릭해서 판매)" : shopInventoryHeader;
             ClearRows();
             if (rowTemplate == null) return;
             if (barracks) { BuildBarracksRows(state); return; }
+            if (smithy) { BuildSmithyRows(state); return; }
             if (!shop) return;
             IReadOnlyList<ItemDefinition> stock = state.Shop.Stock;
             if (stock.Count == 0) AddRow(offerList, "매물이 없습니다.", null);
@@ -301,6 +355,37 @@ namespace ProjectNeo.Flow
                 AddRow(inventoryList, $"{mark}부대 {i + 1} · {squads[i].Members.Count}/{squads[i].Capacity}명", () => ChooseSquad(index));
             }
             if (state.Army.CanAddSquad) AddRow(inventoryList, "모두 차면 새 부대를 만듭니다", null);
+        }
+
+        void BuildSmithyRows(RunState state)
+        {
+            IReadOnlyList<CraftingRecipe> recipes = state.CraftableRecipes(IsUnlocked);
+            if (recipes.Count == 0) AddRow(offerList, "만들 수 있는 장비가 없습니다.", null);
+            for (int i = 0; i < recipes.Count; i++)
+            {
+                int index = i;
+                AddRow(offerList, $"{recipes[i].item.DisplayName} · {Describe(recipes[i].cost)}", () => TryCraft(index));
+            }
+            List<ItemInstance> equipment = EquipmentIn(state.Inventory);
+            if (equipment.Count == 0) AddRow(inventoryList, "팔 장비가 없습니다.", null);
+            for (int i = 0; i < equipment.Count && i < MaxInventoryRows; i++)
+            {
+                int index = i;
+                AddRow(inventoryList, $"{equipment[i].Definition.DisplayName} 팔기 · {state.Shop.GetSellPrice(equipment[i].Definition)}골드",
+                    () => TrySellEquipment(index));
+            }
+            if (equipment.Count > MaxInventoryRows) AddRow(inventoryList, $"외 {equipment.Count - MaxInventoryRows}개", null);
+        }
+
+        static string DescribeSmithy(FacilityState facility)
+        {
+            var text = new StringBuilder("레시피의 장비는 비용만 있으면 언제든 만들 수 있습니다. 착용 중인 장비는 팔 수 없습니다.");
+            if (!facility.IsMaxLevel)
+            {
+                List<CraftingRecipe> next = facility.Definition.Levels[facility.Level + 1].recipes;
+                text.Append($"\n다음 레벨: 레시피 {(next != null ? next.Count : 0)}종");
+            }
+            return text.ToString();
         }
 
         static string DescribeTraining(FacilityState facility)

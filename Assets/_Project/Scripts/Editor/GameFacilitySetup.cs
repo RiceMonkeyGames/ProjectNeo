@@ -44,6 +44,7 @@ namespace ProjectNeo.Editor
             Scene scene = EditorSceneManager.OpenScene(GameFlowSetup.GamePath, OpenSceneMode.Single);
             CreateData();
             CreateShopData();
+            CreateSmithyData();
             AssetDatabase.SaveAssets();
             // 씬을 연 뒤 만든 에셋은 경로로 다시 불러와 연결한다(C-4 GameRewardSetup과 같은 주의).
             var start = AssetDatabase.LoadAssetAtPath<RunConfig>(StartPath)
@@ -195,6 +196,74 @@ namespace ProjectNeo.Editor
                 startData.ApplyModifiedPropertiesWithoutUndo();
                 EditorUtility.SetDirty(start);
             }
+        }
+
+        const string MaterialFolder = "Assets/_Project/Data/GameFlow/Rewards";
+
+        /// <summary>대장간 레시피 데이터만 만든다(D-6). 씬은 건드리지 않는다.</summary>
+        [MenuItem("ProjectNeo/Setup/Create Smithy Recipes")]
+        public static void ApplySmithyData()
+        {
+            CreateSmithyData();
+            AssetDatabase.SaveAssets();
+        }
+
+        /// <summary>
+        /// D-6 대장간 고정 레시피(Q-35). 대장간 시설 정의의 레시피가 모두 비어 있을 때만 레벨별 전체 목록을 채운다
+        /// (인스펙터에서 바꾼 값은 덮어쓰지 않는다). 1레벨에 재료 없이 만들 수 있는 레시피를 하나 두어 시작부터 확인할 수 있게 한다.
+        /// </summary>
+        public static void CreateSmithyData()
+        {
+            var smithy = AssetDatabase.LoadAssetAtPath<FacilityDefinition>(PathOf(FacilityType.Smithy));
+            if (smithy == null) return;
+            // 프로토타입 임의 값(2026-11-13). 상점 아이템을 같이 쓰고, 상점보다 골드는 싸고 재료를 더 쓴다.
+            ItemDefinition sword = GameRewardSetup.Item("item_iron_sword", "철검", ItemKind.Equipment, 40);
+            ItemDefinition shield = GameRewardSetup.Item("item_wood_shield", "나무 방패", ItemKind.Equipment, 25);
+            ItemDefinition leather = GameRewardSetup.Item("item_leather_armor", "가죽 갑옷", ItemKind.Equipment, 30);
+            ItemDefinition chain = GameRewardSetup.Item("item_chain_armor", "사슬 갑옷", ItemKind.Equipment, 60);
+            ItemDefinition steel = GameRewardSetup.Item("item_steel_sword", "강철검", ItemKind.Equipment, 80);
+            MaterialDefinition hide = AssetDatabase.LoadAssetAtPath<MaterialDefinition>($"{MaterialFolder}/mat_hide.asset");
+            MaterialDefinition bone = AssetDatabase.LoadAssetAtPath<MaterialDefinition>($"{MaterialFolder}/mat_bone.asset");
+            MaterialDefinition feather = AssetDatabase.LoadAssetAtPath<MaterialDefinition>($"{MaterialFolder}/mat_feather.asset");
+
+            var data = new SerializedObject(smithy);
+            SerializedProperty levels = data.FindProperty("levels");
+            for (int i = 0; i < levels.arraySize; i++)
+                if (levels.GetArrayElementAtIndex(i).FindPropertyRelative("recipes").arraySize > 0) return;
+
+            var lv1 = new[]
+            {
+                new CraftingRecipe(shield, new Cost(20)),
+                new CraftingRecipe(sword, new Cost(30, new MaterialAmount(hide, 2))),
+                new CraftingRecipe(leather, new Cost(20, new MaterialAmount(hide, 3))),
+            };
+            var lv2 = new List<CraftingRecipe>(lv1) { new CraftingRecipe(chain, new Cost(45, new MaterialAmount(hide, 4), new MaterialAmount(bone, 2))) };
+            var lv3 = new List<CraftingRecipe>(lv2) { new CraftingRecipe(steel, new Cost(60, new MaterialAmount(bone, 4), new MaterialAmount(feather, 2))) };
+            var perLevel = new IReadOnlyList<CraftingRecipe>[] { lv1, lv2, lv3 };
+            for (int i = 0; i < levels.arraySize && i < perLevel.Length; i++)
+            {
+                SerializedProperty recipes = levels.GetArrayElementAtIndex(i).FindPropertyRelative("recipes");
+                foreach (CraftingRecipe recipe in perLevel[i])
+                {
+                    recipes.InsertArrayElementAtIndex(recipes.arraySize);
+                    SerializedProperty entry = recipes.GetArrayElementAtIndex(recipes.arraySize - 1);
+                    entry.FindPropertyRelative("item").objectReferenceValue = recipe.item;
+                    SerializedProperty cost = entry.FindPropertyRelative("cost");
+                    cost.FindPropertyRelative("gold").intValue = recipe.cost.gold;
+                    SerializedProperty materials = cost.FindPropertyRelative("materials");
+                    materials.ClearArray();
+                    foreach (MaterialAmount amount in recipe.cost.materials)
+                    {
+                        if (amount.material == null) continue;
+                        materials.InsertArrayElementAtIndex(materials.arraySize);
+                        SerializedProperty material = materials.GetArrayElementAtIndex(materials.arraySize - 1);
+                        material.FindPropertyRelative("material").objectReferenceValue = amount.material;
+                        material.FindPropertyRelative("amount").intValue = amount.amount;
+                    }
+                }
+            }
+            data.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(smithy);
         }
 
         struct Popup
