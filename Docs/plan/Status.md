@@ -1,6 +1,6 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-13 15:35:52 (KST)
+Last Updated: 2026-11-13 15:43:32 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
@@ -16,7 +16,7 @@ Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elev
 | Stats, Economy, Facilities | Stat modifiers, multi-material wallet, inventory, trade logic, facility pop-ups/upgrades, shop, barracks recruitment/training | Tavern/blacksmith/squad org UIs, crafting workflows |
 | Characters & Combat | 1st-person movement, melee attacks, health, grunt stats, projectiles, auto-combat, Game scene siege assault/ladders/outcomes | Wall-destroying/aerial enemies, active skills, consumables, production HUD |
 | Meta & Perks | Progression curves, reincarnation conversion, gacha unlocks, perk payloads | Disk persistence, run reward routing, runtime perk injection |
-| Squads, Morale, Walls | Squad structures, grid occupancy/rotation, stacking, async NavMesh rebuild, fall damage, weapon mounting/collapse, 1st-person commands | Morale/rout mechanics, siege weapon firing, wall-destroying enemies, construction delays |
+| Squads, Morale, Walls | Squad structures, grid occupancy/rotation, stacking, async NavMesh rebuild, fall damage, weapon mounting/collapse, 1st-person commands | Morale/rout scene wiring (B-8.1 pure rules done (`BattleSquadMorale`); B-8.2 movement/exit, HUD, settings asset pending), siege weapon firing, wall-destroying enemies, construction delays |
 | Run Data Architecture | `RunState` container, castle persistence, combat I/O, single application rules (`C-1a`), Game scene unit binding, survivor healing (`C-1~2`), grunt spawning (`D-0b`) | Teammate format sign-off (`C-1a-confirm`), hero spawning (`D-3`), saved run loading, casualty replacement (`C-3`), meta file persistence |
 | Test Scenes | `CombatPrototype`, `UnitBattlePrototype`, `ConstructionPrototype`, `SquadCommandPrototype`, `WallCommandPrototype`, `SiegePrototype` | Wall-breaching/aerial enemies, multi-wave sequences, morale routs, full loop integration |
 | Art & Performance | Capsule/box placeholder visuals, dual-tier NavMesh benchmark, AI query optimization (`PERF-nav-query`) | Production Synty packs, animations, VFX, full combat performance profiling |

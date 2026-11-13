@@ -1,6 +1,6 @@
 # Runtime Codemap: Core, Stats, Characters, Combat & Squads
 
-Last Updated: 2026-11-13 13:23:18 (KST)
+Last Updated: 2026-11-13 15:33:23 (KST)
 
 > Purpose: Class map for core utilities, stats, characters, combat AI, squads, and morale. | Parent: [codemap/README](README.md) | Related: [WallsAndSiege](WallsAndSiege.md), [design/Combat](../design/Combat.md)
 
@@ -23,4 +23,6 @@ Base path: `Assets/_Project/Scripts/Runtime/`. Assembly: `ProjectNeo.Runtime`. N
 | Squads | `SquadCommander`, `SquadOrder`, `SquadFormation` | Pure C# squad command logic. Single/all selection, Move/Attack/Hold orders, default Hold state, arrival transition to Hold, rank-and-file formation offsets. Decoupled from scene and input. |
 | Squads | `SquadCommandSettings`, `SquadCommandCenter`, `SquadCommandInput` | Command hotkeys (`InputAction`), formation settings asset (`Command.asset`), translates orders to `UnitDirective` and formation slots, tracks arrival, screen-center raycast. D-0b: `SquadCommandCenter.AddSquad`/`AddMember`/`TryGetGatherPoint` and `SquadCommander.AddSquad` grow squads at runtime; `PlaceholderSquadMarkers` creates discs lazily. |
 | UI | `SquadCommandHud` | Test command overlay (selection, orders, headcount, prompts, reticle). Not final HUD. |
-| Morale | `SquadMorale` | Squad morale tracker for perk hooks. Actual rout mechanics deferred to B-8. |
+| Morale | `SquadMorale` | Squad morale value (0–max) carried with the squad across battles; perks change it via `Add`. |
+| Morale | `MoraleSettings`, `MoraleTypes` (`MoraleSide`, `MoraleState`, `CollapseEffect`, `AwakenEffect`) | Morale tuning asset (Q-04/Q-38/Q-39 starting values, `Create()` for tests) and state enums. No `.asset` instance yet; created when wired in B-8.2. |
+| Morale | `BattleSquadMorale`, `MoraleRules` | B-8.1 pure C# rules. Per-battle wrapper over `SquadMorale`: loss events (member/captain death, gate, nearby wall, nearby rout), once-per-battle breaking point at 100 (Collapse Fear/Panic/Contagion or 25% Awaken Rally/Last Stand/Steadfast), start-below-100 weak collapse, rout at 0 (Steadfast exempt), `AttackMultiplier`, `ShouldIgnoreOrder`, `Tick` for Panic/Contagion. Raises `BreakingPointReached`, `Routed`, `NearbyMoraleChange`, `PanicRetreat`; scene applies nearby effects. `MoraleRules.RecoverAfterBattle` = max(+20, 80) capped. Not wired to scenes yet (B-8.2). |

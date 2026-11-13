@@ -1,6 +1,6 @@
 # Editor Setup & Test Scripts
 
-Last Updated: 2026-11-13 13:23:18 (KST)
+Last Updated: 2026-11-13 15:33:23 (KST)
 
 > Purpose: Map of Editor setup menus, build scripts, and EditMode/PlayMode test suites. | Parent: [codemap/README](README.md) | Related: [UnityCLI](../workflow/UnityCLI.md), [Status](../plan/Status.md)
 
@@ -33,6 +33,7 @@ Last Updated: 2026-11-13 13:23:18 (KST)
 - `SquadCommanderTests.cs`: Selection, orders, arrival transitions, formation geometries, runtime `AddSquad`.
 - `MoveStallTrackerTests.cs`: Destination stall detection and progress tracking.
 - `SiegeRulesTests.cs`: Cost deductions, win/loss, ladder mechanics, upward damage reduction.
+- `MoraleRulesTests.cs`: B-8.1 morale: proportional/fixed losses, ally-only gate/wall, once-per-battle check (collapse/awaken, chance bonus), start-below-100 weak collapse, rout once at 0, Rally/Last Stand/Steadfast, attack bands (enemy low band only), Fear/Panic/Contagion strength, dispose, post-battle recovery max(+20, 80).
 - `GameFlowTests.cs`: Phase transitions, invalid rejections, single battle result handling, run reset, phase change events.
 - `RunStateTests.cs`: Start config, unit IDs, squad caps, captains, battle inputs, death/rout/permadeath, single result processing, castle persistence.
 - `CastleStateTests.cs`: Gate, stacking, rotation, HP, mounted weapons persistence, empty grid restoration.
