@@ -1,10 +1,10 @@
 # BUG-build-grid-lines | 2026-11-13 | Construction - Subpixel Grid Lines
 
-Last Updated: 2026-11-13 14:18:18 (KST)
+Last Updated: 2026-11-13 14:19:18 (KST)
 
 ## Claim and cause
 
-- Owner: Codex; branch `fix/bug-build-grid-lines` from develop `f7400a1`. Claim committed/pushed before code changes. User confirmed zoom-in restores visible grid lines.
+- Owner: Codex; branch `fix/bug-build-grid-lines` from develop `f7400a1`. Claim committed/pushed before code changes. Final commit `4041358` was made/pushed directly on develop: final Git output revealed that develop was current, while the task branch still pointed at its base. This was not a task-branch merge; the pre-commit branch guard was missed. Temporary local branch removed after remote ancestry verification; no remote task branch published. Future commits must check current branch immediately before staging/committing. User confirmed zoom-in restores visible grid lines.
 - Actual Game scene reproduction: 0.09m strips projected to approximately 0.372px at initial zoom 55 and camera viewport 1469×719. Captured dotted/missing lines before change. This supports subpixel rasterization as the cause; no geometry rows were actually omitted by grid generation.
 - Fix: cache one grid mesh and vertex buffer, compute perpendicular screen-pixel width for both grid axes in URP beginCameraRendering, and widen only as needed to maintain BuildCameraSettings.MinimumGridLinePixels (default 1.5). Account for zoom, viewport resolution, transform scale and changing camera angle. Keep line center/spacing and world-width floor; non-construction game cameras restore baseline width. Unsubscribe on disable; destroy mesh on destruction.
 - No serialized assets, materials, build layout, occupancy, colliders or NavMesh changes. New numerical view setting lives in the existing ScriptableObject; default applies to existing settings.
