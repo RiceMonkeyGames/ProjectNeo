@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-13 22:58:26 (KST)
+Last Updated: 2026-11-13 23:10:44 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -30,7 +30,6 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 | C-5 | Wave Preview & Hidden Enemy Intel | Waiting for Prerequisite | Unassigned | Following B-7.1 and run contracts, display upcoming enemy types, counts, and hidden indicators in prep UI. Scouting rules clarified first. |
 | B-9.3 | M1 Full Integration, Iteration & Build Verification | Waiting for Prerequisite | Unassigned | Following B-4~8 integration, test repeated cycles of destruction, enemy variants, waves, morale, and outcomes; verify regressions and standalone build startup flow. |
 | QA-smithy-popup | Manual Check of Blacksmith Crafting & Sales | Waiting | Unassigned | From D-6 (user skipped manual play 2026-11-13). In `Game.unity` prep: F on Smithy opens popup; Lv1 lists 3 recipes; craft wood shield (100→80 gold, recipe stays); iron sword without hide shows "비용이 모자랍니다"; sell shield +12 gold; consumables not listed for sale; upgrade shows 4 recipes. Open a BUG task if wrong. |
-| UI-01 | Squad Organization Card Layout | In Progress | Hwang Seong-min | Branch `feature/ui-01`. User feedback (2026-11-13, D-3 review): the D-8 two-column organization window is not intuitive. Decision Q-49: show every squad as a side-by-side card (captain slot on top, grunts below) plus a "new squad" card and a reserve-hero card; click a grunt or hero to select it, then click a destination card to move it (captain slot assigns, reserve card unassigns). Keep D-8 rules (`GameRunLink.TryMoveSoldier`/`TrySetCaptain`); rebuild `OrganizationPanel` via Editor API. Prerequisites: D-8, D-3. |
 | PREP-01 | Blacksmith Equipment Upgrade Levels | In Progress | 신용준 | Branch `feature/prep-01`. Prerequisite: D-6 (Done 2026-11-13; shares the Smithy panel). Decision: Q-35. Completion: Per-item upgrade level stored on `ItemInstance` and kept through equip/unequip and run state; +10% equip modifiers per level; max +1/+3/+5 by blacksmith Lv1/2/3; step cost 50% gold price × target level + materials (data); sell refund includes upgrade spend at the sell ratio. |
 | PREP-02 | Shop Gold Re-roll | In Progress | youngho | Branch `feature/prep-02`. Decision: Q-46 (2026-11-13). Completion: Re-roll button in Shop pop-up; cost rises per re-roll within a prep phase (data, e.g., 10/20/30g) and resets next prep; re-roll is seed-reproducible via `IRandomSource`. Coordinate with PREP-03 (same files). |
 | PREP-03 | Shop Offer Slot Locks | Waiting | Unassigned | Decision: Q-46 (2026-11-13). Completion: Free lock toggle per offer, max locked = Shop level; locked offers survive re-roll (PREP-02) and next prep restock; buying clears the lock. |

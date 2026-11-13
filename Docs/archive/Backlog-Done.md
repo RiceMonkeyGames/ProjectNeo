@@ -1,6 +1,6 @@
 # Completed Backlog Archive (Done)
 
-Last Updated: 2026-11-13 22:57:34 (KST)
+Last Updated: 2026-11-13 23:10:44 (KST)
 
 > Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
@@ -54,4 +54,5 @@ Last Updated: 2026-11-13 22:57:34 (KST)
 | D-6 | Blacksmith Fixed-Recipe Crafting & Sales | Hwang Seong-min | Branch `feature/d-6`. EditMode 327, PlayMode 164. Manual play skipped by user (QA-smithy-popup). [History](../history/D/D-6.md) |
 | D-7 | Equipment System | Hwang Seong-min | Branch `feature/player-equipment`, merged (`050948a`). EditMode 201, PlayMode 88. [History](../history/D/D-7.md) |
 | D-3 | Tavern Hero Hiring | Hwang Seong-min | Branch `feature/d-3`. EditMode 343, PlayMode 171. Reviewed by user in play; organization UI feedback split to UI-01. [History](../history/D/D-3.md) |
+| UI-01 | Squad Organization Card Layout | Hwang Seong-min | Branch `feature/ui-01`. EditMode 343, PlayMode 172. Manual play confirmed by user. [History](../history/UI/UI-01.md) |
 | D-8 | Squad Organization | Hwang Seong-min | Branch `feature/d-8`. EditMode 336, PlayMode 170. Manual play confirmed by user (captain rows untestable until D-3). [History](../history/D/D-8.md) |

@@ -1,6 +1,6 @@
 # Past Verification History Index
 
-Last Updated: 2026-11-13 22:49:00 (KST)
+Last Updated: 2026-11-13 23:03:41 (KST)
 
 > Purpose: Route historical log lookups by Task ID prefix. | Parent: [INDEX](../INDEX.md) | Related: [Backlog-Done](../archive/Backlog-Done.md), [Status](../plan/Status.md)
 
@@ -25,4 +25,5 @@ Read this folder only when researching past design rationales, benchmarks, or ve
 - `ART/` — [ART-01](ART/ART-01.md), [ART-02](ART/ART-02.md)
 - `DOC/` — [DOC-workflow-branches](DOC/DOC-workflow-branches.md), [DOC-doc-tree-and-id](DOC/DOC-doc-tree-and-id.md)
 - `TOOL/` — [TOOL-claude-read-deny](TOOL/TOOL-claude-read-deny.md), [TOOL-agent-workflows](TOOL/TOOL-agent-workflows.md), [TOOL-codex-workflows](TOOL/TOOL-codex-workflows.md)
+- `UI/` — [UI-01](UI/UI-01.md)
 - `LEGACY/` — Un-ID'd early records: [M0-early-setup](LEGACY/M0-early-setup.md), [M1-construction-camera](LEGACY/M1-construction-camera.md), [M1-combat-and-command](LEGACY/M1-combat-and-command.md), [M1-game-scene-integration](LEGACY/M1-game-scene-integration.md), [M1-siege-prototype](LEGACY/M1-siege-prototype.md), [DOC-early-workflow](LEGACY/DOC-early-workflow.md)
