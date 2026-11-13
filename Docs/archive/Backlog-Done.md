@@ -1,11 +1,12 @@
 # Completed Backlog Archive (Done)
 
-Last Updated: 2026-11-13 16:09:26 (KST)
+Last Updated: 2026-11-13 16:45:54 (KST)
 
 > Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
 | Task ID | Description | Assignee | Outcome & History Link |
 |---|---|---|---|
+| B-6.2 | Wall Breaker Enemy (Wall Attack & Breach Entry) | Codex | Done 2026-11-13; branch `feature/b-6.2`. Asset-selected wall/gate bottom attacks, settled-piece re-selection, breach Engage, unreachable Hold/retry; prefab/settings and opt-in prototype roster. Corrected SiegePrototype grid/generators to 3 tiers. Agent visibly placed 3 tiers and demonstrated real attack/settling; user confirmed verification/completion. Final compile/scoped PlayMode 6/6; earlier full EditMode 250/250, PlayMode 126/126 predate grid correction. Standalone unverified; mixed encounters B-6.4. [History](../history/B/B-6.2.md) |
 | QA-opening-battle-balance | Review opening battle difficulty | Codex | Done 2026-11-13. Branch `feature/qa-opening-battle-balance`. Game debug enemies reduced 28 → 12 (6 ladder / 2 gate breakers / 4 archers); setup generator retains roster. Compile passed, GameBattlePlayTests 10/10; two passive courtyard observations naturally won. User confirmed manual verification and authorized completion/commit/push. Formal stage tuning deferred to B-7.1; standalone unverified. [History](../history/QA/QA-opening-battle-balance.md) |
 | Q-21 | Finalize Siege Weapon Mechanics | User decision / Claude documentation | Decided 2026-11-13. Cannon: auto-fire + player manning, ballistic area damage, ±45° arc, own HP, no passage block, no friendly fire (switchable), nearest-enemy strategy, temporary values in data; detail defaults confirmed. Implementation SIEGE-02. Doc-only; no Unity verification. [History](../history/Q/Q-21.md) |
 | B-8.1 | Squad Morale Calculations & Rout Transitions | youngho | Done 2026-11-13. Branch `feature/b-8.1`. Pure C# `MoraleSettings`, `MoraleTypes`, `BattleSquadMorale`, `MoraleRules` implementing Q-04/Q-05/Q-38/Q-39; EditMode 248/248 (`MoraleRulesTests` 32). Not wired to scenes; wiring scope recorded on B-8.2. [History](../history/B/B-8.1.md) |

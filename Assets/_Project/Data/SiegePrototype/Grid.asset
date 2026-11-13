@@ -15,3 +15,4 @@ MonoBehaviour:
   width: 16
   depth: 20
   cellSize: 3
+  maxLevels: 3

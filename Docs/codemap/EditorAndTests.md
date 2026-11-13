@@ -1,6 +1,6 @@
 # Editor Setup & Test Scripts
 
-Last Updated: 2026-11-13 15:33:23 (KST)
+Last Updated: 2026-11-13 16:42:47 (KST)
 
 > Purpose: Map of Editor setup menus, build scripts, and EditMode/PlayMode test suites. | Parent: [codemap/README](README.md) | Related: [UnityCLI](../workflow/UnityCLI.md), [Status](../plan/Status.md)
 
@@ -10,6 +10,7 @@ Last Updated: 2026-11-13 15:33:23 (KST)
 - `UnitBattleSetup.cs`: Menu `ProjectNeo/Setup/Create Unit Battle Prototype`. Generates B-3 scene, prefabs, assets, and NavMesh.
 - `ConstructionPrototypeSetup.cs`: Menu `ProjectNeo/Setup/Create Construction Prototype`. Generates B-4 construction scene and assets.
 - `SiegeWeaponSetup.cs`: Menu `ProjectNeo/Setup/Add Siege Weapons To Construction Prototype`. Adds cannon assets and buttons.
+- `WallBreakerSetup.cs`: Menu `ProjectNeo/Setup/Add Wall Breaker Assets`. Idempotently creates target-strategy/settings assets and an inactive wall-breaker prefab, ensures SiegePrototype grid supports at least three tiers, then registers the prefab in its roster at count 0. Existing positive counts/configuration are retained.
 - `SquadCommandSetup.cs`: Menu `ProjectNeo/Setup/Create Squad Command Prototype`. Generates B-5 scene and HUD (`Upgrade()` adds team vision and markers).
 - `WallCommandSetup.cs`: Menu `ProjectNeo/Setup/Create Wall Command Prototype`. Creates B-5.4 integrated scene.
 - `FirstPersonSetup.cs`: Menu `ProjectNeo/Setup/Upgrade Player Views To First Person`. Converts scenes to 1st-person cameras.
@@ -55,6 +56,8 @@ Last Updated: 2026-11-13 15:33:23 (KST)
 - `WallCommandPlayTests.cs`: View/input toggling, order persistence, wall traversal, stair loss handling, collapse handling.
 - `SquadCommandPlayTests.cs`: Squad movement, Hold posture, Attack engagement, screen-center targeting.
 - `SiegePrototypePlayTests.cs`: Budget validation, troop placement, breach entry, ladder climbing, toppling, fall damage, victory/defeat.
+- `WallTargetStrategyTests.cs` (EditMode): Nearest selection, stable tie resolution, empty/invalid candidate distances.
+- `WallBreakerPlayTests.cs`: Saved wall-breaker prefab attacks/breaches walls, includes gates, selects stacked-column bottom and settled upper piece, assaults existing gaps, holds/retries inaccessible bases, and stops structure damage on retreat. Stacking asserts and uses the actual saved SiegePrototype three-tier grid; a substitute world must not hide scene configuration failures.
 - `GameFlowPlayTests.cs`: Scene transitions, phase execution, defeat reset to title, default castle perimeter checks.
 - `GameBattlePlayTests.cs`: Enemy assault, win/loss, defeat priority, retreat, 3-tier ladders, gate collapse assault, next prep carry-over, run link, rewards.
 - `GameBuildEconomyPlayTests.cs`: Starting gold, build deductions, refunds, gate protection, repair execution.

@@ -1,6 +1,6 @@
 # Prototype Scenes & Asset Details
 
-Last Updated: 2026-11-13 13:17:37 (KST)
+Last Updated: 2026-11-13 16:40:10 (KST)
 
 > Purpose: Detailed setup, assets, and controls for prototype scenes (B-2, B-3, B-4, B-5, B-5.4, Siege). | Parent: [codemap/README](README.md) | Related: [Scenes](Scenes.md)
 
@@ -41,7 +41,9 @@ Last Updated: 2026-11-13 13:17:37 (KST)
 
 - `Assets/_Project/Scenes/SiegePrototype.unity`: Cloned from `WallCommandPrototype`. Grid 16×20 (48m × 60m); wall line at grid z=8. Cells 4, 11, 12 breached. 2 stairs, 1 gate (600 HP).
 - `Assets/_Project/Data/SiegePrototype/`: `Grid`, `Gate`, `Camera`, `Siege` (`SiegeSettings`), `EnemyRanged` (0.5x upward damage multiplier).
+- Grid supports **3 tiers** (MaxLevels=3, B-6.2 follow-up). Choose Wall and click an existing wall twice to reach 9m; a fourth tier is rejected. WallBreakerSetup also upgrades an existing single-tier grid; no scene YAML edits are needed.
 - Budget: 40 starting; Wall 2, Stairs 3, Cannon 6 (cannons non-firing). Ladder slots at cells 1, 6, 11 (11 needs wall). Raise 3s, Topple 2s, Climb 2.5s.
+- B-6.2 adds `Prefabs/SiegePrototype/enemy_wall_breaker.prefab`, `Data/SiegePrototype/WallBreaker.asset` and `NearestWall.asset`. Its `Siege.asset` enemy-group count defaults to 0; set it to 1 before Play to exercise the role. Close the three gaps first to force structural attacks; an existing walkable gap makes it use Engage. Restore all edited roster counts after manual checks. Full steps: [B-6.2](../history/B/B-6.2.md).
 - Squads spawned at runtime per `Siege.asset` (`Ally Squads`, `Enemy Groups`), capped at 4 × 10; `SiegeDirector` holds positions/spacing. UI troop buttons scale dynamically; F1–F10 hotkeys via `Command.asset`; labels show composition (`Squad 1 · Melee`).
 - Default setup: Allies (4 melee, 4 melee, 4 archer); Enemies (8 `enemy_ladder` w/ brown plank, 4 `enemy_gate_breaker` w/ black pack, 4 `enemy_archer` in `Prefabs/SiegePrototype/`). Player spawns behind gate. Upward damage modifier via `CombatProfile` (`upwardShotDamageRatio`, `upwardShotMinimumRise`).
 

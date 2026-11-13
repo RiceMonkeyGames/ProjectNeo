@@ -1,12 +1,12 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-13 16:07:37 (KST)
+Last Updated: 2026-11-13 16:45:54 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
 **Current Milestone: M1 Single Siege Battle in progress; M2 Repeatable Run Loop in progress in parallel.**
 
-Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elevation, and `feature/siege-prototype` test scene into `develop`. `Game` scene links 1st-person prep / construction F interaction → hold B for 1 second at current position (FLOW-01) → enemy assault, ladders, actual win/loss → rewards/results. On the M2 side, run data (`C-1~2`), victory rewards (`C-4`), build/repair costs (`D-2`), facility pop-ups (`D-0`), upgrades (`D-1`), shop (`D-5`), player equipment (`D-7`), grunt spawning (`D-0b`), and barracks recruitment/training (`D-4`) are implemented; formal stage/wave layouts, casualty carry-over (`C-3`), tavern (`D-3`), squad org (`D-8`), and blacksmith (`D-6`) remain follow-ups. Wall-destroying enemies, aerial enemies, morale, and siege weapon firing (`Q-21`) remain pending.
+Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elevation, and `feature/siege-prototype` test scene into `develop`. `Game` scene links 1st-person prep / construction F interaction → hold B for 1 second at current position (FLOW-01) → enemy assault, ladders, actual win/loss → rewards/results. On the M2 side, run data (`C-1~2`), victory rewards (`C-4`), build/repair costs (`D-2`), facility pop-ups (`D-0`), upgrades (`D-1`), shop (`D-5`), player equipment (`D-7`), grunt spawning (`D-0b`), and barracks recruitment/training (`D-4`) are implemented; formal stage/wave layouts, casualty carry-over (`C-3`), tavern (`D-3`), squad org (`D-8`), and blacksmith (`D-6`) remain follow-ups. Wall-breaker behavior is complete on `feature/b-6.2`, pending develop merge; mixed encounter integration, aerial enemies, morale scene wiring, and siege weapon firing (`Q-21`) remain pending.
 
 ## Implemented vs Pending Real Connections
 
@@ -14,14 +14,16 @@ Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elev
 |---|---|---|
 | Project Foundation | Unity 6000.6.8f1, URP, 4 assemblies, test runners, Windows build script | Distribution packaging, release verification |
 | Stats, Economy, Facilities | Stat modifiers, multi-material wallet, inventory, trade logic, facility pop-ups/upgrades, shop, barracks recruitment/training | Tavern/blacksmith/squad org UIs, crafting workflows |
-| Characters & Combat | 1st-person movement, melee attacks, health, grunt stats, projectiles, auto-combat, Game scene siege assault/ladders/outcomes | Wall-destroying/aerial enemies, active skills, consumables, production HUD |
+| Characters & Combat | 1st-person movement, melee attacks, health, grunt stats, projectiles, auto-combat, Game scene siege assault/ladders/outcomes | Wall-breaker encounter integration, aerial enemies, active skills, consumables, production HUD |
 | Meta & Perks | Progression curves, reincarnation conversion, gacha unlocks, perk payloads | Disk persistence, run reward routing, runtime perk injection |
-| Squads, Morale, Walls | Squad structures, grid occupancy/rotation, stacking, async NavMesh rebuild, fall damage, weapon mounting/collapse, 1st-person commands | Morale/rout scene wiring (B-8.1 pure rules done (`BattleSquadMorale`); B-8.2 movement/exit, HUD, settings asset pending), siege weapon firing, wall-destroying enemies, construction delays |
+| Squads, Morale, Walls | Squad structures, grid occupancy/rotation, stacking, async NavMesh rebuild, fall damage, weapon mounting/collapse, 1st-person commands | Morale/rout scene wiring (B-8.1 pure rules done (`BattleSquadMorale`); B-8.2 movement/exit, HUD, settings asset pending), siege weapon firing, wall-breaker encounter integration, construction delays |
 | Run Data Architecture | `RunState` container, castle persistence, combat I/O, single application rules (`C-1a`), Game scene unit binding, survivor healing (`C-1~2`), grunt spawning (`D-0b`) | Teammate format sign-off (`C-1a-confirm`), hero spawning (`D-3`), saved run loading, casualty replacement (`C-3`), meta file persistence |
-| Test Scenes | `CombatPrototype`, `UnitBattlePrototype`, `ConstructionPrototype`, `SquadCommandPrototype`, `WallCommandPrototype`, `SiegePrototype` | Wall-breaching/aerial enemies, multi-wave sequences, morale routs, full loop integration |
+| Test Scenes | `CombatPrototype`, `UnitBattlePrototype`, `ConstructionPrototype`, `SquadCommandPrototype`, `WallCommandPrototype`, `SiegePrototype` | Mixed wall-breaker/aerial encounters, multi-wave sequences, morale routs, full loop integration |
 | Art & Performance | Capsule/box placeholder visuals, dual-tier NavMesh benchmark, AI query optimization (`PERF-nav-query`) | Production Synty packs, animations, VFX, full combat performance profiling |
 
 ## Test Baselines & Status Conventions
+
+- **Wall breaker (`B-6.2`, 2026-11-13; Done on `feature/b-6.2`, develop merge pending)**: Asset-selected reachable wall/gate bottom attacks, settled-piece re-selection and breach Engage; prototype roster defaults to 0. Saved SiegePrototype grid/generators now support three tiers, and stacking regression uses that real scene. Agent visibly mouse-stacked to 9m and demonstrated real breaker damage/settling; user confirmed verification/completion. Final compile and scoped **6/6** PlayMode passed (3.02s). Earlier full EditMode **250/250** / PlayMode **126/126** predate the grid correction. Standalone unverified; mixed encounters B-6.4. [History](../history/B/B-6.2.md).
 
 - **Debug encounter tuning (QA-opening-battle-balance, 2026-11-13; Done on `feature/qa-opening-battle-balance`, develop merge pending)**: User requests rough prototype tuning rather than formal stage balancing. Game enemies reduced 28 → 12 (6 ladder, 2 gate breakers, 4 archers), retaining unit stats/outcome rules; generator emits the same roster. Two controlled courtyard observations reached natural victory at 76.27/78.40 simulated seconds; exposed stationary wall player still dies. Final compile passed, GameBattlePlayTests **10/10** (5.23s). User confirmed manual verification and authorized completion/commit/push; standalone unverified. Formal stage design remains B-7.1. [History](../history/QA/QA-opening-battle-balance.md).
 

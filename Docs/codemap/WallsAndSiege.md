@@ -1,6 +1,6 @@
 # Runtime Codemap: Walls & Siege
 
-Last Updated: 2026-11-13 15:07:57 (KST)
+Last Updated: 2026-11-13 16:25:49 (KST)
 
 > Purpose: Class map for castle construction, fall damage, siege weapons, and enemy siege AI. | Parent: [codemap/README](README.md) | Related: [CombatAndSquads](CombatAndSquads.md), [design/WallsAndSiege](../design/WallsAndSiege.md)
 
@@ -26,6 +26,8 @@ Grid display (`BUG-build-grid-lines`): BuildCameraSettings.MinimumGridLinePixels
 | Siege | `BuildBudget`, `SiegeOutcomeRules`, `SiegeLadderState` | Pure C# siege rules. Temporary build budget deduction/refund, win/loss evaluation (defeat prioritizes simultaneous victory, Q-09) and retreat trigger, ladder state machine (placed → raising → raised, single climber queue, toppling). |
 | Siege | `SiegeSettings` | Settings asset for budget, ladder timings/distances, enemy tick intervals, hotkeys (F topple, Tab view, R restart). |
 | Siege | `SiegeLadder`, `PlaceholderLadderView` | Fixed ladder slots along wall perimeter. Active only when wall piece exists at slot. Raised by ground enemies, toppled by defenders atop walls. Blocked from toppling if enemies are actively climbing top. Visualized via placeholder bar under `Visual`. |
-| Siege | `SiegeAttackerBrain` | Per-enemy siege decision AI. Delegates to `UnitCombatAI.Engage` if walkable ally exists; otherwise executes role-specific siege behaviors (`SiegeAttackerRole`: Ladder Grunt, Gate Breaker, Archer). Movement and attacks executed via `UnitDirective`. Ladder grunts redirect to gate if no ladders exist. `Retreat()` navigates unit off-map, setting state to `Fled` (excluded from active enemy tally). |
+| Siege | `SiegeAttackerBrain` | Per-enemy siege decision AI. Delegates to `UnitCombatAI.Engage` if walkable ally exists; otherwise executes role-specific siege behaviors (`SiegeAttackerRole`: Ladder=0, GateBreaker=1, Archer=2, WallBreaker=3). WallBreaker delegates structure handling to `WallBreakerAttack`, immediately reselecting invalidated targets after navigation settles. Movement and attacks executed via `UnitDirective`. Ladder grunts redirect to gate if no ladders exist. `Retreat()` navigates unit off-map, setting state to `Fled` (excluded from active enemy tally). |
+| Siege | `WallTargetCandidate`, `WallTargetStrategy`, `NearestWallTargetStrategy` | Data-selected ScriptableObject target strategy. Pure candidate ID/distance inputs; nearest valid collider distance wins, stable placement-ID tie break. Invalid distances ignored. Other strategies can be assigned through `WallBreakerSettings`. |
+| Siege | `WallBreakerSettings`, `WallBreakerAttack` | Per-prefab strategy and approach clearance/snap data. Candidate walls/gates must be level 0 (stairs excluded); tries four base faces and rejects incomplete paths, elevated snaps, and endpoints outside attack range. Holds/retries if none reachable; existing actor attack cadence/signals damage the wall. Rebuilds pause structure attacks. Assault/retreat/deactivation clears selection. Prefab `Prefabs/SiegePrototype/enemy_wall_breaker.prefab`; assets `Data/SiegePrototype/WallBreaker.asset`, `NearestWall.asset`. |
 | Siege | `SiegePrepController`, `SiegeDirector` | Prep phase utilities (budget validation, demolition/refund, click-placement of squads) and match coordinator (spawns squads from `SiegeSettings`, orchestrates prep → battle → outcome, camera swaps, enemy activation, win/loss). Not connected to persistent run flow. |
 | UI | `SiegeHud`, `SiegeStatusHud` | Test prep overlay, phase banners, troop count, and outcome screens. |

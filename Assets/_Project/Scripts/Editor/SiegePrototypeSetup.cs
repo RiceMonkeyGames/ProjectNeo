@@ -52,7 +52,7 @@ namespace ProjectNeo.Editor
             GameObject enemyMelee = Required<GameObject>(Units + "hostile_melee.prefab");
             GameObject enemyRanged = Required<GameObject>(Units + "hostile_ranged.prefab");
             CombatPrototypeSetup.EnsureFolder(Data);
-            var grid = CombatPrototypeSetup.Save(BuildGridDefinition.Create(16, 20, 3f), Data + "/Grid.asset");
+            var grid = CombatPrototypeSetup.Save(BuildGridDefinition.Create(16, 20, 3f, 3), Data + "/Grid.asset");
             // 성문 파괴병이 바로 뚫지 못하도록 이 시험의 성문은 체력을 따로 둔다.
             var gate = CombatPrototypeSetup.Save(BuildPieceDefinition.Create(BuildPieceKind.Gate, "메인 성문",
                 new Vector2Int(2, 1), maxHealth: 600f, prefab: gatePrefab), Data + "/Gate.asset");

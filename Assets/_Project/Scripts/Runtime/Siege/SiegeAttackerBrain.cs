@@ -11,6 +11,7 @@ namespace ProjectNeo.Siege
         Ladder = 0,      // 들어갈 길이 없으면 사다리를 세우고 오른다.
         GateBreaker = 1, // 들어갈 길이 없으면 성문만 공격한다. 사다리는 타지 않는다.
         Archer = 2,      // 아래에서 성벽 위 아군을 쏜다.
+        WallBreaker = 3, // 선택 전략으로 성벽 밑단을 공격하고 열린 길로 진입한다.
     }
 
     /// <summary>
@@ -21,7 +22,7 @@ namespace ProjectNeo.Siege
     [RequireComponent(typeof(UnitCombatAI), typeof(CharacterActor), typeof(NavMeshAgent))]
     public sealed class SiegeAttackerBrain : MonoBehaviour
     {
-        enum Mode { Deciding, Assault, ToLadder, Raising, Climbing, Falling, ToGate, Shooting, Retreating }
+        enum Mode { Deciding, Assault, ToLadder, Raising, Climbing, Falling, ToGate, Shooting, Retreating, ToWall }
 
         [SerializeField] SiegeAttackerRole role;
         [SerializeField] ConstructionWorld world;
@@ -33,6 +34,7 @@ namespace ProjectNeo.Siege
         NavMeshAgent agent;
         UnitFallController fall;
         NavMeshPath path;
+        WallBreakerAttack wallBreaker;
         Mode mode = Mode.Deciding;
         SiegeLadder ladder;
         PlacedStructure gate;
@@ -71,6 +73,7 @@ namespace ProjectNeo.Siege
         {
             world = owner; ladders = ladderSpots; outward = outwardDirection;
             if (battleSettings != null) settings = battleSettings;
+            GetComponent<WallBreakerAttack>()?.Bind(owner);
         }
 
         void Awake()
@@ -80,6 +83,8 @@ namespace ProjectNeo.Siege
             agent = GetComponent<NavMeshAgent>();
             fall = GetComponent<UnitFallController>();
             path = new NavMeshPath();
+            wallBreaker = GetComponent<WallBreakerAttack>();
+            wallBreaker?.Bind(world);
         }
 
         void OnEnable() => Actor.Died += OnDied;
@@ -88,6 +93,7 @@ namespace ProjectNeo.Siege
         {
             Actor.Died -= OnDied;
             LeaveLadder();
+            wallBreaker?.Clear();
         }
 
         Vector3 OutwardWorld => world.transform.TransformDirection(new Vector3(outward.x, 0f, outward.y)).normalized;
@@ -105,12 +111,14 @@ namespace ProjectNeo.Siege
             if (!agent.enabled || !agent.isOnNavMesh) return;
             if (retreatRequested) { UpdateRetreat(); return; }
             think -= Time.deltaTime;
+            if (mode == Mode.ToWall && wallBreaker != null && wallBreaker.TargetInvalidated) think = 0f;
             if (think <= 0f)
             {
                 think = settings.AttackerDecisionInterval;
                 Decide();
             }
             if (mode == Mode.ToGate) StrikeGate();
+            else if (mode == Mode.ToWall) wallBreaker?.Tick();
             else if (mode == Mode.Raising && ladder != null) Face(-ladder.OutwardWorld);
         }
 
@@ -124,6 +132,7 @@ namespace ProjectNeo.Siege
                 {
                     LeaveLadder();
                     gate = null;
+                    wallBreaker?.Clear();
                     ai.SetDirective(UnitDirective.Engage);
                     mode = Mode.Assault;
                 }
@@ -133,6 +142,11 @@ namespace ProjectNeo.Siege
             {
                 case SiegeAttackerRole.Ladder: DecideLadder(); break;
                 case SiegeAttackerRole.GateBreaker: DecideGate(); break;
+                case SiegeAttackerRole.WallBreaker:
+                    mode = Mode.ToWall;
+                    if (wallBreaker != null) wallBreaker.Decide();
+                    else if (ai.Directive != UnitDirective.Hold) ai.SetDirective(UnitDirective.Hold);
+                    break;
                 default: DecideArcher(); break;
             }
         }
@@ -367,6 +381,7 @@ namespace ProjectNeo.Siege
             {
                 LeaveLadder();
                 gate = null;
+                wallBreaker?.Clear();
                 mode = Mode.Retreating;
                 retreatRemaining = settings.RetreatTimeout;
                 if (!TryGetRetreatPoint(out Vector3 point)) { Flee(); return; }

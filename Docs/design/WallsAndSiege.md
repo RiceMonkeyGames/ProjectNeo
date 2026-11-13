@@ -1,6 +1,6 @@
 # Game Design: Castle Walls, Enemies & Siege Strategy
 
-Last Updated: 2026-11-13 15:56:45 (KST)
+Last Updated: 2026-11-13 16:25:49 (KST)
 
 > Purpose: Construction stacking, build economy, enemy roles, and siege/ladder rules. | Parent: [design/README](README.md) | Related: [Combat](Combat.md), [MoraleAndWave](MoraleAndWave.md)
 
@@ -45,7 +45,7 @@ Last Updated: 2026-11-13 15:56:45 (KST)
 - **Siege Assault Rules** (2026-11-11, 2026-11-12):
   - Ground melee cannot strike wall-top defenders from ground level. Enemies enter via gaps, un-repaired segments, or broken gate.
   - Gate destruction drops upper stacked walls; gate breakers keep attacking dropped pieces at the gate cell.
-  - Wall-destroying enemies are specified below (B-6.1, Q-43) but not yet implemented; currently only gates can be breached.
+  - Wall-destroying enemies follow Q-43; B-6.2 implementation on `feature/b-6.2` adds wall/gate bottom-piece attacks and breach entry. Prototype prefab is available with default roster count 0; formal/mixed encounter integration remains B-6.4/B-7.1. [Verification](../history/B/B-6.2.md).
   - **Archetypes**: `Ladder Grunt` (enters breaches or raises/climbs ladders), `Gate Breaker` (enters breaches or attacks gate), `Archer` (shoots upward at 50% damage, enters castle once path opens; ally archers shoot downward at 100%).
 
 - **Additional enemy behaviors (approved 2026-11-13, Q-43 / B-6.1; implementation B-6.2~4)**:
