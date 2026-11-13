@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-13 23:10:44 (KST)
+Last Updated: 2026-11-13 23:14:56 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -26,7 +26,7 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 | B-7.1 | Formal Wave Data & Spawning Rules | Waiting for Prerequisite | Unassigned | After enemy definitions and spawn/termination contracts are agreed upon, spawn according to configured types, counts, and timings. No duplicates on pause/restart. |
 | SIEGE-01 | Link Pending Spawns to Win/Loss Evaluation | Waiting for Prerequisite | Unassigned | Formerly `B-9.2-wave` (fulfills `B-9.2` wave-spawn link). After B-7.1, prevent premature victory if enemies remain to spawn; ensure battle termination and outcomes trigger exactly once. |
 | COMBAT-03 | Morale Collapse/Awaken Effects in Combat & Morale HUD | Waiting for Prerequisite | Unassigned | After B-8.2 (Q-44). Apply band/Last Stand attack modifiers (`StatSheet.AddModifier`), Fear `ShouldIgnoreOrder`, Panic retreat, Contagion to nearby squads in real combat; minimal `SquadCommandHud` morale number/state/check notice. Sequence shared `CharacterActor`/`UnitCombatAI`/`SquadCommandCenter` edits. |
-| C-3 | Run Carry-over of Troop Casualties & Wall HP | Waiting for Prerequisite | Unassigned | Following C-1a and rout outcome contracts, carry over deaths, rout returns, and wall damage into subsequent battles without duplicate accounting. |
+| C-3 | Run Carry-over of Troop Casualties & Wall HP | In Progress | Hwang Seong-min | Branch `feature/c-3`. Prerequisites C-1a and B-8.2 (rout outcome) Done. Following C-1a and rout outcome contracts, carry over deaths, rout returns, and wall damage into subsequent battles without duplicate accounting. |
 | C-5 | Wave Preview & Hidden Enemy Intel | Waiting for Prerequisite | Unassigned | Following B-7.1 and run contracts, display upcoming enemy types, counts, and hidden indicators in prep UI. Scouting rules clarified first. |
 | B-9.3 | M1 Full Integration, Iteration & Build Verification | Waiting for Prerequisite | Unassigned | Following B-4~8 integration, test repeated cycles of destruction, enemy variants, waves, morale, and outcomes; verify regressions and standalone build startup flow. |
 | QA-smithy-popup | Manual Check of Blacksmith Crafting & Sales | Waiting | Unassigned | From D-6 (user skipped manual play 2026-11-13). In `Game.unity` prep: F on Smithy opens popup; Lv1 lists 3 recipes; craft wood shield (100→80 gold, recipe stays); iron sword without hide shows "비용이 모자랍니다"; sell shield +12 gold; consumables not listed for sale; upgrade shows 4 recipes. Open a BUG task if wrong. |
