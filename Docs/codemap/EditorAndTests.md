@@ -1,6 +1,6 @@
 # Editor Setup & Test Scripts
 
-Last Updated: 2026-11-13 13:17:37 (KST)
+Last Updated: 2026-11-13 13:23:18 (KST)
 
 > Purpose: Map of Editor setup menus, build scripts, and EditMode/PlayMode test suites. | Parent: [codemap/README](README.md) | Related: [UnityCLI](../workflow/UnityCLI.md), [Status](../plan/Status.md)
 
@@ -49,7 +49,7 @@ Last Updated: 2026-11-13 13:17:37 (KST)
 
 - `CombatPrototypePlayTests.cs`: Movement, collisions, windup, range, LoS, death, camera collision avoidance.
 - `UnitCombatPlayTests.cs`: Targeting, projectile ally penetration, agent death, 10v10 combat, DecisionInterval/offset collider regressions.
-- `ConstructionPlayTests.cs`: Camera 4-way orbit, non-snapping interpolation, preview safety, async NavMesh rebuilds, unit displacement, stairs, collapse.
+- `ConstructionPlayTests.cs`: Camera 4-way orbit, non-snapping interpolation, preview safety, async NavMesh rebuilds, unit displacement, stairs, collapse. Destination-collapse Move/Engage covers rebuild start delays 0–7 frames (16 cases), retaining >1m movement and requiring <0.6m ground arrival.
 - `StackedConstructionPlayTests.cs`: 2nd/3rd-tier stacking, multi-tier NavMesh connectivity, unit elevation without damage, collapse settling.
 - `WallCommandPlayTests.cs`: View/input toggling, order persistence, wall traversal, stair loss handling, collapse handling.
 - `SquadCommandPlayTests.cs`: Squad movement, Hold posture, Attack engagement, screen-center targeting.

@@ -1,12 +1,12 @@
 # BUG-wall-destination-replan | 2026-11-13 | Combat - Recover Path After Destination Collapse
 
-Last Updated: 2026-11-13 13:24:20 (KST)
+Last Updated: 2026-11-13 13:25:55 (KST)
 
 > Purpose: Diagnosis, fix, regression evidence, and manual repeat steps. | Parent: [history/README](../README.md) | Related: [Backlog-Done](../../archive/Backlog-Done.md), [Status](../../plan/Status.md)
 
 ## Results
 
-- Assignee Codex, branch `feature/wall-destination-replan`, from synced develop claim `299c832`. Claim committed/pushed before implementation. User confirmed no concurrent edits and authorized shared UnitCombatAI.cs path-replanning/arrival changes. Implementation code remains uncommitted/unmerged for review; completion status/archive and this log are synchronized by the agent.
+- Assignee Codex, branch `feature/wall-destination-replan`, from synced develop claim `299c832`. Claim committed/pushed before implementation. User confirmed no concurrent edits and authorized shared UnitCombatAI.cs path-replanning/arrival changes. User requested finalization on 2026-11-13, authorizing implementation commit and develop integration.
 - Diagnosis: Initial standalone test passed; initial 20-cycle diagnostic and Construction fixture (21/21 with temporary diagnostic test) passed, as did a diagnostic full suite 94/94 (57.87s). Varying the rebuild start across the 0.25s decision interval reproduced the original 0.647087097m premature Hold at rebuild delay 2. A temporary before-AI observer showed direct path query invalid after destination removal, nearby ground sampled at (-7.50, 0.08, 4.50), recovery CalculatePath=True/PathComplete, but AI SetPath=False. Resetting/reapplying within the same frame also returned False. This is a transient application rejection at NavMesh replacement, not an arrival-distance/stall test timeout.
 - Fix: UnitCombatAI.SetAdvancePath clears the rejected path and marks a single retry. Move and Engage advance process it on their next AI update, recalculating against the current mesh; a second rejection or no recoverable route still ends advance. New directives cancel pending retries. Existing decision cadence, no-route/partial-path rules, arrival and stall settings are unchanged. No serialized assets or game rules changed.
 - Tests: replaced the single destination-collapse Move case with 8 rebuild-start timings (0–7 frames), added matching 8 Engage advance cases via ValueSource, and retained >1m movement plus a stronger <0.6m ground-arrival assertion. Tests restore world.enabled in finally, unload their scene, and restore capture/cursor. Both pre-collapse path presence and post-collapse walkable ground are asserted. Shared prototype scene is not saved or modified.

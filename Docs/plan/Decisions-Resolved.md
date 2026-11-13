@@ -1,6 +1,6 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-13 13:17:37 (KST)
+Last Updated: 2026-11-13 13:23:18 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
@@ -40,3 +40,5 @@ Last Updated: 2026-11-13 13:17:37 (KST)
 - **Q-27 Option A implementation details (2026-11-11)**: `BuildLayout` keys `(x, level, z)`; Game grid allows 3 tiers (prototype grids default 1 tier). No stacking on stairs or weapon pieces; multi-cell pieces require uniform support and break if partially unsupported; instant drop with no animation. Options B/C rejected for cost/Synty mismatch.
 - **C-1a decisions (2026-11-12)**: Pure C# run data & EditMode tests first; survivors heal fully between battles (no unit HP stored in run data); unique in-run grunt IDs; `BattleResult` pending `C-1a-confirm`.
 - **Temporary prototype values**: B-2/B-3 stats, camera settings, and "unreachable = no full NavMesh path" are prototype baselines expanding in B-6.
+
+- **BUG-wall-destination-replan coordination (2026-11-13):** User confirmed no concurrent edits to shared `UnitCombatAI.cs` and authorized path-replanning/arrival fixes for destination-wall collapse. Valid recovery paths rejected for one NavMesh replacement frame receive one retry on the next AI update. No morale/assault contracts, serialized settings, arrival or stall thresholds changed.

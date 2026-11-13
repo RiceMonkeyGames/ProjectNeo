@@ -279,8 +279,23 @@ namespace ProjectNeo.Tests
             finally { Object.Destroy(settings); }
         }
 
+        static readonly int[] CollapseRebuildDelays = { 0, 1, 2, 3, 4, 5, 6, 7 };
+
         [UnityTest]
-        public IEnumerator MoveDirective_ReplansWhenDestinationWallDisappears()
+        public IEnumerator MoveDirective_ReplansWhenDestinationWallDisappears(
+            [ValueSource(nameof(CollapseRebuildDelays))] int rebuildDelay)
+        {
+            yield return ReplanAfterDestinationCollapse(UnitDirective.Move, rebuildDelay);
+        }
+
+        [UnityTest]
+        public IEnumerator EngageDirective_ReplansWhenDestinationWallDisappears(
+            [ValueSource(nameof(CollapseRebuildDelays))] int rebuildDelay)
+        {
+            yield return ReplanAfterDestinationCollapse(UnitDirective.Engage, rebuildDelay);
+        }
+
+        IEnumerator ReplanAfterDestinationCollapse(UnitDirective directive, int rebuildDelay)
         {
             var ai = sandbox.Unit.gameObject.AddComponent<UnitCombatAI>();
             var settings = UnitAISettings.Create();
@@ -290,20 +305,36 @@ namespace ProjectNeo.Tests
                 var target = world.Structures.Single(piece => piece.Placement.Cell == new Vector2Int(5, 8));
                 Vector3 destination = target.transform.position + Vector3.up * wall.Height;
                 Vector3 start = ai.transform.position;
-                ai.SetDirective(UnitDirective.Move, destination);
+                var agent = ai.GetComponent<NavMeshAgent>();
+                ai.SetDirective(directive, destination);
                 yield return null;
+                Assert.IsTrue(agent.hasPath, "붕괴 전에는 성벽으로 가는 경로가 있어야 한다.");
                 target.ReceiveDamage(target.Health.Current);
+                // 판단 주기(0.25초) 안의 서로 다른 프레임에 재빌드를 시작한다.
+                // 경로 계산은 성공해도 SetPath가 한 프레임 거부되는 시점을 포함한다.
+                world.enabled = false;
+                for (int delay = 0; delay < rebuildDelay; delay++) yield return null;
+                world.enabled = true;
                 yield return WaitForNavigation(world);
+                Vector3 ground = new Vector3(destination.x, start.y, destination.z);
+                Assert.IsTrue(NavMesh.SamplePosition(ground, out var expected, 0.5f, NavMesh.AllAreas),
+                    "붕괴 후에는 목적지 바로 아래 지면이 걸을 수 있어야 한다.");
                 int frames = 0;
-                while (ai.Directive != UnitDirective.Hold && frames++ < 900) yield return null;
-                Assert.AreEqual(UnitDirective.Hold, ai.Directive);
+                while (frames++ < 900)
+                {
+                    if (directive == UnitDirective.Move ? ai.Directive == UnitDirective.Hold : agent.isStopped) break;
+                    yield return null;
+                }
+                Assert.Less(frames, 900, "지형 갱신 후 이동이 끝나지 않았다.");
+                Assert.AreEqual(directive == UnitDirective.Move ? UnitDirective.Hold : UnitDirective.Engage, ai.Directive);
                 Assert.That(Vector3.Distance(start, ai.transform.position), Is.GreaterThan(1f),
                     "목적지가 무너져도 도달 가능한 가까운 지점으로 이동해야 한다.");
-                Assert.IsTrue(ai.GetComponent<NavMeshAgent>().isOnNavMesh);
+                Assert.That(Vector3.Distance(expected.position, ai.transform.position), Is.LessThan(0.6f),
+                    "잠깐 이동한 뒤 멈추지 않고 붕괴한 목적지 아래 지면에 도달해야 한다.");
+                Assert.IsTrue(agent.isOnNavMesh);
             }
-            finally { Object.Destroy(settings); }
+            finally { world.enabled = true; Object.Destroy(settings); }
         }
-
         [UnityTest]
         public IEnumerator MoveDirective_SurvivesSupportCollapse_AndReachesGroundDestination()
         {

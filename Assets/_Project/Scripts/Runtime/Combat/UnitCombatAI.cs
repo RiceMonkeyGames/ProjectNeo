@@ -25,6 +25,7 @@ namespace ProjectNeo.Combat
         float advanceRepathRemaining;
         readonly MoveStallTracker stall = new MoveStallTracker();
         bool returningToPost;
+        bool advancePathRetryPending;
         public CharacterActor Target { get; private set; }
         // 지시를 받지 않은 유닛(적, 관전 전투)은 기존처럼 알아서 싸운다.
         public UnitDirective Directive { get; private set; } = UnitDirective.Engage;
@@ -44,6 +45,7 @@ namespace ProjectNeo.Combat
             Directive = directive;
             HasAdvancePoint = false;
             destinationPending = false;
+            advancePathRetryPending = false;
             Target = null;
             decisionRemaining = 0f;
             stall.Reset();
@@ -92,7 +94,7 @@ namespace ProjectNeo.Combat
             agent.updateRotation = true;
             // 시작한 공격의 판정이 끝난 뒤 움직인다.
             agent.isStopped = actor.IsAttacking;
-            if (destinationPending || decisionRemaining <= 0f)
+            if (destinationPending || advancePathRetryPending || decisionRemaining <= 0f)
             {
                 // 지형이 바뀌어도 따라가도록 판단 주기마다 경로를 다시 구한다.
                 decisionRemaining = settings.DecisionInterval;
@@ -132,7 +134,7 @@ namespace ProjectNeo.Combat
             agent.updateRotation = true;
             agent.isStopped = actor.IsAttacking;
             advanceRepathRemaining -= Time.deltaTime;
-            if (advanceRepathRemaining <= 0f)
+            if (advancePathRetryPending || advanceRepathRemaining <= 0f)
             {
                 advanceRepathRemaining = settings.DecisionInterval;
                 if (SetAdvancePath()) return;
@@ -147,6 +149,8 @@ namespace ProjectNeo.Combat
         // 일부만 이어지는지 여기서 확인해 부분 경로의 끝에서도 지시를 마칠 수 있게 한다.
         bool SetAdvancePath()
         {
+            bool retrying = advancePathRetryPending;
+            advancePathRetryPending = false;
             if (!agent.CalculatePath(MoveDestination, path) || path.status == NavMeshPathStatus.PathInvalid)
             {
                 // 목적지 성벽 자체가 사라지면 원래 점에는 NavMesh가 없다.
@@ -159,7 +163,20 @@ namespace ProjectNeo.Combat
                     return false;
                 }
             }
-            return agent.SetPath(path);
+            bool accepted = agent.SetPath(path);
+            if (!accepted)
+            {
+                agent.ResetPath();
+                // NavMesh 교체 직후에는 유효한 경로도 한 프레임 적용이 거부될 수 있다.
+                // 다음 갱신에서 한 번 다시 계산한 뒤에도 실패하면 기존처럼 멈춘다.
+                if (!retrying)
+                {
+                    advancePathRetryPending = true;
+                    stall.Reset();
+                    return true;
+                }
+            }
+            return accepted;
         }
 
         // 자리를 지키는 동안의 행동(배너로드식 "여기 서 있어").

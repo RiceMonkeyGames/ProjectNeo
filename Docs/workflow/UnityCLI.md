@@ -1,6 +1,6 @@
 # Unity CLI Workflow
 
-Last Updated: 2026-11-13 13:17:37 (KST)
+Last Updated: 2026-11-13 13:23:18 (KST)
 
 > Purpose: Unity CLI 1.0.0-beta.17 commands for compile, tests, benchmarks, builds, and Editor-API asset edits. | Parent: [INDEX](../INDEX.md) | Related: [Principles](Principles.md), [Scenes](../codemap/Scenes.md)
 
@@ -73,3 +73,8 @@ unity command package add --caller plugin --skill unity-package-management --nam
 - Shell heredocs containing non-ASCII characters across batch C# file generation have caused encoding corruption; write files individually via dedicated tools.
 - Do not merge `2>&1` when parsing CLI output; read stdout only.
 - Standalone builds may automatically mutate URP assets under `Assets/Settings/` and files in `ProjectSettings/`.
+## Destination-Wall Collapse Regression
+
+- Source: `Assets/Tests/PlayMode/ConstructionPlayTests.cs`; methods `MoveDirective_ReplansWhenDestinationWallDisappears` and `EngageDirective_ReplansWhenDestinationWallDisappears`. Each has rebuild-delay cases 0–7 frames at 1/30s. Expected: all 16 reach within 0.6m of the exposed ground under the destroyed wall and move >1m. Move ends in Hold; Engage stops while retaining Engage.
+- Manual repeat: Window > General > Test Runner > PlayMode, filter `ReplansWhenDestinationWallDisappears`, Run Selected on both methods/all cases. Tests load `Assets/_Project/Scenes/ConstructionPrototype.unity`, order the unit toward cell (5,8), destroy that destination wall, then vary rebuild start timing. They unload the scene and restore capture time/cursor. If interrupted, stop Play Mode and reopen ConstructionPrototype to reset. No physical input or standalone build verification is implied.
+- CLI: `unity command editor set_auto_tick --caller plugin --skill unity-cli`, then `unity command test run --caller plugin --skill unity-cli --mode playmode --filter ReplansWhenDestinationWallDisappears --async-tests --result-only`; poll `unity command test status --caller plugin --skill unity-cli --result-only` to completed and verify Play Mode has exited before another operation.

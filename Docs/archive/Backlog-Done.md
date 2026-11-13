@@ -1,12 +1,12 @@
 # Completed Backlog Archive (Done)
 
-Last Updated: 2026-11-13 13:24:20 (KST)
+Last Updated: 2026-11-13 13:25:55 (KST)
 
 > Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
 | Task ID | Description | Assignee | Outcome & History Link |
 |---|---|---|---|
-| BUG-wall-destination-replan | Recover movement after destination wall collapses | Codex | Branch `feature/wall-destination-replan` (code uncommitted/unmerged for user review). Valid recovery path may be rejected by SetPath during NavMesh replacement; clear rejected path and retry once next AI update for Move/Engage advance. Original regression 15/16; fixed 16/16, full latest-shared PlayMode 112/112 (46.03s). Arrival/stall thresholds unchanged; >1m assertion retained plus <0.6m ground-arrival check. [History](../history/BUG/BUG-wall-destination-replan.md) |
+| BUG-wall-destination-replan | Recover movement after destination wall collapses | Codex | Branch `feature/wall-destination-replan` (user requested final commit/integration on 2026-11-13). Valid recovery path may be rejected by SetPath during NavMesh replacement; clear rejected path and retry once next AI update for Move/Engage advance. Original regression 15/16; fixed 16/16, full latest-shared PlayMode 112/112 (46.03s). Arrival/stall thresholds unchanged; >1m assertion retained plus <0.6m ground-arrival check. [History](../history/BUG/BUG-wall-destination-replan.md) |
 | DOC-doc-tree-and-id | Shard Docs into tree structure and formalize Task ID naming rules | Hwang Seong-min (agent) | Branch `feature/doc-tree-and-id`. Split Context/ImplementationPlan/GameDesign/History into `Docs/` tree with `INDEX.md`, moved `Done` rows here, codified M3+ domain IDs and normalized unstarted irregular IDs (`QA-game-loop`, `SIEGE-01`, `SIEGE-02`). [History](../history/DOC/DOC-doc-tree-and-id.md) |
 | DOC-workflow-branches | Document task branch creation and remote cleanup workflow | Codex | User decision (2026-11-12): Create feature branch from latest develop after claim; delete remote branch after confirmed integration. [History](../history/DOC/DOC-workflow-branches.md) |
 | C-1a | Agree on Run Data & Combat Outcome Boundary | Hwang Seong-min | Merged to develop (`9429e85`). Pure C# `RunState`, `CastleState`, `BattleInput`, `BattleResult`. [History](../history/C/C-1a.md) |

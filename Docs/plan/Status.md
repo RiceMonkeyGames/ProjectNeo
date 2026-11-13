@@ -1,6 +1,6 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-13 13:17:37 (KST)
+Last Updated: 2026-11-13 13:25:55 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
@@ -24,6 +24,7 @@ Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elev
 ## Test Baselines & Status Conventions
 
 - **Latest integrated baseline (D-4, 2026-11-13)**: EditMode **216/216**, PlayMode **97/97**, 0 compile errors; user manual verification confirmed for D-4 (`Game.unity`).
+- **Destination-wall recovery (`BUG-wall-destination-replan`, 2026-11-13)**: Done on `feature/wall-destination-replan`, user requested final commit/integration on 2026-11-13. Based on latest shared develop `e79fd46` (D-0b/D-4 and Docs migration included), full PlayMode **112/112** passed (46.03s). Move/Engage valid-path application retries once next AI update during NavMesh replacement; arrival/stall settings unchanged. Regression matrix 16/16; original runtime 15/16. [History](../history/BUG/BUG-wall-destination-replan.md).
 - **Focus-independent PlayMode (`BUG-playmode-input-focus`, 2026-11-13)**: 93/93 unfocused PlayMode passed (37.72s). Intermittent destination-wall failure tracked as `BUG-wall-destination-replan`.
 - **PERF-nav-query (2026-11-12)**: 200v200 idle Hold AI mean 83.371 → 1.679 ms (98.0% reduction); standalone performance unmeasured.
 - **Status flow**: `Waiting` → `In Progress` → `Waiting for Link` / `Waiting for Verification` → `Done` (`Pending Decision` / `Waiting for Prerequisite` for blockers).
