@@ -1,6 +1,6 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-13 21:09:32 (KST)
+Last Updated: 2026-11-13 21:24:43 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
@@ -61,3 +61,5 @@ Q-41 and SIEGE-04 completion/commit/push were authorized by the user on 2026-11-
 - **D-0b (`Done`, `feature/run-unit-spawn`) & D-4 (`Done`, `feature/barracks-recruit`)**: Grunt spawning in front of barracks, squad selection/auto-creation, automatic level-based training bonuses (Lv2 +10%, Lv3 +20% HP/attack).
 
 Even with `Q-13` undecided, keep meta, run, and battle lifetimes separate. Do not implement mid-run saves or unconfirmed result policies.
+
+- **COMBAT-01 / COMBAT-02 (Done on user approval; feature/combat-01, 신용준)**: Hold Ctrl crouch / Shift sprint implemented together on user request; 50% / 150% current MoveSpeed, crouch priority, capsule/eye height and overhead clearance. Unity compile and CombatPrototypePlayTests 9/9 passed. Final regression passed after the 0.18s first-person crouch view refinement: EditMode 315/315 (6.66s), PlayMode 164/164 (86.62s); user confirmed crouch/sprint and smooth view behavior on 2026-11-13 and authorized develop merge plus work-branch deletion. Standalone build unverified.

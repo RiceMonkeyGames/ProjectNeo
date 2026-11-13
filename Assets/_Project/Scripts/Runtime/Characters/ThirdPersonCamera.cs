@@ -8,6 +8,7 @@ namespace ProjectNeo.Characters
         [SerializeField] PlayerControlSettings settings;
         float pitch;
         float yaw;
+        PlayerInputController player;
         public override float Yaw => yaw;
 
         public void Configure(Transform followTarget, PlayerControlSettings controlSettings)
@@ -19,6 +20,7 @@ namespace ProjectNeo.Characters
         void Awake()
         {
             yaw = target.eulerAngles.y;
+            player = target.GetComponent<PlayerInputController>();
             pitch = settings.InitialPitch;
         }
 
@@ -33,7 +35,7 @@ namespace ProjectNeo.Characters
         {
             if (target == null) return;
             Quaternion rotation = Quaternion.Euler(pitch, Yaw, 0f);
-            Vector3 pivot = target.position + Vector3.up * settings.CameraHeight;
+            Vector3 pivot = target.position + Vector3.up * (player != null ? player.EyeHeight : settings.CameraHeight);
             Vector3 backward = rotation * Vector3.back;
             float distance = settings.CameraDistance;
             foreach (RaycastHit hit in Physics.SphereCastAll(pivot, settings.CameraCollisionRadius,

@@ -1,6 +1,6 @@
 # Game Design: Combat, Units & Win/Loss
 
-Last Updated: 2026-11-13 15:53:29 (KST)
+Last Updated: 2026-11-13 21:15:45 (KST)
 
 > Purpose: Rules for perspective, squad commands, damage, unit lifecycles, and battle outcomes. | Parent: [design/README](README.md) | Related: [WallsAndSiege](WallsAndSiege.md), [MoraleAndWave](MoraleAndWave.md)
 
@@ -55,3 +55,11 @@ Last Updated: 2026-11-13 15:53:29 (KST)
 | **Defeat** | Main gate destroyed AND all allies killed (or routed), OR Player character dies |
 
 Combat continues if main gate falls as long as surviving allies remain.
+
+## Player crouch and sprint (COMBAT-01 / COMBAT-02, 2026-11-13)
+
+- User approved: hold Ctrl to crouch, hold Shift to sprint; crouch takes priority when both are held. Crouch moves at 50% and sprint at 150% of the current MoveSpeed stat. No stamina cost.
+- Crouch reduces capsule and eye height while keeping the feet fixed. Standing waits until overhead space is clear. Temporary height ratio: 60%, configurable in PlayerControlSettings.
+- Both task IDs remain separate; implemented together on feature/combat-01 at the user's request. Owner: 신용준.
+
+- **User-approved crouch view refinement (2026-11-13)**: First-person eye height transitions with SmoothStep over 0.18 seconds (PlayerControlSettings.CrouchViewTransitionSeconds); capsule changes remain immediate. Reversing Ctrl mid-transition continues from the currently displayed height. Root movement/falls follow immediately; camera re-enable resets the transition.
