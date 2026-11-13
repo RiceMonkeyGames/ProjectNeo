@@ -1,6 +1,6 @@
 # ProjectNeo Documentation Index
 
-Last Updated: 2026-11-13 13:17:37 (KST)
+Last Updated: 2026-11-13 13:58:01 (KST)
 
 > Purpose: Route agents to only the leaf docs needed for a task. | Parent: [AGENTS.md](../AGENTS.md) | Related: [Backlog](Backlog.md), [Collaboration](workflow/Collaboration.md)
 
@@ -10,10 +10,10 @@ Last Updated: 2026-11-13 13:17:37 (KST)
 
 | Task Type | Read These Files |
 |---|---|
-| Pick a task / claim / branch / Task ID rules | [Backlog.md](Backlog.md) → [workflow/Collaboration.md](workflow/Collaboration.md) |
+| Pick a task / claim / branch / Task ID rules | [Backlog.md](Backlog.md) → [workflow/Collaboration.md](workflow/Collaboration.md) (or `/claim`, `/finish`, `/sync-summary`) |
 | Check current status / active M1–M2 state | [plan/Status.md](plan/Status.md) |
 | Check team ownership / shared file locks | [plan/Team.md](plan/Team.md) → [workflow/Collaboration.md](workflow/Collaboration.md) |
-| Compile / EditMode & PlayMode tests / Windows build | [workflow/UnityCLI.md](workflow/UnityCLI.md) |
+| Compile / EditMode & PlayMode tests / Windows build | [workflow/UnityCLI.md](workflow/UnityCLI.md) (or `/verify` / `Tools/Agent/unity-verify.ps1`) |
 | Coding rules / art-swap decoupling rules | [workflow/Principles.md](workflow/Principles.md) |
 | Find scripts, assets, or tests for a system | [codemap/README.md](codemap/README.md) → target module leaf |
 | Manual verification controls & scenes | [codemap/Scenes.md](codemap/Scenes.md) (or [codemap/PrototypeScenes.md](codemap/PrototypeScenes.md)) |

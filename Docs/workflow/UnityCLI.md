@@ -1,10 +1,12 @@
 # Unity CLI Workflow
 
-Last Updated: 2026-11-13 13:23:18 (KST)
+Last Updated: 2026-11-13 13:58:01 (KST)
 
 > Purpose: Unity CLI 1.0.0-beta.17 commands for compile, tests, benchmarks, builds, and Editor-API asset edits. | Parent: [INDEX](../INDEX.md) | Related: [Principles](Principles.md), [Scenes](../codemap/Scenes.md)
 
 Interact with open editor instances using `unity` (`com.unity.pipeline`). Check `unity status` to confirm `ready`. Do not assume editor is closed solely from `unreachable` (verify sandbox local socket restrictions). Flag `--caller plugin --skill unity-cli` is an invocation tag with no side effects.
+
+> **Fast Wrapper (`/verify`)**: Use `powershell.exe -NoProfile -ExecutionPolicy Bypass -File Tools/Agent/unity-verify.ps1 [-Mode all|edit|play|compile] [-Filter <substr>]` (or `/verify`) for `dotnet build` 1차 사전 검사 + `unity status` 가드 + Refresh/컴파일 + `Logs/Editor.log` `error CS` 필터링 + EditMode/PlayMode 실행을 단일 bounded 출력으로 처리한다.
 
 ## Compilation
 

@@ -1,6 +1,14 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
+    "allow": [
+      "Bash(powershell *Tools/Agent/*.ps1*)",
+      "Bash(powershell.exe *Tools/Agent/*.ps1*)",
+      "Bash(git status*)",
+      "Bash(git diff --name-only*)",
+      "Bash(git diff --stat*)",
+      "Bash(git log -n*)"
+    ],
     "deny": [
       "Read(./Library/*)",
       "Read(./Library/APIUpdater/**)",

@@ -1,6 +1,6 @@
 # Collaboration, Backlog & Task ID Rules
 
-Last Updated: 2026-11-13 13:17:37 (KST)
+Last Updated: 2026-11-13 13:58:01 (KST)
 
 > Purpose: Team workflow, Task ID rules, shared file locks, and `.claude` boundaries. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [Team](../plan/Team.md)
 
@@ -13,6 +13,7 @@ Last Updated: 2026-11-13 13:17:37 (KST)
 5. Never take over or edit another assignee's `In Progress` task. Coordinate order before touching shared files.
 6. Upon completion: update affected `Docs/` leaves, add/append `Docs/history/<PREFIX>/<TASK-ID>.md`, mark `Done` (and move completed row to [Backlog-Done.md](../archive/Backlog-Done.md) with history link), and sync.
 7. After the user merges into `develop` and remote integration is confirmed, delete the remote task branch. Retain unmerged branches. General code commits and merges remain user-owned.
+8. **Shared Skill / Wrapper Shortcuts**: Claude Code users and agents may use `.claude/skills/` (`/claim`, `/verify`, `/finish`, `/sync-summary`) backed by Windows PowerShell 5.1 scripts under `Tools/Agent/` (`claim-check.ps1`, `unity-verify.ps1`, `doc-finish-check.ps1`, `sync-summary.ps1`) to run preflight, bounded verification, link/history checks, and remote diffs in one call. `/finish` runs doc checks and presents manual verification steps first, asking user confirmation before marking `Done`, archiving, and committing/pushing.
 
 ### Status Conventions
 
@@ -48,7 +49,8 @@ Active collaboration since 2026-11-11 across separate PCs/branches (Q-26). See [
 
 Avoid opening one project folder in multiple editor instances; use `--project-path` if multiple editors run on one machine.
 
-**Claude Code read/edit exclusions (`.claude/settings.json`)**: Claude Code does not support `.claudeignore`; shared `.claude/settings.json` uses `permissions.deny`.
+**Claude Code read/edit exclusions & allow rules (`.claude/settings.json`)**: Claude Code does not support `.claudeignore`; shared `.claude/settings.json` uses `permissions.deny` and `permissions.allow`.
+- Allow listed: PowerShell wrappers under `Tools/Agent/*.ps1` and read-only git inspection (`git status`, `git diff --name-only`, `git diff --stat`, `git log -n`). `git commit` and `git push` remain un-allowed for interactive confirmation.
 - Read blocked: `Library/` except `Library/PackageCache/` (explicit path only), `Temp/`, `Logs/` old/worker logs (`*-prev.log`, `AssetImportWorker*`, `*.jsonl`), `UserSettings/`, `obj/`, `Build(s)/`, `*.csproj`, `*.sln(x)`; third-party `Assets/TextMesh Pro/`, `Assets/Synty/`, `Assets/Polygon*/`, `Assets/Plugins/`, `Assets/Samples/`; `*.meta`, `*.unity`, `*.shadergraph`, `*.anim`, `*SDF.asset`, `LightingData.asset`, `NavMesh*.asset`; textures under `Assets/`, models, audio, fonts, video, `*.dll`, `*.pdb`, `*.unitypackage`.
 - Read allowed: `.cs`, `.asmdef`, `.prefab`, `.mat`, `.controller`, ScriptableObject `.asset`, `ProjectSettings/`, `Packages/`, `Docs/`, `Logs/Editor.log` (search `error CS` only; do not read whole file), images outside `Assets/` (save verification screenshots outside `Assets/`, `Temp/`, `Logs/`).
 - Edit/Write blocked: `*.unity`, `*.prefab`, `*.asset`, `*.meta`, `*.mat`, `*.controller`, `*.anim` (Editor API only).
