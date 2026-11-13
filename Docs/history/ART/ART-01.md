@@ -1,6 +1,6 @@
 # ART-01 | 2026-11-13 | Art - Flatten Placeholder Stair Shading
 
-Last Updated: 2026-11-13 15:07:57 (KST)
+Last Updated: 2026-11-13 15:16:47 (KST)
 
 ## Scope and implementation
 
@@ -13,7 +13,7 @@ Last Updated: 2026-11-13 15:07:57 (KST)
 
 - Compile passed; EditMode 216/216; PlayMode filter `Construction` 41/41 (includes stacked/one-cell stair traversal).
 - Preview-scene render of the Stairs prefab with a directional light shows a single uniform tone per face (no gradient).
-- Manual Game-view check by user pending.
+- User checked the stairs in the Game scene and confirmed completion on 2026-11-13. Standalone build unverified.
 
 ## Manual verification
 
