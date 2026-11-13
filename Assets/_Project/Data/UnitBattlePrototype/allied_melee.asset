@@ -30,3 +30,4 @@ MonoBehaviour:
     value: 1
   - stat: 4
     value: 3.5
+  unitPrefab: {fileID: 1914076826456804682, guid: b983b6e18928fe34d98f9442d19d1f2f, type: 3}

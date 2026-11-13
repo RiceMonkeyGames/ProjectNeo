@@ -56,6 +56,18 @@ namespace ProjectNeo.Run
             return binding;
         }
 
+        /// <summary>
+        /// 준비 중에 런에 새로 들어온 유닛(모집·고용, D-0b)을 씬 유닛과 짝짓는다. 이 런의 유닛이어야 하고,
+        /// 씬 유닛·런 유닛 모두 아직 짝이 없어야 한다.
+        /// </summary>
+        public void BindNew(T target, RunUnit unit)
+        {
+            if (target == null) throw new ArgumentNullException(nameof(target));
+            if (unit == null || State.Find(unit.Id) != unit) throw new ArgumentException("이 런의 유닛이 아니다.", nameof(unit));
+            if (objects.ContainsKey(unit.Id)) throw new ArgumentException("이미 씬 유닛과 짝지은 런 유닛이다.", nameof(unit));
+            Bind(target, unit);
+        }
+
         void Bind(T target, RunUnit unit)
         {
             if (ids.ContainsKey(target)) throw new ArgumentException("같은 씬 유닛이 두 번 들어 있다.");

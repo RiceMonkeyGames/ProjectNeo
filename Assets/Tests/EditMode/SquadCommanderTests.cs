@@ -21,6 +21,25 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
+        public void AddSquad_AppendsHoldingUnselectedSquad_AndKeepsExistingOrders()
+        {
+            var commander = new SquadCommander(2);
+            commander.Select(0);
+            commander.Issue(new SquadOrder(SquadOrderKind.Attack));
+            int added = -1;
+            commander.SquadAdded += index => added = index;
+
+            Assert.AreEqual(2, commander.AddSquad());
+            Assert.AreEqual(2, added);
+            Assert.AreEqual(3, commander.SquadCount);
+            Assert.AreEqual(SquadOrderKind.Attack, commander.OrderOf(0).Kind);
+            Assert.IsTrue(commander.IsSelected(0));
+            Assert.AreEqual(SquadOrderKind.Hold, commander.OrderOf(2).Kind);
+            Assert.IsFalse(commander.IsSelected(2));
+            Assert.IsTrue(commander.Select(2));
+        }
+
+        [Test]
         public void Select_PicksExactlyOneSquad_AndRejectsMissingSquad()
         {
             var commander = new SquadCommander(3);
