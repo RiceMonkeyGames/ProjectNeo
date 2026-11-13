@@ -152,8 +152,9 @@ namespace ProjectNeo.Tests
             controller.UpdatePreview(world.transform.TransformPoint(new Vector3(1.2f, 0f, 1.2f) * world.Grid.CellSize));
             Assert.IsTrue(controller.StairNeedsConnection);
             Assert.IsTrue(controller.Confirm());
-            Assert.AreEqual(new Vector2Int(2, 1), world.Layout.At(cell).Size);
-            Assert.AreSame(world.Layout.At(cell), world.Layout.At(cell + Vector2Int.right));
+            Assert.AreEqual(Vector2Int.one, world.Layout.At(cell).Size);
+            Assert.AreEqual(1, world.Layout.At(cell).Rotation);
+            Assert.IsNull(world.Layout.At(cell + Vector2Int.right), "Rotating a one-cell stair must leave the adjacent landing cell free.");
             Assert.IsFalse(controller.Confirm());
             Assert.AreEqual(PlacementIssue.Occupied, controller.Issue);
             yield return WaitForNavigation(world);

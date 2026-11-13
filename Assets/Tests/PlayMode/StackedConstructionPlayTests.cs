@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
+using ProjectNeo.Combat;
 using ProjectNeo.Flow;
 using ProjectNeo.Squads;
 using ProjectNeo.UI;
@@ -18,10 +19,13 @@ namespace ProjectNeo.Tests
         static int cleanupCount;
         ConstructionWorld world;
         BuildPieceDefinition wall, stairs;
+        float previousCapture;
 
         [UnitySetUp]
         public IEnumerator SetUp()
         {
+            previousCapture = Time.captureDeltaTime;
+            Time.captureDeltaTime = 1f / 30f;
             GameSession.Reset();
             yield return SceneManager.LoadSceneAsync("Game", LoadSceneMode.Single);
             yield return null;
@@ -41,6 +45,7 @@ namespace ProjectNeo.Tests
                 if (scene != empty) yield return SceneManager.UnloadSceneAsync(scene);
             }
             GameSession.Reset();
+            Time.captureDeltaTime = previousCapture;
         }
 
         IEnumerator WaitForNavigation()
@@ -52,6 +57,76 @@ namespace ProjectNeo.Tests
         }
 
         PlacedStructure Lower(Vector2Int cell) => world.Structures.Single(piece => piece.Placement.Cell == cell && piece.Placement.Level == 0);
+
+        static readonly int[] StairRotations = { 0, 1, 2, 3 };
+
+        [UnityTest]
+        public IEnumerator OneCellStairs_PlayerAndUnitAscendAndDescendTwoTiers(
+            [ValueSource(nameof(StairRotations))] int rotation)
+        {
+            Assert.AreEqual(Vector2Int.one, stairs.Footprint);
+            Assert.AreEqual(3f, stairs.Height);
+            var cell = new Vector2Int(32, 45);
+            Vector2Int direction = BuildLayout.Landings(Vector2Int.one, cell, rotation).Single() - cell;
+            Assert.IsTrue(world.TryPlace(stairs, cell, rotation, out var groundStair));
+            Assert.IsTrue(world.TryPlace(wall, cell + direction, 0, out _));
+            Assert.IsTrue(world.TryPlace(wall, cell + direction * 2, 0, out _));
+            Assert.IsTrue(world.TryPlace(stairs, cell + direction * 2, rotation, out var upperStair));
+            Assert.IsTrue(world.TryPlace(wall, cell + direction * 3, 0, out _));
+            Assert.IsTrue(world.TryPlace(wall, cell + direction * 3, 0, out var upperWall));
+            Assert.IsTrue(world.Layout.HasLanding(upperStair.Placement));
+            Assert.AreEqual(PlacementIssue.Occupied, world.CheckPlacement(wall, cell, 0));
+            yield return WaitForNavigation();
+
+            Vector3 ground = world.WorldCenter(wall, cell - direction, 0);
+            Vector3 top = upperWall.transform.position + Vector3.up * wall.Height;
+            var unit = Object.FindAnyObjectByType<SquadCommandCenter>().Squads[0].Members[0];
+            var agent = unit.GetComponent<NavMeshAgent>();
+            Vector3 original = unit.transform.position;
+            Assert.IsTrue(agent.Warp(ground));
+            foreach (Vector3 target in new[] { top, ground })
+            {
+                unit.SetDirective(UnitDirective.Move, target);
+                int frame = 0;
+                while (frame++ < 900 && unit.Directive != UnitDirective.Hold) yield return null;
+                Assert.AreEqual(UnitDirective.Hold, unit.Directive);
+                Assert.Less(Vector3.Distance(target, unit.transform.position), 0.6f,
+                    $"Unit rotation={rotation}, target={target}, position={unit.transform.position}");
+            }
+            Assert.IsTrue(agent.Warp(original));
+
+            var player = Object.FindAnyObjectByType<ProjectNeo.Characters.PlayerInputController>();
+            player.enabled = false;
+            var motor = player.GetComponent<CharacterController>();
+            var actor = player.GetComponent<ProjectNeo.Combat.CharacterActor>();
+            float health = actor.Health.Current;
+            motor.enabled = false;
+            player.transform.position = ground + Vector3.up * 0.05f;
+            motor.enabled = true;
+            Physics.SyncTransforms();
+            foreach (Vector3 target in new[] { top, ground })
+            {
+                int frame = 0;
+                while (frame++ < 900)
+                {
+                    Vector3 delta = target - player.transform.position;
+                    delta.y = 0f;
+                    if (delta.magnitude < 0.15f && Mathf.Abs(target.y - player.transform.position.y) < 0.2f) break;
+                    float yaw = Quaternion.LookRotation(delta.normalized).eulerAngles.y;
+                    player.Move(delta.magnitude > 0.1f ? Vector2.up : Vector2.zero, yaw, 1f / 30f);
+                    yield return null;
+                }
+                Assert.Less(Vector3.Distance(target, player.transform.position), 0.3f,
+                    $"Player rotation={rotation}, target={target}, position={player.transform.position}");
+            }
+            Assert.AreEqual(health, actor.Health.Current, "Walking stairs must not cause fall damage.");
+            groundStair.ReceiveDamage(groundStair.Health.Current);
+            yield return WaitForNavigation();
+            var disconnected = new NavMeshPath();
+            Assert.IsTrue(NavMesh.CalculatePath(ground, top, NavMesh.AllAreas, disconnected));
+            Assert.AreEqual(NavMeshPathStatus.PathPartial, disconnected.status,
+                "Removing the only ground stair must leave vertical wall faces impassable.");
+        }
 
         [UnityTest]
         public IEnumerator 적층_성벽은_맨_위부터_철거하고_점유와_길찾기를_갱신한다()
@@ -146,8 +221,8 @@ namespace ProjectNeo.Tests
         [UnityTest]
         public IEnumerator 이층_성벽과_이단_계단을_놓으면_안뜰에서_이층_위까지_길이_이어진다()
         {
-            // 북쪽 성벽의 서쪽 모서리 (24,59)에 2층을 올리고, (25,59)~(26,59) 위에 서쪽으로 오르는 계단을 놓는다.
-            // 땅의 계단은 (27,59) 윗면으로 올라오므로 그 옆에서 2단 계단이 시작된다.
+            // 북쪽 성벽의 서쪽 모서리 (24,59)에 2층을 올리고, (25,59) 위에 서쪽으로 오르는 1칸 계단을 놓는다.
+            // 땅의 계단은 (27,59) 윗면으로 올라오고, (26,59)의 평평한 성벽을 지나 2단 계단에 닿는다.
             var corner = new Vector2Int(24, 59);
             var controller = Object.FindAnyObjectByType<PlacementController>(FindObjectsInactive.Include);
             controller.Select(wall);

@@ -45,7 +45,7 @@ namespace ProjectNeo.Editor
             var wall = CombatPrototypeSetup.Save(BuildPieceDefinition.Create(BuildPieceKind.Wall, "성벽", Vector2Int.one,
                 prefab: PiecePrefab("Wall", BuildPieceKind.Wall, stone),
                 mountPoints: new[] { new BuildMountPoint("top", Vector3.up) }), Data + "/Wall.asset");
-            var stairs = CombatPrototypeSetup.Save(BuildPieceDefinition.Create(BuildPieceKind.Stairs, "계단", new Vector2Int(1, 2),
+            var stairs = CombatPrototypeSetup.Save(BuildPieceDefinition.Create(BuildPieceKind.Stairs, "계단", Vector2Int.one,
                 prefab: PiecePrefab("Stairs", BuildPieceKind.Stairs, stone)), Data + "/Stairs.asset");
             var gate = CombatPrototypeSetup.Save(BuildPieceDefinition.Create(BuildPieceKind.Gate, "메인 성문", new Vector2Int(2, 1),
                 maxHealth: 300f, prefab: PiecePrefab("MainGate", BuildPieceKind.Gate, gateMaterial)), Data + "/Gate.asset");
@@ -70,7 +70,7 @@ namespace ProjectNeo.Editor
             var seeds = new List<InitialBuildPiece>();
             foreach (int x in new[] { 4, 5, 6, 9, 10 }) seeds.Add(new InitialBuildPiece { definition = wall, cell = new Vector2Int(x, 8) });
             seeds.Add(new InitialBuildPiece { definition = gate, cell = new Vector2Int(7, 8), fixedGate = true });
-            seeds.Add(new InitialBuildPiece { definition = stairs, cell = new Vector2Int(5, 6) });
+            seeds.Add(new InitialBuildPiece { definition = stairs, cell = new Vector2Int(5, 7) });
             world.Configure(grid, geometry.transform, surface, seeds.ToArray());
             var lines = new GameObject("GridLines"); lines.transform.SetParent(worldObject.transform, false);
             lines.AddComponent<BuildGridView>().Configure(world, gridMaterial);

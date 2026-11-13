@@ -1,10 +1,12 @@
 # Runtime Codemap: Walls & Siege
 
-Last Updated: 2026-11-13 14:18:18 (KST)
+Last Updated: 2026-11-13 14:54:12 (KST)
 
 > Purpose: Class map for castle construction, fall damage, siege weapons, and enemy siege AI. | Parent: [codemap/README](README.md) | Related: [CombatAndSquads](CombatAndSquads.md), [design/WallsAndSiege](../design/WallsAndSiege.md)
 
 Base path: `Assets/_Project/Scripts/Runtime/`. Assembly: `ProjectNeo.Runtime`. Namespace: `ProjectNeo.<Folder>`.
+
+One-cell stairs (`SIEGE-03`): shared `Data/ConstructionPrototype/Stairs.asset` uses a 1×1 footprint and 3m height. `ConstructionWorld.SetPose` scales the existing normalized ramp collider and Visual to 3×3×3m; no mesh or material change is needed. `Editor/OneCellStairsMigration` retains high landings while moving initial seeds in ConstructionPrototype, WallCommandPrototype, SiegePrototype and Game (7 stairs total); repeated execution does not move them again. Setup generators now emit the new locations. Humanoid NavMesh maximum slope is 46° to admit the exact 45° ramp; `Characters/PlayerControlSettings.MaximumWalkSlope` defaults to 46° and is applied by PlayerInputController.Awake. Four Game PlayMode cases cover both traversal directions, rotations, two tiers and disconnection after stair destruction. [History](../history/SIEGE/SIEGE-03.md).
 
 Construction wheel input (`BUG-build-camera-zoom`): ConstructionCameraController uses normalized scroll steps directly; only Windows editor/player with KeepPlatformSpecificInputRange divides by 120. GameFlowPlayTests.ConstructionWheelInput_UsesNormalizedStepsAndRestoresCamera covers actual input → Update → zoom/reset; user confirmed physical wheel zoom works (2026-11-13). [History](../history/BUG/BUG-build-camera-zoom.md).
 

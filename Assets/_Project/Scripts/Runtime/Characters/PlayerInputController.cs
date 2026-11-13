@@ -38,6 +38,7 @@ namespace ProjectNeo.Characters
         void Awake()
         {
             motor = GetComponent<CharacterController>();
+            motor.slopeLimit = settings.MaximumWalkSlope;
             actor = GetComponent<CharacterActor>();
             actions = Instantiate(inputActions);
             move = actions.FindAction("Player/Move", true);

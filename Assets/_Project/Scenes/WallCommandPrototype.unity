@@ -1132,7 +1132,7 @@ MonoBehaviour:
     rotation: 0
     fixedGate: 1
   - definition: {fileID: 11400000, guid: 9bec35695a6f5a848b88ce14e4da5884, type: 2}
-    cell: {x: 5, y: 6}
+    cell: {x: 5, y: 7}
     rotation: 0
     fixedGate: 0
 --- !u!4 &340332243

@@ -204,8 +204,8 @@ namespace ProjectNeo.Editor
                 seeds.Add(new InitialBuildPiece { definition = wall, cell = new Vector2Int(WallEast, z) });
             }
             // 계단은 안뜰 쪽에 둔다. 회전 0은 북쪽, 회전 2는 남쪽 성벽으로 올라간다.
-            seeds.Add(new InitialBuildPiece { definition = stairs, cell = new Vector2Int(WallWest + 3, WallNorth - 2) });
-            seeds.Add(new InitialBuildPiece { definition = stairs, cell = new Vector2Int(WallEast - 3, WallNorth - 2) });
+            seeds.Add(new InitialBuildPiece { definition = stairs, cell = new Vector2Int(WallWest + 3, WallNorth - 1) });
+            seeds.Add(new InitialBuildPiece { definition = stairs, cell = new Vector2Int(WallEast - 3, WallNorth - 1) });
             seeds.Add(new InitialBuildPiece { definition = stairs, cell = new Vector2Int(GateX, WallSouth + 1), rotation = 2 });
 
             ConstructionWorld world = FindAll<ConstructionWorld>(game)[0];

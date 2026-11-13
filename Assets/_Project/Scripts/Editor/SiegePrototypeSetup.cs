@@ -113,8 +113,8 @@ namespace ProjectNeo.Editor
                 if (x != 7 && x != 8 && !Gaps.Contains(x))
                     seeds.Add(new InitialBuildPiece { definition = wall, cell = new Vector2Int(x, WallRow) });
             seeds.Add(new InitialBuildPiece { definition = gate, cell = new Vector2Int(7, WallRow), fixedGate = true });
-            seeds.Add(new InitialBuildPiece { definition = stairs, cell = new Vector2Int(5, WallRow - 2) });
-            seeds.Add(new InitialBuildPiece { definition = stairs, cell = new Vector2Int(10, WallRow - 2) });
+            seeds.Add(new InitialBuildPiece { definition = stairs, cell = new Vector2Int(5, WallRow - 1) });
+            seeds.Add(new InitialBuildPiece { definition = stairs, cell = new Vector2Int(10, WallRow - 1) });
             world.Configure(grid, surface.transform, surface, seeds.ToArray());
             EditorUtility.SetDirty(world);
             SetReference(orbit, "settings", cameraSettings);
