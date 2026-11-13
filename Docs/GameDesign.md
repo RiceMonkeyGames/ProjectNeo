@@ -1,6 +1,6 @@
 # Game Design: Siege Defense Roguelike
 
-Last Updated: 2026-11-13 00:35:13 (KST)
+Last Updated: 2026-11-13 11:05:57 (KST)
 
 This file is the ground truth for game design. The design text in Google Docs is legacy human-readable reference only and may lag behind this file. When game design changes, update this file first. Implementation roadmap, dependencies, and implementation status are managed in [ImplementationPlan.md](ImplementationPlan.md); task selection, assignment, and progress tracking are managed in [Docs/Backlog.md](Backlog.md). Backlog operating procedures follow AGENTS.md (user decision on 2026-11-12).
 
@@ -242,6 +242,7 @@ All numbers below are starting values kept in data assets and tuned through play
 - Shop (2026-11-12 prototype): Inventory items roll from shop tier item tables; locked items do not appear. Purchased items disappear from stock for current preparation phase. Selling price defaults to 50% of purchase gold price (configurable via data).
 - Equipment (2026-11-12 prototype): Press I during preparation to open equipment UI, equipping/unequipping items between stash and player inventory (3 generic slots). Equipping immediately modifies stats; locked during combat. Hero equipment integration follows Tavern implementation.
 - Selling price is fixed percentage of purchase price. Items obtained via combat or other means can be sold.
+- Barracks (Q-37, user decision on 2026-11-13): Training is automatic by barracks level; no separate paid training action. Each level grants a stat bonus to every grunt (existing and newly recruited) as soon as the upgrade is bought. Starting values: level 1 none, level 2 +10% max HP and attack, level 3 +20% max HP and attack. Melee and ranged grunts are both recruitable from level 1. Recruit cost: melee 15 gold, ranged 20 gold. All values live in data assets and need playtest tuning.
 - Unit Deployment (Q-36, user decision on 2026-11-13):
   - Barracks recruits: Player picks the target squad in the barracks UI when recruiting (default: first squad with free space). If every squad is full, a new squad is created automatically up to the squad count cap; recruiting is blocked once the cap is reached.
   - Tavern heroes: Player picks the squad to captain in the tavern UI when hiring. Choosing a squad that already has a captain swaps them; the displaced hero goes to reserve (not in battle) until reassigned in squad organization (D-8).

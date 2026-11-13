@@ -1,6 +1,6 @@
 # Past Verification History
 
-Last Updated: 2026-11-13 10:48:28 (KST). Historical log of completed milestones, performance benchmarks, and manual playtest records separated from [Context.md](Context.md). Preserves historical completion scope and verification evidence; past test counts and temporary numbers do not represent current baselines or final performance guarantees. Check [ImplementationPlan Section 3](ImplementationPlan.md#3-current-status--starting-point) first for active task status. Agents should only open this file when past rationales or verification evidence are needed, searching by date or task ID.
+Last Updated: 2026-11-13 11:21:45 (KST). Historical log of completed milestones, performance benchmarks, and manual playtest records separated from [Context.md](Context.md). Preserves historical completion scope and verification evidence; past test counts and temporary numbers do not represent current baselines or final performance guarantees. Check [ImplementationPlan Section 3](ImplementationPlan.md#3-current-status--starting-point) first for active task status. Agents should only open this file when past rationales or verification evidence are needed, searching by date or task ID.
 
 New completion results must be appended to the end of this file under `### YYYY-MM-DD: Title`, updating ImplementationPlan Section 3 and Context Section 2 concurrently.
 
@@ -403,3 +403,14 @@ Method: `Assets/Tests/PlayMode/UnitScaleBenchmark.cs`. Ground 120m × 120m, 4m-h
 - Re-run 2026-11-13 10:45 KST: EditMode 210/210, PlayMode 93/93, no compile errors.
 - Manual play (user, 2026-11-13): Game scene F9 recruit spawn, walk to squad, new squad creation and battle participation confirmed with no issues.
 - Not verified: standalone build, interaction with teammate morale/rout work (B-8).
+
+### 2026-11-13: D-4 - Barracks Recruitment & Training
+
+- Assignee: Hwang Seong-min (agent). Branch `feature/barracks-recruit` from develop `f3628e8` (claim pushed first; merged to develop at user request 2026-11-13). Decisions Q-37 (user, 2026-11-13): training automatic by barracks level, no paid training; melee and ranged recruitable from level 1; recruit cost melee 15 / ranged 20 gold; level 2 +10%, level 3 +20% max HP and attack.
+- Rules (pure C#): `RunState.RecruitableSoldiers`, `CheckBarracksRecruit` (BattlePending → NotRecruitable → NoSquad → NotEnoughFunds, enum `RecruitCheck`), `TryRecruitAtBarracks` (pays then recruits with the Q-36 squad rule). `SoldierTraining.Apply` swaps the level bonus under a single source so re-applying never stacks and other modifiers stay.
+- Scene: `GameRunLink.TryRecruit(..., payAtBarracks)` and `ApplyTraining` (grunts only; units at full HP refill to the new maximum; called on prep start, barracks upgrade and after each recruit). `GameUnitSpawner.RecruitAtBarracks`; D-0b F9 debug key removed. `GameFacilities` barracks popup: recruit rows, squad choice rows (auto default, headcount), runtime column headers, training text. No scene or prefab edits.
+- Data: `ProjectNeo/Setup/Configure Barracks Data` (`BarracksSetup`, Editor API) filled `Facility_TrainingGround.asset` levels and `allied_melee`/`allied_ranged` (display names 근접 잡졸/원거리 잡졸, recruit cost 15/20).
+- Automated: EditMode 216/216 (new `BarracksRecruitTests` 6). PlayMode 97/97 (new `GameBarracksPlayTests` 2). Compile errors 0.
+- Known limit: a wounded grunt (not at full HP) whose bonus changes can lose up to the bonus difference because `Health` clamps when the old modifier is removed; only matters if a grunt is damaged during prep.
+- Manual play (user, 2026-11-13): barracks popup recruit, squad choice, cost, upgrade bonus and battle participation confirmed with no issues.
+- Not verified: standalone build.
