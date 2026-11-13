@@ -1,6 +1,6 @@
 # Game Design: Preparation, Economy, Rewards & Meta
 
-Last Updated: 2026-11-13 20:57:51 (KST)
+Last Updated: 2026-11-13 22:24:20 (KST)
 
 > Purpose: Rules for courtyard facilities, unit deployment, currencies, rewards, and meta progression. | Parent: [design/README](README.md) | Related: [WallsAndSiege](WallsAndSiege.md), [OpenQuestions](OpenQuestions.md)
 
@@ -26,6 +26,9 @@ Last Updated: 2026-11-13 20:57:51 (KST)
   - *Barracks recruits*: Pick target squad in UI (default: first with free space). If all full, auto-creates a new squad up to cap, then blocks.
   - *Tavern heroes*: Pick squad to captain; swaps existing captain to reserve (excluded from battle until D-8 reorganization).
   - *Scene spawn*: Recruited/hired units spawn in front of their facility during current prep and walk to their squad.
+- **Squad Organization** (Q-45, Q-47, 2026-11-13): Press `O` during prep exploration to open the organization window (movement/look frozen like `I`; `Esc` closes; disabled in combat). Left column lists the chosen source squad's grunts, right column picks the target squad; clicking a grunt moves that one grunt (blocked when the target is full). Captains are assigned from reserve heroes or unassigned (back to reserve). Merging is manual only: no automatic merge or minimum size; a squad emptied this way is removed and its captain returns to reserve; the receiving squad keeps its morale. Changes apply to scene squads and battle commands immediately.
+- **Player as Captain** (Q-32 interim, 2026-11-13): Not allowed for now (player stays an independent unit). Keep the captain-assignment code open so player captaincy can be enabled later.
+- **Tavern Heroes** (Q-48, 2026-11-13): Hire cost is gold per hero tier in hero data (prototype 60 / 120 / 200g). Reserve heroes are excluded from battle for now; keep deployment extensible so a reserve hero can later be placed into a captain-less squad. Hero equipment is equipped through the `I` window with a player/hero selector (part of D-3).
 
 ## Currencies, Items & Rewards
 

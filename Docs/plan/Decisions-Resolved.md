@@ -1,6 +1,6 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-13 21:24:43 (KST)
+Last Updated: 2026-11-13 22:24:20 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
@@ -39,6 +39,9 @@ Last Updated: 2026-11-13 21:24:43 (KST)
 | Q-44 | Rout wiring & enemy morale | B-8.2, COMBAT-03, C-3 | Resolved (2026-11-13): Enemies have no morale; ally death loss proportional to battle-start size (150 → 0 at 90% deaths); morale on run squads (new squads 150); computed courtyard retreat point; exit on arrival or after 20s; fled units return next prep; exited allies excluded from defeat count. See [MoraleAndWave](../design/MoraleAndWave.md). |
 | Q-35 | Blacksmith crafting model & upgrades | D-6, PREP-01 | Resolved (2026-11-13): Fixed recipes per blacksmith level (Gold + Materials, always available); per-item upgrade levels +10% each, max +1/+3/+5 by blacksmith Lv1/2/3, step cost 50% of gold price × target level + materials; blacksmith sells equipment at the Shop ratio incl. upgrade spend. |
 | Q-46 | Shop gold re-roll & offer locks | PREP-02, PREP-03 | Resolved (2026-11-13): Re-roll cost rises per re-roll within a prep phase (e.g., 10/20/30g), resets each prep; free locks up to Shop level; locked offers persist through re-roll and next restock; buying clears the lock. |
+| Q-45 | Merging under-strength squads | D-8 | Resolved (2026-11-13): Manual only via moving grunts in the organization window; no auto-merge or minimum size; emptied squad removed, its captain to reserve; receiving squad keeps its morale. |
+| Q-47 | Squad organization UI | D-8 | Resolved (2026-11-13): `O` key during prep; source-squad grunt list + target-squad picker, click moves one grunt; captains assigned from reserve heroes; player excluded (Q-32 interim). |
+| Q-48 | Tavern hire cost, reserve heroes, hero equipment | D-3 | Resolved (2026-11-13): Gold per hero tier in data (60/120/200g); reserve heroes excluded from battle with extensible deployment into captain-less squads later; hero equipment via `I` window hero selector inside D-3. |
 
 ## Detailed Decision Records
 
