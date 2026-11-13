@@ -93,6 +93,7 @@ namespace ProjectNeo.Flow
                 ClearEnemies();
                 RunLink.OnPreparation();
                 foreach (SiegeLadder ladder in ladders) { ladder.ResetBattle(); ladder.enabled = false; }
+                SetCannonsArmed(false);
                 StartCoroutine(RestoreWhenReady());
                 SpawnEnemies();
             }
@@ -103,6 +104,7 @@ namespace ProjectNeo.Flow
                 RunLink.OnBattleStart();
                 foreach (SiegeLadder ladder in ladders) ladder.enabled = true;
                 foreach (SiegeAttackerBrain enemy in enemies) enemy.gameObject.SetActive(true);
+                SetCannonsArmed(true);
             }
             else if (phase == GamePhase.Reward || phase == GamePhase.RunResult)
             {
@@ -262,6 +264,23 @@ namespace ProjectNeo.Flow
             foreach (SiegeLadder ladder in ladders) ladder.enabled = false;
             foreach (CombatProjectile shot in Object.FindObjectsByType<CombatProjectile>())
                 if (shot.gameObject.scene == gameObject.scene) { shot.enabled = false; Destroy(shot.gameObject); }
+            SetCannonsArmed(false);
+            // 결과가 난 뒤 날아가던 포탄이 피해를 주지 않게 터뜨리지 않고 없앤다.
+            for (int i = CannonShell.Active.Count - 1; i >= 0; i--)
+            {
+                CannonShell shell = CannonShell.Active[i];
+                if (shell != null && shell.gameObject.scene == gameObject.scene) { shell.enabled = false; Destroy(shell.gameObject); }
+            }
+        }
+
+        /// <summary>성 위 대포를 전투 중에만 자동 사격하게 한다(SIEGE-02).</summary>
+        void SetCannonsArmed(bool armed)
+        {
+            if (world == null) return;
+            foreach (PlacedSiegeWeapon weapon in world.Weapons)
+                if (weapon != null)
+                    foreach (CannonModule cannon in weapon.GetComponentsInChildren<CannonModule>())
+                        cannon.SetArmed(armed);
         }
         IEnumerator RestoreWhenReady()
         {

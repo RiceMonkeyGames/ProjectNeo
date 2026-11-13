@@ -65,6 +65,7 @@ namespace ProjectNeo.Walls
         {
             Cancel();
             SelectedWeapon = definition;
+            Rotation = 0;
             if (definition != null) CreateGhost(definition.Prefab);
         }
 
@@ -122,7 +123,7 @@ namespace ProjectNeo.Walls
             }
             PreviewMountId = mountId;
             MountIssue = world.CheckMount(SelectedWeapon, support, mountId);
-            world.SetMountPose(ghost.transform, SelectedWeapon, pose);
+            world.SetMountPose(ghost.transform, SelectedWeapon, ConstructionWorld.RotateMountPose(pose, Rotation));
             Tint(MountIssue == MountIssue.None);
             ghost.SetActive(true);
         }
@@ -133,7 +134,8 @@ namespace ProjectNeo.Walls
             if (ConfirmGate != null && !ConfirmGate()) return false;
             if (SelectedWeapon != null)
             {
-                bool mounted = world.TryMount(SelectedWeapon, PreviewSupport, PreviewMountId, out PlacedSiegeWeapon weapon);
+                bool mounted = world.TryMount(SelectedWeapon, PreviewSupport, PreviewMountId, out PlacedSiegeWeapon weapon,
+                    Rotation);
                 if (mounted) WeaponMounted?.Invoke(weapon);
                 MountIssue = world.CheckMount(SelectedWeapon, PreviewSupport, PreviewMountId);
                 Tint(MountIssue == MountIssue.None);
@@ -177,7 +179,8 @@ namespace ProjectNeo.Walls
             if (Mouse.current == null) return;
             if (Mouse.current.rightButton.wasPressedThisFrame) Cancel();
             if (!HasSelection) return;
-            if (Selected != null && Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame) Rotate();
+            // 조각과 수성 무기 모두 R로 90도씩 돌린다. 무기는 이 방향이 사격 기준 정면이다(Q-21).
+            if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame) Rotate();
             Vector2 pointer = Mouse.current.position.ReadValue();
             var plane = new Plane(world.transform.up, world.transform.position);
             Ray ray = view.ScreenPointToRay(pointer);

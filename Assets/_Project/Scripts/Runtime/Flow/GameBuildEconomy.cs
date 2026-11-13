@@ -166,32 +166,40 @@ namespace ProjectNeo.Flow
             return true;
         }
 
-        List<RepairNeed> RepairNeeds(Dictionary<int, PlacedStructure> lookup)
+        // 성벽 조각과 수성 무기(SIEGE-02)를 함께 모은다. 둘의 번호 체계가 달라 수리 목록 안에서만 쓰는 순번을 붙인다.
+        List<RepairNeed> RepairNeeds(Dictionary<int, Health> lookup)
         {
             var needs = new List<RepairNeed>();
             if (world == null) return needs;
             foreach (PlacedStructure piece in world.Structures)
-            {
-                if (piece == null || piece.Health == null || piece.Health.IsDead) continue;
-                float missing = piece.Health.Maximum - piece.Health.Current;
-                if (missing <= 0f) continue;
-                needs.Add(new RepairNeed(piece.Placement.Id, missing));
-                lookup?.Add(piece.Placement.Id, piece);
-            }
+                if (piece != null) AddNeed(needs, lookup, piece.Health);
+            foreach (PlacedSiegeWeapon weapon in world.Weapons)
+                if (weapon != null && !weapon.IsRemoved) AddNeed(needs, lookup, weapon.Health);
             return needs;
+        }
+
+        static void AddNeed(List<RepairNeed> needs, Dictionary<int, Health> lookup, Health health)
+        {
+            if (health == null || health.IsDead) return;
+            float missing = health.Maximum - health.Current;
+            if (missing <= 0f) return;
+            int key = needs.Count;
+            needs.Add(new RepairNeed(key, missing));
+            lookup?.Add(key, health);
         }
 
         /// <summary>모두 수리하는 데 드는 골드.</summary>
         public int FullRepairCost => EnsureEconomy()?.FullRepairCost(RepairNeeds(null)) ?? 0;
 
         /// <summary>
-        /// 가진 골드로 가장 많이 깎인 조각부터 완전히 수리한다(2026-11-12 사용자 결정). 수리한 조각 수를 돌려준다.
+        /// 가진 골드로 가장 많이 깎인 조각·무기부터 완전히 수리한다(2026-11-12 사용자 결정, 무기는 SIEGE-02).
+        /// 수리한 개수를 돌려준다.
         /// </summary>
         public int RepairAll()
         {
             BuildEconomy current = EnsureEconomy();
             if (!Preparing || current == null) return 0;
-            var lookup = new Dictionary<int, PlacedStructure>();
+            var lookup = new Dictionary<int, Health>();
             List<RepairNeed> needs = RepairNeeds(lookup);
             if (needs.Count == 0) { Message = "수리할 곳이 없습니다."; return 0; }
             List<RepairNeed> chosen = current.PlanRepair(needs, out int cost);
@@ -200,7 +208,7 @@ namespace ProjectNeo.Flow
                 Message = "골드가 모자라 수리하지 못했습니다.";
                 return 0;
             }
-            foreach (RepairNeed need in chosen) lookup[need.Id].Health.RestoreFull();
+            foreach (RepairNeed need in chosen) lookup[need.Id].RestoreFull();
             Message = chosen.Count == needs.Count ? $"모두 수리 · {cost}골드" : $"{chosen.Count}/{needs.Count}곳 수리 · {cost}골드 (골드 부족)";
             return chosen.Count;
         }

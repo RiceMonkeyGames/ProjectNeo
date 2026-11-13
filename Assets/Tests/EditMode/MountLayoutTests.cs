@@ -36,6 +36,14 @@ namespace ProjectNeo.Tests
         public void TearDown() { foreach (Object asset in assets) Object.DestroyImmediate(asset); assets.Clear(); }
 
         [Test]
+        public void WeaponDefinition_MaxHealth_DefaultsAndClampsToAtLeastOne()
+        {
+            Assert.AreEqual(100f, cannon.MaxHealth);
+            Assert.AreEqual(150f, Track(SiegeWeaponDefinition.Create("a", "a", Vector3.one, null, 150f)).MaxHealth);
+            Assert.AreEqual(1f, Track(SiegeWeaponDefinition.Create("b", "b", Vector3.one, null, -5f)).MaxHealth);
+        }
+
+        [Test]
         public void Mount_OccupiesOnlyItsPoint_AndDoesNotTouchFloorOccupancy()
         {
             Assert.IsTrue(layout.TryPlace(wall, Vector2Int.zero, 0, out var support));

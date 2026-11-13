@@ -13,10 +13,15 @@ namespace ProjectNeo.Walls
         public SiegeWeaponDefinition Definition { get; }
         public int SupportId { get; }
         public string MountId { get; }
-        public MountedWeapon(int id, SiegeWeaponDefinition definition, int supportId, string mountId)
+        /// <summary>설치 지점 방향에서 더 돌린 90도 단위 횟수(0~3). 설치할 때 R로 정한다.</summary>
+        public int Rotation { get; }
+        public MountedWeapon(int id, SiegeWeaponDefinition definition, int supportId, string mountId, int rotation = 0)
         {
             Id = id; Definition = definition; SupportId = supportId; MountId = mountId;
+            Rotation = NormalizeRotation(rotation);
         }
+
+        public static int NormalizeRotation(int rotation) => ((rotation % 4) + 4) % 4;
     }
 
     /// <summary>
@@ -46,11 +51,12 @@ namespace ProjectNeo.Walls
             return slots.ContainsKey((supportId, mountId)) ? MountIssue.Occupied : MountIssue.None;
         }
 
-        public bool TryMount(SiegeWeaponDefinition definition, int supportId, string mountId, out MountedWeapon weapon)
+        public bool TryMount(SiegeWeaponDefinition definition, int supportId, string mountId, out MountedWeapon weapon,
+            int rotation = 0)
         {
             weapon = null;
             if (Check(definition, supportId, mountId) != MountIssue.None) return false;
-            weapon = new MountedWeapon(nextId++, definition, supportId, mountId);
+            weapon = new MountedWeapon(nextId++, definition, supportId, mountId, rotation);
             mounted.Add(weapon.Id, weapon);
             slots.Add((supportId, mountId), weapon);
             return true;
