@@ -34,7 +34,7 @@ namespace ProjectNeo.Siege
         [Header("편성 (Play를 시작할 때 이 숫자대로 만든다)")]
         // 한 줄이 아군 부대 하나다. 부대 수와 부대당 인원은 SquadConfig의 상한(현재 4개 × 10명)까지만 쓴다.
         [SerializeField] SiegeUnitGroup[] allySquads = new SiegeUnitGroup[0];
-        // 한 줄이 적 한 무리다. 적 프리팹의 SiegeAttackerBrain이 종류(사다리병·성문 파괴병·궁수)를 정한다.
+        // 한 줄이 적 한 무리다. 프리팹의 SiegeAttacker와 데이터/모듈 조합이 행동을 정한다.
         [SerializeField] SiegeUnitGroup[] enemyGroups = new SiegeUnitGroup[0];
         public System.Collections.Generic.IReadOnlyList<SiegeUnitGroup> AllySquads => allySquads;
         public System.Collections.Generic.IReadOnlyList<SiegeUnitGroup> EnemyGroups => enemyGroups;

@@ -1,11 +1,12 @@
 # Completed Backlog Archive (Done)
 
-Last Updated: 2026-11-13 19:11:49 (KST)
+Last Updated: 2026-11-13 19:43:19 (KST)
 
 > Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
 | Task ID | Description | Assignee | Outcome & History Link |
 |---|---|---|---|
+| B-6.4 | Enemy Data Composition & Three-type Integration Test | Codex | Done 2026-11-13; branch `feature/b-6.4`. Dedicated mixed scene (2 ladder troops, 1 wall breaker, low melee flyer and data-only high archer flyer); scene settings binding fixed for ground/flying spawns. Compile, EditMode 310/310, PlayMode 157/157 (including 4 composition tests), generator GUID/roster repeat audit and doc/link checks passed. User authorized Done/archive/commit/push; manual play and standalone remain unverified. Formal Game waves remain B-7.1. [History](../history/B/B-6.4.md) |
 | B-6.3 | Flyer Enemy Movement & Attacks | Claude | Done 2026-11-13; branch `feature/b-6.3`. Shared `SiegeAttacker` base for walking/flying enemies; `FlyerBrain` with data-selected target (wall-top first), flight (climb/cross/descend) and hover-beside modules; airborne melee reach via ground projection and exposure altitude; full damage on shots at flyers. Verification scene `FlyerVerification.unity` (menu `ProjectNeo/Setup/Create Flyer Verification Scene`). Compile passed, EditMode 310/310, PlayMode 153/153; user manually verified in the verification scene and authorized completion. Game scene encounters (B-6.4/B-7.1) and standalone unverified. [History](../history/B/B-6.3.md) |
 | Q-41 | Define shared ladder traversal details | Codex | Done 2026-11-13; approved bidirectional traversal, FIFO traffic, allied orders, combat/toppling safety and raising. User subsequently selected tap F boarding / hold F toppling and approved shared-code edits. Design and implementation carried together on `feature/siege-04`; user authorized completion/commit/push. [History](../history/Q/Q-41.md) |
 | SIEGE-04 | Shared Ladder Traversal for Allies and Player | Codex | Done 2026-11-13; branch `feature/siege-04`. Player tap F boarding / W-S traversal / hold F raising-toppling; allied route integration, deferred orders, FIFO single occupancy, damage/death/collapse handling and friendly-use topple protection. Full EditMode 252/252 and PlayMode 132/132 passed before final destroyed-occupant cleanup; final compile + scoped PlayMode 6/6 passed afterward. User authorized completion/commit/push; physical-key/HUD manual review and standalone remain unverified. [History](../history/SIEGE/SIEGE-04.md) |

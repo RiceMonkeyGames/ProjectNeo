@@ -1,10 +1,12 @@
 # Runtime Codemap: Walls & Siege
 
-Last Updated: 2026-11-13 19:09:16 (KST)
+Last Updated: 2026-11-13 19:32:22 (KST)
 
 > Purpose: Class map for castle construction, fall damage, siege weapons, and enemy siege AI. | Parent: [codemap/README](README.md) | Related: [CombatAndSquads](CombatAndSquads.md), [design/WallsAndSiege](../design/WallsAndSiege.md)
 
 Base path: `Assets/_Project/Scripts/Runtime/`. Assembly: `ProjectNeo.Runtime`. Namespace: `ProjectNeo.<Folder>`.
+
+Mixed enemy composition (`B-6.4`, `feature/b-6.4`): `Editor/EnemyCompositionVerificationSetup` creates `Scenes/EnemyCompositionVerification.unity` with a separate 5-enemy roster (2 ladder, 1 wall breaker, 1 melee flyer, 1 high projectile flyer). The high variant combines existing flight modules, higher hover data and the existing archer profile/definition; no additional runtime behavior class. `SiegeDirector` passes scene settings into `SiegeAttacker.Bind` for both ground/flying spawns. Four `EnemyCompositionPlayTests` exercise mixed closed-wall behavior, breach entry, data-only variant and roster/start/death accounting. Game's formal encounters remain B-7.1. [Verification and reset](../history/B/B-6.4.md).
 
 Shared ladders (`SIEGE-04`, `feature/siege-04`): pure `Siege/LadderTraffic<T>` enforces FIFO single occupancy for both directions and teams. `SiegeLadder` keeps legacy enemy raising/climbing APIs while routing their occupancy through the shared actor queue; it also handles allied raising and friendly-use automatic-topple protection. `Siege/LadderTraveller` is added at runtime by allied `UnitCombatAI` or `PlayerInputController`, without prefab/scene edits. It selects a reachable ladder route only when the ordered destination lacks a complete walking path, drives approach/ascent/descent, defers orders received aboard, and restores NavMeshAgent/CharacterController or hands interruption/death to `UnitFallController`. Player uses tap F boarding, W/S climbing and hold F raising/toppling; `SiegeSettings.LadderTapSeconds` controls the temporary 0.25s tap threshold. `CharacterActor.IsOnLadder` prevents new attacks and cancels pending impacts while remaining damageable. GameFlowHud/SiegeStatusHud show contextual traversal hints. [Verification](../history/SIEGE/SIEGE-04.md).
 

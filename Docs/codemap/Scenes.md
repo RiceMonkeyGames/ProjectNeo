@@ -1,6 +1,6 @@
 # Playable Scenes & Manual Controls
 
-Last Updated: 2026-11-13 17:20:01 (KST)
+Last Updated: 2026-11-13 19:32:22 (KST)
 
 > Purpose: Executable scene table and `Title`/`Game` scene verification controls. | Parent: [codemap/README](README.md) | Related: [PrototypeScenes](PrototypeScenes.md), [Status](../plan/Status.md)
 
@@ -8,6 +8,7 @@ Unity 6000.6.8f1, URP, 3D first-person project. Placeholder graphics planned for
 
 | Scene Path | Verification Target & Controls |
 |---|---|
+| `Assets/_Project/Scenes/EnemyCompositionVerification.unity` | B-6.4 mixed enemy fixture, excluded from build list. Play → Start Battle: 2 ladder troops, 1 wall breaker, low melee flyer and high projectile flyer attack a closed wall and wall-top squad. WASD/mouse/left click and squad controls match SiegePrototype. Stop Play Mode to reset. Menu `ProjectNeo/Setup/Create Enemy Composition Verification Scene` restores only this fixture. [Detailed checks](../history/B/B-6.4.md). |
 | `Assets/_Project/Scenes/ConstructionPrototype.unity` | Initial build scene. Q/E camera orbit, wall/stairs selection, translucent grid preview, Left-click place, Right-click cancel, R rotate piece. Walking on walls, falling damage via floor destruction. Cannon placement on walls and simultaneous collapse on wall destruction. |
 | `Assets/_Project/Scenes/CombatPrototype.unity` | WASD move, mouse look, Left-click melee attack. Dummy combat, health, camera test. Esc to release cursor. |
 | `Assets/_Project/Scenes/UnitBattlePrototype.unity` | Automated 10v10 spectator combat (melee & ranged allies vs enemies). |

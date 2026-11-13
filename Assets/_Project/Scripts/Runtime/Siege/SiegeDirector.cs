@@ -193,7 +193,7 @@ namespace ProjectNeo.Siege
                         if (unit != null) Destroy(unit);
                         break;
                     }
-                    brain.Bind(world, ladders, outward);
+                    brain.Bind(world, ladders, outward, settings);
                     enemies.Add(brain);
                 }
                 row += (group.count + enemyColumns - 1) / enemyColumns;
