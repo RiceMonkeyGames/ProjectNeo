@@ -70,7 +70,7 @@ namespace ProjectNeo.Editor
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             RenderSettings.ambientLight = new Color(0.65f, 0.7f, 0.8f);
             var sun = new GameObject("Sun").AddComponent<Light>();
-            sun.type = LightType.Directional; sun.intensity = 1.3f;
+            sun.type = LightType.Directional; sun.intensity = 1.3f; sun.shadows = LightShadows.Soft;
             sun.transform.rotation = Quaternion.Euler(45f, -30f, 0f);
             MainCamera(new Vector3(0f, 14f, -22f), Quaternion.Euler(30f, 0f, 0f));
             // 성과 전장이 들어올 자리. 지금은 빈 바닥만 둔다.

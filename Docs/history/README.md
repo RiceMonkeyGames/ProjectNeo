@@ -1,6 +1,6 @@
 # Past Verification History Index
 
-Last Updated: 2026-11-13 15:07:57 (KST)
+Last Updated: 2026-11-13 15:19:13 (KST)
 
 > Purpose: Route historical log lookups by Task ID prefix. | Parent: [INDEX](../INDEX.md) | Related: [Backlog-Done](../archive/Backlog-Done.md), [Status](../plan/Status.md)
 
@@ -19,7 +19,7 @@ Read this folder only when researching past design rationales, benchmarks, or ve
 - `BUG/` — [BUG-wall-hold](BUG/BUG-wall-hold.md), [BUG-playmode-input-focus](BUG/BUG-playmode-input-focus.md), [BUG-wall-destination-replan](BUG/BUG-wall-destination-replan.md)
 - `PERF/` — [PERF-nav-query](PERF/PERF-nav-query.md)
 - `SIEGE/` — [SIEGE-03](SIEGE/SIEGE-03.md)
-- `ART/` — [ART-01](ART/ART-01.md)
+- `ART/` — [ART-01](ART/ART-01.md), [ART-02](ART/ART-02.md)
 - `DOC/` — [DOC-workflow-branches](DOC/DOC-workflow-branches.md), [DOC-doc-tree-and-id](DOC/DOC-doc-tree-and-id.md)
 - `TOOL/` — [TOOL-claude-read-deny](TOOL/TOOL-claude-read-deny.md), [TOOL-agent-workflows](TOOL/TOOL-agent-workflows.md), [TOOL-codex-workflows](TOOL/TOOL-codex-workflows.md)
 - `LEGACY/` — Un-ID'd early records: [M0-early-setup](LEGACY/M0-early-setup.md), [M1-construction-camera](LEGACY/M1-construction-camera.md), [M1-combat-and-command](LEGACY/M1-combat-and-command.md), [M1-game-scene-integration](LEGACY/M1-game-scene-integration.md), [M1-siege-prototype](LEGACY/M1-siege-prototype.md), [DOC-early-workflow](LEGACY/DOC-early-workflow.md)

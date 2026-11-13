@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-13 15:16:47 (KST)
+Last Updated: 2026-11-13 15:19:13 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -23,7 +23,6 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 | FLOW-01 | Start battle from desired current position | In Progress | Codex | Branch `feature/flow-01`. Approved 2026-11-13: hold B for 1 second in prep exploration, show hold progress, block in construction/facility/equipment panels, preserve position/view and start once. |
 | Q-41 | Define shared ladder traversal details | Pending Decision | Unassigned | Approved 2026-11-13: allies AND player ascend/descend. Decide controls, opposing traffic/queues, commands, combat/toppling behavior; coordinate combat owner before shared edits. Current climb API takes SiegeAttackerBrain only. |
 | QA-opening-battle-balance | Review opening battle difficulty | Waiting | Unassigned | User could not win current battle; record as feedback, not proven numerical imbalance. Evaluate after start-position/access fixes; distinguish encounter tuning from temporary victory-flow verification aids. |
-| ART-02 | Review missing soldier shadows | In Progress | Claude | Branch `feature/art-02`. User reports soldiers have no visible shadows; explicitly low priority for prototype. Check render/light/shadow settings and camera distance before changes; verify near and far views. |
 | Q-21 | Finalize Siege Weapon Mechanics | Pending Decision | Unassigned | Confirm auto/unit/player control, range, damage, HP, rotation, passage blocking, and costs with user. Cannons currently mountable only. |
 | B-6.1 | Scope & Contract for Additional Enemy Behaviors | Pending Decision | Unassigned | Agree on targeting, movement, and failure handling for wall-destroying and aerial enemies. Existing ladder and gate assault logic will not be re-implemented. |
 | B-7.1 | Formal Wave Data & Spawning Rules | Waiting for Prerequisite | Unassigned | After enemy definitions and spawn/termination contracts are agreed upon, spawn according to configured types, counts, and timings. No duplicates on pause/restart. |

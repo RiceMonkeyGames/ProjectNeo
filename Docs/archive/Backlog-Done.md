@@ -1,12 +1,13 @@
 # Completed Backlog Archive (Done)
 
-Last Updated: 2026-11-13 15:16:47 (KST)
+Last Updated: 2026-11-13 15:19:13 (KST)
 
 > Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
 | Task ID | Description | Assignee | Outcome & History Link |
 |---|---|---|---|
 | ART-01 | Flatten placeholder stair shading | Claude | Done; branch `feature/art-01` (`e58a411`). Ramp mesh rebuilt with per-face vertices (flat normals) in place via Editor API; shape/collider/GUID unchanged. Compile passed, EditMode 216/216, PlayMode `Construction` 41/41. User confirmed in Game scene on 2026-11-13. Standalone build unverified. [History](../history/ART/ART-01.md) |
+| ART-02 | Review missing soldier shadows | Claude | Done; branch `feature/art-02` (`f933c7a`). Cause: scene Sun lights had LightShadows.None. Setup generators emit Soft shadows; 7 scenes migrated via Editor API. Compile passed, EditMode 216/216, PlayMode 118/118; near/far render shows soldier shadows. User manually verified and confirmed completion on 2026-11-13. Large-battle frame rate and standalone build unverified. [History](../history/ART/ART-02.md) |
 | SIEGE-03 | Implement one-cell full-tier stairs | Codex | Done; branch `feature/siege-03`. 1×1 cells, full 3m rise; 7 stairs migrated in 4 scenes through Editor APIs. Compile passed, EditMode 216/216, PlayMode 118/118. User confirmed stair feel and authorized completion on 2026-11-13. Standalone build unverified. [History](../history/SIEGE/SIEGE-03.md) |
 | TOOL-codex-workflows | Share teammate workflow skills with Codex and align Git handoff policy | Codex | Branch `feature/tool-codex-workflows`; claim `80aee2b`. Added 4 Codex entrypoints sharing teammate instructions/scripts. User confirmation required before completion commit/push; develop merge remains user-owned. Four skill validations and doc/link checks passed; host catalog discovered all 4 skills. User authorized completion on 2026-11-13. No Unity operations. [History](../history/TOOL/TOOL-codex-workflows.md) |
 | BUG-build-grid-lines | Keep construction grid lines visible at distant zoom | Codex | Implementation `4041358` integrated/pushed to develop. Camera-aware minimum 1.5px lines; render matrix 30 combinations, EditMode 216/216, PlayMode 114/114. User confirmed manual verification on 2026-11-13. Standalone build unverified. [History](../history/BUG/BUG-build-grid-lines.md) |

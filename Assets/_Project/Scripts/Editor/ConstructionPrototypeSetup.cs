@@ -53,7 +53,7 @@ namespace ProjectNeo.Editor
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             RenderSettings.ambientLight = new Color(0.7f, 0.75f, 0.85f);
             var sun = new GameObject("Sun").AddComponent<Light>();
-            sun.type = LightType.Directional; sun.intensity = 1.2f;
+            sun.type = LightType.Directional; sun.intensity = 1.2f; sun.shadows = LightShadows.Soft;
             sun.transform.rotation = Quaternion.Euler(48f, -35f, 0f);
             var worldObject = new GameObject("ConstructionWorld");
             worldObject.SetActive(false);
