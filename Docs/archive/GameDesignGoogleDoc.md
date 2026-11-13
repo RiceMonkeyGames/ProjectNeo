@@ -4,9 +4,9 @@ Last Updated: 2026-11-12 22:46:47 (KST)
 Source: [Google Docs](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 Original Author: Shin Yong-jun (As of 2026-11-11)
 
-> Note: The Development Backlog table from the top of the Google Doc is maintained in [Docs/Backlog.md](Backlog.md).
+> Note: The Development Backlog table from the top of the Google Doc is maintained in [Docs/Backlog.md](../Backlog.md).
 >
-> This file mirrors the Google Doc as human-readable reference and can lag behind. [GameDesign.md](GameDesign.md) is the ground truth for game rules. Known difference: the defeat condition here says "castle wall HP depleted", while the current rule is "main gate destroyed AND all allies dead or routed, OR player character dies" (see GameDesign "Win/Loss Conditions").
+> This file mirrors the Google Doc as human-readable reference and can lag behind. [design/README.md](../design/README.md) is the ground truth for game rules. Known difference: the defeat condition here says "castle wall HP depleted", while the current rule is "main gate destroyed AND all allies dead or routed, OR player character dies" (see GameDesign "Win/Loss Conditions").
 
 
 ### Overview

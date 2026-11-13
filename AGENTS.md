@@ -1,59 +1,40 @@
 # ProjectNeo
 
-Last Updated: 2026-11-12 23:08:04 (KST)
+Last Updated: 2026-11-13 13:17:37 (KST)
 
-A 3D first-person siege defense roguelike. Scout the upcoming wave, prepare heroes, troops, equipment, and walls, and defend the castle through direct player combat and unit commanding. Built with Unity 6000.6.8f1 and URP. Low-poly art style; Synty assets planned, currently using placeholder graphics.
+A 3D first-person siege defense roguelike built with Unity 6000.6.8f1 and URP. Scout the upcoming wave, prepare heroes, troops, equipment, and walls, and defend the castle through direct player combat and unit commanding. Low-poly art style; Synty assets planned, currently using placeholder graphics.
 
-This file is the primary entry point for all agents working in this repository. `CLAUDE.md` simply references this file. The repository maintains four core documentation files—Backlog, Context, Implementation Plan, and Game Design—plus one past verification log (History). History is not read routinely.
+This file is the primary entry point for all agents (`CLAUDE.md` imports this file via `@AGENTS.md`).
 
 ## Documents to Read First
 
-Repository Markdown files serve as the ground truth for game rules, implementation details, verification evidence, task selection, assignment, and progress tracking.
+Do **not** bulk-read `Docs/`. Read only:
+1. [Docs/INDEX.md](Docs/INDEX.md) — Routing map from task type to leaf docs.
+2. [Docs/Backlog.md](Docs/Backlog.md) — Active tasks, assignments, and statuses (`Done` tasks in [Docs/archive/Backlog-Done.md](Docs/archive/Backlog-Done.md)).
+3. Only the specific leaf documents under `Docs/design/`, `Docs/plan/`, `Docs/codemap/`, `Docs/workflow/`, or `Docs/history/` required for your task.
 
-1. [Docs/Backlog.md](Docs/Backlog.md): Development backlog. The Single Source of Truth for task selection, status tracking, and assignment. Check this first to pick tasks.
-2. [Docs/Context.md](Docs/Context.md): Execution guide, code/scene/asset map. Read development principles and Unity CLI usage as relevant to your task. Past verification logs are in [Docs/History.md](Docs/History.md); search by date or task ID only when past rationales or verification evidence are needed.
-3. [Docs/ImplementationPlan.md](Docs/ImplementationPlan.md): Implementation roadmap. Review Section 1 (GOAL), Section 2 (Pending Decisions), Section 3 (Current Status), Section 5 (Immediate Tasks), and Section 6 (Future Division of Labor).
-4. [Docs/GameDesign.md](Docs/GameDesign.md): Game rules, design intent, and pending designs. Read the sections relevant to your implementation.
+Precedence on conflict: `Docs/design/` (game rules) > `Docs/plan/` (roadmap/status/decisions) > `Docs/workflow/` & `Docs/codemap/` (execution/code map) > `Docs/Backlog.md` (claims/live status).
 
-If documents conflict, GameDesign takes precedence for game rules, ImplementationPlan for roadmap/dependencies/implementation status, Context for code explanations and development workflows, and Backlog for task claiming and progress. Do not duplicate separate rules or plans into CLAUDE. Release platform, timing, and content scale remain undecided; long-term plans will be refined based on playtest results.
+## Backlog, Task IDs & Branch Workflow
 
-## Backlog & Workflow
-
-- Backlog Location: [Docs/Backlog.md](Docs/Backlog.md).
-- **Task Claiming & Immediate Merge**:
-  1. Inspect `Docs/Backlog.md` and select an unclaimed (`Waiting`) task.
-  2. Mark the task as `In Progress` with your assignee name in `Docs/Backlog.md`.
-  3. **Immediately commit and merge (or push/sync) this backlog change to the shared branch so that other teammates and agents are immediately notified of the assignment to avoid collisions.**
-  4. Begin implementation only after the in-progress marking is recorded and synced.
-- **Task Branch Lifecycle**: After selecting and claiming a backlog task, sync the latest shared `develop` (including the claim) and create a dedicated `feature/<task-description>` branch from it before implementation. Record the branch name in the backlog. After the user merges the work into `develop` and the merge is confirmed on the remote, delete the corresponding remote task branch. Retain unmerged work branches. This keeps the remote branch list small and makes cross-agent references easier. General code commits and merges remain user-owned.
-- **Strict Collision Avoidance**: Never modify or take over items marked `In Progress` by another assignee. Even if tasks differ, coordinate order if modifying the same file or shared asset. Refer to Section 6 of ImplementationPlan for actual assignment, file ownership, and shared contracts.
-- **Task Completion**: After finishing work, update relevant Markdown docs, record results, verification details, or doc paths in `Docs/Backlog.md`, and change status to `Done`. Sync/merge the updated backlog. Do not conceal incomplete scopes or unverified items.
-- **Registering New Items**: If you discover new tasks, bugs, or follow-ups during work, check for duplication with existing entries and add them to `Docs/Backlog.md`. If design or shared architecture is undecided, note that user confirmation is required rather than treating it as a finalized task.
-- **When to Add / Update Backlog**: New feature requests / design decisions, discovering bugs/missing items/dependencies during implementation, feedback from tests/playtests/teammates, checking remaining linkages/unverified scope upon completion/integration, breaking down subsequent roadmap milestones. Record as soon as discovered; re-check before reporting completion. Do not create duplicates for existing tasks; update existing items.
-- **Format for New Items**: In new items, document Task ID, description, current status, completion criteria, and prerequisites. For bugs, include reproduction steps, expected results, and actual results. Distinguish `Pending Decision` (undecided design) and `Waiting for Prerequisite` (missing upstream feature). Registration alone does not imply approval, start, or assignment. Keep distant roadmap items as feature bundles, breaking them down into actionable units as they draw near.
-- **Backlog vs Implementation Plan**: `Docs/Backlog.md` manages task selection, assignment, and progress, while `ImplementationPlan.md` manages roadmaps, decisions, dependencies, and implementation status. If they diverge, reconcile by verifying the active assignee and actual changes/verification evidence. Never overwrite another assignee's in-progress status with an outdated local document.
+- **Claim & Sync**: Pick a `Waiting` task in [Docs/Backlog.md](Docs/Backlog.md), mark `In Progress` with your assignee name, and **immediately commit and push to `develop`** before coding. Never take over another assignee's `In Progress` item.
+- **Branch Lifecycle**: From synced `develop`, create `feature/<task-id-lowercase>` (or `fix/<task-id-lowercase>`) and record it in the backlog. After the user merges into `develop` and remote integration is confirmed, delete the remote task branch. Retain unmerged work branches. General commits/merges remain user-owned.
+- **Task ID Rules**: Allowed characters `A-Z`, `0-9`, `a-z`, `-` only; 1 task = 1 ID (no `~`, `·`, `.`, or ad-hoc suffixes). Legacy `A~D`, `G`, and reserved `E-1~4` (until M3) remain as-is. New M3+ features use `<DOMAIN>-<NN>` (`COMBAT`, `SIEGE`, `FLOW`, `PREP`, `META`, `CONTENT`, `ART`, `UI`, `AUDIO`); cross-cutting tasks use `Q-NN`, `BUG-<slug>`, `PERF-<slug>`, `QA-<slug>`, `DOC-<slug>`, `TOOL-<slug>`. Full rules in [Docs/workflow/Collaboration.md](Docs/workflow/Collaboration.md).
+- **Completion**: Update affected `Docs/` leaves, append/create `Docs/history/<PREFIX>/<TASK-ID>.md`, move completed rows to [Docs/archive/Backlog-Done.md](Docs/archive/Backlog-Done.md), and sync.
 
 ## Working Rules
 
 - Respond to the user in Korean, using clear and simple language.
-- Document last updated timestamp must use the format: `Last Updated: YYYY-MM-DD HH:MM:SS (KST)` (or `마지막 갱신: YYYY-MM-DD HH:MM:SS (KST)`). Whenever modifying a document, update it to the exact current time right before saving (e.g., using `Get-Date` or `date "+%Y-%m-%d %H:%M:%S"`); never guess the timestamp.
-- If ambiguous requirements, divergent interpretations, or questions arise regarding design, behavior, or shared architecture, do not decide arbitrarily. Present options with rationale and ask the user first. Do not proceed with implementation dependent on that decision until answered. Independent work with no impact may continue. Reflect undecided items and received decisions in ImplementationPlan Section 2 and corresponding design docs.
-- When the user makes a new decision, do not leave it only in chat. Update GameDesign for design, ImplementationPlan for implementation decisions/status/dependencies immediately. Update Context's code map as codebase grows.
-- Log detailed completion and verification results at the end of Docs/History.md along with the date. Do not accumulate past logs in current planning documents.
-- Always guide the user on how to verify manually upon completion: exact scene/file paths, control steps, expected results, and reset procedures. Open relevant scenes when possible. For rule/logic tasks, guide test names and Test Runner or CLI commands. Never stop at merely reporting passing automated tests.
-- General commits and code merges are made directly by the user, except for immediate backlog in-progress/done claim synchronization as specified in the Backlog & Workflow rules.
-- Collaborating since 2026-11-11: Teammate handles enemy assault and single battle phase execution; User handles game entry scene and core loop scaffolding. Actual assignments, owned files, shared contracts, and integration responsibilities follow Section 6 of ImplementationPlan. Never overwrite others' work or unverified connections.
-- Apply modifications sequentially when touching identical files, shared prefabs, integration scenes, or project settings. Never run compilation, PlayMode, tests, builds, or asset modifications simultaneously in the same Unity editor.
-- Do not mix game code changes or unnecessary Unity operations into doc-only tasks. Differentiate and record completion scope: rules, integration, manual play, required builds.
+- Use `Last Updated: YYYY-MM-DD HH:MM:SS (KST)` whenever editing docs; query the exact current time (never guess).
+- Never decide ambiguous design/architecture questions arbitrarily; present options with rationale and ask the user first. Record decisions immediately in `Docs/design/` and `Docs/plan/`.
+- Always guide the user on manual verification upon completion (exact scene/file paths, controls, expected results, reset steps; test names/CLI commands for logic tasks). Never stop at automated test counts alone.
+- Collaborating since 2026-11-11 (teammate: enemy assault/combat execution; user: game entry/core flow). Coordinate sequential edits on shared files/assets ([Docs/plan/Team.md](Docs/plan/Team.md)); never run compile, PlayMode, tests, or builds concurrently in one editor.
+- Do not mix game code or unnecessary Unity operations into doc-only tasks. Distinguish verified scope: rules, integration, manual play, standalone builds.
 
-## Implementation Principles
+## Implementation & Tool Principles
 
-- Separate rules and calculations from visual presentation using plain C# and verify via EditMode. Verify scene behavior via PlayMode and manual play.
-- Store numerical parameters in ScriptableObjects. Provide `Create(...)` factory methods for testing in definitions.
-- Maintain one class per file for ScriptableObjects and MonoBehaviours; match file name to class name.
-- Explicitly assign numeric values to persistent enums; add new values to the end. Route random generation through `ProjectNeo.Core.IRandomSource`.
-- Separate gameplay rules, collision, and movement on the root from visual representation under a `Visual` child. Follow principles in Context Section 5.
-- Do not edit `.unity`, `.prefab`, `.asset`, or `.meta` files directly. Create/move scenes, assets, and folders via Editor APIs. `.cs` and `.asmdef` files may be authored directly.
-- Shared `.claude/settings.json` blocks Claude Code from reading generated/third-party/binary files (e.g. `Library/`, `Temp/`, `*.meta`, `*.unity`, art and audio) and from editing serialized Unity files. Do not work around these blocks with shell commands; inspect scenes, GUIDs, and references via Editor `script eval` instead, and search `Logs/Editor.log` for `error CS` rather than reading it whole. Agents other than Claude Code (e.g. Codex) are not bound by that file and must follow the same limits by convention. Full list in Context Section 3.
-- Always check Unity connection status first with `unity status`. Do not assume the editor is closed solely from connection failures; verify sandbox constraints as well. If not open, ask the user to open it.
-- Follow compilation, testing, build, and package commands and caveats in Context Section 6. Do not use `unity recompile` or `unity command script recompile`, which failed in this project.
+- Separate pure C# rules (EditMode) from MonoBehaviours/scene behavior (PlayMode/manual play) and from visuals under a `Visual` child ([Docs/workflow/Principles.md](Docs/workflow/Principles.md)).
+- Store numerical values in ScriptableObjects with `Create(...)` factories; one class per file matching class name; explicit persistent enum values; route randomness via `ProjectNeo.Core.IRandomSource`.
+- Never hand-edit `.unity`, `.prefab`, `.asset`, or `.meta` files; use Editor APIs (`script eval` or helper `.cs`). `.cs` and `.asmdef` may be authored directly.
+- Shared `.claude/settings.json` enforces read/edit exclusions for generated/binary/serialized files (search `Logs/Editor.log` for `error CS` rather than reading whole). Agents not bound by it (e.g., Codex) must follow the same boundaries by convention ([Docs/workflow/Collaboration.md](Docs/workflow/Collaboration.md)).
+- Check `unity status` first; follow [Docs/workflow/UnityCLI.md](Docs/workflow/UnityCLI.md) for compile/test/build. Never run `unity recompile` or `unity command script recompile`.
