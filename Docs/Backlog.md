@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-13 21:41:54 (KST)
+Last Updated: 2026-11-13 22:06:07 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -33,7 +33,7 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 | D-3 | Tavern Hero Hiring | Waiting for Prerequisite | Unassigned | Prerequisites: D-0, D-0b, D-8. Decisions: Q-34, Q-36 resolved (2026-11-13). Completion: Hire heroes from unlocked pools per tier; pick squad to captain at hire (swaps existing captain to reserve); hero scene prefab, tavern spawning and captain squad orders (moved from D-0b, 2026-11-13); permadeath applies. |
 | QA-smithy-popup | Manual Check of Blacksmith Crafting & Sales | Waiting | Unassigned | From D-6 (user skipped manual play 2026-11-13). In `Game.unity` prep: F on Smithy opens popup; Lv1 lists 3 recipes; craft wood shield (100→80 gold, recipe stays); iron sword without hide shows "비용이 모자랍니다"; sell shield +12 gold; consumables not listed for sale; upgrade shows 4 recipes. Open a BUG task if wrong. |
 | PREP-01 | Blacksmith Equipment Upgrade Levels | Waiting | Unassigned | Prerequisite: D-6 (Done 2026-11-13; shares the Smithy panel). Decision: Q-35. Completion: Per-item upgrade level stored on `ItemInstance` and kept through equip/unequip and run state; +10% equip modifiers per level; max +1/+3/+5 by blacksmith Lv1/2/3; step cost 50% gold price × target level + materials (data); sell refund includes upgrade spend at the sell ratio. |
-| PREP-02 | Shop Gold Re-roll | Waiting | Unassigned | Decision: Q-46 (2026-11-13). Completion: Re-roll button in Shop pop-up; cost rises per re-roll within a prep phase (data, e.g., 10/20/30g) and resets next prep; re-roll is seed-reproducible via `IRandomSource`. Coordinate with PREP-03 (same files). |
+| PREP-02 | Shop Gold Re-roll | In Progress | youngho | Branch `feature/prep-02`. Decision: Q-46 (2026-11-13). Completion: Re-roll button in Shop pop-up; cost rises per re-roll within a prep phase (data, e.g., 10/20/30g) and resets next prep; re-roll is seed-reproducible via `IRandomSource`. Coordinate with PREP-03 (same files). |
 | PREP-03 | Shop Offer Slot Locks | Waiting | Unassigned | Decision: Q-46 (2026-11-13). Completion: Free lock toggle per offer, max locked = Shop level; locked offers survive re-roll (PREP-02) and next prep restock; buying clears the lock. |
 | PREP-04 | Combat Consumable Use | Pending Decision | Unassigned | User deferred (2026-11-13). Decide with Q-12: input keys (combat key ownership with teammate), quick slots, effects (e.g., potion heal %), limits. Existing data: `item_potion`. |
 
