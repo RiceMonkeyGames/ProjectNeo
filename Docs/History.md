@@ -1,6 +1,6 @@
 # Past Verification History
 
-Last Updated: 2026-11-12 23:35:46 (KST). Historical log of completed milestones, performance benchmarks, and manual playtest records separated from [Context.md](Context.md). Preserves historical completion scope and verification evidence; past test counts and temporary numbers do not represent current baselines or final performance guarantees. Check [ImplementationPlan Section 3](ImplementationPlan.md#3-current-status--starting-point) first for active task status. Agents should only open this file when past rationales or verification evidence are needed, searching by date or task ID.
+Last Updated: 2026-11-13 10:47:31 (KST). Historical log of completed milestones, performance benchmarks, and manual playtest records separated from [Context.md](Context.md). Preserves historical completion scope and verification evidence; past test counts and temporary numbers do not represent current baselines or final performance guarantees. Check [ImplementationPlan Section 3](ImplementationPlan.md#3-current-status--starting-point) first for active task status. Agents should only open this file when past rationales or verification evidence are needed, searching by date or task ID.
 
 New completion results must be appended to the end of this file under `### YYYY-MM-DD: Title`, updating ImplementationPlan Section 3 and Context Section 2 concurrently.
 
@@ -381,3 +381,14 @@ Method: `Assets/Tests/PlayMode/UnitScaleBenchmark.cs`. Ground 120m × 120m, 4m-h
 - Rejected or deferred: war cry rallying routed units, Berserk, enemy hero/boss approach, explosions, ladder pressure, being surrounded, siege-failure loss for enemies, player presence modifying the check, prep-phase recovery facilities (later design), Last Stand / Steadfast Awaken types (later).
 - Recorded in: GameDesign "Ally Morale: Breaking Point" / "Enemy Morale", ImplementationPlan Q-04·Q-05, Backlog Q-04·05 (Done) and B-8.1 (prerequisite resolved).
 - Verification: Document review only. Values are starting points for data assets and need playtesting after B-8.1/B-8.2.
+
+### 2026-11-13: D-0b - Spawning Recruited Grunts into the Game Scene
+
+- Assignee: Hwang Seong-min (agent). Branch `feature/run-unit-spawn`, merged to develop at user request (2026-11-13). Scope narrowed by user decision (2026-11-13): grunts only; hero prefab, captain spawning and captain squad orders moved to D-3. Verification via editor-only F9 debug key (user decision); remove once D-4 lands.
+- Rules (pure C#): `RunState.TryFindRecruitSquad`/`TryRecruit`/`IndexOf` implement Q-36 (chosen squad if free, else first free squad, else new squad up to cap, rejected at cap or during a pending battle; no cost charged). `RunUnitBinding.BindNew` pairs a new run unit once. `SquadCommander.AddSquad` grows orders/selection.
+- Scene: `SoldierDefinition.UnitPrefab` (shared data field; teammate notice needed). `GameRunLink.TryRecruit` syncs run and `SquadCommandCenter` (`AddSquad`, `AddMember`, `TryGetGatherPoint`). `GameUnitSpawner` instantiates inactive, applies ally AI/fall settings, places in front of the `FacilityStation`, walks to the squad gather point (new empty squad holds). `PlaceholderSquadMarkers` adds discs lazily. `GameUnitSpawnSetup` (Editor API) attached the spawner to `Game.unity` and filled `allied_melee`/`allied_ranged` prefab slots.
+- Bug found during verification: inactive instances have no `UnitCombatAI.Actor` before Awake, so `TryRecruit` rejected every recruit; fixed by resolving `CharacterActor` via `GetComponent`.
+- Automated: EditMode 210/210 (new `RunRecruitTests` 8, `SquadCommanderTests.AddSquad_*` 1). PlayMode 93/93 including new `GameUnitSpawnPlayTests` 2 (spawn near barracks, walk to squad, on NavMesh, in battle input, receives Attack order, death removed from run, battle-time recruit rejected; full squads → new squad selectable with markers).
+- Re-run 2026-11-13 10:45 KST: EditMode 210/210, PlayMode 93/93, no compile errors.
+- Manual play (user, 2026-11-13): Game scene F9 recruit spawn, walk to squad, new squad creation and battle participation confirmed with no issues.
+- Not verified: standalone build, interaction with teammate morale/rout work (B-8).

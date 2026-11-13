@@ -24,13 +24,18 @@ namespace ProjectNeo.Squads
             center = commandCenter; selectionMaterial = selection; destinationMaterial = destination;
         }
 
-        void Start()
+        void Start() => EnsureDiscs();
+
+        // 준비 중에 모집한 유닛·새 부대(D-0b)에도 표시를 붙인다.
+        void EnsureDiscs()
         {
             for (int squad = 0; squad < center.Squads.Count; squad++)
             {
                 foreach (UnitCombatAI member in center.Squads[squad].Members)
-                    memberDiscs[member] = Disc("Selected_" + member.name, memberDiameter, selectionMaterial);
-                destinationDiscs.Add(Disc("Destination_" + (squad + 1), destinationDiameter, destinationMaterial));
+                    if (member != null && !memberDiscs.ContainsKey(member))
+                        memberDiscs[member] = Disc("Selected_" + member.name, memberDiameter, selectionMaterial);
+                if (squad >= destinationDiscs.Count)
+                    destinationDiscs.Add(Disc("Destination_" + (squad + 1), destinationDiameter, destinationMaterial));
             }
         }
 
@@ -62,12 +67,13 @@ namespace ProjectNeo.Squads
 
         void LateUpdate()
         {
+            EnsureDiscs();
             for (int squad = 0; squad < destinationDiscs.Count; squad++)
             {
                 bool selected = center.Commander.IsSelected(squad);
                 foreach (UnitCombatAI member in center.Squads[squad].Members)
                 {
-                    GameObject disc = memberDiscs[member];
+                    if (member == null || !memberDiscs.TryGetValue(member, out GameObject disc)) continue;
                     bool alive = member != null && member.isActiveAndEnabled
                         && member.Actor.Health != null && !member.Actor.Health.IsDead;
                     disc.SetActive(selected && alive);

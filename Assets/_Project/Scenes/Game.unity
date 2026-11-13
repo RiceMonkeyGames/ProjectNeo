@@ -12378,6 +12378,7 @@ GameObject:
   - component: {fileID: 1251469582}
   - component: {fileID: 1251469583}
   - component: {fileID: 1251469584}
+  - component: {fileID: 1251469585}
   m_Layer: 0
   m_Name: GameBattleController
   m_TagString: Untagged
@@ -12501,6 +12502,27 @@ MonoBehaviour:
   equippedList: {fileID: 899236515}
   inventoryList: {fileID: 422646979}
   rowTemplate: {fileID: 1289174122}
+--- !u!114 &1251469585
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1251469578}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce4b4dfff77c9b74eb78d548772a2373, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Flow.GameUnitSpawner
+  battle: {fileID: 1251469579}
+  squads: {fileID: 1621472877}
+  world: {fileID: 340332242}
+  aiSettings: {fileID: 11400000, guid: 4fd3b4b03d58c4b4dbbacd1bfd9e00a5, type: 2}
+  fallSettings: {fileID: 11400000, guid: eb94384911f5841459c354ee5b00c9cb, type: 2}
+  facilityFrontDistance: 6
+  navigationSnapDistance: 4
+  gatherScatter: 1.5
+  debugSoldier: {fileID: 11400000, guid: a0ed209df7c113348b2d08b2620b9793, type: 2}
 --- !u!1 &1252913542
 GameObject:
   m_ObjectHideFlags: 0

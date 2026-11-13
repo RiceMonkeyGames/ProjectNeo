@@ -58,6 +58,49 @@ namespace ProjectNeo.Squads
             for (int i = 0; i < army.Squads.Count; i++) Apply(i, Commander.OrderOf(i));
         }
 
+        /// <summary>
+        /// 실행 중에 빈 부대를 맨 뒤에 더한다(D-0b). 부대 수 상한이면 -1. 새 부대는 중지 상태다.
+        /// </summary>
+        public int AddSquad()
+        {
+            if (army.TryAddSquad() == null) return -1;
+            return Commander.AddSquad();
+        }
+
+        /// <summary>
+        /// 실행 중에 만든 유닛을 부대에 넣는다(D-0b). 자리가 없거나 이미 있으면 false. 지시는 바꾸지 않으므로
+        /// 부르는 쪽이 유닛을 부대 쪽으로 보낸다.
+        /// </summary>
+        public bool AddMember(int squad, UnitCombatAI member)
+        {
+            if (member == null || squad < 0 || squad >= army.Squads.Count) return false;
+            foreach (Squad<UnitCombatAI> other in army.Squads)
+                foreach (UnitCombatAI existing in other.Members)
+                    if (existing == member) return false;
+            return army.Squads[squad].TryAdd(member);
+        }
+
+        /// <summary>
+        /// 부대가 모여 있는 곳. 지시한 목적지가 있으면 그곳, 없으면 살아 있는 부대원의 평균 위치다. 아무도 없으면 false.
+        /// </summary>
+        public bool TryGetGatherPoint(int squad, out Vector3 point)
+        {
+            point = default;
+            if (squad < 0 || squad >= army.Squads.Count) return false;
+            SquadOrder order = Commander.OrderOf(squad);
+            if (order.HasDestination) { point = order.Destination; return true; }
+            int count = 0;
+            foreach (UnitCombatAI member in army.Squads[squad].Members)
+            {
+                if (!IsAlive(member)) continue;
+                point += member.transform.position;
+                count++;
+            }
+            if (count == 0) return false;
+            point /= count;
+            return true;
+        }
+
         public int AliveCount(int squad)
         {
             int count = 0;

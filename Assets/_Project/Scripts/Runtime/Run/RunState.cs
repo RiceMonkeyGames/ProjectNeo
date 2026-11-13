@@ -282,6 +282,48 @@ namespace ProjectNeo.Run
             return true;
         }
 
+        /// <summary>
+        /// 새 잡졸이 들어갈 부대를 고른다(Q-36). 지정한 부대가 있으면 그 부대에 자리가 있어야 하고,
+        /// 없으면 자리가 남은 첫 부대다. 모든 부대가 꽉 찼으면 부대 수 상한까지 새 부대가 들어갈 자리가 된다(이때 null이고
+        /// <paramref name="needsNewSquad"/>가 true). 넣을 수 없으면 false. 런을 바꾸지 않는다.
+        /// </summary>
+        public bool TryFindRecruitSquad(Squad<RunUnit> preferred, out Squad<RunUnit> squad, out bool needsNewSquad)
+        {
+            squad = null; needsNewSquad = false;
+            if (HasPendingBattle) return false;
+            if (preferred != null)
+            {
+                if (!Owns(preferred) || preferred.IsFull) return false;
+                squad = preferred;
+                return true;
+            }
+            foreach (Squad<RunUnit> own in Army.Squads)
+                if (!own.IsFull) { squad = own; return true; }
+            needsNewSquad = Army.CanAddSquad;
+            return needsNewSquad;
+        }
+
+        /// <summary>
+        /// 잡졸을 런에 더하고 Q-36 규칙으로 부대에 넣는다. 전투 중이거나 넣을 부대가 없으면 null이고 런은 바뀌지 않는다.
+        /// 비용은 받지 않는다(병영 D-4가 낸다). 들어간 부대는 <paramref name="squad"/>, 새로 만든 부대면 그 부대다.
+        /// </summary>
+        public RunSoldier TryRecruit(SoldierDefinition definition, Squad<RunUnit> preferred, out Squad<RunUnit> squad)
+        {
+            if (definition == null) throw new ArgumentNullException(nameof(definition));
+            if (!TryFindRecruitSquad(preferred, out squad, out bool needsNewSquad)) return null;
+            if (needsNewSquad) squad = Army.TryAddSquad();
+            RunSoldier soldier = AddSoldier(definition);
+            TryAssign(soldier, squad);
+            return soldier;
+        }
+
+        /// <summary>이 런 부대의 순번. 씬 부대와 같은 순서다. 없으면 -1.</summary>
+        public int IndexOf(Squad<RunUnit> squad)
+        {
+            for (int i = 0; i < Army.Squads.Count; i++) if (Army.Squads[i] == squad) return i;
+            return -1;
+        }
+
         /// <summary>영웅을 부대장으로 정한다. null이면 부대장을 비운다. 한 영웅은 한 부대만 맡는다.</summary>
         public bool TrySetLeader(Squad<RunUnit> squad, RunHero hero)
         {

@@ -32,18 +32,32 @@ namespace ProjectNeo.Squads
     /// </summary>
     public sealed class SquadCommander
     {
-        readonly SquadOrder[] orders;
-        readonly bool[] selected;
+        SquadOrder[] orders;
+        bool[] selected;
         public int SquadCount => orders.Length;
         /// <summary>지시가 바뀐 부대 번호와 새 지시.</summary>
         public event Action<int, SquadOrder> OrderChanged;
         public event Action SelectionChanged;
+        /// <summary>부대가 늘었다. 인자는 새 부대 번호.</summary>
+        public event Action<int> SquadAdded;
 
         public SquadCommander(int squadCount)
         {
             if (squadCount < 0) throw new ArgumentOutOfRangeException(nameof(squadCount));
             orders = new SquadOrder[squadCount];
             selected = new bool[squadCount];
+        }
+
+        /// <summary>
+        /// 맨 뒤에 부대를 하나 더하고 번호를 돌려준다(D-0b 모집으로 새 부대가 생길 때). 새 부대는 중지 상태이고 선택되지 않는다.
+        /// </summary>
+        public int AddSquad()
+        {
+            int index = orders.Length;
+            Array.Resize(ref orders, index + 1);
+            Array.Resize(ref selected, index + 1);
+            SquadAdded?.Invoke(index);
+            return index;
         }
 
         public SquadOrder OrderOf(int squad) => orders[squad];
