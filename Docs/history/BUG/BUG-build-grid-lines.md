@@ -1,6 +1,6 @@
 # BUG-build-grid-lines | 2026-11-13 | Construction - Subpixel Grid Lines
 
-Last Updated: 2026-11-13 14:19:18 (KST)
+Last Updated: 2026-11-13 14:28:55 (KST)
 
 ## Claim and cause
 
@@ -14,7 +14,7 @@ Last Updated: 2026-11-13 14:19:18 (KST)
 - `GameFlowPlayTests.ConstructionGrid_RenderedLinesKeepPixelThicknessAcrossZoomAndAngles`: renders into 1280×720 and 1920×1080 targets at zoom 20/55/180 and yaw 0/22.5/45/90/135 (30 combinations). Checks projected perpendicular width of both line directions >=1.5px, line centers/spacing unchanged, mesh reused. 1/1 passed (0.85s).
 - Full EditMode 216/216 passed (6.30s); full PlayMode 114/114 passed (47.88s). Final Editor check: playing=False, failed=False, background=False; Title scene restored.
 - Agent captured actual Game view before/after; corrected captures show continuous grid lines. Captures are visual evidence at their displayed framing, not controlled golden-image comparisons at identical zoom. Evidence saved outside Assets/Temp/Logs under `C:/Users/JUNGLE/.codex/visualizations/2026/11/13/01a1d329-3d8d-7532-baa4-dd5715e8f993/` (`grid-before.png`, `grid-after.png`, `grid-after-far.png`). File labels alone do not establish the exact captured zoom, since screen capture reads the Game view's last rendered buffer.
-- User physical-input visual recheck and standalone build not performed for this fix. Keep Waiting for Verification after automated checks.
+- User confirmed the requested manual visual recheck on 2026-11-13 at 14:28 KST; mark Done. No detailed per-control report was supplied. Standalone build remains unverified.
 
 ## Manual verification / reset
 

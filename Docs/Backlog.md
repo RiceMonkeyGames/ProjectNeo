@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-13 14:19:18 (KST)
+Last Updated: 2026-11-13 14:28:55 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -20,7 +20,6 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 |---|---|---|---|---|
 | C-1a-confirm | Teammate Review of Combat Outcome Format | In Progress | Hwang Seong-min | Review C-1a `BattleResult` draft (outcome, end reason, per-unit status, castle snapshot, kill counts) with combat lead; update code, tests, docs. Prerequisites: C-1a (Done). Decision (2026-11-12): Proceed concurrently with C-1~2. |
 | QA-game-loop | Manual Playtest of Current Game Scene | Waiting for Verification | Unassigned | Formerly `B-9.3-play`. First user playtest reported 2026-11-13; findings in [QA history](history/QA/QA-game-loop.md). Victory and next-prep flow remain unverified because user could not win. Recheck construction and combat after follow-ups below. |
-| BUG-build-grid-lines | Construction grid lines intermittently disappear | Waiting for Verification | Codex | Claim pushed in `f7400a1`; task branch `fix/bug-build-grid-lines` created, but final implementation committed/pushed directly on develop as `4041358` (branch-state mismatch caught after commit; code was not lost). Temporary local branch removed after remote ancestry check; no remote task branch published. Owned: BuildGridView.cs, BuildCameraSettings.cs, ConstructionCameraController.cs, GameFlowPlayTests.cs, related docs. Basic view measured ~0.37px lines; now maintain minimum 1.5px perpendicular width using camera projection. Grid rendering matrix 30 combinations passed; full EditMode 216/216, PlayMode 114/114. Agent screenshots show continuous lines; user manual recheck pending. [History](history/BUG/BUG-build-grid-lines.md). |
 | ART-01 | Flatten placeholder stair shading | Waiting | Unassigned | User requests flat appearance like walls; current ramp shading looks unnatural. Inspect mesh normals/material, retain gameplay shape for this visual task. Verify Game construction and first-person views. |
 | SIEGE-03 | Implement one-cell full-tier stairs | Waiting | Unassigned | Q-42 approved 2026-11-13: 1×1 cells, full 3m rise. Update geometry/footprint through Editor APIs; verify player and unit ascent/descent, rotations, stacked placement and existing layouts. Coordinate shared assets; ART-01 handles shading. |
 | FLOW-01 | Start battle from desired current position | Pending Decision | Unassigned | Q-40 direction approved 2026-11-13: move to desired position in prep, then start there without banner return or relocation. Agree trigger UI/input details, then verify phase guards, modal conflicts and single battle start. |

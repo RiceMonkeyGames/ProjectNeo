@@ -1,6 +1,6 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-13 14:18:18 (KST)
+Last Updated: 2026-11-13 14:28:55 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
@@ -23,7 +23,7 @@ Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elev
 
 ## Test Baselines & Status Conventions
 
-- **Construction grid display (`BUG-build-grid-lines`, 2026-11-13)**: Initial lines measured ~0.37px; camera-aware width maintains minimum 1.5px while retaining cell centers/spacing. Render matrix 30 combinations passed, full EditMode **216/216**, full PlayMode **114/114** (47.88s). Agent captured continuous grid; waiting for user manual visual recheck. [History](../history/BUG/BUG-build-grid-lines.md).
+- **Construction grid display (`BUG-build-grid-lines`, 2026-11-13)**: Initial lines measured ~0.37px; camera-aware width maintains minimum 1.5px while retaining cell centers/spacing. Render matrix 30 combinations passed, full EditMode **216/216**, full PlayMode **114/114** (47.88s). Agent captured continuous grid; user confirmed manual visual recheck on 2026-11-13. Done; standalone build unverified. [History](../history/BUG/BUG-build-grid-lines.md).
 
 - **Construction wheel zoom (`BUG-build-camera-zoom`, 2026-11-13; on `fix/bug-build-camera-zoom`)**: Correct normalized scroll units; red/green actual-input regression reproduced 55 → 54.92556 before fix vs expected 46.75. GameFlow **8/8**, full EditMode **216/216**, full PlayMode **113/113** (46.50s), no compilation failure. User confirmed physical wheel zoom works (2026-11-13); physical wheel manually verified; integrated/pushed to develop in f7400a1 under updated AI Git policy; UI-hover manual check unverified; no standalone build checked. [History](../history/BUG/BUG-build-camera-zoom.md).
 
