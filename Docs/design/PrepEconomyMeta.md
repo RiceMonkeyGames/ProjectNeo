@@ -1,6 +1,6 @@
 # Game Design: Preparation, Economy, Rewards & Meta
 
-Last Updated: 2026-11-13 13:17:37 (KST)
+Last Updated: 2026-11-13 20:57:51 (KST)
 
 > Purpose: Rules for courtyard facilities, unit deployment, currencies, rewards, and meta progression. | Parent: [design/README](README.md) | Related: [WallsAndSiege](WallsAndSiege.md), [OpenQuestions](OpenQuestions.md)
 
@@ -18,6 +18,9 @@ Last Updated: 2026-11-13 13:17:37 (KST)
 
 - **Refresh & Upgrades** (2026-11-12): Shop and Tavern refresh inventories on entering each prep phase (gold re-rolling is a follow-up). Facility upgrades pay next-level gold; Shop tier reflects on next prep phase (prevents free in-phase re-roll).
 - **Shop & Equipment Prototypes** (2026-11-12): Shop rolls from tier pools excluding locked items; purchased items leave stock; sell price = `50%` of purchase gold (data-configurable, applies to combat/reward items too). Press `I` during prep for player equipment UI (3 generic slots, immediate stat updates; hero equipment follows Tavern).
+- **Blacksmith** (Q-35, 2026-11-13): *Fixed recipes* — every unlocked equipment recipe allowed by the current blacksmith level (recipe list per level in data; higher levels add higher-tier gear) is always craftable, with no random roll. Cost = Gold + Monster Materials from recipe data. *Upgrades* — each equipment item carries its own level (+1 to +N); each level adds +10% to that item's equip stat modifiers; max level by blacksmith level Lv1 +1 / Lv2 +3 / Lv3 +5; step cost = item gold price × 50% × target level, plus materials (all data-configurable); always succeeds. *Selling* — same rule as Shop (equipment, `50%` of purchase gold); upgraded items also refund the same ratio of gold spent on upgrades.
+- **Shop Re-roll & Locks** (Q-46, 2026-11-13): Pay gold to re-roll the current offers; cost rises with each re-roll in one prep phase (e.g., 10g, 20g, 30g; data) and resets each prep phase. Locking is free; max locked offers = Shop level. Locked offers survive re-rolls and the next prep restock; buying a locked offer removes its lock.
+- **Consumables** (2026-11-13): Combat use of consumables (e.g., potions) is deferred; keys and effects to be planned with Q-12.
 - **Barracks** (Q-37, 2026-11-13): Training is automatic by barracks level (no separate paid training action), granting stat bonuses to all grunts immediately on upgrade (Lv1 none, Lv2 +10% max HP/attack, Lv3 +20% max HP/attack). Melee (15g) and ranged (20g) grunts recruitable from Lv1 (data asset values).
 - **Unit Deployment** (Q-36, 2026-11-13):
   - *Barracks recruits*: Pick target squad in UI (default: first with free space). If all full, auto-creates a new squad up to cap, then blocks.

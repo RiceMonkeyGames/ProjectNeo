@@ -1,6 +1,6 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-13 20:37:08 (KST)
+Last Updated: 2026-11-13 20:57:51 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
@@ -37,6 +37,8 @@ Last Updated: 2026-11-13 20:37:08 (KST)
 | Q-21 | Siege weapon (cannon) mechanics | SIEGE-02 | Resolved (2026-11-13): Auto-fire + player manual control; ballistic area damage; ±45° arc; own HP (repairable); no passage blocking; no friendly fire (switchable); nearest-enemy targeting as swappable strategy; temporary values in data. See [WallsAndSiege](../design/WallsAndSiege.md). |
 | Q-41 | Shared ladder traversal interaction rules | SIEGE-04 | Resolved (2026-11-13): Ally/player ascent and descent; tap F boards, hold F at top topples, W/S traverses; one occupant with FIFO traffic and no player priority; allied routes use ladders and defer new orders until endpoint; no attacks aboard, damage/death falls allowed; friendly use blocks automatic toppling; allies/player can raise ladders. User confirmed shared-code edits. See [WallsAndSiege](../design/WallsAndSiege.md). |
 | Q-44 | Rout wiring & enemy morale | B-8.2, COMBAT-03, C-3 | Resolved (2026-11-13): Enemies have no morale; ally death loss proportional to battle-start size (150 → 0 at 90% deaths); morale on run squads (new squads 150); computed courtyard retreat point; exit on arrival or after 20s; fled units return next prep; exited allies excluded from defeat count. See [MoraleAndWave](../design/MoraleAndWave.md). |
+| Q-35 | Blacksmith crafting model & upgrades | D-6, PREP-01 | Resolved (2026-11-13): Fixed recipes per blacksmith level (Gold + Materials, always available); per-item upgrade levels +10% each, max +1/+3/+5 by blacksmith Lv1/2/3, step cost 50% of gold price × target level + materials; blacksmith sells equipment at the Shop ratio incl. upgrade spend. |
+| Q-46 | Shop gold re-roll & offer locks | PREP-02, PREP-03 | Resolved (2026-11-13): Re-roll cost rises per re-roll within a prep phase (e.g., 10/20/30g), resets each prep; free locks up to Shop level; locked offers persist through re-roll and next restock; buying clears the lock. |
 
 ## Detailed Decision Records
 

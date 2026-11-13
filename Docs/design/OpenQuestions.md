@@ -1,6 +1,6 @@
 # Open Design Questions
 
-Last Updated: 2026-11-13 13:17:37 (KST)
+Last Updated: 2026-11-13 20:57:51 (KST)
 
 > Purpose: Undecided game design topics tracked alongside `plan/Decisions-Pending.md`. | Parent: [design/README](README.md) | Related: [Decisions-Pending](../plan/Decisions-Pending.md)
 
@@ -13,5 +13,5 @@ Last Updated: 2026-11-13 13:17:37 (KST)
 - Actual values for squad counts and squad member caps.
 - Layered building edge cases (stairs constraints, partial foundation collapse) and max vertical tiers.
 - Equipment handling on hero permadeath (Q-31); whether player character can serve as squad captain (Q-32).
-- Shop/tavern gold re-roll costs and locking slots (refresh per prep phase decided 2026-11-12).
-- Blacksmith crafting format (direct purchase vs material recipes) and upgrade definitions (Q-35).
+- Tavern gold re-roll costs and locking slots (Shop rules decided as Q-46, 2026-11-13).
+- Combat consumable use (keys, effects, limits) with Q-12; deferred 2026-11-13.
