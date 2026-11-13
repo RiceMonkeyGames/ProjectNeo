@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-13 13:22:37 (KST)
+Last Updated: 2026-11-13 13:24:59 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -19,7 +19,6 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 | Task ID | Description | Status | Assignee | Completion Criteria & Prerequisites |
 |---|---|---|---|---|
 | C-1a-confirm | Teammate Review of Combat Outcome Format | In Progress | Hwang Seong-min | Review C-1a `BattleResult` draft (outcome, end reason, per-unit status, castle snapshot, kill counts) with combat lead; update code, tests, docs. Prerequisites: C-1a (Done). Decision (2026-11-12): Proceed concurrently with C-1~2. |
-| BUG-wall-destination-replan | Investigate intermittent move distance after destination wall collapse | In Progress | Codex | Branch: `feature/wall-destination-replan`. Repro: Full PlayMode suite on `feature/playmode-input-focus` (2026-11-13), `ConstructionPlayTests.MoveDirective_ReplansWhenDestinationWallDisappears`. Expected: Unit moves >1m toward a reachable point after destination wall collapses. Actual: 0.647087097m; full run 92/93 passed, immediate isolated retry passed. Completion: Determine timing/navigation or rule cause and stabilize behavior/assertion without weakening valid checks. Prerequisite: Coordinate shared combat/navigation files with combat owner; separate from BUG-wall-hold. |
 | QA-game-loop | Manual Playtest of Current Game Scene | Waiting for Verification | Unassigned | Formerly `B-9.3-play`. Title → Prep → F Construction / Esc Return → F Battle → Win/Loss → Next Prep loop. Document camera, squad commanding, input glitches, and reproduction steps. |
 | Q-21 | Finalize Siege Weapon Mechanics | Pending Decision | Unassigned | Confirm auto/unit/player control, range, damage, HP, rotation, passage blocking, and costs with user. Cannons currently mountable only. |
 | B-6.1 | Scope & Contract for Additional Enemy Behaviors | Pending Decision | Unassigned | Agree on targeting, movement, and failure handling for wall-destroying and aerial enemies. Existing ladder and gate assault logic will not be re-implemented. |
