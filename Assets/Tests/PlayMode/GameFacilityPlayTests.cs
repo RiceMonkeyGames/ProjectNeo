@@ -115,6 +115,38 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
+        public IEnumerator 대장간_팝업에서_레시피로_만들고_장비를_판다()
+        {
+            var state = GameSession.Flow.Run.State;
+            Assert.IsTrue(Station(FacilityType.Smithy).Interact());
+            var recipes = state.CraftableRecipes();
+            Assert.AreEqual(3, recipes.Count, "대장간 1레벨 레시피 수");
+            Assert.AreEqual(3, facilities.OfferRows);
+            StringAssert.Contains("제작", facilities.OfferHeaderText);
+            Assert.AreEqual(1, facilities.InventoryRows, "팔 장비가 없다는 안내 한 줄");
+
+            int gold = state.Wallet.Gold;
+            var expensive = recipes.First(recipe => !state.Wallet.CanAfford(recipe.cost));
+            Assert.IsFalse(facilities.TryCraft(recipes.ToList().IndexOf(expensive)), "재료가 모자라면 만들 수 없다.");
+            StringAssert.Contains("모자랍니다", facilities.BodyText);
+            Assert.AreEqual(gold, state.Wallet.Gold);
+
+            var shield = recipes[0];
+            Assert.IsTrue(facilities.TryCraft(0));
+            Assert.AreEqual(gold - shield.cost.gold, state.Wallet.Gold);
+            Assert.AreEqual(1, state.Inventory.CountOf(shield.item));
+            Assert.AreEqual(3, facilities.OfferRows, "고정 레시피라 만든 뒤에도 남는다.");
+            Assert.AreEqual(1, facilities.InventoryRows);
+            StringAssert.Contains("제작", facilities.BodyText);
+
+            int sell = state.Shop.GetSellPrice(shield.item);
+            Assert.IsTrue(facilities.TrySellEquipment(0));
+            Assert.AreEqual(gold - shield.cost.gold + sell, state.Wallet.Gold);
+            Assert.AreEqual(0, state.Inventory.Items.Count);
+            yield break;
+        }
+
+        [UnityTest]
         public IEnumerator 시설_팝업에서_업그레이드하고_비용이_모자라면_거부한다()
         {
             var state = GameSession.Flow.Run.State;

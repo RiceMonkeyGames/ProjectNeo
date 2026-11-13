@@ -38,6 +38,8 @@ namespace ProjectNeo.Facilities
         public List<WeightedEntry<ItemDefinition>> itemPool;
         /// <summary>이 레벨에서 나올 수 있는 영웅과 가중치(주점).</summary>
         public List<WeightedEntry<HeroDefinition>> heroPool;
+        /// <summary>이 레벨에서 항상 만들 수 있는 장비와 제작 비용(대장간, Q-35). 레벨마다 전체 목록을 적는다.</summary>
+        public List<CraftingRecipe> recipes;
     }
 
     /// <summary>시설 하나의 데이터. 레벨 목록의 첫 칸이 시작 레벨이다.</summary>

@@ -359,6 +359,65 @@ namespace ProjectNeo.Run
             return TryRecruit(definition, preferred, out squad);
         }
 
+        /// <summary>대장간 상태. 시설을 아직 붙이지 않았으면 null.</summary>
+        public FacilityState Smithy => Facility(FacilityType.Smithy);
+
+        /// <summary>
+        /// 지금 대장간 레벨에서 항상 만들 수 있는 레시피(D-6, Q-35). 장비가 비었거나 isAvailable(해금)을 통과하지 못한 칸은 뺀다.
+        /// 대장간이 없으면 빈 목록.
+        /// </summary>
+        public IReadOnlyList<CraftingRecipe> CraftableRecipes(Func<ItemDefinition, bool> isAvailable = null)
+        {
+            var result = new List<CraftingRecipe>();
+            List<CraftingRecipe> recipes = Smithy?.Current.recipes;
+            if (recipes == null) return result;
+            foreach (CraftingRecipe recipe in recipes)
+                if (recipe.item != null && (isAvailable == null || isAvailable(recipe.item))) result.Add(recipe);
+            return result;
+        }
+
+        /// <summary>
+        /// 대장간에서 이 장비를 만들 수 있는지(D-6). 전투 대기 → 레시피·해금 → 비용 순으로 처음 걸린 이유를 돌려준다.
+        /// 런을 바꾸지 않는다.
+        /// </summary>
+        public CraftCheck CheckCraft(ItemDefinition item, Func<ItemDefinition, bool> isAvailable = null)
+        {
+            if (HasPendingBattle) return CraftCheck.BattlePending;
+            if (!TryFindRecipe(item, isAvailable, out CraftingRecipe recipe)) return CraftCheck.NotCraftable;
+            if (!Wallet.CanAfford(recipe.cost)) return CraftCheck.NotEnoughFunds;
+            return CraftCheck.Ok;
+        }
+
+        /// <summary>
+        /// 대장간에서 장비를 만들어 보관함에 넣고 레시피 비용을 런 지갑에서 낸다(D-6). <see cref="CheckCraft"/>가 Ok가 아니면
+        /// null이고 런은 바뀌지 않는다. 레시피는 고정이라 만든 뒤에도 목록에 남는다.
+        /// </summary>
+        public ItemInstance TryCraft(ItemDefinition item, Func<ItemDefinition, bool> isAvailable = null)
+        {
+            if (CheckCraft(item, isAvailable) != CraftCheck.Ok) return null;
+            TryFindRecipe(item, isAvailable, out CraftingRecipe recipe);
+            if (!Wallet.TrySpend(recipe.cost)) return null;
+            ItemInstance crafted = Inventory.Add(item);
+            Changed?.Invoke();
+            return crafted;
+        }
+
+        /// <summary>대장간에서는 장비만 판다. 판매가는 상점과 같다(구매가 골드 × 판매 비율, Q-35).</summary>
+        public bool TrySellAtSmithy(ItemInstance item)
+        {
+            if (item == null || item.Definition.Kind != ItemKind.Equipment || Smithy == null) return false;
+            return TrySell(item);
+        }
+
+        bool TryFindRecipe(ItemDefinition item, Func<ItemDefinition, bool> isAvailable, out CraftingRecipe found)
+        {
+            found = default;
+            if (item == null) return false;
+            foreach (CraftingRecipe recipe in CraftableRecipes(isAvailable))
+                if (recipe.item == item) { found = recipe; return true; }
+            return false;
+        }
+
         /// <summary>이 런 부대의 순번. 씬 부대와 같은 순서다. 없으면 -1.</summary>
         public int IndexOf(Squad<RunUnit> squad)
         {

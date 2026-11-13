@@ -23,6 +23,23 @@ MonoBehaviour:
     offerCount: 3
     itemPool: []
     heroPool: []
+    recipes:
+    - item: {fileID: 11400000, guid: 82f91b232b8d1fc4fb04fbebf5e77a88, type: 2}
+      cost:
+        gold: 20
+        materials: []
+    - item: {fileID: 11400000, guid: f199196ca1dd9d8458335b9110821698, type: 2}
+      cost:
+        gold: 30
+        materials:
+        - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+          amount: 2
+    - item: {fileID: 11400000, guid: 460dfb0830ad07e44b81096701286eeb, type: 2}
+      cost:
+        gold: 20
+        materials:
+        - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+          amount: 3
   - upgradeCost:
       gold: 60
       materials: []
@@ -32,6 +49,31 @@ MonoBehaviour:
     offerCount: 4
     itemPool: []
     heroPool: []
+    recipes:
+    - item: {fileID: 11400000, guid: 82f91b232b8d1fc4fb04fbebf5e77a88, type: 2}
+      cost:
+        gold: 20
+        materials: []
+    - item: {fileID: 11400000, guid: f199196ca1dd9d8458335b9110821698, type: 2}
+      cost:
+        gold: 30
+        materials:
+        - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+          amount: 2
+    - item: {fileID: 11400000, guid: 460dfb0830ad07e44b81096701286eeb, type: 2}
+      cost:
+        gold: 20
+        materials:
+        - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+          amount: 3
+    - item: {fileID: 11400000, guid: 67d0133c1953fa84c81f67a15984ec45, type: 2}
+      cost:
+        gold: 45
+        materials:
+        - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+          amount: 4
+        - material: {fileID: 11400000, guid: d8a422bc2c200bc4098f7e97952c696e, type: 2}
+          amount: 2
   - upgradeCost:
       gold: 120
       materials: []
@@ -41,4 +83,37 @@ MonoBehaviour:
     offerCount: 5
     itemPool: []
     heroPool: []
+    recipes:
+    - item: {fileID: 11400000, guid: 82f91b232b8d1fc4fb04fbebf5e77a88, type: 2}
+      cost:
+        gold: 20
+        materials: []
+    - item: {fileID: 11400000, guid: f199196ca1dd9d8458335b9110821698, type: 2}
+      cost:
+        gold: 30
+        materials:
+        - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+          amount: 2
+    - item: {fileID: 11400000, guid: 460dfb0830ad07e44b81096701286eeb, type: 2}
+      cost:
+        gold: 20
+        materials:
+        - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+          amount: 3
+    - item: {fileID: 11400000, guid: 67d0133c1953fa84c81f67a15984ec45, type: 2}
+      cost:
+        gold: 45
+        materials:
+        - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+          amount: 4
+        - material: {fileID: 11400000, guid: d8a422bc2c200bc4098f7e97952c696e, type: 2}
+          amount: 2
+    - item: {fileID: 11400000, guid: b916f3e660b272b4791179bd0f5b8dc5, type: 2}
+      cost:
+        gold: 60
+        materials:
+        - material: {fileID: 11400000, guid: d8a422bc2c200bc4098f7e97952c696e, type: 2}
+          amount: 4
+        - material: {fileID: 11400000, guid: 983096480f690a248a516a89f583ca4f, type: 2}
+          amount: 2
   displayName: "\uB300\uC7A5\uAC04"
