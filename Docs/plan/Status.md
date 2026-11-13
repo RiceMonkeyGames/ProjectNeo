@@ -1,12 +1,12 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-13 14:57:42 (KST)
+Last Updated: 2026-11-13 15:24:36 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
 **Current Milestone: M1 Single Siege Battle in progress; M2 Repeatable Run Loop in progress in parallel.**
 
-Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elevation, and `feature/siege-prototype` test scene into `develop`. `Game` scene links 1st-person prep / construction F interaction → gate banner F interaction → enemy assault, ladders, actual win/loss → rewards/results. On the M2 side, run data (`C-1~2`), victory rewards (`C-4`), build/repair costs (`D-2`), facility pop-ups (`D-0`), upgrades (`D-1`), shop (`D-5`), player equipment (`D-7`), grunt spawning (`D-0b`), and barracks recruitment/training (`D-4`) are implemented; formal stage/wave layouts, casualty carry-over (`C-3`), tavern (`D-3`), squad org (`D-8`), and blacksmith (`D-6`) remain follow-ups. Wall-destroying enemies, aerial enemies, morale, and siege weapon firing (`Q-21`) remain pending.
+Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elevation, and `feature/siege-prototype` test scene into `develop`. `Game` scene links 1st-person prep / construction F interaction → hold B for 1 second at current position (FLOW-01, on feature/flow-01) → enemy assault, ladders, actual win/loss → rewards/results. On the M2 side, run data (`C-1~2`), victory rewards (`C-4`), build/repair costs (`D-2`), facility pop-ups (`D-0`), upgrades (`D-1`), shop (`D-5`), player equipment (`D-7`), grunt spawning (`D-0b`), and barracks recruitment/training (`D-4`) are implemented; formal stage/wave layouts, casualty carry-over (`C-3`), tavern (`D-3`), squad org (`D-8`), and blacksmith (`D-6`) remain follow-ups. Wall-destroying enemies, aerial enemies, morale, and siege weapon firing (`Q-21`) remain pending.
 
 ## Implemented vs Pending Real Connections
 
@@ -22,6 +22,8 @@ Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elev
 | Art & Performance | Capsule/box placeholder visuals, dual-tier NavMesh benchmark, AI query optimization (`PERF-nav-query`) | Production Synty packs, animations, VFX, full combat performance profiling |
 
 ## Test Baselines & Status Conventions
+
+- **Current-position battle start (`FLOW-01`, 2026-11-13; feature/flow-01, Done after user authorization)**: Hold B for 1 second in prep exploration; show hold percentage; cancel on release/modal/focus loss; block construction/facility/equipment screens and held-key restarts. Retire banner F trigger, preserve position/view. Compile passed, EditMode **216/216**, PlayMode **120/120** (67.85s). Agent inspected the live Game hint; physical-key playtest and standalone build unverified. [History](../history/FLOW/FLOW-01.md).
 
 - **One-cell stairs (`SIEGE-03`, 2026-11-13; Done on `feature/siege-03`; develop merge pending)**: 1×1 footprint, full 3m rise; 7 initial stairs migrated through Editor APIs across Game and 3 prototypes. Exact 45° ramp admitted with 46° NavMesh/player slope tolerance. New four-rotation Game tests exercise unit/player ascent and descent across two tiers, no player HP loss, and disconnection after ground stair collapse. Full EditMode **216/216**, final full PlayMode **118/118** (53.74s), compile passed. All four initial layouts/landing connections audited. User confirmed stair feel and authorized completion, retaining approved dimensions. Exact manual rotation/tier/squad matrix was not separately reported. Standalone build unverified. [History](../history/SIEGE/SIEGE-03.md).
 

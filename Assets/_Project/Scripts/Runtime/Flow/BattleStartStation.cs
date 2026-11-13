@@ -7,8 +7,9 @@ namespace ProjectNeo.Flow
         [SerializeField] GamePhaseView phaseView;
         [SerializeField] GameBattleController battle;
         public override GamePhaseView PhaseView => phaseView;
-        public override string Prompt => battle.CanStart ? "전투 시작" : "전장 준비 중";
+        public override string Prompt => "현재 위치에서 B 길게 누르기 · 전투 시작";
         public void Configure(GamePhaseView view, GameBattleController controller) { phaseView = view; battle = controller; }
-        public override bool Interact() => battle != null && battle.TryStartBattle();
+        // Legacy banner remains as scenery; FLOW-01 starts only through the preparation hold input.
+        public override bool Interact() => false;
     }
 }

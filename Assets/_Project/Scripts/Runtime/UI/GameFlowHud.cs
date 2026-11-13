@@ -107,8 +107,16 @@ namespace ProjectNeo.UI
                 ? (korean ? $"{interaction.CloseKey} 닫기" : $"{interaction.CloseKey} to close")
                 : interaction.Target != null
                     ? $"{interaction.InteractKey} · {interaction.Target.Prompt}"
-                    : (korean ? $"WASD 이동 · {interaction.InteractKey} 상호작용 · {interaction.EquipmentKey} 장비 · 성문 앞 깃발에서 전투 시작"
-                        : $"WASD move - {interaction.InteractKey} interact - {interaction.EquipmentKey} gear - Start battle at the flag near the gate");
+                    : (korean ? $"WASD 이동 · {interaction.InteractKey} 상호작용 · {interaction.EquipmentKey} 장비"
+                        : $"WASD move - {interaction.InteractKey} interact - {interaction.EquipmentKey} gear");
+            if (phaseView.IsExplorationView && battle != null)
+            {
+                string startHint = interaction.CanStartBattle
+                    ? (korean ? $"{interaction.BattleStartKey} 길게 누르기 · 전투 시작" : $"Hold {interaction.BattleStartKey} - Start battle")
+                    : (korean ? "전장 준비 중" : "Preparing battlefield");
+                if (interaction.BattleStartProgress > 0f) startHint += $" · {Mathf.FloorToInt(interaction.BattleStartProgress * 100f)}%";
+                interactionHint.text += "\n" + startHint;
+            }
         }
 
         void Refresh(GamePhase phase)

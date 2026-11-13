@@ -1,13 +1,13 @@
 # Game Design: Castle Walls, Enemies & Siege Strategy
 
-Last Updated: 2026-11-13 14:57:42 (KST)
+Last Updated: 2026-11-13 15:12:33 (KST)
 
 > Purpose: Construction stacking, build economy, enemy roles, and siege/ladder rules. | Parent: [design/README](README.md) | Related: [Combat](Combat.md), [MoraleAndWave](MoraleAndWave.md)
 
 ## Castle Walls & Construction
 
 - **One-cell stairs (approved 2026-11-13, Q-42; SIEGE-03 Done; user accepted stair feel)**: Stairs occupy 1×1 grid cell (3×3m) and ascend one full tier (3m), replacing the former 1×2 footprint. The placeholder remains a continuous ramp. All four rotations support player and unit ascent/descent, including stairs stacked on walls. Existing scene placements retain their high landing positions. No stacking on stairs; existing construction costs are retained. [Implementation and verification](../history/SIEGE/SIEGE-03.md).
-- **Battle start (approved 2026-11-13, Q-40)**: Player moves to the desired position during preparation and starts battle there. Battle start must not require returning to the gate banner or automatically relocate the player. Trigger UI/input remains to be specified; current banner interaction is the old implementation.
+- **Battle start (approved 2026-11-13, Q-40)**: Player moves to the desired position during preparation and starts battle there. Battle start must not require returning to the gate banner or automatically relocate the player. FLOW-01 input approved: hold B continuously for 1 second in preparation exploration; show key hint and hold progress. Release or leave exploration to cancel; construction/facility/equipment panels block starting. Preserve position and view, and start only once. The old gate-banner F trigger is retired.
 
 - **Map scale standard** (approved 2026-11-12): Total ground 240×300m, castle w/ outer walls 96×96m, courtyard 90×90m, northern approach 120m; 3m grid cells, up to 3 vertical tiers. One fixed main gate ("Wall Breached" on destruction).
 - **Phase restriction**: Construction/demolition/repair allowed only during Preparation; prohibited during battle (2026-11-11).

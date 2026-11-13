@@ -46,6 +46,125 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
+        public IEnumerator BattleHold_CancelsOnReleaseAndStartsOnceAtCurrentWallPose()
+        {
+            using var inputScope = new FocusIndependentInputScope();
+            var originalKeyboard = Keyboard.current;
+            var keyboard = InputSystem.AddDevice<Keyboard>();
+            try
+            {
+                yield return SceneManager.LoadSceneAsync("Game", LoadSceneMode.Single);
+                var interaction = Object.FindAnyObjectByType<PreparationInteraction>();
+                var battle = Object.FindAnyObjectByType<GameBattleController>();
+                var world = Object.FindAnyObjectByType<ConstructionWorld>();
+                var player = Object.FindAnyObjectByType<PlayerInputController>();
+                var camera = Object.FindAnyObjectByType<FirstPersonCamera>();
+                var hud = Object.FindAnyObjectByType<GameFlowHud>();
+                for (int i = 0; i < 600 && !battle.CanStart; i++) yield return null;
+                Assert.IsTrue(battle.CanStart);
+                // Start on a wall, far from the former gate interaction.
+                var wall = world.Structures.First(p => p.Placement.Definition.Kind == BuildPieceKind.Wall && p.Placement.Level == 0);
+                var motor = player.GetComponent<CharacterController>();
+                motor.enabled = false;
+                player.transform.position = wall.transform.position + Vector3.up * (wall.Placement.Definition.Height + 0.05f);
+                motor.enabled = true;
+                camera.Look(new Vector2(35f, -12f));
+                for (int i = 0; i < 5; i++) yield return null;
+                Cursor.lockState = CursorLockMode.Locked;
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.B));
+                yield return new WaitForSecondsRealtime(0.25f);
+                Assert.AreEqual(GamePhase.Preparation, GameSession.Flow.Phase);
+                Assert.Greater(interaction.BattleStartProgress, 0f);
+                Assert.Less(interaction.BattleStartProgress, 1f);
+                Assert.IsTrue(hud.InteractionHint.Contains("%"));
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+                yield return null; yield return null;
+                Assert.AreEqual(0f, interaction.BattleStartProgress);
+                yield return new WaitForSecondsRealtime(1.1f);
+                Assert.AreEqual(GamePhase.Preparation, GameSession.Flow.Phase);
+
+                Vector3 position = player.transform.position;
+                Quaternion rotation = camera.transform.rotation;
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.B));
+                double deadline = Time.realtimeSinceStartupAsDouble + 3d;
+                while (Time.realtimeSinceStartupAsDouble < deadline && GameSession.Flow.Phase == GamePhase.Preparation) yield return null;
+                Assert.AreEqual(GamePhase.Battle, GameSession.Flow.Phase);
+                Assert.Less(Vector3.Distance(position, player.transform.position), 0.02f);
+                Assert.Less(Quaternion.Angle(rotation, camera.transform.rotation), 0.01f);
+                Assert.AreEqual(1, battle.BattleNumber);
+                Assert.IsTrue(battle.Enemies.All(enemy => enemy.gameObject.activeSelf));
+                yield return new WaitForSecondsRealtime(1.1f);
+                Assert.AreEqual(1, battle.BattleNumber);
+                GameSession.Flow.FinishBattle(BattleOutcome.Victory);
+                yield return new WaitForSecondsRealtime(1.1f);
+                Assert.AreEqual(GamePhase.Reward, GameSession.Flow.Phase);
+                Assert.AreEqual(0f, interaction.BattleStartProgress);
+                GameSession.Flow.ContinueToNextStage();
+                yield return new WaitForSecondsRealtime(1.1f);
+                Assert.AreEqual(GamePhase.Preparation, GameSession.Flow.Phase, "Held B must not restart the next stage.");
+                Assert.AreEqual(1, battle.BattleNumber);
+            }
+            finally
+            {
+                InputSystem.RemoveDevice(keyboard);
+                if (originalKeyboard != null && originalKeyboard.added) originalKeyboard.MakeCurrent();
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator BattleHold_BlocksConstructionFacilitiesEquipmentAndRequiresFreshPress()
+        {
+            using var inputScope = new FocusIndependentInputScope();
+            var originalKeyboard = Keyboard.current;
+            var keyboard = InputSystem.AddDevice<Keyboard>();
+            try
+            {
+                yield return SceneManager.LoadSceneAsync("Game", LoadSceneMode.Single);
+                var interaction = Object.FindAnyObjectByType<PreparationInteraction>();
+                var battle = Object.FindAnyObjectByType<GameBattleController>();
+                var view = Object.FindAnyObjectByType<GamePhaseView>();
+                var facilities = Object.FindAnyObjectByType<GameFacilities>();
+                var equipment = Object.FindAnyObjectByType<GameEquipment>();
+                for (int i = 0; i < 600 && !battle.CanStart; i++) yield return null;
+                Assert.IsTrue(battle.CanStart);
+                for (int modal = 0; modal < 3; modal++)
+                {
+                    Cursor.lockState = CursorLockMode.Locked;
+                    InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.B));
+                    yield return new WaitForSecondsRealtime(0.2f);
+                    Assert.Greater(interaction.BattleStartProgress, 0f);
+                    bool opened = modal == 0 ? view.EnterConstruction()
+                        : modal == 1 ? facilities.Open(ProjectNeo.Facilities.FacilityType.Shop) : equipment.Open();
+                    Assert.IsTrue(opened);
+                    yield return new WaitForSecondsRealtime(1.1f);
+                    Assert.AreEqual(GamePhase.Preparation, GameSession.Flow.Phase);
+                    Assert.AreEqual(0f, interaction.BattleStartProgress);
+                    Assert.IsFalse(interaction.CanStartBattle);
+                    if (modal == 0) view.ExitConstruction();
+                    else if (modal == 1) facilities.Close();
+                    else equipment.Close();
+                    yield return new WaitForSecondsRealtime(1.1f);
+                    Assert.AreEqual(GamePhase.Preparation, GameSession.Flow.Phase, "Closing a modal while B is held must not arm it.");
+                    Assert.AreEqual(0f, interaction.BattleStartProgress);
+                    InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+                    yield return null; yield return null;
+                }
+                // Simultaneous equipment/start input gives the modal priority.
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.I, Key.B));
+                yield return null; yield return null;
+                Assert.IsTrue(equipment.IsOpen);
+                yield return new WaitForSecondsRealtime(1.1f);
+                Assert.AreEqual(GamePhase.Preparation, GameSession.Flow.Phase);
+                Assert.AreEqual(0, battle.BattleNumber);
+            }
+            finally
+            {
+                InputSystem.RemoveDevice(keyboard);
+                if (originalKeyboard != null && originalKeyboard.added) originalKeyboard.MakeCurrent();
+            }
+        }
+
+        [UnityTest]
         public IEnumerator 타이틀에서_새_게임을_누르면_게임_씬의_준비_단계로_간다()
         {
             yield return SceneManager.LoadSceneAsync("Title", LoadSceneMode.Single);

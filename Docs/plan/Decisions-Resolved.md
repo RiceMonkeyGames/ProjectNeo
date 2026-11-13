@@ -1,6 +1,6 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-13 13:54:51 (KST)
+Last Updated: 2026-11-13 15:12:33 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
@@ -37,7 +37,7 @@ Last Updated: 2026-11-13 13:54:51 (KST)
 ## Detailed Decision Records
 
 - **Q-42 (2026-11-13)**: User selected 1×1 footprint ascending one full 3m tier. Design decision resolved; implementation tracked by SIEGE-03. [History](../history/Q/Q-42.md).
-- **Q-40 (2026-11-13)**: User selected starting battle at the desired current position after preparation, without returning to the gate. Design direction resolved; trigger UI/input details are pending under FLOW-01. [History](../history/Q/Q-40.md).
+- **Q-40 (2026-11-13)**: User selected starting battle at the desired current position after preparation, without returning to the gate. FLOW-01 input also approved: hold B for 1 second, display progress, cancel on release or modal entry, block construction/facility/equipment screens, preserve pose, and start once. [History](../history/Q/Q-40.md).
 - **Q-41 approved scope (2026-11-13)**: Both allies and player may ascend/descend ladders. Full interaction/traffic/combat rules remain partial in Decisions-Pending. [History](../history/Q/Q-41.md).
 
 - **Stacking on the gate (2026-11-11)**: Walls stack on main gate during prep; drop by settle rule when gate breaks; gate floor remains fixed/non-demolishable/unbuildable once destroyed.
