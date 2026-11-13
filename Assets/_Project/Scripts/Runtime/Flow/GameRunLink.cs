@@ -54,6 +54,7 @@ namespace ProjectNeo.Flow
             }
             foreach (CharacterActor actor in binding.ObjectsInRun())
                 if (actor != null && actor.Health != null) actor.Health.RestoreFull();
+            SetReserveHeroesActive(true);
             ApplyTraining();
         }
 
@@ -115,6 +116,55 @@ namespace ProjectNeo.Flow
                 Debug.LogError("모집한 유닛을 씬 부대에 넣지 못했다: " + squadIndex);
             binding.BindNew(actor, soldier);
             return unit;
+        }
+
+        /// <summary>
+        /// 준비 중에 주점에서 영웅을 고용해 런과 씬에 함께 넣는다(D-3, Q-36·Q-48). <paramref name="captainOf"/>가 0 이상이면 그 부대의
+        /// 대장을 맡기고(원래 대장은 대기), -1이면 대기 영웅이다. <paramref name="create"/>는 이 영웅으로 설정해 제자리에 놓고 켠 씬 유닛을
+        /// 만든다(켜져야 <see cref="CharacterActor.Character"/>가 생긴다). 런 영웅은 씬 유닛과 같은 캐릭터를 써서 장비가 씬 스탯에 바로 반영된다.
+        /// 못 하면 이유를 돌려주고 런·씬은 바뀌지 않는다.
+        /// </summary>
+        public HireCheck TryHire(HeroDefinition hero, int captainOf, System.Func<HeroDefinition, UnitCombatAI> create,
+            out UnitCombatAI unit, out Vector3 gatherPoint, out bool hasGatherPoint)
+        {
+            unit = null; gatherPoint = default; hasGatherPoint = false;
+            if (hero == null || create == null || !CanOrganize()) return HireCheck.NotOffered;
+            RunState state = binding.State;
+            if (captainOf < -1 || captainOf >= state.Army.Squads.Count) return HireCheck.NoSquad;
+            Squad<RunUnit> squad = captainOf < 0 ? null : state.Army.Squads[captainOf];
+            HireCheck check = state.CheckHire(hero, squad);
+            if (check != HireCheck.Ok) return check;
+            unit = create(hero);
+            CharacterActor actor = unit != null ? unit.GetComponent<CharacterActor>() : null;
+            if (actor == null || actor.Character == null || actor.Character.Definition != hero)
+            {
+                if (unit != null) Object.Destroy(unit.gameObject);
+                unit = null;
+                return HireCheck.NotOffered;
+            }
+            RunHero hired = state.TryHire(hero, squad, actor.Character);
+            if (hired == null) { Object.Destroy(unit.gameObject); unit = null; return HireCheck.NotOffered; }
+            binding.BindNew(actor, hired);
+            if (captainOf >= 0)
+            {
+                hasGatherPoint = squads.TryGetGatherPoint(captainOf, out gatherPoint);
+                squads.SetLeader(captainOf, unit);
+            }
+            return HireCheck.Ok;
+        }
+
+        /// <summary>
+        /// 대기 영웅(대장이 아닌 고용 영웅)의 씬 유닛을 켜거나 끈다(Q-48). 전투 시작 때 끄고 준비로 돌아오면 켠다.
+        /// 나중에 대장 없는 부대로 내보낼 때는 이 목록에서 빼면 된다.
+        /// </summary>
+        void SetReserveHeroesActive(bool active)
+        {
+            if (binding == null) return;
+            foreach (RunHero hero in binding.State.ReserveHeroes)
+            {
+                CharacterActor actor = binding.ObjectOf(hero.Id);
+                if (actor != null && actor.gameObject.activeSelf != active) actor.gameObject.SetActive(active);
+            }
         }
 
         /// <summary>런과 씬 부대가 같은 순서로 맞물려 있고 준비 중이면 true(D-8 편성 조건).</summary>
@@ -182,6 +232,7 @@ namespace ProjectNeo.Flow
             if (binding == null || flow.Run == null || flow.Run.State != binding.State) return;
             binding.State.SetCastle(CaptureCastle());
             input = binding.State.CreateBattleInput(flow.Run.StageNumber);
+            SetReserveHeroesActive(false);
         }
 
         /// <summary>

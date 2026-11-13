@@ -18,6 +18,7 @@ namespace ProjectNeo.Flow
     /// Esc나 닫기 버튼으로 닫는다. 팝업이 열린 동안은 <see cref="GamePhaseView.IsPanelView"/>로 이동·시점을 멈춘다.
     /// 모든 시설은 팝업에서 업그레이드하고, 상점은 매물 구매와 보관함 판매를 한다. 병영(D-4)은 잡졸을 모집하고 넣을 부대를 고르며,
     /// 레벨에 따른 훈련 보너스를 보여 준다. 대장간(D-6)은 레벨의 고정 레시피로 장비를 만들고 보관함 장비를 판다.
+    /// 주점(D-3)은 준비마다 뽑은 영웅을 고용해 고른 부대의 대장이나 대기 영웅으로 넣는다.
     /// 다른 시설의 기능은 후속 작업이다.
     /// 시설 목록·거래 수치는 <see cref="RunConfig"/> 에셋, 레벨·매물 풀은 시설 정의 에셋에서 바꾼다.
     /// <see cref="GameBattleController"/>와 같은 오브젝트에 붙어 그 런 연결을 쓴다.
@@ -47,6 +48,7 @@ namespace ProjectNeo.Flow
         string shopOfferHeader;
         string shopInventoryHeader;
         Squad<RunUnit> chosenSquad;
+        int captainSquad = -1;
         GameFlow flow;
 
         /// <summary>지금 열린 시설. 닫혀 있으면 null.</summary>
@@ -127,9 +129,11 @@ namespace ProjectNeo.Flow
             }
             if (!phaseView.EnterPanel()) return false;
             if (type == FacilityType.Shop) State.RestockShopIfNeeded(item => GameSession.Meta.IsUnlocked(item));
+            if (type == FacilityType.Tavern) State.RestockTavernIfNeeded(hero => GameSession.Meta.IsUnlocked(hero));
             OpenFacility = type;
             Message = string.Empty;
             chosenSquad = null;
+            captainSquad = -1;
             panel.SetActive(true);
             Rebuild();
             return true;
@@ -182,6 +186,74 @@ namespace ProjectNeo.Flow
             if (sold) Message = $"{item.Definition.DisplayName} 판매 · {price}골드";
             Rebuild();
             return sold;
+        }
+
+        /// <summary>주점에서 고용할 영웅에게 대장을 맡길 부대 순번. -1이면 대기 영웅으로 고용한다.</summary>
+        public int CaptainSquad => captainSquad;
+
+        /// <summary>주점 매물의 index번째 영웅을 고른 부대 대장(없으면 대기)으로 고용한다(D-3). 비용을 내고 주점 앞에 나타난다.</summary>
+        public bool TryHire(int index)
+        {
+            RunState state = State;
+            if (OpenFacility != FacilityType.Tavern || state == null || flow.Phase != GamePhase.Preparation) return false;
+            if (index < 0 || index >= state.TavernOffers.Count) return false;
+            HeroDefinition hero = state.TavernOffers[index];
+            if (captainSquad >= state.Army.Squads.Count) captainSquad = -1;
+            UnitCombatAI unit = null;
+            HireCheck check = HireCheck.NotOffered;
+            if (spawner != null) unit = spawner.HireAtTavern(hero, captainSquad, out check);
+            Message = unit != null
+                ? $"{hero.DisplayName} 고용 · {Describe(hero.HireCost)} → " + (captainSquad < 0 ? "대기 영웅" : $"부대 {captainSquad + 1} 대장")
+                : $"{hero.DisplayName}: " + Reason(check);
+            Rebuild();
+            return unit != null;
+        }
+
+        /// <summary>주점에서 고용할 영웅에게 대장을 맡길 부대를 고른다. -1이면 대기 영웅.</summary>
+        public bool ChooseCaptainSquad(int index)
+        {
+            RunState state = State;
+            if (OpenFacility != FacilityType.Tavern || state == null || index < -1 || index >= state.Army.Squads.Count) return false;
+            captainSquad = index;
+            Message = string.Empty;
+            Rebuild();
+            return true;
+        }
+
+        static string Reason(HireCheck check) => check switch
+        {
+            HireCheck.BattlePending => "전투 중에는 고용할 수 없습니다.",
+            HireCheck.NoSquad => "대장을 맡길 부대가 없습니다.",
+            HireCheck.NotEnoughFunds => "비용이 모자랍니다.",
+            _ => "고용하지 못했습니다.",
+        };
+
+        void BuildTavernRows(RunState state)
+        {
+            IReadOnlyList<HeroDefinition> offers = state.TavernOffers;
+            if (offers.Count == 0) AddRow(offerList, "고용할 영웅이 없습니다.", null);
+            for (int i = 0; i < offers.Count; i++)
+            {
+                int index = i;
+                AddRow(offerList, $"{offers[i].DisplayName} · {offers[i].Tier}등급 · {Describe(offers[i].HireCost)}", () => TryHire(index));
+            }
+            if (captainSquad >= state.Army.Squads.Count) captainSquad = -1;
+            AddRow(inventoryList, (captainSquad < 0 ? "[선택] " : string.Empty) + "대기 영웅으로 (전투 제외)", () => ChooseCaptainSquad(-1));
+            IReadOnlyList<Squad<RunUnit>> squads = state.Army.Squads;
+            for (int i = 0; i < squads.Count && i < MaxInventoryRows; i++)
+            {
+                int index = i;
+                string mark = i == captainSquad ? "[선택] " : string.Empty;
+                string leader = squads[i].Leader is RunHero hero ? hero.Definition.DisplayName : "없음";
+                AddRow(inventoryList, $"{mark}부대 {i + 1} 대장으로 (지금: {leader})", () => ChooseCaptainSquad(index));
+            }
+        }
+
+        static string DescribeTavern(FacilityState facility)
+        {
+            var text = new StringBuilder("영웅은 준비 단계마다 새로 등장합니다. 대장을 맡기면 원래 대장은 대기로 갑니다. 대기 영웅은 전투에 나가지 않습니다.");
+            if (!facility.IsMaxLevel) text.Append("\n업그레이드하면 다음 준비부터 더 높은 등급의 영웅이 등장합니다.");
+            return text.ToString();
         }
 
         static bool IsUnlocked(ItemDefinition item) => GameSession.Meta.IsUnlocked(item);
@@ -299,22 +371,27 @@ namespace ProjectNeo.Flow
             bool shop = type == FacilityType.Shop && state.Shop != null;
             bool barracks = type == FacilityType.TrainingGround;
             bool smithy = type == FacilityType.Smithy && state.Shop != null;
+            bool tavern = type == FacilityType.Tavern;
             if (body != null)
             {
                 string text = shop ? "매물은 준비 단계마다 새로 바뀝니다. 업그레이드는 다음 준비의 매물부터 반영됩니다."
                     : barracks ? DescribeTraining(facility)
                     : smithy ? DescribeSmithy(facility)
+                    : tavern ? DescribeTavern(facility)
                     : Purpose(type) + "\n이 시설의 기능과 업그레이드 효과는 다음 작업에서 붙습니다.";
                 body.text = string.IsNullOrEmpty(Message) ? text : Message + "\n" + text;
             }
-            if (tradeArea != null) tradeArea.SetActive(shop || barracks || smithy);
+            if (tradeArea != null) tradeArea.SetActive(shop || barracks || smithy || tavern);
             if (offerHeader != null)
-                offerHeader.text = barracks ? "모집 (클릭해서 모집)" : smithy ? "제작 (클릭해서 제작)" : shopOfferHeader;
+                offerHeader.text = barracks ? "모집 (클릭해서 모집)" : smithy ? "제작 (클릭해서 제작)"
+                    : tavern ? "영웅 (클릭해서 고용)" : shopOfferHeader;
             if (inventoryHeader != null)
-                inventoryHeader.text = barracks ? "넣을 부대 (클릭해서 선택)" : smithy ? "장비 판매 (클릭해서 판매)" : shopInventoryHeader;
+                inventoryHeader.text = barracks ? "넣을 부대 (클릭해서 선택)" : smithy ? "장비 판매 (클릭해서 판매)"
+                    : tavern ? "맡길 자리 (클릭해서 선택)" : shopInventoryHeader;
             ClearRows();
             if (rowTemplate == null) return;
             if (barracks) { BuildBarracksRows(state); return; }
+            if (tavern) { BuildTavernRows(state); return; }
             if (smithy) { BuildSmithyRows(state); return; }
             if (!shop) return;
             IReadOnlyList<ItemDefinition> stock = state.Shop.Stock;
