@@ -228,6 +228,74 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
+        public IEnumerator ConstructionWheelInput_UsesNormalizedStepsAndRestoresCamera()
+        {
+            yield return SceneManager.LoadSceneAsync("Game", LoadSceneMode.Single);
+            yield return null;
+            Assert.IsTrue(Object.FindAnyObjectByType<GamePhaseView>().EnterConstruction());
+            var camera = Object.FindAnyObjectByType<ConstructionCameraController>();
+            float startZoom = camera.ZoomSize;
+            Vector2 startFocus = camera.Focus;
+            using var inputScope = new FocusIndependentInputScope();
+            var originalScrollBehavior = InputSystem.settings.scrollDeltaBehavior;
+            Mouse originalMouse = Mouse.current;
+            Keyboard originalKeyboard = Keyboard.current;
+            var mouse = InputSystem.AddDevice<Mouse>();
+            var keyboard = InputSystem.AddDevice<Keyboard>();
+            Vector2 position = new Vector2(Screen.width - 5f, Screen.height * 0.5f);
+            try
+            {
+                InputSystem.settings.scrollDeltaBehavior = InputSettings.ScrollDeltaBehavior.UniformAcrossAllPlatforms;
+                InputSystem.QueueStateEvent(mouse, new MouseState { position = position });
+                yield return null;
+                yield return null;
+                Assert.IsFalse(UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject(),
+                    "Wheel test must point outside construction UI.");
+
+                InputSystem.QueueStateEvent(mouse, new MouseState { position = position, scroll = Vector2.up });
+                yield return null;
+                Assert.AreEqual(startZoom * 0.85f, camera.ZoomSize, 0.001f,
+                    "One normalized wheel tick must zoom by the configured 15%, not 1/120 of a tick.");
+                InputSystem.QueueStateEvent(mouse, new MouseState { position = position, scroll = Vector2.down });
+                yield return null;
+                Assert.AreEqual(startZoom, camera.ZoomSize, 0.001f, "Reverse tick restores the previous zoom.");
+
+                InputSystem.QueueStateEvent(mouse, new MouseState { position = position, scroll = Vector2.up * 0.5f });
+                yield return null;
+                Assert.Less(camera.ZoomSize, startZoom * 0.95f, "Fractional wheel deltas remain meaningful.");
+                Assert.Greater(camera.ZoomSize, startZoom * 0.85f);
+                InputSystem.QueueStateEvent(mouse, new MouseState { position = position, scroll = Vector2.up * 1000f });
+                yield return null;
+                Assert.AreEqual(20f, camera.ZoomSize);
+                InputSystem.QueueStateEvent(mouse, new MouseState { position = position, scroll = Vector2.down * 1000f });
+                yield return null;
+                Assert.AreEqual(180f, camera.ZoomSize);
+
+                camera.Pan(new Vector2(10f, 10f));
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Home));
+                yield return null;
+                Assert.AreEqual(startZoom, camera.ZoomSize);
+                Assert.AreEqual(startFocus, camera.Focus);
+
+#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
+                InputSystem.settings.scrollDeltaBehavior = InputSettings.ScrollDeltaBehavior.KeepPlatformSpecificInputRange;
+                InputSystem.QueueStateEvent(mouse, new MouseState { position = position, scroll = Vector2.up * 120f });
+                yield return null;
+                Assert.AreEqual(startZoom * 0.85f, camera.ZoomSize, 0.001f,
+                    "Unnormalized Windows wheel ticks must retain their existing sensitivity.");
+#endif
+            }
+            finally
+            {
+                InputSystem.settings.scrollDeltaBehavior = originalScrollBehavior;
+                InputSystem.RemoveDevice(mouse);
+                InputSystem.RemoveDevice(keyboard);
+                if (originalMouse != null && originalMouse.added) originalMouse.MakeCurrent();
+                if (originalKeyboard != null && originalKeyboard.added) originalKeyboard.MakeCurrent();
+            }
+        }
+
+        [UnityTest]
         public IEnumerator 건설소를_가까이_바라보고_F로_열고_Esc로_나오며_전투에서는_열리지_않는다()
         {
             yield return SceneManager.LoadSceneAsync("Game", LoadSceneMode.Single);

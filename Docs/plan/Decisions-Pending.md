@@ -1,10 +1,12 @@
 # Pending Decisions & Active Operational Policies
 
-Last Updated: 2026-11-13 13:49:25 (KST)
+Last Updated: 2026-11-13 14:07:40 (KST)
 
 > Purpose: Undecided or partial design/implementation decisions (`Q-*`) and active operational rules. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Resolved](Decisions-Resolved.md), [OpenQuestions](../design/OpenQuestions.md)
 
 ## Active Operational Decisions
+
+- **AI Git operations (2026-11-13 user decision)**: AI may commit code, merge task branches and push within user-authorized task scope. Supersedes the prior user-owned-only rule. Preserve task claims, scoped branches, verification and remote integration checks before branch cleanup.
 
 - **Backlog & Branch Lifecycle (2026-11-12)**: Claim `Waiting` → `In Progress` in `Docs/Backlog.md` and immediately commit/push before coding; branch `feature/<task-id-lowercase>` from latest `develop`; delete remote task branch after confirmed user merge to `develop`.
 - **Docs Tree & Task ID Rules (2026-11-13)**: Docs sharded into `Docs/INDEX.md` tree; M3+ feature IDs use domain prefixes (`COMBAT`, `SIEGE`, `FLOW`, `PREP`, `META`, `CONTENT`, `ART`, `UI`, `AUDIO`); unstarted irregular IDs normalized (`B-9.3-play` → `QA-game-loop`, `B-9.2-wave` → `SIEGE-01`, `B-4.6-action` → `SIEGE-02`); `In Progress` `C-1a-confirm` and reserved `E-1~4` kept until M3.

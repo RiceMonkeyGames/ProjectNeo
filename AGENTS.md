@@ -1,6 +1,6 @@
 # ProjectNeo
 
-Last Updated: 2026-11-13 13:17:37 (KST)
+Last Updated: 2026-11-13 14:07:40 (KST)
 
 A 3D first-person siege defense roguelike built with Unity 6000.6.8f1 and URP. Scout the upcoming wave, prepare heroes, troops, equipment, and walls, and defend the castle through direct player combat and unit commanding. Low-poly art style; Synty assets planned, currently using placeholder graphics.
 
@@ -18,14 +18,14 @@ Precedence on conflict: `Docs/design/` (game rules) > `Docs/plan/` (roadmap/stat
 ## Backlog, Task IDs & Branch Workflow
 
 - **Claim & Sync**: Pick a `Waiting` task in [Docs/Backlog.md](Docs/Backlog.md), mark `In Progress` with your assignee name, and **immediately commit and push to `develop`** before coding. Never take over another assignee's `In Progress` item.
-- **Branch Lifecycle**: From synced `develop`, create `feature/<task-id-lowercase>` (or `fix/<task-id-lowercase>`) and record it in the backlog. After the user merges into `develop` and remote integration is confirmed, delete the remote task branch. Retain unmerged work branches. General commits/merges remain user-owned.
+- **Branch Lifecycle**: From synced `develop`, create `feature/<task-id-lowercase>` (or `fix/<task-id-lowercase>`) and record it in the backlog. After merging into `develop` and remote integration is confirmed, delete the remote task branch. Retain unmerged work branches. AI agents may commit code, merge task branches, and push within the user-authorized task scope; separate approval is not required for each Git operation.
 - **Task ID Rules**: Allowed characters `A-Z`, `0-9`, `a-z`, `-` only; 1 task = 1 ID (no `~`, `·`, `.`, or ad-hoc suffixes). Legacy `A~D`, `G`, and reserved `E-1~4` (until M3) remain as-is. New M3+ features use `<DOMAIN>-<NN>` (`COMBAT`, `SIEGE`, `FLOW`, `PREP`, `META`, `CONTENT`, `ART`, `UI`, `AUDIO`); cross-cutting tasks use `Q-NN`, `BUG-<slug>`, `PERF-<slug>`, `QA-<slug>`, `DOC-<slug>`, `TOOL-<slug>`. Full rules in [Docs/workflow/Collaboration.md](Docs/workflow/Collaboration.md).
 - **Completion**: Update affected `Docs/` leaves, append/create `Docs/history/<PREFIX>/<TASK-ID>.md`, move completed rows to [Docs/archive/Backlog-Done.md](Docs/archive/Backlog-Done.md), and sync.
 
 ## Working Rules
 
 - Respond to the user in Korean, using clear and simple language.
-- Use `Last Updated: YYYY-MM-DD HH:MM:SS (KST)` whenever editing docs; query the exact current time (never guess).
+- Use `Last Updated: 2026-11-13 14:07:40 (KST)
 - Never decide ambiguous design/architecture questions arbitrarily; present options with rationale and ask the user first. Record decisions immediately in `Docs/design/` and `Docs/plan/`.
 - Always guide the user on manual verification upon completion (exact scene/file paths, controls, expected results, reset steps; test names/CLI commands for logic tasks). Never stop at automated test counts alone.
 - Collaborating since 2026-11-11 (teammate: enemy assault/combat execution; user: game entry/core flow). Coordinate sequential edits on shared files/assets ([Docs/plan/Team.md](Docs/plan/Team.md)); never run compile, PlayMode, tests, or builds concurrently in one editor.

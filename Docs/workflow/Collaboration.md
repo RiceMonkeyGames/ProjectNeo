@@ -1,6 +1,6 @@
 # Collaboration, Backlog & Task ID Rules
 
-Last Updated: 2026-11-13 13:58:01 (KST)
+Last Updated: 2026-11-13 14:08:22 (KST)
 
 > Purpose: Team workflow, Task ID rules, shared file locks, and `.claude` boundaries. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [Team](../plan/Team.md)
 
@@ -12,7 +12,7 @@ Last Updated: 2026-11-13 13:58:01 (KST)
 4. Sync latest shared `develop`, create `feature/<task-id-lowercase>` (or `fix/<task-id-lowercase>`) from it, and record the branch name in `Docs/Backlog.md`.
 5. Never take over or edit another assignee's `In Progress` task. Coordinate order before touching shared files.
 6. Upon completion: update affected `Docs/` leaves, add/append `Docs/history/<PREFIX>/<TASK-ID>.md`, mark `Done` (and move completed row to [Backlog-Done.md](../archive/Backlog-Done.md) with history link), and sync.
-7. After the user merges into `develop` and remote integration is confirmed, delete the remote task branch. Retain unmerged branches. General code commits and merges remain user-owned.
+7. After merging into `develop` and remote integration is confirmed, delete the remote task branch. Retain unmerged branches. AI agents may commit code, merge task branches, and push within the user-authorized task scope; separate approval is not required for each Git operation.
 8. **Shared Skill / Wrapper Shortcuts**: Claude Code users and agents may use `.claude/skills/` (`/claim`, `/verify`, `/finish`, `/sync-summary`) backed by Windows PowerShell 5.1 scripts under `Tools/Agent/` (`claim-check.ps1`, `unity-verify.ps1`, `doc-finish-check.ps1`, `sync-summary.ps1`) to run preflight, bounded verification, link/history checks, and remote diffs in one call. `/finish` runs doc checks and presents manual verification steps first, asking user confirmation before marking `Done`, archiving, and committing/pushing.
 
 ### Status Conventions
