@@ -1,6 +1,6 @@
 # QA-game-loop | 2026-11-13 | Game Flow - First User Playtest
 
-Last Updated: 2026-11-13 15:19:13 (KST)
+Last Updated: 2026-11-13 20:25:05 (KST)
 
 ## Evidence and scope
 
@@ -17,6 +17,7 @@ User manually exercised Game construction and battle and supplied a construction
 | Soldiers cast no visible shadows | ART-02 | Resolved 2026-11-13: scene Sun lights had shadows disabled; all scenes now use Soft shadows. User verified. [History](../ART/ART-02.md) |
 | Starting battle below wall is disadvantageous | Q-40 | User requests another approach; no new trigger/deployment rule finalized. |
 | Could not win because enemies felt strong | QA-opening-battle-balance | Do not infer a numeric balance fix from this alone. Victory-flow verification still outstanding. |
+| Victory → reward → next prep unverified (could not win) | QA-victory-flow | Resolved 2026-11-13: user manually won with the 12-enemy debug roster; reward claim entered preparation once and next-stage checks were normal; defeat → `Return to Title` also confirmed. [History](QA-victory-flow.md) |
 | Allies/player cannot use ladders | Q-41 | SiegeLadder climbing/queue API takes SiegeAttackerBrain. SiegeAttackerBrain disables agent/AI and interpolates base → edge → wall top before resuming navigation. Defenders have push/topple handling but no climb control. |
 
 ## Manual recheck after fixes
