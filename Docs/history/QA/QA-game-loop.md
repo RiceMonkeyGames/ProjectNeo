@@ -1,6 +1,6 @@
 # QA-game-loop | 2026-11-13 | Game Flow - First User Playtest
 
-Last Updated: 2026-11-13 13:46:52 (KST)
+Last Updated: 2026-11-13 15:19:13 (KST)
 
 ## Evidence and scope
 
@@ -12,9 +12,9 @@ User manually exercised Game construction and battle and supplied a construction
 |---|---|---|
 | Wheel zoom changes view too little | BUG-build-camera-zoom | ConstructionCameraController divides wheel y by 120; input-unit mismatch is a hypothesis. Verify actual wheel values before choosing fix. |
 | Grid repeatedly loses rows | BUG-build-grid-lines | Screenshot and user report. BuildGridView draws 0.09m world-space strips at local y=0.02; aliasing/depth overlap are hypotheses, not confirmed causes. |
-| Stairs look unnaturally shaded; prefer flat wall-like appearance | ART-01 | Setup generates a ramp mesh; inspect face normals and material before visual-only change. |
+| Stairs look unnaturally shaded; prefer flat wall-like appearance | ART-01 | Resolved 2026-11-13: shared ramp vertices smoothed normals; mesh rebuilt with flat per-face normals. User verified. [History](../ART/ART-01.md) |
 | Prefer stairs in one-cell units | Q-42 | Setup currently specifies 1×2 footprint. Full-tier rise vs composable rise not yet decided. |
-| Soldiers cast no visible shadows | ART-02 | Low priority explicitly stated by user; renderer/light/distance cause not investigated. |
+| Soldiers cast no visible shadows | ART-02 | Resolved 2026-11-13: scene Sun lights had shadows disabled; all scenes now use Soft shadows. User verified. [History](../ART/ART-02.md) |
 | Starting battle below wall is disadvantageous | Q-40 | User requests another approach; no new trigger/deployment rule finalized. |
 | Could not win because enemies felt strong | QA-opening-battle-balance | Do not infer a numeric balance fix from this alone. Victory-flow verification still outstanding. |
 | Allies/player cannot use ladders | Q-41 | SiegeLadder climbing/queue API takes SiegeAttackerBrain. SiegeAttackerBrain disables agent/AI and interpolates base → edge → wall top before resuming navigation. Defenders have push/topple handling but no climb control. |
