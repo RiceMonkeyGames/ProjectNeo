@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-13 15:25:39 (KST)
+Last Updated: 2026-11-13 15:36:39 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -26,7 +26,7 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 | B-6.1 | Scope & Contract for Additional Enemy Behaviors | Pending Decision | Unassigned | Agree on targeting, movement, and failure handling for wall-destroying and aerial enemies. Existing ladder and gate assault logic will not be re-implemented. |
 | B-7.1 | Formal Wave Data & Spawning Rules | Waiting for Prerequisite | Unassigned | After enemy definitions and spawn/termination contracts are agreed upon, spawn according to configured types, counts, and timings. No duplicates on pause/restart. |
 | SIEGE-01 | Link Pending Spawns to Win/Loss Evaluation | Waiting for Prerequisite | Unassigned | Formerly `B-9.2-wave` (fulfills `B-9.2` wave-spawn link). After B-7.1, prevent premature victory if enemies remain to spawn; ensure battle termination and outcomes trigger exactly once. |
-| B-8.1 | Squad Morale Calculations & Rout Transitions | Waiting | youngho | Prerequisite Q-04·05 resolved 2026-11-12 (rules in [MoraleAndWave.md](design/MoraleAndWave.md)); reserved by youngho, not started. Verify casualties, boosts, stat debuffs, thresholds, and rout transitions in pure C# EditMode. |
+| B-8.1 | Squad Morale Calculations & Rout Transitions | In Progress | youngho | Branch `feature/b-8.1`. Prerequisites Q-04·05, Q-38, Q-39 resolved (rules in [MoraleAndWave.md](design/MoraleAndWave.md)). Verify casualties, boosts, stat debuffs, thresholds, and rout transitions in pure C# EditMode. |
 | B-8.2 | Rout Movement, Exit, and Outcome Wiring | Waiting for Prerequisite | Unassigned | Following B-8.1 and outcome contracts, differentiate death vs routing vs battlefield exit to avoid double-counting. Distinguish from final enemy retreat. |
 | SIEGE-02 | Siege Weapon Actions & Combat Integration | Waiting for Prerequisite | Unassigned | Formerly `B-4.6-action` (fulfills `B-4.6` weapon combat scope). Following Q-21 resolution, wire agreed behaviors and verify hits, damage, and concurrent destruction upon supporting wall collapse. |
 | C-3 | Run Carry-over of Troop Casualties & Wall HP | Waiting for Prerequisite | Unassigned | Following C-1a and rout outcome contracts, carry over deaths, rout returns, and wall damage into subsequent battles without duplicate accounting. |
