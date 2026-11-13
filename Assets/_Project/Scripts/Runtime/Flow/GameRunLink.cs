@@ -54,8 +54,27 @@ namespace ProjectNeo.Flow
             }
             foreach (CharacterActor actor in binding.ObjectsInRun())
                 if (actor != null && actor.Health != null) actor.Health.RestoreFull();
+            CleanUpSquadsAfterBattle();
             SetReserveHeroesActive(true);
             ApplyTraining();
+        }
+
+        /// <summary>
+        /// 전투 뒤 다음 준비 시작 때 부대를 정리한다(C-3, Q-50). 죽은 유닛은 씬 부대에서 빠지고(몸은 남는다), 잡졸도 대장도 없는 부대는
+        /// 런과 씬에서 함께 없어진다. 런은 이미 전투 결과로 죽은 유닛을 뺐으므로 씬을 런에 맞춘다. 결과는 한 번만 반영되었으므로
+        /// 여러 번 불러도 더 바뀌지 않는다.
+        /// </summary>
+        void CleanUpSquadsAfterBattle()
+        {
+            if (squads == null || binding == null) return;
+            squads.RemoveFallen();
+            if (squads.Squads.Count != binding.State.Army.Squads.Count)
+            {
+                Debug.LogWarning("씬 부대 수와 런 부대 수가 달라 빈 부대를 정리하지 않는다.");
+                return;
+            }
+            foreach (int index in binding.State.RemoveEmptySquads())
+                if (!squads.RemoveSquad(index)) Debug.LogError("빈 씬 부대를 없애지 못했다: " + index);
         }
 
         /// <summary>

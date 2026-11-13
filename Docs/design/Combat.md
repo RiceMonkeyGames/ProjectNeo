@@ -1,6 +1,6 @@
 # Game Design: Combat, Units & Win/Loss
 
-Last Updated: 2026-11-13 21:15:45 (KST)
+Last Updated: 2026-11-13 23:58:14 (KST)
 
 > Purpose: Rules for perspective, squad commands, damage, unit lifecycles, and battle outcomes. | Parent: [design/README](README.md) | Related: [WallsAndSiege](WallsAndSiege.md), [MoraleAndWave](MoraleAndWave.md)
 
@@ -41,7 +41,7 @@ Last Updated: 2026-11-13 21:15:45 (KST)
 | Minion (Grunt) | Recruited at barracks. Eliminated on death; only fleeing/routed minions return next battle. |
 
 - Surviving heroes and minions fully recover HP before the next battle (2026-11-12). Only wall HP damage carries over.
-- Fallen ally corpses remain on the ground during the next preparation phase (2026-11-12), excluded from squads and run.
+- Fallen ally corpses remain on the ground during the next preparation phase (2026-11-12), excluded from squads and run. At the next prep start fallen units leave their scene squads (bodies stay), so they no longer take squad slots (Q-50, 2026-11-13).
 - Fallen hero equipment retention/loss remains undecided (Q-31).
 
 ## Win/Loss Conditions

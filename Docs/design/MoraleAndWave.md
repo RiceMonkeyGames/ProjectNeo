@@ -1,6 +1,6 @@
 # Game Design: Morale, Rout & Wave Preview
 
-Last Updated: 2026-11-13 19:28:47 (KST)
+Last Updated: 2026-11-13 23:58:14 (KST)
 
 > Purpose: Ally Breaking Point morale, enemy morale, rout/exit accounting, and wave preview rules. | Parent: [design/README](README.md) | Related: [Combat](Combat.md), [OpenQuestions](OpenQuestions.md)
 
@@ -39,7 +39,7 @@ Combines Bannerlord-style squad morale with a Darkest Dungeon-style resolve chec
   - *Panic*: Periodically abandons position toward castle interior.
   - *Contagion*: Periodically lowers nearby squads' morale slightly.
   - (*Berserk* charging out the gate dropped).
-- **Persistence & Reorganization**: Morale belongs to the squad and is stored on the run-data squad between battles (Q-44); every newly created squad, including squads auto-created by barracks recruiting, starts at `150`. After each battle every squad's morale becomes `max(current + 20, 80)`, capped at `200` (Q-39 2026-11-13), so a squad that held never ends below one that routed. Routed squads (0) therefore start next battle at `80` (keeps debuff, no check, can recover). Moving soldiers between squads does not alter squad morale; new squad starts at `150`; empty squad and its morale are removed. Merging under-strength squads and a minimum squad size are pending (Q-45, decide with preparation-phase work).
+- **Persistence & Reorganization**: Morale belongs to the squad and is stored on the run-data squad between battles (Q-44); every newly created squad, including squads auto-created by barracks recruiting, starts at `150`. After each battle every squad's morale becomes `max(current + 20, 80)`, capped at `200` (Q-39 2026-11-13), so a squad that held never ends below one that routed. Routed squads (0) therefore start next battle at `80` (keeps debuff, no check, can recover). Moving soldiers between squads does not alter squad morale; new squad starts at `150`; empty squad and its morale are removed (after a battle, a squad is removed at the next prep start only when it has no grunts and no living captain; a captain-only squad stays with its morale, Q-50 2026-11-13). Merging under-strength squads and a minimum squad size are pending (Q-45, decide with preparation-phase work).
 - **Test Display**: `SquadCommandHud` shows ally morale number, state (`Normal`, `Collapse: <type>`, `Awaken`), and one-line check notice. Enemy morale hidden. Prep-phase morale recovery facilities and player proximity modifiers are later design.
 
 ## Enemy Morale (removed, Q-44 2026-11-13)
