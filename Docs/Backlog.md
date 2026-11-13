@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-13 13:54:51 (KST)
+Last Updated: 2026-11-13 13:55:10 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -18,6 +18,7 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 
 | Task ID | Description | Status | Assignee | Completion Criteria & Prerequisites |
 |---|---|---|---|---|
+| TOOL-agent-workflows | Add shared `.claude/skills/` and `Tools/Agent/` PowerShell workflow wrappers | In Progress | Hwang Seong-min (agent) | Branch `feature/tool-agent-workflows`. Implement `claim`, `verify` (w/ `dotnet build` pre-check), `finish` (asks user confirmation before Done/archive), and `sync-summary` skills + PowerShell 5.1 wrappers, `.claude/settings.json` allow rules, and doc updates. |
 | C-1a-confirm | Teammate Review of Combat Outcome Format | In Progress | Hwang Seong-min | Review C-1a `BattleResult` draft (outcome, end reason, per-unit status, castle snapshot, kill counts) with combat lead; update code, tests, docs. Prerequisites: C-1a (Done). Decision (2026-11-12): Proceed concurrently with C-1~2. |
 | QA-game-loop | Manual Playtest of Current Game Scene | Waiting for Verification | Unassigned | Formerly `B-9.3-play`. First user playtest reported 2026-11-13; findings in [QA history](history/QA/QA-game-loop.md). Victory and next-prep flow remain unverified because user could not win. Recheck construction and combat after follow-ups below. |
 | BUG-build-camera-zoom | Construction wheel zoom barely changes view | In Progress | Codex | Planned branch: `fix/bug-build-camera-zoom`. Owned files: ConstructionCameraController.cs, targeted camera input tests, related docs. User report: enter Game construction mode and scroll; expected useful zoom, actual negligible change. Investigate input units (`scroll / 120f`) and zoom settings; verify physical wheel input, both directions and Home reset. |
