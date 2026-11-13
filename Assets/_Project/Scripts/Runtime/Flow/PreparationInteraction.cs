@@ -13,7 +13,7 @@ namespace ProjectNeo.Flow
         [SerializeField] CharacterActor player;
         [SerializeField] PreparationInteractionSettings settings;
         [SerializeField] GameBattleController battle;
-        InputAction interact, close, equipment, startBattle;
+        InputAction interact, close, equipment, organization, startBattle;
         float battleStartElapsed;
         bool holdingBattleStart;
         public float BattleStartProgress => Mathf.Clamp01(battleStartElapsed / settings.BattleStartHoldSeconds);
@@ -26,6 +26,9 @@ namespace ProjectNeo.Flow
         public string EquipmentKey => equipment != null ? equipment.GetBindingDisplayString() : string.Empty;
         /// <summary>1인칭 탐색 중 장비 키를 눌렀다(D-7). 장비 화면이 듣는다.</summary>
         public event System.Action EquipmentRequested;
+        public string OrganizationKey => organization != null ? organization.GetBindingDisplayString() : string.Empty;
+        /// <summary>1인칭 탐색 중 편성 키를 눌렀다(D-8). 편성 화면이 듣는다.</summary>
+        public event System.Action OrganizationRequested;
 
         public void Configure(GamePhaseView view, Camera camera, CharacterActor actor, PreparationInteractionSettings config)
         { phaseView = view; playerCamera = camera; player = actor; settings = config; }
@@ -36,11 +39,16 @@ namespace ProjectNeo.Flow
             interact = settings.Interact.Clone();
             close = settings.Close.Clone();
             equipment = settings.Equipment?.Clone();
+            organization = settings.Organization?.Clone();
             startBattle = settings.StartBattle.Clone();
         }
-        void OnEnable() { interact.Enable(); close.Enable(); equipment?.Enable(); startBattle.Enable(); }
-        void OnDisable() { interact?.Disable(); close?.Disable(); equipment?.Disable(); startBattle?.Disable(); Target = null; CancelBattleStart(); }
-        void OnDestroy() { interact?.Dispose(); close?.Dispose(); equipment?.Dispose(); startBattle?.Dispose(); }
+        void OnEnable() { interact.Enable(); close.Enable(); equipment?.Enable(); organization?.Enable(); startBattle.Enable(); }
+        void OnDisable()
+        {
+            interact?.Disable(); close?.Disable(); equipment?.Disable(); organization?.Disable(); startBattle?.Disable();
+            Target = null; CancelBattleStart();
+        }
+        void OnDestroy() { interact?.Dispose(); close?.Dispose(); equipment?.Dispose(); organization?.Dispose(); startBattle?.Dispose(); }
 
         void CancelBattleStart() { holdingBattleStart = false; battleStartElapsed = 0f; }
 
@@ -99,6 +107,8 @@ namespace ProjectNeo.Flow
             if (interact.WasPressedThisFrame()) { CancelBattleStart(); TryInteract(); }
             else if (phaseView.IsExplorationView && equipment != null && equipment.WasPressedThisFrame())
             { CancelBattleStart(); EquipmentRequested?.Invoke(); }
+            else if (phaseView.IsExplorationView && organization != null && organization.WasPressedThisFrame())
+            { CancelBattleStart(); OrganizationRequested?.Invoke(); }
             else UpdateBattleStart();
         }
     }

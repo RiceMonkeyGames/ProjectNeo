@@ -1,6 +1,6 @@
 # Completed Backlog Archive (Done)
 
-Last Updated: 2026-11-13 21:24:43 (KST)
+Last Updated: 2026-11-13 22:39:10 (KST)
 
 > Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
@@ -53,3 +53,4 @@ Last Updated: 2026-11-13 21:24:43 (KST)
 | D-4 | Barracks Recruitment & Training | Hwang Seong-min | Branch `feature/barracks-recruit`, merged (`06baa0b`). EditMode 216, PlayMode 97. [History](../history/D/D-4.md) |
 | D-6 | Blacksmith Fixed-Recipe Crafting & Sales | Hwang Seong-min | Branch `feature/d-6`. EditMode 327, PlayMode 164. Manual play skipped by user (QA-smithy-popup). [History](../history/D/D-6.md) |
 | D-7 | Equipment System | Hwang Seong-min | Branch `feature/player-equipment`, merged (`050948a`). EditMode 201, PlayMode 88. [History](../history/D/D-7.md) |
+| D-8 | Squad Organization | Hwang Seong-min | Branch `feature/d-8`. EditMode 336, PlayMode 170. Manual play confirmed by user (captain rows untestable until D-3). [History](../history/D/D-8.md) |

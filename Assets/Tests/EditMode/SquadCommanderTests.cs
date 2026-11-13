@@ -21,6 +21,25 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
+        public void RemoveSquad_ShiftsLaterOrdersAndSelection_AndRejectsMissingSquad()
+        {
+            var commander = new SquadCommander(3);
+            commander.Select(2);
+            commander.Issue(new SquadOrder(SquadOrderKind.Attack));
+            int removed = -1;
+            commander.SquadRemoved += index => removed = index;
+
+            Assert.IsTrue(commander.RemoveSquad(1));
+            Assert.AreEqual(1, removed);
+            Assert.AreEqual(2, commander.SquadCount);
+            Assert.AreEqual(SquadOrderKind.Attack, commander.OrderOf(1).Kind, "3번 부대의 지시가 2번으로 당겨진다.");
+            Assert.IsTrue(commander.IsSelected(1));
+            Assert.AreEqual(SquadOrderKind.Hold, commander.OrderOf(0).Kind);
+            Assert.IsFalse(commander.RemoveSquad(2));
+            Assert.IsFalse(commander.RemoveSquad(-1));
+        }
+
+        [Test]
         public void AddSquad_AppendsHoldingUnselectedSquad_AndKeepsExistingOrders()
         {
             var commander = new SquadCommander(2);
