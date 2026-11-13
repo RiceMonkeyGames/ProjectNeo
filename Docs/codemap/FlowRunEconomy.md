@@ -1,6 +1,6 @@
 # Runtime Codemap: Flow, Run, Economy, Facilities & Meta
 
-Last Updated: 2026-11-13 19:42:56 (KST)
+Last Updated: 2026-11-13 20:53:03 (KST)
 
 > Purpose: Class map for game flow, run state, economy, facilities, rewards, meta progression, and flow UI. | Parent: [codemap/README](README.md) | Related: [CombatAndSquads](CombatAndSquads.md), [design/PrepEconomyMeta](../design/PrepEconomyMeta.md)
 
@@ -24,7 +24,7 @@ Base path: `Assets/_Project/Scripts/Runtime/`. Assembly: `ProjectNeo.Runtime`. N
 | Flow | `GameEquipment` | D-7 Player equipment UI (`I` during prep opens `EquipmentPanel`). Equips/unequips between stash and player `Character` (`RunState.TryEquip`/`TryUnequip`). |
 | Run | `RunState`, `RunUnit`, `RunHero`, `RunSoldier`, `RunConfig`, `RunSquadSetup` | Pure C# run container (C-1a): wallet, inventory, heroes, grunts, squads (`Army<RunUnit>`), castle records. Distinguishes runtime `Id` from definition asset. Starting config in `Data/GameFlow/Build/RunStart.asset`; Game scene builds player/squads from scene layout. Discarded on return to Title. |
 | Run | `RunUnitBinding<T>` | Pairs scene GameObject units with run unit IDs. Builds `RunState` from scene setup and `BattleResult` from combat survival (B-8.2: optional `isFled` → `UnitFate.Fled`, death first; optional per-type `retreats`). Run player shares `Character` with scene player. |
-| Run | `CastleState`, `BattleInput`, `BattleResult` | Records castle placement, layers, rotations, HP, mounted weapons (`Capture`/`TryRestore`, bottom-up). `RunState.Apply` checks battle index for single application; dead grunts removed, dead heroes moved to `FallenHeroes` with gear; `Fled` units stay in their squad. `BattleResult.EnemiesRetreated` (B-8.2/Q-44) counts Q-30 retreats per enemy type separately from `EnemiesKilled`. Format pending C-1a-confirm. |
+| Run | `CastleState`, `BattleInput`, `BattleResult` | Records castle placement, layers, rotations, HP, mounted weapons (`Capture`/`TryRestore`, bottom-up). `RunState.Apply` checks battle index for single application; dead grunts removed, dead heroes moved to `FallenHeroes` with gear; `Fled` units stay in their squad. `BattleResult.EnemiesRetreated` (B-8.2/Q-44) counts Q-30 retreats per enemy type separately from `EnemiesKilled`. Format reviewed in C-1a-confirm; B-8.2 owns the final rout/exit format (Q-44 removed enemy morale, so no enemy rout reason). |
 | Run / Facilities | `RunState.Facilities`, `FacilityDefinition.DisplayName` | `FacilityState` per type (initial level 0); assets in `Data/GameFlow/Facilities/Facility_*.asset`. `Shop`, `RestockShopIfNeeded`, `TryBuy`, `TrySell`, `TryUpgradeFacility` (`Data/GameFlow/Economy.asset`). |
 | Run | `BuildCostTable`, `PieceGoldCost`, `WeaponGoldCost`, `BuildEconomy` | Build cost table asset (piece/weapon gold, past refund ratio, repair gold per HP) and pure C# refund/repair logic (heaviest damaged first). |
 | Run | `StageRewardTable`, `KillReward`, `StageReward` | Reward table asset and deterministic `StageReward.Roll` via `IRandomSource`. `RunState.ApplyReward` enforces single payout per battle via `SeedFor`. |

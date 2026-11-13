@@ -1,6 +1,6 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-13 20:25:05 (KST)
+Last Updated: 2026-11-13 20:51:18 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
@@ -21,7 +21,7 @@ Q-41 and SIEGE-04 completion/commit/push were authorized by the user on 2026-11-
 | Characters & Combat | 1st-person movement, melee attacks, health, grunt stats, projectiles, auto-combat, Game scene siege assault/ladders/outcomes | Wall-breaker encounter integration, aerial enemies, active skills, consumables, production HUD |
 | Meta & Perks | Progression curves, reincarnation conversion, gacha unlocks, perk payloads | Disk persistence, run reward routing, runtime perk injection |
 | Squads, Morale, Walls | Squad structures, grid occupancy/rotation, stacking, async NavMesh rebuild, fall damage, weapon mounting/collapse, 1st-person commands | Morale/rout scene wiring (B-8.1 pure rules done (`BattleSquadMorale`); B-8.2 movement/exit, HUD, settings asset pending), wall-breaker encounter integration, construction delays. Siege weapon firing implemented on `feature/siege-02` (SIEGE-02, awaiting user playtest) |
-| Run Data Architecture | `RunState` container, castle persistence, combat I/O, single application rules (`C-1a`), Game scene unit binding, survivor healing (`C-1~2`), grunt spawning (`D-0b`) | Teammate format sign-off (`C-1a-confirm`), hero spawning (`D-3`), saved run loading, casualty replacement (`C-3`), meta file persistence |
+| Run Data Architecture | `RunState` container, castle persistence, combat I/O, single application rules (`C-1a`), Game scene unit binding, survivor healing (`C-1~2`), grunt spawning (`D-0b`) | `BattleResult` rout/exit fields (`B-8.2`), hero spawning (`D-3`), saved run loading, casualty replacement (`C-3`), meta file persistence |
 | Test Scenes | `CombatPrototype`, `UnitBattlePrototype`, `ConstructionPrototype`, `SquadCommandPrototype`, `WallCommandPrototype`, `SiegePrototype` | Mixed wall-breaker/aerial encounters, multi-wave sequences, morale routs, full loop integration |
 | Art & Performance | Capsule/box placeholder visuals, dual-tier NavMesh benchmark, AI query optimization (`PERF-nav-query`) | Production Synty packs, animations, VFX, full combat performance profiling |
 
