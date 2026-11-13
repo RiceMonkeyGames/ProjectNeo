@@ -23,6 +23,7 @@ namespace ProjectNeo.Squads
         [SerializeField] SquadCommandSettings settings;
         [SerializeField] SquadRoster[] rosters = new SquadRoster[0];
         Army<UnitCombatAI> army;
+        readonly HashSet<UnitCombatAI> detached = new HashSet<UnitCombatAI>();
         public SquadCommander Commander { get; private set; }
         public SquadCommandSettings Settings => settings;
         public IReadOnlyList<Squad<UnitCombatAI>> Squads => army.Squads;
@@ -92,13 +93,36 @@ namespace ProjectNeo.Squads
             int count = 0;
             foreach (UnitCombatAI member in army.Squads[squad].Members)
             {
-                if (!IsAlive(member)) continue;
+                if (!IsAlive(member) || detached.Contains(member)) continue;
                 point += member.transform.position;
                 count++;
             }
             if (count == 0) return false;
             point /= count;
             return true;
+        }
+
+        /// <summary>
+        /// 부대원을 지시에서 뗀다(사기로 도망, B-8.2). 뗀 부대원은 부대에 남아 살아 있는 수에는 들지만
+        /// 부대 지시·대형·모이는 곳 계산에서 빠진다. 이미 떼었거나 부대원이 아니면 false.
+        /// </summary>
+        public bool Detach(UnitCombatAI member)
+        {
+            if (member == null || !Contains(member)) return false;
+            return detached.Add(member);
+        }
+
+        /// <summary>뗀 부대원을 다시 지시를 받게 한다. 지시는 바꾸지 않으므로 부르는 쪽이 부대 쪽으로 보낸다.</summary>
+        public bool Reattach(UnitCombatAI member) => member != null && detached.Remove(member);
+
+        public bool IsDetached(UnitCombatAI member) => member != null && detached.Contains(member);
+
+        bool Contains(UnitCombatAI member)
+        {
+            foreach (Squad<UnitCombatAI> squad in army.Squads)
+                foreach (UnitCombatAI existing in squad.Members)
+                    if (existing == member) return true;
+            return false;
         }
 
         public int AliveCount(int squad)
@@ -114,7 +138,8 @@ namespace ProjectNeo.Squads
         void Apply(int index, SquadOrder order)
         {
             var alive = new List<UnitCombatAI>();
-            foreach (UnitCombatAI member in army.Squads[index].Members) if (IsAlive(member)) alive.Add(member);
+            foreach (UnitCombatAI member in army.Squads[index].Members)
+                if (IsAlive(member) && !detached.Contains(member)) alive.Add(member);
             if (order.Kind == SquadOrderKind.Move || (order.Kind == SquadOrderKind.Attack && order.HasDestination))
             {
                 UnitDirective toward = order.Kind == SquadOrderKind.Move ? UnitDirective.Move : UnitDirective.Engage;
@@ -143,7 +168,8 @@ namespace ProjectNeo.Squads
                 if (Commander.OrderOf(i).Kind != SquadOrderKind.Move) continue;
                 bool moving = false;
                 foreach (UnitCombatAI member in army.Squads[i].Members)
-                    if (IsAlive(member) && member.Directive == UnitDirective.Move) { moving = true; break; }
+                    if (IsAlive(member) && !detached.Contains(member) && member.Directive == UnitDirective.Move)
+                    { moving = true; break; }
                 if (!moving) Commander.CompleteMove(i);
             }
         }

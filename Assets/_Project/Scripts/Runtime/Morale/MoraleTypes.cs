@@ -1,6 +1,9 @@
 namespace ProjectNeo.Morale
 {
-    /// <summary>사기 규칙이 다른 두 진영. 적은 한계 판정·붕괴·각성이 없다.</summary>
+    /// <summary>
+    /// 사기 규칙이 다른 두 진영. 지금 적은 사기가 없어(Q-44) <see cref="Enemy"/>는 쓰지 않는다.
+    /// 나중에 사기를 받는 사람 적을 넣을 때를 위해 남겨 둔다(한계 판정·붕괴·각성 없음).
+    /// </summary>
     public enum MoraleSide
     {
         Ally = 0,

@@ -1,6 +1,6 @@
 # Pending Decisions & Active Operational Policies
 
-Last Updated: 2026-11-13 15:12:33 (KST)
+Last Updated: 2026-11-13 19:28:47 (KST)
 
 > Purpose: Undecided or partial design/implementation decisions (`Q-*`) and active operational rules. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Resolved](Decisions-Resolved.md), [OpenQuestions](../design/OpenQuestions.md)
 
@@ -31,3 +31,4 @@ Last Updated: 2026-11-13 15:12:33 (KST)
 | Q-32 | Can player character serve as squad captain | `D-8` squad setup UI | Undecided. `C-1a` `TrySetLeader` permits assigning player character. |
 | Q-35 | Blacksmith crafting model (storefront vs recipes) and upgrades | `D-6` blacksmith | Undecided. Requires crafting recipes and gear enhancement definitions. |
 | Q-41 | Shared ladder traversal interaction rules | Shared siege/combat movement | Partial (2026-11-13): User approved allies AND player ascending/descending. Controls, opposing traffic/queues, commands, combat and toppling rules still pending. Coordinate combat owner before implementation. |
+| Q-45 | Merging under-strength squads & minimum squad size | Preparation-phase squad management (after B-8.2) | Undecided (raised 2026-11-13). Decide minimum size, automatic vs player-driven merge, merged morale (current rule: moving soldiers keeps the receiving squad's morale), dissolved squad's captain, and full receiving squads. |

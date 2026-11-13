@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 82d37e689d6f7f6498abf5e209621093, type: 3}
+  m_Name: Morale
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Morale.MoraleSettings
+  maxMorale: 200
+  startingMorale: 150
+  breakingPoint: 100
+  awakenChance: 0.25
+  startingCollapseStrength: 0.5
+  highBandThreshold: 150
+  highBandAttackBonus: 0.1
+  lowBandAttackPenalty: 0.1
+  fullSquadLoss: 166.66667
+  captainDeathLoss: 40
+  gateDestroyedLoss: 25
+  nearbyWallCollapseLoss: 15
+  nearbySquadRoutLoss: 20
+  nearbyRadius: 15
+  rallyAmount: 40
+  lastStandMaxAttackBonus: 0.5
+  fearIgnoreChance: 0.5
+  panicInterval: 8
+  contagionAmount: 5
+  contagionInterval: 5
+  postBattleRecovery: 20
+  postBattleFloor: 80
+  retreatInset: 9
+  retreatArrivalDistance: 2.5
+  retreatTimeout: 20

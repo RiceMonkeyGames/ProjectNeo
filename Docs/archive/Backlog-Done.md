@@ -1,11 +1,12 @@
 # Completed Backlog Archive (Done)
 
-Last Updated: 2026-11-13 15:46:38 (KST)
+Last Updated: 2026-11-13 20:35:16 (KST)
 
 > Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
 | Task ID | Description | Assignee | Outcome & History Link |
 |---|---|---|---|
+| B-8.2 | Rout Movement, Exit, and Outcome Wiring | youngho | Done 2026-11-13. Branch `feature/b-8.2`. Per Q-44 (ally squads only; enemies have no morale): `GameSquadMorale` added at runtime by `GameBattleController` (no scene edit), morale on run squads, member/captain death, gate, nearby wall, nearby rout and Rally/Contagion wiring; routed squads ignore orders, run to computed south courtyard retreat point, exit on arrival/20s, return next prep; `BattleResult` ally `Fled` and per-type enemy retreats; `Morale.asset` (full-squad loss ≈166.7). Compile passed, EditMode 253/253, PlayMode 123/123 (`GameMoralePlayTests` 3). User manually verified rout in Game (with temporary tuning, restored) and authorized commit/push/develop merge on 2026-11-13. Combat effects/HUD: COMBAT-01. Standalone build unverified. [History](../history/B/B-8.2.md) |
 | B-8.1 | Squad Morale Calculations & Rout Transitions | youngho | Done 2026-11-13. Branch `feature/b-8.1`. Pure C# `MoraleSettings`, `MoraleTypes`, `BattleSquadMorale`, `MoraleRules` implementing Q-04/Q-05/Q-38/Q-39; EditMode 248/248 (`MoraleRulesTests` 32). Not wired to scenes; wiring scope recorded on B-8.2. [History](../history/B/B-8.1.md) |
 | B-6.1 | Scope & Contract for Additional Enemy Behaviors | User decision / Claude documentation | Decided 2026-11-13 (Q-43). Modular Wall Breaker (nearest piece incl. gate, assault once path opens) and Flyer (hover melee, wall-top allies first, 100% damage from below, ally melee in range); failure-handling defaults confirmed. Implementation tracked as B-6.2~4. Doc-only; no Unity verification. Recorded in [WallsAndSiege](../design/WallsAndSiege.md). [History](../history/Q/Q-43.md) |
 | FLOW-01 | Start battle from desired current position | Codex | Done; implementation `dc048b9`, branch `feature/flow-01`. Hold B for 1 second in prep exploration, show progress, cancel on release/modal entry, preserve position/view and start once; retire gate-banner F trigger. Compile passed, EditMode 216/216, PlayMode 120/120; agent HUD visual check passed. User authorized completion, commit/push and develop merge on 2026-11-13. Tests are pre-integration; post-integration dotnet passed but Unity/Pipeline readiness timed out. Physical-key playtest and standalone build not separately reported. [History](../history/FLOW/FLOW-01.md) |

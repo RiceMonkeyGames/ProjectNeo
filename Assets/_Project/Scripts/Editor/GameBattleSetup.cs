@@ -39,6 +39,7 @@ namespace ProjectNeo.Editor
             var siege = CombatPrototypeSetup.Save(UnityEngine.Object.Instantiate(source), Data + "/Siege.asset");
             var settings = CombatPrototypeSetup.Save(GameBattleSettings.Create(siege,
                 new List<SiegeUnitGroup>(source.EnemyGroups).ToArray()), Data + "/Battle.asset");
+            MoraleSetup.Connect(settings);
             var falling = AssetDatabase.LoadAssetAtPath<FallSettings>("Assets/_Project/Data/ConstructionPrototype/Fall.asset");
             var controller = Find<GameBattleController>(scene);
             if (controller == null) controller = new GameObject("GameBattleController").AddComponent<GameBattleController>();

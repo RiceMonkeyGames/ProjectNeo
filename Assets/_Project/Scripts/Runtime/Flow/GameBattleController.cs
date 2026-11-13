@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using ProjectNeo.Combat;
+using ProjectNeo.Core;
+using ProjectNeo.Morale;
 using ProjectNeo.Run;
 using ProjectNeo.Siege;
 using ProjectNeo.Squads;
@@ -36,6 +38,9 @@ namespace ProjectNeo.Flow
         public IReadOnlyList<SiegeLadder> Ladders => ladders;
         /// <summary>런 데이터 연결(C-1~2). 씬 유닛의 런 번호와 이번 전투 입력을 읽을 때 쓴다.</summary>
         public GameRunLink RunLink => runLink ??= new GameRunLink(flow, commander, player, world);
+        /// <summary>아군 부대 사기 연결(B-8.2). 사기 설정이 없으면 null.</summary>
+        public GameSquadMorale Morale => morale;
+        GameSquadMorale morale;
         public int BattleNumber { get; private set; }
         public bool IsRunning => battleRunning;
         public bool IsRetreating { get; private set; }
@@ -80,6 +85,13 @@ namespace ProjectNeo.Flow
             flow = GameSession.Flow;
             enemyRoot = new GameObject("BattleEnemies").transform;
             enemyRoot.SetParent(transform, false);
+            // 아군 부대 사기(B-8.2). 사기 설정이 있으면 씬 파일을 바꾸지 않고 실행 중에 붙인다. 단계 변화는 스스로 받는다.
+            if (settings != null && settings.Morale != null && commander != null)
+            {
+                morale = gameObject.AddComponent<GameSquadMorale>();
+                morale.Configure(flow, commander, world, settings.Morale, settings.Outward, () => RunLink.State,
+                    new SeededRandom(System.Environment.TickCount));
+            }
         }
         void OnEnable() => flow.PhaseChanged += OnPhaseChanged;
         void OnDisable() => flow.PhaseChanged -= OnPhaseChanged;
@@ -282,7 +294,10 @@ namespace ProjectNeo.Flow
             battleRunning = false;
             BattleOutcome result = outcome == SiegeOutcome.Victory ? BattleOutcome.Victory : BattleOutcome.Defeat;
             // 런 데이터에 결과를 반영하고 단계를 넘긴다. 연결이 없으면 기존처럼 승패만 넘긴다.
-            if (!RunLink.TryFinish(result, EndReason(result), CountKills())) flow.FinishBattle(result);
+            // 사기로 도망친 아군은 Fled로 적는다(B-8.2).
+            if (!RunLink.TryFinish(result, EndReason(result), CountKills(),
+                morale != null ? morale.HasFled : (System.Func<CharacterActor, bool>)null, CountRetreats()))
+                flow.FinishBattle(result);
         }
 
         BattleEndReason EndReason(BattleOutcome outcome)
@@ -303,6 +318,19 @@ namespace ProjectNeo.Flow
                 kills[id] = count + 1;
             }
             return kills;
+        }
+
+        // 퇴각(Q-30)으로 빠진 적 종류별 수. 처치 수와 따로 결과에 적는다(Q-44).
+        Dictionary<string, int> CountRetreats()
+        {
+            var retreats = new Dictionary<string, int>();
+            foreach (SiegeAttackerBrain enemy in retreated)
+            {
+                if (enemy == null || !enemyIds.TryGetValue(enemy, out string id)) continue;
+                retreats.TryGetValue(id, out int count);
+                retreats[id] = count + 1;
+            }
+            return retreats;
         }
     }
 }

@@ -107,6 +107,49 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
+        public void 도망친_유닛은_Fled로_남고_죽음이_먼저이며_적_퇴각은_처치와_따로_센다()
+        {
+            // B-8.2 / Q-44: 사기로 도망친 아군은 런에 남고, 도망치다 죽으면 사망이다.
+            RunUnitBinding<Unit> binding = Bind();
+            RunState state = binding.State;
+            first[0].Dead = true;
+            var fled = new HashSet<Unit> { first[0], first[1] };
+            BattleInput input = state.CreateBattleInput(1);
+            BattleResult result = binding.CreateResult(input.BattleNumber, BattleOutcome.Victory,
+                BattleEndReason.EnemiesRetreated, unit => unit.Dead, new CastleState(),
+                new Dictionary<string, int> { { "enemy_ladder", 2 } }, fled.Contains,
+                new Dictionary<string, int> { { "enemy_archer", 3 }, { "", 1 }, { "enemy_ladder", 0 } });
+
+            Assert.AreEqual(UnitFate.Dead, result.FateOf(binding.IdOf(first[0])), "도망치다 죽으면 사망이다.");
+            Assert.AreEqual(UnitFate.Fled, result.FateOf(binding.IdOf(first[1])));
+            Assert.AreEqual(UnitFate.Alive, result.FateOf(binding.IdOf(second[0])));
+            Assert.AreEqual(2, result.EnemiesKilled["enemy_ladder"]);
+            Assert.AreEqual(1, result.EnemiesRetreated.Count, "빈 ID와 0 이하는 빼고 담는다.");
+            Assert.AreEqual(3, result.EnemiesRetreated["enemy_archer"]);
+            Assert.IsFalse(result.EnemiesKilled.ContainsKey("enemy_archer"), "퇴각한 적은 처치 수에 들지 않는다.");
+
+            Assert.AreEqual(BattleResultIssue.None, state.Apply(result));
+            CollectionAssert.Contains(binding.ObjectsInRun(), first[1], "도망친 유닛은 런에 남아 다음 전투에 돌아온다.");
+            Assert.AreSame(state.Army.Squads[0], state.SquadOf((RunSoldier)state.Find(binding.IdOf(first[1]))));
+        }
+
+        [Test]
+        public void 런_부대는_사기를_들고_다니며_새_부대는_비어_있다()
+        {
+            // Q-44: 사기는 런 부대에 둔다. 처음 쓰는 쪽이 시작값을 넣는다.
+            RunState state = Bind().State;
+            Assert.IsNull(state.Army.Squads[0].Morale);
+            var settings = ProjectNeo.Morale.MoraleSettings.Create();
+            state.Army.Squads[0].Morale = settings.CreateSquadMorale();
+            state.Army.Squads[0].Morale.Add(-70f);
+            BattleInput input = state.CreateBattleInput(1);
+            Assert.AreEqual(BattleResultIssue.None, state.Apply(new BattleResult(input.BattleNumber,
+                BattleOutcome.Victory, BattleEndReason.EnemiesDefeated)));
+            Assert.AreEqual(80f, state.Army.Squads[0].Morale.Value, 0.001f, "전투 결과를 반영해도 부대 사기는 그대로 이어진다.");
+            UnityEngine.Object.DestroyImmediate(settings);
+        }
+
+        [Test]
         public void 흐름은_데이터_없이_시작한_런에만_한_번_데이터를_붙인다()
         {
             var flow = new GameFlow();

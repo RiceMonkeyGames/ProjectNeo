@@ -23,12 +23,13 @@ namespace ProjectNeo.Morale
         [Header("능력 보정")]
         [SerializeField, Min(0f)] float highBandThreshold = 150f;
         [SerializeField, Min(0f)] float highBandAttackBonus = 0.1f;
-        [Tooltip("breakingPoint 미만일 때 공격력 감소. 적에게도 적용된다.")]
+        [Tooltip("breakingPoint 미만일 때 공격력 감소.")]
         [SerializeField, Min(0f)] float lowBandAttackPenalty = 0.1f;
 
         [Header("사기 감소")]
-        [Tooltip("처음 인원이 모두 죽었을 때의 총 감소량. 한 명이 죽으면 이 값 / 처음 인원만큼 줄어든다.")]
-        [SerializeField, Min(0f)] float fullSquadLoss = 100f;
+        [Tooltip("이번 전투 시작 인원이 모두 죽었을 때의 총 감소량. 한 명이 죽으면 이 값 / 시작 인원만큼 줄어든다. "
+            + "기본값은 사기 150에서 90%가 죽으면 0이 되는 값(150 / 0.9, Q-44).")]
+        [SerializeField, Min(0f)] float fullSquadLoss = 150f / 0.9f;
         [SerializeField, Min(0f)] float captainDeathLoss = 40f;
         [SerializeField, Min(0f)] float gateDestroyedLoss = 25f;
         [SerializeField, Min(0f)] float nearbyWallCollapseLoss = 15f;
@@ -53,6 +54,14 @@ namespace ProjectNeo.Morale
         [Tooltip("전투 후 사기의 최소값. 전투 후 사기 = max(현재 + 회복, 이 값), 최대 maxMorale.")]
         [SerializeField, Min(0f)] float postBattleFloor = 80f;
 
+        [Header("도망 이동(씬, Q-44)")]
+        [Tooltip("퇴각 지점: 적이 오는 쪽의 반대편 성 가장자리에서 성 안쪽으로 들어온 거리(m).")]
+        [SerializeField, Min(0f)] float retreatInset = 9f;
+        [Tooltip("퇴각 지점에서 이 거리(m, 수평) 안에 들어오면 전투에서 빠진다.")]
+        [SerializeField, Min(0.1f)] float retreatArrivalDistance = 2.5f;
+        [Tooltip("도망을 시작하고 이 시간(초) 안에 퇴각 지점에 닿지 못하면 그 자리에서 전투에서 빠진다.")]
+        [SerializeField, Min(0.1f)] float retreatTimeout = 20f;
+
         public float MaxMorale => maxMorale;
         public float StartingMorale => startingMorale;
         public float BreakingPoint => breakingPoint;
@@ -75,6 +84,9 @@ namespace ProjectNeo.Morale
         public float ContagionInterval => contagionInterval;
         public float PostBattleRecovery => postBattleRecovery;
         public float PostBattleFloor => postBattleFloor;
+        public float RetreatInset => retreatInset;
+        public float RetreatArrivalDistance => retreatArrivalDistance;
+        public float RetreatTimeout => retreatTimeout;
 
         /// <summary>새 부대의 사기(시작값).</summary>
         public SquadMorale CreateSquadMorale() => new SquadMorale(maxMorale, startingMorale);

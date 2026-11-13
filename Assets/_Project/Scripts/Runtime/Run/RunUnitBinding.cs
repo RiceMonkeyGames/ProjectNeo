@@ -92,18 +92,25 @@ namespace ProjectNeo.Run
         /// <summary>
         /// 씬 유닛의 생사로 전투 결과를 만든다. 런에 남아 있는 유닛만 담는다.
         /// <paramref name="kills"/>는 처치한 적 종류별 수이며 null이면 비운다.
+        /// <paramref name="isFled"/>가 true인 살아 있는 유닛은 도망(<see cref="UnitFate.Fled"/>)으로 적는다. 죽음이 먼저다(Q-44).
+        /// <paramref name="retreats"/>는 퇴각한 적 종류별 수이며 null이면 비운다.
         /// </summary>
         public BattleResult CreateResult(int battleNumber, BattleOutcome outcome, BattleEndReason reason,
-            Func<T, bool> isDead, CastleState castleAfter, IReadOnlyDictionary<string, int> kills = null)
+            Func<T, bool> isDead, CastleState castleAfter, IReadOnlyDictionary<string, int> kills = null,
+            Func<T, bool> isFled = null, IReadOnlyDictionary<string, int> retreats = null)
         {
             if (isDead == null) throw new ArgumentNullException(nameof(isDead));
             var result = new BattleResult(battleNumber, outcome, reason) { CastleAfter = castleAfter };
             foreach (KeyValuePair<int, T> pair in objects)
                 if (State.Find(pair.Key) != null)
-                    result.SetFate(pair.Key, isDead(pair.Value) ? UnitFate.Dead : UnitFate.Alive);
+                    result.SetFate(pair.Key, isDead(pair.Value) ? UnitFate.Dead
+                        : isFled != null && isFled(pair.Value) ? UnitFate.Fled : UnitFate.Alive);
             if (kills != null)
                 foreach (KeyValuePair<string, int> kill in kills)
                     if (!string.IsNullOrEmpty(kill.Key) && kill.Value > 0) result.AddKill(kill.Key, kill.Value);
+            if (retreats != null)
+                foreach (KeyValuePair<string, int> retreat in retreats)
+                    if (!string.IsNullOrEmpty(retreat.Key) && retreat.Value > 0) result.AddRetreat(retreat.Key, retreat.Value);
             return result;
         }
     }
