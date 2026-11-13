@@ -1,6 +1,6 @@
 # Completed Backlog Archive (Done)
 
-Last Updated: 2026-11-13 20:35:58 (KST)
+Last Updated: 2026-11-13 20:51:18 (KST)
 
 > Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
@@ -34,6 +34,7 @@ Last Updated: 2026-11-13 20:35:58 (KST)
 | DOC-doc-tree-and-id | Shard Docs into tree structure and formalize Task ID naming rules | Hwang Seong-min (agent) | Branch `feature/doc-tree-and-id`. Split Context/ImplementationPlan/GameDesign/History into `Docs/` tree with `INDEX.md`, moved `Done` rows here, codified M3+ domain IDs and normalized unstarted irregular IDs (`QA-game-loop`, `SIEGE-01`, `SIEGE-02`). [History](../history/DOC/DOC-doc-tree-and-id.md) |
 | DOC-workflow-branches | Document task branch creation and remote cleanup workflow | Codex | User decision (2026-11-12): Create feature branch from latest develop after claim; delete remote branch after confirmed integration. [History](../history/DOC/DOC-workflow-branches.md) |
 | C-1a | Agree on Run Data & Combat Outcome Boundary | Hwang Seong-min | Merged to develop (`9429e85`). Pure C# `RunState`, `CastleState`, `BattleInput`, `BattleResult`. [History](../history/C/C-1a.md) |
+| C-1a-confirm | Teammate Review of Combat Outcome Format | Hwang Seong-min | Branch `feature/c-1a-confirm` (doc-only review memo). Format sign-off handed to youngho, who applies `BattleResult` changes in B-8.2. [History](../history/C/C-1a-confirm.md) |
 | Q-04·05 | Finalize Morale, Rout, and Captain Death Rules | youngho | Decided 2026-11-12 (Bannerlord morale + Darkest Dungeon Breaking Point). Recorded in [MoraleAndWave](../design/MoraleAndWave.md). [History](../history/Q/Q-04-05.md) |
 | C-4 | Runtime Reward Payout & Prep Phase Linking | Hwang Seong-min | Branch `feature/stage-rewards`, merged (`f9f79cf`). EditMode 169, PlayMode 76/77. [History](../history/C/C-4.md) |
 | D-3~8-plan | Decompose Facility & Squad Tasks into Actionable Units | Hwang Seong-min | Registered D-0..D-8 and Q-33..Q-36. [History](../history/D/D-3-8-plan.md) |

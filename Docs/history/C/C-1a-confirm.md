@@ -1,6 +1,6 @@
 # C-1a-confirm | 2026-11-13 | Run - Combat Outcome Format Review
 
-Last Updated: 2026-11-13 20:40:48 (KST)
+Last Updated: 2026-11-13 20:51:18 (KST)
 
 > Purpose: Review memo for the combat lead (youngho) and verification log. | Parent: [history/README](../README.md) | Related: [C-1a](C-1a.md), [MoraleAndWave](../../design/MoraleAndWave.md), [FlowRunEconomy codemap](../../codemap/FlowRunEconomy.md)
 
@@ -44,3 +44,8 @@ Last Updated: 2026-11-13 20:40:48 (KST)
 #### Next steps
 
 - After sign-off: implement P1/P2 in `BattleResult`, `RunUnitBinding.CreateResult`, `GameRunLink.TryFinish`, `GameBattleController`; add EditMode tests; update [FlowRunEconomy codemap](../../codemap/FlowRunEconomy.md) and remove the "draft" note in `BattleResult`.
+
+### 2026-11-13: Closed
+
+- User reported youngho had already reviewed the format and is applying changes in B-8.2 (`feature/b-8.2` edits `BattleResult`, `RunUnitBinding`, `GameRunLink`). Proposals P1–P3 above are reference only; B-8.2 owns the final format.
+- User confirmed `Done` on 2026-11-13. Doc-only; no Unity compile or tests run.
