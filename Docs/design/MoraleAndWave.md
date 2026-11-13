@@ -1,6 +1,6 @@
 # Game Design: Morale, Rout & Wave Preview
 
-Last Updated: 2026-11-13 13:17:37 (KST)
+Last Updated: 2026-11-13 13:29:00 (KST)
 
 > Purpose: Ally Breaking Point morale, enemy morale, rout/exit accounting, and wave preview rules. | Parent: [design/README](README.md) | Related: [Combat](Combat.md), [OpenQuestions](OpenQuestions.md)
 
@@ -33,7 +33,7 @@ Combines Bannerlord-style squad morale with a Darkest Dungeon-style resolve chec
   - *Panic*: Periodically abandons position toward castle interior.
   - *Contagion*: Periodically lowers nearby squads' morale slightly.
   - (*Berserk* charging out the gate dropped).
-- **Persistence & Reorganization**: Morale belongs to the squad (`+20` after each battle, capped at `200`). Routed squads start next battle at floor `80` (keeps debuff, no check, can recover). Moving soldiers between squads does not alter squad morale; new squad starts at `150`; empty squad and its morale are removed.
+- **Persistence & Reorganization**: Morale belongs to the squad. After each battle every squad's morale becomes `max(current + 20, 80)`, capped at `200` (Q-39 2026-11-13), so a squad that held never ends below one that routed. Routed squads (0) therefore start next battle at `80` (keeps debuff, no check, can recover). Moving soldiers between squads does not alter squad morale; new squad starts at `150`; empty squad and its morale are removed.
 - **Test Display**: `SquadCommandHud` shows ally morale number, state (`Normal`, `Collapse: <type>`, `Awaken`), and one-line check notice. Enemy morale hidden. Prep-phase morale recovery facilities and player proximity modifiers are later design.
 
 ## Enemy Morale (2026-11-12)
