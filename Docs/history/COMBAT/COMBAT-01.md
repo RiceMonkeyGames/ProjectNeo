@@ -1,6 +1,6 @@
 # COMBAT-01 | 2026-11-13 | Characters - Player crouch
 
-Last Updated: 2026-11-13 21:17:31 (KST)
+Last Updated: 2026-11-13 21:24:12 (KST)
 
 Owner: 신용준. Branch: `feature/combat-01`. Implemented together with [COMBAT-02](COMBAT-02.md) at the user's request; IDs remain separate.
 
@@ -27,12 +27,12 @@ Owner: 신용준. Branch: `feature/combat-01`. Implemented together with [COMBAT
 
 Reproduce automation: `powershell.exe -NoProfile -ExecutionPolicy Bypass -File Tools/Agent/unity-verify.ps1 -Mode play -Filter CombatPrototypePlayTests -SkipDotnet`.
 
-- **User-approved crouch view refinement (2026-11-13)**: First-person eye height transitions with SmoothStep over 0.18 seconds (PlayerControlSettings.CrouchViewTransitionSeconds); capsule changes remain immediate. Reversing Ctrl mid-transition continues from the currently displayed height. Root movement/falls follow immediately; camera re-enable resets the transition. User authorized this refinement and Done/archive/commit/push for COMBAT-01 and COMBAT-02. Physical manual review of the refined transition and standalone build remain unverified.
+- **User-approved crouch view refinement (2026-11-13)**: First-person eye height transitions with SmoothStep over 0.18 seconds (PlayerControlSettings.CrouchViewTransitionSeconds); capsule changes remain immediate. Reversing Ctrl mid-transition continues from the currently displayed height. Root movement/falls follow immediately; camera re-enable resets the transition. User authorized this refinement and Done/archive/commit/push for COMBAT-01 and COMBAT-02. User confirmed the refined behavior on 2026-11-13 and authorized develop merge plus local/remote work-branch deletion. Standalone build remains unverified.
 
 - Refinement verification: Unity compile and CombatPrototypePlayTests 10/10 passed (6.59s). Added transition midpoint, mid-transition reversal, final crouch/stand height, immediate root following, and camera re-enable reset checks. Final regression: compile passed, EditMode 315/315 (6.66s) and PlayMode 164/164 (86.62s) passed.
 
 ## Completion handoff
 
-- Done/archive/task-branch commit and push authorized by the user, including the smooth first-person crouch transition. develop merge and remote branch deletion remain user-owned.
+- Done/archive/task-branch commit and push authorized by the user, including the smooth first-person crouch transition. The user subsequently explicitly authorized develop merge and local/remote task-branch deletion on 2026-11-13.
 - Final code: Unity compile passed; EditMode 315/315 (6.66s), PlayMode 164/164 (86.62s). Command: powershell.exe -NoProfile -ExecutionPolicy Bypass -File Tools/Agent/unity-verify.ps1 -Mode all -SkipDotnet.
-- Manual follow-up: Game scene -> Play -> click Game view -> WASD with Ctrl/Shift; check gradual lowering/raising, reverse Ctrl mid-transition, crouch priority, and blocked standing beneath a ceiling. Stop Play Mode to reset. Refined physical play and standalone build remain unverified, tracked in QA-game-loop.
+- Manual follow-up: Game scene -> Play -> click Game view -> WASD with Ctrl/Shift; check gradual lowering/raising, reverse Ctrl mid-transition, crouch priority, and blocked standing beneath a ceiling. Stop Play Mode to reset. User confirmed crouch/sprint and smooth view behavior on 2026-11-13. Standalone build remains unverified; no detailed per-step manual results were provided.

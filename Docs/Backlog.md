@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-13 21:17:31 (KST)
+Last Updated: 2026-11-13 21:24:12 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -20,7 +20,7 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 |---|---|---|---|---|
 | BUG-ladder-fall-clipping | 낙하 시 적이 사다리를 관통하는 연출 개선 | Waiting | Unassigned | 사용자 수동 확인 (2026-11-13): 사다리에서 떨어지는 적이 사다리 외형을 관통함. 기대: 분리 위치·낙하 경로·외형 간격을 다듬어 관통이 눈에 띄지 않도록 개선. 사용자가 세부 연출은 추후 작업으로 명시하고 BUG-ladder-push-visual 현재 범위 완료 승인. 기존 균형점·낙하 피해·착지 규칙 유지 여부는 구현 전 확인. |
 | C-1a-confirm | Teammate Review of Combat Outcome Format | In Progress | Hwang Seong-min | Review C-1a `BattleResult` draft (outcome, end reason, per-unit status, castle snapshot, kill counts) with combat lead; update code, tests, docs. Prerequisites: C-1a (Done). Decision (2026-11-12): Proceed concurrently with C-1~2. |
-| QA-game-loop | Manual Playtest of Current Game Scene | Waiting for Verification | Unassigned | Formerly `B-9.3-play`. First user playtest reported 2026-11-13; findings in [QA history](history/QA/QA-game-loop.md). Victory → reward → next-prep flow verified by user via QA-victory-flow (2026-11-13). Recheck construction and combat after follow-ups below. Include COMBAT-01/COMBAT-02 physical Ctrl/Shift input and refined 0.18s crouch view transition (including reversal and overhead clearance); final refinement user play remains unverified. |
+| QA-game-loop | Manual Playtest of Current Game Scene | Waiting for Verification | Unassigned | Formerly `B-9.3-play`. First user playtest reported 2026-11-13; findings in [QA history](history/QA/QA-game-loop.md). Victory → reward → next-prep flow verified by user via QA-victory-flow (2026-11-13). Recheck construction and combat after follow-ups below. COMBAT-01/COMBAT-02 crouch/sprint and refined view transition confirmed by user on 2026-11-13; this does not close the remaining game-loop QA scope. |
 | QA-ladder-controls | Manual Check of Shared Ladder Physical Keys & HUD | Waiting | Unassigned | From SIEGE-04 (physical-key/HUD review unverified). Verify tap F boarding, hold F toppling/raising, W/S traversal, FIFO occupancy, allied ladder orders, and HUD prompts in Game scene with real input. BUG-ladder-push-visual is Done; include its balance-point motion and occupant fall behavior. Remaining ladder visual penetration is tracked as BUG-ladder-fall-clipping. |
 | QA-build-zoom-ui-hover | Manual Check of Construction Wheel Zoom over UI | Waiting | Unassigned | From BUG-build-camera-zoom (UI-hover check unverified). In construction mode, scrolling over UI panels must not zoom the camera (or behaves per agreed rule); scrolling over the world zooms normally. Open a BUG task if behavior is wrong. |
 | B-7.1 | Formal Wave Data & Spawning Rules | Waiting for Prerequisite | Unassigned | After enemy definitions and spawn/termination contracts are agreed upon, spawn according to configured types, counts, and timings. No duplicates on pause/restart. |

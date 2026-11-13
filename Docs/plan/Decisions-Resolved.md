@@ -1,6 +1,6 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-13 21:15:45 (KST)
+Last Updated: 2026-11-13 21:24:12 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
@@ -65,4 +65,4 @@ Last Updated: 2026-11-13 21:15:45 (KST)
 - Crouch reduces capsule and eye height while keeping the feet fixed. Standing waits until overhead space is clear. Temporary height ratio: 60%, configurable in PlayerControlSettings.
 - Both task IDs remain separate; implemented together on feature/combat-01 at the user's request. Owner: 신용준.
 
-- **User-approved crouch view refinement (2026-11-13)**: First-person eye height transitions with SmoothStep over 0.18 seconds (PlayerControlSettings.CrouchViewTransitionSeconds); capsule changes remain immediate. Reversing Ctrl mid-transition continues from the currently displayed height. Root movement/falls follow immediately; camera re-enable resets the transition. User authorized this refinement and Done/archive/commit/push for COMBAT-01 and COMBAT-02. Physical manual review of the refined transition and standalone build remain unverified.
+- **User-approved crouch view refinement (2026-11-13)**: First-person eye height transitions with SmoothStep over 0.18 seconds (PlayerControlSettings.CrouchViewTransitionSeconds); capsule changes remain immediate. Reversing Ctrl mid-transition continues from the currently displayed height. Root movement/falls follow immediately; camera re-enable resets the transition. User authorized this refinement and Done/archive/commit/push for COMBAT-01 and COMBAT-02. User confirmed the refined behavior on 2026-11-13 and authorized develop merge plus local/remote work-branch deletion. Standalone build remains unverified.
