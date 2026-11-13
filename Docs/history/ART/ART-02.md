@@ -1,6 +1,6 @@
 # ART-02 | 2026-11-13 | Art - Soldier Shadows (Scene Sun Soft Shadows)
 
-Last Updated: 2026-11-13 15:17:16 (KST)
+Last Updated: 2026-11-13 15:19:13 (KST)
 
 ## Scope and implementation
 
@@ -14,7 +14,7 @@ Last Updated: 2026-11-13 15:17:16 (KST)
 - Compile passed; EditMode 216/216 (3.21s); full PlayMode 118/118 (56.26s; SIEGE-03 baseline was 53.74s, so no notable slowdown in tests).
 - Preview-scene render of 6 `allied_melee` units under a Soft directional light: shadows visible on the ground at ~6m and ~28m camera distance. Health bars also cast small shadows (prototype placeholder, left as is).
 - Beyond 50m (URP shadow distance) shadows fade out by design. Frame-rate impact with large battles not measured.
-- User authorized completion on 2026-11-13; a separate manual Game-view shadow report was not given. Large-battle frame rate and standalone build unverified.
+- User manually verified shadows in the Game scene and confirmed completion on 2026-11-13. Large-battle frame rate was not measured; standalone build unverified.
 
 ## Manual verification
 
