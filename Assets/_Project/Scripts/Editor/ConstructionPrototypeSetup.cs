@@ -157,13 +157,10 @@ namespace ProjectNeo.Editor
 
         static Mesh RampMesh()
         {
-            string path = Art + "/ConstructionRamp.asset";
+            string path = ConstructionRampMesh.AssetPath;
             var existing = AssetDatabase.LoadAssetAtPath<Mesh>(path); if (existing != null) return existing;
-            var mesh = new Mesh { name = "UnitRamp" };
-            mesh.vertices = new[] { new Vector3(-0.5f,0f,-0.5f), new Vector3(0.5f,0f,-0.5f),
-                new Vector3(-0.5f,0f,0.5f), new Vector3(0.5f,0f,0.5f), new Vector3(-0.5f,1f,0.5f), new Vector3(0.5f,1f,0.5f) };
-            mesh.triangles = new[] { 0,4,5, 0,5,1, 0,2,4, 1,5,3, 2,3,5, 2,5,4, 0,1,3, 0,3,2 };
-            mesh.RecalculateNormals(); mesh.RecalculateBounds();
+            var mesh = new Mesh();
+            ConstructionRampMesh.Fill(mesh);
             return CombatPrototypeSetup.Save(mesh, path);
         }
 
