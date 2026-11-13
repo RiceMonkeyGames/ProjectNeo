@@ -1,6 +1,6 @@
 # Completed Backlog Archive (Done)
 
-Last Updated: 2026-11-13 23:10:44 (KST)
+Last Updated: 2026-11-14 00:28:15 (KST)
 
 > Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
@@ -38,6 +38,7 @@ Last Updated: 2026-11-13 23:10:44 (KST)
 | DOC-workflow-branches | Document task branch creation and remote cleanup workflow | Codex | User decision (2026-11-12): Create feature branch from latest develop after claim; delete remote branch after confirmed integration. [History](../history/DOC/DOC-workflow-branches.md) |
 | C-1a | Agree on Run Data & Combat Outcome Boundary | Hwang Seong-min | Merged to develop (`9429e85`). Pure C# `RunState`, `CastleState`, `BattleInput`, `BattleResult`. [History](../history/C/C-1a.md) |
 | C-1a-confirm | Teammate Review of Combat Outcome Format | Hwang Seong-min | Branch `feature/c-1a-confirm` (doc-only review memo). Format sign-off handed to youngho, who applies `BattleResult` changes in B-8.2. [History](../history/C/C-1a-confirm.md) |
+| C-3 | Run Carry-over of Troop Casualties & Wall HP | Hwang Seong-min | Branch `feature/c-3`. EditMode 347, PlayMode 173. Q-50 cleanup; fixed squad-marker crash on squad removal. Manual play confirmed by user. [History](../history/C/C-3.md) |
 | Q-04·05 | Finalize Morale, Rout, and Captain Death Rules | youngho | Decided 2026-11-12 (Bannerlord morale + Darkest Dungeon Breaking Point). Recorded in [MoraleAndWave](../design/MoraleAndWave.md). [History](../history/Q/Q-04-05.md) |
 | C-4 | Runtime Reward Payout & Prep Phase Linking | Hwang Seong-min | Branch `feature/stage-rewards`, merged (`f9f79cf`). EditMode 169, PlayMode 76/77. [History](../history/C/C-4.md) |
 | D-3~8-plan | Decompose Facility & Squad Tasks into Actionable Units | Hwang Seong-min | Registered D-0..D-8 and Q-33..Q-36. [History](../history/D/D-3-8-plan.md) |

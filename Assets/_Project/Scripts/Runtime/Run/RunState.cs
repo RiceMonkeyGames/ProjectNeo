@@ -671,6 +671,25 @@ namespace ProjectNeo.Run
             return BattleResultIssue.None;
         }
 
+        /// <summary>
+        /// 전투 뒤 정리(C-3, Q-50): 잡졸도 대장도 없는 부대를 없앤다(사기도 함께 없어진다). 대장만 남은 부대는 사기와 함께 남는다.
+        /// 없앤 부대의 원래 순번을 큰 것부터 돌려준다(씬 부대를 같은 순서로 지우면 번호가 맞는다). 전투 대기 중이면 아무것도 하지 않는다.
+        /// </summary>
+        public List<int> RemoveEmptySquads()
+        {
+            var removed = new List<int>();
+            if (HasPendingBattle) return removed;
+            for (int i = Army.Squads.Count - 1; i >= 0; i--)
+            {
+                Squad<RunUnit> squad = Army.Squads[i];
+                if (squad.Members.Count > 0 || squad.Leader != null) continue;
+                Army.RemoveSquad(squad);
+                removed.Add(i);
+            }
+            if (removed.Count > 0) Changed?.Invoke();
+            return removed;
+        }
+
         bool Owns(Squad<RunUnit> squad)
         {
             foreach (Squad<RunUnit> own in Army.Squads)

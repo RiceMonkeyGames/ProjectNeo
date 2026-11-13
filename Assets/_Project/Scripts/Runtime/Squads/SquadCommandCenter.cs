@@ -113,6 +113,22 @@ namespace ProjectNeo.Squads
             return Commander.RemoveSquad(squad);
         }
 
+        /// <summary>
+        /// 죽은 부대원과 죽은 부대장을 모든 부대에서 뺀다(C-3, Q-50). 몸은 씬에 그대로 남고 부대 자리만 비운다. 뺀 수를 돌려준다.
+        /// </summary>
+        public int RemoveFallen()
+        {
+            int count = 0;
+            foreach (Squad<UnitCombatAI> squad in army.Squads)
+            {
+                count -= squad.Members.Count;
+                RemoveDead(squad);
+                count += squad.Members.Count;
+                if (squad.Leader != null && IsDeadBody(squad.Leader)) { squad.Leader = null; count--; }
+            }
+            return -count;
+        }
+
         /// <summary>부대 대장을 정한다(D-8). null이면 비운다. 없는 번호면 false.</summary>
         public bool SetLeader(int squad, UnitCombatAI leader)
         {

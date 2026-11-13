@@ -1,6 +1,6 @@
 # Editor Setup & Test Scripts
 
-Last Updated: 2026-11-13 23:03:41 (KST)
+Last Updated: 2026-11-14 00:26:01 (KST)
 
 > Purpose: Map of Editor setup menus, build scripts, and EditMode/PlayMode test suites. | Parent: [codemap/README](README.md) | Related: [UnityCLI](../workflow/UnityCLI.md), [Status](../plan/Status.md)
 
@@ -37,6 +37,7 @@ Last Updated: 2026-11-13 23:03:41 (KST)
 - `SquadCommanderTests.cs`: Selection, orders, arrival transitions, formation geometries, runtime `AddSquad`/`RemoveSquad`.
 - `RunOrganizationTests.cs`: D-8 grunt moves, emptied-squad removal with captain to reserve, new squad cap, reserve-only captains, player blocked (Q-32 interim), battle lock.
 - `RunTavernTests.cs`: D-3 seeded tavern offers, locked/hired/fallen exclusion, gold hire, captain swap to reserve, shared character, battle input leader.
+- `RunCarryOverTests.cs`: C-3 empty-squad cleanup (captain-only squad kept with morale, dead captain removes squad), fled grunts stay, no double application, no cleanup while a battle is pending.
 - `MoveStallTrackerTests.cs`: Destination stall detection and progress tracking.
 - `SiegeRulesTests.cs`: Cost deductions, win/loss, ladder mechanics, upward damage reduction.
 - `MoraleRulesTests.cs`: B-8.1 morale: proportional/fixed losses, ally-only gate/wall, once-per-battle check (collapse/awaken, chance bonus), start-below-100 weak collapse, rout once at 0, Rally/Last Stand/Steadfast, attack bands (enemy low band only), Fear/Panic/Contagion strength, dispose, post-battle recovery max(+20, 80). B-8.2: squad at 150 routs exactly at 90% battle-start deaths (5/10/20 members).
@@ -74,6 +75,7 @@ Last Updated: 2026-11-13 23:03:41 (KST)
 - `GameBarracksPlayTests.cs`: D-4 Game scene barracks popup recruit with cost/squad choice, insufficient funds, battle input, upgrade bonus on existing/new grunts.
 - `GameOrganizationPlayTests.cs`: D-8 Game scene organization window moves a grunt to a new squad and back via cards (UI-01), hired hero to captain, to another squad and back to reserve, (run + scene squads + commander stay aligned, emptied squad removed); closed during battle.
 - `GameTavernPlayTests.cs`: D-3 Game scene tavern hire as captain and reserve, shared scene/run character, equipment hero selector, reserve hero deactivated in battle.
+- `GameCarryOverPlayTests.cs`: C-3 Game scene battle with deaths → next prep: dead leave scene squads (bodies stay), empty squad removed from run/scene/commander, captain-only squad kept, recruit into emptied squad and next battle input stay aligned.
 - `FocusIndependentInputScopeTests.cs`: Normal/exception restoration of InputSettings via `FocusIndependentInputScope`.
 - `SetupSmokePlayTests.cs`: Basic frame tick verification.
 - `UnitScaleBenchmark.cs` & `UnitAIQueryBenchmark.cs`: Explicit `[Explicit]` performance benchmarks (excluded from standard runs).
