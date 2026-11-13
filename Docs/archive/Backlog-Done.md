@@ -1,11 +1,12 @@
 # Completed Backlog Archive (Done)
 
-Last Updated: 2026-11-13 21:24:43 (KST)
+Last Updated: 2026-11-14 00:04:02 (KST)
 
 > Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
 | Task ID | Description | Assignee | Outcome & History Link |
 |---|---|---|---|
+| PREP-02 | Shop Gold Re-roll | youngho | Done 2026-11-14; branch `feature/prep-02`. Q-46: re-roll button in Shop pop-up, cost 10g rising by 10g per re-roll without cap, resets each prep, refills bought slots, seed-reproducible. Compile, EditMode 334/334 and PlayMode 169/169 passed. User confirmed manual check in `Game.unity`. Standalone build not verified. [History](../history/PREP/PREP-02.md) |
 | COMBAT-01 | 플레이어 웅크리기 (Ctrl) | 신용준 | Done 2026-11-13; branch `feature/combat-01`, implemented with COMBAT-02 on user request. Hold either Ctrl, 50% MoveSpeed, reduced capsule/visual/eye height, fixed feet and overhead standing clearance. First-person eye height uses user-approved 0.18s smoothing with continuous reversal. Compile, EditMode 315/315 and PlayMode 164/164 passed. User confirmed crouch/sprint and smooth view behavior and authorized develop merge plus local/remote work-branch deletion on 2026-11-13. Standalone build unverified. [History](../history/COMBAT/COMBAT-01.md) |
 | COMBAT-02 | 플레이어 달리기 (Shift) | 신용준 | Done 2026-11-13; branch `feature/combat-01`, implemented with COMBAT-01 on user request. Hold either Shift, 150% current MoveSpeed, crouch priority, normalized diagonals, no stamina. Compile, EditMode 315/315 and PlayMode 164/164 passed. User confirmed crouch/sprint and smooth view behavior and authorized develop merge plus local/remote work-branch deletion on 2026-11-13. Standalone build unverified. [History](../history/COMBAT/COMBAT-02.md) |
 | B-8.2 | Rout Movement, Exit, and Outcome Wiring | youngho | Done 2026-11-13. Branch `feature/b-8.2`. Per Q-44 (ally squads only; enemies have no morale): `GameSquadMorale` added at runtime by `GameBattleController` (no scene edit), morale on run squads, member/captain death, gate, nearby wall, nearby rout and Rally/Contagion wiring; routed squads ignore orders, run to computed south courtyard retreat point, exit on arrival/20s, return next prep; `BattleResult` ally `Fled` and per-type enemy retreats; `Morale.asset` (full-squad loss ≈166.7). Compile passed, EditMode 253/253, PlayMode 123/123 (`GameMoralePlayTests` 3). User manually verified rout in Game (with temporary tuning, restored) and authorized commit/push/develop merge on 2026-11-13. Combat effects/HUD: COMBAT-03. Standalone build unverified. [History](../history/B/B-8.2.md) |

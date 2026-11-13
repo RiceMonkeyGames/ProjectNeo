@@ -59,6 +59,7 @@ namespace ProjectNeo.Editor
             Popup popup = BuildPopup(hud, facilities);
             facilities.Configure(start, view, popup.panel, popup.title, popup.status, popup.body);
             facilities.ConfigureActions(popup.upgrade, popup.upgradeLabel, popup.trade, popup.offers, popup.inventory, popup.row);
+            facilities.ConfigureReroll(popup.reroll, popup.rerollLabel);
             EditorUtility.SetDirty(facilities);
 
             // D-7 장비 화면(I 키). 상호작용 설정 에셋에 새 키 칸을 저장한다.
@@ -270,8 +271,37 @@ namespace ProjectNeo.Editor
         {
             public GameObject panel, trade;
             public TMP_Text title, status, body, upgradeLabel;
-            public Button upgrade, row;
+            public Button upgrade, row, reroll;
+            public TMP_Text rerollLabel;
             public RectTransform offers, inventory;
+        }
+
+        /// <summary>
+        /// PREP-02 상점 리롤 버튼만 Game 씬의 시설 팝업에 더한다. 팝업 전체를 다시 만들지 않아 씬 변경이 작다.
+        /// 이미 있으면 다시 만들어 연결한다.
+        /// </summary>
+        [MenuItem("ProjectNeo/Setup/Add Shop Reroll Button To Game Scene")]
+        public static void ApplyRerollButton()
+        {
+            if (EditorSceneManager.GetActiveScene().isDirty) throw new InvalidOperationException("Save the active scene first.");
+            Scene scene = EditorSceneManager.OpenScene(GameFlowSetup.GamePath, OpenSceneMode.Single);
+            GameFacilities facilities = Find<GameFacilities>(scene);
+            var panel = (GameObject)new SerializedObject(facilities).FindProperty("panel").objectReferenceValue
+                ?? throw new InvalidOperationException("Run Connect Facilities To Game Scene first: no FacilityPanel.");
+            Button reroll = RerollButton(panel.transform, facilities, out TMP_Text label);
+            facilities.ConfigureReroll(reroll, label);
+            EditorUtility.SetDirty(facilities);
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+        }
+
+        /// <summary>팝업 왼쪽 아래의 리롤 버튼. 상점 팝업에서만 보이고 글자는 실행 중에 비용으로 바뀐다.</summary>
+        static Button RerollButton(Transform panel, GameFacilities facilities, out TMP_Text label)
+        {
+            Transform existing = panel.Find("Button_Reroll");
+            if (existing != null) UnityEngine.Object.DestroyImmediate(existing.gameObject);
+            return ButtonAt(panel, "Button_Reroll", "리롤", new Vector2(0f, 0f), new Vector2(24f, 20f),
+                new Vector2(230f, 48f), facilities.TryRerollFromButton, out label);
         }
 
         static void SetModifiers(ItemDefinition item, params StatModifier[] modifiers)
@@ -375,6 +405,7 @@ namespace ProjectNeo.Editor
 
             ButtonAt(popup.panel.transform, "Button_Close", "닫기 (Esc)", new Vector2(0.5f, 0f), new Vector2(0f, 20f),
                 new Vector2(200f, 48f), facilities.Close, out _);
+            popup.reroll = RerollButton(popup.panel.transform, facilities, out popup.rerollLabel);
             popup.panel.SetActive(false);
             return popup;
         }
