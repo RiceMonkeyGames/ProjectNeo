@@ -1,6 +1,6 @@
 # ProjectNeo
 
-Last Updated: 2026-11-13 14:07:40 (KST)
+Last Updated: 2026-11-13 14:18:50 (KST)
 
 A 3D first-person siege defense roguelike built with Unity 6000.6.8f1 and URP. Scout the upcoming wave, prepare heroes, troops, equipment, and walls, and defend the castle through direct player combat and unit commanding. Low-poly art style; Synty assets planned, currently using placeholder graphics.
 
@@ -25,7 +25,7 @@ Precedence on conflict: `Docs/design/` (game rules) > `Docs/plan/` (roadmap/stat
 ## Working Rules
 
 - Respond to the user in Korean, using clear and simple language.
-- Use `Last Updated: 2026-11-13 14:07:40 (KST)
+- Use `Last Updated: YYYY-MM-DD HH:MM:SS (KST)` whenever editing docs; query the exact current time (never guess). When bulk-updating timestamps, replace only header lines (`^Last Updated:`), never this rule line.
 - Never decide ambiguous design/architecture questions arbitrarily; present options with rationale and ask the user first. Record decisions immediately in `Docs/design/` and `Docs/plan/`.
 - Always guide the user on manual verification upon completion (exact scene/file paths, controls, expected results, reset steps; test names/CLI commands for logic tasks). Never stop at automated test counts alone.
 - Collaborating since 2026-11-11 (teammate: enemy assault/combat execution; user: game entry/core flow). Coordinate sequential edits on shared files/assets ([Docs/plan/Team.md](Docs/plan/Team.md)); never run compile, PlayMode, tests, or builds concurrently in one editor.
