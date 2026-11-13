@@ -201,8 +201,11 @@ namespace ProjectNeo.Squads
         void Apply(int index, SquadOrder order)
         {
             var alive = new List<UnitCombatAI>();
+            // 대장(D-3 고용 영웅)도 부대 지시를 따른다. 대형 맨 앞 자리에 선다.
+            UnitCombatAI leader = army.Squads[index].Leader;
+            if (IsAlive(leader) && !detached.Contains(leader)) alive.Add(leader);
             foreach (UnitCombatAI member in army.Squads[index].Members)
-                if (IsAlive(member) && !detached.Contains(member)) alive.Add(member);
+                if (IsAlive(member) && !detached.Contains(member) && member != leader) alive.Add(member);
             if (order.Kind == SquadOrderKind.Move || (order.Kind == SquadOrderKind.Attack && order.HasDestination))
             {
                 UnitDirective toward = order.Kind == SquadOrderKind.Move ? UnitDirective.Move : UnitDirective.Engage;

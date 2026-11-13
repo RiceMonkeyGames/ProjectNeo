@@ -1,6 +1,6 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-13 22:24:20 (KST)
+Last Updated: 2026-11-13 22:57:34 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
@@ -42,6 +42,7 @@ Last Updated: 2026-11-13 22:24:20 (KST)
 | Q-45 | Merging under-strength squads | D-8 | Resolved (2026-11-13): Manual only via moving grunts in the organization window; no auto-merge or minimum size; emptied squad removed, its captain to reserve; receiving squad keeps its morale. |
 | Q-47 | Squad organization UI | D-8 | Resolved (2026-11-13): `O` key during prep; source-squad grunt list + target-squad picker, click moves one grunt; captains assigned from reserve heroes; player excluded (Q-32 interim). |
 | Q-48 | Tavern hire cost, reserve heroes, hero equipment | D-3 | Resolved (2026-11-13): Gold per hero tier in data (60/120/200g); reserve heroes excluded from battle with extensible deployment into captain-less squads later; hero equipment via `I` window hero selector inside D-3. |
+| Q-49 | Squad organization window layout | UI-01 | Resolved (2026-11-13): Side-by-side squad cards (captain slot on top, grunts below), new-squad card, reserve-hero card; click a unit then the destination card. Replaces the D-8 two-column layout after user feedback. |
 
 ## Detailed Decision Records
 

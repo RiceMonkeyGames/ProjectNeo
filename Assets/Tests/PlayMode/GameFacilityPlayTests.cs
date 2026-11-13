@@ -162,7 +162,7 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(1, state.Facility(FacilityType.Tavern).Level);
             Assert.AreEqual(40, state.Wallet.Gold);
             StringAssert.Contains("모자랍니다", facilities.BodyText);
-            Assert.AreEqual(0, facilities.OfferRows,"상점이 아닌 시설은 거래 줄이 없다.");
+            StringAssert.Contains("고용", facilities.OfferHeaderText, "주점은 영웅 고용 줄을 보여 준다(D-3).");
             yield break;
         }
 

@@ -149,6 +149,72 @@ namespace ProjectNeo.Run
             return true;
         }
 
+        readonly List<HeroDefinition> tavernOffers = new List<HeroDefinition>();
+
+        /// <summary>이번 준비의 주점 영웅 매물(D-3). 고용하면 빠진다.</summary>
+        public IReadOnlyList<HeroDefinition> TavernOffers => tavernOffers;
+        /// <summary>주점 매물을 마지막으로 뽑은 준비 번호. 아직 안 뽑았으면 -1.</summary>
+        public int TavernStockedFor { get; private set; } = -1;
+
+        /// <summary>준비 번호별 주점 시드. 상점·보상 시드와 겹치지 않게 섞는다.</summary>
+        public int TavernSeedFor(int preparation) => unchecked(SeedFor(preparation) * 7919 + 104729);
+
+        /// <summary>
+        /// 이번 준비의 주점 매물을 아직 뽑지 않았으면 주점 시설의 현재 레벨 영웅 풀에서 매물 수만큼 뽑는다(D-3, Q-34).
+        /// 이 런에 이미 있거나 영구 사망한 영웅, isAvailable(해금)을 통과하지 못한 영웅은 빼고, 같은 시드면 같은 매물이다.
+        /// 뽑았으면 true. 시설 업그레이드는 다음 준비의 매물부터 반영된다.
+        /// </summary>
+        public bool RestockTavernIfNeeded(Func<HeroDefinition, bool> isAvailable = null)
+        {
+            FacilityState tavern = Facility(FacilityType.Tavern);
+            if (tavern == null || TavernStockedFor == BattlesFought) return false;
+            tavernOffers.Clear();
+            tavernOffers.AddRange(Core.WeightedPool.Roll(tavern.Current.heroPool, tavern.Current.offerCount,
+                new Core.SeededRandom(TavernSeedFor(BattlesFought)),
+                hero => !InRunOrFallen(hero) && (isAvailable == null || isAvailable(hero))));
+            TavernStockedFor = BattlesFought;
+            Changed?.Invoke();
+            return true;
+        }
+
+        bool InRunOrFallen(HeroDefinition definition)
+        {
+            foreach (RunHero hero in heroes) if (hero.Definition == definition) return true;
+            foreach (RunHero hero in fallenHeroes) if (hero.Definition == definition) return true;
+            return false;
+        }
+
+        /// <summary>
+        /// 주점에서 이 영웅을 고용할 수 있는지(D-3). <paramref name="captainOf"/>가 있으면 그 부대의 대장을 맡기고, null이면 대기 영웅이다.
+        /// 전투 대기 → 매물 → 부대 → 비용 순으로 처음 걸린 이유를 돌려준다. 런을 바꾸지 않는다.
+        /// </summary>
+        public HireCheck CheckHire(HeroDefinition hero, Squad<RunUnit> captainOf)
+        {
+            if (HasPendingBattle) return HireCheck.BattlePending;
+            if (hero == null || !tavernOffers.Contains(hero)) return HireCheck.NotOffered;
+            if (captainOf != null && !Owns(captainOf)) return HireCheck.NoSquad;
+            if (!Wallet.CanAfford(hero.HireCost)) return HireCheck.NotEnoughFunds;
+            return HireCheck.Ok;
+        }
+
+        /// <summary>
+        /// 영웅을 고용한다(D-3, Q-36·Q-48). 비용을 내고 매물에서 빼며 런에 더한다. <paramref name="captainOf"/>가 있으면 대장을 맡기고
+        /// 원래 대장은 대기 영웅이 된다. <paramref name="character"/>는 씬 유닛과 같은 캐릭터(장비·스탯 공유)이며 null이면 새로 만든다.
+        /// <see cref="CheckHire"/>가 Ok가 아니면 null이고 런은 바뀌지 않는다.
+        /// </summary>
+        public RunHero TryHire(HeroDefinition hero, Squad<RunUnit> captainOf, Character character = null)
+        {
+            if (CheckHire(hero, captainOf) != HireCheck.Ok) return null;
+            if (character != null && character.Definition != hero)
+                throw new ArgumentException("캐릭터가 고용할 영웅의 것이 아니다.", nameof(character));
+            if (!Wallet.TrySpend(hero.HireCost)) return null;
+            tavernOffers.Remove(hero);
+            RunHero hired = AddHero(character ?? new Character(hero));
+            if (captainOf != null) captainOf.Leader = hired;
+            Changed?.Invoke();
+            return hired;
+        }
+
         /// <summary>매물을 런 지갑으로 사서 보관함에 넣는다.</summary>
         public bool TryBuy(ItemDefinition item) => Shop != null && Shop.TryBuy(item, Wallet, Inventory);
 

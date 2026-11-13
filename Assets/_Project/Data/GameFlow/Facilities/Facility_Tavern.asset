@@ -22,7 +22,12 @@ MonoBehaviour:
     recruitableSoldiers: []
     offerCount: 3
     itemPool: []
-    heroPool: []
+    heroPool:
+    - item: {fileID: 11400000, guid: 9a7127772c8055441ae6ecb5018d46db, type: 2}
+      weight: 1
+    - item: {fileID: 11400000, guid: 6b44272629dfe43448af015dfafd3976, type: 2}
+      weight: 1
+    recipes: []
   - upgradeCost:
       gold: 60
       materials: []
@@ -31,7 +36,14 @@ MonoBehaviour:
     recruitableSoldiers: []
     offerCount: 4
     itemPool: []
-    heroPool: []
+    heroPool:
+    - item: {fileID: 11400000, guid: 9a7127772c8055441ae6ecb5018d46db, type: 2}
+      weight: 1
+    - item: {fileID: 11400000, guid: 6b44272629dfe43448af015dfafd3976, type: 2}
+      weight: 1
+    - item: {fileID: 11400000, guid: 762c4e94b65ae944ca69707a085a1dc6, type: 2}
+      weight: 1
+    recipes: []
   - upgradeCost:
       gold: 120
       materials: []
@@ -40,5 +52,14 @@ MonoBehaviour:
     recruitableSoldiers: []
     offerCount: 5
     itemPool: []
-    heroPool: []
+    heroPool:
+    - item: {fileID: 11400000, guid: 9a7127772c8055441ae6ecb5018d46db, type: 2}
+      weight: 0.5
+    - item: {fileID: 11400000, guid: 6b44272629dfe43448af015dfafd3976, type: 2}
+      weight: 0.5
+    - item: {fileID: 11400000, guid: 762c4e94b65ae944ca69707a085a1dc6, type: 2}
+      weight: 1
+    - item: {fileID: 11400000, guid: 1b1a67a7924861849808913352a1d76b, type: 2}
+      weight: 1
+    recipes: []
   displayName: "\uC8FC\uC810"
