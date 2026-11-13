@@ -19,7 +19,9 @@ MonoBehaviour:
       materials: []
     qualityTier: 0
     soldierModifiers: []
-    recruitableSoldiers: []
+    recruitableSoldiers:
+    - {fileID: 11400000, guid: a0ed209df7c113348b2d08b2620b9793, type: 2}
+    - {fileID: 11400000, guid: f3e38ec2effb8c3408320027d8874f67, type: 2}
     offerCount: 3
     itemPool: []
     heroPool: []
@@ -27,8 +29,16 @@ MonoBehaviour:
       gold: 60
       materials: []
     qualityTier: 1
-    soldierModifiers: []
-    recruitableSoldiers: []
+    soldierModifiers:
+    - stat: 0
+      kind: 1
+      value: 0.1
+    - stat: 1
+      kind: 1
+      value: 0.1
+    recruitableSoldiers:
+    - {fileID: 11400000, guid: a0ed209df7c113348b2d08b2620b9793, type: 2}
+    - {fileID: 11400000, guid: f3e38ec2effb8c3408320027d8874f67, type: 2}
     offerCount: 4
     itemPool: []
     heroPool: []
@@ -36,8 +46,16 @@ MonoBehaviour:
       gold: 120
       materials: []
     qualityTier: 2
-    soldierModifiers: []
-    recruitableSoldiers: []
+    soldierModifiers:
+    - stat: 0
+      kind: 1
+      value: 0.2
+    - stat: 1
+      kind: 1
+      value: 0.2
+    recruitableSoldiers:
+    - {fileID: 11400000, guid: a0ed209df7c113348b2d08b2620b9793, type: 2}
+    - {fileID: 11400000, guid: f3e38ec2effb8c3408320027d8874f67, type: 2}
     offerCount: 5
     itemPool: []
     heroPool: []

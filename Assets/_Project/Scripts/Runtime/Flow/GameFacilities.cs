@@ -1,8 +1,12 @@
 using System.Collections.Generic;
 using System.Text;
+using ProjectNeo.Characters;
+using ProjectNeo.Combat;
 using ProjectNeo.Economy;
 using ProjectNeo.Facilities;
 using ProjectNeo.Run;
+using ProjectNeo.Squads;
+using ProjectNeo.Stats;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -12,7 +16,8 @@ namespace ProjectNeo.Flow
     /// <summary>
     /// Game 씬 준비 단계의 시설 팝업(D-0·D-1·D-5). 런 데이터에 시설 상태·상점 창구를 붙이고, 건물에서 F로 시설 팝업을 열며
     /// Esc나 닫기 버튼으로 닫는다. 팝업이 열린 동안은 <see cref="GamePhaseView.IsPanelView"/>로 이동·시점을 멈춘다.
-    /// 모든 시설은 팝업에서 업그레이드하고, 상점은 매물 구매와 보관함 판매를 한다. 다른 시설의 기능은 후속 작업이다.
+    /// 모든 시설은 팝업에서 업그레이드하고, 상점은 매물 구매와 보관함 판매를 한다. 병영(D-4)은 잡졸을 모집하고 넣을 부대를 고르며,
+    /// 레벨에 따른 훈련 보너스를 보여 준다. 다른 시설의 기능은 후속 작업이다.
     /// 시설 목록·거래 수치는 <see cref="RunConfig"/> 에셋, 레벨·매물 풀은 시설 정의 에셋에서 바꾼다.
     /// <see cref="GameBattleController"/>와 같은 오브젝트에 붙어 그 런 연결을 쓴다.
     /// </summary>
@@ -35,6 +40,12 @@ namespace ProjectNeo.Flow
         [SerializeField] Button rowTemplate;
         readonly List<Button> rows = new List<Button>();
         GameBattleController battle;
+        GameUnitSpawner spawner;
+        TMP_Text offerHeader;
+        TMP_Text inventoryHeader;
+        string shopOfferHeader;
+        string shopInventoryHeader;
+        Squad<RunUnit> chosenSquad;
         GameFlow flow;
 
         /// <summary>지금 열린 시설. 닫혀 있으면 null.</summary>
@@ -48,7 +59,11 @@ namespace ProjectNeo.Flow
         public string UpgradeText => upgradeLabel != null ? upgradeLabel.text : string.Empty;
         /// <summary>지금 보이는 매물 줄 수(상점).</summary>
         public int OfferRows => offerList != null ? ActiveChildren(offerList) : 0;
-        /// <summary>지금 보이는 보관함 줄 수(상점).</summary>
+        /// <summary>병영에서 고른 부대 순번. -1이면 자동 배치(자리가 남은 첫 부대).</summary>
+        public int ChosenSquad => chosenSquad != null && State != null ? State.IndexOf(chosenSquad) : -1;
+        /// <summary>매물 칸 제목(상점: 매물, 병영: 모집).</summary>
+        public string OfferHeaderText => offerHeader != null ? offerHeader.text : string.Empty;
+        /// <summary>지금 보이는 보관함 줄 수(상점) 또는 부대 줄 수(병영).</summary>
         public int InventoryRows => inventoryList != null ? ActiveChildren(inventoryList) : 0;
 
         public void Configure(RunConfig start, GamePhaseView view, GameObject popup, TMP_Text titleLabel, TMP_Text statusLabel,
@@ -67,6 +82,11 @@ namespace ProjectNeo.Flow
         void Awake()
         {
             battle = GetComponent<GameBattleController>();
+            spawner = GetComponent<GameUnitSpawner>();
+            offerHeader = HeaderOf(offerList);
+            inventoryHeader = HeaderOf(inventoryList);
+            shopOfferHeader = offerHeader != null ? offerHeader.text : string.Empty;
+            shopInventoryHeader = inventoryHeader != null ? inventoryHeader.text : string.Empty;
             flow = GameSession.Flow;
             if (panel != null) panel.SetActive(false);
             if (rowTemplate != null) rowTemplate.gameObject.SetActive(false);
@@ -108,6 +128,7 @@ namespace ProjectNeo.Flow
             if (type == FacilityType.Shop) State.RestockShopIfNeeded(item => GameSession.Meta.IsUnlocked(item));
             OpenFacility = type;
             Message = string.Empty;
+            chosenSquad = null;
             panel.SetActive(true);
             Rebuild();
             return true;
@@ -129,6 +150,7 @@ namespace ProjectNeo.Flow
             if (facility.IsMaxLevel) { Message = "이미 최대 레벨입니다."; Rebuild(); return false; }
             Cost cost = facility.NextUpgradeCost;
             bool upgraded = State.TryUpgradeFacility(OpenFacility.Value);
+            if (upgraded && OpenFacility == FacilityType.TrainingGround) battle.RunLink.ApplyTraining();
             Message = upgraded ? $"레벨 {facility.Level + 1}(으)로 올렸습니다 · {Describe(cost)}" : "비용이 모자랍니다: " + Describe(cost);
             Rebuild();
             return upgraded;
@@ -161,6 +183,45 @@ namespace ProjectNeo.Flow
             return sold;
         }
 
+        /// <summary>병영에서 모집할 수 있는 잡졸의 index번째를 고른 부대(없으면 자동 배치)로 모집한다(D-4). 비용을 낸다.</summary>
+        public bool TryRecruit(int index)
+        {
+            RunState state = State;
+            if (OpenFacility != FacilityType.TrainingGround || state == null || flow.Phase != GamePhase.Preparation) return false;
+            IReadOnlyList<SoldierDefinition> soldiers = state.RecruitableSoldiers;
+            if (index < 0 || index >= soldiers.Count || soldiers[index] == null) return false;
+            SoldierDefinition soldier = soldiers[index];
+            if (chosenSquad != null && state.IndexOf(chosenSquad) < 0) chosenSquad = null;
+            RecruitCheck check = state.CheckBarracksRecruit(soldier, chosenSquad);
+            UnitCombatAI unit = null;
+            int squad = -1;
+            if (check == RecruitCheck.Ok && spawner != null) unit = spawner.RecruitAtBarracks(soldier, chosenSquad, out squad);
+            Message = unit != null ? $"{soldier.DisplayName} 모집 · {Describe(soldier.RecruitCost)} → 부대 {squad + 1}"
+                : $"{soldier.DisplayName}: " + Reason(check);
+            Rebuild();
+            return unit != null;
+        }
+
+        /// <summary>병영에서 새 잡졸을 넣을 부대를 고른다. -1이면 자동 배치(자리가 남은 첫 부대, 모두 차면 새 부대).</summary>
+        public bool ChooseSquad(int index)
+        {
+            RunState state = State;
+            if (OpenFacility != FacilityType.TrainingGround || state == null || index >= state.Army.Squads.Count) return false;
+            chosenSquad = index < 0 ? null : state.Army.Squads[index];
+            Message = string.Empty;
+            Rebuild();
+            return true;
+        }
+
+        static string Reason(RecruitCheck check) => check switch
+        {
+            RecruitCheck.BattlePending => "전투 중에는 모집할 수 없습니다.",
+            RecruitCheck.NotRecruitable => "지금 병영 레벨에서는 모집할 수 없습니다.",
+            RecruitCheck.NoSquad => "넣을 부대가 없습니다(고른 부대가 꽉 찼거나 부대 수 상한).",
+            RecruitCheck.NotEnoughFunds => "비용이 모자랍니다.",
+            _ => "모집하지 못했습니다.",
+        };
+
         void Hide()
         {
             OpenFacility = null;
@@ -187,15 +248,21 @@ namespace ProjectNeo.Flow
                 upgradeLabel.text = facility.IsMaxLevel ? "최대 레벨" : "업그레이드 · " + Describe(facility.NextUpgradeCost);
             if (upgradeButton != null) upgradeButton.interactable = !facility.IsMaxLevel;
             bool shop = type == FacilityType.Shop && state.Shop != null;
+            bool barracks = type == FacilityType.TrainingGround;
             if (body != null)
             {
                 string text = shop ? "매물은 준비 단계마다 새로 바뀝니다. 업그레이드는 다음 준비의 매물부터 반영됩니다."
+                    : barracks ? DescribeTraining(facility)
                     : Purpose(type) + "\n이 시설의 기능과 업그레이드 효과는 다음 작업에서 붙습니다.";
                 body.text = string.IsNullOrEmpty(Message) ? text : Message + "\n" + text;
             }
-            if (tradeArea != null) tradeArea.SetActive(shop);
+            if (tradeArea != null) tradeArea.SetActive(shop || barracks);
+            if (offerHeader != null) offerHeader.text = barracks ? "모집 (클릭해서 모집)" : shopOfferHeader;
+            if (inventoryHeader != null) inventoryHeader.text = barracks ? "넣을 부대 (클릭해서 선택)" : shopInventoryHeader;
             ClearRows();
-            if (!shop || rowTemplate == null) return;
+            if (rowTemplate == null) return;
+            if (barracks) { BuildBarracksRows(state); return; }
+            if (!shop) return;
             IReadOnlyList<ItemDefinition> stock = state.Shop.Stock;
             if (stock.Count == 0) AddRow(offerList, "매물이 없습니다.", null);
             for (int i = 0; i < stock.Count; i++)
@@ -212,6 +279,68 @@ namespace ProjectNeo.Flow
                     () => TrySell(index));
             }
             if (items.Count > MaxInventoryRows) AddRow(inventoryList, $"외 {items.Count - MaxInventoryRows}개", null);
+        }
+
+        void BuildBarracksRows(RunState state)
+        {
+            IReadOnlyList<SoldierDefinition> soldiers = state.RecruitableSoldiers;
+            if (soldiers.Count == 0) AddRow(offerList, "모집할 수 있는 잡졸이 없습니다.", null);
+            for (int i = 0; i < soldiers.Count; i++)
+            {
+                int index = i;
+                if (soldiers[i] == null) continue;
+                AddRow(offerList, $"{soldiers[i].DisplayName} · {Describe(soldiers[i].RecruitCost)}", () => TryRecruit(index));
+            }
+            if (chosenSquad != null && state.IndexOf(chosenSquad) < 0) chosenSquad = null;
+            AddRow(inventoryList, (chosenSquad == null ? "[선택] " : string.Empty) + "자동 배치 (빈자리 있는 첫 부대)", () => ChooseSquad(-1));
+            IReadOnlyList<Squad<RunUnit>> squads = state.Army.Squads;
+            for (int i = 0; i < squads.Count && i < MaxInventoryRows; i++)
+            {
+                int index = i;
+                string mark = squads[i] == chosenSquad ? "[선택] " : string.Empty;
+                AddRow(inventoryList, $"{mark}부대 {i + 1} · {squads[i].Members.Count}/{squads[i].Capacity}명", () => ChooseSquad(index));
+            }
+            if (state.Army.CanAddSquad) AddRow(inventoryList, "모두 차면 새 부대를 만듭니다", null);
+        }
+
+        static string DescribeTraining(FacilityState facility)
+        {
+            var text = new StringBuilder("훈련 보너스(모든 잡졸): " + DescribeModifiers(SoldierTraining.ModifiersOf(facility)));
+            if (!facility.IsMaxLevel)
+                text.Append("\n다음 레벨: " + DescribeModifiers(facility.Definition.Levels[facility.Level + 1].soldierModifiers));
+            text.Append("\n업그레이드하면 지금 있는 잡졸에게도 바로 붙습니다.");
+            return text.ToString();
+        }
+
+        static string DescribeModifiers(IEnumerable<StatModifier> modifiers)
+        {
+            var text = new StringBuilder();
+            if (modifiers != null)
+                foreach (StatModifier modifier in modifiers)
+                {
+                    if (text.Length > 0) text.Append(" · ");
+                    string amount = modifier.kind == ModifierKind.Percent ? $"{modifier.value * 100f:+0;-0}%" : $"{modifier.value:+0.#;-0.#}";
+                    text.Append(StatName(modifier.stat) + " " + amount);
+                }
+            return text.Length > 0 ? text.ToString() : "없음";
+        }
+
+        static string StatName(StatType stat) => stat switch
+        {
+            StatType.MaxHealth => "체력",
+            StatType.Attack => "공격력",
+            StatType.Defense => "방어력",
+            StatType.AttackSpeed => "공격 속도",
+            StatType.MoveSpeed => "이동 속도",
+            StatType.AttackRange => "사거리",
+            _ => stat.ToString(),
+        };
+
+        // 매물·보관함 칸 위의 제목. 칸의 부모(열) 아래 Header 텍스트를 쓴다. 없으면 null.
+        static TMP_Text HeaderOf(RectTransform list)
+        {
+            Transform header = list != null && list.parent != null ? list.parent.Find("Header") : null;
+            return header != null ? header.GetComponent<TMP_Text>() : null;
         }
 
         void AddRow(RectTransform list, string text, UnityEngine.Events.UnityAction action)

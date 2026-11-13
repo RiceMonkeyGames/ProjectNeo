@@ -317,6 +317,48 @@ namespace ProjectNeo.Run
             return soldier;
         }
 
+        /// <summary>병영(훈련장) 상태. 시설을 아직 붙이지 않았으면 null.</summary>
+        public FacilityState TrainingGround => Facility(FacilityType.TrainingGround);
+
+        /// <summary>지금 병영 레벨에서 모집할 수 있는 잡졸(D-4). 병영이 없으면 빈 목록.</summary>
+        public IReadOnlyList<SoldierDefinition> RecruitableSoldiers
+        {
+            get
+            {
+                List<SoldierDefinition> soldiers = TrainingGround?.Current.recruitableSoldiers;
+                return soldiers != null ? (IReadOnlyList<SoldierDefinition>)soldiers : Array.Empty<SoldierDefinition>();
+            }
+        }
+
+        /// <summary>
+        /// 병영에서 이 잡졸을 <paramref name="preferred"/> 부대(null이면 Q-36 자동 배치)로 모집할 수 있는지(D-4).
+        /// 전투 대기 → 모집 가능 종류 → 넣을 부대 → 비용 순으로 처음 걸린 이유를 돌려준다. 런을 바꾸지 않는다.
+        /// </summary>
+        public RecruitCheck CheckBarracksRecruit(SoldierDefinition definition, Squad<RunUnit> preferred)
+        {
+            if (HasPendingBattle) return RecruitCheck.BattlePending;
+            if (definition == null) return RecruitCheck.NotRecruitable;
+            bool recruitable = false;
+            foreach (SoldierDefinition soldier in RecruitableSoldiers)
+                if (soldier == definition) { recruitable = true; break; }
+            if (!recruitable) return RecruitCheck.NotRecruitable;
+            if (!TryFindRecruitSquad(preferred, out _, out _)) return RecruitCheck.NoSquad;
+            if (!Wallet.CanAfford(definition.RecruitCost)) return RecruitCheck.NotEnoughFunds;
+            return RecruitCheck.Ok;
+        }
+
+        /// <summary>
+        /// 병영에서 잡졸을 모집하고 모집 비용을 런 지갑에서 낸다(D-4). <see cref="CheckBarracksRecruit"/>가 Ok가 아니면 null이고
+        /// 런은 바뀌지 않는다. 들어간 부대는 <paramref name="squad"/>다.
+        /// </summary>
+        public RunSoldier TryRecruitAtBarracks(SoldierDefinition definition, Squad<RunUnit> preferred, out Squad<RunUnit> squad)
+        {
+            squad = null;
+            if (CheckBarracksRecruit(definition, preferred) != RecruitCheck.Ok) return null;
+            if (!Wallet.TrySpend(definition.RecruitCost)) return null;
+            return TryRecruit(definition, preferred, out squad);
+        }
+
         /// <summary>이 런 부대의 순번. 씬 부대와 같은 순서다. 없으면 -1.</summary>
         public int IndexOf(Squad<RunUnit> squad)
         {

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using ProjectNeo.Characters;
 using ProjectNeo.Combat;
+using ProjectNeo.Facilities;
 using ProjectNeo.Run;
 using ProjectNeo.Squads;
 using ProjectNeo.Walls;
@@ -48,20 +49,41 @@ namespace ProjectNeo.Flow
                 if (binding == null) return;
                 binding.State.SetCastle(CaptureCastle());
                 flow.AttachRunState(binding.State);
+                ApplyTraining();
                 return;
             }
             foreach (CharacterActor actor in binding.ObjectsInRun())
                 if (actor != null && actor.Health != null) actor.Health.RestoreFull();
+            ApplyTraining();
+        }
+
+        /// <summary>
+        /// 런의 모든 씬 잡졸에게 지금 병영 레벨의 훈련 보너스를 붙인다(D-4, Q-37). 병영 업그레이드·모집 뒤와 준비 시작 때 부른다.
+        /// 여러 번 불러도 겹치지 않는다. 체력이 가득 찼던 유닛은 늘어난 최대 체력까지 채운다. 영웅·플레이어는 건드리지 않는다.
+        /// </summary>
+        public void ApplyTraining()
+        {
+            if (binding == null) return;
+            FacilityState trainingGround = binding.State.TrainingGround;
+            foreach (CharacterActor actor in binding.ObjectsInRun())
+            {
+                if (actor == null || actor.Stats == null || !(binding.State.Find(binding.IdOf(actor)) is RunSoldier)) continue;
+                bool wasFull = actor.Health != null && !actor.Health.IsDead && actor.Health.Current >= actor.Health.Maximum;
+                SoldierTraining.Apply(actor.Stats, trainingGround);
+                if (wasFull) actor.Health.RestoreFull();
+            }
         }
 
         /// <summary>
         /// 준비 중에 잡졸 하나를 모집해 런과 씬 부대에 함께 넣는다(D-0b, Q-36). <paramref name="create"/>는 씬 유닛을
         /// 만들어 돌려준다(위치·활성화는 부르는 쪽). 준비 단계가 아니거나 넣을 부대가 없거나 씬 유닛을 만들지 못하면 null이고
         /// 런·씬 부대는 바뀌지 않는다. <paramref name="gatherPoint"/>는 넣기 전 부대가 모여 있던 곳이며, 빈 부대면 false다.
-        /// 비용은 받지 않는다.
+        /// <paramref name="payAtBarracks"/>면 병영 규칙(모집 가능 종류·비용, D-4)을 따르고 비용을 낸다. 아니면 비용을 받지 않는다.
+        /// 훈련 보너스는 유닛이 켜진 뒤 <see cref="ApplyTraining"/>으로 붙인다.
         /// </summary>
         public UnitCombatAI TryRecruit(SoldierDefinition definition, Squad<RunUnit> preferred,
-            System.Func<SoldierDefinition, UnitCombatAI> create, out int squadIndex, out Vector3 gatherPoint, out bool hasGatherPoint)
+            System.Func<SoldierDefinition, UnitCombatAI> create, out int squadIndex, out Vector3 gatherPoint, out bool hasGatherPoint,
+            bool payAtBarracks = false)
         {
             squadIndex = -1; gatherPoint = default; hasGatherPoint = false;
             if (definition == null || create == null || squads == null) return null;
@@ -73,6 +95,7 @@ namespace ProjectNeo.Flow
                 Debug.LogWarning("씬 부대 수와 런 부대 수가 달라 모집하지 않는다.");
                 return null;
             }
+            if (payAtBarracks && state.CheckBarracksRecruit(definition, preferred) != RecruitCheck.Ok) return null;
             if (!state.TryFindRecruitSquad(preferred, out _, out bool needsNewSquad)) return null;
 
             // 씬 유닛은 아직 꺼진 채 올 수 있어(Awake 전) UnitCombatAI.Actor 대신 컴포넌트를 직접 찾는다.
@@ -80,7 +103,9 @@ namespace ProjectNeo.Flow
             if (unit == null) return null;
             var actor = unit.GetComponent<CharacterActor>();
             if (actor == null) { Object.Destroy(unit.gameObject); return null; }
-            RunSoldier soldier = state.TryRecruit(definition, preferred, out Squad<RunUnit> squad);
+            Squad<RunUnit> squad;
+            RunSoldier soldier = payAtBarracks ? state.TryRecruitAtBarracks(definition, preferred, out squad)
+                : state.TryRecruit(definition, preferred, out squad);
             if (soldier == null) { Object.Destroy(unit.gameObject); return null; }
             squadIndex = state.IndexOf(squad);
             if (needsNewSquad && squads.AddSquad() != squadIndex)

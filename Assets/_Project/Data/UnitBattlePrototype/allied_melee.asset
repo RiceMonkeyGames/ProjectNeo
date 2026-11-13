@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: allied_melee
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Characters.SoldierDefinition
   id: allied_melee
-  displayName: allied_melee
+  displayName: "\uADFC\uC811 \uC7A1\uC878"
   recruitCost:
-    gold: 0
+    gold: 15
     materials: []
   baseStats:
   - stat: 0
