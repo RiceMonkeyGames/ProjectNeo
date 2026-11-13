@@ -35,6 +35,9 @@ namespace ProjectNeo.Economy
             Changed?.Invoke();
         }
 
+        /// <summary>이번 준비 단계에서 이미 rerollsDone번 리롤했을 때 다음 리롤의 골드(PREP-02).</summary>
+        public int GetRerollCost(int rerollsDone) => config.GetRerollCost(rerollsDone);
+
         /// <summary>매물에 있고 비용을 낼 수 있으면 차감하고 보관함에 넣는다.</summary>
         public bool TryBuy(ItemDefinition item, Wallet wallet, Inventory inventory)
         {

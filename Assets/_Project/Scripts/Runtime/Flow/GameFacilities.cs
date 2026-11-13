@@ -40,6 +40,8 @@ namespace ProjectNeo.Flow
         [SerializeField] RectTransform offerList;
         [SerializeField] RectTransform inventoryList;
         [SerializeField] Button rowTemplate;
+        [SerializeField] Button rerollButton;
+        [SerializeField] TMP_Text rerollLabel;
         readonly List<Button> rows = new List<Button>();
         GameBattleController battle;
         GameUnitSpawner spawner;
@@ -60,6 +62,10 @@ namespace ProjectNeo.Flow
         public string StatusText => status != null ? status.text : string.Empty;
         public string BodyText => body != null ? body.text : string.Empty;
         public string UpgradeText => upgradeLabel != null ? upgradeLabel.text : string.Empty;
+        /// <summary>리롤 버튼 글자(상점). 버튼이 없으면 빈 글자.</summary>
+        public string RerollText => rerollLabel != null ? rerollLabel.text : string.Empty;
+        /// <summary>리롤 버튼이 지금 보이는지(상점 팝업에서만 보인다).</summary>
+        public bool IsRerollVisible => rerollButton != null && rerollButton.gameObject.activeSelf;
         /// <summary>지금 보이는 매물 줄 수(상점).</summary>
         public int OfferRows => offerList != null ? ActiveChildren(offerList) : 0;
         /// <summary>병영에서 고른 부대 순번. -1이면 자동 배치(자리가 남은 첫 부대).</summary>
@@ -80,6 +86,11 @@ namespace ProjectNeo.Flow
         {
             upgradeButton = upgrade; upgradeLabel = upgradeText; tradeArea = trade; offerList = offers;
             inventoryList = inventory; rowTemplate = template;
+        }
+
+        public void ConfigureReroll(Button reroll, TMP_Text rerollText)
+        {
+            rerollButton = reroll; rerollLabel = rerollText;
         }
 
         void Awake()
@@ -256,6 +267,28 @@ namespace ProjectNeo.Flow
             return text.ToString();
         }
 
+        /// <summary>골드를 내고 상점 매물을 새로 뽑는다(PREP-02). 리롤 버튼이 부른다.</summary>
+        public bool TryReroll()
+        {
+            RunState state = State;
+            if (OpenFacility != FacilityType.Shop || state?.Shop == null || flow.Phase != GamePhase.Preparation) return false;
+            int cost = state.ShopRerollCost;
+            ShopRerollCheck check = state.CheckShopReroll();
+            bool rerolled = check == ShopRerollCheck.Ok && state.TryRerollShop(IsUnlocked);
+            Message = rerolled ? $"매물을 새로 뽑았습니다 · {cost}골드" : "리롤: " + Reason(check, cost);
+            Rebuild();
+            return rerolled;
+        }
+
+        public void TryRerollFromButton() => TryReroll();
+
+        static string Reason(ShopRerollCheck check, int cost) => check switch
+        {
+            ShopRerollCheck.BattlePending => "전투 중에는 리롤할 수 없습니다.",
+            ShopRerollCheck.NotEnoughFunds => $"비용이 모자랍니다: {cost}골드",
+            _ => "지금은 리롤할 수 없습니다.",
+        };
+
         static bool IsUnlocked(ItemDefinition item) => GameSession.Meta.IsUnlocked(item);
 
         /// <summary>대장간 레시피의 index번째 장비를 만든다(D-6). 비용을 내고 보관함에 넣는다.</summary>
@@ -374,7 +407,7 @@ namespace ProjectNeo.Flow
             bool tavern = type == FacilityType.Tavern;
             if (body != null)
             {
-                string text = shop ? "매물은 준비 단계마다 새로 바뀝니다. 업그레이드는 다음 준비의 매물부터 반영됩니다."
+                string text = shop ? "매물은 준비 단계마다 새로 바뀌고, 업그레이드는 다음 준비의 매물부터 반영됩니다.\n리롤은 할 때마다 비싸지고 다음 준비에 처음 값으로 돌아갑니다."
                     : barracks ? DescribeTraining(facility)
                     : smithy ? DescribeSmithy(facility)
                     : tavern ? DescribeTavern(facility)
@@ -382,6 +415,8 @@ namespace ProjectNeo.Flow
                 body.text = string.IsNullOrEmpty(Message) ? text : Message + "\n" + text;
             }
             if (tradeArea != null) tradeArea.SetActive(shop || barracks || smithy || tavern);
+            if (rerollButton != null) rerollButton.gameObject.SetActive(shop);
+            if (shop && rerollLabel != null) rerollLabel.text = $"리롤 · {state.ShopRerollCost}골드";
             if (offerHeader != null)
                 offerHeader.text = barracks ? "모집 (클릭해서 모집)" : smithy ? "제작 (클릭해서 제작)"
                     : tavern ? "영웅 (클릭해서 고용)" : shopOfferHeader;

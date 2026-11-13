@@ -152,6 +152,117 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(1, run.ShopStockedFor);
         }
 
+        static void FinishBattle(RunState run, int battle)
+        {
+            run.CreateBattleInput(battle);
+            Assert.AreEqual(BattleResultIssue.None,
+                run.Apply(new BattleResult(battle, Flow.BattleOutcome.Victory, BattleEndReason.EnemiesDefeated)));
+        }
+
+        [Test]
+        public void 리롤_비용은_데이터의_시작값에서_같은_폭으로_계속_오른다()
+        {
+            EconomyConfig config = EconomyConfig.Create(0.5f, 5, 15);
+            Assert.AreEqual(5, config.GetRerollCost(0));
+            Assert.AreEqual(20, config.GetRerollCost(1));
+            Assert.AreEqual(35, config.GetRerollCost(2));
+            Assert.AreEqual(155, config.GetRerollCost(10), "상한이 없다.");
+        }
+
+        [Test]
+        public void 리롤은_골드를_내고_할_때마다_비싸지며_다음_준비에_처음_값으로_돌아간다()
+        {
+            RunState run = NewRun(gold: 200);
+            run.RestockShopIfNeeded();
+            Assert.AreEqual(10, run.ShopRerollCost);
+            Assert.IsTrue(run.TryRerollShop());
+            Assert.AreEqual(190, run.Wallet.Gold);
+            Assert.AreEqual(1, run.ShopRerolls);
+            Assert.AreEqual(20, run.ShopRerollCost);
+            Assert.IsTrue(run.TryRerollShop());
+            Assert.IsTrue(run.TryRerollShop());
+            Assert.AreEqual(200 - 10 - 20 - 30, run.Wallet.Gold);
+            Assert.AreEqual(40, run.ShopRerollCost);
+
+            FinishBattle(run, 1);
+            Assert.IsTrue(run.RestockShopIfNeeded());
+            Assert.AreEqual(0, run.ShopRerolls);
+            Assert.AreEqual(10, run.ShopRerollCost, "다음 준비에는 처음 값");
+        }
+
+        [Test]
+        public void 리롤은_이미_산_칸까지_매물_수만큼_다시_채운다()
+        {
+            RunState run = NewRun();
+            run.RestockShopIfNeeded();
+            Assert.IsTrue(run.TryBuy(run.Shop.Stock[0]));
+            Assert.AreEqual(1, run.Shop.Stock.Count);
+            Assert.IsTrue(run.TryRerollShop());
+            Assert.AreEqual(2, run.Shop.Stock.Count);
+            Assert.AreEqual(2, run.Shop.Stock.Distinct().Count());
+        }
+
+        [Test]
+        public void 같은_시드에서_같은_순번의_리롤은_같은_매물이다()
+        {
+            RunState first = NewRun(), again = NewRun();
+            first.RestockShopIfNeeded(); again.RestockShopIfNeeded();
+            for (int i = 0; i < 4; i++)
+            {
+                Assert.IsTrue(first.TryRerollShop());
+                Assert.IsTrue(again.TryRerollShop());
+                CollectionAssert.AreEqual(first.Shop.Stock, again.Shop.Stock, "리롤 " + (i + 1));
+            }
+            Assert.AreNotEqual(first.ShopRerollSeedFor(0, 0), first.ShopRerollSeedFor(0, 1));
+            Assert.AreNotEqual(first.ShopSeedFor(0), first.ShopRerollSeedFor(0, 0));
+        }
+
+        [Test]
+        public void 골드가_모자라면_리롤하지_못하고_아무것도_바뀌지_않는다()
+        {
+            RunState run = NewRun(gold: 9);
+            run.RestockShopIfNeeded();
+            List<ItemDefinition> stock = run.Shop.Stock.ToList();
+            Assert.AreEqual(ShopRerollCheck.NotEnoughFunds, run.CheckShopReroll());
+            Assert.IsFalse(run.TryRerollShop());
+            Assert.AreEqual(9, run.Wallet.Gold);
+            Assert.AreEqual(0, run.ShopRerolls);
+            CollectionAssert.AreEqual(stock, run.Shop.Stock);
+        }
+
+        [Test]
+        public void 매물을_뽑기_전이나_전투_입력이_나간_뒤에는_리롤하지_못한다()
+        {
+            RunState run = NewRun();
+            Assert.AreEqual(ShopRerollCheck.NotStocked, run.CheckShopReroll());
+            Assert.IsFalse(run.TryRerollShop());
+            run.RestockShopIfNeeded();
+            Assert.AreEqual(ShopRerollCheck.Ok, run.CheckShopReroll());
+
+            FinishBattle(run, 1);
+            Assert.AreEqual(ShopRerollCheck.NotStocked, run.CheckShopReroll(), "새 준비의 매물을 아직 뽑지 않았다.");
+            run.RestockShopIfNeeded();
+            run.CreateBattleInput(2);
+            Assert.AreEqual(ShopRerollCheck.BattlePending, run.CheckShopReroll());
+            Assert.IsFalse(run.TryRerollShop());
+            Assert.AreEqual(200, run.Wallet.Gold);
+        }
+
+        [Test]
+        public void 업그레이드한_뒤의_리롤도_이번_준비를_뽑은_레벨의_풀을_쓴다()
+        {
+            RunState run = NewRun(gold: 500);
+            run.RestockShopIfNeeded();
+            Assert.IsTrue(run.TryUpgradeFacility(FacilityType.Shop));
+            for (int i = 0; i < 6; i++)
+            {
+                Assert.IsTrue(run.TryRerollShop());
+                Assert.AreEqual(2, run.Shop.Stock.Count, "1레벨 매물 수 그대로");
+                CollectionAssert.DoesNotContain(run.Shop.Stock, steel);
+            }
+            Assert.AreEqual(0, run.ShopStockedLevel);
+        }
+
         [Test]
         public void 새_런은_설정의_거래_수치로_상점을_만든다()
         {

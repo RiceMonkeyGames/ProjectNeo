@@ -143,9 +143,53 @@ namespace ProjectNeo.Run
         {
             FacilityState shop = Facility(FacilityType.Shop);
             if (Shop == null || shop == null || ShopStockedFor == BattlesFought) return false;
+            ShopStockedFor = BattlesFought;
+            ShopStockedLevel = shop.Level;
+            ShopRerolls = 0;
             Shop.Restock(shop.Current.itemPool, shop.Current.offerCount,
                 new Core.SeededRandom(ShopSeedFor(BattlesFought)), isAvailable);
-            ShopStockedFor = BattlesFought;
+            return true;
+        }
+
+        /// <summary>이번 준비의 매물을 뽑은 상점 레벨. 리롤도 이 레벨의 풀을 쓴다(업그레이드는 다음 준비부터).</summary>
+        public int ShopStockedLevel { get; private set; }
+        /// <summary>이번 준비 단계에서 리롤한 횟수. 준비마다 매물을 새로 뽑을 때 0으로 돌아간다.</summary>
+        public int ShopRerolls { get; private set; }
+        /// <summary>다음 리롤의 골드(Q-46). 리롤할 때마다 오르고 준비마다 처음 값으로 돌아간다. 상점이 없으면 0.</summary>
+        public int ShopRerollCost => Shop != null ? Shop.GetRerollCost(ShopRerolls) : 0;
+
+        /// <summary>리롤 시드. 같은 런·같은 준비·같은 리롤 순번이면 같다. 준비 매물 시드와 겹치지 않게 섞는다.</summary>
+        public int ShopRerollSeedFor(int preparation, int reroll) =>
+            unchecked(ShopSeedFor(preparation) * 1000003 + (reroll + 1) * 7919);
+
+        /// <summary>
+        /// 지금 리롤할 수 있는지(PREP-02). 전투 대기 → 이번 준비 매물을 뽑았는지 → 골드 순으로 처음 걸린 이유를 돌려준다.
+        /// 런을 바꾸지 않는다.
+        /// </summary>
+        public ShopRerollCheck CheckShopReroll()
+        {
+            if (HasPendingBattle) return ShopRerollCheck.BattlePending;
+            if (Shop == null || Facility(FacilityType.Shop) == null || ShopStockedFor != BattlesFought)
+                return ShopRerollCheck.NotStocked;
+            if (!Wallet.CanAfford(new Cost(ShopRerollCost))) return ShopRerollCheck.NotEnoughFunds;
+            return ShopRerollCheck.Ok;
+        }
+
+        /// <summary>
+        /// 골드를 내고 이번 준비의 매물을 새로 뽑는다(PREP-02, Q-46). 이미 산 칸까지 매물 수만큼 다시 채운다.
+        /// 이번 준비 매물을 뽑은 레벨의 풀을 쓰고, 같은 시드·같은 리롤 순번이면 같은 매물이다.
+        /// <see cref="CheckShopReroll"/>이 Ok가 아니면 false이고 런은 바뀌지 않는다.
+        /// </summary>
+        public bool TryRerollShop(Func<ItemDefinition, bool> isAvailable = null)
+        {
+            if (CheckShopReroll() != ShopRerollCheck.Ok) return false;
+            FacilityState shop = Facility(FacilityType.Shop);
+            IReadOnlyList<FacilityLevel> levels = shop.Definition.Levels;
+            FacilityLevel level = levels[Math.Min(Math.Max(ShopStockedLevel, 0), levels.Count - 1)];
+            if (!Wallet.TrySpend(new Cost(ShopRerollCost))) return false;
+            int reroll = ShopRerolls++;
+            Shop.Restock(level.itemPool, level.offerCount,
+                new Core.SeededRandom(ShopRerollSeedFor(BattlesFought, reroll)), isAvailable);
             return true;
         }
 

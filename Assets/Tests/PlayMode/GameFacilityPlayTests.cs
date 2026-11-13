@@ -115,6 +115,36 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
+        public IEnumerator 상점_팝업에서_골드를_내고_리롤하며_다른_시설에는_리롤_버튼이_없다()
+        {
+            var state = GameSession.Flow.Run.State;
+            Assert.IsTrue(Station(FacilityType.Shop).Interact());
+            Assert.IsTrue(facilities.IsRerollVisible, "Game 씬 시설 팝업에 리롤 버튼이 있어야 한다.");
+            StringAssert.Contains("10골드", facilities.RerollText);
+            int gold = state.Wallet.Gold;
+            Assert.IsTrue(facilities.TryBuy(0));
+            gold -= state.Inventory.Items[0].Definition.Price.gold;
+            Assert.AreEqual(2, facilities.OfferRows);
+
+            Assert.IsTrue(facilities.TryReroll());
+            Assert.AreEqual(gold - 10, state.Wallet.Gold);
+            Assert.AreEqual(3, facilities.OfferRows, "산 칸까지 다시 채운다.");
+            StringAssert.Contains("20골드", facilities.RerollText);
+            StringAssert.Contains("새로 뽑았습니다", facilities.BodyText);
+
+            state.Wallet.TrySpend(new ProjectNeo.Economy.Cost(state.Wallet.Gold));
+            Assert.IsFalse(facilities.TryReroll(), "골드가 모자라다.");
+            StringAssert.Contains("모자랍니다", facilities.BodyText);
+            Assert.AreEqual(1, state.ShopRerolls);
+            facilities.Close();
+            yield return null;
+
+            Assert.IsTrue(Station(FacilityType.Tavern).Interact());
+            Assert.IsFalse(facilities.IsRerollVisible, "상점이 아니면 리롤 버튼을 숨긴다.");
+            Assert.IsFalse(facilities.TryReroll());
+        }
+
+        [UnityTest]
         public IEnumerator 대장간_팝업에서_레시피로_만들고_장비를_판다()
         {
             var state = GameSession.Flow.Run.State;
