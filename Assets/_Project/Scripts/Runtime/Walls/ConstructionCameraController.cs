@@ -23,6 +23,7 @@ namespace ProjectNeo.Walls
         public bool IsTransitioning { get; private set; }
         public Vector2 Focus => focus;
         public float ZoomSize => zoom;
+        public float MinimumGridLinePixels => settings.MinimumGridLinePixels;
         public void Configure(ConstructionWorld owner, BuildCameraSettings cameraSettings)
         { world = owner; settings = cameraSettings; }
         void Awake()

@@ -1,6 +1,6 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-13 14:07:40 (KST)
+Last Updated: 2026-11-13 14:18:18 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
@@ -23,7 +23,9 @@ Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elev
 
 ## Test Baselines & Status Conventions
 
-- **Construction wheel zoom (`BUG-build-camera-zoom`, 2026-11-13; on `fix/bug-build-camera-zoom`)**: Correct normalized scroll units; red/green actual-input regression reproduced 55 → 54.92556 before fix vs expected 46.75. GameFlow **8/8**, full EditMode **216/216**, full PlayMode **113/113** (46.50s), no compilation failure. User confirmed physical wheel zoom works (2026-11-13); physical wheel manually verified; proceeding to develop integration under updated AI Git policy; UI-hover manual check unverified; no standalone build checked. [History](../history/BUG/BUG-build-camera-zoom.md).
+- **Construction grid display (`BUG-build-grid-lines`, 2026-11-13)**: Initial lines measured ~0.37px; camera-aware width maintains minimum 1.5px while retaining cell centers/spacing. Render matrix 30 combinations passed, full EditMode **216/216**, full PlayMode **114/114** (47.88s). Agent captured continuous grid; waiting for user manual visual recheck. [History](../history/BUG/BUG-build-grid-lines.md).
+
+- **Construction wheel zoom (`BUG-build-camera-zoom`, 2026-11-13; on `fix/bug-build-camera-zoom`)**: Correct normalized scroll units; red/green actual-input regression reproduced 55 → 54.92556 before fix vs expected 46.75. GameFlow **8/8**, full EditMode **216/216**, full PlayMode **113/113** (46.50s), no compilation failure. User confirmed physical wheel zoom works (2026-11-13); physical wheel manually verified; integrated/pushed to develop in f7400a1 under updated AI Git policy; UI-hover manual check unverified; no standalone build checked. [History](../history/BUG/BUG-build-camera-zoom.md).
 
 - **Latest integrated baseline (D-4, 2026-11-13)**: EditMode **216/216**, PlayMode **97/97**, 0 compile errors; user manual verification confirmed for D-4 (`Game.unity`).
 - **Destination-wall recovery (`BUG-wall-destination-replan`, 2026-11-13)**: Done on `feature/wall-destination-replan`, implementation `f2b2d15` integrated/pushed to develop at user request; remote ancestry verified and local task branch deleted (remote task branch never published). Based on latest shared develop `e79fd46` (D-0b/D-4 and Docs migration included), full PlayMode **112/112** passed (46.03s). Move/Engage valid-path application retries once next AI update during NavMesh replacement; arrival/stall settings unchanged. Regression matrix 16/16; original runtime 15/16. [History](../history/BUG/BUG-wall-destination-replan.md).

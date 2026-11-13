@@ -18,6 +18,7 @@ namespace ProjectNeo.Walls
         [SerializeField, Range(0.01f, 0.5f)] float zoomFraction = 0.15f;
         [SerializeField, Min(1f)] float minZoom = 20f;
         [SerializeField, Min(1f)] float maxZoom = 140f;
+        [SerializeField, Min(1f)] float minimumGridLinePixels = 1.5f;
         public float Pitch => pitch;
         public float InitialYaw => initialYaw;
         public float OrthographicSize => orthographicSize;
@@ -30,6 +31,7 @@ namespace ProjectNeo.Walls
         public float ZoomFraction => zoomFraction;
         public float MinZoom => minZoom;
         public float MaxZoom => Mathf.Max(minZoom, maxZoom);
+        public float MinimumGridLinePixels => minimumGridLinePixels;
         public static BuildCameraSettings Create() => CreateInstance<BuildCameraSettings>();
     }
 }

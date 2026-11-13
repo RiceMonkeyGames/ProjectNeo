@@ -228,6 +228,63 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
+        public IEnumerator ConstructionGrid_RenderedLinesKeepPixelThicknessAcrossZoomAndAngles()
+        {
+            yield return SceneManager.LoadSceneAsync("Game", LoadSceneMode.Single);
+            yield return null;
+            Assert.IsTrue(Object.FindAnyObjectByType<GamePhaseView>().EnterConstruction());
+            var orbit = Object.FindAnyObjectByType<ConstructionCameraController>();
+            var camera = orbit.GetComponent<Camera>();
+            var grid = Object.FindAnyObjectByType<BuildGridView>();
+            var world = Object.FindAnyObjectByType<ConstructionWorld>();
+            yield return null;
+            Mesh mesh = grid.GetComponent<MeshFilter>().sharedMesh;
+            RenderTexture originalTarget = camera.targetTexture;
+            RenderTexture target = null;
+            try
+            {
+                foreach (Vector2Int resolution in new[] { new Vector2Int(1280, 720), new Vector2Int(1920, 1080) })
+                {
+                    target = new RenderTexture(resolution.x, resolution.y, 24);
+                    target.Create();
+                    camera.targetTexture = target;
+                    foreach (float zoom in new[] { 20f, 55f, 180f })
+                    {
+                        orbit.ResetNavigation();
+                        orbit.Zoom(Mathf.Log(zoom / orbit.ZoomSize) / Mathf.Log(0.85f));
+                        foreach (float yaw in new[] { 0f, 22.5f, 45f, 90f, 135f })
+                        {
+                            camera.transform.rotation = Quaternion.Euler(30f, yaw, 0f);
+                            camera.Render();
+                            Vector3[] points = mesh.vertices;
+                            Assert.AreEqual((world.Grid.Width + world.Grid.Depth + 2) * 4, points.Length);
+                            Assert.AreSame(mesh, grid.GetComponent<MeshFilter>().sharedMesh, "Reuse mesh while zooming.");
+                            foreach (int index in new[] { 0, (world.Grid.Width + 1) * 4 })
+                            {
+                                Vector2 p0 = camera.WorldToScreenPoint(grid.transform.TransformPoint(points[index]));
+                                Vector2 along = (Vector2)camera.WorldToScreenPoint(grid.transform.TransformPoint(points[index + (index == 0 ? 1 : 3)])) - p0;
+                                Vector2 across = (Vector2)camera.WorldToScreenPoint(grid.transform.TransformPoint(points[index + (index == 0 ? 3 : 1)])) - p0;
+                                float pixels = Mathf.Abs(along.x * across.y - along.y * across.x) / along.magnitude;
+                                Assert.GreaterOrEqual(pixels, orbit.MinimumGridLinePixels - 0.01f,
+                                    $"{resolution}, zoom={zoom}, yaw={yaw}, line={index}");
+                            }
+                            Assert.AreEqual(0f, (points[0].x + points[3].x) * 0.5f, 0.0001f, "Line remains centered on cell boundary.");
+                            Assert.AreEqual(world.Grid.CellSize, (points[4].x + points[7].x) * 0.5f, 0.0001f);
+                        }
+                    }
+                    camera.targetTexture = originalTarget;
+                    target.Release(); Object.Destroy(target); target = null;
+                }
+            }
+            finally
+            {
+                camera.targetTexture = originalTarget;
+                if (target != null) { target.Release(); Object.Destroy(target); }
+                orbit.ResetNavigation();
+            }
+        }
+
+        [UnityTest]
         public IEnumerator ConstructionWheelInput_UsesNormalizedStepsAndRestoresCamera()
         {
             yield return SceneManager.LoadSceneAsync("Game", LoadSceneMode.Single);

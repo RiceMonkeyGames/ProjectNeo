@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-13 14:08:22 (KST)
+Last Updated: 2026-11-13 14:18:18 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -8,7 +8,7 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 ## Workflow & ID Summary
 
 - **Claim & Sync**: Pick `Waiting` → mark `In Progress` + assignee here → **immediately commit & push to `develop`** → create `feature/<task-id-lowercase>` from latest `develop` and record branch here. Never modify another assignee's `In Progress` item.
-- **Completion**: Update affected `Docs/` leaves, log results in `Docs/history/<PREFIX>/<TASK-ID>.md`, move completed row to [archive/Backlog-Done.md](archive/Backlog-Done.md), and sync. Delete remote task branch after confirmed user merge to `develop`.
+- **Completion**: Update affected `Docs/` leaves, log results in `Docs/history/<PREFIX>/<TASK-ID>.md`, move completed row to [archive/Backlog-Done.md](archive/Backlog-Done.md), and sync. Delete remote task branch after confirmed merge to `develop`.
 - **Task IDs**: Allowed chars `A-Z`, `0-9`, `a-z`, `-` only (1 task = 1 ID; no `~`, `·`, `.`, or ad-hoc suffixes). M3+ features use `<DOMAIN>-<NN>` (`COMBAT`, `SIEGE`, `FLOW`, `PREP`, `META`, `CONTENT`, `ART`, `UI`, `AUDIO`); cross-cutting use `Q-NN`, `BUG-<slug>`, `PERF-<slug>`, `QA-<slug>`, `DOC-<slug>`, `TOOL-<slug>`. Full rules in [Collaboration.md](workflow/Collaboration.md).
 - **Statuses**: `Waiting` → `In Progress` → `Waiting for Link` / `Waiting for Verification` → `Done` (`Pending Decision`, `Waiting for Prerequisite` for blockers).
 
@@ -20,7 +20,7 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 |---|---|---|---|---|
 | C-1a-confirm | Teammate Review of Combat Outcome Format | In Progress | Hwang Seong-min | Review C-1a `BattleResult` draft (outcome, end reason, per-unit status, castle snapshot, kill counts) with combat lead; update code, tests, docs. Prerequisites: C-1a (Done). Decision (2026-11-12): Proceed concurrently with C-1~2. |
 | QA-game-loop | Manual Playtest of Current Game Scene | Waiting for Verification | Unassigned | Formerly `B-9.3-play`. First user playtest reported 2026-11-13; findings in [QA history](history/QA/QA-game-loop.md). Victory and next-prep flow remain unverified because user could not win. Recheck construction and combat after follow-ups below. |
-| BUG-build-grid-lines | Construction grid lines intermittently disappear | In Progress | Codex | Planned branch: `fix/bug-build-grid-lines`. Owned: BuildGridView.cs, targeted grid tests, related docs. User confirms zoom-in restores continuous lines; investigate subpixel width and screen-space minimum thickness. User report + screenshot: grid loses rows while viewing construction. Expected stable readable grid; actual broken/missing lines. Check thin-line aliasing and depth overlap; cause not confirmed. Verify zoom, pan and Q/E rotation. |
+| BUG-build-grid-lines | Construction grid lines intermittently disappear | Waiting for Verification | Codex | Branch: `fix/bug-build-grid-lines`; claim pushed to develop in `f7400a1`. Owned: BuildGridView.cs, BuildCameraSettings.cs, ConstructionCameraController.cs, GameFlowPlayTests.cs, related docs. Basic view measured ~0.37px lines; now maintain minimum 1.5px perpendicular width using camera projection. Grid rendering matrix 30 combinations passed; full EditMode 216/216, PlayMode 114/114. Agent screenshots show continuous lines; user manual recheck pending. [History](history/BUG/BUG-build-grid-lines.md). |
 | ART-01 | Flatten placeholder stair shading | Waiting | Unassigned | User requests flat appearance like walls; current ramp shading looks unnatural. Inspect mesh normals/material, retain gameplay shape for this visual task. Verify Game construction and first-person views. |
 | SIEGE-03 | Implement one-cell full-tier stairs | Waiting | Unassigned | Q-42 approved 2026-11-13: 1×1 cells, full 3m rise. Update geometry/footprint through Editor APIs; verify player and unit ascent/descent, rotations, stacked placement and existing layouts. Coordinate shared assets; ART-01 handles shading. |
 | FLOW-01 | Start battle from desired current position | Pending Decision | Unassigned | Q-40 direction approved 2026-11-13: move to desired position in prep, then start there without banner return or relocation. Agree trigger UI/input details, then verify phase guards, modal conflicts and single battle start. |

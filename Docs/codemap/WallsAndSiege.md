@@ -1,12 +1,14 @@
 # Runtime Codemap: Walls & Siege
 
-Last Updated: 2026-11-13 14:07:40 (KST)
+Last Updated: 2026-11-13 14:18:18 (KST)
 
 > Purpose: Class map for castle construction, fall damage, siege weapons, and enemy siege AI. | Parent: [codemap/README](README.md) | Related: [CombatAndSquads](CombatAndSquads.md), [design/WallsAndSiege](../design/WallsAndSiege.md)
 
 Base path: `Assets/_Project/Scripts/Runtime/`. Assembly: `ProjectNeo.Runtime`. Namespace: `ProjectNeo.<Folder>`.
 
-Construction wheel input (`BUG-build-camera-zoom`): ConstructionCameraController uses normalized scroll steps directly; only Windows editor/player with KeepPlatformSpecificInputRange divides by 120. GameFlowPlayTests.ConstructionWheelInput_UsesNormalizedStepsAndRestoresCamera covers actual input → Update → zoom/reset; physical wheel feel remains manual verification. [History](../history/BUG/BUG-build-camera-zoom.md).
+Construction wheel input (`BUG-build-camera-zoom`): ConstructionCameraController uses normalized scroll steps directly; only Windows editor/player with KeepPlatformSpecificInputRange divides by 120. GameFlowPlayTests.ConstructionWheelInput_UsesNormalizedStepsAndRestoresCamera covers actual input → Update → zoom/reset; user confirmed physical wheel zoom works (2026-11-13). [History](../history/BUG/BUG-build-camera-zoom.md).
+
+Grid display (`BUG-build-grid-lines`): BuildCameraSettings.MinimumGridLinePixels (default 1.5px) is exposed through ConstructionCameraController. BuildGridView updates its cached mesh before each URP Game camera render, computing perpendicular pixel widths separately for the two grid axes; original world line width remains the minimum. Cell centers/spacing, occupancy and picking stay unchanged. Cameras without an orthographic construction controller use original width. [History](../history/BUG/BUG-build-grid-lines.md).
 
 | Folder | Key Classes | Role |
 |---|---|---|
