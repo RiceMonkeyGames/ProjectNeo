@@ -1,6 +1,6 @@
 # Game Design: Castle Walls, Enemies & Siege Strategy
 
-Last Updated: 2026-11-13 15:12:33 (KST)
+Last Updated: 2026-11-13 15:45:04 (KST)
 
 > Purpose: Construction stacking, build economy, enemy roles, and siege/ladder rules. | Parent: [design/README](README.md) | Related: [Combat](Combat.md), [MoraleAndWave](MoraleAndWave.md)
 
@@ -34,8 +34,16 @@ Last Updated: 2026-11-13 15:12:33 (KST)
 - **Siege Assault Rules** (2026-11-11, 2026-11-12):
   - Ground melee cannot strike wall-top defenders from ground level. Enemies enter via gaps, un-repaired segments, or broken gate.
   - Gate destruction drops upper stacked walls; gate breakers keep attacking dropped pieces at the gate cell.
-  - Wall-destroying enemies will be added later; currently only gates can be breached.
+  - Wall-destroying enemies are specified below (B-6.1, Q-43) but not yet implemented; currently only gates can be breached.
   - **Archetypes**: `Ladder Grunt` (enters breaches or raises/climbs ladders), `Gate Breaker` (enters breaches or attacks gate), `Archer` (shoots upward at 50% damage, enters castle once path opens; ally archers shoot downward at 100%).
+
+- **Additional enemy behaviors (approved 2026-11-13, Q-43 / B-6.1; implementation B-6.2~4)**:
+  - **Extensibility (user requirement)**: Wall-target selection and flying movement/attack are swappable, data-selected modules (strategy/polymorphism), not hard-coded branches. Many flying enemy variants are planned; a new variant must be addable by combining existing modules plus data. Existing ladder/gate/archer behavior is kept, not re-implemented.
+  - **Wall Breaker (ground)**: Target = nearest outer wall piece by the current selection module ("nearest" is the first module; others may be added later). The gate counts as a valid wall piece. In a stacked column it strikes the bottom piece; existing settle rules drop upper pieces one tier. Once a walkable path to any ally opens, it switches to normal assault (`Engage`) like other ground enemies.
+  - **Flyer**: Flies over walls (not blocked by them; no ground NavMesh needed), then hovers at human height beside its target and attacks in melee. Target priority: nearest ally atop walls; if none, nearest ally anywhere inside the castle.
+  - **Damage vs flyers**: The 50% upward-shot penalty does not apply when allies/player shoot flyers; they take 100%. The penalty remains only for enemies shooting up at wall tops.
+  - **Ally melee vs flyers**: Allies attack a hovering flyer when it is within attack range, measured from its ground projection; they do not reach it while it travels at altitude.
+  - **Failure handling (confirmed 2026-11-13)**: All roles re-decide every `AttackerDecisionInterval`; a dead or destroyed target triggers immediate re-selection. Wall Breaker with no reachable wall base holds and retries; Flyer with no valid target holds at altitude above the courtyard. Decisions pause during NavMesh rebuilds (existing rule).
   - **Ladders**: Pre-placed along wall perimeter (~every 5 cells; inactive if no wall piece at slot; attaches to topmost wall at cell). Raise ~3s, Climb ~2.5s (1 unit at a time, others queue at base), Topple ~2s (allies atop walls topple autonomously when clear of climbers, or player via interact key). Toppling drops climber with fall damage; toppled ladders can be re-erected in ~3s.
 
 ## Siege Defense Prototype Scope
