@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-13 11:21:45 (KST)
+Last Updated: 2026-11-13 13:12:09 (KST)
 Source: [Google Docs - Development Backlog Table (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 ## Workflow & Operating Rules
@@ -27,6 +27,7 @@ Source: [Google Docs - Development Backlog Table (Legacy)](https://docs.google.c
 
 | Task ID | Description | Status | Assignee | Completion Criteria & Prerequisites |
 |---|---|---|---|---|
+| DOC-doc-tree-and-id | Shard Docs into tree structure and formalize Task ID naming rules | In Progress | Hwang Seong-min (agent) | Branch `feature/doc-tree-and-id`. User decisions (2026-11-13): M3+ feature IDs use domain prefixes (`COMBAT`, `SIEGE`, `FLOW`, `PREP`, `META`, `CONTENT`, `ART`, `UI`, `AUDIO`); normalize unstarted irregular IDs now (`B-9.3-play` → `QA-game-loop`, `B-9.2-wave` → `SIEGE-01`, `B-4.6-action` → `SIEGE-02`); keep `In Progress` (`C-1a-confirm`) and reserved `E-1~4` until M3; split `Context`/`ImplementationPlan`/`GameDesign`/`History` into `Docs/` tree with `INDEX.md` and `archive/Backlog-Done.md`. |
 | DOC-workflow-branches | Document task branch creation and remote cleanup workflow | Done | Codex | User decision (2026-11-12): Create a feature branch from latest shared develop after claiming; delete remote task branch after confirmed remote develop integration. Updated AGENTS, Backlog, Context, ImplementationPlan; verification recorded in History. Documentation only. |
 | B-9.3-play | Manual Playtest of Current Game Scene | Waiting for Verification | Unassigned | Title → Prep → F Construction / Esc Return → F Battle → Win/Loss → Next Prep loop. Document camera, squad commanding, input glitches, and reproduction steps. |
 | C-1a | Agree on Run Data & Combat Outcome Boundary | Done | Hwang Seong-min | Agree on data ownership and IDs for wallet, troops, castle, battle I/O, single result processing. Mid-run saves remain undecided. Outcome (2026-11-12): Merged to develop (9429e85); verification log in [History.md](History.md) (search "C-1a"), status in ImplementationPlan 5.6. Teammate sign-off and scene wiring are follow-up tasks. |
