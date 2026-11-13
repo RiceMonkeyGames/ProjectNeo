@@ -1,6 +1,6 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-13 13:17:37 (KST)
+Last Updated: 2026-11-13 13:22:55 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
@@ -31,6 +31,7 @@ Last Updated: 2026-11-13 13:17:37 (KST)
 | Q-34 | Shop/tavern refresh & re-rolls | D-5, D-3 | Resolved (2026-11-12): Seed-rolled per prep phase; gold re-rolling deferred. |
 | Q-36 | Hired hero & recruit deployment | D-0b, D-3, D-4 | Resolved (2026-11-13): Pick squad in UI (auto-create up to cap; hiring swaps captain to reserve); units spawn in front of facility and walk to squad. |
 | Q-37 | Barracks training & recruit costs | D-4 | Resolved (2026-11-13): Automatic by level (Lv2 +10%, Lv3 +20% HP/attack); melee 15g / ranged 20g from Lv1. |
+| Q-38 | Awaken effect types | B-8.1 | Resolved (2026-11-13): Awaken picks 1 of 3 at random: Rally (self + nearby morale), Last Stand (attack up with share of members lost, start max +50%), Steadfast (no rout at 0 this battle). Amends Q-04. See [MoraleAndWave](../design/MoraleAndWave.md). |
 
 ## Detailed Decision Records
 

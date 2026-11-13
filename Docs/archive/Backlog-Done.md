@@ -1,11 +1,12 @@
 # Completed Backlog Archive (Done)
 
-Last Updated: 2026-11-13 13:17:37 (KST)
+Last Updated: 2026-11-13 13:23:27 (KST)
 
 > Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
 | Task ID | Description | Assignee | Outcome & History Link |
 |---|---|---|---|
+| Q-38 | Add Last Stand and Steadfast Awaken effects | youngho | Decided 2026-11-13. Branch `feature/q-38`. Awaken picks 1 of 3 at random (Rally, Last Stand, Steadfast); Steadfast squads do not rout at 0. Recorded in [MoraleAndWave](../design/MoraleAndWave.md), [Decisions-Resolved](../plan/Decisions-Resolved.md). Doc-only. [History](../history/Q/Q-38.md) |
 | DOC-doc-tree-and-id | Shard Docs into tree structure and formalize Task ID naming rules | Hwang Seong-min (agent) | Branch `feature/doc-tree-and-id`. Split Context/ImplementationPlan/GameDesign/History into `Docs/` tree with `INDEX.md`, moved `Done` rows here, codified M3+ domain IDs and normalized unstarted irregular IDs (`QA-game-loop`, `SIEGE-01`, `SIEGE-02`). [History](../history/DOC/DOC-doc-tree-and-id.md) |
 | DOC-workflow-branches | Document task branch creation and remote cleanup workflow | Codex | User decision (2026-11-12): Create feature branch from latest develop after claim; delete remote branch after confirmed integration. [History](../history/DOC/DOC-workflow-branches.md) |
 | C-1a | Agree on Run Data & Combat Outcome Boundary | Hwang Seong-min | Merged to develop (`9429e85`). Pure C# `RunState`, `CastleState`, `BattleInput`, `BattleResult`. [History](../history/C/C-1a.md) |
