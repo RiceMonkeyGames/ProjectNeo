@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-13 19:48:01 (KST)
+Last Updated: 2026-11-13 20:24:58 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -18,7 +18,9 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 
 | Task ID | Description | Status | Assignee | Completion Criteria & Prerequisites |
 |---|---|---|---|---|
-| BUG-ladder-push-visual | Show gradual ladder toppling while pushing | In Progress | 신용준 | Branch `fix/bug-ladder-push-visual`. Repro: hold F at a raised ladder top; view stays still then snaps down. Expected: visible outward tilt follows push progress, cancellation restores the raised pose; retain existing timing/fall rules. |
+| BUG-ladder-fall-clipping | 낙하 시 적이 사다리를 관통하는 연출 개선 | Waiting | Unassigned | 사용자 수동 확인 (2026-11-13): 사다리에서 떨어지는 적이 사다리 외형을 관통함. 기대: 분리 위치·낙하 경로·외형 간격을 다듬어 관통이 눈에 띄지 않도록 개선. 사용자가 세부 연출은 추후 작업으로 명시하고 BUG-ladder-push-visual 현재 범위 완료 승인. 기존 균형점·낙하 피해·착지 규칙 유지 여부는 구현 전 확인. |
+| COMBAT-01 | 플레이어 웅크리기 (Ctrl) | Waiting | Unassigned | 사용자 요청 (2026-11-13): Ctrl 키로 웅크리기 추가. 유지/토글 방식, 자세·충돌체·시점 높이 및 이동 속도는 구현 전 결정. |
+| COMBAT-02 | 플레이어 달리기 (Shift) | Waiting | Unassigned | 사용자 요청 (2026-11-13): Shift 키로 달리기 추가. 유지/토글 방식, 달리기 속도 및 웅크리기와 동시 입력 시 동작은 구현 전 결정. |
 | C-1a-confirm | Teammate Review of Combat Outcome Format | In Progress | Hwang Seong-min | Review C-1a `BattleResult` draft (outcome, end reason, per-unit status, castle snapshot, kill counts) with combat lead; update code, tests, docs. Prerequisites: C-1a (Done). Decision (2026-11-12): Proceed concurrently with C-1~2. |
 | QA-game-loop | Manual Playtest of Current Game Scene | Waiting for Verification | Unassigned | Formerly `B-9.3-play`. First user playtest reported 2026-11-13; findings in [QA history](history/QA/QA-game-loop.md). Victory and next-prep flow remain unverified because user could not win. Recheck construction and combat after follow-ups below. |
 | B-7.1 | Formal Wave Data & Spawning Rules | Waiting for Prerequisite | Unassigned | After enemy definitions and spawn/termination contracts are agreed upon, spawn according to configured types, counts, and timings. No duplicates on pause/restart. |

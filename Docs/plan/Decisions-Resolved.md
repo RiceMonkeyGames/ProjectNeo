@@ -1,6 +1,6 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-13 18:00:38 (KST)
+Last Updated: 2026-11-13 20:10:36 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
@@ -56,3 +56,5 @@ Last Updated: 2026-11-13 18:00:38 (KST)
 - **Temporary prototype values**: B-2/B-3 stats, camera settings, and "unreachable = no full NavMesh path" are prototype baselines expanding in B-6.
 
 - **BUG-wall-destination-replan coordination (2026-11-13):** User confirmed no concurrent edits to shared `UnitCombatAI.cs` and authorized path-replanning/arrival fixes for destination-wall collapse. Valid recovery paths rejected for one NavMesh replacement frame receive one retry on the next AI update. No morale/assault contracts, serialized settings, arrival or stall thresholds changed.
+
+- **Ladder push feedback (2026-11-13, BUG-ladder-push-visual)**: User approved reverse raising visuals, then expanded the request to balance-point motion: release before vertical smoothly returns, release after vertical auto-completes toward the opposite endpoint. New boarding is blocked during push/settling; existing occupants pause climbing and follow ladder tilt while pushed or returning, resume once fully returned, and fall at the outward vertical balance point. Balance follows actual ladder geometry; existing durations set motion speed. Forced support collapse/reset remains immediate. [Implementation](../history/BUG/BUG-ladder-push-visual.md).

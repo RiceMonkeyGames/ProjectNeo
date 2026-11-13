@@ -70,9 +70,13 @@ namespace ProjectNeo.Tests
             Assert.IsFalse(ladder.TryBeginClimb());
             ladder.Tick(0.1f, true, false, false);
             Assert.AreEqual(LadderPhase.Raising, ladder.Phase);
-            ladder.Tick(1.5f, true, false, false);
+            ladder.Tick(0.75f, true, false, false);
             Assert.AreEqual(LadderPhase.Raising, ladder.Phase);
             ladder.Tick(0.1f, false, false, false);
+            Assert.AreEqual(LadderPhase.Raising, ladder.Phase);
+            Assert.That(ladder.RaiseProgress, Is.GreaterThan(0f).And.LessThan(0.25f));
+            Assert.IsTrue(ladder.IsSettling);
+            ladder.Tick(3f, false, false, false);
             Assert.AreEqual(LadderPhase.Down, ladder.Phase);
             Assert.AreEqual(0f, ladder.RaiseProgress);
             ladder.Tick(0.1f, true, false, false);
@@ -96,19 +100,25 @@ namespace ProjectNeo.Tests
             SiegeLadderState ladder = Raised();
             ladder.TryBeginClimb();
             bool? droppedClimber = null;
+            int dislodged = 0;
+            ladder.ClimberDislodged += () => dislodged++;
             ladder.Toppled += hadClimber => droppedClimber = hadClimber;
             // 올라온 적이 있으면 밀지 못하고 진행도도 쌓이지 않는다.
             ladder.Tick(5f, false, true, true);
             Assert.AreEqual(LadderPhase.Up, ladder.Phase);
             Assert.AreEqual(0f, ladder.PushProgress);
-            ladder.Tick(1f, false, true, false);
+            ladder.Tick(0.4f, false, true, false);
             Assert.AreEqual(LadderPhase.Up, ladder.Phase);
-            // 밀다가 멈추면 처음부터 다시 민다.
+            // 균형점 전에 놓으면 진행도를 순간 초기화하지 않고 천천히 돌아온다.
             ladder.Tick(0.1f, false, false, false);
+            Assert.That(ladder.PushProgress, Is.GreaterThan(0f).And.LessThan(0.2f));
+            ladder.Tick(2f, false, false, false);
             Assert.AreEqual(0f, ladder.PushProgress);
+            Assert.AreEqual(0, dislodged, "균형점 전의 취소로 추락했다.");
             ladder.Tick(2f, false, true, false);
             Assert.AreEqual(LadderPhase.Down, ladder.Phase);
-            Assert.AreEqual(true, droppedClimber);
+            Assert.AreEqual(1, dislodged);
+            Assert.AreEqual(false, droppedClimber, "균형점에서 떨어진 탑승자를 완료 시 다시 떨어뜨렸다.");
             Assert.IsFalse(ladder.HasClimber);
             Assert.AreEqual(1, ladder.ToppleCount);
             // 쓰러진 사다리는 다시 세울 수 있다.
@@ -123,6 +133,88 @@ namespace ProjectNeo.Tests
             ladder.Tick(0.1f, true, false, false);
             ladder.Tick(3f, true, false, false);
             return ladder;
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void Ladder_BalancePoint_AutoCompletesWithoutInput(bool pushing)
+        {
+            var ladder = new SiegeLadderState(3f, 2f, 0.8f);
+            ladder.Tick(0.1f, true, false, false);
+            ladder.Tick(pushing ? 3f : 2.5f, true, false, false);
+            if (pushing) ladder.Tick(0.5f, false, true, false);
+            float before = ladder.RaisedFraction;
+            Assert.IsTrue(ladder.IsSettling);
+            Assert.IsFalse(ladder.TryBeginClimb());
+            ladder.Tick(0.1f, false, false, true);
+            Assert.That(ladder.RaisedFraction, pushing ? Is.LessThan(before) : Is.GreaterThan(before));
+            ladder.Tick(3f, false, false, true);
+            Assert.AreEqual(pushing ? LadderPhase.Down : LadderPhase.Up, ladder.Phase);
+            Assert.IsFalse(ladder.IsSettling);
+            Assert.AreEqual(pushing ? 1 : 0, ladder.ToppleCount);
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void Ladder_BeforeBalance_ReturnsContinuously_AndCannotReverseUntilSettled(bool pushing)
+        {
+            var ladder = new SiegeLadderState(3f, 2f, 0.8f);
+            ladder.Tick(0.1f, true, false, false);
+            ladder.Tick(pushing ? 3f : 1f, true, false, false);
+            if (pushing) ladder.Tick(0.2f, false, true, false);
+            float before = ladder.RaisedFraction;
+            ladder.Tick(0.05f, false, false, false);
+            float returning = ladder.RaisedFraction;
+            Assert.That(returning, pushing ? Is.GreaterThan(before).And.LessThan(1f)
+                : Is.LessThan(before).And.GreaterThan(0f));
+            Assert.IsTrue(ladder.IsSettling);
+            Assert.IsFalse(ladder.TryBeginClimb());
+            // 다시 눌러도 복귀가 끝나기 전에는 반대 방향으로 꺾이지 않는다.
+            ladder.Tick(0.05f, true, true, false);
+            Assert.That(ladder.RaisedFraction, pushing ? Is.GreaterThan(returning) : Is.LessThan(returning));
+            ladder.Tick(3f, false, false, false);
+            Assert.AreEqual(pushing ? LadderPhase.Up : LadderPhase.Down, ladder.Phase);
+            Assert.IsFalse(ladder.IsSettling);
+            Assert.AreEqual(0, ladder.ToppleCount);
+            Assert.AreEqual(pushing, ladder.CanBoard);
+        }
+
+        [Test]
+        public void Ladder_CommittedPush_DropsOccupantAtBalanceOnce_AndForcedCollapseResetsMotion()
+        {
+            var ladder = Raised();
+            Assert.IsTrue(ladder.TryBeginClimb());
+            int notifications = 0;
+            int dislodged = 0;
+            ladder.ClimberDislodged += () =>
+            {
+                Assert.That(ladder.PushProgress, Is.EqualTo(1f - ladder.BalancePoint).Within(0.0001f));
+                Assert.AreEqual(LadderPhase.Up, ladder.Phase);
+                dislodged++;
+            };
+            System.Action<bool> onToppled = occupied => { Assert.IsFalse(occupied); notifications++; };
+            ladder.Toppled += onToppled;
+            ladder.Tick(1.1f, false, true, false);
+            Assert.IsTrue(ladder.IsSettling);
+            Assert.IsFalse(ladder.HasClimber);
+            Assert.AreEqual(1, dislodged);
+            Assert.AreEqual(0, notifications);
+            ladder.Tick(1f, false, false, true);
+            Assert.AreEqual(1, notifications);
+            Assert.AreEqual(1, dislodged);
+            Assert.IsFalse(ladder.HasClimber);
+            ladder.Topple();
+            Assert.AreEqual(1, notifications);
+            ladder.Tick(0.1f, true, false, false);
+            ladder.Tick(2f, true, false, false);
+            Assert.IsTrue(ladder.IsSettling);
+            // 지지 성벽 파괴나 전투 초기화는 자동 세우기도 즉시 취소해야 한다.
+            ladder.Toppled -= onToppled;
+            ladder.Topple();
+            ladder.Tick(3f, false, false, false);
+            Assert.AreEqual(LadderPhase.Down, ladder.Phase);
+            Assert.AreEqual(0f, ladder.RaisedFraction);
+            Assert.IsFalse(ladder.IsSettling);
         }
 
         [TestCase(3f, 0.5f)]   // 성벽 위를 올려 쏘면 절반

@@ -3,7 +3,7 @@ using UnityEngine;
 namespace ProjectNeo.Siege
 {
     /// <summary>
-    /// 교체용 임시 사다리 외형. 바닥에 누워 있다가 세워지는 모습만 보여준다.
+    /// 교체용 임시 사다리 외형. 세우기와 밀기 진행도에 맞춰 기울어진다.
     /// 사다리 상태를 읽기만 하며 규칙에 영향을 주지 않는다.
     /// </summary>
     public sealed class PlaceholderLadderView : MonoBehaviour
@@ -20,12 +20,10 @@ namespace ProjectNeo.Siege
         {
             if (ladder.State == null) return;
             Vector3 foot = ladder.BasePoint + Vector3.up * lift;
-            Vector3 lean = ladder.EdgePoint - foot;
+            Vector3 lean = ladder.EdgePoint - ladder.BasePoint;
             float length = lean.magnitude + 0.4f;
-            float raised = ladder.State.Phase == LadderPhase.Up ? 1f
-                : ladder.State.Phase == LadderPhase.Raising ? ladder.State.RaiseProgress : 0f;
             // 바닥에서는 성 바깥쪽으로 누워 있고, 세우면 발을 축으로 성벽에 기댄다.
-            Vector3 direction = Vector3.Slerp(ladder.OutwardWorld, lean.normalized, raised);
+            Vector3 direction = ladder.CurrentDirection;
             // 사다리가 수직을 지나도 뒤집히지 않도록, 눕는 면 안에서 직각인 방향을 위쪽으로 준다.
             Vector3 side = Vector3.Cross(Vector3.up, ladder.OutwardWorld);
             transform.SetPositionAndRotation(foot, Quaternion.LookRotation(direction, Vector3.Cross(direction, side)));

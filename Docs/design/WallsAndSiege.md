@@ -1,6 +1,6 @@
 # Game Design: Castle Walls, Enemies & Siege Strategy
 
-Last Updated: 2026-11-13 18:00:38 (KST)
+Last Updated: 2026-11-13 20:10:36 (KST)
 
 > Purpose: Construction stacking, build economy, enemy roles, and siege/ladder rules. | Parent: [design/README](README.md) | Related: [Combat](Combat.md), [MoraleAndWave](MoraleAndWave.md)
 
@@ -42,6 +42,7 @@ Last Updated: 2026-11-13 18:00:38 (KST)
   - **Allied commands**: Automatically use a ladder when the route to the ordered destination requires it. A new order received during traversal takes effect after reaching an endpoint.
   - **Combat**: Occupants cannot attack, may receive damage, and fall if killed. Existing fall-damage rules apply when a ladder topples beneath a living occupant.
   - **Toppling safety**: Automatic allied toppling is prohibited while an ally/player is aboard or waiting to use the ladder. Enemy occupancy alone does not prohibit toppling. Existing nearby-enemy combat blocking remains; the player topples with the hold-F gesture. Deliberate friendly toppling was not approved; SIEGE-04 applies the friendly-use protection to both automatic and player pushes.
+  - **Push feedback (user approved 2026-11-13, BUG-ladder-push-visual)**: Raising and pushing use continuous motion. Cancellation before the vertical balance point returns smoothly to the starting endpoint; once past balance, motion completes without further input, even if a nearby hostile arrives. Balance is derived from ladder geometry, not a fixed half-progress threshold. New boarding is blocked during push/settling; occupants pause climbing and follow ladder tilt while pushed or returning, resume once fully returned, and fall as soon as an outward push crosses vertical. Existing 3s raise / 2s push durations also determine settling speed. Support destruction and battle reset still force immediate logical collapse.
   - **Raising**: Allies automatically raise a lowered ladder when needed; the player holds F at the lower endpoint to raise it.
   - User confirmed shared-code edits are available for SIEGE-04 on 2026-11-13. The current implementation handles a ladder between two walkable endpoint regions; a complete walking route is preferred when already available. [Decision record](../history/Q/Q-41.md), [implementation verification](../history/SIEGE/SIEGE-04.md).
 
