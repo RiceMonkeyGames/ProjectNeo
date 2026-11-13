@@ -1,11 +1,12 @@
 # Completed Backlog Archive (Done)
 
-Last Updated: 2026-11-13 14:28:55 (KST)
+Last Updated: 2026-11-13 14:41:26 (KST)
 
 > Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
 | Task ID | Description | Assignee | Outcome & History Link |
 |---|---|---|---|
+| TOOL-codex-workflows | Share teammate workflow skills with Codex and align Git handoff policy | Codex | Branch `feature/tool-codex-workflows`; claim `80aee2b`. Added 4 Codex entrypoints sharing teammate instructions/scripts. User confirmation required before completion commit/push; develop merge remains user-owned. Four skill validations and doc/link checks passed; host catalog discovered all 4 skills. User authorized completion on 2026-11-13. No Unity operations. [History](../history/TOOL/TOOL-codex-workflows.md) |
 | BUG-build-grid-lines | Keep construction grid lines visible at distant zoom | Codex | Implementation `4041358` integrated/pushed to develop. Camera-aware minimum 1.5px lines; render matrix 30 combinations, EditMode 216/216, PlayMode 114/114. User confirmed manual verification on 2026-11-13. Standalone build unverified. [History](../history/BUG/BUG-build-grid-lines.md) |
 | TOOL-agent-workflows | Add shared `.claude/skills/` and `Tools/Agent/` PowerShell workflow wrappers | Hwang Seong-min (agent) | Branch `feature/tool-agent-workflows`. Added `.claude/skills/` (`claim`, `verify`, `finish`, `sync-summary`), PowerShell 5.1 wrappers (`Tools/Agent/_common.ps1`, `claim-check.ps1`, `unity-verify.ps1`, `doc-finish-check.ps1`, `sync-summary.ps1`), `.claude/settings.json` `permissions.allow` rules, and doc updates. Wrapper CLI checks, JSON parse, and link checks passed; live Claude Code / Unity verification pending manual check. [History](../history/TOOL/TOOL-agent-workflows.md) |
 | BUG-build-camera-zoom | Fix construction wheel zoom input units | Codex | Branch `fix/bug-build-camera-zoom`. Fixed normalized wheel input divided by 120; regression red before fix, GameFlow 8/8, EditMode 216/216, PlayMode 113/113. User confirmed physical wheel zoom. UI-hover manual check/standalone build unverified. [History](../history/BUG/BUG-build-camera-zoom.md) |

@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-13 14:36:42 (KST)
+Last Updated: 2026-11-13 14:41:26 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -8,7 +8,7 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 ## Workflow & ID Summary
 
 - **Claim & Sync**: Pick `Waiting` → mark `In Progress` + assignee here → **immediately commit & push to `develop`** → create `feature/<task-id-lowercase>` from latest `develop` and record branch here. Never modify another assignee's `In Progress` item.
-- **Completion**: Update affected `Docs/` leaves, log results in `Docs/history/<PREFIX>/<TASK-ID>.md`, move completed row to [archive/Backlog-Done.md](archive/Backlog-Done.md), and sync. Delete remote task branch after confirmed merge to `develop`.
+- **Completion**: Update affected leaves/history and present verification; after explicit user confirmation mark Done, archive, and commit/push the task branch. The user handles develop merge and remote branch deletion. Immediate claim commit/push remains authorized.
 - **Task IDs**: Allowed chars `A-Z`, `0-9`, `a-z`, `-` only (1 task = 1 ID; no `~`, `·`, `.`, or ad-hoc suffixes). M3+ features use `<DOMAIN>-<NN>` (`COMBAT`, `SIEGE`, `FLOW`, `PREP`, `META`, `CONTENT`, `ART`, `UI`, `AUDIO`); cross-cutting use `Q-NN`, `BUG-<slug>`, `PERF-<slug>`, `QA-<slug>`, `DOC-<slug>`, `TOOL-<slug>`. Full rules in [Collaboration.md](workflow/Collaboration.md).
 - **Statuses**: `Waiting` → `In Progress` → `Waiting for Link` / `Waiting for Verification` → `Done` (`Pending Decision`, `Waiting for Prerequisite` for blockers).
 
@@ -18,7 +18,6 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 
 | Task ID | Description | Status | Assignee | Completion Criteria & Prerequisites |
 |---|---|---|---|---|
-| TOOL-codex-workflows | Share teammate workflow skills with Codex and align Git handoff policy | In Progress | Codex | Branch: `feature/tool-codex-workflows`. Add repo-local Codex skill entrypoints that reuse `.claude/skills` and Tools/Agent; align completion commit/push with explicit user confirmation and leave develop merge to user. Doc/tool-only; validate skills and read-only wrappers without Unity operations. |
 | C-1a-confirm | Teammate Review of Combat Outcome Format | In Progress | Hwang Seong-min | Review C-1a `BattleResult` draft (outcome, end reason, per-unit status, castle snapshot, kill counts) with combat lead; update code, tests, docs. Prerequisites: C-1a (Done). Decision (2026-11-12): Proceed concurrently with C-1~2. |
 | QA-game-loop | Manual Playtest of Current Game Scene | Waiting for Verification | Unassigned | Formerly `B-9.3-play`. First user playtest reported 2026-11-13; findings in [QA history](history/QA/QA-game-loop.md). Victory and next-prep flow remain unverified because user could not win. Recheck construction and combat after follow-ups below. |
 | ART-01 | Flatten placeholder stair shading | Waiting | Unassigned | User requests flat appearance like walls; current ramp shading looks unnatural. Inspect mesh normals/material, retain gameplay shape for this visual task. Verify Game construction and first-person views. |

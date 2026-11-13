@@ -1,6 +1,6 @@
 # ProjectNeo
 
-Last Updated: 2026-11-13 14:18:50 (KST)
+Last Updated: 2026-11-13 14:37:30 (KST)
 
 A 3D first-person siege defense roguelike built with Unity 6000.6.8f1 and URP. Scout the upcoming wave, prepare heroes, troops, equipment, and walls, and defend the castle through direct player combat and unit commanding. Low-poly art style; Synty assets planned, currently using placeholder graphics.
 
@@ -18,9 +18,14 @@ Precedence on conflict: `Docs/design/` (game rules) > `Docs/plan/` (roadmap/stat
 ## Backlog, Task IDs & Branch Workflow
 
 - **Claim & Sync**: Pick a `Waiting` task in [Docs/Backlog.md](Docs/Backlog.md), mark `In Progress` with your assignee name, and **immediately commit and push to `develop`** before coding. Never take over another assignee's `In Progress` item.
-- **Branch Lifecycle**: From synced `develop`, create `feature/<task-id-lowercase>` (or `fix/<task-id-lowercase>`) and record it in the backlog. After merging into `develop` and remote integration is confirmed, delete the remote task branch. Retain unmerged work branches. AI agents may commit code, merge task branches, and push within the user-authorized task scope; separate approval is not required for each Git operation.
+- **Branch Lifecycle**: From synced `develop`, create `feature/<task-id-lowercase>` (or `fix/<task-id-lowercase>`) and record it in the backlog. General code commits and task-branch pushes require explicit user confirmation after presenting the result. The user handles `develop` merges and remote task-branch deletion after confirmed integration. Retain unmerged work branches. Immediate backlog claim commit/push remains the exception authorized above.
 - **Task ID Rules**: Allowed characters `A-Z`, `0-9`, `a-z`, `-` only; 1 task = 1 ID (no `~`, `·`, `.`, or ad-hoc suffixes). Legacy `A~D`, `G`, and reserved `E-1~4` (until M3) remain as-is. New M3+ features use `<DOMAIN>-<NN>` (`COMBAT`, `SIEGE`, `FLOW`, `PREP`, `META`, `CONTENT`, `ART`, `UI`, `AUDIO`); cross-cutting tasks use `Q-NN`, `BUG-<slug>`, `PERF-<slug>`, `QA-<slug>`, `DOC-<slug>`, `TOOL-<slug>`. Full rules in [Docs/workflow/Collaboration.md](Docs/workflow/Collaboration.md).
-- **Completion**: Update affected `Docs/` leaves, append/create `Docs/history/<PREFIX>/<TASK-ID>.md`, move completed rows to [Docs/archive/Backlog-Done.md](Docs/archive/Backlog-Done.md), and sync.
+- **Completion**: Update affected `Docs/` leaves and `Docs/history/<PREFIX>/<TASK-ID>.md`, present verification results and manual checks, then obtain user confirmation before marking `Done`, archiving, and committing/pushing the task branch. Follow the shared finish skill; leave `develop` merge to the user.
+
+## Shared Workflow Skills
+
+- Claude Code: `.claude/skills/` (`/claim`, `/verify`, `/finish`, `/sync-summary`). Codex: `.agents/skills/` (`$claim`, `$verify`, `$finish`, `$sync-summary`).
+- Codex entrypoints read the matching `.claude/skills/<name>/SKILL.md`; both reuse `Tools/Agent/` PowerShell wrappers. Keep workflow logic in those shared sources, not duplicated copies. Skills do not expand Git authorization.
 
 ## Working Rules
 

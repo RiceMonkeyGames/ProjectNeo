@@ -1,10 +1,12 @@
 # ProjectNeo Documentation Index
 
-Last Updated: 2026-11-13 13:58:01 (KST)
+Last Updated: 2026-11-13 14:37:30 (KST)
 
 > Purpose: Route agents to only the leaf docs needed for a task. | Parent: [AGENTS.md](../AGENTS.md) | Related: [Backlog](Backlog.md), [Collaboration](workflow/Collaboration.md)
 
 **Reading Rule:** Open this file and [Backlog.md](Backlog.md) first, then read only the leaf files matching your task. Do not bulk-read `Docs/` or `history/`.
+
+Shared workflow skills: Claude Code uses `/claim`, `/verify`, `/finish`, `/sync-summary`; Codex uses `$claim`, `$verify`, `$finish`, `$sync-summary` from `.agents/skills/`, delegating to the same `.claude/skills/` instructions and Tools/Agent wrappers. Details: [Collaboration](workflow/Collaboration.md).
 
 ## Task Routing
 
