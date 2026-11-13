@@ -1,10 +1,12 @@
 # Playable Scenes & Manual Controls
 
-Last Updated: 2026-11-13 19:32:22 (KST)
+Last Updated: 2026-11-13 21:15:45 (KST)
 
 > Purpose: Executable scene table and `Title`/`Game` scene verification controls. | Parent: [codemap/README](README.md) | Related: [PrototypeScenes](PrototypeScenes.md), [Status](../plan/Status.md)
 
 Unity 6000.6.8f1, URP, 3D first-person project. Placeholder graphics planned for Synty swap. Open scenes in Editor and press Play; exiting Play Mode restores clean state. Every scene's directional `Sun` uses Soft shadows (URP main-light shadow distance 50m); setup generators emit it and `Editor/SceneSunShadowsMigration` (menu `ProjectNeo/Setup/Enable Scene Sun Shadows`) applies it to existing scenes ([ART-02](../history/ART/ART-02.md)).
+
+Player movement (COMBAT-01 / COMBAT-02): hold left/right Ctrl to crouch (50% MoveSpeed, lower collider/eye height); hold left/right Shift to sprint (150% MoveSpeed). Both held: crouch wins. Releasing Ctrl under a low solid ceiling keeps the player crouched until clear. No stamina cost. Applies wherever PlayerInputController is active, including Game prep exploration and battle. Stop Play Mode to reset.
 
 | Scene Path | Verification Target & Controls |
 |---|---|
@@ -19,3 +21,5 @@ Unity 6000.6.8f1, URP, 3D first-person project. Placeholder graphics planned for
 | `Assets/_Project/Scenes/Game.unity` | Actual game scene (G-0, G-1). Ground 240×300m, castle 96×96m, courtyard 90×90m, 5 placeholder facilities. Middle-click drag pan, scroll zoom, Home reset camera. Prep phase uses 1st-person WASD navigation. Approach construction station and press F → orthographic build view to place walls/stairs/cannons with Q/E rotation; Esc returns to 1st-person. Hold B for 1 second during prep exploration to start battle at the current position/view (release cancels; blocked in construction/facility/equipment screens) → 12 debug enemies (6 ladder, 2 gate breakers, 4 archers) advance from north; direct 1st-person combat and F1–F3 / 1 / 2 / 3 squad commanding. Cannons (SIEGE-02): R rotates the cannon preview in build view; in battle cannons auto-fire at enemies within ±45° / 6–60m; walk within 3m facing a cannon and press F to man it (left click fires at the crosshair, F/Esc leaves, HUD shows reload). Auto outcome on wipe/rout/defeat → `Claim Reward & Next Stage` or `Return to Title`. Opening and playing this scene directly starts at Stage 1 prep. |
 
 `*Prototype` scenes are standalone mechanism validation demos; the actual game consists of `Title` and `Game`. Currently, `Game` links construction station interaction, battle trigger, siege combat, win/loss, run data, victory reward payout, build/repair costs, facility pop-ups with upgrades, the shop, barracks recruitment/training (D-4), grunt scene spawning (D-0b), and player equipment (`I` during prep). Tavern (D-3), squad organization (D-8), blacksmith (D-6), and formal wave sequencing remain unlinked. Check [Status.md](../plan/Status.md) for latest test pass baselines.
+
+- **User-approved crouch view refinement (2026-11-13)**: First-person eye height transitions with SmoothStep over 0.18 seconds (PlayerControlSettings.CrouchViewTransitionSeconds); capsule changes remain immediate. Reversing Ctrl mid-transition continues from the currently displayed height. Root movement/falls follow immediately; camera re-enable resets the transition.

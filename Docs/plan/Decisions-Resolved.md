@@ -1,6 +1,6 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-13 20:10:36 (KST)
+Last Updated: 2026-11-13 21:15:45 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
@@ -58,3 +58,11 @@ Last Updated: 2026-11-13 20:10:36 (KST)
 - **BUG-wall-destination-replan coordination (2026-11-13):** User confirmed no concurrent edits to shared `UnitCombatAI.cs` and authorized path-replanning/arrival fixes for destination-wall collapse. Valid recovery paths rejected for one NavMesh replacement frame receive one retry on the next AI update. No morale/assault contracts, serialized settings, arrival or stall thresholds changed.
 
 - **Ladder push feedback (2026-11-13, BUG-ladder-push-visual)**: User approved reverse raising visuals, then expanded the request to balance-point motion: release before vertical smoothly returns, release after vertical auto-completes toward the opposite endpoint. New boarding is blocked during push/settling; existing occupants pause climbing and follow ladder tilt while pushed or returning, resume once fully returned, and fall at the outward vertical balance point. Balance follows actual ladder geometry; existing durations set motion speed. Forced support collapse/reset remains immediate. [Implementation](../history/BUG/BUG-ladder-push-visual.md).
+
+## Player crouch and sprint (COMBAT-01 / COMBAT-02, 2026-11-13)
+
+- User approved: hold Ctrl to crouch, hold Shift to sprint; crouch takes priority when both are held. Crouch moves at 50% and sprint at 150% of the current MoveSpeed stat. No stamina cost.
+- Crouch reduces capsule and eye height while keeping the feet fixed. Standing waits until overhead space is clear. Temporary height ratio: 60%, configurable in PlayerControlSettings.
+- Both task IDs remain separate; implemented together on feature/combat-01 at the user's request. Owner: 신용준.
+
+- **User-approved crouch view refinement (2026-11-13)**: First-person eye height transitions with SmoothStep over 0.18 seconds (PlayerControlSettings.CrouchViewTransitionSeconds); capsule changes remain immediate. Reversing Ctrl mid-transition continues from the currently displayed height. Root movement/falls follow immediately; camera re-enable resets the transition. User authorized this refinement and Done/archive/commit/push for COMBAT-01 and COMBAT-02. Physical manual review of the refined transition and standalone build remain unverified.

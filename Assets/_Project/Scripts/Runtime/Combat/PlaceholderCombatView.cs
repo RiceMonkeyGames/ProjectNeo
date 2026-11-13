@@ -13,6 +13,8 @@ namespace ProjectNeo.Combat
         MaterialPropertyBlock properties;
         float flashUntil;
         float attackUntil;
+        ProjectNeo.Characters.PlayerInputController player;
+        Vector3 standingScale;
         static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
 
         public void Configure(CharacterActor owner, Renderer bodyRenderer, Transform bar, GameObject marker)
@@ -26,6 +28,8 @@ namespace ProjectNeo.Combat
         void Awake()
         {
             properties = new MaterialPropertyBlock();
+            player = actor.GetComponent<ProjectNeo.Characters.PlayerInputController>();
+            standingScale = transform.localScale;
             normalColor = body.sharedMaterial.GetColor(BaseColor);
         }
 
@@ -49,6 +53,12 @@ namespace ProjectNeo.Combat
         }
 
         void OnAttack() => attackUntil = Time.time + actor.Profile.ImpactDelay + 0.15f;
+        void LateUpdate()
+        {
+            if (player == null || actor.Health == null || actor.Health.IsDead) return;
+            transform.localScale = new Vector3(standingScale.x, standingScale.y * player.HeightRatio, standingScale.z);
+        }
+
         void OnHit() => flashUntil = Time.time + 0.12f;
         void OnDeath()
         {

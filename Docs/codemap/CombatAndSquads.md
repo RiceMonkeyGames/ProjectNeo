@@ -1,6 +1,6 @@
 # Runtime Codemap: Core, Stats, Characters, Combat & Squads
 
-Last Updated: 2026-11-13 18:00:38 (KST)
+Last Updated: 2026-11-13 21:15:45 (KST)
 
 > Purpose: Class map for core utilities, stats, characters, combat AI, squads, and morale. | Parent: [codemap/README](README.md) | Related: [WallsAndSiege](WallsAndSiege.md), [design/Combat](../design/Combat.md)
 
@@ -11,7 +11,7 @@ Base path: `Assets/_Project/Scripts/Runtime/`. Assembly: `ProjectNeo.Runtime`. N
 | Core | `RandomSource`, `WeightedPool`, `Unlockable` | Seed-based random generator, weighted selection pool, common unlock types and interfaces. |
 | Stats | `StatSheet`, `StatValue`, `StatModifier`, `StatType` | Base stats and source-specific modifiers: `(base + flat) * (1 + percent)`. |
 | Characters | `HeroDefinition`, `SoldierDefinition`, `SkillDefinition`, `Character` | Hero/grunt/skill data. `Character` stores individual hero stats and equipment; player uses same class. |
-| Characters | `PlayerControlSettings`, `PlayerInputController` | Control/camera settings asset, Input System bindings, and CharacterController movement. FirstPersonCamera is default. |
+| Characters | `PlayerControlSettings`, `PlayerInputController`, `PlayerLocomotionRules` | Control/camera settings, runtime-copy Input System bindings, CharacterController movement. Hold either Ctrl to crouch (50% speed, 60% capsule/eye height, feet fixed); hold either Shift to sprint (150%). Crouch wins; overhead solids defer standing. Movement suspension blocks locomotion; sprint clears on suspension, disable and focus loss. FirstPersonCamera is default. |
 | Characters | `PlayerViewCamera`, `FirstPersonCamera` | Common camera interface and default 1st-person camera driven by `PlayerControlSettings`. Player visual casts shadow only while active. ThirdPersonCamera preserved unused. |
 | Combat | `Health` | Pure C# health rules. Damage, death, max HP scaling, `RestoreFull` for living units (no resurrecting dead). Stat subscriptions unsubscribed via `Dispose()`. `CharacterActor.SoldierDefinition` reads grunt data. |
 | Combat | `CombatProfile`, `CharacterActor`, `CombatTeam` | Body size, attack type, windup delay, min damage, projectile settings asset. Bridges heroes and grunts to common stats; handles teams, targeting, melee/ranged attacks, cooldowns, hit reactions, death. `Character` attached to heroes only; common access uses `Stats`. |
@@ -27,3 +27,5 @@ Base path: `Assets/_Project/Scripts/Runtime/`. Assembly: `ProjectNeo.Runtime`. N
 | Morale | `SquadMorale` | Squad morale value (0–max) carried with the squad across battles; perks change it via `Add`. |
 | Morale | `MoraleSettings`, `MoraleTypes` (`MoraleSide`, `MoraleState`, `CollapseEffect`, `AwakenEffect`) | Morale tuning asset (Q-04/Q-38/Q-39 starting values, `Create()` for tests) and state enums. No `.asset` instance yet; created when wired in B-8.2. |
 | Morale | `BattleSquadMorale`, `MoraleRules` | B-8.1 pure C# rules. Per-battle wrapper over `SquadMorale`: loss events (member/captain death, gate, nearby wall, nearby rout), once-per-battle breaking point at 100 (Collapse Fear/Panic/Contagion or 25% Awaken Rally/Last Stand/Steadfast), start-below-100 weak collapse, rout at 0 (Steadfast exempt), `AttackMultiplier`, `ShouldIgnoreOrder`, `Tick` for Panic/Contagion. Raises `BreakingPointReached`, `Routed`, `NearbyMoraleChange`, `PanicRetreat`; scene applies nearby effects. `MoraleRules.RecoverAfterBattle` = max(+20, 80) capped. Not wired to scenes yet (B-8.2). |
+
+- **User-approved crouch view refinement (2026-11-13)**: First-person eye height transitions with SmoothStep over 0.18 seconds (PlayerControlSettings.CrouchViewTransitionSeconds); capsule changes remain immediate. Reversing Ctrl mid-transition continues from the currently displayed height. Root movement/falls follow immediately; camera re-enable resets the transition.
