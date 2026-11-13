@@ -47,7 +47,7 @@ namespace ProjectNeo.Editor
             RenderSettings.ambientLight = new Color(0.65f, 0.7f, 0.8f);
             var sun = new GameObject("Sun").AddComponent<Light>();
             sun.type = LightType.Directional;
-            sun.intensity = 1.3f;
+            sun.intensity = 1.3f; sun.shadows = LightShadows.Soft;
             sun.transform.rotation = Quaternion.Euler(45f, -30f, 0f);
             Box("Ground", new Vector3(0f, -0.5f, 5f), new Vector3(40f, 1f, 40f), ground);
             Box("NorthWall", new Vector3(0f, 1.5f, 25f), new Vector3(40f, 3f, 1f), stone);

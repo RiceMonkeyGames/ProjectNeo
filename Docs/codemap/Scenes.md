@@ -1,10 +1,10 @@
 # Playable Scenes & Manual Controls
 
-Last Updated: 2026-11-13 13:17:37 (KST)
+Last Updated: 2026-11-13 15:12:57 (KST)
 
 > Purpose: Executable scene table and `Title`/`Game` scene verification controls. | Parent: [codemap/README](README.md) | Related: [PrototypeScenes](PrototypeScenes.md), [Status](../plan/Status.md)
 
-Unity 6000.6.8f1, URP, 3D first-person project. Placeholder graphics planned for Synty swap. Open scenes in Editor and press Play; exiting Play Mode restores clean state.
+Unity 6000.6.8f1, URP, 3D first-person project. Placeholder graphics planned for Synty swap. Open scenes in Editor and press Play; exiting Play Mode restores clean state. Every scene's directional `Sun` uses Soft shadows (URP main-light shadow distance 50m); setup generators emit it and `Editor/SceneSunShadowsMigration` (menu `ProjectNeo/Setup/Enable Scene Sun Shadows`) applies it to existing scenes ([ART-02](../history/ART/ART-02.md)).
 
 | Scene Path | Verification Target & Controls |
 |---|---|

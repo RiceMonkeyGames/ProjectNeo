@@ -49,7 +49,7 @@ namespace ProjectNeo.Editor
             RenderSettings.ambientLight = new Color(0.65f, 0.7f, 0.8f);
             var light = new GameObject("Sun").AddComponent<Light>();
             light.type = LightType.Directional;
-            light.intensity = 1.3f;
+            light.intensity = 1.3f; light.shadows = LightShadows.Soft;
             light.transform.rotation = Quaternion.Euler(45f, -30f, 0f);
             var geometry = new GameObject("NavigationGeometry");
             AddGeometry(geometry, "Ground", new Vector3(0f, -0.5f, 0f), new Vector3(40f, 1f, 40f), ground);
