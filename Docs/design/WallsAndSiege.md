@@ -1,6 +1,6 @@
 # Game Design: Castle Walls, Enemies & Siege Strategy
 
-Last Updated: 2026-11-13 15:45:04 (KST)
+Last Updated: 2026-11-13 15:56:45 (KST)
 
 > Purpose: Construction stacking, build economy, enemy roles, and siege/ladder rules. | Parent: [design/README](README.md) | Related: [Combat](Combat.md), [MoraleAndWave](MoraleAndWave.md)
 
@@ -19,6 +19,17 @@ Last Updated: 2026-11-13 15:45:04 (KST)
 - **Build Controls**: 45-deg azimuth, 30-deg elevation orthographic camera; Q/E orbits 90 deg smoothly matching screen direction (Q left, E right); Left-click place, Right-click cancel, R rotate piece; translucent green/red preview.
 - **Unit Overlap** (2026-11-11): Living units overlapping new placement are harmlessly lifted onto the new top surface.
 - **Siege Weapons**: Mounted on wall mount points (decoupled from ground footprint). Cannons are one extensible type (`ISiegeWeaponModule`). Destroying supporting wall piece destroys mounted weapons simultaneously (no ground drop).
+- **Cannon mechanics (approved 2026-11-13, Q-21; implementation SIEGE-02)**:
+  - **Control**: Auto-fires at enemies in range when unmanned; the player can man it and aim/fire manually (more accurate than auto). Auto-fire pauses while manned.
+  - **Shot**: Ballistic arc with area damage at impact; minimum range prevents hitting the wall base directly below.
+  - **Aim arc**: 90° horizontal (±45°) around the facing set by R at placement.
+  - **Durability**: Own HP; enemies that reach the wall top and flyers can destroy it. Repaired by the existing `Repair All`. Still destroyed together with its supporting wall piece.
+  - **Passage**: Does not block movement on the wall top; no NavMesh carve.
+  - **Friendly fire**: None for now (allies and own walls take no damage), behind a data/rule switch so it can be enabled later.
+  - **Auto targeting**: Nearest enemy in range/arc, implemented as a swappable target-selection strategy for later patterns (e.g., densest cluster, gate/ladder priority).
+  - **Extensibility**: Behavior lives in `ISiegeWeaponModule` components configured by data; new weapon types reuse the shared body and mount rules.
+  - **Temporary values (data asset, tune after playtest; user had no preference)**: Range 6–60m, blast radius 3m, center damage 40 (50% at edge), reload 6s (same when manned), HP 150, cost 30 gold (unchanged).
+  - **Detail defaults (confirmed 2026-11-13)**: Man/leave with the interact key (F) near the cannon, also leave with Esc; mouse aims within the arc, left-click fires. Auto-fire impact scatters up to 2m (via `IRandomSource`); manual fire has no scatter. Enemies target a cannon only when no ally is within their reach.
 - **Construction Economy** (2026-11-12, D-2): Spend run gold on walls/stairs/cannons. Demolishing refunds 100% for current-prep builds and partial percentage for past-prep/starting walls (gate non-demolishable). Single `Repair All` button spends gold proportional to missing HP (prioritizes heaviest damaged if funds low). Instant construction currently; delayed multi-stage construction planned later.
 
 ## Enemies & Siege Strategy

@@ -1,6 +1,6 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-13 15:45:04 (KST)
+Last Updated: 2026-11-13 15:56:45 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
@@ -34,8 +34,11 @@ Last Updated: 2026-11-13 15:45:04 (KST)
 | Q-38 | Awaken effect types | B-8.1 | Resolved (2026-11-13): Awaken picks 1 of 3 at random: Rally (self + nearby morale), Last Stand (attack up with share of members lost, start max +50%), Steadfast (no rout at 0 this battle). Amends Q-04. See [MoraleAndWave](../design/MoraleAndWave.md). |
 | Q-39 | Post-battle morale recovery floor | B-8.1, C-3 | Resolved (2026-11-13): After each battle morale = max(current + 20, 80), capped at 200, so surviving squads never end below routed squads; replaces the separate routed floor rule. Amends Q-04. See [MoraleAndWave](../design/MoraleAndWave.md). |
 | Q-43 | Wall-breaker & flyer behavior contract | B-6.1~4, B-7.1 | Resolved (2026-11-13): Modular target/movement strategies; Wall Breaker hits nearest wall piece (gate included), then assaults once path opens; Flyer hovers to melee wall-top allies first; flyers take 100% from below; ally melee hits flyers in range. See [WallsAndSiege](../design/WallsAndSiege.md). |
+| Q-21 | Siege weapon (cannon) mechanics | SIEGE-02 | Resolved (2026-11-13): Auto-fire + player manual control; ballistic area damage; ±45° arc; own HP (repairable); no passage blocking; no friendly fire (switchable); nearest-enemy targeting as swappable strategy; temporary values in data. See [WallsAndSiege](../design/WallsAndSiege.md). |
 
 ## Detailed Decision Records
+
+- **Q-21 (2026-11-13)**: Cannon mechanics decided by user with extensibility required for friendly fire and targeting. Temporary numbers and control/scatter/enemy-targeting detail defaults proposed by agent and confirmed by user the same day. [History](../history/Q/Q-21.md).
 
 - **Q-43 (2026-11-13)**: B-6.1 contract decided by user, with modular extensibility required for future flying variants. Agent-proposed failure-handling defaults confirmed by user the same day. [History](../history/Q/Q-43.md).
 

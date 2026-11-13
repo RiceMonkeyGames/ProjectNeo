@@ -1,6 +1,6 @@
 # Pending Decisions & Active Operational Policies
 
-Last Updated: 2026-11-13 15:12:33 (KST)
+Last Updated: 2026-11-13 15:54:34 (KST)
 
 > Purpose: Undecided or partial design/implementation decisions (`Q-*`) and active operational rules. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Resolved](Decisions-Resolved.md), [OpenQuestions](../design/OpenQuestions.md)
 
@@ -26,7 +26,6 @@ Last Updated: 2026-11-13 15:12:33 (KST)
 | Q-13 | Mid-run saves, resume capability, save slots | M2 lifecycle, M3 persistence | Meta save mandatory; mid-run save unconfirmed. |
 | Q-14 | Release platforms, distribution channels, launch dates, scale | M4 scope, M7 delivery | Undecided. Focus on core completion criteria first. |
 | Q-15 | Supported input devices, settings, languages, accessibility | M2 framework, M5 UI | Undecided. Avoid arbitrary additions. |
-| Q-21 | Siege weapon mechanics: firing, control mode, HP, range, reload, cost | `SIEGE-02` (was `B-4.6-action`) | Undecided. Cannons are non-firing, non-colliding placeholders. |
 | Q-31 | Equipment retention upon hero permadeath | `C-3` casualty carry-over | Undecided. `C-1a` preserves fallen hero gear in `RunState.FallenHeroes`. |
 | Q-32 | Can player character serve as squad captain | `D-8` squad setup UI | Undecided. `C-1a` `TrySetLeader` permits assigning player character. |
 | Q-35 | Blacksmith crafting model (storefront vs recipes) and upgrades | `D-6` blacksmith | Undecided. Requires crafting recipes and gear enhancement definitions. |
