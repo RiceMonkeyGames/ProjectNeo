@@ -1,6 +1,6 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-13 21:24:43 (KST)
+Last Updated: 2026-11-13 23:28:23 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
@@ -41,6 +41,8 @@ Last Updated: 2026-11-13 21:24:43 (KST)
 | Q-46 | Shop gold re-roll & offer locks | PREP-02, PREP-03 | Resolved (2026-11-13): Re-roll cost rises per re-roll within a prep phase (e.g., 10/20/30g), resets each prep; free locks up to Shop level; locked offers persist through re-roll and next restock; buying clears the lock. |
 
 ## Detailed Decision Records
+
+- **PREP-01 upgrade materials (2026-11-13)**: User confirmed that equipment upgrade materials belong on the item data (`ItemDefinition`). Store requirements per target upgrade level; common gold ratio/bonus/limits remain in shared settings. User approved implementing independent rules first and connecting shared files after youngho's PREP-02 to avoid concurrent edits to `RunState`, `GameFacilities`, and `ItemShop`.
 
 - **Q-44 (2026-11-13)**: B-8.2 preparation decided by user: enemies have no morale (Q-30 retreat only); ally member-death loss proportional to battle-start size (150 → 0 at 90% deaths); morale stored on run squads; retreat point computed at the courtyard edge away from enemies; exit on arrival or after 20s; fled units return next prep; B-8.2 split with new COMBAT-03. Squad merging deferred as Q-45. [History](../history/Q/Q-44.md).
 - **Q-21 (2026-11-13)**: Cannon mechanics decided by user with extensibility required for friendly fire and targeting. Temporary numbers and control/scatter/enemy-targeting detail defaults proposed by agent and confirmed by user the same day. [History](../history/Q/Q-21.md).

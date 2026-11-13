@@ -1,6 +1,6 @@
 # Editor Setup & Test Scripts
 
-Last Updated: 2026-11-13 20:37:08 (KST)
+Last Updated: 2026-11-13 23:28:23 (KST)
 
 > Purpose: Map of Editor setup menus, build scripts, and EditMode/PlayMode test suites. | Parent: [codemap/README](README.md) | Related: [UnityCLI](../workflow/UnityCLI.md), [Status](../plan/Status.md)
 
@@ -28,6 +28,7 @@ Last Updated: 2026-11-13 20:37:08 (KST)
 ## EditMode Tests (`Assets/Tests/EditMode/`)
 
 - General Stage A: Stat sheets, wallets, facilities, squads, perks, items, shops, characters, meta progression, health rules.
+- `EquipmentUpgradeTests.cs`: PREP-01 independent upgrade rules (16 cases): per-item state, target-level gold/material cost, duplicate material totals, affordability/caps/data guards, scaled flat/percent modifiers, equip/unequip state preservation, actual-spend refund and settings overrides. Actual Game UI/character upgrade stat/sale integration pending PREP-02.
 - `DamageRulesTests.cs`: Defense subtraction, minimum damage, invalid parameters.
 - `BuildLayoutTests.cs`: Grid bounds, rotated footprints, stair connectivity, gate zones, fall damage curves.
 - `BuildStackingTests.cs`: Vertical stacking, max tiers, stair prohibitions, gate stacking, multi-cell uniform height, collapse settling.

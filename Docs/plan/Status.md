@@ -1,6 +1,6 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-13 21:24:43 (KST)
+Last Updated: 2026-11-13 23:28:23 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
@@ -9,6 +9,8 @@ Last Updated: 2026-11-13 21:24:43 (KST)
 Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elevation, and `feature/siege-prototype` test scene into `develop`. `Game` scene links 1st-person prep / construction F interaction → hold B for 1 second at current position (FLOW-01) → enemy assault, ladders, actual win/loss → rewards/results. On the M2 side, run data (`C-1~2`), victory rewards (`C-4`), build/repair costs (`D-2`), facility pop-ups (`D-0`), upgrades (`D-1`), shop (`D-5`), player equipment (`D-7`), grunt spawning (`D-0b`), and barracks recruitment/training (`D-4`) are implemented; formal stage/wave layouts, casualty carry-over (`C-3`), tavern (`D-3`), squad org (`D-8`), and blacksmith (`D-6`) remain follow-ups. Wall-breaker behavior is complete on `feature/b-6.2`, pending develop merge; mixed encounter integration, aerial enemies, morale scene wiring, and siege weapon firing (`Q-21`) remain pending.
 
 ## Implemented vs Pending Real Connections
+
+**Blacksmith upgrade rules (PREP-01, In Progress)**: Independent item state, per-target-level material data on `ItemDefinition`, common upgrade settings, costs/caps, modifier/refund calculations are implemented on `feature/prep-01`. Compile and full EditMode 343/343 (16 new) passed. At the user's request, shared run/shop/facility UI integration follows youngho's PREP-02. Existing Game equipment stats/sales and item assets do not yet consume these rules. [Progress and remaining scope](../history/PREP/PREP-01.md).
 
 Q-41 and SIEGE-04 completion/commit/push were authorized by the user on 2026-11-13 and archived as Done on `feature/siege-04`; develop integration remains pending user merge. Physical-key/HUD manual review and standalone build remain unverified.
 

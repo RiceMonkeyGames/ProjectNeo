@@ -1,6 +1,6 @@
 # Runtime Codemap: Flow, Run, Economy, Facilities & Meta
 
-Last Updated: 2026-11-13 21:09:32 (KST)
+Last Updated: 2026-11-13 23:28:23 (KST)
 
 > Purpose: Class map for game flow, run state, economy, facilities, rewards, meta progression, and flow UI. | Parent: [codemap/README](README.md) | Related: [CombatAndSquads](CombatAndSquads.md), [design/PrepEconomyMeta](../design/PrepEconomyMeta.md)
 
@@ -10,6 +10,7 @@ Base path: `Assets/_Project/Scripts/Runtime/`. Assembly: `ProjectNeo.Runtime`. N
 |---|---|---|
 | Economy | `Cost`, `Wallet`, `MaterialDefinition` | Costs and wallet storage for gold and various monster material types. |
 | Economy | `ItemDefinition`, `Inventory`, `EconomyConfig`, `ItemShop` | Equipment/consumable definitions, inventory containers, sale ratios, shop roll and trade logic. |
+| Economy | `ItemInstance`, `ItemUpgradeMaterials`, `EquipmentUpgradeSettings`, `EquipmentUpgrade`, `EquipmentUpgradeCheck` | PREP-01 independent rules: item level/actual gold spend, materials per target level on `ItemDefinition.UpgradeMaterials`, common bonus/gold ratio/limits in settings; cost/check/payment, scaled modifiers and refund calculation. `smithyLevel` uses the same zero-based index as `FacilityState.Level`. Shared run/shop/UI integration and actual equip stat application remain pending until PREP-02. |
 | Economy | `CraftingRecipe` | D-6 fixed blacksmith recipe (item + `Cost` gold/materials), listed per level in `FacilityLevel.recipes` (Q-35). |
 | Facilities | `FacilityDefinition`, `FacilityState`, `SoldierTraining` | Per-facility level progression, inventory pools, upgrade costs, and stat modifiers. D-4: `SoldierTraining` (pure C#) swaps the current Training Ground level `soldierModifiers` onto a grunt `StatSheet` under one source, so re-applying never stacks. |
 | Flow | `GamePhase`, `BattleOutcome`, `GameFlow`, `RunProgress` | Pure C# flow state machine: Title → Prep → Battle → Reward (if victory) → Next Stage Prep, or Run Results (if defeat) → Title. Illegal transitions return false without state mutation. `RunProgress` maintains current run stage, discarded upon return to Title. |
