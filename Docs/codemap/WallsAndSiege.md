@@ -1,10 +1,12 @@
 # Runtime Codemap: Walls & Siege
 
-Last Updated: 2026-11-13 13:17:37 (KST)
+Last Updated: 2026-11-13 14:07:40 (KST)
 
 > Purpose: Class map for castle construction, fall damage, siege weapons, and enemy siege AI. | Parent: [codemap/README](README.md) | Related: [CombatAndSquads](CombatAndSquads.md), [design/WallsAndSiege](../design/WallsAndSiege.md)
 
 Base path: `Assets/_Project/Scripts/Runtime/`. Assembly: `ProjectNeo.Runtime`. Namespace: `ProjectNeo.<Folder>`.
+
+Construction wheel input (`BUG-build-camera-zoom`): ConstructionCameraController uses normalized scroll steps directly; only Windows editor/player with KeepPlatformSpecificInputRange divides by 120. GameFlowPlayTests.ConstructionWheelInput_UsesNormalizedStepsAndRestoresCamera covers actual input → Update → zoom/reset; physical wheel feel remains manual verification. [History](../history/BUG/BUG-build-camera-zoom.md).
 
 | Folder | Key Classes | Role |
 |---|---|---|

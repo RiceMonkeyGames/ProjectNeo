@@ -87,7 +87,12 @@ namespace ProjectNeo.Walls
                 && (EventSystem.current == null || !EventSystem.current.IsPointerOverGameObject()))
             {
                 float scroll = Mouse.current.scroll.ReadValue().y;
-                if (scroll != 0f) Zoom(scroll / 120f);
+                // 정규화된 휠 입력은 이미 한 눈금이 1이다. Windows 원시 입력만 120으로 나눈다.
+#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
+                if (InputSystem.settings.scrollDeltaBehavior == InputSettings.ScrollDeltaBehavior.KeepPlatformSpecificInputRange)
+                    scroll /= 120f;
+#endif
+                if (scroll != 0f) Zoom(scroll);
                 if (Mouse.current.middleButton.isPressed)
                 {
                     Vector2 drag = Mouse.current.delta.ReadValue();

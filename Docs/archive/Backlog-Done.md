@@ -1,11 +1,12 @@
 # Completed Backlog Archive (Done)
 
-Last Updated: 2026-11-13 13:54:51 (KST)
+Last Updated: 2026-11-13 14:07:40 (KST)
 
 > Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
 | Task ID | Description | Assignee | Outcome & History Link |
 |---|---|---|---|
+| BUG-build-camera-zoom | Fix construction wheel zoom input units | Codex | Branch `fix/bug-build-camera-zoom`. Fixed normalized wheel input divided by 120; regression red before fix, GameFlow 8/8, EditMode 216/216, PlayMode 113/113. User confirmed physical wheel zoom. UI-hover manual check/standalone build unverified. [History](../history/BUG/BUG-build-camera-zoom.md) |
 | Q-39 | Post-battle morale recovery floor | youngho | Decided 2026-11-13. Branch `feature/q-39`. After each battle morale = max(current + 20, 80), capped 200; routed-floor rule folded in. Recorded in [MoraleAndWave](../design/MoraleAndWave.md), [Decisions-Resolved](../plan/Decisions-Resolved.md). Doc-only. [History](../history/Q/Q-39.md) |
 | Q-38 | Add Last Stand and Steadfast Awaken effects | youngho | Decided 2026-11-13. Branch `feature/q-38`. Awaken picks 1 of 3 at random (Rally, Last Stand, Steadfast); Steadfast squads do not rout at 0. Recorded in [MoraleAndWave](../design/MoraleAndWave.md), [Decisions-Resolved](../plan/Decisions-Resolved.md). Doc-only. [History](../history/Q/Q-38.md) |
 | Q-42 | Define one-cell stair geometry | User decision / Codex documentation | 1×1 footprint ascending one full 3m tier. Implementation remains Waiting under SIEGE-03. [History](../history/Q/Q-42.md) |
