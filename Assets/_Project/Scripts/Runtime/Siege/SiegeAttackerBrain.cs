@@ -16,13 +16,14 @@ namespace ProjectNeo.Siege
 
     /// <summary>
     /// 성을 공격하는 적 하나의 판단. 걸어서 닿는 아군이 있으면(뚫린 곳, 무너진 성문, 이미 오른 성벽 위)
-    /// 기존 자동 전투에 맡기고, 없으면 종류에 따라 사다리·성문·사격을 고른다.
+    /// 기존 자동 전투에 맡긴다. 아군은 없고 걸어서 닿는 대포가 있으면(성벽 위에 올라온 경우 등) 대포를 부순다(SIEGE-02).
+    /// 둘 다 없으면 종류에 따라 사다리·성문·사격을 고른다.
     /// 이동과 공격 자체는 UnitCombatAI의 지시(Engage·Hold·Move)로 실행한다.
     /// </summary>
     [RequireComponent(typeof(UnitCombatAI), typeof(CharacterActor), typeof(NavMeshAgent))]
     public sealed class SiegeAttackerBrain : MonoBehaviour
     {
-        enum Mode { Deciding, Assault, ToLadder, Raising, Climbing, Falling, ToGate, Shooting, Retreating, ToWall }
+        enum Mode { Deciding, Assault, ToLadder, Raising, Climbing, Falling, ToGate, Shooting, Retreating, ToWall, ToCannon }
 
         [SerializeField] SiegeAttackerRole role;
         [SerializeField] ConstructionWorld world;
@@ -39,6 +40,9 @@ namespace ProjectNeo.Siege
         SiegeLadder ladder;
         PlacedStructure gate;
         Collider[] gateBodies;
+        PlacedSiegeWeapon cannon;
+        // 이 높이 이상이면 성벽 위에 올라온 것으로 본다.
+        const float WallTopMinimumHeight = 1f;
         Vector3 climbStart;
         float climbProgress;
         float think;
@@ -46,6 +50,8 @@ namespace ProjectNeo.Siege
         public SiegeAttackerRole Role => role;
         public bool IsClimbing => mode == Mode.Climbing;
         public bool IsAssaulting => mode == Mode.Assault;
+        /// <summary>지금 부수러 가는 수성 무기. 없으면 null.</summary>
+        public PlacedSiegeWeapon CannonTarget => mode == Mode.ToCannon ? cannon : null;
         /// <summary>전투가 시작된 뒤 한 번이라도 할 일을 정했는지. 후퇴 판정은 모두 정한 뒤에 한다.</summary>
         public bool HasDecided => mode != Mode.Deciding;
         public bool IsRetreating => retreatRequested && !Fled;
@@ -94,6 +100,7 @@ namespace ProjectNeo.Siege
             Actor.Died -= OnDied;
             LeaveLadder();
             wallBreaker?.Clear();
+            cannon = null;
         }
 
         Vector3 OutwardWorld => world.transform.TransformDirection(new Vector3(outward.x, 0f, outward.y)).normalized;
@@ -117,7 +124,9 @@ namespace ProjectNeo.Siege
                 think = settings.AttackerDecisionInterval;
                 Decide();
             }
+            if (mode == Mode.ToCannon && (cannon == null || cannon.IsRemoved)) think = 0f;
             if (mode == Mode.ToGate) StrikeGate();
+            else if (mode == Mode.ToCannon) StrikeCannon();
             else if (mode == Mode.ToWall) wallBreaker?.Tick();
             else if (mode == Mode.Raising && ladder != null) Face(-ladder.OutwardWorld);
         }
@@ -132,12 +141,16 @@ namespace ProjectNeo.Siege
                 {
                     LeaveLadder();
                     gate = null;
+                    cannon = null;
                     wallBreaker?.Clear();
                     ai.SetDirective(UnitDirective.Engage);
                     mode = Mode.Assault;
                 }
                 return;
             }
+            // 걸어서 닿는 아군이 없을 때만 대포를 노린다(Q-21). 궁수는 기존 사격을 유지한다.
+            if (role != SiegeAttackerRole.Archer && DecideCannon()) return;
+            if (mode == Mode.ToCannon) { cannon = null; mode = Mode.Deciding; }
             switch (role)
             {
                 case SiegeAttackerRole.Ladder: DecideLadder(); break;
@@ -373,6 +386,65 @@ namespace ProjectNeo.Siege
             gate.ReceiveDamage(DamageRules.Calculate(Actor.Stats.GetValue(StatType.Attack), 0f, Actor.Profile.MinimumDamage));
         }
 
+        // ── 대포(SIEGE-02) ──────────────────────────────────────
+
+        /// <summary>걸어서 닿는 가장 가까운 대포로 간다. 그런 대포가 없으면 false.</summary>
+        bool DecideCannon()
+        {
+            // 성벽 위에 올라온 적만 대포를 찾는다. 성 밖 땅의 적까지 매번 길을 찾지 않게 한다.
+            if (world == null || transform.position.y - world.transform.position.y < WallTopMinimumHeight) return false;
+            PlacedSiegeWeapon best = null;
+            Vector3 bestPoint = default;
+            float nearest = float.PositiveInfinity;
+            foreach (PlacedSiegeWeapon weapon in world.Weapons)
+            {
+                if (weapon == null || weapon.IsRemoved || weapon.Health == null || weapon.Health.IsDead) continue;
+                float distance = (weapon.transform.position - transform.position).sqrMagnitude;
+                if (distance >= nearest || !TryCannonStand(weapon, out Vector3 point)) continue;
+                nearest = distance;
+                best = weapon;
+                bestPoint = point;
+            }
+            if (best == null) return false;
+            if (mode != Mode.ToCannon || cannon != best)
+            {
+                LeaveLadder();
+                gate = null;
+                wallBreaker?.Clear();
+                cannon = best;
+                mode = Mode.ToCannon;
+                if (!CannonInReach()) ai.SetDirective(UnitDirective.Move, bestPoint);
+                else if (ai.Directive != UnitDirective.Hold) ai.SetDirective(UnitDirective.Hold);
+            }
+            else if (!CannonInReach() && ai.Directive != UnitDirective.Move)
+                ai.SetDirective(UnitDirective.Move, bestPoint);
+            return true;
+        }
+
+        // 대포 옆 길찾기 지점. 지금 자리에서 끝까지 이어지는 길이 있어야 한다.
+        bool TryCannonStand(PlacedSiegeWeapon weapon, out Vector3 point)
+        {
+            point = default;
+            if (!NavMesh.SamplePosition(weapon.transform.position, out NavMeshHit hit, 2f, NavMesh.AllAreas)) return false;
+            if (!agent.CalculatePath(hit.position, path) || path.status != NavMeshPathStatus.PathComplete) return false;
+            point = hit.position;
+            return true;
+        }
+
+        bool CannonInReach() => cannon != null && !cannon.IsRemoved && cannon.Definition != null
+            && SiegeWeaponStrikeRules.InReach(transform.position, cannon.transform.position, cannon.Definition.Size,
+                Actor.Stats.GetValue(StatType.AttackRange));
+
+        void StrikeCannon()
+        {
+            if (!CannonInReach()) return;
+            if (ai.Directive == UnitDirective.Move) ai.SetDirective(UnitDirective.Hold);
+            Face(cannon.transform.position - transform.position);
+            // 성문과 같은 공격 속도·선딜레이 신호를 쓴다. 대포에는 방어력이 없다.
+            if (!Actor.TryAttack()) return;
+            cannon.ReceiveDamage(DamageRules.Calculate(Actor.Stats.GetValue(StatType.Attack), 0f, Actor.Profile.MinimumDamage));
+        }
+
         // ── 후퇴 ────────────────────────────────────────────────
 
         void UpdateRetreat()
@@ -381,6 +453,7 @@ namespace ProjectNeo.Siege
             {
                 LeaveLadder();
                 gate = null;
+                cannon = null;
                 wallBreaker?.Clear();
                 mode = Mode.Retreating;
                 retreatRemaining = settings.RetreatTimeout;

@@ -241,6 +241,19 @@ namespace ProjectNeo.Tests
             finally { Object.DestroyImmediate(settings); }
         }
 
+        // ── 적의 대포 공격 거리 ───────────────────────────────
+
+        [TestCase(1.5f, 0f, true)]    // 사거리 1 + 반 폭 0.9 = 1.9
+        [TestCase(1.95f, 0f, false)]
+        [TestCase(1.5f, 3f, false)]   // 한 층 아래
+        [TestCase(0f, 0.5f, true)]
+        public void StrikeReach_UsesWeaponSizeInsteadOfCollider(float distance, float drop, bool expected)
+        {
+            Vector3 weapon = new Vector3(0f, 9f, 0f);
+            Vector3 attacker = weapon + new Vector3(distance, -drop, 0f);
+            Assert.AreEqual(expected, SiegeWeaponStrikeRules.InReach(attacker, weapon, new Vector3(1.2f, 1.1f, 1.8f), 1f));
+        }
+
         // ── 설정 에셋 ─────────────────────────────────────────
 
         [Test]
