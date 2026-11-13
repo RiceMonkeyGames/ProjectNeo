@@ -55,8 +55,9 @@ function Invoke-StdoutOnly {
     $proc = New-Object System.Diagnostics.Process
     $proc.StartInfo = $psi
     [void]$proc.Start()
+    $stderrTask = $proc.StandardError.ReadToEndAsync()
     $stdout = $proc.StandardOutput.ReadToEnd()
-    $stderr = $proc.StandardError.ReadToEnd()
+    $stderr = $stderrTask.GetAwaiter().GetResult()
     $proc.WaitForExit()
 
     return [PSCustomObject]@{

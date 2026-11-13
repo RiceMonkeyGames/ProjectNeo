@@ -28,4 +28,12 @@ Reduce repeated token/turn overhead and manual command chaining across the team 
   - `unity-verify.ps1 -DryRun`: verified command plan generation and graceful `DOTNET_PRECHECK` skip behavior in worktree without `.csproj`
   - `sync-summary.ps1 -NoFetch`: verified bounded summary output
   - `doc-finish-check.ps1 -TaskId TOOL-agent-workflows`: verified `HISTORY_EXISTS=True`, `UNARCHIVED_DONE_ROWS=0`, `BROKEN_LINKS=0`, `GIT_DIFF_CHECK_OK=True`
-- Live Unity Editor compilation/test invocation via `unity-verify.ps1` (without `-DryRun`) and Claude Code interactive `/claim`, `/verify`, `/finish`, `/sync-summary` invocation were **not** executed in this headless worktree run; see manual verification steps in completion handoff.
+- Live Unity Editor verification on merged `develop` (`2026-11-13 14:06:03 (KST)`):
+  - Caught and fixed three real-environment issues in `Tools/Agent/unity-verify.ps1` and `Tools/Agent/_common.ps1`:
+    1. `dotnet build --no-restore` failed with `NETSDK1004` before `Temp/obj/<Project>/project.assets.json` existed; switched to conditional restore (`--no-restore` only when `project.assets.json` exists) + `DOTNET_NOLOGO=1`.
+    2. `unity command script eval` argument parsing broke on quotes/spaces inside `ProcessStartInfo`; replaced with quote-free/space-free C# expressions and JSON `.success`/`.result` parsing (`ConvertFrom-Json`).
+    3. `Invoke-StdoutOnly` switched `StandardError` to `ReadToEndAsync()`, and `unity-verify.ps1` now parses EditMode/PlayMode JSON `Summary`/`Results` cleanly into 1-line summaries.
+  - Verified live against open Unity 6000.6.8f1 (`port 7800/7801`, `ready`):
+    - `Tools/Agent/unity-verify.ps1 -Mode edit`: `DOTNET_PRECHECK=PASSED (ProjectNeo.Tests.EditMode.csproj)`, `COMPILE=PASSED`, `EDITMODE=PASSED (Total=216 Passed=216 Failed=0 Skipped=0 Duration=3.21s)` (exit `0`).
+    - `Tools/Agent/unity-verify.ps1 -Mode play -Filter FocusIndependentInputScopeTests`: `DOTNET_PRECHECK=PASSED`, `COMPILE=PASSED`, `PLAYMODE=PASSED (Total=2 Passed=2 Failed=0 Skipped=0 Duration=0.07s)` (exit `0`).
+- Still left to user verification: full un-filtered PlayMode suite via `unity-verify.ps1 -Mode play` and interactive Claude Code `/claim`, `/verify`, `/finish`, `/sync-summary` execution.
