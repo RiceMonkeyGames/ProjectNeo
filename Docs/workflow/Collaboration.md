@@ -1,13 +1,13 @@
 # Collaboration, Backlog & Task ID Rules
 
-Last Updated: 2026-11-13 14:37:30 (KST)
+Last Updated: 2026-11-13 19:47:38 (KST)
 
 > Purpose: Team workflow, Task ID rules, shared file locks, and `.claude` boundaries. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [Team](../plan/Team.md)
 
 ## 1. Backlog Claim & Branch Lifecycle
 
 1. Inspect [Backlog.md](../Backlog.md) and pick an unclaimed (`Waiting`) task.
-2. Mark `In Progress` with your assignee name in `Docs/Backlog.md`.
+2. Mark `In Progress` with the human requester's name as assignee in `Docs/Backlog.md`, not the AI tool name. Use the same human owner in future task history; do not rewrite past records or other teammates' ownership without an explicit request.
 3. **Immediately commit and push** this backlog change to shared `develop` before writing code so teammates/agents see the claim.
 4. Sync latest shared `develop`, create `feature/<task-id-lowercase>` (or `fix/<task-id-lowercase>`) from it, and record the branch name in `Docs/Backlog.md`.
 5. Never take over or edit another assignee's `In Progress` task. Coordinate order before touching shared files.

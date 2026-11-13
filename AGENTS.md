@@ -1,6 +1,6 @@
 # ProjectNeo
 
-Last Updated: 2026-11-13 14:37:30 (KST)
+Last Updated: 2026-11-13 19:47:38 (KST)
 
 A 3D first-person siege defense roguelike built with Unity 6000.6.8f1 and URP. Scout the upcoming wave, prepare heroes, troops, equipment, and walls, and defend the castle through direct player combat and unit commanding. Low-poly art style; Synty assets planned, currently using placeholder graphics.
 
@@ -18,6 +18,7 @@ Precedence on conflict: `Docs/design/` (game rules) > `Docs/plan/` (roadmap/stat
 ## Backlog, Task IDs & Branch Workflow
 
 - **Claim & Sync**: Pick a `Waiting` task in [Docs/Backlog.md](Docs/Backlog.md), mark `In Progress` with your assignee name, and **immediately commit and push to `develop`** before coding. Never take over another assignee's `In Progress` item.
+- **Human Task Ownership**: Record the human requester as task assignee/owner, never the AI tool name (such as Codex or Claude). Apply this to future backlog claims and task history; preserve existing records and other teammates' ownership unless explicitly asked to correct them.
 - **Branch Lifecycle**: From synced `develop`, create `feature/<task-id-lowercase>` (or `fix/<task-id-lowercase>`) and record it in the backlog. General code commits and task-branch pushes require explicit user confirmation after presenting the result. The user handles `develop` merges and remote task-branch deletion after confirmed integration. Retain unmerged work branches. Immediate backlog claim commit/push remains the exception authorized above.
 - **Task ID Rules**: Allowed characters `A-Z`, `0-9`, `a-z`, `-` only; 1 task = 1 ID (no `~`, `·`, `.`, or ad-hoc suffixes). Legacy `A~D`, `G`, and reserved `E-1~4` (until M3) remain as-is. New M3+ features use `<DOMAIN>-<NN>` (`COMBAT`, `SIEGE`, `FLOW`, `PREP`, `META`, `CONTENT`, `ART`, `UI`, `AUDIO`); cross-cutting tasks use `Q-NN`, `BUG-<slug>`, `PERF-<slug>`, `QA-<slug>`, `DOC-<slug>`, `TOOL-<slug>`. Full rules in [Docs/workflow/Collaboration.md](Docs/workflow/Collaboration.md).
 - **Completion**: Update affected `Docs/` leaves and `Docs/history/<PREFIX>/<TASK-ID>.md`, present verification results and manual checks, then obtain user confirmation before marking `Done`, archiving, and committing/pushing the task branch. Follow the shared finish skill; leave `develop` merge to the user.
