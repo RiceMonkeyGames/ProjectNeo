@@ -17,7 +17,7 @@ namespace ProjectNeo.Siege
         UnitCombatAI ai;
         SiegeLadder ladder, interaction;
         float progress, held, retry;
-        bool ascending, queuedPlayer, deferred, deferredPoint, agentWasEnabled, motorWasEnabled;
+        bool ascending, queuedPlayer, deferred, deferredPoint, agentWasEnabled, motorWasEnabled, tapBoardEligible;
         UnitDirective nextDirective;
         Vector3 nextPoint;
         NavMeshPath path;
@@ -153,19 +153,22 @@ namespace ProjectNeo.Siege
             bool pressed = Keyboard.current != null && Keyboard.current.fKey.isPressed;
             if (pressed)
             {
+                // 자동 안착 중 시작한 입력은 완료 직후 놓아도 탑승 입력으로 바뀌지 않는다.
+                if (held == 0f) tapBoardEligible = nearest.State.CanBoard;
                 held += Time.deltaTime;
                 if (!upper && nearest.State.Phase != LadderPhase.Up) nearest.TryRaise(actor);
             }
             else
             {
                 nearest.StopRaising(actor);
-                if (held > 0f && held < nearest.Settings.LadderTapSeconds && nearest.State.Phase == LadderPhase.Up)
+                if (tapBoardEligible && held > 0f && held < nearest.Settings.LadderTapSeconds && nearest.State.CanBoard)
                 { queuedPlayer = true; ladder = nearest; ascending = !upper; }
                 held = 0f;
             }
             PlayerHint = nearest.State.Phase == LadderPhase.Up
                 ? "F 짧게 · 탑승 / 위에서 F 유지 · 사다리 밀기"
                 : upper ? "사다리가 내려가 있습니다" : "F 유지 · 사다리 세우기";
+            if (nearest.State.IsSettling) PlayerHint = "사다리가 움직이는 중 · 잠시 기다리세요";
             if (queuedPlayer)
             {
                 PlayerHint = "사다리 이용 대기 중";
@@ -184,13 +187,18 @@ namespace ProjectNeo.Siege
             player?.SetMovementSuspended(true);
             transform.position = Position(progress);
         }
-        Vector3 Position(float t) => t < 0.85f
+        Vector3 Position(float t) => ladder.FollowTilt(t < 0.85f
             ? Vector3.Lerp(ladder.BasePoint, ladder.EdgePoint, t / 0.85f)
-            : Vector3.Lerp(ladder.EdgePoint, ladder.TopPoint, (t - 0.85f) / 0.15f);
+            : Vector3.Lerp(ladder.EdgePoint, ladder.TopPoint, (t - 0.85f) / 0.15f));
+        public void FollowLadderTilt()
+        {
+            if (IsTraversing && ladder != null) transform.position = Position(progress);
+        }
         void MoveOnLadder(float direction)
         {
             if (ladder == null || !ladder.isActiveAndEnabled || !ladder.HasWall || ladder.State.Phase != LadderPhase.Up)
             { Drop(); return; }
+            if (ladder.State.PushProgress > 0f) { FollowLadderTilt(); return; }
             progress = Mathf.Clamp01(progress + Mathf.Clamp(direction, -1f, 1f) * Time.deltaTime / ladder.Settings.LadderClimbSeconds);
             transform.position = Position(progress);
             if ((direction > 0f && progress >= 1f) || (direction < 0f && progress <= 0f)) Finish();

@@ -273,6 +273,163 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
+        public IEnumerator SharedLadder_LowEnemyPush_StaysAboveGroundAndLands()
+        {
+            yield return CloseWalls();
+            IsolateSharedLadder();
+            SiegeLadder ladder = ladders[0];
+            Assert.IsTrue(ladder.HasWall);
+            var state = ladder.State;
+            state.Tick(0.1f, true, false, false);
+            state.Tick(ladder.Settings.LadderRaiseSeconds, true, false, false);
+            // 적은 발의 한 점이 아니라 사용 반경에 들어온 시점에 등반을 시작한다.
+            CharacterActor enemy = PlaceStillEnemy(SiegeAttackerRole.Ladder,
+                ladder.BasePoint + ladder.OutwardWorld * ladder.Settings.LadderUseRadius * 0.7f);
+            var brain = enemy.GetComponent<SiegeAttackerBrain>();
+            var fall = enemy.GetComponent<UnitFallController>();
+            brain.Bind(world, new[] { ladder }, Vector2Int.up);
+            brain.enabled = true;
+            int frames = 0;
+            while (!brain.IsClimbing && frames++ < 120) yield return null;
+            Assert.IsTrue(brain.IsClimbing);
+            float pushToBalance = ladder.Settings.LadderPushSeconds * (1f - state.BalancePoint);
+            state.Tick(pushToBalance * 0.75f, false, true, false);
+            yield return null;
+            Assert.GreaterOrEqual(enemy.transform.position.y, ladder.BasePoint.y - 0.01f,
+                "탑승 직후 밀자 접근 위치가 발 축 아래로 회전해 지면을 뚫었다.");
+            frames = 0;
+            while (state.PushProgress > 0f && frames++ < 60) yield return null;
+            Assert.AreEqual(0f, state.PushProgress);
+            state.Tick(pushToBalance * 1.25f, false, true, false);
+            Assert.IsTrue(fall.IsFalling, "복귀 후 다시 균형점을 넘겼는데 추락하지 않았다.");
+            Assert.GreaterOrEqual(enemy.transform.position.y, ladder.BasePoint.y - 0.01f);
+            frames = 0;
+            while (fall.IsFalling && frames++ < 180) yield return null;
+            Assert.IsFalse(fall.IsFalling, "지면 아래에서 낙하가 끝나지 않는다.");
+            Assert.GreaterOrEqual(enemy.transform.position.y, ladder.BasePoint.y - 0.01f);
+            Assert.IsTrue(enemy.GetComponent<NavMeshAgent>().enabled);
+        }
+
+        [UnityTest]
+        public IEnumerator SharedLadder_EnemyHangsWithTilt_ResumesAfterReturn_AndFallsAtBalance()
+        {
+            yield return CloseWalls();
+            IsolateSharedLadder();
+            SiegeLadder ladder = ladders[0];
+            var state = ladder.State;
+            Assert.IsTrue(ladder.HasWall);
+            state.Tick(0.1f, true, false, false);
+            state.Tick(ladder.Settings.LadderRaiseSeconds, true, false, false);
+            CharacterActor enemy = PlaceStillEnemy(SiegeAttackerRole.Ladder, ladder.BasePoint);
+            var brain = enemy.GetComponent<SiegeAttackerBrain>();
+            var fall = enemy.GetComponent<UnitFallController>();
+            brain.Bind(world, new[] { ladder }, Vector2Int.up);
+            brain.enabled = true;
+            int frames = 0;
+            while ((!brain.IsClimbing || enemy.transform.position.y < ladder.BasePoint.y + 1.5f)
+                && frames++ < 180) yield return null;
+            Assert.IsTrue(brain.IsClimbing, "적이 사다리에 탑승하지 않았다.");
+            Assert.Greater(enemy.transform.position.y, ladder.BasePoint.y + 1.4f);
+            Vector3 attached = enemy.transform.position;
+            float pushToBalance = ladder.Settings.LadderPushSeconds * (1f - state.BalancePoint);
+            state.Tick(pushToBalance * 0.75f, false, true, false);
+            for (int i = 0; i < 3; i++)
+            {
+                yield return null;
+                Assert.Greater(state.PushProgress, 0f);
+                Assert.IsTrue(brain.IsClimbing);
+                Assert.IsFalse(fall.IsFalling);
+                Assert.That(Vector3.Distance(enemy.transform.position, ladder.FollowTilt(attached)), Is.LessThan(0.02f),
+                    "기울어진 사다리에 매달리지 않고 기존 경로로 계속 올라갔다.");
+            }
+            frames = 0;
+            while (state.PushProgress > 0f && frames++ < 60) yield return null;
+            for (int i = 0; i < 3; i++) yield return null;
+            Assert.IsTrue(brain.IsClimbing);
+            Assert.Greater(enemy.transform.position.y, attached.y + 0.05f, "복귀 후 등반을 재개하지 않았다.");
+
+            state.Tick(pushToBalance * 1.25f, false, true, false);
+            Assert.AreEqual(LadderPhase.Up, state.Phase, "사다리가 완전히 눕기 전 추락을 검증해야 한다.");
+            Assert.IsFalse(brain.IsClimbing);
+            Assert.IsTrue(fall.IsFalling, "균형점을 넘었는데 추락하지 않았다.");
+            Assert.IsNull(ladder.Occupant);
+            Assert.IsFalse(state.HasClimber);
+            Assert.IsFalse(enemy.IsOnLadder);
+            Assert.AreEqual(0, state.ToppleCount);
+            frames = 0;
+            while (fall.IsFalling && frames++ < 300) yield return null;
+            Assert.IsFalse(fall.IsFalling);
+            Assert.Greater(fall.LastFallDamage, 0f, "실제 매달린 높이에서 낙하 피해를 받지 않았다.");
+            Assert.IsTrue(enemy.GetComponent<NavMeshAgent>().enabled);
+        }
+
+        [UnityTest]
+        public IEnumerator SharedLadder_BalanceMotion_ReturnsOrCompletes_AndVisualFollowsWithoutSnapping()
+        {
+            yield return CloseWalls();
+            UnitCombatAI unit = IsolateSharedLadder();
+            SiegeLadder ladder = ladders[0];
+            var view = ladder.GetComponentInChildren<PlaceholderLadderView>();
+            Assert.IsNotNull(view);
+            Assert.IsTrue(ladder.HasWall);
+            unit.GetComponent<NavMeshAgent>().Warp(ladder.BasePoint);
+            var state = ladder.State;
+            float raiseSeconds = ladder.Settings.LadderRaiseSeconds;
+            float pushSeconds = ladder.Settings.LadderPushSeconds;
+
+            state.Tick(0.1f, true, false, false);
+            state.Tick(raiseSeconds * state.BalancePoint * 0.5f, true, false, false);
+            view.SendMessage("LateUpdate");
+            float raisingAngle = Vector3.Angle(ladder.OutwardWorld, view.transform.forward);
+            yield return null;
+            view.SendMessage("LateUpdate");
+            float returningAngle = Vector3.Angle(ladder.OutwardWorld, view.transform.forward);
+            Assert.That(returningAngle, Is.GreaterThan(0f).And.LessThan(raisingAngle));
+            Assert.IsFalse(ladder.TryRaise(unit.Actor), "복귀 중 새 세우기를 허용했다.");
+            for (int i = 0; state.Phase != LadderPhase.Down && i < 200; i++) yield return null;
+            Assert.AreEqual(LadderPhase.Down, state.Phase);
+
+            state.Tick(0.1f, true, false, false);
+            state.Tick(raiseSeconds * (state.BalancePoint + (1f - state.BalancePoint) * 0.5f), true, false, false);
+            view.SendMessage("LateUpdate");
+            Assert.Less(Vector3.Dot(view.transform.forward, ladder.OutwardWorld), 0f,
+                "세우기 자동 완료 기준이 실제 수직 각도와 일치하지 않는다.");
+            Assert.IsTrue(state.IsSettling);
+            Assert.IsFalse(ladder.TryEnter(unit.Actor), "자동 세우기 도중 탑승했다.");
+            for (int i = 0; state.Phase != LadderPhase.Up && i < 200; i++) yield return null;
+            Assert.AreEqual(LadderPhase.Up, state.Phase);
+
+            state.Tick(pushSeconds * (1f - state.BalancePoint) * 0.75f, false, true, false);
+            view.SendMessage("LateUpdate");
+            float pushingAngle = Vector3.Angle(ladder.OutwardWorld, view.transform.forward);
+            Assert.IsFalse(ladder.TryEnter(unit.Actor), "밀고 있는 사다리에 탑승했다.");
+            ladder.Leave(unit.Actor);
+            yield return null;
+            view.SendMessage("LateUpdate");
+            float pushReturningAngle = Vector3.Angle(ladder.OutwardWorld, view.transform.forward);
+            float raisedAngle = Vector3.Angle(ladder.OutwardWorld, ladder.EdgePoint - ladder.BasePoint);
+            Assert.That(pushReturningAngle, Is.GreaterThan(pushingAngle).And.LessThan(raisedAngle));
+            for (int i = 0; state.PushProgress > 0f && i < 200; i++) yield return null;
+            Assert.AreEqual(0f, state.PushProgress);
+
+            var enemy = PlaceStillEnemy(SiegeAttackerRole.Ladder, ladder.BasePoint);
+            Assert.IsTrue(ladder.TryEnter(enemy));
+            state.Tick(pushSeconds * (1f - state.BalancePoint) * 1.25f, false, true, false);
+            view.SendMessage("LateUpdate");
+            Assert.Greater(Vector3.Dot(view.transform.forward, ladder.OutwardWorld), 0f,
+                "눕히기 자동 완료 기준이 실제 수직 각도와 일치하지 않는다.");
+            Assert.IsTrue(state.IsSettling);
+            Assert.IsFalse(state.HasClimber, "균형점을 넘었는데 탑승자를 떨어뜨리지 않았다.");
+            Assert.IsNull(ladder.Occupant);
+            Assert.IsFalse(ladder.TryEnter(unit.Actor));
+            for (int i = 0; state.Phase != LadderPhase.Down && i < 200; i++) yield return null;
+            Assert.AreEqual(LadderPhase.Down, state.Phase);
+            Assert.AreEqual(1, state.ToppleCount);
+            Assert.IsNull(ladder.Occupant);
+            Assert.IsFalse(state.HasClimber);
+        }
+
+        [UnityTest]
         public IEnumerator SharedLadder_AlliedOrdersGoBothDirections_AndDeferUntilEndpoint()
         {
             yield return CloseWalls();
@@ -379,6 +536,16 @@ namespace ProjectNeo.Tests
                 var motor = player.GetComponent<CharacterController>();
                 motor.enabled = false; player.transform.position = ladder.BasePoint; motor.enabled = true;
                 Cursor.lockState = CursorLockMode.Locked;
+                // 자동 안착 중 누른 짧은 F가, 안착 직후 해제됐다고 탑승으로 바뀌면 안 된다.
+                ladder.State.Tick(0.1f, true, false, false);
+                ladder.State.Tick(ladder.Settings.LadderRaiseSeconds - Time.captureDeltaTime * 1.5f, true, false, false);
+                Assert.IsTrue(ladder.State.IsSettling);
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.F)); yield return null;
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState()); yield return null;
+                Assert.AreEqual(LadderPhase.Up, ladder.State.Phase);
+                Assert.IsFalse(player.GetComponent<CharacterActor>().IsOnLadder,
+                    "자동 안착 중 누른 키가 안착 직후 해제되자 탑승으로 바뀌었다.");
+                ladder.State.Topple();
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.F));
                 int frames = 0;
                 while (ladder.State.Phase != LadderPhase.Up && frames++ < 300) yield return null;

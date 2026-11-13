@@ -49,6 +49,7 @@ namespace ProjectNeo.Siege
         {
             State = new SiegeLadderState(settings.LadderRaiseSeconds, settings.LadderPushSeconds);
             State.Toppled += OnToppled;
+            State.ClimberDislodged += OnClimberDislodged;
             push = settings.PushLadder.Clone();
         }
 
@@ -63,7 +64,11 @@ namespace ProjectNeo.Siege
         }
         void OnDestroy()
         {
-            if (State != null) State.Toppled -= OnToppled;
+            if (State != null)
+            {
+                State.Toppled -= OnToppled;
+                State.ClimberDislodged -= OnClimberDislodged;
+            }
             if (push != null) push.Dispose();
         }
 
@@ -78,6 +83,9 @@ namespace ProjectNeo.Siege
                     State?.Topple();
                 supportId = placement.Id;
                 wallHeight = height;
+                // 무게중심이 발 바로 위에 오는 실제 수직 각도를 규칙에 전달한다.
+                float angle = Vector3.Angle(OutwardWorld, EdgePoint - BasePoint);
+                State?.ConfigureBalancePoint(angle > 0f ? Mathf.Clamp01(90f / angle) : 1f);
                 return true;
             }
         }
@@ -105,6 +113,20 @@ namespace ProjectNeo.Siege
         /// <summary>다 오른 유닛이 올라서는 성벽 위의 자리.</summary>
         public Vector3 TopPoint => Point(world.Grid.CellSize * 0.5f - settings.LadderTopInset, wallHeight);
 
+        /// <summary>외형과 탑승자가 공유하는 현재 사다리 방향.</summary>
+        public Vector3 CurrentDirection => Vector3.Slerp(OutwardWorld,
+            (EdgePoint - BasePoint).normalized, State.RaisedFraction);
+
+        /// <summary>사다리 접점만 기울이고, 몸과 접근 여유의 방향은 유지한다.</summary>
+        public Vector3 FollowTilt(Vector3 raisedPosition)
+        {
+            Vector3 raisedDirection = (EdgePoint - BasePoint).normalized;
+            float along = Mathf.Max(0f, Vector3.Dot(raisedPosition - BasePoint, raisedDirection));
+            // 사용 반경에서 막 탑승한 적의 접근 오프셋까지 회전하면 발이 땅 아래로 들어간다.
+            // 접점 이동분만 적용해 그 여유는 월드 공간에 남겨 둔다.
+            return raisedPosition + (CurrentDirection - raisedDirection) * along;
+        }
+
         public void Join(SiegeAttackerBrain unit) => crowd.Add(unit);
 
         public void Leave(SiegeAttackerBrain unit)
@@ -120,7 +142,7 @@ namespace ProjectNeo.Siege
         /// <summary>바닥에 놓인 사다리를 세우기 시작한다. 이미 다른 유닛이 세우고 있으면 실패한다.</summary>
         public bool TryRaise(SiegeAttackerBrain unit)
         {
-            if (!HasWall || State.Phase == LadderPhase.Up) return false;
+            if (!HasWall || State.Phase == LadderPhase.Up || State.IsSettling) return false;
             if (Alive(sharedRaiser) && IsNear(sharedRaiser, false)) return false;
             if (raiser != null && raiser != unit && IsNearBase(raiser)) return false;
             raiser = unit;
@@ -145,9 +167,10 @@ namespace ProjectNeo.Siege
 
         public bool TryEnter(CharacterActor actor)
         {
-            if (!HasWall || !Alive(actor) || (!IsNear(actor, false) && !IsNear(actor, true))) return false;
+            if (!HasWall || !Alive(actor) || State.IsSettling
+                || (!IsNear(actor, false) && !IsNear(actor, true))) return false;
             traffic.Join(actor);
-            if (State.Phase != LadderPhase.Up || State.HasClimber || !traffic.TryEnter(actor)) return false;
+            if (!State.CanBoard || State.HasClimber || !traffic.TryEnter(actor)) return false;
             if (State.TryBeginClimb()) return true;
             traffic.Leave(actor);
             return false;
@@ -164,7 +187,8 @@ namespace ProjectNeo.Siege
 
         public bool TryRaise(CharacterActor actor)
         {
-            if (!HasWall || !Alive(actor) || !IsNear(actor, false) || State.Phase == LadderPhase.Up) return false;
+            if (!HasWall || !Alive(actor) || !IsNear(actor, false)
+                || State.Phase == LadderPhase.Up || State.IsSettling) return false;
             if (raiser != null && IsNearBase(raiser)) return false;
             if (Alive(sharedRaiser) && sharedRaiser != actor && IsNear(sharedRaiser, false)) return false;
             sharedRaiser = actor;
@@ -240,7 +264,7 @@ namespace ProjectNeo.Siege
                 if (distance > settings.LadderPushRadius) continue;
                 if (actor.GetComponent<PlayerInputController>() != null)
                 {
-                    PlayerCanPush = true;
+                    PlayerCanPush = !State.IsSettling;
                     var traversal = actor.GetComponent<LadderTraveller>();
                     if (traversal != null && traversal.IsHoldingTopple(this) && !FriendlyUse) pusher = true;
                 }
@@ -256,16 +280,30 @@ namespace ProjectNeo.Siege
 
         void OnToppled(bool hadClimber)
         {
-            CharacterActor occupant = traffic.Occupant;
+            ReleaseOccupant(false);
             traffic.Clear(); sharedRaiser = null;
+            raiser = null;
+        }
+
+        void OnClimberDislodged() => ReleaseOccupant(true);
+
+        void ReleaseOccupant(bool followTilt)
+        {
+            CharacterActor occupant = traffic.Occupant;
+            traffic.Leave(occupant);
             SiegeAttackerBrain fallen = climber;
             climber = null;
-            raiser = null;
-            if (hadClimber && fallen != null) fallen.OnLadderToppled();
+            if (fallen != null)
+            {
+                if (followTilt) fallen.FollowLadderTilt();
+                fallen.OnLadderToppled();
+            }
             if (occupant != null)
             {
                 occupant.SetOnLadder(false);
-                occupant.GetComponent<LadderTraveller>()?.OnToppled();
+                var traveller = occupant.GetComponent<LadderTraveller>();
+                if (followTilt) traveller?.FollowLadderTilt();
+                traveller?.OnToppled();
             }
         }
     }

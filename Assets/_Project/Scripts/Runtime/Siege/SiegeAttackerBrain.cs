@@ -269,12 +269,9 @@ namespace ProjectNeo.Siege
         void UpdateClimb()
         {
             if (ladder == null) { Drop(); return; }
+            if (ladder.State.PushProgress > 0f) { FollowLadderTilt(); return; }
             climbProgress += Time.deltaTime / settings.LadderClimbSeconds;
-            // 대부분의 시간은 사다리를 오르고, 마지막에 성벽 위로 넘어간다.
-            const float onLadder = 0.85f;
-            transform.position = climbProgress < onLadder
-                ? Vector3.Lerp(climbStart, ladder.EdgePoint, climbProgress / onLadder)
-                : Vector3.Lerp(ladder.EdgePoint, ladder.TopPoint, (climbProgress - onLadder) / (1f - onLadder));
+            FollowLadderTilt();
             Face(-ladder.OutwardWorld);
             if (climbProgress < 1f) return;
             if (!NavMesh.SamplePosition(ladder.TopPoint, out NavMeshHit hit, 1.5f, NavMesh.AllAreas)
@@ -290,6 +287,18 @@ namespace ProjectNeo.Siege
             ai.SetDirective(UnitDirective.Engage);
             mode = Mode.Deciding;
             think = 0f;
+        }
+
+        /// <summary>등반 진행도는 유지하면서 현재 사다리 기울기를 따라간다.</summary>
+        public void FollowLadderTilt()
+        {
+            if (ladder == null || mode != Mode.Climbing) return;
+            // 대부분의 시간은 사다리를 오르고, 마지막에 성벽 위로 넘어간다.
+            const float onLadder = 0.85f;
+            Vector3 raisedPosition = climbProgress < onLadder
+                ? Vector3.Lerp(climbStart, ladder.EdgePoint, climbProgress / onLadder)
+                : Vector3.Lerp(ladder.EdgePoint, ladder.TopPoint, (climbProgress - onLadder) / (1f - onLadder));
+            transform.position = ladder.FollowTilt(raisedPosition);
         }
 
         /// <summary>오르는 중에 사다리가 밀려 쓰러졌다. 그 높이에서 떨어져 낙하 피해를 받는다.</summary>
