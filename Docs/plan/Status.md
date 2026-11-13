@@ -1,6 +1,6 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-13 17:36:36 (KST)
+Last Updated: 2026-11-13 19:11:49 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
@@ -27,6 +27,7 @@ Q-41 and SIEGE-04 completion/commit/push were authorized by the user on 2026-11-
 
 ## Test Baselines & Status Conventions
 
+- **Flyer (`B-6.3`, Done 2026-11-13, branch `feature/b-6.3`)**: Shared `SiegeAttacker` base for walking/flying enemies; `FlyerBrain` flies over walls with data-selected target/movement/engagement modules, hovers beside wall-top allies first, holds over the courtyard with no target. Melee allies reach hovering flyers via ground projection; airborne targets skip the upward penalty. Prototype roster count 0; verification scene `FlyerVerification.unity`. EditMode **310/310**, PlayMode **153/153**; user manually verified. Game encounters and standalone unverified. [History](../history/B/B-6.3.md).
 - **Wall breaker (`B-6.2`, 2026-11-13; Done on `feature/b-6.2`, develop merge pending)**: Asset-selected reachable wall/gate bottom attacks, settled-piece re-selection and breach Engage; prototype roster defaults to 0. Saved SiegePrototype grid/generators now support three tiers, and stacking regression uses that real scene. Agent visibly mouse-stacked to 9m and demonstrated real breaker damage/settling; user confirmed verification/completion. Final compile and scoped **6/6** PlayMode passed (3.02s). Earlier full EditMode **250/250** / PlayMode **126/126** predate the grid correction. Standalone unverified; mixed encounters B-6.4. [History](../history/B/B-6.2.md).
 
 - **Debug encounter tuning (QA-opening-battle-balance, 2026-11-13; Done on `feature/qa-opening-battle-balance`, develop merge pending)**: User requests rough prototype tuning rather than formal stage balancing. Game enemies reduced 28 → 12 (6 ladder, 2 gate breakers, 4 archers), retaining unit stats/outcome rules; generator emits the same roster. Two controlled courtyard observations reached natural victory at 76.27/78.40 simulated seconds; exposed stationary wall player still dies. Final compile passed, GameBattlePlayTests **10/10** (5.23s). User confirmed manual verification and authorized completion/commit/push; standalone unverified. Formal stage design remains B-7.1. [History](../history/QA/QA-opening-battle-balance.md).

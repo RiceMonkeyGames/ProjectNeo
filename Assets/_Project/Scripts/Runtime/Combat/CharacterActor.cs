@@ -27,6 +27,8 @@ namespace ProjectNeo.Combat
         public CombatProfile Profile => profile;
         public CombatTeam Team => team;
         public Collider Body { get; private set; }
+        /// <summary>공중 유닛이면 그 몸통 상태. 땅 유닛은 null이다.</summary>
+        public AirborneBody Airborne { get; private set; }
         public Vector3 AimPoint => transform.position + Vector3.up * (profile.Height * 0.5f);
         public bool IsAttacking => pendingImpact;
         public bool IsOnLadder { get; private set; }
@@ -75,6 +77,7 @@ namespace ProjectNeo.Combat
             Health = new Health(Stats);
             Health.Died += OnDied;
             Body = GetComponent<Collider>();
+            Airborne = GetComponent<AirborneBody>();
         }
 
         void OnEnable()

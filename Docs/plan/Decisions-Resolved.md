@@ -1,6 +1,6 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-13 17:29:40 (KST)
+Last Updated: 2026-11-13 18:00:38 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
@@ -42,6 +42,7 @@ Last Updated: 2026-11-13 17:29:40 (KST)
 - **Q-21 (2026-11-13)**: Cannon mechanics decided by user with extensibility required for friendly fire and targeting. Temporary numbers and control/scatter/enemy-targeting detail defaults proposed by agent and confirmed by user the same day. [History](../history/Q/Q-21.md).
 
 - **Q-43 (2026-11-13)**: B-6.1 contract decided by user, with modular extensibility required for future flying variants. Agent-proposed failure-handling defaults confirmed by user the same day. [History](../history/Q/Q-43.md).
+- **B-6.3 flyer details (2026-11-13)**: User approved shared combat-code edits for airborne targets, asked for the most extensible structure regardless of size, kept hover height data-driven (melee-reachable vs ranged-only flyers), and chose the 1m-above-ground wall-top rule. [History](../history/B/B-6.3.md).
 
 - **Q-42 (2026-11-13)**: User selected 1×1 footprint ascending one full 3m tier. Design decision resolved; implementation tracked by SIEGE-03. [History](../history/Q/Q-42.md).
 - **Q-40 (2026-11-13)**: User selected starting battle at the desired current position after preparation, without returning to the gate. FLOW-01 input also approved: hold B for 1 second, display progress, cancel on release or modal entry, block construction/facility/equipment screens, preserve pose, and start once. [History](../history/Q/Q-40.md).

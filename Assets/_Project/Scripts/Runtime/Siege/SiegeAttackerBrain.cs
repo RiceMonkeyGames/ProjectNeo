@@ -12,6 +12,7 @@ namespace ProjectNeo.Siege
         GateBreaker = 1, // 들어갈 길이 없으면 성문만 공격한다. 사다리는 타지 않는다.
         Archer = 2,      // 아래에서 성벽 위 아군을 쏜다.
         WallBreaker = 3, // 선택 전략으로 성벽 밑단을 공격하고 열린 길로 진입한다.
+        Flyer = 4,       // 성벽을 넘어 날아가 아군 옆에 떠서 공격한다(FlyerBrain).
     }
 
     /// <summary>
@@ -21,7 +22,7 @@ namespace ProjectNeo.Siege
     /// 이동과 공격 자체는 UnitCombatAI의 지시(Engage·Hold·Move)로 실행한다.
     /// </summary>
     [RequireComponent(typeof(UnitCombatAI), typeof(CharacterActor), typeof(NavMeshAgent))]
-    public sealed class SiegeAttackerBrain : MonoBehaviour
+    public sealed class SiegeAttackerBrain : SiegeAttacker
     {
         enum Mode { Deciding, Assault, ToLadder, Raising, Climbing, Falling, ToGate, Shooting, Retreating, ToWall, ToCannon }
 
@@ -46,22 +47,19 @@ namespace ProjectNeo.Siege
         Vector3 climbStart;
         float climbProgress;
         float think;
-        public CharacterActor Actor { get; private set; }
-        public SiegeAttackerRole Role => role;
+        public override SiegeAttackerRole Role => role;
         public bool IsClimbing => mode == Mode.Climbing;
-        public bool IsAssaulting => mode == Mode.Assault;
+        public override bool IsAssaulting => mode == Mode.Assault;
         /// <summary>지금 부수러 가는 수성 무기. 없으면 null.</summary>
         public PlacedSiegeWeapon CannonTarget => mode == Mode.ToCannon ? cannon : null;
-        /// <summary>전투가 시작된 뒤 한 번이라도 할 일을 정했는지. 후퇴 판정은 모두 정한 뒤에 한다.</summary>
-        public bool HasDecided => mode != Mode.Deciding;
-        public bool IsRetreating => retreatRequested && !Fled;
-        /// <summary>후퇴해 전장을 떠났다. 승패에서는 죽은 적과 같이 남은 적 수에서 뺀다.</summary>
-        public bool Fled { get; private set; }
+        public override bool HasDecided => mode != Mode.Deciding;
+        public override bool IsRetreating => retreatRequested && !Fled;
+        public override bool IsMidAction => agent == null || !agent.enabled || !agent.isOnNavMesh || (fall != null && fall.IsFalling);
         bool retreatRequested;
         float retreatRemaining;
 
         /// <summary>판 바깥으로 물러나게 한다. 오르거나 떨어지는 중이면 그 동작이 끝난 뒤 물러난다.</summary>
-        public void Retreat()
+        public override void Retreat()
         {
             if (Fled || Actor.Health == null || Actor.Health.IsDead) return;
             retreatRequested = true;
@@ -74,7 +72,7 @@ namespace ProjectNeo.Siege
         }
 
         /// <summary>프리팹으로 만든 적을 씬의 성과 사다리에 연결한다. 활성화하기 전에 부른다.</summary>
-        public void Bind(ConstructionWorld owner, SiegeLadder[] ladderSpots, Vector2Int outwardDirection,
+        public override void Bind(ConstructionWorld owner, SiegeLadder[] ladderSpots, Vector2Int outwardDirection,
             SiegeSettings battleSettings = null)
         {
             world = owner; ladders = ladderSpots; outward = outwardDirection;
@@ -162,6 +160,20 @@ namespace ProjectNeo.Siege
                     break;
                 default: DecideArcher(); break;
             }
+        }
+
+        public override bool CanReachAnyEnemy() => AnyReachableEnemy();
+
+        /// <summary>판단을 멈추고 걸어서 출구로 간다. 길이 없으면 제자리에 선다.</summary>
+        public override Vector3 BeginExit(Vector3 exit, float searchRadius)
+        {
+            Vector3 target = transform.position;
+            if (NavMesh.SamplePosition(exit, out NavMeshHit hit, searchRadius, NavMesh.AllAreas)
+                && agent.CalculatePath(hit.position, path) && path.corners.Length > 0)
+                target = path.corners[path.corners.Length - 1];
+            enabled = false;
+            ai.SetDirective(UnitDirective.Move, target);
+            return target;
         }
 
         bool AnyReachableEnemy()

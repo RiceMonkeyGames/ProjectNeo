@@ -50,12 +50,12 @@ namespace ProjectNeo.Siege
         [SerializeField, Min(1)] int enemyColumns = 10;
         [SerializeField, Min(0.1f)] float enemySpacing = 2f;
         [SerializeField, Min(0.1f)] float enemyRowSpacing = 2.5f;
-        readonly List<SiegeAttackerBrain> enemies = new List<SiegeAttackerBrain>();
+        readonly List<SiegeAttacker> enemies = new List<SiegeAttacker>();
         InputAction toggle, restart;
         public SiegePhase Phase { get; private set; } = SiegePhase.Preparation;
         public SiegeOutcome Outcome { get; private set; } = SiegeOutcome.Ongoing;
         public bool IsConstructionView { get; private set; } = true;
-        public IReadOnlyList<SiegeAttackerBrain> Enemies => enemies;
+        public IReadOnlyList<SiegeAttacker> Enemies => enemies;
         public SiegeSettings Settings => settings;
 
         public void Configure(ConstructionWorld owner, SiegeSettings siegeSettings, SiegePrepController prepController,
@@ -105,6 +105,9 @@ namespace ProjectNeo.Siege
             GameObject unit = Instantiate(prefab, position, rotation);
             SceneManager.MoveGameObjectToScene(unit, gameObject.scene);
             unit.name = unitName;
+            // 나는 적은 발판이 무너져도 떨어지지 않으므로 낙하 부품을 붙이지 않는다.
+            var attacker = unit.GetComponent<SiegeAttacker>();
+            if (attacker != null && !attacker.UsesFallController) return unit;
             var falling = unit.GetComponent<UnitFallController>();
             if (falling == null) falling = unit.AddComponent<UnitFallController>();
             falling.Configure(world, fall);
@@ -183,10 +186,10 @@ namespace ProjectNeo.Siege
                         + right * ((i % enemyColumns - (inRow - 1) * 0.5f) * enemySpacing)
                         + OutwardWorld * ((row + i / enemyColumns) * enemyRowSpacing);
                     GameObject unit = Spawn(group.unitPrefab, position, facing, group.unitPrefab.name + "_" + (enemies.Count + 1));
-                    var brain = unit != null ? unit.GetComponent<SiegeAttackerBrain>() : null;
+                    var brain = unit != null ? unit.GetComponent<SiegeAttacker>() : null;
                     if (brain == null)
                     {
-                        Debug.LogError("Siege enemy prefab needs a SiegeAttackerBrain: " + group.unitPrefab.name, this);
+                        Debug.LogError("Siege enemy prefab needs a SiegeAttacker: " + group.unitPrefab.name, this);
                         if (unit != null) Destroy(unit);
                         break;
                     }
@@ -209,7 +212,7 @@ namespace ProjectNeo.Siege
                 if (!RetreatOrdered && !world.IsRebuilding && !world.RebuildPending && ShouldOrderRetreat())
                 {
                     RetreatOrdered = true;
-                    foreach (SiegeAttackerBrain enemy in enemies) if (IsInBattle(enemy)) enemy.Retreat();
+                    foreach (SiegeAttacker enemy in enemies) if (IsInBattle(enemy)) enemy.Retreat();
                 }
                 Outcome = SiegeOutcomeRules.Evaluate(player.Health == null || player.Health.IsDead,
                     GateDestroyed, AlliesAlive, EnemiesAlive, 0);
@@ -251,18 +254,18 @@ namespace ProjectNeo.Siege
             get
             {
                 int count = 0;
-                foreach (SiegeAttackerBrain enemy in enemies) if (enemy != null && enemy.Fled) count++;
+                foreach (SiegeAttacker enemy in enemies) if (enemy != null && enemy.Fled) count++;
                 return count;
             }
         }
 
-        static bool IsInBattle(SiegeAttackerBrain enemy) => enemy != null && !enemy.Fled
+        static bool IsInBattle(SiegeAttacker enemy) => enemy != null && !enemy.Fled
             && enemy.gameObject.activeSelf && enemy.Actor.Health != null && !enemy.Actor.Health.IsDead;
 
         bool ShouldOrderRetreat()
         {
             int alive = 0, breachers = 0, assaulting = 0, undecided = 0;
-            foreach (SiegeAttackerBrain enemy in enemies)
+            foreach (SiegeAttacker enemy in enemies)
             {
                 if (!IsInBattle(enemy)) continue;
                 alive++;
@@ -276,7 +279,7 @@ namespace ProjectNeo.Siege
         public int CountEnemies(SiegeAttackerRole? role)
         {
             int count = 0;
-            foreach (SiegeAttackerBrain enemy in enemies)
+            foreach (SiegeAttacker enemy in enemies)
             {
                 if (enemy == null || enemy.Fled || (role.HasValue && enemy.Role != role.Value)) continue;
                 // 아직 나오지 않은 적은 체력이 만들어지기 전이므로 살아 있는 것으로 센다.
@@ -293,7 +296,7 @@ namespace ProjectNeo.Siege
             prep.Lock();
             Phase = SiegePhase.Battle;
             ShowView(false);
-            foreach (SiegeAttackerBrain enemy in enemies) if (enemy != null) enemy.gameObject.SetActive(true);
+            foreach (SiegeAttacker enemy in enemies) if (enemy != null) enemy.gameObject.SetActive(true);
             return true;
         }
 

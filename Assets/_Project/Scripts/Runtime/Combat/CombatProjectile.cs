@@ -73,10 +73,11 @@ namespace ProjectNeo.Combat
         {
             if (ShouldIgnore(collider)) return false;
             var target = collider.GetComponentInParent<CharacterActor>();
+            // 위로 쏠 때의 감소는 성벽 위를 노릴 때만이다. 공중 대상은 언제나 온전한 피해를 받는다(Q-43).
             if (target != null)
                 target.ReceiveDamage(DamageRules.Calculate(attack, target.Stats.GetValue(StatType.Defense), profile.MinimumDamage)
-                    * DamageRules.ElevationMultiplier(target.transform.position.y - launchHeight,
-                        profile.UpwardShotMinimumRise, profile.UpwardShotDamageRatio));
+                    * (target.Airborne != null ? 1f : DamageRules.ElevationMultiplier(target.transform.position.y - launchHeight,
+                        profile.UpwardShotMinimumRise, profile.UpwardShotDamageRatio)));
             Destroy(gameObject);
             launched = false;
             return true;

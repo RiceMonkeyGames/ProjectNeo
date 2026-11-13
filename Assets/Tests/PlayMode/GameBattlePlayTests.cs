@@ -151,7 +151,7 @@ namespace ProjectNeo.Tests
             Assert.IsTrue(ally.enabled && player.enabled);
             Assert.AreEqual(enemyCount, battle.Enemies.Count);
             Assert.IsTrue(battle.Enemies.All(enemy => !enemy.gameObject.activeSelf));
-            Assert.AreEqual(enemyCount, battle.GetComponentsInChildren<SiegeAttackerBrain>(true).Length);
+            Assert.AreEqual(enemyCount, battle.GetComponentsInChildren<SiegeAttacker>(true).Length);
             Assert.IsTrue(battle.TryStartBattle());
             Assert.AreEqual(2, battle.BattleNumber);
         }

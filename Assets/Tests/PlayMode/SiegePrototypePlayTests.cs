@@ -123,7 +123,7 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(director.Settings.EnemyGroups.Sum(group => group.count), director.Enemies.Count);
             foreach (SiegeAttackerRole role in new[] { SiegeAttackerRole.Ladder, SiegeAttackerRole.GateBreaker, SiegeAttackerRole.Archer })
                 Assert.AreEqual(director.Settings.EnemyGroups
-                    .Where(group => group.unitPrefab.GetComponent<SiegeAttackerBrain>().Role == role).Sum(group => group.count),
+                    .Where(group => group.unitPrefab.GetComponent<SiegeAttacker>().Role == role).Sum(group => group.count),
                     director.CountEnemies(role));
             yield return null;
         }
@@ -133,7 +133,7 @@ namespace ProjectNeo.Tests
         {
             director.StartBattle();
             yield return null;
-            SiegeAttackerBrain enemy = director.Enemies.First(unit => unit.Role == SiegeAttackerRole.Ladder);
+            SiegeAttacker enemy = director.Enemies.First(unit => unit.Role == SiegeAttackerRole.Ladder);
             Transform marker = enemy.transform.Find("Visual/RoleMarker");
             Assert.IsTrue(marker.gameObject.activeSelf);
             Kill(enemy.Actor);
@@ -144,7 +144,7 @@ namespace ProjectNeo.Tests
         // 정해 둔 자리에 적 하나를 꺼내 둔다. 스스로 움직이지 않게 판단과 AI를 끈다.
         CharacterActor PlaceStillEnemy(SiegeAttackerRole role, Vector3 position)
         {
-            SiegeAttackerBrain enemy = director.Enemies.First(unit => unit.Role == role && !unit.gameObject.activeSelf);
+            SiegeAttacker enemy = director.Enemies.First(unit => unit.Role == role && !unit.gameObject.activeSelf);
             enemy.enabled = false;
             enemy.GetComponent<UnitCombatAI>().enabled = false;
             enemy.transform.position = position;
@@ -234,9 +234,9 @@ namespace ProjectNeo.Tests
             {
                 yield return null;
                 raised |= ladders.Any(ladder => ladder.State.Phase == LadderPhase.Up);
-                Assert.LessOrEqual(director.Enemies.Count(enemy => enemy.IsClimbing),
+                Assert.LessOrEqual(director.Enemies.OfType<SiegeAttackerBrain>().Count(enemy => enemy.IsClimbing),
                     ladders.Count(ladder => ladder.HasWall), "사다리 하나에 한 명씩만 오른다.");
-                onTop |= director.Enemies.Any(enemy => !enemy.IsClimbing && !enemy.Actor.Health.IsDead
+                onTop |= director.Enemies.OfType<SiegeAttackerBrain>().Any(enemy => !enemy.IsClimbing && !enemy.Actor.Health.IsDead
                     && enemy.GetComponent<NavMeshAgent>().enabled && enemy.transform.position.y > wall.Height - 0.4f);
                 gateHit |= gate == null || gate.Health.Current < gateHealth;
             }
@@ -244,7 +244,7 @@ namespace ProjectNeo.Tests
             Assert.IsTrue(onTop, "성벽 위로 올라온 적이 없다.");
             Assert.IsTrue(gateHit, "성문이 공격받지 않았다.");
             // 성벽이 다 막혀 있는 동안 궁수와 성문 파괴병은 사다리를 타지 않는다.
-            Assert.IsFalse(director.Enemies.Any(enemy => enemy.Role != SiegeAttackerRole.Ladder && enemy.IsClimbing));
+            Assert.IsFalse(director.Enemies.OfType<SiegeAttackerBrain>().Any(enemy => enemy.Role != SiegeAttackerRole.Ladder && enemy.IsClimbing));
         }
 
         [UnityTest]
@@ -483,12 +483,12 @@ namespace ProjectNeo.Tests
 
         IEnumerator KillBreachersAfterArchersDecide()
         {
-            SiegeAttackerBrain[] archers = director.Enemies.Where(enemy => enemy.Role == SiegeAttackerRole.Archer).ToArray();
+            SiegeAttacker[] archers = director.Enemies.Where(enemy => enemy.Role == SiegeAttackerRole.Archer).ToArray();
             Assert.IsNotEmpty(archers, "설정 에셋에 궁수가 있어야 하는 시험이다.");
             int frames = 0;
             while (!archers.All(archer => archer.HasDecided) && frames++ < 300) yield return null;
             Assert.IsTrue(archers.All(archer => archer.HasDecided), "궁수가 할 일을 정하지 않았다.");
-            foreach (SiegeAttackerBrain enemy in director.Enemies)
+            foreach (SiegeAttacker enemy in director.Enemies)
                 if (enemy.Role != SiegeAttackerRole.Archer) Kill(enemy.Actor);
         }
 
@@ -504,7 +504,7 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(SiegeOutcome.Victory, director.Outcome);
             Assert.Greater(director.EnemiesFled, 0, "물러나 떠난 적이 없다.");
             Assert.AreEqual(0, director.EnemiesAlive);
-            foreach (SiegeAttackerBrain enemy in director.Enemies.Where(enemy => enemy.Fled))
+            foreach (SiegeAttacker enemy in director.Enemies.Where(enemy => enemy.Fled))
                 Assert.IsFalse(enemy.gameObject.activeSelf, "떠난 적은 전장에서 사라져야 한다.");
         }
 

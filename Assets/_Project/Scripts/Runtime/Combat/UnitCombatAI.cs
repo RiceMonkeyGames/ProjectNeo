@@ -263,6 +263,7 @@ namespace ProjectNeo.Combat
         }
 
         bool IsHoldTarget(CharacterActor target, bool chases) => actor.IsEnemy(target)
+            && CombatPhysics.CanTarget(actor, target)
             && (CanStrikeFromHere(target) || (chases && IsNearPost(target)));
 
         /// <summary>중지 중에 자리에서 이 거리 안의 적을 쫓는다. 0이면 쫓지 않는다.</summary>
@@ -279,7 +280,8 @@ namespace ProjectNeo.Combat
             float nearestDistance = float.PositiveInfinity;
             foreach (CharacterActor candidate in CharacterActor.ActiveActors)
             {
-                if (candidate.Team == actor.Team || !IsNearPost(candidate) || !actor.IsEnemy(candidate)) continue;
+                if (candidate.Team == actor.Team || !IsNearPost(candidate) || !actor.IsEnemy(candidate)
+                    || !CombatPhysics.CanTarget(actor, candidate)) continue;
                 float distance = (candidate.transform.position - transform.position).sqrMagnitude;
                 if (distance >= nearestDistance || !CanReach(candidate)) continue;
                 nearestDistance = distance;
@@ -291,7 +293,7 @@ namespace ProjectNeo.Combat
         void UpdateEngage()
         {
             agent.stoppingDistance = actor.Stats.GetValue(StatType.AttackRange) * settings.StoppingRangeRatio;
-            if (!ReferenceEquals(Target, null) && !actor.IsEnemy(Target))
+            if (!ReferenceEquals(Target, null) && (!actor.IsEnemy(Target) || !CombatPhysics.CanTarget(actor, Target)))
             {
                 Target = null;
                 decisionRemaining = 0f;
@@ -333,9 +335,10 @@ namespace ProjectNeo.Combat
                     Quaternion.LookRotation(direction), settings.TurnSpeed * Time.deltaTime);
         }
 
+        // 공중 대상은 몸통 아래 바닥 투영점까지의 길을 찾는다.
         bool CanReach(CharacterActor target)
         {
-            return agent.CalculatePath(target.transform.position, path) && path.status == NavMeshPathStatus.PathComplete;
+            return agent.CalculatePath(CombatPhysics.ReachPoint(target), path) && path.status == NavMeshPathStatus.PathComplete;
         }
 
         // 움직이지 않고 지금 자리에서 닿는 적인지. 방향은 돌려서 맞추므로 따지지 않는다.
@@ -354,7 +357,8 @@ namespace ProjectNeo.Combat
                 if (candidate.Team == actor.Team || candidate.Body == null) continue;
                 // AABB는 실제 콜라이더를 포함하므로 범위 밖 후보만 안전하게 제외한다.
                 // 큰/오프셋 콜라이더는 통과시키고 기존 정밀 판정과 시야 검사를 그대로 적용한다.
-                if (candidate.Body.bounds.SqrDistance(aim) > range * range) continue;
+                // 공중 대상의 근접 사거리는 몸통이 아니라 바닥 투영점 기준이므로 이 예비 검사를 건너뛴다.
+                if (candidate.Airborne == null && candidate.Body.bounds.SqrDistance(aim) > range * range) continue;
                 float distance = (candidate.transform.position - position).sqrMagnitude;
                 if (distance >= nearestDistance || !CanStrikeFromHere(candidate)) continue;
                 nearestDistance = distance;
@@ -371,7 +375,8 @@ namespace ProjectNeo.Combat
             {
                 if (candidate.Team == actor.Team) continue;
                 float distance = (candidate.transform.position - transform.position).sqrMagnitude;
-                if (distance >= nearestDistance || !actor.IsEnemy(candidate) || !CanReach(candidate)) continue;
+                if (distance >= nearestDistance || !actor.IsEnemy(candidate)
+                    || !CombatPhysics.CanTarget(actor, candidate) || !CanReach(candidate)) continue;
                 nearestDistance = distance;
                 nearest = candidate;
             }

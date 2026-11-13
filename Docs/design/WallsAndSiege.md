@@ -1,6 +1,6 @@
 # Game Design: Castle Walls, Enemies & Siege Strategy
 
-Last Updated: 2026-11-13 17:36:36 (KST)
+Last Updated: 2026-11-13 18:00:38 (KST)
 
 > Purpose: Construction stacking, build economy, enemy roles, and siege/ladder rules. | Parent: [design/README](README.md) | Related: [Combat](Combat.md), [MoraleAndWave](MoraleAndWave.md)
 
@@ -61,6 +61,7 @@ Last Updated: 2026-11-13 17:36:36 (KST)
   - **Extensibility (user requirement)**: Wall-target selection and flying movement/attack are swappable, data-selected modules (strategy/polymorphism), not hard-coded branches. Many flying enemy variants are planned; a new variant must be addable by combining existing modules plus data. Existing ladder/gate/archer behavior is kept, not re-implemented.
   - **Wall Breaker (ground)**: Target = nearest outer wall piece by the current selection module ("nearest" is the first module; others may be added later). The gate counts as a valid wall piece. In a stacked column it strikes the bottom piece; existing settle rules drop upper pieces one tier. Once a walkable path to any ally opens, it switches to normal assault (`Engage`) like other ground enemies.
   - **Flyer**: Flies over walls (not blocked by them; no ground NavMesh needed), then hovers at human height beside its target and attacks in melee. Target priority: nearest ally atop walls; if none, nearest ally anywhere inside the castle.
+  - **Flyer details (user, 2026-11-13, B-6.3)**: Hover height stays a per-variant data value so future flyers can either hover low enough for melee or stay high and require ranged fire. "Atop walls" = standing at least 1m above world ground (same as cannon targeting). Agent defaults pending review: no-target hold point is the castle-piece centroid moved 6m inward at cruise height (tallest piece + 3m); dead flyers drop without fall damage. [Implementation](../history/B/B-6.3.md).
   - **Damage vs flyers**: The 50% upward-shot penalty does not apply when allies/player shoot flyers; they take 100%. The penalty remains only for enemies shooting up at wall tops.
   - **Ally melee vs flyers**: Allies attack a hovering flyer when it is within attack range, measured from its ground projection; they do not reach it while it travels at altitude.
   - **Failure handling (confirmed 2026-11-13)**: All roles re-decide every `AttackerDecisionInterval`; a dead or destroyed target triggers immediate re-selection. Wall Breaker with no reachable wall base holds and retries; Flyer with no valid target holds at altitude above the courtyard. Decisions pause during NavMesh rebuilds (existing rule).

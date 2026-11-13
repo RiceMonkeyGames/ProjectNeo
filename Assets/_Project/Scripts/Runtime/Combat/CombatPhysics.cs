@@ -45,7 +45,30 @@ namespace ProjectNeo.Combat
             Collider body = target.Body;
             if (body == null || !body.enabled) return false;
             float range = attacker.Stats.GetValue(ProjectNeo.Stats.StatType.AttackRange);
+            // 공중 대상은 근접이면 바닥 투영점 기준으로 잰다(Q-43). 원거리는 몸통까지 그대로 잰다.
+            AirborneBody air = target.Airborne;
+            if (air != null && attacker.Profile.AttackKind == AttackKind.Melee)
+                return AirborneReach.InMeleeReach(attacker.transform.position, air.GroundPoint, air.IsMeleeExposed,
+                    range, target.Profile.Radius);
             return (body.ClosestPoint(attacker.AimPoint) - attacker.AimPoint).sqrMagnitude <= range * range;
+        }
+
+        /// <summary>길찾기로 다가갈 지점. 공중 대상은 바닥 투영점이다.</summary>
+        public static Vector3 ReachPoint(CharacterActor target)
+        {
+            AirborneBody air = target.Airborne;
+            return air != null && air.HasGround ? air.GroundPoint : target.transform.position;
+        }
+
+        /// <summary>
+        /// 대상으로 고를 수 있는지. 근접 공격자는 높이 떠 있는 공중 대상을 쫓지 않는다.
+        /// 쫓아가 봐야 닿지 않고, 그동안 땅의 적을 놓치기 때문이다.
+        /// </summary>
+        public static bool CanTarget(CharacterActor attacker, CharacterActor target)
+        {
+            AirborneBody air = target.Airborne;
+            return air == null || attacker.Profile.AttackKind != AttackKind.Melee
+                || AirborneReach.CanMeleeTarget(air.HasGround, air.IsMeleeExposed);
         }
     }
 }

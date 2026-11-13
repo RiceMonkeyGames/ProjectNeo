@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6cef525f5869fea41af1b776003325e8, type: 3}
+  m_Name: Flyer
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Siege.FlyerSettings
+  targetStrategy: {fileID: 11400000, guid: 3a3036d80c22f444b805a8c88c48eff6, type: 2}
+  movement: {fileID: 11400000, guid: 279db0dc8a537564aa82900d222eae87, type: 2}
+  engagement: {fileID: 11400000, guid: 04a6e74de0e47c349bfc605c5b5d14be, type: 2}
+  cruiseClearance: 3
+  meleeExposureAltitude: 1.5
+  wallTopMinimumHeight: 1
+  groundProbeDistance: 60
+  corpseFallAcceleration: 9.81

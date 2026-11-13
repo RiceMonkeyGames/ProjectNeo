@@ -42,6 +42,8 @@ MonoBehaviour:
     count: 4
   - unitPrefab: {fileID: 3276109497482159700, guid: def97a7de831ff349a9a555089d5b0ef, type: 3}
     count: 1
+  - unitPrefab: {fileID: 7517096732457025389, guid: a4246cb22c7768840aae61bb4b280916, type: 3}
+    count: 0
   startingBudget: 40
   pieceCosts:
   - piece: {fileID: 11400000, guid: c1c038f7a168fe347bc9a0582b3d05bf, type: 2}
@@ -54,6 +56,7 @@ MonoBehaviour:
   ladderRaiseSeconds: 3
   ladderPushSeconds: 2
   ladderClimbSeconds: 2.5
+  ladderTapSeconds: 0.25
   ladderUseRadius: 3.5
   ladderPushRadius: 2.5
   ladderBlockRadius: 3

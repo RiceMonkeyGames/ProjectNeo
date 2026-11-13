@@ -100,7 +100,7 @@ namespace ProjectNeo.Tests
         SiegeAttackerBrain SpawnClimber(Vector3 at)
         {
             GameObject prefab = director.Settings.EnemyGroups.Select(g => g.unitPrefab)
-                .First(p => p != null && p.GetComponent<SiegeAttackerBrain>().Role == SiegeAttackerRole.Ladder);
+                .First(p => p != null && p.GetComponent<SiegeAttacker>()?.Role == SiegeAttackerRole.Ladder);
             Assert.IsFalse(prefab.activeSelf);
             GameObject unit = Object.Instantiate(prefab, at, Quaternion.identity);
             SceneManager.MoveGameObjectToScene(unit, scene);

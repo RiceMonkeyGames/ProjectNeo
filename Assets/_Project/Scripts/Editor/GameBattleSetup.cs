@@ -98,7 +98,7 @@ namespace ProjectNeo.Editor
             {
                 GameObject prefab = null;
                 foreach (var group in source.EnemyGroups)
-                    if (group.unitPrefab != null && group.unitPrefab.GetComponent<SiegeAttackerBrain>().Role == roles[i])
+                    if (group.unitPrefab != null && group.unitPrefab.GetComponent<SiegeAttacker>()?.Role == roles[i])
                     { prefab = group.unitPrefab; break; }
                 if (prefab == null) throw new InvalidOperationException("Missing debug enemy role: " + roles[i]);
                 result.Add(new SiegeUnitGroup { unitPrefab = prefab, count = counts[i] });

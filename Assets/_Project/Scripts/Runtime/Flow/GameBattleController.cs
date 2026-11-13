@@ -20,19 +20,19 @@ namespace ProjectNeo.Flow
         [SerializeField] CharacterActor player;
         [SerializeField] FallSettings fallSettings;
         [SerializeField] SiegeLadder[] ladders = new SiegeLadder[0];
-        readonly List<SiegeAttackerBrain> enemies = new List<SiegeAttackerBrain>();
+        readonly List<SiegeAttacker> enemies = new List<SiegeAttacker>();
         readonly Dictionary<Behaviour, bool> frozen = new Dictionary<Behaviour, bool>();
         readonly List<Behaviour> freezeOrder = new List<Behaviour>();
-        readonly HashSet<SiegeAttackerBrain> retreated = new HashSet<SiegeAttackerBrain>();
-        readonly Dictionary<SiegeAttackerBrain, Vector3> retreatTargets = new Dictionary<SiegeAttackerBrain, Vector3>();
+        readonly HashSet<SiegeAttacker> retreated = new HashSet<SiegeAttacker>();
+        readonly Dictionary<SiegeAttacker, Vector3> retreatTargets = new Dictionary<SiegeAttacker, Vector3>();
         // 처치 수를 적 종류별로 세기 위한 적 ID. 지금은 적 프리팹 이름을 쓴다.
-        readonly Dictionary<SiegeAttackerBrain, string> enemyIds = new Dictionary<SiegeAttackerBrain, string>();
+        readonly Dictionary<SiegeAttacker, string> enemyIds = new Dictionary<SiegeAttacker, string>();
         GameFlow flow;
         GameRunLink runLink;
         Transform enemyRoot;
         bool battleRunning;
         public GameBattleSettings Settings => settings;
-        public IReadOnlyList<SiegeAttackerBrain> Enemies => enemies;
+        public IReadOnlyList<SiegeAttacker> Enemies => enemies;
         public IReadOnlyList<SiegeLadder> Ladders => ladders;
         /// <summary>런 데이터 연결(C-1~2). 씬 유닛의 런 번호와 이번 전투 입력을 읽을 때 쓴다.</summary>
         public GameRunLink RunLink => runLink ??= new GameRunLink(flow, commander, player, world);
@@ -61,7 +61,7 @@ namespace ProjectNeo.Flow
             get
             {
                 int count = 0;
-                foreach (SiegeAttackerBrain enemy in enemies)
+                foreach (SiegeAttacker enemy in enemies)
                     if (enemy != null && !retreated.Contains(enemy))
                     {
                         var actor = enemy.GetComponent<CharacterActor>();
@@ -103,7 +103,7 @@ namespace ProjectNeo.Flow
                 BattleNumber++;
                 RunLink.OnBattleStart();
                 foreach (SiegeLadder ladder in ladders) ladder.enabled = true;
-                foreach (SiegeAttackerBrain enemy in enemies) enemy.gameObject.SetActive(true);
+                foreach (SiegeAttacker enemy in enemies) enemy.gameObject.SetActive(true);
                 SetCannonsArmed(true);
             }
             else if (phase == GamePhase.Reward || phase == GamePhase.RunResult)
@@ -134,21 +134,16 @@ namespace ProjectNeo.Flow
         bool ShouldRetreat()
         {
             int siegeUnits = 0;
-            foreach (SiegeAttackerBrain enemy in enemies)
+            foreach (SiegeAttacker enemy in enemies)
                 if (enemy != null && !retreated.Contains(enemy) && enemy.Actor != null && !enemy.Actor.Health.IsDead
                     && enemy.Role != SiegeAttackerRole.Archer) siegeUnits++;
             if (!SiegeOutcomeRules.ShouldRetreat(EnemiesAlive, siegeUnits, false,
                 !world.IsRebuilding && !world.RebuildPending)) return false;
-            var path = new NavMeshPath();
-            foreach (SiegeAttackerBrain enemy in enemies)
+            // 오르기·떨어지기 중이거나 자기 방식(걷기·날기)으로 아군에 닿는 적이 있으면 아직 후퇴하지 않는다.
+            foreach (SiegeAttacker enemy in enemies)
             {
                 if (enemy == null || retreated.Contains(enemy) || enemy.Actor == null || enemy.Actor.Health.IsDead) continue;
-                var agent = enemy.GetComponent<NavMeshAgent>();
-                var falling = enemy.GetComponent<UnitFallController>();
-                if (!agent.enabled || !agent.isOnNavMesh || (falling != null && falling.IsFalling)) return false;
-                foreach (CharacterActor target in CharacterActor.ActiveActors)
-                    if (enemy.Actor.IsEnemy(target) && agent.CalculatePath(target.transform.position, path)
-                        && path.status == NavMeshPathStatus.PathComplete) return false;
+                if (enemy.IsMidAction || enemy.CanReachAnyEnemy()) return false;
             }
             return true;
         }
@@ -156,7 +151,7 @@ namespace ProjectNeo.Flow
         void BeginRetreat()
         {
             IsRetreating = true;
-            foreach (SiegeAttackerBrain enemy in enemies)
+            foreach (SiegeAttacker enemy in enemies)
             {
                 if (enemy == null || enemy.Actor.Health.IsDead) continue;
                 Vector3 local = world.LocalPoint(enemy.transform.position);
@@ -166,15 +161,8 @@ namespace ProjectNeo.Flow
                     ? world.Grid.Depth * world.Grid.CellSize - settings.RetreatExitMargin : settings.RetreatExitMargin;
                 local.y = 0f;
                 Vector3 target = world.transform.TransformPoint(local);
-                var agent = enemy.GetComponent<NavMeshAgent>();
-                var path = new NavMeshPath();
-                if (NavMesh.SamplePosition(target, out NavMeshHit exit, settings.RetreatExitMargin, NavMesh.AllAreas)
-                    && agent.CalculatePath(exit.position, path) && path.corners.Length > 0)
-                    target = path.corners[path.corners.Length - 1];
-                else target = enemy.transform.position;
-                enemy.enabled = false;
-                enemy.GetComponent<UnitCombatAI>().SetDirective(UnitDirective.Move, target);
-                retreatTargets[enemy] = target;
+                // 걷는 적은 NavMesh 출구로 걸어가고, 나는 적은 그 위로 날아간다.
+                retreatTargets[enemy] = enemy.BeginExit(target, settings.RetreatExitMargin);
             }
         }
         void UpdateRetreat()
@@ -182,7 +170,7 @@ namespace ProjectNeo.Flow
             float distance = settings.RetreatArrivalDistance;
             foreach (var pair in retreatTargets)
             {
-                SiegeAttackerBrain enemy = pair.Key;
+                SiegeAttacker enemy = pair.Key;
                 if (enemy == null || enemy.Actor.Health.IsDead || retreated.Contains(enemy)) continue;
                 if ((enemy.transform.position - pair.Value).sqrMagnitude > distance * distance) continue;
                 retreated.Add(enemy);
@@ -210,11 +198,15 @@ namespace ProjectNeo.Flow
                     GameObject unit = Instantiate(group.unitPrefab, enemyRoot);
                     unit.name = group.unitPrefab.name + "_" + enemies.Count;
                     unit.transform.SetPositionAndRotation(position, Quaternion.LookRotation(-outward));
-                    var fall = unit.GetComponent<UnitFallController>();
-                    if (fall == null) fall = unit.AddComponent<UnitFallController>();
-                    fall.Configure(world, fallSettings);
-                    var brain = unit.GetComponent<SiegeAttackerBrain>();
-                    if (brain == null) { Debug.LogError("Battle enemy needs SiegeAttackerBrain", unit); Destroy(unit); continue; }
+                    var brain = unit.GetComponent<SiegeAttacker>();
+                    if (brain == null) { Debug.LogError("Battle enemy needs a SiegeAttacker", unit); Destroy(unit); continue; }
+                    // 나는 적은 발판이 무너져도 떨어지지 않으므로 낙하 부품을 붙이지 않는다.
+                    if (brain.UsesFallController)
+                    {
+                        var fall = unit.GetComponent<UnitFallController>();
+                        if (fall == null) fall = unit.AddComponent<UnitFallController>();
+                        fall.Configure(world, fallSettings);
+                    }
                     brain.Bind(world, ladders, settings.Outward, settings.Siege);
                     enemies.Add(brain);
                     enemyIds[brain] = group.unitPrefab.name;
@@ -225,7 +217,7 @@ namespace ProjectNeo.Flow
 
         void ClearEnemies()
         {
-            foreach (SiegeAttackerBrain enemy in enemies)
+            foreach (SiegeAttacker enemy in enemies)
                 if (enemy != null) { enemy.gameObject.SetActive(false); Destroy(enemy.gameObject); }
             enemies.Clear();
             enemyIds.Clear();
@@ -256,7 +248,7 @@ namespace ProjectNeo.Flow
         }
         void FreezeBattle()
         {
-            foreach (SiegeAttackerBrain enemy in enemies)
+            foreach (SiegeAttacker enemy in enemies)
                 if (enemy != null) { enemy.enabled = false; FreezeActor(enemy.GetComponent<CharacterActor>(), false); }
             FreezeActor(player, true);
             foreach (var squad in commander.Squads)
@@ -314,7 +306,7 @@ namespace ProjectNeo.Flow
         Dictionary<string, int> CountKills()
         {
             var kills = new Dictionary<string, int>();
-            foreach (SiegeAttackerBrain enemy in enemies)
+            foreach (SiegeAttacker enemy in enemies)
             {
                 if (enemy == null || enemy.Actor == null || enemy.Actor.Health == null || !enemy.Actor.Health.IsDead) continue;
                 if (!enemyIds.TryGetValue(enemy, out string id)) continue;
