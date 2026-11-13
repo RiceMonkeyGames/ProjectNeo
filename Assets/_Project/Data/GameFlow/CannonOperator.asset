@@ -1,0 +1,89 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ea03a6ebfe5a55140befc9ced88ea672, type: 3}
+  m_Name: CannonOperator
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Siege.CannonOperatorSettings
+  interact:
+    m_Name: ManCannon
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 305f50c6-4f2c-46ab-9ebb-9102afdfdda2
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 1b9e01ca-9f35-4aab-a0e5-0b7f3e2a6b93
+      m_Path: <Keyboard>/f
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: ManCannon
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  leave:
+    m_Name: LeaveCannon
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 383201ba-a938-4019-87c4-f18d529b2c09
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 25fc42bc-d2af-468d-9856-b05a804a0634
+      m_Path: <Keyboard>/escape
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: LeaveCannon
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  fire:
+    m_Name: FireCannon
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 69aea196-cf54-4fae-b4c8-45641caa59db
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: df8e5fbb-3174-4c4f-8e0e-d042d215669c
+      m_Path: <Mouse>/leftButton
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: FireCannon
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  look:
+    m_Name: AimCannon
+    m_Type: 0
+    m_ExpectedControlType: 
+    m_Id: b40715eb-e618-4119-baa7-bcde9872a64a
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: f265a14d-c809-432a-9f81-0ad06ca03727
+      m_Path: <Mouse>/delta
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: AimCannon
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  interactDistance: 3
+  interactHalfAngle: 60
+  aimDistance: 150

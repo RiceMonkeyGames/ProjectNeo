@@ -16,6 +16,22 @@ namespace ProjectNeo.Editor
     {
         const string Data = "Assets/_Project/Data/ConstructionPrototype";
         const string Prefabs = "Assets/_Project/Prefabs/ConstructionPrototype";
+        // Q-21 임시값. 성벽 기본 체력 100 기준.
+        internal const float CannonMaxHealth = 150f;
+        internal const string CannonAssetPath = Data + "/Cannon.asset";
+
+        /// <summary>이미 만든 대포 에셋의 체력을 Q-21 값으로 맞춘다. 여러 번 실행해도 같다.</summary>
+        [MenuItem("ProjectNeo/Setup/Apply Cannon Health (Q-21)")]
+        public static void ApplyCannonHealth()
+        {
+            var cannon = AssetDatabase.LoadAssetAtPath<SiegeWeaponDefinition>(CannonAssetPath);
+            if (cannon == null) throw new InvalidOperationException("Cannon asset not found: " + CannonAssetPath);
+            var serialized = new SerializedObject(cannon);
+            serialized.FindProperty("maxHealth").floatValue = CannonMaxHealth;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(cannon);
+            AssetDatabase.SaveAssets();
+        }
 
         [MenuItem("ProjectNeo/Setup/Add Siege Weapons To Construction Prototype")]
         public static void AddToConstructionPrototype()
@@ -36,7 +52,7 @@ namespace ProjectNeo.Editor
             if (hud.Weapons.Count > 0) throw new InvalidOperationException("Siege weapons are already added.");
             CombatPrototypeSetup.EnsureFolder(Data); CombatPrototypeSetup.EnsureFolder(Prefabs);
             Material metal = CombatPrototypeSetup.MaterialAsset("ConstructionSiegeWeapon", new Color(0.2f, 0.22f, 0.26f));
-            var weapons = new[] { Weapon("cannon", "Cannon", "대포", new Vector3(1.2f, 1.1f, 1.8f), metal) };
+            var weapons = new[] { Weapon("cannon", "Cannon", "대포", new Vector3(1.2f, 1.1f, 1.8f), metal, CannonMaxHealth) };
 
             Transform panel = hud.transform.Find("BuildPanel");
             panel.GetComponent<RectTransform>().sizeDelta = new Vector2(248f, 690f);
@@ -61,7 +77,8 @@ namespace ProjectNeo.Editor
         }
 
         // 임시 외형의 수성 무기 하나. 충돌체를 두지 않아 성벽 위 통로를 막지 않는다.
-        static SiegeWeaponDefinition Weapon(string id, string assetName, string displayName, Vector3 size, Material material)
+        static SiegeWeaponDefinition Weapon(string id, string assetName, string displayName, Vector3 size, Material material,
+            float maxHealth)
         {
             string path = Data + "/" + assetName + ".asset";
             var existing = AssetDatabase.LoadAssetAtPath<SiegeWeaponDefinition>(path);
@@ -76,7 +93,7 @@ namespace ProjectNeo.Editor
                 VisualPart(visual.transform, "Barrel", new Vector3(0f, 0.65f, 0.15f), new Vector3(0.4f, 0.45f, 1f), material);
                 prefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath); UnityEngine.Object.DestroyImmediate(root);
             }
-            var definition = SiegeWeaponDefinition.Create(id, displayName, size, prefab);
+            var definition = SiegeWeaponDefinition.Create(id, displayName, size, prefab, maxHealth);
             definition.name = assetName;
             return CombatPrototypeSetup.Save(definition, path);
         }

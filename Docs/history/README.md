@@ -1,6 +1,6 @@
 # Past Verification History Index
 
-Last Updated: 2026-11-13 17:29:40 (KST)
+Last Updated: 2026-11-13 17:36:36 (KST)
 
 > Purpose: Route historical log lookups by Task ID prefix. | Parent: [INDEX](../INDEX.md) | Related: [Backlog-Done](../archive/Backlog-Done.md), [Status](../plan/Status.md)
 
@@ -20,7 +20,7 @@ Read this folder only when researching past design rationales, benchmarks, or ve
 - `PERF/` — [PERF-nav-query](PERF/PERF-nav-query.md)
 - `QA/` — [QA-game-loop](QA/QA-game-loop.md), [QA-opening-battle-balance](QA/QA-opening-battle-balance.md)
 - `FLOW/` — [FLOW-01](FLOW/FLOW-01.md)
-- `SIEGE/` — [SIEGE-03](SIEGE/SIEGE-03.md), [SIEGE-04](SIEGE/SIEGE-04.md)
+- `SIEGE/` — [SIEGE-02](SIEGE/SIEGE-02.md), [SIEGE-03](SIEGE/SIEGE-03.md), [SIEGE-04](SIEGE/SIEGE-04.md)
 - `ART/` — [ART-01](ART/ART-01.md), [ART-02](ART/ART-02.md)
 - `DOC/` — [DOC-workflow-branches](DOC/DOC-workflow-branches.md), [DOC-doc-tree-and-id](DOC/DOC-doc-tree-and-id.md)
 - `TOOL/` — [TOOL-claude-read-deny](TOOL/TOOL-claude-read-deny.md), [TOOL-agent-workflows](TOOL/TOOL-agent-workflows.md), [TOOL-codex-workflows](TOOL/TOOL-codex-workflows.md)

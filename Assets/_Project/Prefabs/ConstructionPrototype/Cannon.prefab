@@ -190,6 +190,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8161752749704019132}
   - component: {fileID: 2855231191864082783}
+  - component: {fileID: 6744322829473763782}
   m_Layer: 0
   m_Name: Cannon
   m_TagString: Untagged
@@ -225,6 +226,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e0a9ad3725f6b3c4db1a9026c36857bf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Walls.PlacedSiegeWeapon
+--- !u!114 &6744322829473763782
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7127349363672436470}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f96d8d8afed42644fb16717b69f8f4a2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Siege.CannonModule
+  settings: {fileID: 11400000, guid: dd350d550bf48e54fb559e93a47cfa14, type: 2}
+  shellPrefab: {fileID: 8016835872666390580, guid: a3aad4861b0ba634384a2ceb836d5f03, type: 3}
+  muzzleLocal: {x: 0, y: 0.65, z: 0.65}
+  team: 0
 --- !u!1 &9064753356604191551
 GameObject:
   m_ObjectHideFlags: 0

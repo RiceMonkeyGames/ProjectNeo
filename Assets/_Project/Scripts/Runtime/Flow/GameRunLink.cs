@@ -170,8 +170,13 @@ namespace ProjectNeo.Flow
             foreach (PlacedStructure piece in world.Structures)
                 if (piece != null && piece.Placement != null && piece.Health != null)
                     health[piece.Placement.Id] = piece.Health.Current;
+            var weaponHealth = new Dictionary<int, float>();
+            foreach (PlacedSiegeWeapon weapon in world.Weapons)
+                if (weapon != null && weapon.Mount != null && weapon.Health != null)
+                    weaponHealth[weapon.Mount.Id] = weapon.Health.Current;
             return CastleState.Capture(world.Layout, world.Mounts,
-                placement => health.TryGetValue(placement.Id, out float value) ? value : placement.Definition.MaxHealth);
+                placement => health.TryGetValue(placement.Id, out float value) ? value : placement.Definition.MaxHealth,
+                mount => weaponHealth.TryGetValue(mount.Id, out float value) ? value : mount.Definition.MaxHealth);
         }
     }
 }

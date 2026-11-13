@@ -120,6 +120,36 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
+        public IEnumerator 모두_수리는_깎인_대포도_함께_고친다()
+        {
+            yield return null;
+            Assert.IsTrue(Wallet.TrySpend(new Cost(Wallet.Gold)));
+            SiegeWeaponDefinition cannon = economy.Table.Weapons.Select(entry => entry.weapon)
+                .FirstOrDefault(definition => definition != null && definition.Id == "cannon");
+            Assert.IsNotNull(cannon, "Game 건설 비용표에 대포가 있어야 한다.");
+            PlacedStructure support = world.Structures.First(piece => piece.Placement.Definition.Kind == BuildPieceKind.Wall
+                && !world.Layout.IsCovered(piece.Placement) && world.CheckMount(cannon, piece, "top") == MountIssue.None);
+            Assert.IsTrue(world.TryMount(cannon, support, "top", out PlacedSiegeWeapon weapon));
+            Assert.AreEqual(150f, weapon.Health.Maximum, "Q-21 대포 체력");
+            PlacedStructure wallPiece = world.Structures.First(piece => piece != support
+                && piece.Placement.Definition.Kind == BuildPieceKind.Wall);
+            weapon.ReceiveDamage(60f);
+            wallPiece.ReceiveDamage(20f);
+
+            int repair = economy.FullRepairCost;
+            Assert.AreEqual(economy.Economy.RepairCost(60f) + economy.Economy.RepairCost(20f), repair);
+            Wallet.AddGold(economy.Economy.RepairCost(60f));
+            Assert.AreEqual(1, economy.RepairAll(), "골드가 모자라면 더 많이 깎인 대포부터 고친다.");
+            Assert.AreEqual(150f, weapon.Health.Current);
+            Assert.Less(wallPiece.Health.Current, wallPiece.Health.Maximum);
+
+            Wallet.AddGold(economy.Economy.RepairCost(20f));
+            Assert.AreEqual(1, economy.RepairAll());
+            Assert.AreEqual(wallPiece.Health.Maximum, wallPiece.Health.Current);
+            Assert.AreEqual(0, economy.FullRepairCost);
+        }
+
+        [UnityTest]
         public IEnumerator 전투_중에는_철거와_수리를_하지_않는다()
         {
             yield return null;

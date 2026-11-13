@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71bc159382c8dc845b978b9dbcfef575, type: 3}
+  m_Name: CannonSettings
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Siege.CannonSettings
+  minimumRange: 6
+  maximumRange: 60
+  aimHalfAngle: 45
+  blastRadius: 3
+  centerDamage: 40
+  edgeDamageRatio: 0.5
+  minimumDamage: 1
+  reloadSeconds: 6
+  autoScatterRadius: 2
+  shellSpeed: 30
+  shellGravity: 9.81
+  shellLifetime: 10
+  targetSearchInterval: 0.25
+  friendlyFire: 0

@@ -27,18 +27,27 @@ namespace ProjectNeo.Run
         }
     }
 
-    /// <summary>수성 무기 하나의 기록. 받치는 조각은 <see cref="CastleState.Pieces"/>의 순번으로 가리킨다.</summary>
+    /// <summary>
+    /// 수성 무기 하나의 기록. 받치는 조각은 <see cref="CastleState.Pieces"/>의 순번으로 가리킨다.
+    /// 체력은 성벽처럼 깎인 채로 다음 전투에 이어진다(SIEGE-02). 체력을 주지 않으면 최대 체력이다.
+    /// </summary>
     public readonly struct CastleWeaponState
     {
         public SiegeWeaponDefinition Definition { get; }
         public int SupportIndex { get; }
         public string MountId { get; }
+        /// <summary>설치 지점 방향에서 더 돌린 90도 단위 횟수(0~3).</summary>
+        public int Rotation { get; }
+        public float Health { get; }
 
-        public CastleWeaponState(SiegeWeaponDefinition definition, int supportIndex, string mountId)
+        public CastleWeaponState(SiegeWeaponDefinition definition, int supportIndex, string mountId,
+            int rotation = 0, float? health = null)
         {
             Definition = definition != null ? definition : throw new ArgumentNullException(nameof(definition));
             SupportIndex = supportIndex;
             MountId = mountId;
+            Rotation = MountedWeapon.NormalizeRotation(rotation);
+            Health = Mathf.Clamp(health ?? definition.MaxHealth, 0f, definition.MaxHealth);
         }
     }
 
@@ -77,9 +86,11 @@ namespace ProjectNeo.Run
             new CastleState(new List<CastlePieceState>(pieces), new List<CastleWeaponState>(weapons));
 
         /// <summary>
-        /// 지금 배치를 기록한다. <paramref name="healthOf"/>는 조각의 현재 체력이며 null이면 최대 체력으로 기록한다.
+        /// 지금 배치를 기록한다. <paramref name="healthOf"/>는 조각의, <paramref name="weaponHealthOf"/>는 무기의
+        /// 현재 체력이며 null이면 최대 체력으로 기록한다.
         /// </summary>
-        public static CastleState Capture(BuildLayout layout, MountLayout mounts, Func<BuildPlacement, float> healthOf = null)
+        public static CastleState Capture(BuildLayout layout, MountLayout mounts, Func<BuildPlacement, float> healthOf = null,
+            Func<MountedWeapon, float> weaponHealthOf = null)
         {
             if (layout == null) throw new ArgumentNullException(nameof(layout));
             var ordered = new List<BuildPlacement>(layout.Placements);
@@ -102,7 +113,8 @@ namespace ProjectNeo.Run
                 mounted.Sort((a, b) => a.Id.CompareTo(b.Id));
                 foreach (MountedWeapon weapon in mounted)
                     if (indexById.TryGetValue(weapon.SupportId, out int index))
-                        weaponList.Add(new CastleWeaponState(weapon.Definition, index, weapon.MountId));
+                        weaponList.Add(new CastleWeaponState(weapon.Definition, index, weapon.MountId, weapon.Rotation,
+                            weaponHealthOf != null ? weaponHealthOf(weapon) : (float?)null));
             }
             return new CastleState(pieceList, weaponList);
         }
@@ -110,7 +122,7 @@ namespace ProjectNeo.Run
         /// <summary>
         /// 빈 격자에 기록대로 조각과 무기를 다시 놓는다. <paramref name="placed"/>는 <see cref="Pieces"/>와 같은 순서다.
         /// 기록과 다른 층에 놓이거나 놓을 수 없으면 false이며, 그때 격자는 버리고 새로 만든다.
-        /// 체력은 씬이 <see cref="CastlePieceState.Health"/>를 읽어 적용한다.
+        /// 체력은 씬이 <see cref="CastlePieceState.Health"/>·<see cref="CastleWeaponState.Health"/>를 읽어 적용한다.
         /// </summary>
         public bool TryRestore(BuildLayout layout, MountLayout mounts, out List<BuildPlacement> placed)
         {
@@ -129,7 +141,8 @@ namespace ProjectNeo.Run
             foreach (CastleWeaponState weapon in weapons)
             {
                 if (weapon.SupportIndex < 0 || weapon.SupportIndex >= placed.Count) return false;
-                if (!mounts.TryMount(weapon.Definition, placed[weapon.SupportIndex].Id, weapon.MountId, out _)) return false;
+                if (!mounts.TryMount(weapon.Definition, placed[weapon.SupportIndex].Id, weapon.MountId, out _,
+                        weapon.Rotation)) return false;
             }
             return true;
         }
