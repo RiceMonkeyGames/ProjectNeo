@@ -1,6 +1,6 @@
 # Game Design: Combat, Units & Win/Loss
 
-Last Updated: 2026-11-13 13:17:37 (KST)
+Last Updated: 2026-11-13 15:53:29 (KST)
 
 > Purpose: Rules for perspective, squad commands, damage, unit lifecycles, and battle outcomes. | Parent: [design/README](README.md) | Related: [WallsAndSiege](WallsAndSiege.md), [MoraleAndWave](MoraleAndWave.md)
 
@@ -24,6 +24,8 @@ Last Updated: 2026-11-13 13:17:37 (KST)
   - Captain hero death drops squad morale by the largest fixed amount (2026-11-12).
 
 ## Basic Combat Rules
+
+- **Prototype encounter tuning (2026-11-13, QA-opening-battle-balance)**: User directs lightweight tuning for debugging; current Game encounter is not a formal stage. Use 12 enemies (6 ladder, 2 gate breakers, 4 archers) against the existing 12 allies. This is a temporary debug roster; formal stage balance follows B-7.1. Keep unit stats and outcome rules unchanged.
 
 - Damage formula: `Attack − Defense`, minimum damage is `1`.
 - Auto-targeting acquires closest enemy, re-evaluating on target death or unreachability.

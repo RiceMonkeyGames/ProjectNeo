@@ -1,6 +1,6 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-13 15:43:32 (KST)
+Last Updated: 2026-11-13 16:07:37 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
@@ -22,6 +22,8 @@ Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elev
 | Art & Performance | Capsule/box placeholder visuals, dual-tier NavMesh benchmark, AI query optimization (`PERF-nav-query`) | Production Synty packs, animations, VFX, full combat performance profiling |
 
 ## Test Baselines & Status Conventions
+
+- **Debug encounter tuning (QA-opening-battle-balance, 2026-11-13; Done on `feature/qa-opening-battle-balance`, develop merge pending)**: User requests rough prototype tuning rather than formal stage balancing. Game enemies reduced 28 → 12 (6 ladder, 2 gate breakers, 4 archers), retaining unit stats/outcome rules; generator emits the same roster. Two controlled courtyard observations reached natural victory at 76.27/78.40 simulated seconds; exposed stationary wall player still dies. Final compile passed, GameBattlePlayTests **10/10** (5.23s). User confirmed manual verification and authorized completion/commit/push; standalone unverified. Formal stage design remains B-7.1. [History](../history/QA/QA-opening-battle-balance.md).
 
 - **Current-position battle start (`FLOW-01`, 2026-11-13; dc048b9, Done; develop integration authorized)**: Hold B for 1 second in prep exploration; show hold percentage; cancel on release/modal/focus loss; block construction/facility/equipment screens and held-key restarts. Retire banner F trigger, preserve position/view. Compile passed, EditMode **216/216**, PlayMode **120/120** (67.85s). Agent inspected the live Game hint. Integration onto develop 21aa87b retains ART-01/02; post-integration dotnet passed, but Unity compile readiness timed out with Pipeline unreachable, so the test counts are from before integration. Physical-key playtest and standalone build unverified. [History](../history/FLOW/FLOW-01.md).
 

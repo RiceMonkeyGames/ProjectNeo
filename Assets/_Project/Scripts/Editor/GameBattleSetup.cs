@@ -38,7 +38,7 @@ namespace ProjectNeo.Editor
             var source = AssetDatabase.LoadAssetAtPath<SiegeSettings>("Assets/_Project/Data/SiegePrototype/Siege.asset");
             var siege = CombatPrototypeSetup.Save(UnityEngine.Object.Instantiate(source), Data + "/Siege.asset");
             var settings = CombatPrototypeSetup.Save(GameBattleSettings.Create(siege,
-                new List<SiegeUnitGroup>(source.EnemyGroups).ToArray()), Data + "/Battle.asset");
+                CreateDebugEnemies(source)), Data + "/Battle.asset");
             var falling = AssetDatabase.LoadAssetAtPath<FallSettings>("Assets/_Project/Data/ConstructionPrototype/Fall.asset");
             var controller = Find<GameBattleController>(scene);
             if (controller == null) controller = new GameObject("GameBattleController").AddComponent<GameBattleController>();
@@ -86,6 +86,24 @@ namespace ProjectNeo.Editor
             EditorUtility.SetDirty(controller);
             ConfigureStartStation(world, view, controller, gateCell);
             ConfigureHudLayout(scene);
+        }
+
+        // 정식 웨이브가 들어오기 전, Game 흐름 디버깅용 소규모 편성.
+        public static SiegeUnitGroup[] CreateDebugEnemies(SiegeSettings source)
+        {
+            var result = new List<SiegeUnitGroup>();
+            var roles = new[] { SiegeAttackerRole.Ladder, SiegeAttackerRole.GateBreaker, SiegeAttackerRole.Archer };
+            int[] counts = { 6, 2, 4 };
+            for (int i = 0; i < roles.Length; i++)
+            {
+                GameObject prefab = null;
+                foreach (var group in source.EnemyGroups)
+                    if (group.unitPrefab != null && group.unitPrefab.GetComponent<SiegeAttackerBrain>().Role == roles[i])
+                    { prefab = group.unitPrefab; break; }
+                if (prefab == null) throw new InvalidOperationException("Missing debug enemy role: " + roles[i]);
+                result.Add(new SiegeUnitGroup { unitPrefab = prefab, count = counts[i] });
+            }
+            return result.ToArray();
         }
 
         [MenuItem("ProjectNeo/Setup/Arrange Game HUD")]

@@ -1,11 +1,12 @@
 # Completed Backlog Archive (Done)
 
-Last Updated: 2026-11-13 15:43:32 (KST)
+Last Updated: 2026-11-13 16:07:37 (KST)
 
 > Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
 | Task ID | Description | Assignee | Outcome & History Link |
 |---|---|---|---|
+| QA-opening-battle-balance | Review opening battle difficulty | Codex | Done 2026-11-13. Branch `feature/qa-opening-battle-balance`. Game debug enemies reduced 28 → 12 (6 ladder / 2 gate breakers / 4 archers); setup generator retains roster. Compile passed, GameBattlePlayTests 10/10; two passive courtyard observations naturally won. User confirmed manual verification and authorized completion/commit/push. Formal stage tuning deferred to B-7.1; standalone unverified. [History](../history/QA/QA-opening-battle-balance.md) |
 | B-8.1 | Squad Morale Calculations & Rout Transitions | youngho | Done 2026-11-13. Branch `feature/b-8.1`. Pure C# `MoraleSettings`, `MoraleTypes`, `BattleSquadMorale`, `MoraleRules` implementing Q-04/Q-05/Q-38/Q-39; EditMode 248/248 (`MoraleRulesTests` 32). Not wired to scenes; wiring scope recorded on B-8.2. [History](../history/B/B-8.1.md) |
 | FLOW-01 | Start battle from desired current position | Codex | Done; implementation `dc048b9`, branch `feature/flow-01`. Hold B for 1 second in prep exploration, show progress, cancel on release/modal entry, preserve position/view and start once; retire gate-banner F trigger. Compile passed, EditMode 216/216, PlayMode 120/120; agent HUD visual check passed. User authorized completion, commit/push and develop merge on 2026-11-13. Tests are pre-integration; post-integration dotnet passed but Unity/Pipeline readiness timed out. Physical-key playtest and standalone build not separately reported. [History](../history/FLOW/FLOW-01.md) |
 | ART-01 | Flatten placeholder stair shading | Claude | Done; branch `feature/art-01` (`e58a411`). Ramp mesh rebuilt with per-face vertices (flat normals) in place via Editor API; shape/collider/GUID unchanged. Compile passed, EditMode 216/216, PlayMode `Construction` 41/41. User confirmed in Game scene on 2026-11-13. Standalone build unverified. [History](../history/ART/ART-01.md) |
