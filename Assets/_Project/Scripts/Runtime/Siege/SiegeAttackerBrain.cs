@@ -325,10 +325,16 @@ namespace ProjectNeo.Siege
 
         void Drop()
         {
+            Vector3 fallVelocity = Vector3.zero;
+            if (ladder != null && ladder.TryGetFallMotion(transform.position, out Vector3 separatedPosition, out Vector3 outwardVelocity))
+            {
+                transform.position = separatedPosition;
+                fallVelocity = outwardVelocity;
+            }
             LeaveLadder();
             ai.enabled = true;
             mode = Mode.Falling;
-            if (fall != null) fall.BeginFall(true);
+            if (fall != null) fall.BeginFall(true, fallVelocity);
             else
             {
                 // 낙하 부품이 없으면 사다리 밑으로 되돌린다.
