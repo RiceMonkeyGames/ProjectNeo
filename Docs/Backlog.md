@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-15 01:20:51 (KST)
+Last Updated: 2026-11-15 01:22:46 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -19,7 +19,7 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 | Task ID | Description | Status | Assignee | Completion Criteria & Prerequisites |
 |---|---|---|---|---|
 | SIEGE-07 | Cannon Usability: Fire-Ready Feedback & Aim Rotation | Pending Decision | Unassigned | User feedback 2026-11-14 on SIEGE-02 cannons: the player cannot tell whether the cannon can fire or is on cooldown, and wants to turn the cannon while manning it. Decisions needed before implementation: (1) fire-ready/reload indicator form (crosshair state, HUD bar/text, on-cannon visual, sound) and why the existing manned-HUD reload text goes unnoticed, (2) rotation method: cannon follows the aim vs separate rotate keys, (3) rotation limits/speed versus the current ±45° / 6–60m fire arc, and whether auto-fire cannons are affected. |
-| PREP-05 | Pre-Battle Squad Placement | Pending Decision | Unassigned | User feedback 2026-11-14: squads cannot be positioned before the battle starts. Decisions needed before implementation: (1) method: enable F1–F3 / 1·2·3 orders during prep exploration vs placement in the construction view vs both, (2) whether units walk or are placed instantly (SiegePrototype uses instant placement), (3) allowed areas (wall tops, courtyard) and whether positions persist to the next stage. Related: Q-40 / FLOW-01 current-position battle start. |
+| PREP-05 | Pre-Battle Squad Placement | In Progress | Hwang Seong-min | Branch `feature/prep-05`. User decision 2026-11-15 (C-A-A-B): squad orders (F1–F3 / 1·2·3) during prep exploration **and** placement in the construction view; units walk; anywhere reachable inside the castle (wall tops, courtyard), outer field blocked; last ordered positions persist into the next preparation phase. Related: Q-40 / FLOW-01 current-position battle start. |
 | B-7.1 | Formal Wave Data & Spawning Rules | Waiting for Prerequisite | Unassigned | Structure decided by Q-51 (2026-11-14): 3 fixed stages, 2–3 timed waves, fixed northern spawn points, stage asset with wave list referencing existing enemy prefabs. Remaining prerequisite: teammate review of the data format. Spawn according to configured types, counts, and timings; no duplicates on pause/restart. |
 | SIEGE-01 | Link Pending Spawns to Win/Loss Evaluation | Waiting for Prerequisite | Unassigned | Formerly `B-9.2-wave` (fulfills `B-9.2` wave-spawn link). After B-7.1, prevent premature victory if enemies remain to spawn; ensure battle termination and outcomes trigger exactly once. |
 | C-5 | Wave Preview & Hidden Enemy Intel | Waiting for Prerequisite | Unassigned | Following B-7.1 and run contracts, display upcoming enemy types, counts, and hidden indicators in prep UI. Scouting rules clarified first. |
