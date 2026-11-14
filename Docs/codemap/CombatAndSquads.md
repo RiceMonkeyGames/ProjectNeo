@@ -1,6 +1,6 @@
 # Runtime Codemap: Core, Stats, Characters, Combat & Squads
 
-Last Updated: 2026-11-14 19:07:57 (KST)
+Last Updated: 2026-11-15 01:09:36 (KST)
 
 > Purpose: Class map for core utilities, stats, characters, combat AI, squads, and morale. | Parent: [codemap/README](README.md) | Related: [WallsAndSiege](WallsAndSiege.md), [design/Combat](../design/Combat.md)
 
@@ -11,7 +11,7 @@ Base path: `Assets/_Project/Scripts/Runtime/`. Assembly: `ProjectNeo.Runtime`. N
 | Core | `RandomSource`, `WeightedPool`, `Unlockable` | Seed-based random generator, weighted selection pool, common unlock types and interfaces. |
 | Stats | `StatSheet`, `StatValue`, `StatModifier`, `StatType` | Base stats and source-specific modifiers: `(base + flat) * (1 + percent)`. |
 | Characters | `HeroDefinition`, `SoldierDefinition`, `SkillDefinition`, `Character` | Hero/grunt/skill data. `Character` stores individual hero stats and equipment; player uses same class. |
-| Characters | `PlayerControlSettings`, `PlayerInputController`, `PlayerLocomotionRules` | Control/camera settings, runtime-copy Input System bindings, CharacterController movement. Hold either Ctrl to crouch (50% speed, 60% capsule/eye height, feet fixed); hold either Shift to sprint (150%). Crouch wins; overhead solids defer standing. Movement suspension blocks locomotion; sprint clears on suspension, disable and focus loss. FirstPersonCamera is default. |
+| Characters | `PlayerControlSettings`, `PlayerInputController`, `PlayerLocomotionRules` | Control/camera settings, runtime-copy Input System bindings, CharacterController movement. Hold either Ctrl to crouch (50% speed, 60% capsule/eye height, feet fixed); hold either Shift to sprint (150%); Space jumps 1.2m with 30% air control, blocked while crouched/suspended/airborne (COMBAT-05, `TryJump`, `IsJumping`, `PlayerLocomotionRules.JumpSpeed/AirHorizontal/CanJump`). Crouch wins; overhead solids defer standing. Movement suspension blocks locomotion; sprint clears on suspension, disable and focus loss. FirstPersonCamera is default. |
 | Characters | `PlayerViewCamera`, `FirstPersonCamera` | Common camera interface and default 1st-person camera driven by `PlayerControlSettings`. Player visual casts shadow only while active. ThirdPersonCamera preserved unused. |
 | Combat | `Health` | Pure C# health rules. Damage, death, max HP scaling, `RestoreFull` for living units (no resurrecting dead). Stat subscriptions unsubscribed via `Dispose()`. `CharacterActor.SoldierDefinition` reads grunt data. |
 | Combat | `CombatProfile`, `CharacterActor`, `CombatTeam` | Body size, attack type, windup delay, min damage, projectile settings asset. Bridges heroes and grunts to common stats; handles teams, targeting, melee/ranged attacks, cooldowns, hit reactions, death. `Character` attached to heroes only; common access uses `Stats`. |

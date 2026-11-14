@@ -19,6 +19,10 @@ namespace ProjectNeo.Characters
         [SerializeField, Range(0f, 1f)] float crouchSpeedMultiplier = 0.5f;
         [SerializeField, Min(1f)] float sprintSpeedMultiplier = 1.5f;
         [SerializeField, Min(0f)] float crouchViewTransitionSeconds = 0.18f;
+        // 점프 높이(COMBAT-05). 3m 성벽 한 칸은 넘지 못하는 값으로 둔다.
+        [SerializeField, Min(0f)] float jumpHeight = 1.2f;
+        // 점프 중 입력이 수평 속도에 섞이는 비율. 나머지는 뛸 때의 속도를 유지한다.
+        [SerializeField, Range(0f, 1f)] float airControl = 0.3f;
         public float MouseSensitivity => mouseSensitivity;
         public float CameraDistance => cameraDistance;
         public float CameraHeight => cameraHeight;
@@ -32,10 +36,12 @@ namespace ProjectNeo.Characters
         public float CrouchSpeedMultiplier => crouchSpeedMultiplier;
         public float SprintSpeedMultiplier => sprintSpeedMultiplier;
         public float CrouchViewTransitionSeconds => crouchViewTransitionSeconds;
+        public float JumpHeight => jumpHeight;
+        public float AirControl => airControl;
 
         public static PlayerControlSettings Create(float maximumWalkSlope = 46f,
             float crouchHeightRatio = 0.6f, float crouchSpeedMultiplier = 0.5f, float sprintSpeedMultiplier = 1.5f,
-            float crouchViewTransitionSeconds = 0.18f)
+            float crouchViewTransitionSeconds = 0.18f, float jumpHeight = 1.2f, float airControl = 0.3f)
         {
             var value = CreateInstance<PlayerControlSettings>();
             value.maximumWalkSlope = Mathf.Clamp(maximumWalkSlope, 0f, 90f);
@@ -43,6 +49,8 @@ namespace ProjectNeo.Characters
             value.crouchSpeedMultiplier = Mathf.Clamp01(crouchSpeedMultiplier);
             value.sprintSpeedMultiplier = Mathf.Max(1f, sprintSpeedMultiplier);
             value.crouchViewTransitionSeconds = Mathf.Max(0f, crouchViewTransitionSeconds);
+            value.jumpHeight = Mathf.Max(0f, jumpHeight);
+            value.airControl = Mathf.Clamp01(airControl);
             return value;
         }
     }

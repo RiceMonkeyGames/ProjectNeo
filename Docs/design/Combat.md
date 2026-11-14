@@ -1,6 +1,6 @@
 # Game Design: Combat, Units & Win/Loss
 
-Last Updated: 2026-11-14 22:59:29 (KST)
+Last Updated: 2026-11-15 01:09:36 (KST)
 
 > Purpose: Rules for perspective, squad commands, damage, unit lifecycles, and battle outcomes. | Parent: [design/README](README.md) | Related: [WallsAndSiege](WallsAndSiege.md), [MoraleAndWave](MoraleAndWave.md)
 
@@ -69,3 +69,10 @@ Combat continues if main gate falls as long as surviving allies remain.
 - Both task IDs remain separate; implemented together on feature/combat-01 at the user's request. Owner: 신용준.
 
 - **User-approved crouch view refinement (2026-11-13)**: First-person eye height transitions with SmoothStep over 0.18 seconds (PlayerControlSettings.CrouchViewTransitionSeconds); capsule changes remain immediate. Reversing Ctrl mid-transition continues from the currently displayed height. Root movement/falls follow immediately; camera re-enable resets the transition.
+
+## Player jump (COMBAT-05, user approved 2026-11-15)
+
+- Press Space to jump **1.2m** (PlayerControlSettings.JumpHeight), below one 3m wall tier so walls cannot be jumped onto. Jump speed is derived from the existing gravity so the peak matches the configured height.
+- Air control **30%** (PlayerControlSettings.AirControl): while airborne, horizontal velocity keeps 70% of the takeoff velocity and blends in 30% of the current input velocity. A sprint jump keeps the sprint takeoff speed.
+- No jump while crouched; crouch input is ignored until landing. No double jump. Hitting a ceiling stops the rise.
+- Available in both preparation and battle wherever the player can move; ladders, cannon manning, construction view and falls already suspend movement, so jumping is unavailable there. Keyboard only for now (Q-15).

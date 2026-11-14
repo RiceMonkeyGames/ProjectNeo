@@ -117,5 +117,31 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(8f, stats.GetValue(StatType.Attack));
             Assert.AreEqual(20, spearman.RecruitCost.gold);
         }
+
+        [Test]
+        public void JumpRules_SpeedReachesHeight_AirBlendsTakeoffAndInput_AndBlocksInvalidStates()
+        {
+            float speed = PlayerLocomotionRules.JumpSpeed(1.2f, 25f);
+            Assert.That(speed * speed / (2f * 25f), Is.EqualTo(1.2f).Within(0.0001f));
+            Assert.AreEqual(0f, PlayerLocomotionRules.JumpSpeed(0f, 25f));
+            Assert.AreEqual(0f, PlayerLocomotionRules.JumpSpeed(1.2f, 0f));
+
+            Vector3 air = PlayerLocomotionRules.AirHorizontal(new Vector3(0f, 0f, 10f), new Vector3(5f, 0f, 0f), 0.3f);
+            Assert.That(air.z, Is.EqualTo(7f).Within(0.0001f));
+            Assert.That(air.x, Is.EqualTo(1.5f).Within(0.0001f));
+            Assert.AreEqual(Vector3.forward, PlayerLocomotionRules.AirHorizontal(Vector3.forward, Vector3.right, -1f));
+            Assert.AreEqual(Vector3.right, PlayerLocomotionRules.AirHorizontal(Vector3.forward, Vector3.right, 2f));
+
+            Assert.IsTrue(PlayerLocomotionRules.CanJump(true, false, false, false));
+            Assert.IsFalse(PlayerLocomotionRules.CanJump(false, false, false, false));
+            Assert.IsFalse(PlayerLocomotionRules.CanJump(true, true, false, false));
+            Assert.IsFalse(PlayerLocomotionRules.CanJump(true, false, true, false));
+            Assert.IsFalse(PlayerLocomotionRules.CanJump(true, false, false, true));
+
+            var settings = PlayerControlSettings.Create();
+            Assert.AreEqual(1.2f, settings.JumpHeight);
+            Assert.AreEqual(0.3f, settings.AirControl);
+            Object.DestroyImmediate(settings);
+        }
     }
 }

@@ -1,12 +1,12 @@
 # Playable Scenes & Manual Controls
 
-Last Updated: 2026-11-13 21:15:45 (KST)
+Last Updated: 2026-11-15 01:09:36 (KST)
 
 > Purpose: Executable scene table and `Title`/`Game` scene verification controls. | Parent: [codemap/README](README.md) | Related: [PrototypeScenes](PrototypeScenes.md), [Status](../plan/Status.md)
 
 Unity 6000.6.8f1, URP, 3D first-person project. Placeholder graphics planned for Synty swap. Open scenes in Editor and press Play; exiting Play Mode restores clean state. Every scene's directional `Sun` uses Soft shadows (URP main-light shadow distance 50m); setup generators emit it and `Editor/SceneSunShadowsMigration` (menu `ProjectNeo/Setup/Enable Scene Sun Shadows`) applies it to existing scenes ([ART-02](../history/ART/ART-02.md)).
 
-Player movement (COMBAT-01 / COMBAT-02): hold left/right Ctrl to crouch (50% MoveSpeed, lower collider/eye height); hold left/right Shift to sprint (150% MoveSpeed). Both held: crouch wins. Releasing Ctrl under a low solid ceiling keeps the player crouched until clear. No stamina cost. Applies wherever PlayerInputController is active, including Game prep exploration and battle. Stop Play Mode to reset.
+Player movement (COMBAT-01 / COMBAT-02): hold left/right Ctrl to crouch (50% MoveSpeed, lower collider/eye height); hold left/right Shift to sprint (150% MoveSpeed). Both held: crouch wins. Releasing Ctrl under a low solid ceiling keeps the player crouched until clear. No stamina cost. Space jumps 1.2m (COMBAT-05; not while crouched, no double jump, 30% air control). Applies wherever PlayerInputController is active, including Game prep exploration and battle. Stop Play Mode to reset.
 
 | Scene Path | Verification Target & Controls |
 |---|---|

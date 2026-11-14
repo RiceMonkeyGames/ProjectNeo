@@ -231,6 +231,63 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
+        public IEnumerator Jump_RisesToConfiguredHeight_LandsAndCannotDoubleJump()
+        {
+            Place(dummy, new Vector3(10f, 0f, 10f));
+            const float step = 0.02f;
+            for (int i = 0; i < 10; i++) input.Move(Vector2.zero, 0f, step);
+            float ground = player.transform.position.y;
+            Assert.IsTrue(input.TryJump());
+            Assert.IsTrue(input.IsJumping);
+            Assert.IsFalse(input.TryJump(), "공중에서 다시 뛰지 않는다.");
+            float peak = ground;
+            for (int i = 0; i < 200 && input.IsJumping; i++)
+            {
+                input.Move(Vector2.zero, 0f, step);
+                peak = Mathf.Max(peak, player.transform.position.y);
+                if (i == 5) Assert.IsFalse(input.TryJump(), "공중에서 다시 뛰지 않는다.");
+            }
+            Assert.IsFalse(input.IsJumping, "착지해야 한다.");
+            Assert.That(peak - ground, Is.EqualTo(input.Settings.JumpHeight).Within(0.1f));
+            Assert.Less(input.Settings.JumpHeight, 3f, "3m 성벽 한 칸은 넘지 못한다.");
+            Assert.That(player.transform.position.y, Is.EqualTo(ground).Within(0.05f));
+            input.Move(Vector2.zero, 0f, step);
+            Assert.IsTrue(input.TryJump(), "착지한 뒤에는 다시 뛸 수 있다.");
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator Jump_BlockedWhileCrouchingOrSuspended_KeepsSprintTakeoffWithPartialAirControl()
+        {
+            Place(dummy, new Vector3(10f, 0f, 10f));
+            const float step = 0.02f;
+            float speed = player.Stats.GetValue(StatType.MoveSpeed);
+            input.SetLocomotion(true, false);
+            input.Move(Vector2.zero, 0f, step);
+            Assert.IsFalse(input.TryJump(), "웅크린 채로는 뛰지 않는다.");
+            input.SetLocomotion(false, false);
+            input.SetMovementSuspended(true);
+            Assert.IsFalse(input.TryJump(), "이동이 멈춘 동안(사다리·대포·건설·낙하)은 뛰지 않는다.");
+            input.SetMovementSuspended(false);
+
+            input.SetLocomotion(false, true);
+            for (int i = 0; i < 5; i++) input.Move(Vector2.up, 0f, step);
+            Assert.IsTrue(input.TryJump());
+            input.SetLocomotion(true, true);
+            Assert.IsFalse(input.IsCrouching, "공중에서는 웅크리지 않는다.");
+            float sprint = speed * input.Settings.SprintSpeedMultiplier;
+            float control = input.Settings.AirControl;
+            Vector3 start = player.transform.position;
+            input.Move(Vector2.right, 0f, step);
+            Vector3 delta = player.transform.position - start;
+            Assert.That(delta.z, Is.EqualTo(sprint * (1f - control) * step).Within(0.01f), "뛸 때의 달리기 속도를 유지한다.");
+            Assert.That(delta.x, Is.EqualTo(sprint * control * step).Within(0.01f), "공중 입력은 일부만 반영한다.");
+            for (int i = 0; i < 200 && input.IsJumping; i++) input.Move(Vector2.zero, 0f, step);
+            Assert.IsFalse(input.IsJumping);
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator Locomotion_LowCeilingBlocksStanding_AndEyeHeightTracksCapsule()
         {
             var motor = player.GetComponent<CharacterController>();
