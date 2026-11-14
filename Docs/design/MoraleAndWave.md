@@ -1,6 +1,6 @@
 # Game Design: Morale, Rout & Wave Preview
 
-Last Updated: 2026-11-13 23:58:14 (KST)
+Last Updated: 2026-11-14 19:01:12 (KST)
 
 > Purpose: Ally Breaking Point morale, enemy morale, rout/exit accounting, and wave preview rules. | Parent: [design/README](README.md) | Related: [Combat](Combat.md), [OpenQuestions](OpenQuestions.md)
 
@@ -36,7 +36,7 @@ Combines Bannerlord-style squad morale with a Darkest Dungeon-style resolve chec
   - (War cry rallying already-routed units dropped as too strong).
 - **Collapse Effects (random 1)**:
   - *Fear*: Chance (start 50%) to ignore each order.
-  - *Panic*: Periodically abandons position toward castle interior.
+  - *Panic* (COMBAT-03 user decision, 2026-11-14): On its first periodic trigger, the squad abandons its position for a retreat point inside the castle and waits there until battle end, ignoring new orders. This does not exit combat, hide units, or record them as Fled. Reaching 0 morale still escalates to the existing rout/exit rules. A runtime `PanicRetreatPoint` marks the destination, initially using the existing courtyard retreat location. Normal Hold self-defense applies while waiting.
   - *Contagion*: Periodically lowers nearby squads' morale slightly.
   - (*Berserk* charging out the gate dropped).
 - **Persistence & Reorganization**: Morale belongs to the squad and is stored on the run-data squad between battles (Q-44); every newly created squad, including squads auto-created by barracks recruiting, starts at `150`. After each battle every squad's morale becomes `max(current + 20, 80)`, capped at `200` (Q-39 2026-11-13), so a squad that held never ends below one that routed. Routed squads (0) therefore start next battle at `80` (keeps debuff, no check, can recover). Moving soldiers between squads does not alter squad morale; new squad starts at `150`; empty squad and its morale are removed (after a battle, a squad is removed at the next prep start only when it has no grunts and no living captain; a captain-only squad stays with its morale, Q-50 2026-11-13). Merging under-strength squads and a minimum squad size are pending (Q-45, decide with preparation-phase work).

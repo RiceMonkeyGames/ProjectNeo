@@ -8,6 +8,9 @@ using ProjectNeo.Flow;
 using ProjectNeo.Morale;
 using ProjectNeo.Run;
 using ProjectNeo.Squads;
+using ProjectNeo.Stats;
+using ProjectNeo.UI;
+using ProjectNeo.Facilities;
 using ProjectNeo.Walls;
 using UnityEngine;
 using UnityEngine.AI;
@@ -24,6 +27,16 @@ namespace ProjectNeo.Tests
         {
             public int NextInt(int maxExclusive) => 0;
             public float NextFloat() => 0.99f;
+        }
+
+        sealed class EffectRandom : IRandomSource
+        {
+            readonly int effect;
+            public float Roll = 0.99f;
+            public int FloatCalls;
+            public EffectRandom(int effect) { this.effect = effect; }
+            public int NextInt(int maxExclusive) => effect % maxExclusive;
+            public float NextFloat() { FloatCalls++; return Roll; }
         }
 
         static int cleanup;
@@ -71,6 +84,233 @@ namespace ProjectNeo.Tests
 
         bool Near(int squad, Vector3 point) => AliveMembers(squad)
             .Any(member => (member.transform.position - point).sqrMagnitude <= morale.Settings.NearbyRadius * morale.Settings.NearbyRadius);
+
+        IEnumerator WinBattle()
+        {
+            foreach (var enemy in battle.Enemies) Kill(enemy.Actor);
+            for (int i = 0; i < 10 && GameSession.Flow.Phase == GamePhase.Battle; i++) yield return null;
+            Assert.AreEqual(GamePhase.Reward, GameSession.Flow.Phase);
+        }
+
+        [UnityTest]
+        public IEnumerator StartedShaken_FearIsWeaker_AndCaptainSharesPanicAndAttackEffects()
+        {
+            var facilities = Object.FindAnyObjectByType<GameFacilities>();
+            GameSession.Flow.Run.State.Wallet.AddGold(200);
+            Assert.IsTrue(Object.FindObjectsByType<FacilityStation>().Single(station => station.Type == FacilityType.Tavern).Interact());
+            Assert.IsTrue(facilities.ChooseCaptainSquad(0));
+            Assert.IsTrue(facilities.TryHire(0));
+            facilities.Close();
+            yield return null;
+            var captain = center.Squads[0].Leader;
+            Assert.IsNotNull(captain);
+            morale.MoraleOf(0).Add(-70f);
+            var random = new EffectRandom(0);
+            morale.UseRandom(random);
+            Assert.IsTrue(battle.TryStartBattle());
+            var rules = morale.BattleOf(0);
+            Assert.IsTrue(rules.StartedShaken);
+            Assert.That(captain.Actor.Stats.GetValue(StatType.Attack),
+                Is.EqualTo(captain.Actor.Stats.GetBase(StatType.Attack) * 0.9f).Within(0.001f));
+            center.Commander.Select(0);
+            random.Roll = 0.3f; // 약한 공포는 25%, 일반 공포는 50%.
+            Assert.AreEqual(1, center.Commander.Issue(new SquadOrder(SquadOrderKind.Attack)));
+            random.Roll = 0.2f;
+            Assert.AreEqual(0, center.Commander.Issue(new SquadOrder(SquadOrderKind.Hold)));
+            yield return WinBattle();
+            Assert.That(captain.Actor.Stats.GetValue(StatType.Attack),
+                Is.EqualTo(captain.Actor.Stats.GetBase(StatType.Attack)).Within(0.001f));
+            Assert.IsTrue(GameSession.Flow.ContinueToNextStage());
+            yield return null;
+            morale.UseRandom(new EffectRandom(1));
+            Assert.IsTrue(battle.TryStartBattle());
+            rules = morale.BattleOf(0); // 전투 후 100으로 회복했으므로 한계 판정을 새로 할 수 있다.
+            rules.Morale.Add(-1f);
+            rules.Tick(morale.Settings.PanicInterval + 0.01f);
+            Assert.IsTrue(morale.IsPanicking(captain));
+            Assert.IsTrue(center.IsDetached(captain), "대장도 부대원과 함께 명령에서 분리된다.");
+            Assert.AreEqual(0, center.Commander.Issue(new SquadOrder(SquadOrderKind.Attack)));
+        }
+
+        [UnityTest]
+        public IEnumerator RallyRaisesSelfAndNearbySquad_AndSteadfastAtZeroDoesNotRout()
+        {
+            morale.UseRandom(new EffectRandom(0) { Roll = 0f });
+            Assert.IsTrue(battle.TryStartBattle());
+            Vector3 origin = AliveMembers(0)[0].transform.position;
+            foreach (var unit in AliveMembers(1)) unit.GetComponent<NavMeshAgent>().Warp(origin);
+            var rules = morale.BattleOf(0);
+            float nearBefore = morale.MoraleOf(1).Value;
+            rules.Morale.Add(-50f);
+            Assert.AreEqual(AwakenEffect.Rally, rules.Awaken);
+            Assert.AreEqual(100f + morale.Settings.RallyAmount, rules.Morale.Value, 0.01f);
+            Assert.AreEqual(nearBefore + morale.Settings.RallyAmount, morale.MoraleOf(1).Value, 0.01f);
+            yield return WinBattle();
+            Assert.IsTrue(GameSession.Flow.ContinueToNextStage());
+            yield return null;
+            morale.UseRandom(new EffectRandom(2) { Roll = 0f });
+            Assert.IsTrue(battle.TryStartBattle());
+            rules = morale.BattleOf(0);
+            rules.Morale.Add(-1000f);
+            Assert.AreEqual(AwakenEffect.Steadfast, rules.Awaken);
+            Assert.IsFalse(rules.IsRouted);
+            foreach (var unit in AliveMembers(0))
+            {
+                Assert.IsFalse(morale.IsRouting(unit));
+                Assert.IsFalse(morale.HasFled(unit.Actor));
+            }
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator AttackBands_UpdateImmediately_AndRemoveOnlyMoraleAtBattleEnd()
+        {
+            var actor = AliveMembers(0)[0].Actor;
+            float attack = actor.Stats.GetBase(StatType.Attack);
+            object equipment = new object();
+            actor.Stats.AddModifier(StatModifier.Percent(StatType.Attack, 0.2f), equipment);
+            Assert.IsTrue(battle.TryStartBattle());
+            var enemy = battle.Enemies[0].Actor;
+            float enemyAttack = enemy.Stats.GetValue(StatType.Attack);
+            Assert.That(actor.Stats.GetValue(StatType.Attack), Is.EqualTo(attack * 1.3f).Within(0.001f));
+            var rules = morale.BattleOf(0);
+            rules.Morale.Add(-60f);
+            Assert.That(actor.Stats.GetValue(StatType.Attack), Is.EqualTo(attack * 1.1f).Within(0.001f));
+            rules.Morale.Add(80f);
+            Assert.That(actor.Stats.GetValue(StatType.Attack), Is.EqualTo(attack * 1.3f).Within(0.001f));
+            yield return null;
+            Assert.AreEqual(enemyAttack, enemy.Stats.GetValue(StatType.Attack), "적에게 사기 보정이 적용되지 않는다.");
+            Assert.That(actor.Stats.GetValue(StatType.Attack), Is.EqualTo(attack * 1.3f).Within(0.001f), "매 프레임 보정이 누적되면 안 된다.");
+            yield return WinBattle();
+            Assert.That(actor.Stats.GetValue(StatType.Attack), Is.EqualTo(attack * 1.2f).Within(0.001f));
+            Assert.IsTrue(GameSession.Flow.ContinueToNextStage());
+            yield return null;
+            Assert.IsTrue(battle.TryStartBattle());
+            Assert.That(actor.Stats.GetValue(StatType.Attack), Is.EqualTo(attack * 1.3f).Within(0.001f));
+        }
+
+        [UnityTest]
+        public IEnumerator LastStand_UsesCasualtyShareInRealActorStats()
+        {
+            morale.UseRandom(new EffectRandom(1) { Roll = 0f });
+            Assert.IsTrue(battle.TryStartBattle());
+            var rules = morale.BattleOf(0);
+            var members = AliveMembers(0);
+            var survivor = members[0].Actor;
+            float attack = survivor.Stats.GetBase(StatType.Attack);
+            rules.Morale.Add(-50f);
+            Assert.AreEqual(AwakenEffect.LastStand, rules.Awaken);
+            Kill(members[1].Actor);
+            Assert.That(survivor.Stats.GetValue(StatType.Attack), Is.EqualTo(attack * rules.AttackMultiplier).Within(0.001f));
+            Assert.That(rules.LostShare, Is.EqualTo(1f / rules.StartingMembers).Within(0.001f));
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator Fear_RejectsEachSquadOrderOnce_PreservingOldOrderAndOtherSquads()
+        {
+            var random = new EffectRandom(0);
+            morale.UseRandom(random);
+            Assert.IsTrue(battle.TryStartBattle());
+            morale.BattleOf(0).Morale.Add(-60f);
+            random.Roll = 0f;
+            int rolls = random.FloatCalls;
+            var old = center.Commander.OrderOf(0);
+            center.Commander.SelectAll();
+            Assert.AreEqual(center.Squads.Count - 1, center.Commander.Issue(new SquadOrder(SquadOrderKind.Attack)));
+            Assert.AreEqual(rolls + 1, random.FloatCalls);
+            Assert.AreEqual(old.Kind, center.Commander.OrderOf(0).Kind);
+            foreach (var member in AliveMembers(0)) Assert.AreEqual(UnitDirective.Hold, member.Directive);
+            StringAssert.Contains("명령 무시", morale.NoticeOf(0));
+            center.Commander.Select(0);
+            random.Roll = 0.99f;
+            Assert.AreEqual(1, center.Commander.Issue(new SquadOrder(SquadOrderKind.Move, AliveMembers(0)[0].transform.position)));
+            rolls = random.FloatCalls;
+            Assert.IsTrue(center.Commander.CompleteMove(0));
+            Assert.AreEqual(rolls, random.FloatCalls);
+            yield return WinBattle();
+            Assert.AreEqual(1, center.Commander.Issue(new SquadOrder(SquadOrderKind.Attack)), "전투 종료 후 공포 지시 심사가 남지 않는다.");
+        }
+
+        [UnityTest]
+        public IEnumerator Panic_WaitsAtPointUntilBattleEnd_StaysAliveAndDoesNotFlee()
+        {
+            morale.UseRandom(new EffectRandom(1));
+            Assert.IsTrue(battle.TryStartBattle());
+            var rules = morale.BattleOf(0);
+            rules.Morale.Add(-60f);
+            int alive = battle.AlliesAlive;
+            var members = AliveMembers(0);
+            rules.Tick(morale.Settings.PanicInterval + 0.01f);
+            Assert.AreEqual(CollapseEffect.Panic, rules.Collapse);
+            Assert.IsNotNull(morale.transform.Find("PanicRetreatPoint"));
+            foreach (var unit in members)
+            {
+                Assert.IsTrue(morale.IsPanicking(unit));
+                Assert.IsTrue(center.IsDetached(unit));
+                Assert.That(Vector3.Distance(unit.MoveDestination, morale.PanicRetreatPoint), Is.LessThan(0.01f));
+                Assert.IsTrue(unit.GetComponent<NavMeshAgent>().Warp(morale.PanicRetreatPoint));
+            }
+            yield return null; yield return null;
+            center.Commander.Select(0);
+            Assert.AreEqual(0, center.Commander.Issue(new SquadOrder(SquadOrderKind.Attack)));
+            rules.Tick(morale.Settings.PanicInterval * 2f);
+            foreach (var unit in members)
+            {
+                Assert.AreEqual(UnitDirective.Hold, unit.Directive);
+                Assert.IsTrue(unit.gameObject.activeSelf);
+                Assert.IsFalse(morale.HasFled(unit.Actor));
+            }
+            Assert.AreEqual(alive, battle.AlliesAlive);
+            yield return WinBattle();
+            foreach (var unit in members)
+            {
+                Assert.IsFalse(center.IsDetached(unit));
+                Assert.IsFalse(morale.IsPanicking(unit));
+                Assert.AreEqual(UnitFate.Alive, GameSession.Flow.Run.State.LastBattleResult.FateOf(battle.RunLink.IdOf(unit.Actor)));
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Panic_AtZeroMoraleEscalatesToRout()
+        {
+            morale.UseRandom(new EffectRandom(1));
+            Assert.IsTrue(battle.TryStartBattle());
+            var rules = morale.BattleOf(0);
+            rules.Morale.Add(-60f);
+            rules.Tick(morale.Settings.PanicInterval + 0.01f);
+            var unit = AliveMembers(0)[0];
+            rules.Morale.Add(-1000f);
+            Assert.IsFalse(morale.IsPanicking(unit));
+            Assert.IsTrue(morale.IsRouting(unit));
+            Assert.IsTrue(morale.HasFled(unit.Actor));
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator ContagionTicksInScene_OnlyNearbyAlliesLoseMorale_AndHudShowsCheck()
+        {
+            morale.UseRandom(new EffectRandom(2));
+            Assert.IsTrue(battle.TryStartBattle());
+            // 실시간 Tick을 빠르게 검증하되 공유 에셋은 바꾸지 않는다.
+            var settings = morale.Settings;
+            var rules = morale.BattleOf(0);
+            rules.Morale.Add(-60f);
+            Vector3 origin = AliveMembers(0)[0].transform.position;
+            foreach (var unit in AliveMembers(1)) unit.GetComponent<NavMeshAgent>().Warp(origin);
+            int farSquad = center.Squads.Count - 1;
+            Vector3 distant = origin + Vector3.right * (settings.NearbyRadius + 20f);
+            Assert.IsTrue(NavMesh.SamplePosition(distant, out var hit, 10f, NavMesh.AllAreas));
+            foreach (var unit in AliveMembers(farSquad)) unit.GetComponent<NavMeshAgent>().Warp(hit.position);
+            float nearBefore = morale.MoraleOf(1).Value, farBefore = morale.MoraleOf(farSquad).Value;
+            for (int i = 0; i < Mathf.CeilToInt(settings.ContagionInterval * 30f) + 4; i++) yield return null;
+            Assert.AreEqual(nearBefore - settings.ContagionAmount, morale.MoraleOf(1).Value, 0.01f);
+            Assert.AreEqual(farBefore, morale.MoraleOf(farSquad).Value, 0.01f);
+            var hud = Object.FindAnyObjectByType<SquadCommandHud>();
+            StringAssert.Contains("사기", hud.DisplayText);
+            StringAssert.Contains("전염", hud.DisplayText);
+            StringAssert.Contains("한계 판정", morale.NoticeOf(0));
+        }
 
         [UnityTest]
         public IEnumerator 부대원_사망_근처_성벽_붕괴_성문_파괴가_아군_부대_사기를_깎는다()

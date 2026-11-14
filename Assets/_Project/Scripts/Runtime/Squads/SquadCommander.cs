@@ -37,6 +37,8 @@ namespace ProjectNeo.Squads
         public int SquadCount => orders.Length;
         /// <summary>지시가 바뀐 부대 번호와 새 지시.</summary>
         public event Action<int, SquadOrder> OrderChanged;
+        /// <summary>새 지시를 부대별로 한 번 심사한다. 하나라도 false면 기존 지시를 유지한다. 도착 처리는 심사하지 않는다.</summary>
+        public event Func<int, SquadOrder, bool> OrderRequested;
         public event Action SelectionChanged;
         /// <summary>부대가 늘었다. 인자는 새 부대 번호.</summary>
         public event Action<int> SquadAdded;
@@ -118,12 +120,20 @@ namespace ProjectNeo.Squads
             int count = 0;
             for (int i = 0; i < orders.Length; i++)
             {
-                if (!selected[i]) continue;
+                if (!selected[i] || !AcceptOrder(i, order)) continue;
                 orders[i] = order;
                 count++;
                 OrderChanged?.Invoke(i, order);
             }
             return count;
+        }
+
+        bool AcceptOrder(int squad, SquadOrder order)
+        {
+            if (OrderRequested == null) return true;
+            foreach (Func<int, SquadOrder, bool> filter in OrderRequested.GetInvocationList())
+                if (!filter(squad, order)) return false;
+            return true;
         }
 
         /// <summary>이동 중인 부대가 도착했음을 알린다. 그 자리의 중지 상태가 된다.</summary>

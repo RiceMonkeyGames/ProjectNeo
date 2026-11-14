@@ -1,10 +1,12 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-14 15:03:47 (KST)
+Last Updated: 2026-11-14 19:01:12 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
 ## Resolved `Q-*` Table
+
+COMBAT-03 (2026-11-14): User chose Panic retreat to a point and waiting there until battle end; no automatic return or new orders during the battle. Panic stays in combat and differs from morale-0 rout/exit. Create a runtime `PanicRetreatPoint` at the existing courtyard retreat location. Shared-file edits to SquadCommander/SquadCommandCenter/GameSquadMorale/SquadCommandHud are available (user confirmed no other active editor); CharacterActor and UnitCombatAI use existing APIs. [Rule](../design/MoraleAndWave.md).
 
 Construction return-hint input (QA-build-zoom-ui-hover, 2026-11-14): User requested blocking camera wheel zoom over the bottom return-hint panel, matching the left construction UI. Apply to the Game scene and its setup generator. [Rule](../design/PrepEconomyMeta.md), [verification history](../history/QA/QA-build-zoom-ui-hover.md).
 

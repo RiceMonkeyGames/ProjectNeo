@@ -6,6 +6,7 @@ using ProjectNeo.Core;
 using ProjectNeo.Flow;
 using ProjectNeo.Run;
 using ProjectNeo.Squads;
+using ProjectNeo.Stats;
 using ProjectNeo.Walls;
 using UnityEngine;
 using UnityEngine.AI;
@@ -19,7 +20,7 @@ namespace ProjectNeo.Morale
     /// 도착하거나 제한 시간이 지나면 숨겨 전투에서 뺀다. 전투가 끝나면 전투 후 회복을 적용하고,
     /// 다음 준비 단계에 도망친 유닛을 퇴각 지점에서 다시 나타나게 해 부대로 돌려보낸다.
     /// 사기 값은 런 부대(<see cref="Squad{TUnit}.Morale"/>)에 둔다. 런이 없으면 씬 부대에 둔다.
-    /// 붕괴·각성 효과의 전투 반영(공격력·공포·겁에 질림·전염)과 화면 표시는 COMBAT-03이다.
+    /// COMBAT-03: 공격력 보정, 공포 지시 거부, 패닉 대기, 전염 및 HUD 상태를 연결한다.
     /// </summary>
     public sealed class GameSquadMorale : MonoBehaviour
     {
@@ -40,11 +41,18 @@ namespace ProjectNeo.Morale
         readonly HashSet<UnitCombatAI> exited = new HashSet<UnitCombatAI>();
         readonly HashSet<CharacterActor> fled = new HashSet<CharacterActor>();
         readonly Dictionary<int, int> wallLossFrame = new Dictionary<int, int>();
+        readonly HashSet<UnitCombatAI> panicking = new HashSet<UnitCombatAI>();
+        readonly Dictionary<StatSheet, BattleSquadMorale> attackOwners = new Dictionary<StatSheet, BattleSquadMorale>();
+        readonly Dictionary<BattleSquadMorale, float> attackMultipliers = new Dictionary<BattleSquadMorale, float>();
+        readonly List<KeyValuePair<SquadMorale, Action>> moraleHandlers = new List<KeyValuePair<SquadMorale, Action>>();
+        readonly Dictionary<int, string> notices = new Dictionary<int, string>();
+        Transform panicPoint;
         bool battleActive;
         bool gateLost;
 
         /// <summary>도망치는 아군이 달려가는 곳. 전투 시작 때 성 격자에서 계산한다.</summary>
         public Vector3 RetreatPoint { get; private set; }
+        public Vector3 PanicRetreatPoint => panicPoint != null ? panicPoint.position : RetreatPoint;
         public bool BattleActive => battleActive;
         public MoraleSettings Settings => settings;
 
@@ -64,6 +72,13 @@ namespace ProjectNeo.Morale
         }
 
         void OnDestroy()
+        {
+            if (flow != null) flow.PhaseChanged -= OnPhaseChanged;
+            EndBattle(false);
+        }
+
+        void OnEnable() { if (flow != null) flow.PhaseChanged += OnPhaseChanged; }
+        void OnDisable()
         {
             if (flow != null) flow.PhaseChanged -= OnPhaseChanged;
             EndBattle(false);
@@ -90,6 +105,92 @@ namespace ProjectNeo.Morale
         public BattleSquadMorale BattleOf(int squad) => battleActive && squad >= 0 && squad < battles.Count ? battles[squad] : null;
 
         public bool IsRouting(UnitCombatAI unit) => unit != null && routing.ContainsKey(unit);
+        public bool IsPanicking(UnitCombatAI unit) => unit != null && panicking.Contains(unit);
+        public string NoticeOf(int squad) => notices.TryGetValue(squad, out string notice) ? notice : "";
+        public string LastNotice { get; private set; } = "";
+
+        public string StateOf(int squad)
+        {
+            BattleSquadMorale battle = BattleOf(squad);
+            if (battle == null) return "정상";
+            if (battle.IsRouted) return "도주";
+            if (battle.State == MoraleState.Collapsed) return "붕괴: " + CollapseName(battle.Collapse);
+            if (battle.State == MoraleState.Awakened) return "각성: " + AwakenName(battle.Awaken);
+            return "정상";
+        }
+
+        static string CollapseName(CollapseEffect effect) => effect == CollapseEffect.Fear ? "공포"
+            : effect == CollapseEffect.Panic ? "패닉" : "전염";
+        static string AwakenName(AwakenEffect effect) => effect == AwakenEffect.Rally ? "사기 상승"
+            : effect == AwakenEffect.LastStand ? "결사항전" : "굳건함";
+
+        void SetNotice(int squad, string notice)
+        {
+            notices[squad] = notice;
+            LastNotice = (squad + 1) + "번 부대: " + notice;
+        }
+
+        void OnBreakingPoint(BattleSquadMorale battle)
+        {
+            int squad = battles.IndexOf(battle);
+            if (squad >= 0) SetNotice(squad, "한계 판정 — " + StateOfBattle(battle));
+        }
+
+        static string StateOfBattle(BattleSquadMorale battle) => battle.State == MoraleState.Awakened
+            ? "각성: " + AwakenName(battle.Awaken) : "붕괴: " + CollapseName(battle.Collapse);
+
+        bool AcceptOrder(int squad, SquadOrder order)
+        {
+            BattleSquadMorale battle = BattleOf(squad);
+            if (battle == null) return true;
+            if (battle.IsRouted || SquadIsPanicking(squad)) return false;
+            if (!battle.ShouldIgnoreOrder()) return true;
+            SetNotice(squad, "공포로 명령 무시");
+            return false;
+        }
+
+        bool SquadIsPanicking(int squad)
+        {
+            if (panicking.Contains(center.Squads[squad].Leader)) return true;
+            foreach (UnitCombatAI member in center.Squads[squad].Members)
+                if (panicking.Contains(member)) return true;
+            return false;
+        }
+
+        void OnPanic(BattleSquadMorale battle)
+        {
+            int squad = battles.IndexOf(battle);
+            if (squad < 0 || battle.IsRouted || SquadIsPanicking(squad)) return;
+            foreach (UnitCombatAI member in center.Squads[squad].Members) StartPanic(member);
+            StartPanic(center.Squads[squad].Leader);
+            SetNotice(squad, "패닉: 도주 지점에서 전투 종료까지 대기");
+        }
+
+        void StartPanic(UnitCombatAI unit)
+        {
+            if (!IsAlive(unit) || routing.ContainsKey(unit) || !panicking.Add(unit)) return;
+            center.Detach(unit);
+            unit.SetDirective(UnitDirective.Move, PanicRetreatPoint);
+        }
+
+        void TrackAttack(UnitCombatAI unit, BattleSquadMorale battle)
+        {
+            if (IsAlive(unit)) attackOwners[unit.Actor.Stats] = battle;
+        }
+
+        void RefreshAttack(BattleSquadMorale battle)
+        {
+            float multiplier = battle.AttackMultiplier;
+            if (attackMultipliers.TryGetValue(battle, out float previous) && Mathf.Approximately(previous, multiplier)) return;
+            attackMultipliers[battle] = multiplier;
+            foreach (var pair in attackOwners)
+            {
+                if (pair.Value != battle) continue;
+                pair.Key.RemoveModifiersFrom(battle);
+                if (!Mathf.Approximately(multiplier, 1f))
+                    pair.Key.AddModifier(StatModifier.Percent(StatType.Attack, multiplier - 1f), battle);
+            }
+        }
         public bool HasExited(UnitCombatAI unit) => unit != null && exited.Contains(unit);
 
         /// <summary>이번 전투에서 도망친(달리는 중이거나 빠진) 아군. 결과의 <see cref="UnitFate.Fled"/>에 쓴다. 죽음이 먼저다.</summary>
@@ -107,23 +208,41 @@ namespace ProjectNeo.Morale
             if (center == null || settings == null) return;
             EndBattle(false);
             routing.Clear(); exited.Clear(); fled.Clear(); wallLossFrame.Clear();
+            notices.Clear();
+            LastNotice = "";
             gateLost = false;
             RetreatPoint = ComputeRetreatPoint();
+            if (panicPoint == null)
+            {
+                panicPoint = new GameObject("PanicRetreatPoint").transform;
+                panicPoint.SetParent(transform, false);
+            }
+            panicPoint.position = RetreatPoint;
             for (int i = 0; i < center.Squads.Count; i++)
             {
                 Squad<UnitCombatAI> squad = center.Squads[i];
                 int alive = 0;
                 foreach (UnitCombatAI member in squad.Members) if (IsAlive(member)) alive++;
-                if (alive == 0) { battles.Add(null); continue; }
-                var battle = new BattleSquadMorale(MoraleOf(i), MoraleSide.Ally, alive, settings, random);
+                if (alive == 0 && !IsAlive(squad.Leader)) { battles.Add(null); continue; }
+                var battle = new BattleSquadMorale(MoraleOf(i), MoraleSide.Ally, Mathf.Max(1, alive), settings, random);
                 battle.Routed += OnRouted;
                 battle.NearbyMoraleChange += OnNearbyMoraleChange;
+                battle.PanicRetreat += OnPanic;
+                battle.BreakingPointReached += OnBreakingPoint;
                 battles.Add(battle);
+                foreach (UnitCombatAI member in squad.Members) TrackAttack(member, battle);
+                TrackAttack(squad.Leader, battle);
+                Action changed = () => RefreshAttack(battle);
+                battle.Morale.Changed += changed;
+                moraleHandlers.Add(new KeyValuePair<SquadMorale, Action>(battle.Morale, changed));
+                RefreshAttack(battle);
+                if (battle.StartedShaken) SetNotice(i, "사기 부족: 약한 " + CollapseName(battle.Collapse));
                 foreach (UnitCombatAI member in squad.Members)
                     if (IsAlive(member)) WatchDeath(member.Actor, battle.OnMemberDied);
                 if (IsAlive(squad.Leader)) WatchDeath(squad.Leader.Actor, battle.OnCaptainDied);
             }
             if (world != null) world.PieceCollapsing += OnPieceCollapsing;
+            center.Commander.OrderRequested += AcceptOrder;
             battleActive = true;
         }
 
@@ -131,6 +250,20 @@ namespace ProjectNeo.Morale
         {
             if (!battleActive) return;
             battleActive = false;
+            if (center != null && center.Commander != null) center.Commander.OrderRequested -= AcceptOrder;
+            foreach (var pair in moraleHandlers) pair.Key.Changed -= pair.Value;
+            moraleHandlers.Clear();
+            foreach (var pair in attackOwners) pair.Key.RemoveModifiersFrom(pair.Value);
+            attackOwners.Clear(); attackMultipliers.Clear();
+            foreach (UnitCombatAI unit in panicking)
+                if (unit != null)
+                {
+                    center?.Reattach(unit);
+                    if (IsAlive(unit)) unit.SetDirective(UnitDirective.Hold);
+                }
+            panicking.Clear();
+            notices.Clear();
+            LastNotice = "";
             if (world != null) world.PieceCollapsing -= OnPieceCollapsing;
             foreach (KeyValuePair<CharacterActor, Action> pair in deathHandlers)
                 if (pair.Key != null) pair.Key.Died -= pair.Value;
@@ -140,6 +273,8 @@ namespace ProjectNeo.Morale
                 if (battle == null) continue;
                 battle.Routed -= OnRouted;
                 battle.NearbyMoraleChange -= OnNearbyMoraleChange;
+                battle.PanicRetreat -= OnPanic;
+                battle.BreakingPointReached -= OnBreakingPoint;
                 battle.Dispose();
             }
             battles.Clear();
@@ -172,6 +307,7 @@ namespace ProjectNeo.Morale
         void StartRout(UnitCombatAI unit)
         {
             if (!IsAlive(unit) || routing.ContainsKey(unit)) return;
+            panicking.Remove(unit);
             center.Detach(unit);
             unit.SetDirective(UnitDirective.Move, RetreatPoint);
             routing.Add(unit, Time.time);
@@ -217,7 +353,24 @@ namespace ProjectNeo.Morale
 
         void Update()
         {
-            if (!battleActive || routing.Count == 0) return;
+            if (!battleActive) return;
+            // Tick may route other squads through Contagion. Do not mutate battles during this phase.
+            foreach (BattleSquadMorale battle in battles)
+            {
+                if (battle == null) continue;
+                battle.Tick(Time.deltaTime);
+                RefreshAttack(battle);
+            }
+            foreach (UnitCombatAI unit in panicking)
+            {
+                if (!IsAlive(unit)) continue;
+                Vector3 offset = unit.transform.position - PanicRetreatPoint;
+                offset.y = 0f;
+                if (unit.Directive == UnitDirective.Move
+                    && offset.sqrMagnitude <= settings.RetreatArrivalDistance * settings.RetreatArrivalDistance)
+                    unit.SetDirective(UnitDirective.Hold);
+            }
+            if (routing.Count == 0) return;
             float arrival = settings.RetreatArrivalDistance;
             var leaving = new List<UnitCombatAI>();
             var dead = new List<UnitCombatAI>();

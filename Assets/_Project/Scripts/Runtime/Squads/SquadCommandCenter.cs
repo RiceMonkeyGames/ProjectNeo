@@ -199,8 +199,11 @@ namespace ProjectNeo.Squads
         bool Contains(UnitCombatAI member)
         {
             foreach (Squad<UnitCombatAI> squad in army.Squads)
+            {
+                if (squad.Leader == member) return true;
                 foreach (UnitCombatAI existing in squad.Members)
                     if (existing == member) return true;
+            }
             return false;
         }
 

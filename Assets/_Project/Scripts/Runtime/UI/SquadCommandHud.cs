@@ -1,5 +1,6 @@
 using System.Text;
 using ProjectNeo.Squads;
+using ProjectNeo.Morale;
 using TMPro;
 using UnityEngine;
 
@@ -15,6 +16,8 @@ namespace ProjectNeo.UI
         [SerializeField, TextArea] string helpText;
         readonly StringBuilder builder = new StringBuilder();
         TMP_FontAsset runtimeFont;
+        GameSquadMorale morale;
+        public string DisplayText => squads != null ? squads.text : "";
 
         public void Configure(SquadCommandCenter commandCenter, SquadCommandInput commandInput,
             TMP_Text squadLabel, TMP_Text helpLabel, string helpCaption)
@@ -57,6 +60,12 @@ namespace ProjectNeo.UI
             return melee ? name + " · 근접" : ranged ? name + " · 궁수" : name;
         }
 
+        void Start()
+        {
+            foreach (var candidate in FindObjectsByType<GameSquadMorale>())
+                if (candidate.gameObject.scene == gameObject.scene) { morale = candidate; break; }
+        }
+
         void Update()
         {
             if (runtimeFont == null || center.Commander == null) return;
@@ -65,9 +74,15 @@ namespace ProjectNeo.UI
             {
                 builder.Append(center.Commander.IsSelected(i) ? "▶ " : "    ");
                 builder.Append(SquadName(center, i)).Append("  ").Append(OrderName(center.Commander.OrderOf(i).Kind));
-                builder.Append("  ").Append(center.AliveCount(i)).Append("명\n");
+                builder.Append("  ").Append(center.AliveCount(i)).Append("명");
+                SquadMorale value = morale != null ? morale.MoraleOf(i) : null;
+                if (value != null)
+                    builder.Append("  사기 ").Append(Mathf.RoundToInt(value.Value)).Append(" · ").Append(morale.StateOf(i));
+                builder.Append('\n');
             }
             builder.Append(input.Message);
+            if (morale != null && !string.IsNullOrEmpty(morale.LastNotice))
+                builder.Append('\n').Append(morale.LastNotice);
             squads.text = builder.ToString();
         }
 

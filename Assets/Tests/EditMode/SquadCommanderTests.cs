@@ -8,6 +8,26 @@ namespace ProjectNeo.Tests
     public class SquadCommanderTests
     {
         [Test]
+        public void RejectedOrder_PreservesState_AndArrivalDoesNotReroll()
+        {
+            var commander = new SquadCommander(2);
+            commander.SelectAll();
+            int calls = 0, changes = 0;
+            System.Func<int, SquadOrder, bool> filter = (squad, order) => { calls++; return squad == 1; };
+            commander.OrderRequested += filter;
+            commander.OrderChanged += (_, __) => changes++;
+            Assert.AreEqual(1, commander.Issue(new SquadOrder(SquadOrderKind.Move, Vector3.forward)));
+            Assert.AreEqual(2, calls);
+            Assert.AreEqual(1, changes);
+            Assert.AreEqual(SquadOrderKind.Hold, commander.OrderOf(0).Kind);
+            Assert.AreEqual(SquadOrderKind.Move, commander.OrderOf(1).Kind);
+            Assert.IsTrue(commander.CompleteMove(1));
+            Assert.AreEqual(2, calls, "도착 처리는 새 명령 판정을 하지 않는다.");
+            commander.OrderRequested -= filter;
+            Assert.AreEqual(2, commander.Issue(new SquadOrder(SquadOrderKind.Attack)));
+        }
+
+        [Test]
         public void Squads_StartHolding_WithNothingSelected()
         {
             var commander = new SquadCommander(3);
