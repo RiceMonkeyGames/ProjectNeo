@@ -1,6 +1,6 @@
 # Game Design Overview
 
-Last Updated: 2026-11-13 13:17:37 (KST)
+Last Updated: 2026-11-14 22:59:29 (KST)
 
 > Purpose: Ground-truth game design index, core loop, run structure, and art direction. | Parent: [INDEX](../INDEX.md) | Related: [Combat](Combat.md), [PrepEconomyMeta](PrepEconomyMeta.md), [Backlog](../Backlog.md)
 
@@ -20,7 +20,7 @@ A siege defense roguelike where players prepare heroes, minions, weapons, and ca
 
 - **Run loop**: Preparation → Wave Preview → Battle → Random Rewards → Next Stage Preparation. Castle wall HP carries over to the next battle.
 - **Defeat**: Ends the run. Active perks reset, reincarnation bonuses are awarded, and a new run begins.
-- **Clear**: Clearing all stages triggers the ending (confirmed 2026-11-11; stage count, boss timing, and ending content undecided).
+- **Clear**: Clearing all stages triggers the ending (confirmed 2026-11-11). M2 builds 3 fixed stages with 2–3 timed waves each and no bosses (Q-51, 2026-11-14, see [MoraleAndWave](MoraleAndWave.md)); final stage count, boss timing, and ending content are decided in M4.
 - **Scene layout** (confirmed 2026-11-11): `Title` scene and `Game` scene. All phases transition inside the single castle `Game` scene without reloading; facilities open as pop-up windows.
 
 ## Run Structure

@@ -1,6 +1,6 @@
 # Game Design: Combat, Units & Win/Loss
 
-Last Updated: 2026-11-14 11:48:34 (KST)
+Last Updated: 2026-11-14 22:59:29 (KST)
 
 > Purpose: Rules for perspective, squad commands, damage, unit lifecycles, and battle outcomes. | Parent: [design/README](README.md) | Related: [WallsAndSiege](WallsAndSiege.md), [MoraleAndWave](MoraleAndWave.md)
 
@@ -57,7 +57,7 @@ Last Updated: 2026-11-14 11:48:34 (KST)
 
 | Result | Conditions |
 |---|---|
-| **Victory** | All enemies killed or routed |
+| **Victory** | Every wave has spawned and all enemies are killed or retreated (Q-51) |
 | **Defeat** | Main gate destroyed AND all allies killed (or routed), OR Player character dies |
 
 Combat continues if main gate falls as long as surviving allies remain.

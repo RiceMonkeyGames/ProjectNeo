@@ -1,6 +1,6 @@
 # Pending Decisions & Active Operational Policies
 
-Last Updated: 2026-11-13 22:24:20 (KST)
+Last Updated: 2026-11-14 22:59:29 (KST)
 
 > Purpose: Undecided or partial design/implementation decisions (`Q-*`) and active operational rules. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Resolved](Decisions-Resolved.md), [OpenQuestions](../design/OpenQuestions.md)
 
@@ -19,7 +19,7 @@ Last Updated: 2026-11-13 22:24:20 (KST)
 | Q-01 | Synty pack and finalized piece specifications | Production art integration | Undecided. Generic modular architecture approved; dimensions in assets. |
 | Q-06 | Mid-combat perk allocation and pause behavior | M2 perk hook, M3 UI | Undecided. Candidate: restricted to prep/reward phases. |
 | Q-07 | Unlock point distribution timing, gacha UI location, guaranteed policy | M2 reward contracts, M3 UI | Partial: Gacha appearance flags in data; distribution timing pending. |
-| Q-08 | Run score formula, run duration, ending conditions, boss roles | M2 score/reincarnation, M4 | Partial (2026-11-11): Clearing all stages triggers ending. Stage count, bosses, scoring undecided. |
+| Q-08 | Run score formula, run duration, ending conditions, boss roles | M2 score/reincarnation, M4 | Partial (2026-11-11): Clearing all stages triggers ending. Interim (Q-51, 2026-11-14): 3 stages and no bosses for M2. Final stage count, bosses, scoring undecided. |
 | Q-10 | Final troop headcount, baseline gear, performance budget | Art integration, M6 | Undecided. B-1 500-unit test is not a production guarantee. |
 | Q-11 | Command keys, combat HUD, prep UI layout | B-5.3, M2 UI | Partial: F1–F10 in Siege prototype; default F1–F4, `, 1, 2, 3. Final HUD layout undecided. |
 | Q-12 | Initial skill/consumable rules, cooldowns, targeting, perk effects | M2 minimal skill/item execution | Undecided. Skills exist as identifiers only. |

@@ -1,6 +1,6 @@
 # Game Design: Morale, Rout & Wave Preview
 
-Last Updated: 2026-11-14 19:01:12 (KST)
+Last Updated: 2026-11-14 22:59:29 (KST)
 
 > Purpose: Ally Breaking Point morale, enemy morale, rout/exit accounting, and wave preview rules. | Parent: [design/README](README.md) | Related: [Combat](Combat.md), [OpenQuestions](OpenQuestions.md)
 
@@ -47,6 +47,22 @@ Combines Bannerlord-style squad morale with a Darkest Dungeon-style resolve chec
 - Enemies are monsters and have **no morale** (like monsters without stress in Darkest Dungeon): no morale loss, rout, or attack modifier. The 2026-11-12 enemy morale rules are superseded.
 - Enemies leave battle only through Q-30 retreat. Retreated enemies count as exited, are excluded from victory kill counts, and are recorded separately per enemy type in `BattleResult`.
 - Code keeps the unused `MoraleSide.Enemy` value so morale-affected human enemies can be reintroduced later through enemy data (decide with wave data B-7.1 or later) without changing ally rules.
+
+## Stage & Wave Structure (Q-51, user approved 2026-11-14)
+
+Stages stay fixed per run (the same stage number always brings the same waves), so players can memorize and counter-build.
+
+| Item | Decision |
+|---|---|
+| Run length | Build **3 stages** first for the M2 loop; the final stage count is decided in M4 (Q-08). |
+| Waves per battle | Each battle has **2–3 waves**; each wave starts at a **fixed time** after the battle starts (timetable in data), not on kill count. |
+| Spawn locations | **Several fixed points inside the northern field** (e.g. left / center / right); each wave entry names its point. No east/west approaches for now. |
+| Bosses | **None in M2**; the last stage is simply the hardest hand-made composition. Boss roles stay in Q-08 / M4. |
+| Victory | Victory only after **every wave has spawned** and every enemy is dead or retreated (Q-30). No survive-timer victory. |
+| Difficulty | **Hand-authored composition per stage**; no automatic stage multiplier. |
+| Data format | One stage data asset per stage holding a wave list; each entry gives enemy prefab, count, start time, and spawn point. Enemy types reference the **existing enemy prefabs** (no separate enemy definition asset yet). Teammate (enemy domain owner) review is pending before B-7.1 implementation. |
+
+Tuning numbers (wave start times, counts per stage) live in the stage assets and are set during B-7.1. Hidden-enemy scouting rules remain with C-5.
 
 ## Wave Preview
 

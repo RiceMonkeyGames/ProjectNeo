@@ -1,6 +1,6 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-14 19:01:12 (KST)
+Last Updated: 2026-11-14 22:59:29 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
@@ -48,6 +48,7 @@ Construction return-hint input (QA-build-zoom-ui-hover, 2026-11-14): User reques
 | Q-48 | Tavern hire cost, reserve heroes, hero equipment | D-3 | Resolved (2026-11-13): Gold per hero tier in data (60/120/200g); reserve heroes excluded from battle with extensible deployment into captain-less squads later; hero equipment via `I` window hero selector inside D-3. |
 | Q-49 | Squad organization window layout | UI-01 | Resolved (2026-11-13): Side-by-side squad cards (captain slot on top, grunts below), new-squad card, reserve-hero card; click a unit then the destination card. Replaces the D-8 two-column layout after user feedback. |
 | Q-50 | Post-battle squad cleanup | C-3 | Resolved (2026-11-13): At the next prep start, fallen units leave scene squads (bodies stay on the ground); squads with no grunts and no living captain are removed from run and scene; a squad with a living captain but no grunts stays with its morale. |
+| Q-51 | Stage & wave structure | B-7.1, SIEGE-01, C-5 | Resolved (2026-11-14): 3 fixed stages for M2 (final count in M4); 2–3 waves per battle started by a fixed timetable; several fixed northern spawn points chosen per wave; no M2 bosses; victory after all waves spawned and all enemies dead/retreated; hand-authored stage compositions; one stage asset with a wave list referencing existing enemy prefabs (teammate review pending). See [MoraleAndWave](../design/MoraleAndWave.md). |
 
 ## Detailed Decision Records
 
