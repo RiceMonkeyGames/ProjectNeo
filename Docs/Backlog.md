@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-14 16:42:00 (KST)
+Last Updated: 2026-11-14 17:08:13 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -28,6 +28,7 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 | BUG-wall-archer-los | 성벽 위 궁수 사선·사거리 및 Hold 반격 개선 | Pending Decision | Unassigned | 2026-11-14 수동 플레이 제보: 성벽 위 `Hold` 궁수가 아래 적 궁수에게 맞아도 사선 가림(`HasClearShot` 성벽 모서리 충돌) 또는 3D 거리 경계로 반격 못 함. 구현 전 결정 필요: ① 고지대 원거리 사거리 보너스 적용 여부 및 수치 ② `HasClearShot` 성벽 윗면/모서리 예외 처리 vs 사선 막힘 시 성벽 가장자리로 이동해 사선 확보 여부 ③ `Hold` 상태에서 사선 불가·경로 없음 시 행동 규칙. |
 | SIEGE-05 | 사다리 밀기 속도·무게 페널티 및 배너로드식 개선 | Pending Decision | Unassigned | 2026-11-14 사용자 피드백: 현재 사다리 밀기(2초 고정)가 너무 빠름. 구현 전 결정 필요: ① 기본 밀기/세우기 시간 ② 사다리 탑승자 유무/인원수별 밀기 속도 저하 배율 또는 완전 차단 임계 인원 ③ 아군/적 다수 참여 시 협동 가속 여부 ④ 성벽 위 상단 출구 저지(병목 대치) 포함 여부. |
 | COMBAT-04 | 피격 시 진행 중인 시전/상호작용 중단(Interrupt) 시스템 | Pending Decision | Unassigned | 2026-11-14 사용자 제안: 적에게 공격받으면 사다리 밀기 등 시전 동작이 끊어져야 함. 구현 전 결정 필요: ① 중단 대상 동작 범위(사다리 밀기/세우기, 대포 조작, 전투 시작 홀드 등) ② 중단 발동 조건(모든 피해 vs 최소 피해/경직 이상, 쿨다운 유무) ③ 중단 시 진행도 처리(초기화 vs 현재 기울기에서 복귀) 및 UI/피드백 안내. |
+| SIEGE-06 | 성문 파괴 시 돌 아치·상단 통행 유지 및 문짝만 파괴 | In Progress | youngho | Branch `feature/siege-06`. 2026-11-14 사용자 확정: 기존 성문 블록 메쉬를 문(Door)과 문 주변 돌 아치(Arch)로 분리해 성문 파괴 시 문만 부서지고 아치는 파괴 불가 상태로 남도록 수정. 성문 자체 윗면 및 위층 적층 성벽·계단·무기는 붕괴/낙하하지 않고 계속 보행·방어 가능하며, 하단 통로는 열려 아군·적이 통과 가능. 통로 개방 후 아치는 타격 대상에서 제외되어 적이 성 내부로 진입(`Engage`); 준비 단계 `Repair All` 시 문 복구. |
 
 ---
 
