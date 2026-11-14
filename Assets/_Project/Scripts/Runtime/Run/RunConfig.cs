@@ -20,10 +20,12 @@ namespace ProjectNeo.Run
         [SerializeField] List<FacilityDefinition> facilities = new List<FacilityDefinition>();
         [Tooltip("상점 판매 비율 등 거래 수치. 비어 있으면 상점 거래를 쓰지 않는다.")]
         [SerializeField] EconomyConfig economy;
+        [SerializeField] EquipmentUpgradeSettings equipmentUpgrades;
 
         public SquadConfig SquadConfig => squadConfig;
         public IReadOnlyList<FacilityDefinition> Facilities => facilities;
         public EconomyConfig Economy => economy;
+        public EquipmentUpgradeSettings EquipmentUpgrades => equipmentUpgrades;
         public HeroDefinition PlayerHero => playerHero;
         public int StartingGold => startingGold;
         public IReadOnlyList<MaterialAmount> StartingMaterials => startingMaterials;
@@ -55,6 +57,12 @@ namespace ProjectNeo.Run
         public RunConfig WithEconomy(EconomyConfig config)
         {
             economy = config;
+            return this;
+        }
+
+        public RunConfig WithEquipmentUpgrades(EquipmentUpgradeSettings settings)
+        {
+            equipmentUpgrades = settings;
             return this;
         }
     }

@@ -119,13 +119,16 @@ namespace ProjectNeo.Economy
             return Mathf.FloorToInt(Mathf.Max(item.Price.gold, 0) * config.SellRatio);
         }
 
+        /// <summary>개별 장비의 강화 지출까지 포함한 실제 판매가.</summary>
+        public int GetInstanceSellPrice(ItemInstance item) => EquipmentUpgrade.GetSellPrice(item, config);
+
         /// <summary>보관함에 있는 아이템을 판다. 어떤 경로로 얻은 아이템이든 팔 수 있다.</summary>
         public bool TrySell(ItemInstance item, Wallet wallet, Inventory inventory)
         {
             if (wallet == null) throw new ArgumentNullException(nameof(wallet));
             if (inventory == null) throw new ArgumentNullException(nameof(inventory));
             if (item == null || !inventory.Remove(item)) return false;
-            wallet.AddGold(GetSellPrice(item.Definition));
+            wallet.AddGold(GetInstanceSellPrice(item));
             return true;
         }
     }

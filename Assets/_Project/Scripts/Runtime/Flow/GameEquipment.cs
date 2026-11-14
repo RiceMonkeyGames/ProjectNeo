@@ -184,14 +184,14 @@ namespace ProjectNeo.Flow
             {
                 int index = i;
                 ItemInstance item = character.Equipment[i];
-                AddRow(equippedList, $"{item.Definition.DisplayName} · {Describe(item.Definition)}", () => TryUnequip(index));
+                AddRow(equippedList, $"{item.DisplayName} · {Describe(item)}", () => TryUnequip(index));
             }
             List<ItemInstance> gear = InventoryGear(state);
             if (gear.Count == 0) AddRow(inventoryList, "보관함에 장비가 없습니다.", null);
             for (int i = 0; i < gear.Count; i++)
             {
                 int index = i;
-                AddRow(inventoryList, $"{gear[i].Definition.DisplayName} · {Describe(gear[i].Definition)}", () => TryEquip(index));
+                AddRow(inventoryList, $"{gear[i].DisplayName} · {Describe(gear[i])}", () => TryEquip(index));
             }
         }
 
@@ -224,11 +224,12 @@ namespace ProjectNeo.Flow
             return count;
         }
 
-        static string Describe(ItemDefinition item)
+        string Describe(ItemInstance item)
         {
-            if (item.EquipModifiers.Count == 0) return "효과 없음";
+            IReadOnlyList<StatModifier> modifiers = item.EquipModifiers;
+            if (modifiers.Count == 0) return "효과 없음";
             var text = new StringBuilder();
-            foreach (StatModifier modifier in item.EquipModifiers)
+            foreach (StatModifier modifier in modifiers)
             {
                 if (text.Length > 0) text.Append(", ");
                 text.Append(StatName(modifier.stat)).Append(' ');

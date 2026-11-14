@@ -45,6 +45,7 @@ namespace ProjectNeo.Editor
             CreateData();
             CreateShopData();
             CreateSmithyData();
+            EquipmentUpgradeSetup.Apply();
             AssetDatabase.SaveAssets();
             // 씬을 연 뒤 만든 에셋은 경로로 다시 불러와 연결한다(C-4 GameRewardSetup과 같은 주의).
             var start = AssetDatabase.LoadAssetAtPath<RunConfig>(StartPath)

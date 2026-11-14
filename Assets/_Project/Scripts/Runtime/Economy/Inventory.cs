@@ -4,20 +4,6 @@ using System.Collections.Generic;
 namespace ProjectNeo.Economy
 {
     /// <summary>
-    /// 실제로 가진 아이템 한 개. 같은 종류를 여러 개 가질 수 있어서 종류(ItemDefinition)와 구분한다.
-    /// 장비 강화 단계 같은 개별 상태는 나중에 여기에 붙인다.
-    /// </summary>
-    public sealed class ItemInstance
-    {
-        public ItemDefinition Definition { get; }
-
-        public ItemInstance(ItemDefinition definition)
-        {
-            Definition = definition != null ? definition : throw new ArgumentNullException(nameof(definition));
-        }
-    }
-
-    /// <summary>
     /// 보관함. 구매, 생산, 전투 보상 등 어떤 경로로 얻은 아이템이든 여기에 담긴다.
     /// 캐릭터가 착용한 장비는 보관함에서 빠져 있다.
     /// </summary>

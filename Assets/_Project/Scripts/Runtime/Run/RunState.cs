@@ -102,6 +102,7 @@ namespace ProjectNeo.Run
             state.AddHero(config.PlayerHero, true);
             state.AddFacilities(config.Facilities);
             state.SetupShop(config.Economy);
+            state.SetupEquipmentUpgrades(config.EquipmentUpgrades);
 
             foreach (RunSquadSetup setup in config.StartingSquads)
             {
@@ -543,7 +544,32 @@ namespace ProjectNeo.Run
             return crafted;
         }
 
-        /// <summary>대장간에서는 장비만 판다. 판매가는 상점과 같다(구매가 골드 × 판매 비율, Q-35).</summary>
+        public EquipmentUpgrade EquipmentUpgrades { get; private set; }
+        public int MaxEquipmentUpgrade => Smithy != null && EquipmentUpgrades != null
+            ? EquipmentUpgrades.GetMaxLevel(Smithy.Level) : 0;
+
+        public void SetupEquipmentUpgrades(EquipmentUpgradeSettings settings)
+        {
+            if (EquipmentUpgrades == null && settings != null) EquipmentUpgrades = new EquipmentUpgrade(settings);
+        }
+
+        public EquipmentUpgradeCheck CheckUpgradeEquipment(ItemInstance item)
+        {
+            if (HasPendingBattle) return EquipmentUpgradeCheck.BattlePending;
+            if (EquipmentUpgrades == null) return EquipmentUpgradeCheck.NotConfigured;
+            if (Smithy == null) return EquipmentUpgradeCheck.NoSmithy;
+            return EquipmentUpgrades.Check(item, Inventory, Wallet, Smithy.Level);
+        }
+
+        public bool TryUpgradeEquipment(ItemInstance item)
+        {
+            if (CheckUpgradeEquipment(item) != EquipmentUpgradeCheck.Allowed) return false;
+            if (!EquipmentUpgrades.TryUpgrade(item, Inventory, Wallet, Smithy.Level)) return false;
+            Changed?.Invoke();
+            return true;
+        }
+
+        /// <summary>대장간에서는 장비만 판다. 판매가는 상점과 같고 실제 강화 지출을 포함한다(Q-35).</summary>
         public bool TrySellAtSmithy(ItemInstance item)
         {
             if (item == null || item.Definition.Kind != ItemKind.Equipment || Smithy == null) return false;

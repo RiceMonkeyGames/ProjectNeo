@@ -1,6 +1,6 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-14 01:07:46 (KST)
+Last Updated: 2026-11-14 14:06:56 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
@@ -10,6 +10,8 @@ Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elev
 
 ## Implemented vs Pending Real Connections
 
+**Blacksmith equipment upgrades (PREP-01, Done on user authorization)**: Integrated on `feature/prep-01` after PREP-02/03: stash-only upgrades, per-target-level item materials, +10% equip modifiers per level, +1/+3/+5 smithy caps, actual-spend sale refund, existing Smithy popup rows and Editor API data setup. User chose crafting materials × target level; equipped items must be unequipped first. Unity compile and final full EditMode 380/380 / PlayMode 182/182 passed; physical-input play and standalone build unverified. Details and manual steps: [history](../history/PREP/PREP-01.md).
+
 Q-41 and SIEGE-04 completion/commit/push were authorized by the user on 2026-11-13 and archived as Done on `feature/siege-04`; develop integration remains pending user merge. Physical-key/HUD manual review and standalone build remain unverified.
 
 **Shared ladders (Q-41 / SIEGE-04, 2026-11-13; on `feature/siege-04`)**: Ally/player bidirectional traversal, tap F boarding, hold F toppling/raising, W/S climbing, FIFO single occupancy, endpoint-deferred orders, combat restrictions and friendly-use topple protection are implemented. User confirmed shared-code edit availability. Compile and full EditMode 252/252 / PlayMode 132/132 (79.2s) passed; after final destroyed-occupant cleanup, compile and SharedLadder PlayMode 6/6 (4.11s) passed. Physical-key/HUD manual review and standalone build are not verified. [History](../history/SIEGE/SIEGE-04.md), [design](../design/WallsAndSiege.md).
@@ -17,7 +19,7 @@ Q-41 and SIEGE-04 completion/commit/push were authorized by the user on 2026-11-
 | Domain | Verified Current State | Remaining Integration Scope |
 |---|---|---|
 | Project Foundation | Unity 6000.6.8f1, URP, 4 assemblies, test runners, Windows build script | Distribution packaging, release verification |
-| Stats, Economy, Facilities | Stat modifiers, multi-material wallet, inventory, trade logic, facility pop-ups/upgrades, shop, barracks recruitment/training, blacksmith recipe crafting/sales (D-6), squad organization window (D-8), tavern hero hiring and hero equipment (D-3), shop gold re-roll (PREP-02) | Hero skills, blacksmith upgrades (PREP-01), shop offer locks (PREP-03) |
+| Stats, Economy, Facilities | Stat modifiers, multi-material wallet, inventory, trade logic, facility pop-ups/upgrades, shop, barracks recruitment/training, blacksmith recipe crafting/sales (D-6) and equipment upgrades (PREP-01, on task branch), squad organization window (D-8), tavern hero hiring and hero equipment (D-3), shop gold re-roll/offer locks (PREP-02/03) | Hero skills; PREP-01 physical-input upgrade play and standalone build |
 | Characters & Combat | 1st-person movement, melee attacks, health, grunt stats, projectiles, auto-combat, Game scene siege assault/ladders/outcomes | Wall-breaker encounter integration, aerial enemies, active skills, consumables, production HUD |
 | Meta & Perks | Progression curves, reincarnation conversion, gacha unlocks, perk payloads | Disk persistence, run reward routing, runtime perk injection |
 | Squads, Morale, Walls | Squad structures, grid occupancy/rotation, stacking, async NavMesh rebuild, fall damage, weapon mounting/collapse, 1st-person commands | Morale/rout scene wiring (B-8.1 pure rules done (`BattleSquadMorale`); B-8.2 movement/exit, HUD, settings asset pending), wall-breaker encounter integration, construction delays. Siege weapon firing implemented on `feature/siege-02` (SIEGE-02, awaiting user playtest) |

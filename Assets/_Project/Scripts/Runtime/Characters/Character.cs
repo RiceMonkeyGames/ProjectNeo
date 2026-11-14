@@ -34,7 +34,7 @@ namespace ProjectNeo.Characters
             if (!HasFreeEquipmentSlot) return false;
             if (!inventory.Remove(item)) return false;
             equipment.Add(item);
-            Stats.AddModifiers(item.Definition.EquipModifiers, item);
+            Stats.AddModifiers(item.EquipModifiers, item);
             return true;
         }
 

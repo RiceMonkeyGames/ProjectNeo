@@ -1,6 +1,6 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-14 01:07:46 (KST)
+Last Updated: 2026-11-14 13:14:29 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
@@ -46,6 +46,10 @@ Last Updated: 2026-11-14 01:07:46 (KST)
 | Q-50 | Post-battle squad cleanup | C-3 | Resolved (2026-11-13): At the next prep start, fallen units leave scene squads (bodies stay on the ground); squads with no grunts and no living captain are removed from run and scene; a squad with a living captain but no grunts stays with its morale. |
 
 ## Detailed Decision Records
+
+- **PREP-01 integration (2026-11-14)**: User resumed after PREP-03 merge. Confirmed prototype materials = crafting materials × target upgrade level; item data owns the per-step requirements. Equipped items must be unequipped to the stash before upgrading.
+
+- **PREP-01 upgrade materials (2026-11-13)**: User confirmed that equipment upgrade materials belong on the item data (`ItemDefinition`). Store requirements per target upgrade level; common gold ratio/bonus/limits remain in shared settings. User approved implementing independent rules first and connecting shared files after youngho's PREP-02 to avoid concurrent edits to `RunState`, `GameFacilities`, and `ItemShop`.
 
 - **Q-44 (2026-11-13)**: B-8.2 preparation decided by user: enemies have no morale (Q-30 retreat only); ally member-death loss proportional to battle-start size (150 → 0 at 90% deaths); morale stored on run squads; retreat point computed at the courtyard edge away from enemies; exit on arrival or after 20s; fled units return next prep; B-8.2 split with new COMBAT-03. Squad merging deferred as Q-45. [History](../history/Q/Q-44.md).
 - **Q-21 (2026-11-13)**: Cannon mechanics decided by user with extensibility required for friendly fire and targeting. Temporary numbers and control/scatter/enemy-targeting detail defaults proposed by agent and confirmed by user the same day. [History](../history/Q/Q-21.md).
