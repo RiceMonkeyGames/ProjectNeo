@@ -248,22 +248,57 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
-        public IEnumerator Ladder_AlliesOnTopPushItDown_AndClimberTakesFallDamage()
+        public IEnumerator Ladder_AlliesOnTopPushLaddersDown()
         {
             yield return CloseWalls();
             Assert.IsTrue(prep.PlaceSquad(0, ladders[0].TopPoint), prep.Message);
             Assert.IsTrue(prep.PlaceSquad(1, ladders[1].TopPoint), prep.Message);
-            director.StartBattle();
-            bool toppled = false, fell = false;
+            Assert.IsTrue(director.StartBattle());
             int frames = 0;
-            while (!(toppled && fell) && frames++ < 2400)
-            {
+            while (!ladders.Any(ladder => ladder.State.ToppleCount > 0) && frames++ < 600)
                 yield return null;
-                toppled |= ladders.Any(ladder => ladder.State.ToppleCount > 0);
-                fell |= director.Enemies.Any(enemy => enemy.GetComponent<UnitFallController>().LastFallDamage > 0f);
-            }
-            Assert.IsTrue(toppled, "성벽 위 아군이 사다리를 밀어내지 못했다.");
-            Assert.IsTrue(fell, "오르던 적이 떨어져 피해를 받지 않았다.");
+            Assert.IsTrue(ladders.Any(ladder => ladder.State.ToppleCount > 0),
+                "성벽 위 아군이 사다리를 밀어내지 못했다.");
+        }
+
+        [UnityTest]
+        public IEnumerator Ladder_AlliesOnTopPushItDown_AndClimberTakesFallDamage()
+        {
+            yield return CloseWalls();
+            // 혼합 전투에서는 빈 사다리를 먼저 밀거나 성문 돌파로 적 경로가 바뀔 수 있다.
+            // 등반자가 피해를 받을 높이까지 오른 뒤 수비병을 놓아 자동 밀기부터 착지까지 검증한다.
+            UnitCombatAI defender = IsolateSharedLadder();
+            SiegeLadder ladder = ladders[0];
+            CharacterActor enemy = PlaceStillEnemy(SiegeAttackerRole.Ladder, ladder.BasePoint);
+            var brain = enemy.GetComponent<SiegeAttackerBrain>();
+            var fall = enemy.GetComponent<UnitFallController>();
+            brain.Bind(world, new[] { ladder }, Vector2Int.up);
+            brain.enabled = true;
+            int frames = 0;
+            while ((!brain.IsClimbing || enemy.transform.position.y < ladder.BasePoint.y + 1.5f)
+                && frames++ < 600) yield return null;
+            Assert.IsTrue(brain.IsClimbing, "적이 사다리에 탑승하지 않았다.");
+            Assert.AreSame(enemy, ladder.Occupant);
+            Assert.GreaterOrEqual(enemy.transform.position.y, ladder.BasePoint.y + 1.5f,
+                "낙하 피해를 확인할 높이까지 오르지 못했다.");
+            float healthBefore = enemy.Health.Current;
+            int topplesBefore = ladder.State.ToppleCount;
+            Assert.IsTrue(defender.GetComponent<NavMeshAgent>().Warp(ladder.TopPoint));
+
+            frames = 0;
+            while (!fall.IsFalling && frames++ < 300) yield return null;
+            Assert.IsTrue(fall.IsFalling, "성벽 위 아군의 자동 밀기가 등반자를 떨어뜨리지 못했다.");
+            Assert.IsFalse(brain.IsClimbing);
+            Assert.IsNull(ladder.Occupant);
+            Assert.IsFalse(enemy.IsOnLadder);
+            frames = 0;
+            while ((fall.IsFalling || ladder.State.ToppleCount == topplesBefore) && frames++ < 300)
+                yield return null;
+            Assert.Greater(ladder.State.ToppleCount, topplesBefore, "사다리가 끝까지 쓰러지지 않았다.");
+            Assert.IsFalse(fall.IsFalling, "떨어진 적이 착지하지 못했다.");
+            Assert.Greater(fall.LastFallDamage, 0f, "오르던 적이 떨어져 피해를 받지 않았다.");
+            Assert.That(enemy.Health.Current, Is.EqualTo(healthBefore - fall.LastFallDamage).Within(0.01f));
+            Assert.IsTrue(enemy.GetComponent<NavMeshAgent>().enabled, "착지 후 길찾기가 복구되지 않았다.");
         }
 
         UnitCombatAI IsolateSharedLadder()
