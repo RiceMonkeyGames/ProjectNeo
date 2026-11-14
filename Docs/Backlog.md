@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-14 13:59:24 (KST)
+Last Updated: 2026-11-14 14:02:41 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -27,7 +27,6 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 | COMBAT-03 | Morale Collapse/Awaken Effects in Combat & Morale HUD | Waiting for Prerequisite | Unassigned | After B-8.2 (Q-44). Apply band/Last Stand attack modifiers (`StatSheet.AddModifier`), Fear `ShouldIgnoreOrder`, Panic retreat, Contagion to nearby squads in real combat; minimal `SquadCommandHud` morale number/state/check notice. Sequence shared `CharacterActor`/`UnitCombatAI`/`SquadCommandCenter` edits. |
 | C-5 | Wave Preview & Hidden Enemy Intel | Waiting for Prerequisite | Unassigned | Following B-7.1 and run contracts, display upcoming enemy types, counts, and hidden indicators in prep UI. Scouting rules clarified first. |
 | B-9.3 | M1 Full Integration, Iteration & Build Verification | Waiting for Prerequisite | Unassigned | Following B-4~8 integration, test repeated cycles of destruction, enemy variants, waves, morale, and outcomes; verify regressions and standalone build startup flow. |
-| QA-smithy-popup | Manual Check of Blacksmith Crafting & Sales | In Progress | SeongminHwang | Branch `feature/qa-smithy-popup`. From D-6 (user skipped manual play 2026-11-13). In `Game.unity` prep: F on Smithy opens popup; Lv1 lists 3 recipes; craft wood shield (100→80 gold, recipe stays); iron sword without hide shows "비용이 모자랍니다"; sell shield +12 gold; consumables not listed for sale; upgrade shows 4 recipes. Open a BUG task if wrong. |
 | PREP-01 | Blacksmith Equipment Upgrade Levels | In Progress | 신용준 | Branch `feature/prep-01`. Prerequisite: D-6 (Done 2026-11-13; shares the Smithy panel). Decision: Q-35. Completion: Per-item upgrade level stored on `ItemInstance` and kept through equip/unequip and run state; +10% equip modifiers per level; max +1/+3/+5 by blacksmith Lv1/2/3; step cost 50% gold price × target level + materials (data); sell refund includes upgrade spend at the sell ratio. |
 | PREP-04 | Combat Consumable Use | Pending Decision | Unassigned | User deferred (2026-11-13). Decide with Q-12: input keys (combat key ownership with teammate), quick slots, effects (e.g., potion heal %), limits. Existing data: `item_potion`. |
 
