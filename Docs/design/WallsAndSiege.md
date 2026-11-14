@@ -1,6 +1,6 @@
 # Game Design: Castle Walls, Enemies & Siege Strategy
 
-Last Updated: 2026-11-13 20:10:36 (KST)
+Last Updated: 2026-11-14 11:48:34 (KST)
 
 > Purpose: Construction stacking, build economy, enemy roles, and siege/ladder rules. | Parent: [design/README](README.md) | Related: [Combat](Combat.md), [MoraleAndWave](MoraleAndWave.md)
 
@@ -16,6 +16,7 @@ Last Updated: 2026-11-13 20:10:36 (KST)
   - Stairs placed on tier-1 wall ascend to tier-2. Stairs can be placed before connecting to walls (shows warning prompt).
   - Lower piece destruction drops stacked pieces down 1 tier (retaining HP and mounted weapons); overlapping units fall and take height-based fall damage.
   - Detailed rules: No stacking on stairs; walls may stack above main gate; gate is fixed, undemolishable, and destroyed gate cell cannot receive new placement; multi-cell pieces require uniform support height and are destroyed if partially unsupported; no stacking on weapon-holding pieces and no weapons on covered pieces; no aerial cantilevering.
+  - *Planned wall-top cover*: **성가퀴(Battlement / Parapet)** — 성벽 위에서 수비병의 몸 전체 노출을 막고 사격 시 엄폐를 제공하는 방어 구조물을 추후 추가 예정.
 - **Build Controls**: 45-deg azimuth, 30-deg elevation orthographic camera; Q/E orbits 90 deg smoothly matching screen direction (Q left, E right); Left-click place, Right-click cancel, R rotate piece; translucent green/red preview.
 - **Unit Overlap** (2026-11-11): Living units overlapping new placement are harmlessly lifted onto the new top surface.
 - **Siege Weapons**: Mounted on wall mount points (decoupled from ground footprint). Cannons are one extensible type (`ISiegeWeaponModule`). Destroying supporting wall piece destroys mounted weapons simultaneously (no ground drop).

@@ -1,6 +1,6 @@
 # Past Verification History Index
 
-Last Updated: 2026-11-14 11:05:52 (KST)
+Last Updated: 2026-11-14 11:56:23 (KST)
 
 > Purpose: Route historical log lookups by Task ID prefix. | Parent: [INDEX](../INDEX.md) | Related: [Backlog-Done](../archive/Backlog-Done.md), [Status](../plan/Status.md)
 
@@ -16,7 +16,7 @@ Read this folder only when researching past design rationales, benchmarks, or ve
 - `D/` — [D-0](D/D-0.md), [D-0b](D/D-0b.md), [D-1-5](D/D-1-5.md), [D-2](D/D-2.md), [D-3-8-plan](D/D-3-8-plan.md), [D-4](D/D-4.md), [D-6](D/D-6.md), [D-3](D/D-3.md), [D-8](D/D-8.md), [D-7](D/D-7.md)
 - `G/` — [G-0](G/G-0.md), [G-1](G/G-1.md)
 - `Q/` — [Q-04-05](Q/Q-04-05.md), [Q-27](Q/Q-27.md), [Q-30](Q/Q-30.md), [Q-38](Q/Q-38.md), [Q-39](Q/Q-39.md), [Q-41](Q/Q-41.md), [Q-44](Q/Q-44.md)
-- `BUG/` — [BUG-ladder-push-visual](BUG/BUG-ladder-push-visual.md), [BUG-wall-hold](BUG/BUG-wall-hold.md), [BUG-playmode-input-focus](BUG/BUG-playmode-input-focus.md), [BUG-wall-destination-replan](BUG/BUG-wall-destination-replan.md)
+- `BUG/` — [BUG-ladder-push-visual](BUG/BUG-ladder-push-visual.md), [BUG-wall-hold](BUG/BUG-wall-hold.md), [BUG-playmode-input-focus](BUG/BUG-playmode-input-focus.md), [BUG-wall-destination-replan](BUG/BUG-wall-destination-replan.md), [BUG-ally-no-retaliation](BUG/BUG-ally-no-retaliation.md)
 - `PERF/` — [PERF-nav-query](PERF/PERF-nav-query.md)
 - `QA/` — [QA-game-loop](QA/QA-game-loop.md), [QA-opening-battle-balance](QA/QA-opening-battle-balance.md), [QA-victory-flow](QA/QA-victory-flow.md)
 - `FLOW/` — [FLOW-01](FLOW/FLOW-01.md)

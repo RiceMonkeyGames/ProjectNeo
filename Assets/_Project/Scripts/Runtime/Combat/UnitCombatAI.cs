@@ -26,14 +26,21 @@ namespace ProjectNeo.Combat
         readonly MoveStallTracker stall = new MoveStallTracker();
         bool returningToPost;
         bool advancePathRetryPending;
+        float targetLockRemaining;
+        CharacterActor retaliatingTarget;
+        bool suppressRetaliation;
         public CharacterActor Target { get; private set; }
         // 지시를 받지 않은 유닛(적, 관전 전투)은 기존처럼 알아서 싸운다.
         public UnitDirective Directive { get; private set; } = UnitDirective.Engage;
         public Vector3 MoveDestination { get; private set; }
         public CharacterActor Actor => actor;
         public float DecisionInterval => settings.DecisionInterval;
+        public bool IsRetaliationSuppressed => suppressRetaliation;
 
         public void Configure(UnitAISettings aiSettings) => settings = aiSettings;
+
+        /// <summary>공성 임무 등 특정 목표를 수행하는 동안 피격 반격·타겟 전환을 막는다.</summary>
+        public void SetRetaliationSuppressed(bool suppressed) => suppressRetaliation = suppressed;
 
         // Engage에 목적지가 있으면 그 지점으로 가면서 시야에 들어온 적과 싸운다.
         public bool HasAdvancePoint { get; private set; }
@@ -49,6 +56,8 @@ namespace ProjectNeo.Combat
             destinationPending = false;
             advancePathRetryPending = false;
             Target = null;
+            retaliatingTarget = null;
+            targetLockRemaining = 0f;
             decisionRemaining = 0f;
             stall.Reset();
             returningToPost = false;
@@ -73,7 +82,11 @@ namespace ProjectNeo.Combat
             path = new NavMeshPath();
         }
 
-        void OnEnable() => actor.Died += OnDied;
+        void OnEnable()
+        {
+            actor.Died += OnDied;
+            actor.HitReceivedFrom += OnHitReceived;
+        }
 
         void Update()
         {
@@ -83,6 +96,7 @@ namespace ProjectNeo.Combat
             agent.acceleration = settings.Acceleration;
             agent.angularSpeed = settings.TurnSpeed;
             decisionRemaining -= Time.deltaTime;
+            targetLockRemaining = Mathf.Max(0f, targetLockRemaining - Time.deltaTime);
             switch (Directive)
             {
                 case UnitDirective.Move: UpdateMove(); break;
@@ -199,6 +213,7 @@ namespace ProjectNeo.Combat
             if (!ReferenceEquals(Target, null) && !IsHoldTarget(Target, chases))
             {
                 Target = null;
+                retaliatingTarget = null;
                 decisionRemaining = 0f;
             }
             if (decisionRemaining <= 0f)
@@ -209,6 +224,7 @@ namespace ProjectNeo.Combat
                 {
                     Target = FindTargetInReach();
                     if (Target == null && chases) Target = FindTargetNearPost();
+                    if (Target != null) targetLockRemaining = settings.TargetSwitchCooldown;
                 }
             }
             if (Target != null && CanStrikeFromHere(Target))
@@ -229,7 +245,11 @@ namespace ProjectNeo.Combat
                 if (refreshed)
                 {
                     if (CanReach(Target)) agent.SetPath(path);
-                    else Target = null;
+                    else
+                    {
+                        Target = null;
+                        retaliatingTarget = null;
+                    }
                 }
                 if (Target != null) return;
             }
@@ -264,7 +284,8 @@ namespace ProjectNeo.Combat
 
         bool IsHoldTarget(CharacterActor target, bool chases) => actor.IsEnemy(target)
             && CombatPhysics.CanTarget(actor, target)
-            && (CanStrikeFromHere(target) || (chases && IsNearPost(target)));
+            && (CanStrikeFromHere(target) || (chases && IsNearPost(target))
+                || (ReferenceEquals(target, retaliatingTarget) && IsWithinRetaliationLeash(target)));
 
         /// <summary>중지 중에 자리에서 이 거리 안의 적을 쫓는다. 0이면 쫓지 않는다.</summary>
         public float HoldChaseRadius => actor.Profile.AttackKind == AttackKind.Melee ? settings.HoldEngageRadius
@@ -272,6 +293,26 @@ namespace ProjectNeo.Combat
 
         bool IsNearPost(CharacterActor target) =>
             (target.transform.position - HoldPost).sqrMagnitude <= HoldChaseRadius * HoldChaseRadius;
+
+        bool IsWithinRetaliationLeash(CharacterActor target)
+        {
+            float limit = settings.HoldRetaliationRadius;
+            if (limit <= 0f) return false;
+            if ((target.transform.position - HoldPost).sqrMagnitude > limit * limit) return false;
+            var filter = new NavMeshQueryFilter { agentTypeID = agent.agentTypeID, areaMask = agent.areaMask };
+            Vector3 post = NavMesh.SamplePosition(HoldPost, out NavMeshHit postHit, 1f, filter) ? postHit.position : HoldPost;
+            if (!NavMesh.CalculatePath(post, CombatPhysics.ReachPoint(target), filter, path)
+                || path.status != NavMeshPathStatus.PathComplete) return false;
+            return CalculatePathLength(path) <= limit;
+        }
+
+        static float CalculatePathLength(NavMeshPath navPath)
+        {
+            Vector3[] corners = navPath.corners;
+            float total = 0f;
+            for (int i = 1; i < corners.Length; i++) total += Vector3.Distance(corners[i - 1], corners[i]);
+            return total;
+        }
 
         // 자리 반경 안에서 걸어서 닿는 적 중 지금 위치에서 가장 가까운 적.
         CharacterActor FindTargetNearPost()
@@ -301,10 +342,21 @@ namespace ProjectNeo.Combat
             if (decisionRemaining <= 0f)
             {
                 decisionRemaining = settings.DecisionInterval;
-                if (Target != null && CanReach(Target)) agent.SetPath(path);
+                if (Target != null && CanReach(Target))
+                {
+                    if (!suppressRetaliation && targetLockRemaining <= 0f && !CanStrikeFromHere(Target))
+                    {
+                        CharacterActor closer = FindTarget();
+                        if (closer != null && !ReferenceEquals(closer, Target)
+                            && (CanStrikeFromHere(closer) || SqrDistanceTo(closer) < SqrDistanceTo(Target)))
+                            SwitchTarget(closer, false);
+                    }
+                    if (CanReach(Target)) agent.SetPath(path);
+                }
                 else
                 {
                     Target = FindTarget();
+                    if (Target != null) targetLockRemaining = settings.TargetSwitchCooldown;
                     // 대상을 고르는 동안 path가 바뀔 수 있으므로 선택된 대상의 경로를 다시 얻는다.
                     if (Target != null && CanReach(Target)) agent.SetPath(path);
                 }
@@ -325,6 +377,49 @@ namespace ProjectNeo.Combat
             agent.updateRotation = !inRange;
             if (canAttack) actor.TryAttack(Target);
         }
+
+        void OnHitReceived(CharacterActor attacker)
+        {
+            if (suppressRetaliation || attacker == null || !actor.isActiveAndEnabled) return;
+            if (actor.Health == null || actor.Health.IsDead || actor.IsOnLadder) return;
+            if (!agent.enabled || !agent.isOnNavMesh || Directive == UnitDirective.Move) return;
+            if (!actor.IsEnemy(attacker) || !CombatPhysics.CanTarget(actor, attacker)) return;
+
+            bool holdMode = Directive == UnitDirective.Hold;
+            bool chases = holdMode && HoldChaseRadius > 0f;
+            bool holdDefault = holdMode && (CanStrikeFromHere(attacker) || (chases && IsNearPost(attacker) && CanReach(attacker)));
+            bool holdRetaliation = holdMode && !holdDefault && IsWithinRetaliationLeash(attacker) && CanReach(attacker);
+            if (holdMode && !holdDefault && !holdRetaliation) return;
+            if (!holdMode && !CanStrikeFromHere(attacker) && !CanReach(attacker)) return;
+
+            if (!ShouldSwitchTarget(Target, attacker)) return;
+            SwitchTarget(attacker, holdRetaliation);
+            decisionRemaining = 0f;
+        }
+
+        bool ShouldSwitchTarget(CharacterActor current, CharacterActor candidate)
+        {
+            if (current == null) return true;
+            if (ReferenceEquals(current, candidate)) return false;
+            if (targetLockRemaining > 0f) return false;
+            // 이미 사거리 안에서 교전 중일 때는 다른 원거리 피격에 타겟을 바꾸지 않는다. 근접 공격만 예외 허용.
+            if (CanStrikeFromHere(current))
+            {
+                if (candidate.Profile.AttackKind != AttackKind.Melee) return false;
+                return CanStrikeFromHere(candidate) || SqrDistanceTo(candidate) < SqrDistanceTo(current);
+            }
+            return CanStrikeFromHere(candidate) || SqrDistanceTo(candidate) < SqrDistanceTo(current);
+        }
+
+        void SwitchTarget(CharacterActor next, bool isHoldRetaliation)
+        {
+            Target = next;
+            retaliatingTarget = isHoldRetaliation ? next : null;
+            targetLockRemaining = settings.TargetSwitchCooldown;
+            returningToPost = false;
+        }
+
+        float SqrDistanceTo(CharacterActor other) => (other.transform.position - transform.position).sqrMagnitude;
 
         void Face(CharacterActor target)
         {
@@ -386,6 +481,7 @@ namespace ProjectNeo.Combat
         void OnDied()
         {
             Target = null;
+            retaliatingTarget = null;
             agent.enabled = false;
         }
 
@@ -393,7 +489,9 @@ namespace ProjectNeo.Combat
         {
             GetComponent<ProjectNeo.Siege.LadderTraveller>()?.Interrupt();
             actor.Died -= OnDied;
+            actor.HitReceivedFrom -= OnHitReceived;
             Target = null;
+            retaliatingTarget = null;
             if (agent.enabled && agent.isOnNavMesh)
             {
                 agent.ResetPath();

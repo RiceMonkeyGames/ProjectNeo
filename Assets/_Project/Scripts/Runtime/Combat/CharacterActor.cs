@@ -40,6 +40,7 @@ namespace ProjectNeo.Combat
         public static IReadOnlyList<CharacterActor> ActiveActors => activeActors;
         public event Action AttackStarted;
         public event Action HitReceived;
+        public event Action<CharacterActor> HitReceivedFrom;
         public event Action Died;
 
         public void Configure(HeroDefinition hero, CombatProfile combatProfile, CombatTeam combatTeam = CombatTeam.Allied)
@@ -150,7 +151,7 @@ namespace ProjectNeo.Combat
             if (!CanAttack(nearest)) return;
             float attack = Stats.GetValue(StatType.Attack);
             if (profile.AttackKind == AttackKind.Melee)
-                nearest.ReceiveDamage(DamageRules.Calculate(attack, nearest.Stats.GetValue(StatType.Defense), profile.MinimumDamage));
+                nearest.ReceiveDamage(DamageRules.Calculate(attack, nearest.Stats.GetValue(StatType.Defense), profile.MinimumDamage), this);
             else
             {
                 GameObject shot = Instantiate(profile.ProjectilePrefab, AimPoint,
@@ -162,9 +163,13 @@ namespace ProjectNeo.Combat
             attackTarget = null;
         }
 
-        public void ReceiveDamage(float damage)
+        public void ReceiveDamage(float damage, CharacterActor attacker = null)
         {
-            if (Health != null && Health.TakeDamage(damage) > 0f) HitReceived?.Invoke();
+            if (Health != null && Health.TakeDamage(damage) > 0f)
+            {
+                HitReceived?.Invoke();
+                HitReceivedFrom?.Invoke(attacker);
+            }
         }
 
         void OnDied()

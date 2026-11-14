@@ -32,6 +32,12 @@ namespace ProjectNeo.Combat
         [SerializeField, Min(0f)] float moveStallProgress = 0.1f;
         // 중지 중 자리에서 이 거리보다 멀리 밀려났을 때만 자리로 돌아간다. 살짝 밀린 정도로 자리 다툼을 하지 않게 한다.
         [SerializeField, Min(0.01f)] float holdReturnDistance = 1f;
+        // 중지 중 사거리/추격 반경 밖에서 피격 시 반격 추격할 최대 경로/거리 한계. 0이면 자리 밖 반격 추격을 하지 않는다.
+        [SerializeField, Min(0f)] float holdRetaliationRadius = 15f;
+        public float HoldRetaliationRadius => holdRetaliationRadius;
+        // 타겟 전환 후 최소 유지 시간. 여러 적에게 동시에 맞을 때 핑퐁 현상을 막는다.
+        [SerializeField, Min(0f)] float targetSwitchCooldown = 1.5f;
+        public float TargetSwitchCooldown => targetSwitchCooldown;
         public float MoveStallDistance => moveStallDistance;
         public float MoveStallSeconds => moveStallSeconds;
         public float MoveStallProgress => moveStallProgress;
@@ -41,12 +47,14 @@ namespace ProjectNeo.Combat
         public float DestinationRecoveryDistance => destinationRecoveryDistance;
 
         public static UnitAISettings Create(float detectionRange = 60f, float holdEngageRadius = 6f,
-            float holdRangedChaseExtra = 6f)
+            float holdRangedChaseExtra = 6f, float holdRetaliationRadius = 15f, float targetSwitchCooldown = 1.5f)
         {
             var value = CreateInstance<UnitAISettings>();
             value.detectionRange = Mathf.Max(0f, detectionRange);
             value.holdEngageRadius = Mathf.Max(0f, holdEngageRadius);
             value.holdRangedChaseExtra = Mathf.Max(0f, holdRangedChaseExtra);
+            value.holdRetaliationRadius = Mathf.Max(0f, holdRetaliationRadius);
+            value.targetSwitchCooldown = Mathf.Max(0f, targetSwitchCooldown);
             return value;
         }
     }
