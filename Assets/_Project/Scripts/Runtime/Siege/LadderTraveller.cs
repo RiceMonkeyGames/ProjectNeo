@@ -230,12 +230,22 @@ namespace ProjectNeo.Siege
         {
             if (!IsTraversing) return;
             IsTraversing = false;
-            if (ladder != null) { ladder.Leave(actor); ladder = null; }
+            Vector3 fallVelocity = Vector3.zero;
+            if (ladder != null)
+            {
+                if (ladder.TryGetFallMotion(transform.position, out Vector3 separatedPosition, out Vector3 outwardVelocity))
+                {
+                    transform.position = separatedPosition;
+                    fallVelocity = outwardVelocity;
+                }
+                ladder.Leave(actor);
+                ladder = null;
+            }
             actor.SetOnLadder(false);
             // 낙하 제어가 플레이어 모터의 복구 여부를 기록하도록 먼저 돌려놓는다.
             if (motorWasEnabled && actor.Health != null && !actor.Health.IsDead) motor.enabled = true;
             var fall = GetComponent<UnitFallController>();
-            if (fall != null) fall.BeginFall(agentWasEnabled);
+            if (fall != null) fall.BeginFall(agentWasEnabled, fallVelocity);
             else
             {
                 if (agentWasEnabled && actor.Health != null && !actor.Health.IsDead) agent.enabled = true;

@@ -127,6 +127,34 @@ namespace ProjectNeo.Siege
             return raisedPosition + (CurrentDirection - raisedDirection) * along;
         }
 
+        /// <summary>사다리에서 분리될 때 외형과 겹치지 않는 시작 위치와 바깥쪽 낙하 속도를 반환한다.</summary>
+        public bool TryGetFallMotion(Vector3 currentPosition, out Vector3 separatedPosition, out Vector3 outwardVelocity)
+        {
+            separatedPosition = currentPosition;
+            outwardVelocity = Vector3.zero;
+            if (world == null || settings == null || !HasWall) return false;
+            separatedPosition = ComputeFallSeparation(currentPosition, BasePoint, CurrentDirection, OutwardWorld, settings.LadderFallClearance);
+            outwardVelocity = OutwardWorld * settings.LadderFallOutwardSpeed;
+            return true;
+        }
+
+        /// <summary>현재 사다리 축에서 바깥쪽 법선 방향으로 최소 간격만큼 떨어뜨린 위치를 계산한다.</summary>
+        public static Vector3 ComputeFallSeparation(Vector3 position, Vector3 basePoint,
+            Vector3 ladderDirection, Vector3 outwardWorld, float minClearance)
+        {
+            if (minClearance <= 0f) return position;
+            Vector3 flatOutward = new Vector3(outwardWorld.x, 0f, outwardWorld.z);
+            if (flatOutward.sqrMagnitude < 0.0001f) return position;
+            flatOutward.Normalize();
+
+            Vector3 dir = ladderDirection.sqrMagnitude > 0.0001f ? ladderDirection.normalized : Vector3.up;
+            float along = Mathf.Max(0f, Vector3.Dot(position - basePoint, dir));
+            Vector3 railPoint = basePoint + dir * along;
+            float currentOutward = Vector3.Dot(position - railPoint, flatOutward);
+            if (currentOutward >= minClearance) return position;
+            return position + flatOutward * (minClearance - currentOutward);
+        }
+
         public void Join(SiegeAttackerBrain unit) => crowd.Add(unit);
 
         public void Leave(SiegeAttackerBrain unit)

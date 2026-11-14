@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using ProjectNeo.Combat;
 using ProjectNeo.Siege;
+using UnityEngine;
 
 namespace ProjectNeo.Tests
 {
@@ -224,6 +225,22 @@ namespace ProjectNeo.Tests
         public void UpwardShot_HalvesDamageOnlyAboveMinimumRise(float rise, float expected)
         {
             Assert.AreEqual(expected, DamageRules.ElevationMultiplier(rise, 1.5f, 0.5f));
+        }
+
+        [Test]
+        public void LadderFallSeparation_MovesOnlyInsideClearanceAndPreservesHeight()
+        {
+            var basePoint = new Vector3(10f, 0f, 10f);
+            var outward = Vector3.forward;
+            var inside = new Vector3(10f, 2.2f, 9.9f);
+
+            Vector3 separated = SiegeLadder.ComputeFallSeparation(inside, basePoint, Vector3.up, outward, 0.55f);
+            Assert.AreEqual(2.2f, separated.y, 0.001f);
+            Assert.GreaterOrEqual(Vector3.Dot(separated - basePoint, outward), 0.55f - 0.001f);
+
+            var alreadyOutside = new Vector3(10f, 1.8f, 11.2f);
+            Vector3 unchanged = SiegeLadder.ComputeFallSeparation(alreadyOutside, basePoint, Vector3.up, outward, 0.55f);
+            Assert.AreEqual(alreadyOutside, unchanged);
         }
     }
 }

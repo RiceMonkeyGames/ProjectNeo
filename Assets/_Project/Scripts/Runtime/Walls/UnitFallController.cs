@@ -16,6 +16,7 @@ namespace ProjectNeo.Walls
         PlayerInputController input;
         float fallStart;
         float velocity;
+        Vector3 horizontalVelocity;
         bool resumeAgent;
         bool resumeMotor;
         bool landed;
@@ -53,17 +54,35 @@ namespace ProjectNeo.Walls
             return found;
         }
 
+        bool HasHorizontalObstacle(Vector3 origin, Vector3 step)
+        {
+            float distance = step.magnitude;
+            if (distance <= 0.0001f) return false;
+            foreach (RaycastHit hit in Physics.RaycastAll(origin, step / distance, distance + 0.35f, ~0, QueryTriggerInteraction.Ignore))
+            {
+                if (hit.collider.gameObject.scene != gameObject.scene
+                    || hit.collider.GetComponentInParent<CharacterActor>() != null) continue;
+                return true;
+            }
+            return false;
+        }
+
         /// <summary>성벽 붕괴 외의 이유(사다리가 밀림 등)로 지금 높이에서 떨어뜨린다.</summary>
-        public void BeginFall(bool resumeAgentAfterLanding)
+        public void BeginFall(bool resumeAgentAfterLanding) => BeginFall(resumeAgentAfterLanding, Vector3.zero);
+
+        /// <summary>바깥쪽 수평 속도를 주며 지금 높이에서 떨어뜨린다.</summary>
+        public void BeginFall(bool resumeAgentAfterLanding, Vector3 fallHorizontalVelocity)
         {
             if (IsFalling) return;
             BeginFall();
+            horizontalVelocity = fallHorizontalVelocity;
             resumeAgent = resumeAgentAfterLanding && agent != null;
         }
 
         void BeginFall()
         {
             IsFalling = true; landed = false; fallStart = transform.position.y; velocity = 0f;
+            horizontalVelocity = Vector3.zero;
             resumeAgent = agent != null && agent.enabled;
             resumeMotor = motor != null && motor.enabled;
             if (resumeAgent) agent.enabled = false;
@@ -77,6 +96,7 @@ namespace ProjectNeo.Walls
             if (!IsFalling) BeginFall();
             transform.position = position;
             velocity = 0f;
+            horizontalVelocity = Vector3.zero;
             LastFallDamage = 0f;
             landed = true;
         }
@@ -86,12 +106,21 @@ namespace ProjectNeo.Walls
             if (!IsFalling) return;
             if (!landed)
             {
+                if (horizontalVelocity.sqrMagnitude > 0.0001f)
+                {
+                    Vector3 horizontalStep = horizontalVelocity * Time.deltaTime;
+                    if (HasHorizontalObstacle(transform.position + Vector3.up * 0.5f, horizontalStep))
+                        horizontalVelocity = Vector3.zero;
+                    else
+                        transform.position += horizontalStep;
+                }
                 velocity += settings.Gravity * Time.deltaTime;
                 float step = velocity * Time.deltaTime;
                 if (FindGround(transform.position + Vector3.up * 0.05f, step + 0.05f, out var ground))
                 {
                     transform.position = ground.point;
                     landed = true;
+                    horizontalVelocity = Vector3.zero;
                     LastFallDamage = FallDamageRules.Calculate(fallStart - ground.point.y, settings.SafeHeight, settings.DamagePerMeter);
                     actor.ReceiveDamage(LastFallDamage);
                 }

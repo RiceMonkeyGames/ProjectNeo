@@ -364,6 +364,51 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
+        public IEnumerator SharedLadder_EnemyFall_ClearsTiltingLadderWithoutPenetration()
+        {
+            yield return CloseWalls();
+            IsolateSharedLadder();
+            SiegeLadder ladder = ladders[0];
+            var state = ladder.State;
+            state.Tick(0.1f, true, false, false);
+            state.Tick(ladder.Settings.LadderRaiseSeconds, true, false, false);
+            CharacterActor enemy = PlaceStillEnemy(SiegeAttackerRole.Ladder, ladder.BasePoint);
+            var brain = enemy.GetComponent<SiegeAttackerBrain>();
+            var fall = enemy.GetComponent<UnitFallController>();
+            brain.Bind(world, new[] { ladder }, Vector2Int.up);
+            brain.enabled = true;
+
+            int frames = 0;
+            while ((!brain.IsClimbing || enemy.transform.position.y < ladder.BasePoint.y + 1.8f)
+                && frames++ < 180) yield return null;
+            Assert.IsTrue(brain.IsClimbing);
+
+            float pushToBalance = ladder.Settings.LadderPushSeconds * (1f - state.BalancePoint);
+            state.Tick(pushToBalance * 1.1f, false, true, false);
+            Assert.IsTrue(fall.IsFalling);
+
+            float minOutwardGap = float.MaxValue;
+            frames = 0;
+            while (fall.IsFalling && frames++ < 300)
+            {
+                Vector3 dir = ladder.CurrentDirection;
+                if (dir.y > 0.05f)
+                {
+                    float t = Mathf.Max(0f, (enemy.transform.position.y - ladder.BasePoint.y) / dir.y);
+                    Vector3 railAtHeight = ladder.BasePoint + dir * t;
+                    float gap = Vector3.Dot(enemy.transform.position - railAtHeight, ladder.OutwardWorld);
+                    if (gap < minOutwardGap) minOutwardGap = gap;
+                }
+                yield return null;
+            }
+
+            Assert.IsFalse(fall.IsFalling);
+            Assert.Greater(minOutwardGap, 0.35f, "낙하 중 적이 기울어지는 사다리 외형을 관통했다.");
+            Assert.Greater(Vector3.Dot(enemy.transform.position - ladder.BasePoint, ladder.OutwardWorld), 0.8f);
+            Assert.IsTrue(enemy.GetComponent<NavMeshAgent>().enabled);
+        }
+
+        [UnityTest]
         public IEnumerator SharedLadder_BalanceMotion_ReturnsOrCompletes_AndVisualFollowsWithoutSnapping()
         {
             yield return CloseWalls();
