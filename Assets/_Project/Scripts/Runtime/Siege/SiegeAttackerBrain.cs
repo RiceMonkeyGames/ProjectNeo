@@ -134,7 +134,7 @@ namespace ProjectNeo.Siege
         {
             // 지형을 반영하는 동안에는 길 판단이 틀릴 수 있으므로 하던 일을 계속한다.
             if (world.IsRebuilding || world.RebuildPending) return;
-            if (AnyReachableEnemy())
+            if (AnyReachableEnemy(out CharacterActor nearest))
             {
                 if (mode != Mode.Assault)
                 {
@@ -143,9 +143,12 @@ namespace ProjectNeo.Siege
                     cannon = null;
                     wallBreaker?.Clear();
                     ai.SetRetaliationSuppressed(false);
-                    ai.SetDirective(UnitDirective.Engage);
                     mode = Mode.Assault;
+                    ai.SetDirective(UnitDirective.Engage, nearest.transform.position);
                 }
+                // 감지 범위 밖이면 Engage는 제자리에서 기다리므로, 싸울 대상이 없는 동안 가장 가까운
+                // 닿는 아군 쪽으로 계속 나아간다. 성문이 부서진 채 시작한 다음 스테이지에서 먼 들판의 적이 서 있던 문제.
+                else if (ai.Target == null) ai.SetDirective(UnitDirective.Engage, nearest.transform.position);
                 return;
             }
             // 걸어서 닿는 아군이 없을 때만 대포를 노린다(Q-21). 궁수는 기존 사격을 유지한다.
@@ -178,7 +181,7 @@ namespace ProjectNeo.Siege
             }
         }
 
-        public override bool CanReachAnyEnemy() => AnyReachableEnemy();
+        public override bool CanReachAnyEnemy() => AnyReachableEnemy(out _);
 
         /// <summary>판단을 멈추고 걸어서 출구로 간다. 길이 없으면 제자리에 선다.</summary>
         public override Vector3 BeginExit(Vector3 exit, float searchRadius)
@@ -192,15 +195,21 @@ namespace ProjectNeo.Siege
             return target;
         }
 
-        bool AnyReachableEnemy()
+        /// <summary>걸어서 닿는 적 중 직선거리로 가장 가까운 것. 더 가까운 후보만 경로를 구한다.</summary>
+        bool AnyReachableEnemy(out CharacterActor nearest)
         {
+            nearest = null;
+            float best = float.PositiveInfinity;
+            Vector3 here = transform.position;
             foreach (CharacterActor candidate in CharacterActor.ActiveActors)
             {
                 if (!Actor.IsEnemy(candidate)) continue;
+                float distance = (candidate.transform.position - here).sqrMagnitude;
+                if (distance >= best) continue;
                 if (agent.CalculatePath(candidate.transform.position, path)
-                    && path.status == NavMeshPathStatus.PathComplete) return true;
+                    && path.status == NavMeshPathStatus.PathComplete) { nearest = candidate; best = distance; }
             }
-            return false;
+            return nearest != null;
         }
 
         // ── 사다리 ──────────────────────────────────────────────

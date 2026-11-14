@@ -157,6 +157,39 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
+        public IEnumerator 스테이지_1에서_성문이_부서진_채로_넘어간_스테이지_2에서도_적이_성으로_다가온다()
+        {
+            Assert.IsTrue(battle.TryStartBattle());
+            yield return null;
+            // 성문이 부서진 채 이기면 다음 스테이지 시작부터 먼 들판에서 성 안까지 걸어갈 길이 열려 있다.
+            var gate = world.Structures.First(piece => piece.Placement.Definition.Kind == BuildPieceKind.Gate);
+            gate.ReceiveDamage(gate.Health.Current + 1f);
+            yield return Navigation();
+            foreach (var enemy in battle.Enemies) Kill(enemy.Actor);
+            yield return null; yield return null;
+            Assert.AreEqual(GamePhase.Reward, GameSession.Flow.Phase);
+            Assert.IsTrue(GameSession.Flow.ContinueToNextStage());
+            yield return Navigation();
+            Assert.AreEqual(2, GameSession.Flow.Run.StageNumber);
+            Assert.IsTrue(battle.TryStartBattle());
+            yield return null;
+            Vector3[] start = battle.Enemies.Select(enemy => enemy.transform.position).ToArray();
+            for (int i = 0; i < 120; i++) yield return null;
+            int moved = 0;
+            string idle = "";
+            for (int i = 0; i < start.Length; i++)
+            {
+                SiegeAttacker enemy = battle.Enemies[i];
+                if (enemy.transform.position.z < start[i].z - 1f) { moved++; continue; }
+                var agent = enemy.GetComponent<NavMeshAgent>();
+                idle += $"\n{enemy.name}: active={enemy.gameObject.activeInHierarchy} brain={enemy.enabled} " +
+                    $"actor={enemy.Actor.enabled} agent={(agent != null && agent.enabled)} onMesh={(agent != null && agent.enabled && agent.isOnNavMesh)} " +
+                    $"stopped={(agent != null && agent.enabled && agent.isOnNavMesh && agent.isStopped)} decided={enemy.HasDecided}";
+            }
+            Assert.AreEqual(start.Length, moved, "스테이지 2의 적이 성으로 다가와야 한다." + idle);
+        }
+
+        [UnityTest]
         public IEnumerator 플레이어_사망과_적_전멸이_동시에_일어나면_패배하고_타이틀로_돌아갈_수_있다()
         {
             Assert.IsTrue(battle.TryStartBattle());
