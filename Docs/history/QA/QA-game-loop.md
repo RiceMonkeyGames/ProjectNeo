@@ -1,10 +1,10 @@
 # QA-game-loop | 2026-11-13 | Game Flow - First User Playtest
 
-Last Updated: 2026-11-13 20:25:05 (KST)
+Last Updated: 2026-11-14 20:58:08 (KST)
 
 ## Evidence and scope
 
-User manually exercised Game construction and battle and supplied a construction screenshot. Exact run settings, input values and defeat details were not captured. This is user-reported playtest evidence plus source inspection, not an agent reproduction, automated test pass or standalone build verification. Victory → reward → next preparation remains unverified; keep QA-game-loop open.
+User manually exercised Game construction and battle and supplied a construction screenshot. Exact run settings, input values and defeat details were not captured. This is user-reported playtest evidence plus source inspection, not an agent reproduction, automated test pass or standalone build verification. Victory → reward → next preparation was later verified by QA-victory-flow; the remaining construction/combat recheck closed on 2026-11-14 (see below).
 
 ## Findings
 
@@ -23,3 +23,11 @@ User manually exercised Game construction and battle and supplied a construction
 ## Manual recheck after fixes
 
 Open `Assets/_Project/Scenes/Title.unity`, Play → New Game. Approach construction station → F; scroll both ways, pan with middle mouse, Q/E rotate, Home reset. Confirm useful zoom and continuous grid at near/far views; inspect stair shading. Esc returns to first-person. Approach gate banner → F using current controls; note player location and combat difficulty. Check F1–F3 selection and 1/2/3 orders. After a victory verify `Claim Reward & Next Stage` enters preparation once; on defeat verify `Return to Title`. Record unexercised branches explicitly. Exit Play Mode and reopen Title to reset.
+
+## Recheck 2026-11-14 (Done)
+
+- Setup: on `feature/qa-game-loop` (develop `6118ba2` + claim commit), the agent confirmed the open Editor was `ready` with no compile failure and opened `Assets/_Project/Scenes/Title.unity` through the Editor API so the user only had to press Play → `New Game`.
+- Checklist given to the user: construction (station F entry, wheel zoom, middle-drag pan, Q/E rotate, Home reset, continuous grid near/far, one-cell stairs and flat shading, soldier shadows, Esc return); battle (hold B 1s start at current position, left-click melee, Ctrl crouch / Shift sprint, F1–F3 selection and 1/2/3 orders, ladder tap F boarding / hold F toppling / W-S climbing, cannon F manning if placed, squad morale HUD, difficulty with the 12-enemy debug roster); outcome (`Claim Reward & Next Stage` enters preparation once, `Return to Title` on defeat).
+- Result: user reported everything normal ("전부 정상") and did not flag any item as skipped or failing. No per-item notes, run settings or screenshots were captured.
+- Evidence scope: user-reported manual Editor play only. No code, scene or asset changes; no automated tests were re-run for this task (latest baseline is COMBAT-03: EditMode 394/394, PlayMode 193/193). Standalone build unverified.
+- Manual repeat: open `Assets/_Project/Scenes/Title.unity`, Play → `New Game`, walk the checklist above; stop Play Mode to reset.
