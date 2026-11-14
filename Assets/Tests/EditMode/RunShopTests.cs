@@ -272,5 +272,82 @@ namespace ProjectNeo.Tests
             Assert.IsNotNull(run.Shop);
             Assert.AreEqual(-1, run.ShopStockedFor);
         }
+
+        [Test]
+        public void 잠금은_무료로_상점_레벨만큼_가능하고_업그레이드_직후_한도가_늘어난다()
+        {
+            RunState run = NewRun(gold: 500);
+            run.RestockShopIfNeeded();
+            Assert.AreEqual(1, run.ShopMaxLocked);
+            Assert.IsTrue(run.TryToggleShopLock(0));
+            Assert.AreEqual(500, run.Wallet.Gold, "잠금은 무료");
+            Assert.IsTrue(run.Shop.IsLocked(0));
+
+            Assert.AreEqual(ShopLockCheck.LimitReached, run.CheckShopLock(1));
+            Assert.IsFalse(run.TryToggleShopLock(1));
+
+            // 업그레이드 직후부터 상한이 즉시 2로 늘어난다.
+            Assert.IsTrue(run.TryUpgradeFacility(FacilityType.Shop));
+            Assert.AreEqual(2, run.ShopMaxLocked);
+            Assert.IsTrue(run.TryToggleShopLock(1));
+            Assert.AreEqual(2, run.Shop.LockedCount);
+
+            // 해제는 항상 가능하고, 해제 후 다시 잠글 수 있다.
+            Assert.IsTrue(run.TryToggleShopLock(0));
+            Assert.IsFalse(run.Shop.IsLocked(0));
+            Assert.AreEqual(1, run.Shop.LockedCount);
+        }
+
+        [Test]
+        public void 잠긴_매물은_리롤과_다음_준비_재입고에도_유지된다()
+        {
+            RunState run = NewRun(gold: 500);
+            run.RestockShopIfNeeded();
+            ItemDefinition lockedItem = run.Shop.Stock[1];
+            Assert.IsTrue(run.TryToggleShopLock(1));
+
+            Assert.IsTrue(run.TryRerollShop());
+            Assert.AreEqual(2, run.Shop.Stock.Count);
+            Assert.IsTrue(run.Shop.IsLocked(0));
+            Assert.AreSame(lockedItem, run.Shop.Stock[0], "잠긴 매물은 리롤 후에도 남는다.");
+
+            FinishBattle(run, 1);
+            Assert.IsTrue(run.RestockShopIfNeeded());
+            Assert.AreEqual(2, run.Shop.Stock.Count);
+            Assert.IsTrue(run.Shop.IsLocked(0));
+            Assert.AreSame(lockedItem, run.Shop.Stock[0], "잠긴 매물은 다음 준비 재입고에도 남는다.");
+        }
+
+        [Test]
+        public void 잠긴_매물을_사면_잠금이_지워지고_중복_품목도_고른_칸만_산다()
+        {
+            RunState run = NewRun(gold: 500);
+            run.RestockShopIfNeeded();
+            ItemDefinition lockedItem = run.Shop.Stock[0];
+            Assert.IsTrue(run.TryToggleShopLock(0));
+
+            // 1개짜리 풀과 달리 2개 풀에서도 리롤을 반복해 잠긴 품목과 같은 품목이 뜨는 경우 또는 일반 구매 후 잠금 해제를 검증.
+            Assert.IsTrue(run.TryBuyAt(0));
+            Assert.AreEqual(0, run.Shop.LockedCount, "잠긴 매물을 사면 잠금도 함께 없어진다.");
+            Assert.AreEqual(1, run.Shop.Stock.Count);
+            Assert.IsFalse(run.Shop.IsLocked(0));
+            Assert.AreEqual(1, run.Inventory.CountOf(lockedItem));
+        }
+
+        [Test]
+        public void 미입고_잘못된_칸_전투_중에는_잠금을_바꿀_수_없다()
+        {
+            RunState run = NewRun();
+            Assert.AreEqual(ShopLockCheck.NotStocked, run.CheckShopLock(0));
+            Assert.IsFalse(run.TryToggleShopLock(0));
+
+            run.RestockShopIfNeeded();
+            Assert.AreEqual(ShopLockCheck.InvalidSlot, run.CheckShopLock(-1));
+            Assert.AreEqual(ShopLockCheck.InvalidSlot, run.CheckShopLock(5));
+
+            run.CreateBattleInput(1);
+            Assert.AreEqual(ShopLockCheck.BattlePending, run.CheckShopLock(0));
+            Assert.IsFalse(run.TryToggleShopLock(0));
+        }
     }
 }

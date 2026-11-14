@@ -193,6 +193,34 @@ namespace ProjectNeo.Run
             return true;
         }
 
+        /// <summary>현재 상점 레벨에 따른 최대 잠금 가능 매물 수(PREP-03). 업그레이드 직후부터 바로 늘어난다.</summary>
+        public int ShopMaxLocked
+        {
+            get
+            {
+                FacilityState shop = Facility(FacilityType.Shop);
+                return shop != null ? shop.Level + 1 : 0;
+            }
+        }
+
+        /// <summary>index번째 상점 매물의 잠금을 토글할 수 있는지 확인한다(PREP-03). 런을 바꾸지 않는다.</summary>
+        public ShopLockCheck CheckShopLock(int index)
+        {
+            if (HasPendingBattle) return ShopLockCheck.BattlePending;
+            if (Shop == null || Facility(FacilityType.Shop) == null || ShopStockedFor != BattlesFought)
+                return ShopLockCheck.NotStocked;
+            if (index < 0 || index >= Shop.Stock.Count) return ShopLockCheck.InvalidSlot;
+            if (!Shop.IsLocked(index) && Shop.LockedCount >= ShopMaxLocked) return ShopLockCheck.LimitReached;
+            return ShopLockCheck.Ok;
+        }
+
+        /// <summary>index번째 상점 매물의 잠금을 무료로 토글한다(PREP-03). <see cref="CheckShopLock"/>이 Ok가 아니면 false.</summary>
+        public bool TryToggleShopLock(int index)
+        {
+            if (CheckShopLock(index) != ShopLockCheck.Ok) return false;
+            return Shop.TryToggleLock(index, ShopMaxLocked);
+        }
+
         readonly List<HeroDefinition> tavernOffers = new List<HeroDefinition>();
 
         /// <summary>이번 준비의 주점 영웅 매물(D-3). 고용하면 빠진다.</summary>
@@ -261,6 +289,9 @@ namespace ProjectNeo.Run
 
         /// <summary>매물을 런 지갑으로 사서 보관함에 넣는다.</summary>
         public bool TryBuy(ItemDefinition item) => Shop != null && Shop.TryBuy(item, Wallet, Inventory);
+
+        /// <summary>index번째 매물을 런 지갑으로 사서 보관함에 넣는다(중복 품목 구분).</summary>
+        public bool TryBuyAt(int index) => Shop != null && Shop.TryBuyAt(index, Wallet, Inventory);
 
         /// <summary>보관함의 아이템을 판다. 보상 등 다른 경로로 얻은 아이템도 팔 수 있다.</summary>
         public bool TrySell(ItemInstance item) => Shop != null && Shop.TrySell(item, Wallet, Inventory);

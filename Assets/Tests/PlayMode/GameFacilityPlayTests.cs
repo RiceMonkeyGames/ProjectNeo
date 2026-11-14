@@ -248,5 +248,41 @@ namespace ProjectNeo.Tests
                 if (originalKeyboard != null && originalKeyboard.added) originalKeyboard.MakeCurrent();
             }
         }
+
+        [UnityTest]
+        public IEnumerator 상점_팝업에서_매물을_잠그면_리롤에도_남고_사면_잠금이_풀린다()
+        {
+            var state = GameSession.Flow.Run.State;
+            Assert.IsTrue(Station(FacilityType.Shop).Interact());
+            Assert.AreEqual(3, facilities.OfferRows);
+            Assert.AreEqual(1, facilities.ShopMaxLocked);
+
+            int goldBefore = state.Wallet.Gold;
+            var secondLockButton = facilities.OfferLockButton(1);
+            Assert.IsNotNull(secondLockButton, "매물 줄마다 잠금 버튼이 있어야 한다.");
+            var lockedItem = state.Shop.Stock[1];
+            secondLockButton.onClick.Invoke();
+            yield return null;
+
+            Assert.AreEqual(goldBefore, state.Wallet.Gold, "잠금은 무료");
+            Assert.AreEqual(1, facilities.ShopLockedCount);
+            Assert.IsTrue(facilities.IsOfferLocked(1));
+            StringAssert.Contains("잠금", facilities.BodyText);
+
+            // 한도 초과(레벨 1: 최대 1개) 거부
+            Assert.IsFalse(facilities.TryToggleLock(0));
+            StringAssert.Contains("최대 1개", facilities.BodyText);
+
+            // 리롤 후 잠긴 매물은 유지
+            Assert.IsTrue(facilities.TryReroll());
+            Assert.AreEqual(3, facilities.OfferRows);
+            Assert.IsTrue(facilities.IsOfferLocked(0));
+            Assert.AreSame(lockedItem, state.Shop.Stock[0]);
+
+            // 잠긴 매물 구매 시 잠금이 풀린다.
+            Assert.IsTrue(facilities.TryBuy(0));
+            Assert.AreEqual(0, facilities.ShopLockedCount);
+            Assert.IsFalse(facilities.IsOfferLocked(0));
+        }
     }
 }
