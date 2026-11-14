@@ -228,7 +228,7 @@ namespace ProjectNeo.Tests
             Assert.IsTrue(view.IsExplorationView);
             Assert.IsFalse(view.IsBuildView || placement.enabled || buildCamera.gameObject.activeInHierarchy);
             Assert.IsTrue(player.enabled && firstPerson.gameObject.activeInHierarchy);
-            Assert.IsFalse(command.enabled);
+            Assert.IsTrue(command.enabled, "준비 중 1인칭 탐색에서도 부대를 배치한다(PREP-05).");
             Assert.AreEqual(1, Object.FindObjectsByType<AudioListener>(FindObjectsSortMode.None).Length);
             Assert.AreEqual(1, Object.FindObjectsByType<UnityEngine.EventSystems.EventSystem>(FindObjectsSortMode.None).Length);
             int alive = center.AliveCount(0);
@@ -238,7 +238,7 @@ namespace ProjectNeo.Tests
             Vector3 position = player.transform.position;
             Assert.IsTrue(view.EnterConstruction());
             Assert.IsTrue(view.IsBuildView && placement.enabled && buildCamera.gameObject.activeInHierarchy);
-            Assert.IsFalse(player.enabled);
+            Assert.IsFalse(player.enabled || command.enabled, "건설 화면에서는 1인칭 조작과 지휘 키를 멈춘다.");
             Assert.AreEqual(CursorLockMode.None, Cursor.lockState);
             Assert.IsFalse(view.EnterConstruction(), "중복 진입을 무시한다.");
             view.ExitConstruction();
@@ -262,7 +262,8 @@ namespace ProjectNeo.Tests
 
             flow.ContinueToNextStage();
             Assert.IsTrue(view.IsExplorationView && player.enabled && firstPerson.gameObject.activeInHierarchy);
-            Assert.IsFalse(placement.enabled || command.enabled || buildCamera.gameObject.activeInHierarchy);
+            Assert.IsFalse(placement.enabled || buildCamera.gameObject.activeInHierarchy);
+            Assert.IsTrue(command.enabled, "다음 준비 탐색에서도 부대를 배치한다(PREP-05).");
             Assert.AreEqual(alive, center.AliveCount(0), "다음 스테이지 준비에서도 같은 유닛이 남아 있다.");
         }
 

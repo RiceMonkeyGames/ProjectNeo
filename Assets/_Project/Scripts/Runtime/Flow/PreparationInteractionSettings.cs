@@ -14,6 +14,9 @@ namespace ProjectNeo.Flow
         [Tooltip("준비 중 1인칭 탐색에서 부대 편성 화면을 여는 키(D-8).")]
         [SerializeField] InputAction organization = new InputAction("OpenOrganization", InputActionType.Button, "<Keyboard>/o");
         [SerializeField] InputAction startBattle =new InputAction("StartBattle", InputActionType.Button, "<Keyboard>/b");
+        [Tooltip("준비 중 1인칭 탐색에서 부대 배치 화면을 열고 닫는 키(PREP-05).")]
+        [SerializeField] InputAction squadPlacement = new InputAction("OpenSquadPlacement", InputActionType.Button, "<Keyboard>/p");
+        public InputAction SquadPlacement => squadPlacement;
         [SerializeField, Min(0.1f)] float battleStartHoldSeconds = 1f;
         public float Distance => distance;
         public InputAction Interact => interact;

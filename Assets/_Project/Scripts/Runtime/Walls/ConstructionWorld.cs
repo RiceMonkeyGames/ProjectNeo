@@ -249,6 +249,20 @@ namespace ProjectNeo.Walls
             Changed?.Invoke();
         }
 
+        /// <summary>
+        /// 살아 있는 성문을 열어 두거나 닫고 길을 다시 만든다(PREP-05 준비 단계). 성문이 아니거나 문짝이 없거나 상태가 같으면 false.
+        /// 부서짐 알림(PieceCollapsing)은 보내지 않는다.
+        /// </summary>
+        public bool SetGateHeldOpen(PlacedStructure structure, bool open)
+        {
+            if (!IsLive(structure) || structure.DoorCollider == null
+                || structure.Placement.Definition.Kind != BuildPieceKind.Gate || structure.IsHeldOpen == open) return false;
+            structure.SetHeldOpen(open);
+            rebuildPending = true;
+            Changed?.Invoke();
+            return true;
+        }
+
         public void NotifyGateRepaired(PlacedStructure structure)
         {
             if (!IsLive(structure)) return;

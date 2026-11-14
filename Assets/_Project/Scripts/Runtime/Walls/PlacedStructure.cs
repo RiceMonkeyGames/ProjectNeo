@@ -9,9 +9,15 @@ namespace ProjectNeo.Walls
         [SerializeField] Collider doorCollider;
         [SerializeField] GameObject doorVisual;
         ConstructionWorld world;
+        // 부서져 열린 문. 수리되면 닫힌다(SIEGE-06).
         bool doorOpened;
         public BuildPlacement Placement { get; private set; }
         public Health Health { get; private set; }
+        /// <summary>준비 단계에 일부러 열어 둔 성문(PREP-05). 부서짐과 따로 기억해 수리해도 열린 채로 둔다.</summary>
+        public bool IsHeldOpen { get; private set; }
+        /// <summary>문짝이 지금 열려 있다(부서졌거나 열어 두었다). 문짝이 없는 조각은 false.</summary>
+        public bool IsDoorOpen => doorCollider != null && !doorCollider.enabled;
+        public Collider DoorCollider => doorCollider;
 
         public void SetDoorParts(Collider collider, GameObject visual)
         {
@@ -33,6 +39,19 @@ namespace ProjectNeo.Walls
         public void ApplyDoorState(bool open)
         {
             doorOpened = open;
+            RefreshDoor();
+        }
+
+        /// <summary>문을 열어 두거나 닫는다. 부서진 문은 닫아도 열린 채다.</summary>
+        public void SetHeldOpen(bool open)
+        {
+            IsHeldOpen = open;
+            RefreshDoor();
+        }
+
+        void RefreshDoor()
+        {
+            bool open = doorOpened || IsHeldOpen;
             if (doorCollider != null) doorCollider.enabled = !open;
             if (doorVisual != null) doorVisual.SetActive(!open);
         }

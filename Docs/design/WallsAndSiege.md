@@ -1,6 +1,6 @@
 # Game Design: Castle Walls, Enemies & Siege Strategy
 
-Last Updated: 2026-11-14 17:32:45 (KST)
+Last Updated: 2026-11-15 01:52:20 (KST)
 
 > Purpose: Construction stacking, build economy, enemy roles, and siege/ladder rules. | Parent: [design/README](README.md) | Related: [Combat](Combat.md), [MoraleAndWave](MoraleAndWave.md)
 
@@ -33,6 +33,7 @@ Last Updated: 2026-11-14 17:32:45 (KST)
   - **Detail defaults (confirmed 2026-11-13)**: Man/leave with the interact key (F) near the cannon, also leave with Esc; mouse aims within the arc, left-click fires. Auto-fire impact scatters up to 2m (via `IRandomSource`); manual fire has no scatter. Enemies target a cannon only when no ally is within their reach.
   - **SIEGE-02 scope decisions (2026-11-13)**: R rotates a selected cannon in 4 directions (90° steps) at placement; facing is saved in the castle record. Cannon HP carries over between battles like walls (fixed by `Repair All`). SIEGE-02 also wires wall-top ladder climbers to attack a cannon when no ally is in reach (coordinate shared enemy AI edits with the enemy-assault owner); flyer targeting stays with B-6.3. Blast damage applies target defense (`DamageRules.Calculate`, minimum 1) after distance falloff.
 - **Construction Economy** (2026-11-12, D-2): Spend run gold on walls/stairs/cannons. Demolishing refunds 100% for current-prep builds and partial percentage for past-prep/starting walls (gate non-demolishable). Single `Repair All` button spends gold proportional to missing HP (prioritizes heaviest damaged if funds low). Instant construction currently; delayed multi-stage construction planned later.
+- **Preparation Gate Opening** (PREP-05, user approved 2026-11-15): During preparation the player opens and closes an intact gate with F in front of it so units left outside can return. Opening rebuilds the NavMesh without collapse events. When the battle starts, a held-open gate closes automatically and allies or the player standing in the doorway are moved inward. A destroyed gate stays open until repaired regardless of this toggle; repairing does not close a held-open gate.
 
 ## Enemies & Siege Strategy
 

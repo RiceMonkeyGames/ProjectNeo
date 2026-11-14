@@ -93,7 +93,15 @@ namespace ProjectNeo.Flow
                 morale.Configure(flow, commander, world, settings.Morale, settings.Outward, () => RunLink.State,
                     new SeededRandom(System.Environment.TickCount));
             }
+            // 준비 단계 성문 열기(PREP-05). 씬 파일을 바꾸지 않고 실행 중에 붙인다.
+            if (world != null && settings != null)
+            {
+                PrepGate = gameObject.AddComponent<GamePrepGate>();
+                PrepGate.Configure(world, FindAnyObjectByType<GamePhaseView>(), settings.Outward);
+            }
         }
+        /// <summary>준비 단계 성문 열기(PREP-05).</summary>
+        public GamePrepGate PrepGate { get; private set; }
         void OnEnable() => flow.PhaseChanged += OnPhaseChanged;
         void OnDisable() => flow.PhaseChanged -= OnPhaseChanged;
         void Start() => OnPhaseChanged(flow.Phase);

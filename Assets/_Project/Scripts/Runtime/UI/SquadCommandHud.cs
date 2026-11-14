@@ -3,6 +3,7 @@ using ProjectNeo.Squads;
 using ProjectNeo.Morale;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace ProjectNeo.UI
 {
@@ -18,6 +19,27 @@ namespace ProjectNeo.UI
         TMP_FontAsset runtimeFont;
         GameSquadMorale morale;
         public string DisplayText => squads != null ? squads.text : "";
+        /// <summary>키 안내 상자가 보이는지. 준비 단계에서는 준비 안내 줄이 부대 키를 대신 보여준다(PREP-05).</summary>
+        public bool HelpVisible => help != null && help.gameObject.activeSelf;
+
+        /// <summary>키 안내 글과 그 배경을 켜고 끈다. 부대 목록은 그대로 둔다.</summary>
+        public void SetHelpVisible(bool visible)
+        {
+            if (help == null) return;
+            help.gameObject.SetActive(visible);
+            Transform backing = transform.Find(help.name + "Backing");
+            if (backing != null) backing.gameObject.SetActive(visible);
+        }
+
+        /// <summary>부대 키를 한 줄로 적는다. 준비 안내처럼 다른 곳에서 같은 키를 보여줄 때 쓴다.</summary>
+        public static string KeyLine(SquadCommandSettings settings)
+        {
+            if (settings == null) return "";
+            string first = settings.SelectSquad.Length > 0 ? settings.SelectSquad[0].GetBindingDisplayString() : "";
+            string last = settings.SelectSquad.Length > 0 ? settings.SelectSquad[settings.SelectSquad.Length - 1].GetBindingDisplayString() : "";
+            return $"{first}~{last}·{settings.SelectAll.GetBindingDisplayString()} 부대 선택 · {settings.Move.GetBindingDisplayString()} 이동 · "
+                + $"{settings.Attack.GetBindingDisplayString()} 공격 · {settings.Hold.GetBindingDisplayString()} 정지";
+        }
 
         public void Configure(SquadCommandCenter commandCenter, SquadCommandInput commandInput,
             TMP_Text squadLabel, TMP_Text helpLabel, string helpCaption)

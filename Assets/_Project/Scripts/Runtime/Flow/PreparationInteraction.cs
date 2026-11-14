@@ -13,7 +13,8 @@ namespace ProjectNeo.Flow
         [SerializeField] CharacterActor player;
         [SerializeField] PreparationInteractionSettings settings;
         [SerializeField] GameBattleController battle;
-        InputAction interact, close, equipment, organization, startBattle;
+        InputAction interact, close, equipment, organization, startBattle, squadPlacement;
+        public string PlacementKey => squadPlacement != null ? squadPlacement.GetBindingDisplayString() : string.Empty;
         float battleStartElapsed;
         bool holdingBattleStart;
         public float BattleStartProgress => Mathf.Clamp01(battleStartElapsed / settings.BattleStartHoldSeconds);
@@ -41,14 +42,23 @@ namespace ProjectNeo.Flow
             equipment = settings.Equipment?.Clone();
             organization = settings.Organization?.Clone();
             startBattle = settings.StartBattle.Clone();
+            // 예전 설정 에셋에 키가 비어 있어도 P로 연다.
+            squadPlacement = settings.SquadPlacement != null && settings.SquadPlacement.bindings.Count > 0
+                ? settings.SquadPlacement.Clone()
+                : new InputAction("OpenSquadPlacement", InputActionType.Button, "<Keyboard>/p");
         }
-        void OnEnable() { interact.Enable(); close.Enable(); equipment?.Enable(); organization?.Enable(); startBattle.Enable(); }
+        void OnEnable() { interact.Enable(); close.Enable(); equipment?.Enable(); organization?.Enable(); startBattle.Enable(); squadPlacement?.Enable(); }
         void OnDisable()
         {
             interact?.Disable(); close?.Disable(); equipment?.Disable(); organization?.Disable(); startBattle?.Disable();
+            squadPlacement?.Disable();
             Target = null; CancelBattleStart();
         }
-        void OnDestroy() { interact?.Dispose(); close?.Dispose(); equipment?.Dispose(); organization?.Dispose(); startBattle?.Dispose(); }
+        void OnDestroy()
+        {
+            interact?.Dispose(); close?.Dispose(); equipment?.Dispose(); organization?.Dispose(); startBattle?.Dispose();
+            squadPlacement?.Dispose();
+        }
 
         void CancelBattleStart() { holdingBattleStart = false; battleStartElapsed = 0f; }
 
@@ -103,8 +113,17 @@ namespace ProjectNeo.Flow
                 if (close.WasPressedThisFrame()) phaseView.ExitPanel();
                 return;
             }
+            if (phaseView.IsPlacementView)
+            {
+                CancelBattleStart();
+                Target = null;
+                if (close.WasPressedThisFrame() || squadPlacement.WasPressedThisFrame()) phaseView.ExitPlacement();
+                return;
+            }
             RefreshTarget();
             if (interact.WasPressedThisFrame()) { CancelBattleStart(); TryInteract(); }
+            else if (phaseView.IsExplorationView && squadPlacement.WasPressedThisFrame())
+            { CancelBattleStart(); phaseView.EnterPlacement(); }
             else if (phaseView.IsExplorationView && equipment != null && equipment.WasPressedThisFrame())
             { CancelBattleStart(); EquipmentRequested?.Invoke(); }
             else if (phaseView.IsExplorationView && organization != null && organization.WasPressedThisFrame())

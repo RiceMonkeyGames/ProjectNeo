@@ -156,6 +156,158 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(2, battle.BattleNumber);
         }
 
+        // 성벽 조각들의 가운데 근처 걸을 수 있는 곳(안뜰)과, 적이 나오는 먼 들판의 걸을 수 있는 곳.
+        Vector3 Courtyard(float offset = 0f)
+        {
+            var walls = world.Structures.Where(piece => piece.Placement.Definition.Kind == BuildPieceKind.Wall).ToArray();
+            Vector3 middle = walls.Aggregate(Vector3.zero, (sum, piece) => sum + piece.transform.position) / walls.Length;
+            middle.y = 0f;
+            middle += Vector3.right * offset;
+            Assert.IsTrue(NavMesh.SamplePosition(middle, out NavMeshHit hit, 10f, NavMesh.AllAreas));
+            return hit.position;
+        }
+        Vector3 Field()
+        {
+            Vector3 point = world.transform.TransformPoint(new Vector3(battle.Settings.SpawnCell.x * world.Grid.CellSize,
+                0f, battle.Settings.SpawnCell.y * world.Grid.CellSize));
+            Assert.IsTrue(NavMesh.SamplePosition(point, out NavMeshHit hit, 10f, NavMesh.AllAreas));
+            return hit.position;
+        }
+        static Ray Down(Vector3 point) => new Ray(point + Vector3.up * 40f, Vector3.down);
+
+        [UnityTest]
+        public IEnumerator 준비_탐색에서_부대_지휘가_켜지고_성_밖_목적지는_거절하며_전투_중에는_막지_않는다()
+        {
+            yield return Navigation();
+            var view = Object.FindAnyObjectByType<GamePhaseView>();
+            var command = Object.FindAnyObjectByType<SquadCommandInput>();
+            var hud = Object.FindAnyObjectByType<SquadCommandHud>(FindObjectsInactive.Include);
+            Assert.IsTrue(view.IsExplorationView && command.enabled && hud.gameObject.activeInHierarchy);
+            GamePrepPlacement prep = view.PrepPlacement;
+            Assert.IsNotNull(prep);
+            Assert.IsNull(prep.CheckDestination(Courtyard()));
+            Assert.IsTrue(prep.IsInsideCastle(Courtyard()));
+            Assert.AreEqual(GamePrepPlacement.OutsideMessage, prep.CheckDestination(Field()));
+            Assert.AreEqual(GamePrepPlacement.OutsideMessage, command.DestinationCheck(Field()), "1인칭 지휘도 같은 심사를 쓴다.");
+            Assert.IsTrue(battle.TryStartBattle());
+            Assert.IsNull(prep.CheckDestination(Field()), "전투 중 지시는 성 밖도 허용한다.");
+        }
+
+        [UnityTest]
+        public IEnumerator 부대_배치_화면은_건설과_따로_열리고_키와_유닛_클릭으로_고르며_좌클릭한_성_안으로_걸어간다()
+        {
+            yield return Navigation();
+            var view = Object.FindAnyObjectByType<GamePhaseView>();
+            var center = Object.FindAnyObjectByType<SquadCommandCenter>();
+            var placementTool = Object.FindAnyObjectByType<PlacementController>(FindObjectsInactive.Include);
+            var buildHud = Object.FindAnyObjectByType<ConstructionHud>(FindObjectsInactive.Include);
+            var commandHud = Object.FindAnyObjectByType<SquadCommandHud>(FindObjectsInactive.Include);
+            var command = Object.FindAnyObjectByType<SquadCommandInput>(FindObjectsInactive.Include);
+            GamePrepPlacement prep = view.PrepPlacement;
+            Assert.IsFalse(commandHud.HelpVisible, "준비 단계에서는 전투용 키 안내 상자를 숨긴다.");
+            Assert.IsTrue(view.EnterPlacement());
+            Assert.IsTrue(view.IsPlacementView && prep.PlacementMode);
+            Assert.IsFalse(view.IsBuildView || placementTool.enabled || buildHud.gameObject.activeInHierarchy,
+                "부대 배치 화면에는 건설 도구가 없다.");
+            Assert.IsFalse(view.EnterConstruction() || view.EnterPanel(), "다른 화면과 겹쳐 열리지 않는다.");
+            Assert.IsFalse(command.enabled, "배치 화면은 1인칭 지휘 대신 클릭으로 배치한다.");
+            Assert.IsTrue(commandHud.gameObject.activeInHierarchy && !commandHud.HelpVisible);
+            Assert.AreEqual(CursorLockMode.None, Cursor.lockState);
+
+            UnitCombatAI member = center.Squads[1].Members[0];
+            Assert.IsTrue(prep.ClickAt(Down(member.transform.position)), "유닛을 클릭하면 그 부대를 고른다.");
+            Assert.IsTrue(center.Commander.IsSelected(1) && !center.Commander.IsSelected(0));
+            Assert.IsTrue(prep.SelectSquadForPlacement(0));
+            Assert.IsTrue(center.Commander.IsSelected(0) && !center.Commander.IsSelected(1));
+
+            Vector3 target = Courtyard(6f);
+            Assert.IsFalse(prep.ClickAt(Down(Field())));
+            Assert.AreEqual(GamePrepPlacement.OutsideMessage, prep.Message);
+            Assert.AreNotEqual(SquadOrderKind.Move, center.Commander.OrderOf(0).Kind);
+            Assert.IsTrue(prep.ClickAt(Down(target)));
+            SquadOrder order = center.Commander.OrderOf(0);
+            Assert.AreEqual(SquadOrderKind.Move, order.Kind);
+            Assert.Less(Vector3.Distance(order.Destination, target), 1.5f);
+            Assert.IsTrue(prep.Memory.TryGet(0, out SquadPlacementMemory.Entry remembered));
+            Assert.Less(Vector3.Distance(remembered.Position, target), 1.5f);
+
+            Vector3 start = center.Squads[0].Members[0].transform.position;
+            for (int i = 0; i < 60; i++) yield return null;
+            Assert.Less(Vector3.Distance(center.Squads[0].Members[0].transform.position, target),
+                Vector3.Distance(start, target) - 0.5f, "순간이동이 아니라 걸어서 간다.");
+            view.ExitPlacement();
+            yield return null;
+            Assert.IsTrue(view.IsExplorationView && command.enabled && !prep.PlacementMode);
+            Assert.AreEqual(0, center.Commander.SelectedCount, "배치 화면을 닫으면 고른 부대를 놓는다.");
+        }
+
+        [UnityTest]
+        public IEnumerator 준비_단계에_성문을_F로_열고_닫으며_전투가_시작되면_닫히고_문_자리의_아군은_안쪽으로_옮겨진다()
+        {
+            yield return Navigation();
+            var gate = world.Structures.First(piece => piece.Placement.Definition.Kind == BuildPieceKind.Gate);
+            var station = gate.GetComponent<PreparationGateStation>();
+            Assert.IsNotNull(station, "성문에 준비 단계 상호작용이 붙는다.");
+            Assert.IsFalse(gate.IsDoorOpen);
+            Assert.AreEqual("성문 열기", station.Prompt);
+            Assert.IsTrue(station.Interact());
+            Assert.IsTrue(gate.IsHeldOpen && gate.IsDoorOpen);
+            Assert.AreEqual("성문 닫기", station.Prompt);
+            yield return Navigation();
+            Assert.IsTrue(station.Interact());
+            Assert.IsFalse(gate.IsHeldOpen || gate.IsDoorOpen);
+            yield return Navigation();
+
+            Assert.IsTrue(station.Interact());
+            yield return Navigation();
+            // 열린 문 자리에 아군 한 명을 세워 둔다.
+            var center = Object.FindAnyObjectByType<SquadCommandCenter>();
+            UnitCombatAI member = center.Squads[0].Members[0];
+            Vector3 doorway = gate.DoorCollider.bounds.center;
+            Assert.IsTrue(NavMesh.SamplePosition(doorway, out NavMeshHit hit, 3f, NavMesh.AllAreas));
+            member.GetComponent<NavMeshAgent>().Warp(hit.position);
+            Assert.IsTrue(battle.TryStartBattle());
+            Assert.IsFalse(gate.IsHeldOpen || gate.IsDoorOpen, "전투가 시작되면 성문이 닫힌다.");
+            Assert.IsFalse(gate.DoorCollider.bounds.Contains(new Vector3(member.transform.position.x,
+                gate.DoorCollider.bounds.center.y, member.transform.position.z)), "문 자리의 아군은 안쪽으로 옮겨진다.");
+            Vector3 outward = world.transform.TransformDirection(new Vector3(battle.Settings.Outward.x, 0f, battle.Settings.Outward.y));
+            Assert.Less(Vector3.Dot(member.transform.position - gate.DoorCollider.bounds.center, outward), 0f,
+                "옮겨진 자리는 성 안쪽이다.");
+            Assert.IsFalse(station.Interact(), "전투 중에는 열 수 없다.");
+        }
+
+        [UnityTest]
+        public IEnumerator 준비_때_마지막_배치_자리를_기억해_다음_준비_단계에_걸어서_돌아가고_전투_중_지시는_기억하지_않는다()
+        {
+            yield return Navigation();
+            var view = Object.FindAnyObjectByType<GamePhaseView>();
+            var center = Object.FindAnyObjectByType<SquadCommandCenter>();
+            GamePrepPlacement prep = view.PrepPlacement;
+            Vector3 placed = Courtyard(6f);
+            center.Commander.Select(0);
+            center.Commander.Issue(new SquadOrder(SquadOrderKind.Move, placed, 0f));
+            center.Commander.ClearSelection();
+            Assert.IsTrue(prep.Memory.TryGet(0, out _));
+
+            Assert.IsTrue(battle.TryStartBattle());
+            yield return null;
+            Vector3 elsewhere = Courtyard(-6f);
+            center.Commander.Select(0);
+            center.Commander.Issue(new SquadOrder(SquadOrderKind.Move, elsewhere, 0f));
+            center.Commander.ClearSelection();
+            Assert.IsTrue(prep.Memory.TryGet(0, out SquadPlacementMemory.Entry kept));
+            Assert.Less(Vector3.Distance(kept.Position, placed), 0.01f, "전투 중 지시로 기억이 바뀌지 않는다.");
+            foreach (var enemy in battle.Enemies) Kill(enemy.Actor);
+            yield return null; yield return null;
+            Assert.IsTrue(GameSession.Flow.ContinueToNextStage());
+            yield return Navigation();
+            yield return null; yield return null;
+            SquadOrder order = center.Commander.OrderOf(0);
+            Assert.IsTrue(order.HasDestination);
+            Assert.Less(Vector3.Distance(order.Destination, placed), 1.5f, "다음 준비 단계에서 기억한 자리로 돌아간다.");
+            Assert.AreEqual(0, center.Commander.SelectedCount, "복귀 뒤 선택은 원래대로 비어 있다.");
+        }
+
         [UnityTest]
         public IEnumerator 스테이지_1에서_성문이_부서진_채로_넘어간_스테이지_2에서도_적이_성으로_다가온다()
         {

@@ -20,13 +20,17 @@ namespace ProjectNeo.Flow
         [SerializeField] GameObject constructionHud, commandHud;
         [SerializeField] GameObject[] actors;
         GameFlow flow;
-        bool constructionOpen, panelOpen;
+        bool constructionOpen, panelOpen, placementOpen;
 
         public bool IsBuildView { get; private set; }
+        /// <summary>준비 중 위에서 내려다보며 부대를 배치하는 화면(PREP-05). 건설 시점 카메라를 쓰고 건설 도구는 끈다.</summary>
+        public bool IsPlacementView { get; private set; }
         public bool IsBattleView { get; private set; }
         public bool IsExplorationView { get; private set; }
         /// <summary>준비 중 시설 팝업 같은 화면이 열려 1인칭 이동·시점을 멈추고 커서를 푼 상태(D-0).</summary>
         public bool IsPanelView { get; private set; }
+        /// <summary>준비 단계 부대 배치(PREP-05). 지휘 입력과 건설 화면이 없으면 null.</summary>
+        public GamePrepPlacement PrepPlacement { get; private set; }
 
         public void Configure(Camera buildCamera, FirstPersonCamera firstPersonCamera, PlacementController placementController,
             PlayerInputController playerController, SquadCommandInput squadInput, GameObject buildHud, GameObject squadHud,
@@ -42,6 +46,12 @@ namespace ProjectNeo.Flow
             // ConstructionWorld(-200)가 길을 만든 뒤, 지휘 센터(-50)가 편성을 읽기 전에 유닛을 활성화한다.
             foreach (GameObject actor in actors) actor.SetActive(true);
             flow = GameSession.Flow;
+            // 준비 단계 부대 배치(PREP-05). 씬 파일을 바꾸지 않고 실행 중에 붙인다.
+            if (commandInput != null && placement != null && PrepPlacement == null)
+            {
+                PrepPlacement = gameObject.AddComponent<GamePrepPlacement>();
+                PrepPlacement.Configure(this, commandInput, placement, constructionCamera);
+            }
             Apply(flow.Phase);
         }
 
@@ -58,14 +68,33 @@ namespace ProjectNeo.Flow
         {
             constructionOpen = false;
             panelOpen = false;
+            placementOpen = false;
             placement.Cancel();
             Refresh(phase);
+        }
+
+        bool AnyOverlayOpen => constructionOpen || panelOpen || placementOpen;
+
+        /// <summary>준비 중 1인칭 탐색에서 부대 배치 화면을 연다(PREP-05). 다른 화면이 열려 있으면 false.</summary>
+        public bool EnterPlacement()
+        {
+            if (flow.Phase != GamePhase.Preparation || AnyOverlayOpen) return false;
+            placementOpen = true;
+            Refresh(flow.Phase);
+            return true;
+        }
+
+        public void ExitPlacement()
+        {
+            if (!placementOpen) return;
+            placementOpen = false;
+            Refresh(flow.Phase);
         }
 
         /// <summary>준비 중 1인칭 탐색에서 팝업 화면을 연다. 건설 중이거나 이미 열려 있으면 false.</summary>
         public bool EnterPanel()
         {
-            if (flow.Phase != GamePhase.Preparation || constructionOpen || panelOpen) return false;
+            if (flow.Phase != GamePhase.Preparation || AnyOverlayOpen) return false;
             panelOpen = true;
             Refresh(flow.Phase);
             return true;
@@ -80,7 +109,7 @@ namespace ProjectNeo.Flow
 
         public bool EnterConstruction()
         {
-            if (flow.Phase != GamePhase.Preparation || constructionOpen || panelOpen) return false;
+            if (flow.Phase != GamePhase.Preparation || AnyOverlayOpen) return false;
             constructionOpen = true;
             Refresh(flow.Phase);
             return true;
@@ -101,15 +130,21 @@ namespace ProjectNeo.Flow
             bool build = preparation && constructionOpen;
             bool battle = phase == GamePhase.Battle;
             bool panel = preparation && panelOpen && !build;
-            bool exploration = preparation && !build && !panel;
+            bool squadPlacement = preparation && placementOpen && !build && !panel;
+            bool exploration = preparation && !build && !panel && !squadPlacement;
+            bool topDown = build || squadPlacement;
             placement.enabled = false; playerInput.enabled = false; commandInput.enabled = false;
-            constructionCamera.gameObject.SetActive(build);
-            battleCamera.gameObject.SetActive(!build);
-            constructionHud.SetActive(build); commandHud.SetActive(battle);
+            constructionCamera.gameObject.SetActive(topDown);
+            battleCamera.gameObject.SetActive(!topDown);
+            // 준비 중 1인칭 탐색과 부대 배치 화면에서도 부대 상태를 보여준다(PREP-05). 키 안내 상자는 전투에서만 보인다.
+            constructionHud.SetActive(build); commandHud.SetActive(battle || exploration || squadPlacement);
+            var commandView = commandHud.GetComponent<ProjectNeo.UI.SquadCommandHud>();
+            if (commandView != null) commandView.SetHelpVisible(battle);
             IsBuildView = build; IsBattleView = battle; IsExplorationView = exploration; IsPanelView = panel;
+            IsPlacementView = squadPlacement;
             placement.enabled = build;
             playerInput.enabled = battle || exploration;
-            commandInput.enabled = battle;
+            commandInput.enabled = battle || exploration;
             Cursor.lockState = battle || exploration ? CursorLockMode.Locked : CursorLockMode.None;
             Cursor.visible = !(battle || exploration);
         }

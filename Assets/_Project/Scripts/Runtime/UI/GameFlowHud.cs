@@ -115,9 +115,11 @@ namespace ProjectNeo.UI
             prompt.anchorMax = new Vector2(phaseView.IsBuildView ? 0.98f : 0.85f, 0f);
             prompt.pivot = new Vector2(0.5f, 0f);
             prompt.anchoredPosition = new Vector2(0f, 16f);
-            prompt.sizeDelta = new Vector2(-32f, 64f);
+            // 탐색 안내는 부대 키 줄과 성문 알림까지 담는다(PREP-05).
+            prompt.sizeDelta = new Vector2(-32f, phaseView.IsExplorationView || phaseView.IsPlacementView ? 96f : 64f);
             interactionHint.text = phaseView.IsBuildView
                 ? (korean ? $"건설 모드 · {interaction.CloseKey} 돌아가기" : $"Construction - {interaction.CloseKey} to return")
+                : phaseView.IsPlacementView ? PlacementHint(korean)
                 : phaseView.IsPanelView
                 ? (korean ? $"{interaction.CloseKey} 닫기" : $"{interaction.CloseKey} to close")
                 : interaction.Target != null
@@ -131,7 +133,38 @@ namespace ProjectNeo.UI
                     : (korean ? "전장 준비 중" : "Preparing battlefield");
                 if (interaction.BattleStartProgress > 0f) startHint += $" · {Mathf.FloorToInt(interaction.BattleStartProgress * 100f)}%";
                 interactionHint.text += "\n" + startHint;
+                string squadHint = PreparationSquadHint(korean);
+                if (squadHint.Length > 0) interactionHint.text += "\n" + squadHint;
+                string gateMessage = battle.PrepGate != null ? battle.PrepGate.Message : "";
+                if (gateMessage.Length > 0) interactionHint.text += "\n" + gateMessage;
             }
+        }
+
+        /// <summary>
+        /// 준비 중 1인칭 탐색에서 보여주는 부대 키 한 줄(PREP-05). 전투용 키 안내 상자 대신 여기 한 곳에서만 만든다.
+        /// 나중에 안내 방식을 바꿀 때는 이 함수만 고친다.
+        /// </summary>
+        string PreparationSquadHint(bool korean)
+        {
+            GamePrepPlacement prep = phaseView.PrepPlacement;
+            if (prep == null || prep.Center == null) return "";
+            string keys = SquadCommandHud.KeyLine(prep.Center.Settings);
+            string open = interaction.PlacementKey;
+            return korean ? $"{keys} · {open} 부대 배치 화면" : $"{keys} - {open} squad placement view";
+        }
+
+        /// <summary>부대 배치 화면 안내(PREP-05). 조작과 고른 부대, 마지막 알림을 보여준다.</summary>
+        string PlacementHint(bool korean)
+        {
+            GamePrepPlacement prep = phaseView.PrepPlacement;
+            string back = $"{interaction.PlacementKey}·{interaction.CloseKey}";
+            string text = korean
+                ? $"부대 배치 · F1~F4·` 또는 유닛 클릭으로 선택 · 좌클릭 이동 · 우클릭 해제 · {back} 돌아가기"
+                : $"Squad placement - F1-F4/` or click a unit to select - left click to move - right click to clear - {back} to return";
+            if (prep == null) return text;
+            text += "\n" + (korean ? "선택: " : "Selected: ") + prep.SelectionText();
+            if (prep.Message.Length > 0) text += " · " + prep.Message;
+            return text;
         }
 
         /// <summary>대포 안내 한 줄. 타고 있으면 조작법과 장전 상태, 가까이 있으면 타는 키를 보여준다.</summary>
