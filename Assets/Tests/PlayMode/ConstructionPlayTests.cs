@@ -162,7 +162,7 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
-        public IEnumerator UnitOverlap_LiftsUnitOntoNewWall_AndEmptyGateSiteRemainsReserved()
+        public IEnumerator UnitOverlap_LiftsUnitOntoNewWall_AndBrokenGateArchStaysFixed()
         {
             Vector2Int unitCell = world.Layout.WorldToCell(world.LocalPoint(sandbox.Unit.transform.position));
             float health = sandbox.Unit.GetComponent<CharacterActor>().Health.Current;
@@ -177,7 +177,8 @@ namespace ProjectNeo.Tests
             Vector2Int gateCell = gate.Placement.Cell;
             Assert.IsFalse(world.Layout.Remove(gate.Placement.Id));
             gate.ReceiveDamage(gate.Health.Current);
-            Assert.AreEqual(PlacementIssue.ReservedGate, world.CheckPlacement(wall, gateCell, 0));
+            Assert.AreSame(gate.Placement, world.Layout.At(gateCell));
+            Assert.AreEqual(PlacementIssue.Occupied, world.CheckPlacement(wall, gateCell, 0));
             yield return WaitForNavigation(world);
         }
 

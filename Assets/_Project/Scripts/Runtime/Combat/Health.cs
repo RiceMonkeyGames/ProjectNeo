@@ -46,6 +46,16 @@ namespace ProjectNeo.Combat
             return restored;
         }
 
+        /// <summary>파괴된 구조물(성문 등)을 최대 체력으로 복구한다.</summary>
+        public float ReviveFull()
+        {
+            float restored = Maximum - current;
+            dead = Maximum <= 0f;
+            current = Maximum;
+            Changed?.Invoke();
+            return Math.Max(0f, restored);
+        }
+
         void OnStatChanged(StatType stat)
         {
             if (stat != StatType.MaxHealth) return;

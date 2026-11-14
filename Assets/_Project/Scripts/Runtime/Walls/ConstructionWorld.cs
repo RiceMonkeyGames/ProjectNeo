@@ -240,6 +240,23 @@ namespace ProjectNeo.Walls
             Destroy(weapon.gameObject);
         }
 
+        public void BreachGate(PlacedStructure structure)
+        {
+            if (!IsLive(structure)) return;
+            structure.ApplyDoorState(true);
+            PieceCollapsing?.Invoke(structure);
+            rebuildPending = true;
+            Changed?.Invoke();
+        }
+
+        public void NotifyGateRepaired(PlacedStructure structure)
+        {
+            if (!IsLive(structure)) return;
+            structure.ApplyDoorState(false);
+            rebuildPending = true;
+            Changed?.Invoke();
+        }
+
         public void Collapse(PlacedStructure structure)
         {
             if (structure == null || !structures.ContainsKey(structure.Placement.Id)) return;
