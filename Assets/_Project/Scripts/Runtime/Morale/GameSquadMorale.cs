@@ -196,7 +196,8 @@ namespace ProjectNeo.Morale
                 if (gateLost) return;
                 foreach (PlacedStructure other in world.Structures)
                     if (other != piece && other != null && other.Placement != null
-                        && other.Placement.Definition.Kind == BuildPieceKind.Gate) return;
+                        && other.Placement.Definition.Kind == BuildPieceKind.Gate
+                        && other.Health != null && !other.Health.IsDead) return;
                 gateLost = true;
                 foreach (BattleSquadMorale battle in battles) battle?.OnGateDestroyed();
                 return;

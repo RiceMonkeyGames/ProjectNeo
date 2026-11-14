@@ -53,7 +53,8 @@ namespace ProjectNeo.Flow
             get
             {
                 foreach (PlacedStructure piece in world.Structures)
-                    if (piece.Placement.Definition.Kind == BuildPieceKind.Gate) return false;
+                    if (piece != null && piece.Placement.Definition.Kind == BuildPieceKind.Gate
+                        && piece.Health != null && !piece.Health.IsDead) return false;
                 return true;
             }
         }

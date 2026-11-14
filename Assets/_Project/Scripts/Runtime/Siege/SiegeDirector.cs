@@ -227,7 +227,8 @@ namespace ProjectNeo.Siege
             get
             {
                 foreach (PlacedStructure structure in world.Structures)
-                    if (structure != null && structure.Placement.Definition.Kind == BuildPieceKind.Gate) return false;
+                    if (structure != null && structure.Placement.Definition.Kind == BuildPieceKind.Gate
+                        && structure.Health != null && !structure.Health.IsDead) return false;
                 return true;
             }
         }

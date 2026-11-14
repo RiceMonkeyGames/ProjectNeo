@@ -126,7 +126,7 @@ namespace ProjectNeo.Editor
             string path = Prefabs + "/" + name + ".prefab";
             var existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
             if (existing != null) return existing;
-            var root = new GameObject(name); root.AddComponent<PlacedStructure>();
+            var root = new GameObject(name); var placed = root.AddComponent<PlacedStructure>();
             var visual = new GameObject("Visual"); visual.transform.SetParent(root.transform, false);
             if (kind == BuildPieceKind.Stairs)
             {
@@ -136,20 +136,72 @@ namespace ProjectNeo.Editor
                 visual.AddComponent<MeshRenderer>().sharedMaterial = material;
             }
             else if (kind == BuildPieceKind.Gate)
-            {
-                Part(root.transform, visual.transform, "LeftPost", new Vector3(-0.425f, 0.5f, 0f), new Vector3(0.15f, 1f, 1f), material);
-                Part(root.transform, visual.transform, "RightPost", new Vector3(0.425f, 0.5f, 0f), new Vector3(0.15f, 1f, 1f), material);
-                Part(root.transform, visual.transform, "Top", new Vector3(0f, 0.875f, 0f), new Vector3(0.7f, 0.25f, 1f), material);
-                Part(root.transform, visual.transform, "Door", new Vector3(0f, 0.375f, 0f), new Vector3(0.7f, 0.75f, 0.18f), material);
-            }
+                BuildGateParts(root, placed, visual.transform,
+                    CombatPrototypeSetup.MaterialAsset("ConstructionStone", new Color(0.58f, 0.66f, 0.75f)), material);
             else Part(root.transform, visual.transform, "Body", Vector3.up * 0.5f, Vector3.one, material);
             var prefab = PrefabUtility.SaveAsPrefabAsset(root, path); UnityEngine.Object.DestroyImmediate(root);
             return prefab;
         }
 
+        public static void BuildGateParts(GameObject root, PlacedStructure placed, Transform visual,
+            Material archMaterial, Material doorMaterial)
+        {
+            // Stone arch colliders (indestructible frame + walkable top surface at y = 1.0).
+            AddBoxCollider(root, new Vector3(-0.425f, 0.5f, 0f), new Vector3(0.15f, 1f, 1f));
+            AddBoxCollider(root, new Vector3(0.425f, 0.5f, 0f), new Vector3(0.15f, 1f, 1f));
+            AddBoxCollider(root, new Vector3(0f, 0.91f, 0f), new Vector3(0.7f, 0.18f, 1f));
+
+            var arch = new GameObject("StoneArch");
+            arch.transform.SetParent(visual, false);
+            arch.AddComponent<MeshFilter>().sharedMesh = ConstructionGateArchMesh.EnsureAsset();
+            arch.AddComponent<MeshRenderer>().sharedMaterial = archMaterial;
+
+            // Wooden door (only this part breaks on gate destruction).
+            BoxCollider doorCollider = AddBoxCollider(root, new Vector3(0f, 0.41f, 0f), new Vector3(0.7f, 0.82f, 0.18f));
+            GameObject doorVisual = CombatPrototypeSetup.Box("Door", Vector3.zero, new Vector3(0.7f, 0.82f, 0.18f), doorMaterial);
+            UnityEngine.Object.DestroyImmediate(doorVisual.GetComponent<Collider>());
+            doorVisual.transform.SetParent(visual, false);
+            doorVisual.transform.localPosition = new Vector3(0f, 0.41f, 0f);
+            placed.SetDoorParts(doorCollider, doorVisual);
+        }
+
+        [MenuItem("ProjectNeo/Setup/Split Gate Arch And Door")]
+        public static string RebuildMainGatePrefab()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode) throw new InvalidOperationException("Stop Play Mode first.");
+            string path = Prefabs + "/MainGate.prefab";
+            var existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (existing == null) throw new InvalidOperationException("MainGate prefab not found: " + path);
+            Material archMaterial = CombatPrototypeSetup.MaterialAsset("ConstructionStone", new Color(0.58f, 0.66f, 0.75f));
+            Material doorMaterial = CombatPrototypeSetup.MaterialAsset("ConstructionGate", new Color(0.63f, 0.44f, 0.24f));
+
+            using (var scope = new PrefabUtility.EditPrefabContentsScope(path))
+            {
+                GameObject root = scope.prefabContentsRoot;
+                foreach (Collider col in root.GetComponents<Collider>()) UnityEngine.Object.DestroyImmediate(col);
+                for (int i = root.transform.childCount - 1; i >= 0; i--)
+                    UnityEngine.Object.DestroyImmediate(root.transform.GetChild(i).gameObject);
+
+                var placed = root.GetComponent<PlacedStructure>() ?? root.AddComponent<PlacedStructure>();
+                var visual = new GameObject("Visual");
+                visual.transform.SetParent(root.transform, false);
+                BuildGateParts(root, placed, visual.transform, archMaterial, doorMaterial);
+            }
+            AssetDatabase.SaveAssets();
+            return "Updated MainGate.prefab with StoneArch + Door.";
+        }
+
+        static BoxCollider AddBoxCollider(GameObject root, Vector3 center, Vector3 size)
+        {
+            var collider = root.AddComponent<BoxCollider>();
+            collider.center = center;
+            collider.size = size;
+            return collider;
+        }
+
         static void Part(Transform root, Transform visual, string name, Vector3 center, Vector3 size, Material material)
         {
-            var collider = root.gameObject.AddComponent<BoxCollider>(); collider.center = center; collider.size = size;
+            AddBoxCollider(root.gameObject, center, size);
             var body = CombatPrototypeSetup.Box(name, Vector3.zero, size, material);
             UnityEngine.Object.DestroyImmediate(body.GetComponent<Collider>());
             body.transform.SetParent(visual, false); body.transform.localPosition = center;

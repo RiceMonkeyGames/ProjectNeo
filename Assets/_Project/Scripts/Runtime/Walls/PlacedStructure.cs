@@ -6,9 +6,18 @@ namespace ProjectNeo.Walls
 {
     public sealed class PlacedStructure : MonoBehaviour
     {
+        [SerializeField] Collider doorCollider;
+        [SerializeField] GameObject doorVisual;
         ConstructionWorld world;
+        bool doorOpened;
         public BuildPlacement Placement { get; private set; }
         public Health Health { get; private set; }
+
+        public void SetDoorParts(Collider collider, GameObject visual)
+        {
+            doorCollider = collider;
+            doorVisual = visual;
+        }
 
         public void Initialize(ConstructionWorld owner, BuildPlacement placement)
         {
@@ -18,6 +27,14 @@ namespace ProjectNeo.Walls
             stats.SetBase(StatType.MaxHealth, placement.Definition.MaxHealth);
             Health = new Health(stats);
             Health.Died += Collapse;
+            Health.Changed += OnHealthChanged;
+        }
+
+        public void ApplyDoorState(bool open)
+        {
+            doorOpened = open;
+            if (doorCollider != null) doorCollider.enabled = !open;
+            if (doorVisual != null) doorVisual.SetActive(!open);
         }
 
         public void ReceiveDamage(float amount) => Health?.TakeDamage(amount);
@@ -45,12 +62,25 @@ namespace ProjectNeo.Walls
             }
             return id != null && TryGetMountPose(id, out pose);
         }
-        void Collapse() => world.Collapse(this);
+
+        void Collapse()
+        {
+            if (Placement != null && Placement.Definition.Kind == BuildPieceKind.Gate) world.BreachGate(this);
+            else world.Collapse(this);
+        }
+
+        void OnHealthChanged()
+        {
+            if (doorOpened && Health != null && !Health.IsDead
+                && Placement != null && Placement.Definition.Kind == BuildPieceKind.Gate)
+                world.NotifyGateRepaired(this);
+        }
 
         void OnDestroy()
         {
             if (Health == null) return;
             Health.Died -= Collapse;
+            Health.Changed -= OnHealthChanged;
             Health.Dispose();
         }
     }

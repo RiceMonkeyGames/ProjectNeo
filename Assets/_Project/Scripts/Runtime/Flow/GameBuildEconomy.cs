@@ -172,15 +172,16 @@ namespace ProjectNeo.Flow
             var needs = new List<RepairNeed>();
             if (world == null) return needs;
             foreach (PlacedStructure piece in world.Structures)
-                if (piece != null) AddNeed(needs, lookup, piece.Health);
+                if (piece != null)
+                    AddNeed(needs, lookup, piece.Health, piece.Placement != null && piece.Placement.Definition.Kind == BuildPieceKind.Gate);
             foreach (PlacedSiegeWeapon weapon in world.Weapons)
-                if (weapon != null && !weapon.IsRemoved) AddNeed(needs, lookup, weapon.Health);
+                if (weapon != null && !weapon.IsRemoved) AddNeed(needs, lookup, weapon.Health, false);
             return needs;
         }
 
-        static void AddNeed(List<RepairNeed> needs, Dictionary<int, Health> lookup, Health health)
+        static void AddNeed(List<RepairNeed> needs, Dictionary<int, Health> lookup, Health health, bool allowDead)
         {
-            if (health == null || health.IsDead) return;
+            if (health == null || (health.IsDead && !allowDead)) return;
             float missing = health.Maximum - health.Current;
             if (missing <= 0f) return;
             int key = needs.Count;
@@ -208,7 +209,12 @@ namespace ProjectNeo.Flow
                 Message = "골드가 모자라 수리하지 못했습니다.";
                 return 0;
             }
-            foreach (RepairNeed need in chosen) lookup[need.Id].RestoreFull();
+            foreach (RepairNeed need in chosen)
+            {
+                Health health = lookup[need.Id];
+                if (health.IsDead) health.ReviveFull();
+                else health.RestoreFull();
+            }
             Message = chosen.Count == needs.Count ? $"모두 수리 · {cost}골드" : $"{chosen.Count}/{needs.Count}곳 수리 · {cost}골드 (골드 부족)";
             return chosen.Count;
         }
