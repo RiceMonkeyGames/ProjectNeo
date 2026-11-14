@@ -1,6 +1,6 @@
 # Editor Setup & Test Scripts
 
-Last Updated: 2026-11-14 13:14:29 (KST)
+Last Updated: 2026-11-14 17:58:13 (KST)
 
 > Purpose: Map of Editor setup menus, build scripts, and EditMode/PlayMode test suites. | Parent: [codemap/README](README.md) | Related: [UnityCLI](../workflow/UnityCLI.md), [Status](../plan/Status.md)
 
@@ -66,7 +66,7 @@ Last Updated: 2026-11-14 13:14:29 (KST)
 - `StackedConstructionPlayTests.cs`: 2nd/3rd-tier stacking, multi-tier NavMesh connectivity, unit elevation without damage, collapse settling.
 - `WallCommandPlayTests.cs`: View/input toggling, order persistence, wall traversal, stair loss handling, collapse handling.
 - `SquadCommandPlayTests.cs`: Squad movement, Hold posture, Attack engagement, screen-center targeting.
-- `SiegePrototypePlayTests.cs`: Budget validation, troop placement, breach entry, ladder climbing, toppling, fall damage, victory/defeat.
+- `SiegePrototypePlayTests.cs`: Budget validation, troop placement, breach entry, ladder climbing, toppling, fall damage, victory/defeat. `Ladder_AlliesOnTopPushLaddersDown` checks mixed-battle automatic toppling; `Ladder_AlliesOnTopPushItDown_AndClimberTakesFallDamage` waits for an isolated enemy to climb at least 1.5m before adding a defender, then verifies automatic dislodging, HP loss, landing and navigation recovery. [Diagnosis/manual repeat](../history/BUG/BUG-ladder-fall-test-after-gate-arch.md).
 - `WallTargetStrategyTests.cs` (EditMode): Nearest selection, stable tie resolution, empty/invalid candidate distances.
 - `WallBreakerPlayTests.cs`: Saved wall-breaker prefab attacks/breaches walls, includes gates, selects stacked-column bottom and settled upper piece, assaults existing gaps, holds/retries inaccessible bases, and stops structure damage on retreat. Stacking asserts and uses the actual saved SiegePrototype three-tier grid; a substitute world must not hide scene configuration failures.
 - `GameFlowPlayTests.cs`: Scene transitions, phase execution, defeat reset to title, default castle perimeter checks.
