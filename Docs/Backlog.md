@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-14 20:58:08 (KST)
+Last Updated: 2026-11-14 21:00:12 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -18,6 +18,10 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 
 | Task ID | Description | Status | Assignee | Completion Criteria & Prerequisites |
 |---|---|---|---|---|
+| BUG-stage2-enemies-idle | Stage 2 Enemies Do Not Advance | Waiting | Unassigned | Reported 2026-11-14 by user after the QA-game-loop recheck: in `Game.unity`, after winning Stage 1 and `Claim Reward & Next Stage`, the Stage 2 battle starts but enemies do not approach the castle. Expected: enemies advance and assault as in Stage 1. Roster, start position and castle state at repro were not captured. First reproduce (Stage 1 win → Stage 2 hold B) and identify the cause before fixing; add a regression test for a second-stage assault. |
+| COMBAT-05 | Player Jump | Waiting | Unassigned | User feedback 2026-11-14: add jump to player controls. Confirm with the user at claim: key (Space assumed, not decided), jump height / air control, interaction with crouch, sprint, ladders and cannon manning, and whether jumping onto/over 3m wall pieces must stay impossible. Values in `PlayerControlSettings`. |
+| SIEGE-07 | Cannon Usability: Fire-Ready Feedback & Aim Rotation | Pending Decision | Unassigned | User feedback 2026-11-14 on SIEGE-02 cannons: the player cannot tell whether the cannon can fire or is on cooldown, and wants to turn the cannon while manning it. Decisions needed before implementation: (1) fire-ready/reload indicator form (crosshair state, HUD bar/text, on-cannon visual, sound) and why the existing manned-HUD reload text goes unnoticed, (2) rotation method: cannon follows the aim vs separate rotate keys, (3) rotation limits/speed versus the current ±45° / 6–60m fire arc, and whether auto-fire cannons are affected. |
+| PREP-05 | Pre-Battle Squad Placement | Pending Decision | Unassigned | User feedback 2026-11-14: squads cannot be positioned before the battle starts. Decisions needed before implementation: (1) method: enable F1–F3 / 1·2·3 orders during prep exploration vs placement in the construction view vs both, (2) whether units walk or are placed instantly (SiegePrototype uses instant placement), (3) allowed areas (wall tops, courtyard) and whether positions persist to the next stage. Related: Q-40 / FLOW-01 current-position battle start. |
 | B-7.1 | Formal Wave Data & Spawning Rules | Waiting for Prerequisite | Unassigned | After enemy definitions and spawn/termination contracts are agreed upon, spawn according to configured types, counts, and timings. No duplicates on pause/restart. |
 | SIEGE-01 | Link Pending Spawns to Win/Loss Evaluation | Waiting for Prerequisite | Unassigned | Formerly `B-9.2-wave` (fulfills `B-9.2` wave-spawn link). After B-7.1, prevent premature victory if enemies remain to spawn; ensure battle termination and outcomes trigger exactly once. |
 | C-5 | Wave Preview & Hidden Enemy Intel | Waiting for Prerequisite | Unassigned | Following B-7.1 and run contracts, display upcoming enemy types, counts, and hidden indicators in prep UI. Scouting rules clarified first. |

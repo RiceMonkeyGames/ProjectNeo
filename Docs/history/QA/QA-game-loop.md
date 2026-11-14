@@ -1,6 +1,6 @@
 # QA-game-loop | 2026-11-13 | Game Flow - First User Playtest
 
-Last Updated: 2026-11-14 20:58:08 (KST)
+Last Updated: 2026-11-14 21:00:12 (KST)
 
 ## Evidence and scope
 
@@ -31,3 +31,4 @@ Open `Assets/_Project/Scenes/Title.unity`, Play → New Game. Approach construct
 - Result: user reported everything normal ("전부 정상") and did not flag any item as skipped or failing. No per-item notes, run settings or screenshots were captured.
 - Evidence scope: user-reported manual Editor play only. No code, scene or asset changes; no automated tests were re-run for this task (latest baseline is COMBAT-03: EditMode 394/394, PlayMode 193/193). Standalone build unverified.
 - Manual repeat: open `Assets/_Project/Scenes/Title.unity`, Play → `New Game`, walk the checklist above; stop Play Mode to reset.
+- Post-completion feedback (2026-11-14, same session): after the "all normal" report the user listed four follow-ups, registered in the Backlog: `BUG-stage2-enemies-idle` (Stage 2 enemies do not advance), `COMBAT-05` (player jump), `SIEGE-07` (cannon fire-ready feedback and aim rotation), `PREP-05` (pre-battle squad placement). The Stage 2 bug means multi-stage repetition is not verified by this recheck.
