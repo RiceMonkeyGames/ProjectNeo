@@ -13,6 +13,7 @@ namespace ProjectNeo.Siege
     {
         readonly float raiseSeconds;
         readonly float pushSeconds;
+        readonly LadderPushTuning pushTuning;
         bool returning, committed;
         public float BalancePoint { get; private set; }
         public bool IsSettling => returning || committed;
@@ -29,11 +30,34 @@ namespace ProjectNeo.Siege
         /// <summary>밀기가 수직 균형점을 넘어 탑승자가 떨어진다. 완전히 눕는 시점과 구분한다.</summary>
         public event Action ClimberDislodged;
 
-        public SiegeLadderState(float raiseSeconds, float pushSeconds, float balancePoint = 0.5f)
+        /// <param name="pushSeconds">눕는 전체 회전 시간. 균형점 이후 자동 안착과 취소 복귀의 속도다.</param>
+        /// <param name="pushTuning">균형점까지 밀어야 하는 시간과 무게·협동 배율. 없으면 pushSeconds 속도로 민다.</param>
+        public SiegeLadderState(float raiseSeconds, float pushSeconds, float balancePoint = 0.5f,
+            LadderPushTuning pushTuning = null)
         {
             this.raiseSeconds = Math.Max(0.01f, raiseSeconds);
             this.pushSeconds = Math.Max(0.01f, pushSeconds);
+            this.pushTuning = pushTuning;
             ConfigureBalancePoint(balancePoint);
+        }
+
+        /// <summary>
+        /// 세워진 사다리를 지금 탑승 상태와 주어진 인원으로 균형점까지 미는 데 걸리는 시간.
+        /// 균형점을 넘으면 손을 떼도 넘어가므로 이 시간이 실제로 버텨야 하는 시간이다.
+        /// </summary>
+        public float PushToBalanceSeconds(int pushers)
+        {
+            if (pushers <= 0) return float.PositiveInfinity;
+            if (pushTuning == null) return pushSeconds * (1f - BalancePoint);
+            return pushTuning.SecondsToBalance(pushers, HasClimber);
+        }
+
+        float PushRate(int pushers)
+        {
+            float span = 1f - BalancePoint;
+            // 균형점이 세워진 자세와 같으면 밀자마자 넘어가므로 안착 속도만 쓴다.
+            if (span <= 0f) return 1f / pushSeconds;
+            return span / Math.Max(0.0001f, PushToBalanceSeconds(pushers));
         }
 
         /// <summary>누운 자세에서 성벽에 기댄 자세까지 회전 중 수직을 지나는 비율.</summary>
@@ -41,10 +65,15 @@ namespace ProjectNeo.Siege
             => BalancePoint = Math.Max(0f, Math.Min(1f, raisedFraction));
 
         /// <param name="raiserPresent">세우는 유닛이 사다리 밑에 있는지</param>
-        /// <param name="pusherPresent">밀어낼 수 있는 아군이 사다리 위쪽 끝에 있는지</param>
+        /// <param name="pusherPresent">밀어낼 수 있는 아군이 사다리 위쪽 끝에 있는지(한 명으로 친다)</param>
         /// <param name="pushBlocked">올라온 적이 있어 밀 수 없는지</param>
         public void Tick(float deltaTime, bool raiserPresent, bool pusherPresent, bool pushBlocked)
+            => Tick(deltaTime, raiserPresent, pusherPresent ? 1 : 0, pushBlocked);
+
+        /// <param name="pusherCount">사다리 위쪽 끝에서 함께 미는 아군 수</param>
+        public void Tick(float deltaTime, bool raiserPresent, int pusherCount, bool pushBlocked)
         {
+            bool pusherPresent = pusherCount > 0;
             if (deltaTime <= 0f || float.IsNaN(deltaTime)) return;
             switch (Phase)
             {
@@ -72,7 +101,9 @@ namespace ProjectNeo.Siege
                         break;
                     }
                     if (!committed && (!pusherPresent || pushBlocked)) break;
-                    float nextPushProgress = Math.Min(1f, PushProgress + deltaTime / pushSeconds);
+                    // 균형점 전에는 미는 인원과 무게가 속도를 정하고, 넘은 뒤에는 기존 안착 속도로 넘어간다.
+                    float rate = committed ? 1f / pushSeconds : PushRate(pusherCount);
+                    float nextPushProgress = Math.Min(1f, PushProgress + deltaTime * rate);
                     if (!committed && nextPushProgress >= 1f - BalancePoint)
                     {
                         // 긴 프레임에서도 낙하는 균형점의 위치에서 시작한다.

@@ -1,6 +1,6 @@
 # Runtime Codemap: Walls & Siege
 
-Last Updated: 2026-11-13 20:24:58 (KST)
+Last Updated: 2026-11-14 17:27:30 (KST)
 
 > Purpose: Class map for castle construction, fall damage, siege weapons, and enemy siege AI. | Parent: [codemap/README](README.md) | Related: [CombatAndSquads](CombatAndSquads.md), [design/WallsAndSiege](../design/WallsAndSiege.md)
 
@@ -27,7 +27,7 @@ Grid display (`BUG-build-grid-lines`): BuildCameraSettings.MinimumGridLinePixels
 | Walls | `FallSettings`, `FallDamageRules`, `UnitFallController` | Height-based fall damage calculation and collapse dropping/landing. Supports NavMeshAgent and CharacterController; restores navigation upon landing. `LiftForConstruction` teleports units harmlessly to new top surfaces upon placement. |
 | Walls / UI | `ConstructionSandbox`, `ConstructionHud` | Test scene movement and foundation destruction buttons; uGUI/TMP piece picker and status HUD. |
 | Walls | `WallCommandSandbox` | Integrated test scene Tab view toggle. Swaps construction and 1st-person camera, input, and HUD while retaining terrain and orders. Activates units after World builds NavMesh. |
-| Siege | `BuildBudget`, `SiegeOutcomeRules`, `SiegeLadderState` | Pure C# siege rules. Temporary build budget deduction/refund, win/loss evaluation (defeat prioritizes simultaneous victory, Q-09) and retreat trigger, ladder state machine (placed → raising → raised, single climber queue, toppling). |
+| Siege | `BuildBudget`, `SiegeOutcomeRules`, `SiegeLadderState`, `LadderPushTuning` | Pure C# siege rules. Temporary build budget deduction/refund, win/loss evaluation (defeat prioritizes simultaneous victory, Q-09) and retreat trigger, ladder state machine (placed → raising → raised, single climber queue, toppling; SIEGE-05 push hold time from `LadderPushTuning`: occupant weight multiplier and cooperation bonus by pusher count). |
 | Siege | `SiegeSettings` | Settings asset for budget, ladder timings/distances, enemy tick intervals, hotkeys (F topple, Tab view, R restart). |
 | Siege | `SiegeLadder`, `PlaceholderLadderView` | Fixed ladder slots along wall perimeter. Active only when wall piece exists at slot. Shared FIFO occupancy for enemies/allies/player; existing enemy raiser APIs retained. Friendly occupancy/requests protect against automatic toppling; nearby hostile defenders still block pushing, while enemy ladder occupancy alone does not. Visualized via placeholder bar under `Visual`. |
 | Siege | `SiegeAttackerBrain` | Per-enemy siege decision AI. Delegates to `UnitCombatAI.Engage` if walkable ally exists; otherwise executes role-specific siege behaviors (`SiegeAttackerRole`: Ladder=0, GateBreaker=1, Archer=2, WallBreaker=3). WallBreaker delegates structure handling to `WallBreakerAttack`, immediately reselecting invalidated targets after navigation settles. Movement and attacks executed via `UnitDirective`. Ladder grunts redirect to gate if no ladders exist. `Retreat()` navigates unit off-map, setting state to `Fled` (excluded from active enemy tally). |

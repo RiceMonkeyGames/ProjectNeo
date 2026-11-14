@@ -1,6 +1,6 @@
 # Game Design: Castle Walls, Enemies & Siege Strategy
 
-Last Updated: 2026-11-14 11:48:34 (KST)
+Last Updated: 2026-11-14 17:17:44 (KST)
 
 > Purpose: Construction stacking, build economy, enemy roles, and siege/ladder rules. | Parent: [design/README](README.md) | Related: [Combat](Combat.md), [MoraleAndWave](MoraleAndWave.md)
 
@@ -44,6 +44,7 @@ Last Updated: 2026-11-14 11:48:34 (KST)
   - **Combat**: Occupants cannot attack, may receive damage, and fall if killed. Existing fall-damage rules apply when a ladder topples beneath a living occupant.
   - **Toppling safety**: Automatic allied toppling is prohibited while an ally/player is aboard or waiting to use the ladder. Enemy occupancy alone does not prohibit toppling. Existing nearby-enemy combat blocking remains; the player topples with the hold-F gesture. Deliberate friendly toppling was not approved; SIEGE-04 applies the friendly-use protection to both automatic and player pushes.
   - **Push feedback (user approved 2026-11-13, BUG-ladder-push-visual)**: Raising and pushing use continuous motion. Cancellation before the vertical balance point returns smoothly to the starting endpoint; once past balance, motion completes without further input, even if a nearby hostile arrives. Balance is derived from ladder geometry, not a fixed half-progress threshold. New boarding is blocked during push/settling; occupants pause climbing and follow ladder tilt while pushed or returning, resume once fully returned, and fall as soon as an outward push crosses vertical. Existing 3s raise / 2s push durations also determine settling speed. Support destruction and battle reset still force immediate logical collapse.
+  - **Push weight & cooperation (user approved 2026-11-14, SIEGE-05)**: Supersedes the 2s push hold above; the auto-complete-after-balance rule stays. Push hold time = time from upright to the vertical balance point, 3s for one pusher on an empty ladder (`SiegeSettings.ladderPushHoldSeconds`). An occupant (ally or enemy; still one at a time) multiplies it by ×1.5 (`ladderOccupiedPushMultiplier`). Allies pushing together at the upper endpoint speed it up: 2 pushers +50%, 3 or more +75% cap (`ladderTwoPusherBonus`, `ladderThreePlusPusherBonus`); the player counts as one pusher. Post-balance settling and pre-balance release return keep the existing 2s full-rotation speed (`ladderPushSeconds`). Raising stays 3s. Existing friendly-use protection and nearby-enemy blocking are unchanged. Upper-exit holding (chokepoint standoff) is excluded and left for a separate task.
   - **Raising**: Allies automatically raise a lowered ladder when needed; the player holds F at the lower endpoint to raise it.
   - User confirmed shared-code edits are available for SIEGE-04 on 2026-11-13. The current implementation handles a ladder between two walkable endpoint regions; a complete walking route is preferred when already available. [Decision record](../history/Q/Q-41.md), [implementation verification](../history/SIEGE/SIEGE-04.md).
 
@@ -67,7 +68,7 @@ Last Updated: 2026-11-14 11:48:34 (KST)
   - **Damage vs flyers**: The 50% upward-shot penalty does not apply when allies/player shoot flyers; they take 100%. The penalty remains only for enemies shooting up at wall tops.
   - **Ally melee vs flyers**: Allies attack a hovering flyer when it is within attack range, measured from its ground projection; they do not reach it while it travels at altitude.
   - **Failure handling (confirmed 2026-11-13)**: All roles re-decide every `AttackerDecisionInterval`; a dead or destroyed target triggers immediate re-selection. Wall Breaker with no reachable wall base holds and retries; Flyer with no valid target holds at altitude above the courtyard. Decisions pause during NavMesh rebuilds (existing rule).
-  - **Ladders**: Pre-placed along wall perimeter (~every 5 cells; inactive if no wall piece at slot; attaches to topmost wall at cell). Raise ~3s, Climb ~2.5s (1 unit at a time, others queue at base), Topple ~2s (allies atop walls topple autonomously when clear of climbers, or player via interact key). Toppling drops climber with fall damage; toppled ladders can be re-erected in ~3s.
+  - **Ladders**: Pre-placed along wall perimeter (~every 5 cells; inactive if no wall piece at slot; attaches to topmost wall at cell). Raise ~3s, Climb ~2.5s (1 unit at a time, others queue at base), Topple: 3s hold to balance with weight/cooperation modifiers per SIEGE-05, then ~2s-rate settle (allies atop walls topple autonomously when clear of climbers, or player via interact key). Toppling drops climber with fall damage; toppled ladders can be re-erected in ~3s.
 
 ## Siege Defense Prototype Scope
 
