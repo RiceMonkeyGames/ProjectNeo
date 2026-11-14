@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-14 17:32:45 (KST)
+Last Updated: 2026-11-14 17:38:26 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -27,6 +27,7 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 | PREP-04 | Combat Consumable Use | Pending Decision | Unassigned | User deferred (2026-11-13). Decide with Q-12: input keys (combat key ownership with teammate), quick slots, effects (e.g., potion heal %), limits. Existing data: `item_potion`. |
 | BUG-wall-archer-los | Wall-Top Archer LoS, Range & Hold Retaliation | Pending Decision | Unassigned | Reported 2026-11-14 during manual play: wall-top `Hold` archers fail to retaliate against enemy archers below due to `HasClearShot` wall-edge occlusion or 3D range boundary. Decisions needed before implementation: (1) high-ground ranged bonus enabled/value, (2) `HasClearShot` wall-top/edge exception vs stepping to wall edge for clear LoS, (3) `Hold` behavior when LoS and path are both blocked. |
 | COMBAT-04 | Cast & Interaction Interrupt System on Hit | Pending Decision | Unassigned | Proposal 2026-11-14: taking enemy damage should interrupt active actions such as pushing ladders. Decisions needed before implementation: (1) target actions (ladder push/raise, cannon operation, battle-start hold, etc.), (2) trigger condition (any damage vs minimum damage/stagger threshold, cooldown), (3) progress handling on interrupt (reset vs settle from current tilt) and UI/feedback. |
+| BUG-ladder-fall-test-after-gate-arch | PlayMode ladder fall-damage test fails after SIEGE-06 | Waiting | Unassigned | Found 2026-11-14 while merging SIEGE-05. `SiegePrototypePlayTests.Ladder_AlliesOnTopPushItDown_AndClimberTakesFallDamage` fails deterministically ("오르던 적이 떨어져 피해를 받지 않았다"): allies topple a ladder but no enemy takes fall damage within 2400 frames. Passed on develop before SIEGE-06 (with and without SIEGE-05); fails after SIEGE-06 even with push values temporarily restored to the old fast push, and the SIEGE-06 record already reports it. Likely the door-only gate breach changes ladder-grunt timing/route choice; decide whether it is a behavior regression or a test-scenario update. Coordinate with the SIEGE-06 owner. |
 
 ---
 
