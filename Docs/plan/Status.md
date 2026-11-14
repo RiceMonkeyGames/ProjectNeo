@@ -1,6 +1,6 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-14 20:31:18 (KST)
+Last Updated: 2026-11-14 20:58:08 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
@@ -30,6 +30,8 @@ Q-41 and SIEGE-04 completion/commit/push were authorized by the user on 2026-11-
 | Art & Performance | Capsule/box placeholder visuals, dual-tier NavMesh benchmark, AI query optimization (`PERF-nav-query`) | Production Synty packs, animations, VFX, full combat performance profiling |
 
 ## Test Baselines & Status Conventions
+
+- **Game loop manual recheck (QA-game-loop, 2026-11-14; Done on user authorization, `feature/qa-game-loop`)**: User replayed Title → Game against the construction/combat/outcome checklist and reported all items normal. Manual Editor evidence only; no code/asset changes, no tests re-run, standalone unverified. [History](../history/QA/QA-game-loop.md).
 
 - **Construction UI-hover QA (QA-build-zoom-ui-hover, 2026-11-14; Done on user authorization)**: Left construction UI wheel checks passed. User requested bottom return-hint zoom blocking; enabled background raycasts in setup and Game scene via Editor API. Compile and existing wheel PlayMode 1/1 passed. Live OS-wheel checks confirm bottom text/background retain zoom 55; world resumes to 46.75. User authorized develop merge and local/remote task-branch deletion. Standalone unverified. [History/manual repeat](../history/QA/QA-build-zoom-ui-hover.md).
 
