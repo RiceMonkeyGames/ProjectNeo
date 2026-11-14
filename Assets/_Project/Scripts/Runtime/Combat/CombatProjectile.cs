@@ -77,7 +77,7 @@ namespace ProjectNeo.Combat
             if (target != null)
                 target.ReceiveDamage(DamageRules.Calculate(attack, target.Stats.GetValue(StatType.Defense), profile.MinimumDamage)
                     * (target.Airborne != null ? 1f : DamageRules.ElevationMultiplier(target.transform.position.y - launchHeight,
-                        profile.UpwardShotMinimumRise, profile.UpwardShotDamageRatio)));
+                        profile.UpwardShotMinimumRise, profile.UpwardShotDamageRatio)), owner);
             Destroy(gameObject);
             launched = false;
             return true;
