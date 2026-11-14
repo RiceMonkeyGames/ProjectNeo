@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-14 01:12:57 (KST)
+Last Updated: 2026-11-14 11:05:52 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -30,7 +30,6 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 | B-9.3 | M1 Full Integration, Iteration & Build Verification | Waiting for Prerequisite | Unassigned | Following B-4~8 integration, test repeated cycles of destruction, enemy variants, waves, morale, and outcomes; verify regressions and standalone build startup flow. |
 | QA-smithy-popup | Manual Check of Blacksmith Crafting & Sales | Waiting | Unassigned | From D-6 (user skipped manual play 2026-11-13). In `Game.unity` prep: F on Smithy opens popup; Lv1 lists 3 recipes; craft wood shield (100→80 gold, recipe stays); iron sword without hide shows "비용이 모자랍니다"; sell shield +12 gold; consumables not listed for sale; upgrade shows 4 recipes. Open a BUG task if wrong. |
 | PREP-01 | Blacksmith Equipment Upgrade Levels | In Progress | 신용준 | Branch `feature/prep-01`. Prerequisite: D-6 (Done 2026-11-13; shares the Smithy panel). Decision: Q-35. Completion: Per-item upgrade level stored on `ItemInstance` and kept through equip/unequip and run state; +10% equip modifiers per level; max +1/+3/+5 by blacksmith Lv1/2/3; step cost 50% gold price × target level + materials (data); sell refund includes upgrade spend at the sell ratio. |
-| PREP-03 | Shop Offer Slot Locks | In Progress | youngho | Branch `feature/prep-03`. Prerequisite: PREP-02 (Done 2026-11-14; shares `ItemShop`/`RunState`/`GameFacilities`). Decision: Q-46 (2026-11-13; details in [PrepEconomyMeta](design/PrepEconomyMeta.md): per-row lock button, cap follows Shop level right after upgrade, duplicates allowed). Completion: Free lock toggle per offer, max locked = Shop level; locked offers survive re-roll (PREP-02) and next prep restock; buying clears the lock. |
 | PREP-04 | Combat Consumable Use | Pending Decision | Unassigned | User deferred (2026-11-13). Decide with Q-12: input keys (combat key ownership with teammate), quick slots, effects (e.g., potion heal %), limits. Existing data: `item_potion`. |
 
 ---

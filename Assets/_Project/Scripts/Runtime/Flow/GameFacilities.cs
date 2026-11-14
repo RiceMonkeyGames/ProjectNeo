@@ -74,6 +74,22 @@ namespace ProjectNeo.Flow
         public string OfferHeaderText => offerHeader != null ? offerHeader.text : string.Empty;
         /// <summary>지금 보이는 보관함 줄 수(상점) 또는 부대 줄 수(병영).</summary>
         public int InventoryRows => inventoryList != null ? ActiveChildren(inventoryList) : 0;
+        /// <summary>index번째 상점 매물이 잠겨 있는지(PREP-03).</summary>
+        public bool IsOfferLocked(int index) => State?.Shop != null && State.Shop.IsLocked(index);
+        public int ShopMaxLocked => State != null ? State.ShopMaxLocked : 0;
+        public int ShopLockedCount => State?.Shop != null ? State.Shop.LockedCount : 0;
+        public Button OfferLockButton(int index)
+        {
+            if (offerList == null || index < 0) return null;
+            int found = 0;
+            foreach (Button button in offerList.GetComponentsInChildren<Button>(true))
+            {
+                if (button.gameObject.name != "Button_Lock" || !button.gameObject.activeInHierarchy) continue;
+                if (found == index) return button;
+                found++;
+            }
+            return null;
+        }
 
         public void Configure(RunConfig start, GamePhaseView view, GameObject popup, TMP_Text titleLabel, TMP_Text statusLabel,
             TMP_Text bodyLabel)
@@ -180,7 +196,7 @@ namespace ProjectNeo.Flow
             RunState state = State;
             if (OpenFacility != FacilityType.Shop || state?.Shop == null || index < 0 || index >= state.Shop.Stock.Count) return false;
             ItemDefinition item = state.Shop.Stock[index];
-            bool bought = state.TryBuy(item);
+            bool bought = state.TryBuyAt(index);
             Message = bought ? $"{item.DisplayName} 구매 · {Describe(item.Price)}" : $"{item.DisplayName}: 비용이 모자랍니다.";
             Rebuild();
             return bought;
@@ -287,6 +303,30 @@ namespace ProjectNeo.Flow
             ShopRerollCheck.BattlePending => "전투 중에는 리롤할 수 없습니다.",
             ShopRerollCheck.NotEnoughFunds => $"비용이 모자랍니다: {cost}골드",
             _ => "지금은 리롤할 수 없습니다.",
+        };
+
+        /// <summary>상점 매물의 index번째 잠금을 토글한다(PREP-03). 각 매물 줄의 잠금 버튼이 부른다.</summary>
+        public bool TryToggleLock(int index)
+        {
+            RunState state = State;
+            if (OpenFacility != FacilityType.Shop || state?.Shop == null || flow.Phase != GamePhase.Preparation) return false;
+            if (index < 0 || index >= state.Shop.Stock.Count) return false;
+            bool wasLocked = state.Shop.IsLocked(index);
+            ShopLockCheck check = state.CheckShopLock(index);
+            bool toggled = check == ShopLockCheck.Ok && state.TryToggleShopLock(index);
+            ItemDefinition item = state.Shop.Stock[index];
+            Message = toggled
+                ? (wasLocked ? $"{item.DisplayName} 잠금 해제" : $"{item.DisplayName} 잠금 (최대 {state.ShopMaxLocked}개)")
+                : Reason(check, state.ShopMaxLocked);
+            Rebuild();
+            return toggled;
+        }
+
+        static string Reason(ShopLockCheck check, int maxLocked) => check switch
+        {
+            ShopLockCheck.BattlePending => "전투 중에는 잠금을 바꿀 수 없습니다.",
+            ShopLockCheck.LimitReached => $"잠금은 최대 {maxLocked}개까지 가능합니다.",
+            _ => "지금은 잠금을 바꿀 수 없습니다.",
         };
 
         static bool IsUnlocked(ItemDefinition item) => GameSession.Meta.IsUnlocked(item);
@@ -407,7 +447,7 @@ namespace ProjectNeo.Flow
             bool tavern = type == FacilityType.Tavern;
             if (body != null)
             {
-                string text = shop ? "매물은 준비 단계마다 새로 바뀌고, 업그레이드는 다음 준비의 매물부터 반영됩니다.\n리롤은 할 때마다 비싸지고 다음 준비에 처음 값으로 돌아갑니다."
+                string text = shop ? $"매물은 준비 단계마다 새로 바뀌고, 업그레이드는 다음 준비의 매물부터 반영됩니다.\n리롤은 할 때마다 비싸지고 다음 준비에 처음 값으로 돌아갑니다. 잠금은 무료(최대 {state.ShopMaxLocked}개)입니다."
                     : barracks ? DescribeTraining(facility)
                     : smithy ? DescribeSmithy(facility)
                     : tavern ? DescribeTavern(facility)
@@ -434,7 +474,10 @@ namespace ProjectNeo.Flow
             for (int i = 0; i < stock.Count; i++)
             {
                 int index = i;
-                AddRow(offerList, $"{stock[i].DisplayName} · {Describe(stock[i].Price)}", () => TryBuy(index));
+                bool isLocked = state.Shop.IsLocked(index);
+                string prefix = isLocked ? "[잠금] " : string.Empty;
+                AddShopOfferRow(offerList, $"{prefix}{stock[i].DisplayName} · {Describe(stock[i].Price)}", isLocked,
+                    () => TryBuy(index), () => TryToggleLock(index));
             }
             IReadOnlyList<ItemInstance> items = state.Inventory.Items;
             if (items.Count == 0) AddRow(inventoryList, "보관함이 비었습니다.", null);
@@ -540,15 +583,54 @@ namespace ProjectNeo.Flow
             return header != null ? header.GetComponent<TMP_Text>() : null;
         }
 
-        void AddRow(RectTransform list, string text, UnityEngine.Events.UnityAction action)
+        Button AddRow(RectTransform list, string text, UnityEngine.Events.UnityAction action)
         {
-            if (list == null) return;
+            if (list == null) return null;
             Button row = Instantiate(rowTemplate, list);
             row.gameObject.SetActive(true);
             row.GetComponentInChildren<TMP_Text>(true).text = text;
             row.interactable = action != null;
             if (action != null) row.onClick.AddListener(action);
             rows.Add(row);
+            return row;
+        }
+
+        void AddShopOfferRow(RectTransform list, string text, bool locked,
+            UnityEngine.Events.UnityAction onBuy, UnityEngine.Events.UnityAction onToggleLock)
+        {
+            Button row = AddRow(list, text, onBuy);
+            if (row == null) return;
+            TMP_Text rowLabel = row.GetComponentInChildren<TMP_Text>(true);
+            if (rowLabel != null) rowLabel.rectTransform.offsetMax = new Vector2(-78f, 0f);
+
+            var lockObject = new GameObject("Button_Lock", typeof(RectTransform), typeof(Image), typeof(Button));
+            lockObject.transform.SetParent(row.transform, false);
+            var lockRect = lockObject.GetComponent<RectTransform>();
+            lockRect.anchorMin = new Vector2(1f, 0.5f);
+            lockRect.anchorMax = new Vector2(1f, 0.5f);
+            lockRect.pivot = new Vector2(1f, 0.5f);
+            lockRect.anchoredPosition = new Vector2(-4f, 0f);
+            lockRect.sizeDelta = new Vector2(68f, 26f);
+
+            var lockImage = lockObject.GetComponent<Image>();
+            lockImage.color = locked ? new Color(0.55f, 0.42f, 0.14f) : new Color(0.22f, 0.32f, 0.38f);
+            var lockButton = lockObject.GetComponent<Button>();
+            lockButton.targetGraphic = lockImage;
+            if (onToggleLock != null) lockButton.onClick.AddListener(onToggleLock);
+
+            var labelObject = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
+            labelObject.transform.SetParent(lockObject.transform, false);
+            var labelRect = labelObject.GetComponent<RectTransform>();
+            labelRect.anchorMin = Vector2.zero;
+            labelRect.anchorMax = Vector2.one;
+            labelRect.offsetMin = labelRect.offsetMax = Vector2.zero;
+            var lockLabel = labelObject.GetComponent<TextMeshProUGUI>();
+            lockLabel.text = locked ? "해제" : "잠금";
+            lockLabel.fontSize = 14f;
+            lockLabel.alignment = TextAlignmentOptions.Center;
+            lockLabel.raycastTarget = false;
+            lockLabel.color = new Color(0.95f, 0.97f, 1f);
+            if (rowLabel != null) lockLabel.font = rowLabel.font;
         }
 
         void ClearRows()
