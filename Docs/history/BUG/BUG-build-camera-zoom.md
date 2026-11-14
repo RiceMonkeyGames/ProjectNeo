@@ -1,6 +1,6 @@
 # BUG-build-camera-zoom | 2026-11-13 | Construction - Wheel Zoom Input Units
 
-Last Updated: 2026-11-13 14:18:18 (KST)
+Last Updated: 2026-11-14 15:14:13 (KST)
 
 ## Scope and cause
 
@@ -17,6 +17,10 @@ Last Updated: 2026-11-13 14:18:18 (KST)
 - Full EditMode: 216/216 passed (0.75s); compilation reported failed=False, compiling=False.
 - Full PlayMode: 113/113 passed (46.50s). Final Editor check: playing=False, failed=False; Title scene restored and scroll behavior restored to UniformAcrossAllPlatforms.
 - User confirmed physical wheel zoom works on 2026-11-13 at 14:05 KST; grid still breaks (separate BUG-build-grid-lines). UI-hover behavior and standalone builds have not been manually verified. Implementation and physical wheel verification complete; committed as f6a0aba and integrated/pushed to develop in f7400a1 under the updated AI Git policy. Local zoom branch deleted after remote ancestry check; remote task branch was never published. UI-hover manual check and standalone build are not claimed as verified.
+
+## UI-hover follow-up (2026-11-14)
+
+Agent live Editor OS-wheel checks passed for left construction buttons in both directions, left panel empty area, and world zoom resumption. User subsequently reported the bottom return-hint panel passed zoom and requested blocking it. Setup and Game scene now enable that background's raycasts; compile and existing wheel PlayMode 1/1 passed. Live bottom text/background wheel checks block zoom, world zoom resumes. User authorized completion, develop merge and task-branch deletion. See [QA-build-zoom-ui-hover](../QA/QA-build-zoom-ui-hover.md).
 
 ## Manual verification / reset
 

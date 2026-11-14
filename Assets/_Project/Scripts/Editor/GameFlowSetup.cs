@@ -293,13 +293,15 @@ namespace ProjectNeo.Editor
                 rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0f);
                 rect.anchoredPosition = new Vector2(0f, 64f); rect.sizeDelta = new Vector2(760f, 64f);
                 var background = root.GetComponent<UnityEngine.UI.Image>();
-                background.color = new Color(0.05f, 0.08f, 0.1f, 0.8f); background.raycastTarget = false;
+                background.color = new Color(0.05f, 0.08f, 0.1f, 0.8f);
                 hint = Label(root.transform, "WASD move - Visit the construction station and press F", 48f, 20f);
                 hint.alignment = TextAlignmentOptions.Center;
                 hint.rectTransform.anchorMin = Vector2.zero; hint.rectTransform.anchorMax = Vector2.one;
                 hint.rectTransform.offsetMin = new Vector2(12f, 4f); hint.rectTransform.offsetMax = new Vector2(-12f, -4f);
             }
             else hint = prompt.GetComponentInChildren<TMP_Text>(true);
+            // 안내 패널 위에서도 건설 카메라 입력이 월드로 통과하지 않게 한다.
+            hint.transform.parent.GetComponent<UnityEngine.UI.Image>().raycastTarget = true;
             Transform reticle = hud.transform.Find("ExplorationReticle");
             if (reticle == null)
             {

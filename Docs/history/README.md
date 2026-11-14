@@ -1,6 +1,6 @@
 # Past Verification History Index
 
-Last Updated: 2026-11-14 14:07:43 (KST)
+Last Updated: 2026-11-14 14:55:48 (KST)
 
 > Purpose: Route historical log lookups by Task ID prefix. | Parent: [INDEX](../INDEX.md) | Related: [Backlog-Done](../archive/Backlog-Done.md), [Status](../plan/Status.md)
 
@@ -18,7 +18,7 @@ Read this folder only when researching past design rationales, benchmarks, or ve
 - `Q/` — [Q-04-05](Q/Q-04-05.md), [Q-27](Q/Q-27.md), [Q-30](Q/Q-30.md), [Q-38](Q/Q-38.md), [Q-39](Q/Q-39.md), [Q-41](Q/Q-41.md), [Q-44](Q/Q-44.md)
 - `BUG/` — [BUG-ladder-push-visual](BUG/BUG-ladder-push-visual.md), [BUG-wall-hold](BUG/BUG-wall-hold.md), [BUG-playmode-input-focus](BUG/BUG-playmode-input-focus.md), [BUG-wall-destination-replan](BUG/BUG-wall-destination-replan.md), [BUG-ally-no-retaliation](BUG/BUG-ally-no-retaliation.md)
 - `PERF/` — [PERF-nav-query](PERF/PERF-nav-query.md)
-- `QA/` — [QA-game-loop](QA/QA-game-loop.md), [QA-opening-battle-balance](QA/QA-opening-battle-balance.md), [QA-victory-flow](QA/QA-victory-flow.md), [QA-smithy-popup](QA/QA-smithy-popup.md)
+- `QA/` — [QA-game-loop](QA/QA-game-loop.md), [QA-opening-battle-balance](QA/QA-opening-battle-balance.md), [QA-victory-flow](QA/QA-victory-flow.md), [QA-smithy-popup](QA/QA-smithy-popup.md), [QA-build-zoom-ui-hover](QA/QA-build-zoom-ui-hover.md)
 - `PREP/` — [PREP-01](PREP/PREP-01.md), [PREP-02](PREP/PREP-02.md), [PREP-03](PREP/PREP-03.md)
 - `FLOW/` — [FLOW-01](FLOW/FLOW-01.md)
 - `COMBAT/` — [COMBAT-01](COMBAT/COMBAT-01.md), [COMBAT-02](COMBAT/COMBAT-02.md)

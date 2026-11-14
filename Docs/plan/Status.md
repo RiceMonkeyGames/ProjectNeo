@@ -1,6 +1,6 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-14 14:06:56 (KST)
+Last Updated: 2026-11-14 15:14:13 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
@@ -28,6 +28,8 @@ Q-41 and SIEGE-04 completion/commit/push were authorized by the user on 2026-11-
 | Art & Performance | Capsule/box placeholder visuals, dual-tier NavMesh benchmark, AI query optimization (`PERF-nav-query`) | Production Synty packs, animations, VFX, full combat performance profiling |
 
 ## Test Baselines & Status Conventions
+
+- **Construction UI-hover QA (QA-build-zoom-ui-hover, 2026-11-14; Done on user authorization)**: Left construction UI wheel checks passed. User requested bottom return-hint zoom blocking; enabled background raycasts in setup and Game scene via Editor API. Compile and existing wheel PlayMode 1/1 passed. Live OS-wheel checks confirm bottom text/background retain zoom 55; world resumes to 46.75. User authorized develop merge and local/remote task-branch deletion. Standalone unverified. [History/manual repeat](../history/QA/QA-build-zoom-ui-hover.md).
 
 - **Mixed enemy composition (`B-6.4`, Done on user confirmation, `feature/b-6.4`; implementation `13fcb6a` integrated into develop on user request)**: Dedicated `EnemyCompositionVerification.unity` combines ladder troops, a wall breaker and low/high flyers; the high projectile variant reuses existing modules plus archer/hover data. Scene settings now reach both ground/flying enemies through `SiegeDirector.Bind`. Compile, EditMode **310/310**, PlayMode **157/157** (84.88s), including four new composition tests, passed. Re-running its generator preserves asset GUIDs and the five-enemy roster. Original Game/prototype rosters and build list unchanged. User manual play and standalone unverified; formal Game encounters remain B-7.1. [History and manual checks](../history/B/B-6.4.md).
 

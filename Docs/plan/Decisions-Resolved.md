@@ -1,10 +1,12 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-14 13:14:29 (KST)
+Last Updated: 2026-11-14 15:03:47 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
 ## Resolved `Q-*` Table
+
+Construction return-hint input (QA-build-zoom-ui-hover, 2026-11-14): User requested blocking camera wheel zoom over the bottom return-hint panel, matching the left construction UI. Apply to the Game scene and its setup generator. [Rule](../design/PrepEconomyMeta.md), [verification history](../history/QA/QA-build-zoom-ui-hover.md).
 
 | ID | Topic | Scope | Resolution |
 |---|---|---|---|

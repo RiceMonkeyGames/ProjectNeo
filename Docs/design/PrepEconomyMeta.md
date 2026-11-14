@@ -1,12 +1,13 @@
 # Game Design: Preparation, Economy, Rewards & Meta
 
-Last Updated: 2026-11-14 13:14:29 (KST)
+Last Updated: 2026-11-14 15:03:47 (KST)
 
 > Purpose: Rules for courtyard facilities, unit deployment, currencies, rewards, and meta progression. | Parent: [design/README](README.md) | Related: [WallsAndSiege](WallsAndSiege.md), [OpenQuestions](OpenQuestions.md)
 
 ## Preparation Phase & Facilities
 
 - **Default Perspective** (2026-11-11): 1st-person courtyard navigation. Facing a building and pressing `F` opens its modal pop-up (`Esc` or Close exits; movement/look frozen; disabled during combat). Construction station switches to orthographic build mode on `F`, `Esc` returns to 1st-person at matching pose.
+- **Construction return-hint panel input** (QA-build-zoom-ui-hover, user decision 2026-11-14): Block wheel camera zoom over the bottom `건설 모드 · Esc 돌아가기` panel, including its background. World wheel zoom resumes after leaving the panel, as with the left construction controls.
 
 | Facility | Function | Upgrade Benefit |
 |---|---|---|
