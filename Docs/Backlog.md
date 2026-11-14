@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-14 15:23:05 (KST)
+Last Updated: 2026-11-14 15:51:07 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -20,7 +20,6 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 |---|---|---|---|---|
 | BUG-ladder-fall-clipping | 낙하 시 적이 사다리를 관통하는 연출 개선 | In Progress | youngho | Branch `fix/bug-ladder-fall-clipping`. 사용자 수동 확인 (2026-11-13): 사다리에서 떨어지는 적이 사다리 외형을 관통함. 기대: 분리 위치·낙하 경로·외형 간격을 다듬어 관통이 눈에 띄지 않도록 개선. 사용자가 세부 연출은 추후 작업으로 명시하고 BUG-ladder-push-visual 현재 범위 완료 승인. 기존 균형점·낙하 피해·착지 규칙 유지 여부는 구현 전 확인. |
 | QA-game-loop | Manual Playtest of Current Game Scene | Waiting for Verification | Unassigned | Formerly `B-9.3-play`. First user playtest reported 2026-11-13; findings in [QA history](history/QA/QA-game-loop.md). Victory → reward → next-prep flow verified by user via QA-victory-flow (2026-11-13). Recheck construction and combat after follow-ups below. COMBAT-01/COMBAT-02 crouch/sprint and refined view transition confirmed by user on 2026-11-13; this does not close the remaining game-loop QA scope. |
-| QA-ladder-controls | Manual Check of Shared Ladder Physical Keys & HUD | In Progress | 신용준 | Branch `feature/qa-ladder-controls`. From SIEGE-04 (physical-key/HUD review unverified). Verify tap F boarding, hold F toppling/raising, W/S traversal, FIFO occupancy, allied ladder orders, and HUD prompts in Game scene with real input. BUG-ladder-push-visual is Done; include its balance-point motion and occupant fall behavior. Remaining ladder visual penetration is tracked as BUG-ladder-fall-clipping. |
 | B-7.1 | Formal Wave Data & Spawning Rules | Waiting for Prerequisite | Unassigned | After enemy definitions and spawn/termination contracts are agreed upon, spawn according to configured types, counts, and timings. No duplicates on pause/restart. |
 | SIEGE-01 | Link Pending Spawns to Win/Loss Evaluation | Waiting for Prerequisite | Unassigned | Formerly `B-9.2-wave` (fulfills `B-9.2` wave-spawn link). After B-7.1, prevent premature victory if enemies remain to spawn; ensure battle termination and outcomes trigger exactly once. |
 | COMBAT-03 | Morale Collapse/Awaken Effects in Combat & Morale HUD | Waiting for Prerequisite | Unassigned | After B-8.2 (Q-44). Apply band/Last Stand attack modifiers (`StatSheet.AddModifier`), Fear `ShouldIgnoreOrder`, Panic retreat, Contagion to nearby squads in real combat; minimal `SquadCommandHud` morale number/state/check notice. Sequence shared `CharacterActor`/`UnitCombatAI`/`SquadCommandCenter` edits. |

@@ -1,11 +1,12 @@
 # Completed Backlog Archive (Done)
 
-Last Updated: 2026-11-14 15:14:13 (KST)
+Last Updated: 2026-11-14 15:51:07 (KST)
 
 > Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
 | Task ID | Description | Assignee | Outcome & History Link |
 |---|---|---|---|
+| QA-ladder-controls | Manual Check of Shared Ladder Physical Keys & HUD | 신용준 | Done 2026-11-14; branch `feature/qa-ladder-controls`. User confirmed manual verification complete and authorized completion/archive/commit/push, develop merge and local/remote task-branch deletion. Dotnet/Unity compile, scoped Siege EditMode 20/20 and PlayMode 25/25 passed; Game synthetic ascent/exit passed. No game code/assets changed. Standalone unverified; falling visual penetration remains BUG-ladder-fall-clipping (youngho). [History](../history/QA/QA-ladder-controls.md) |
 | QA-build-zoom-ui-hover | Construction Wheel Zoom over UI | 신용준 | Done 2026-11-14; branch `feature/qa-build-zoom-ui-hover`. Left UI wheel checks passed; user-requested bottom return-hint zoom blocking applied in setup and Game scene via Editor APIs. Compile and existing wheel PlayMode 1/1 passed; live OS-wheel checks confirm bottom text/background block, world zoom resumes. Standalone unverified. User authorized completion/archive/commit/push, develop merge and local/remote task-branch deletion. [History](../history/QA/QA-build-zoom-ui-hover.md) |
 | PREP-01 | Blacksmith Equipment Upgrade Levels | 신용준 | Done 2026-11-14; branch `feature/prep-01`. Item-owned upgrade level/spend and per-stage materials (crafting materials × target level); stash-only Smithy upgrades, +10% item modifiers per level, caps +1/+3/+5, actual-spend Shop/Smithy refunds, equipment display and idempotent Editor API data setup. Compile, full EditMode 380/380 and PlayMode 182/182 passed; API-driven visual QA passed. Human physical-input upgrade play and standalone build unverified. User authorized completion/archive/commit/push, develop merge, and local/remote task-branch deletion. [History](../history/PREP/PREP-01.md) |
 | QA-smithy-popup | Manual Check of Blacksmith Crafting & Sales | Hwang Seong-min | Done 2026-11-14; branch `feature/qa-smithy-popup`. User manually checked the Smithy popup in `Game.unity` prep: F opens popup, Lv1 3 recipes, iron sword without hide refused ("비용이 모자랍니다"), wood shield craft 100→80 gold with recipe kept, shield sale +12 gold, consumables not listed for sale, Lv2 upgrade lists 4 recipes. All passed. No code/asset changes; standalone build unverified. User authorized Done/archive/commit/push. [History](../history/QA/QA-smithy-popup.md) |
