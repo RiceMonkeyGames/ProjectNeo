@@ -191,7 +191,7 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
-        public IEnumerator 성문_위에_성벽을_설치하고_성문을_부수면_내려앉아_길이_갱신된다()
+        public IEnumerator 성문_위에_성벽을_설치하고_성문을_부수면_아치와_위_성벽이_유지되고_아래_통로가_열린다()
         {
             var player = Object.FindAnyObjectByType<ProjectNeo.Characters.PlayerInputController>();
             Assert.AreEqual(0f, world.LocalPoint(player.transform.position).y, 0.1f, "플레이어는 성문 위 대신 안뜰에서 시작한다.");
@@ -208,14 +208,30 @@ namespace ProjectNeo.Tests
             float groundY = gate.transform.position.y;
             Assert.AreEqual(groundY + gate.Placement.Definition.Height, upper.transform.position.y, 0.001f);
             yield return WaitForNavigation();
+
+            // Intact gate blocks ground path through the gate cell.
+            Vector3 outside = gate.transform.position + Vector3.forward * 6f;
+            Vector3 inside = gate.transform.position - Vector3.forward * 6f;
+            var blocked = new NavMeshPath();
+            NavMesh.CalculatePath(outside, inside, NavMesh.AllAreas, blocked);
+            Assert.AreNotEqual(NavMeshPathStatus.PathComplete, blocked.status, "파괴 전에는 성문 아래로 지상 경로가 열리지 않는다.");
+
             gate.ReceiveDamage(gate.Health.Current);
-            Assert.AreEqual(0, upper.Placement.Level);
-            Assert.AreEqual(groundY, upper.transform.position.y, 0.001f);
-            Assert.AreSame(upper.Placement, world.Layout.At(cell));
+            Assert.IsTrue(gate.Health.IsDead);
+            Assert.AreEqual(1, upper.Placement.Level, "성문이 부서져도 아치가 유지되어 위층 성벽이 내려앉지 않는다.");
+            Assert.AreEqual(groundY + gate.Placement.Definition.Height, upper.transform.position.y, 0.001f);
+            Assert.AreSame(gate.Placement, world.Layout.At(cell));
+            Assert.IsTrue(gate.transform.Find("Visual/StoneArch").gameObject.activeSelf);
+            Assert.IsFalse(gate.transform.Find("Visual/Door").gameObject.activeSelf);
+
             yield return WaitForNavigation();
             Vector3 top = upper.transform.position + Vector3.up * wall.Height;
             Assert.IsTrue(NavMesh.SamplePosition(top, out NavMeshHit hit, 0.5f, NavMesh.AllAreas));
             Assert.AreEqual(top.y, hit.position.y, 0.5f);
+
+            var open = new NavMeshPath();
+            NavMesh.CalculatePath(outside, inside, NavMesh.AllAreas, open);
+            Assert.AreEqual(NavMeshPathStatus.PathComplete, open.status, "성문 파괴 후 문 아래 통로로 지상 이동 경로가 열려야 한다.");
         }
 
         [UnityTest]

@@ -1,10 +1,12 @@
 # Runtime Codemap: Walls & Siege
 
-Last Updated: 2026-11-14 17:27:30 (KST)
+Last Updated: 2026-11-14 17:32:45 (KST)
 
 > Purpose: Class map for castle construction, fall damage, siege weapons, and enemy siege AI. | Parent: [codemap/README](README.md) | Related: [CombatAndSquads](CombatAndSquads.md), [design/WallsAndSiege](../design/WallsAndSiege.md)
 
 Base path: `Assets/_Project/Scripts/Runtime/`. Assembly: `ProjectNeo.Runtime`. Namespace: `ProjectNeo.<Folder>`.
+
+Gate door-only destruction (`SIEGE-06`, `feature/siege-06`): `Editor/ConstructionGateArchMesh` generates `Art/Placeholder/ConstructionGateArch.asset`, and `MainGate.prefab` splits `Visual/StoneArch` (`ConstructionStone.mat`) + three arch `BoxCollider`s from `Visual/Door` (`ConstructionGate.mat`) + `doorCollider` wired to `PlacedStructure`. On gate `Health.Died`, `ConstructionWorld.BreachGate` disables only the door collider/visual, fires `PieceCollapsing`, and triggers a NavMesh rebuild without removing the gate from `BuildLayout` or settling upper pieces. `Health.ReviveFull`, `GameBuildEconomy.RepairAll`, and `ConstructionWorld.NotifyGateRepaired` restore the door in preparation. `GameBattleController.GateDestroyed`, `SiegeDirector.GateDestroyed`, `GameSquadMorale`, and `SiegeAttackerBrain` treat `Health.IsDead` gates as breached and untargetable. [History](../history/SIEGE/SIEGE-06.md).
 
 Mixed enemy composition (`B-6.4`, `feature/b-6.4`): `Editor/EnemyCompositionVerificationSetup` creates `Scenes/EnemyCompositionVerification.unity` with a separate 5-enemy roster (2 ladder, 1 wall breaker, 1 melee flyer, 1 high projectile flyer). The high variant combines existing flight modules, higher hover data and the existing archer profile/definition; no additional runtime behavior class. `SiegeDirector` passes scene settings into `SiegeAttacker.Bind` for both ground/flying spawns. Four `EnemyCompositionPlayTests` exercise mixed closed-wall behavior, breach entry, data-only variant and roster/start/death accounting. Game's formal encounters remain B-7.1. [Verification and reset](../history/B/B-6.4.md).
 

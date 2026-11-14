@@ -162,5 +162,24 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(0, economy.RepairAll());
             Assert.AreEqual(gold, Wallet.Gold);
         }
+
+        [UnityTest]
+        public IEnumerator 모두_수리는_파괴된_성문_문짝도_복구한다()
+        {
+            yield return null;
+            PlacedStructure gate = world.Structures.Single(p => p.Placement.Definition.Kind == BuildPieceKind.Gate);
+            gate.ReceiveDamage(gate.Health.Current);
+            Assert.IsTrue(gate.Health.IsDead);
+            Assert.IsFalse(gate.transform.Find("Visual/Door").gameObject.activeSelf);
+
+            int repairCost = economy.FullRepairCost;
+            Assert.Greater(repairCost, 0);
+            Wallet.AddGold(repairCost);
+            Assert.AreEqual(1, economy.RepairAll());
+            Assert.IsFalse(gate.Health.IsDead);
+            Assert.AreEqual(gate.Health.Maximum, gate.Health.Current);
+            Assert.IsTrue(gate.transform.Find("Visual/Door").gameObject.activeSelf);
+            Assert.AreEqual(0, economy.FullRepairCost);
+        }
     }
 }

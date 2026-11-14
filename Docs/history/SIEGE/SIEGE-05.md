@@ -31,3 +31,7 @@ Unity compile passed. Full `unity-verify-local.ps1 -Mode all -SkipDotnet` passed
 Dotnet precheck was skipped: the Unity-generated `.csproj` files are stale (missing `LadderPushTuning` and teammates' newer Economy types), so its failure is not a code error. This is not a separate dotnet verification claim.
 
 Physical-key manual play (player hold time feel, cooperation with idle allies) is not claimed as verified.
+
+### Merge with develop (SIEGE-06), 2026-11-14
+
+Doc-only conflicts (Backlog, archive, history index, timestamps) were resolved keeping both SIEGE-05 and SIEGE-06 records; code merged automatically. After the merge, compile and EditMode 393/393 passed; PlayMode 182/183, with `SiegePrototypePlayTests.Ladder_AlliesOnTopPushItDown_AndClimberTakesFallDamage` failing ("오르던 적이 떨어져 피해를 받지 않았다"). It is not caused by SIEGE-05: it passed on this branch before SIEGE-06, still fails when the push values are temporarily set back to near the old fast push, and the SIEGE-06 record already reports the same failure on that branch. Tracked as `BUG-ladder-fall-test-after-gate-arch`. The user requested the develop merge and branch cleanup.

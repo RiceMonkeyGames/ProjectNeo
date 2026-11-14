@@ -221,7 +221,7 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
-        public IEnumerator 성문_위에서_내려온_성벽으로_입구가_막히면_성문_파괴병이_계속_공격한다()
+        public IEnumerator 성문이_부서져도_위_성벽은_그대로_있고_성문_파괴병은_아치를_치지_않고_진입한다()
         {
             var gate = world.Structures.Single(piece => piece.Placement.Definition.Kind == BuildPieceKind.Gate);
             var wall = world.Structures.First(piece => piece.Placement.Definition.Kind == BuildPieceKind.Wall).Placement.Definition;
@@ -234,12 +234,13 @@ namespace ProjectNeo.Tests
             Vector3 position = gate.transform.position + Vector3.forward * 3f;
             gate.ReceiveDamage(gate.Health.Current);
             yield return Navigation();
-            Assert.AreEqual(0, left.Placement.Level); Assert.AreEqual(0, right.Placement.Level);
+            Assert.AreEqual(1, left.Placement.Level); Assert.AreEqual(1, right.Placement.Level);
             Assert.IsTrue(breaker.GetComponent<NavMeshAgent>().Warp(position));
+            Assert.IsTrue(breaker.CanReachAnyEnemy(), "문짝이 부서지면 성문 파괴병이 성 내부 아군에게 도달할 수 있어야 한다.");
             float total = left.Health.Current + right.Health.Current;
-            for (int i = 0; i < 600 && left != null && right != null
-                && left.Health.Current + right.Health.Current == total; i++) yield return null;
-            Assert.IsTrue(left == null || right == null || left.Health.Current + right.Health.Current < total);
+            for (int i = 0; i < 120 && breaker.transform.position.z > gate.transform.position.z - 0.5f; i++) yield return null;
+            Assert.AreEqual(total, left.Health.Current + right.Health.Current, "아치와 위층 성벽은 추가 공격받지 않아야 한다.");
+            Assert.Less(breaker.transform.position.z, gate.transform.position.z, "성문 파괴병이 열린 성문 아래로 진입해야 한다.");
         }
 
         [UnityTest]

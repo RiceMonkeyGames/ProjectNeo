@@ -1,6 +1,6 @@
 # Past Verification History Index
 
-Last Updated: 2026-11-14 17:27:30 (KST)
+Last Updated: 2026-11-14 17:32:45 (KST)
 
 > Purpose: Route historical log lookups by Task ID prefix. | Parent: [INDEX](../INDEX.md) | Related: [Backlog-Done](../archive/Backlog-Done.md), [Status](../plan/Status.md)
 
@@ -22,7 +22,7 @@ Read this folder only when researching past design rationales, benchmarks, or ve
 - `PREP/` — [PREP-01](PREP/PREP-01.md), [PREP-02](PREP/PREP-02.md), [PREP-03](PREP/PREP-03.md)
 - `FLOW/` — [FLOW-01](FLOW/FLOW-01.md)
 - `COMBAT/` — [COMBAT-01](COMBAT/COMBAT-01.md), [COMBAT-02](COMBAT/COMBAT-02.md)
-- `SIEGE/` — [SIEGE-02](SIEGE/SIEGE-02.md), [SIEGE-03](SIEGE/SIEGE-03.md), [SIEGE-04](SIEGE/SIEGE-04.md), [SIEGE-05](SIEGE/SIEGE-05.md)
+- `SIEGE/` — [SIEGE-02](SIEGE/SIEGE-02.md), [SIEGE-03](SIEGE/SIEGE-03.md), [SIEGE-04](SIEGE/SIEGE-04.md), [SIEGE-05](SIEGE/SIEGE-05.md), [SIEGE-06](SIEGE/SIEGE-06.md)
 - `ART/` — [ART-01](ART/ART-01.md), [ART-02](ART/ART-02.md)
 - `DOC/` — [DOC-workflow-branches](DOC/DOC-workflow-branches.md), [DOC-doc-tree-and-id](DOC/DOC-doc-tree-and-id.md)
 - `TOOL/` — [TOOL-claude-read-deny](TOOL/TOOL-claude-read-deny.md), [TOOL-agent-workflows](TOOL/TOOL-agent-workflows.md), [TOOL-codex-workflows](TOOL/TOOL-codex-workflows.md)

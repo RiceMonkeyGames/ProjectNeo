@@ -117,6 +117,7 @@ namespace ProjectNeo.Siege
             if (retreatRequested) { UpdateRetreat(); return; }
             think -= Time.deltaTime;
             if (mode == Mode.ToWall && wallBreaker != null && wallBreaker.TargetInvalidated) think = 0f;
+            if (mode == Mode.ToGate && (gate == null || gate.Health == null || gate.Health.IsDead)) think = 0f;
             if (think <= 0f)
             {
                 think = settings.AttackerDecisionInterval;
@@ -375,14 +376,16 @@ namespace ProjectNeo.Siege
         PlacedStructure FindGate()
         {
             foreach (PlacedStructure structure in world.Structures)
-                if (structure != null && structure.Placement.Definition.Kind == BuildPieceKind.Gate) return structure;
+                if (structure != null && structure.Placement.Definition.Kind == BuildPieceKind.Gate
+                    && structure.Health != null && !structure.Health.IsDead) return structure;
             // 성문 위에서 내려온 조각도 길을 막는 동안 성문 파괴병의 공격 대상이다.
             PlacedStructure nearest = null;
             float distance = float.PositiveInfinity;
             foreach (PlacedStructure structure in world.Structures)
             {
+                if (structure == null || structure.Health == null || structure.Health.IsDead) continue;
                 BuildPlacement placement = structure.Placement;
-                if (placement.Level != 0) continue;
+                if (placement.Level != 0 || placement.Definition.Kind == BuildPieceKind.Gate) continue;
                 bool onGateSite = false;
                 for (int x = 0; x < placement.Size.x; x++)
                     for (int z = 0; z < placement.Size.y; z++)
@@ -409,7 +412,7 @@ namespace ProjectNeo.Siege
 
         bool GateInReach()
         {
-            if (gate == null || gateBodies == null) return false;
+            if (gate == null || gate.Health == null || gate.Health.IsDead || gateBodies == null) return false;
             float range = Actor.Stats.GetValue(StatType.AttackRange);
             Vector3 origin = Actor.AimPoint;
             foreach (Collider body in gateBodies)
