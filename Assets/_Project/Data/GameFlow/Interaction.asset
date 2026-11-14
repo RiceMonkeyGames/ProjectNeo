@@ -67,3 +67,40 @@ MonoBehaviour:
       m_Flags: 0
     m_Flags: 0
     m_Priority: 0
+  organization:
+    m_Name: OpenOrganization
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: e0ab3af8-7941-48ff-beed-b984c1488365
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 995a7f9e-37f1-44df-919c-96630c8ca045
+      m_Path: <Keyboard>/o
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: OpenOrganization
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  startBattle:
+    m_Name: StartBattle
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 99a41a68-dd1e-4d02-8f7c-3845c664d779
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 5d271bfb-e845-49df-9057-c26c963bb5e3
+      m_Path: <Keyboard>/b
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: StartBattle
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  battleStartHoldSeconds: 1

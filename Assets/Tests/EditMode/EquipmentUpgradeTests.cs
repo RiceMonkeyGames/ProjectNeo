@@ -187,15 +187,18 @@ namespace ProjectNeo.Tests
             ItemInstance item = inventory.Add(sword);
             Assert.IsTrue(upgrade.TryUpgrade(item, inventory, wallet, 0));
             Assert.IsTrue(hero.TryEquip(item, inventory));
+            Assert.AreEqual(31f, hero.Stats.GetValue(StatType.Attack), 0.0001f);
             Assert.AreSame(item, hero.Equipment[0]);
             Assert.IsFalse(upgrade.TryUpgrade(item, inventory, wallet, 1));
             Assert.IsTrue(hero.TryUnequip(item, inventory));
+            Assert.AreEqual(20f, hero.Stats.GetValue(StatType.Attack), 0.0001f);
             Assert.AreSame(item, inventory.Items[0]);
             Assert.AreEqual(1, item.UpgradeLevel);
             Assert.AreEqual(50, item.UpgradeGoldSpent);
             Assert.IsTrue(upgrade.TryUpgrade(item, inventory, wallet, 1));
             Assert.AreEqual(2, item.UpgradeLevel);
-            // Character's actual upgraded modifier application is deferred to shared integration.
+            Assert.IsTrue(hero.TryEquip(item, inventory));
+            Assert.AreEqual(32f, hero.Stats.GetValue(StatType.Attack), 0.0001f);
         }
 
         [Test]

@@ -14,6 +14,8 @@ namespace ProjectNeo.Economy
             this.settings = settings != null ? settings : throw new ArgumentNullException(nameof(settings));
         }
 
+        public int GetMaxLevel(int smithyLevel) => settings.GetMaxLevel(smithyLevel);
+
         /// <summary>다음 단계 비용. 골드 소수점은 판매가와 같이 버린다. 데이터가 없으면 false.</summary>
         public bool TryGetNextCost(ItemInstance item, out Cost cost)
         {
@@ -49,16 +51,19 @@ namespace ProjectNeo.Economy
         {
             if (Check(item, inventory, wallet, smithyLevel) != EquipmentUpgradeCheck.Allowed) return false;
             if (!TryGetNextCost(item, out Cost cost) || !wallet.TrySpend(cost)) return false;
-            item.ApplyUpgrade(cost.gold);
+            item.ApplyUpgrade(cost.gold, settings);
             return true;
         }
 
         /// <summary>캐릭터 기본 스탯이 아닌 이 장비의 수정값만 단계당 보정한다. 원본 데이터는 바꾸지 않는다.</summary>
-        public IReadOnlyList<StatModifier> GetEquipModifiers(ItemInstance item)
+        public IReadOnlyList<StatModifier> GetEquipModifiers(ItemInstance item) =>
+            ScaleEquipModifiers(item, settings.ModifierBonusPerLevel);
+
+        internal static IReadOnlyList<StatModifier> ScaleEquipModifiers(ItemInstance item, float bonusPerLevel)
         {
             if (item == null) throw new ArgumentNullException(nameof(item));
             var modifiers = new List<StatModifier>();
-            float multiplier = 1f + item.UpgradeLevel * settings.ModifierBonusPerLevel;
+            float multiplier = 1f + item.UpgradeLevel * bonusPerLevel;
             foreach (StatModifier modifier in item.Definition.EquipModifiers)
                 modifiers.Add(new StatModifier(modifier.stat, modifier.kind, modifier.value * multiplier));
             return modifiers;

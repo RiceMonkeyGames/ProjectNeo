@@ -122,8 +122,8 @@ namespace ProjectNeo.UI
                 ? (korean ? $"{interaction.CloseKey} 닫기" : $"{interaction.CloseKey} to close")
                 : interaction.Target != null
                     ? $"{interaction.InteractKey} · {interaction.Target.Prompt}"
-                    : (korean ? $"WASD 이동 · {interaction.InteractKey} 상호작용 · {interaction.EquipmentKey} 장비"
-                        : $"WASD move - {interaction.InteractKey} interact - {interaction.EquipmentKey} gear");
+                    : (korean ? $"WASD 이동 · {interaction.InteractKey} 상호작용 · {interaction.EquipmentKey} 장비 · {interaction.OrganizationKey} 편성"
+                        : $"WASD move - {interaction.InteractKey} interact - {interaction.EquipmentKey} gear - {interaction.OrganizationKey} squads");
             if (phaseView.IsExplorationView && battle != null)
             {
                 string startHint = interaction.CanStartBattle

@@ -1,10 +1,12 @@
 # Editor Setup & Test Scripts
 
-Last Updated: 2026-11-13 23:28:23 (KST)
+Last Updated: 2026-11-14 13:14:29 (KST)
 
 > Purpose: Map of Editor setup menus, build scripts, and EditMode/PlayMode test suites. | Parent: [codemap/README](README.md) | Related: [UnityCLI](../workflow/UnityCLI.md), [Status](../plan/Status.md)
 
 ## Editor Scripts (`Assets/_Project/Scripts/Editor/`)
+
+- `EquipmentUpgradeSetup.cs`: `ProjectNeo/Setup/Configure Equipment Upgrades` creates the shared settings, binds RunStart and fills only empty item upgrade-material lists from crafting materials × target level; keeps existing data and does not edit the scene. Also called by the facility generator.
 
 - `CombatPrototypeSetup.cs`: Menu `ProjectNeo/Setup/Create Combat Prototype`. Generates B-2 scene, prefabs, and assets.
 - `UnitBattleSetup.cs`: Menu `ProjectNeo/Setup/Create Unit Battle Prototype`. Generates B-3 scene, prefabs, assets, and NavMesh.
@@ -20,6 +22,8 @@ Last Updated: 2026-11-13 23:28:23 (KST)
 - `GameRewardSetup.cs`: Menu `ProjectNeo/Setup/Connect Rewards To Game Scene`. Generates materials, items, and reward controllers.
 - `GameBuildEconomySetup.cs`: Menu `ProjectNeo/Setup/Connect Build Costs To Game Scene`. Connects build costs, demolition, and repairs.
 - `GameFacilitySetup.cs`: Menu `ProjectNeo/Setup/Connect Facilities To Game Scene`. Generates 5 facility definitions, `GameFacilities`, `FacilityStation` on 4 courtyard buildings, `FacilityPanel`, D-5 `Economy.asset` (50% sell), 4 shop items (`Data/GameFlow/Rewards/item_*`), level stock pools, and D-7 `EquipmentPanel` / `GameEquipment` / `I` key.
+- `SquadOrganizationSetup.cs`: Menu `ProjectNeo/Setup/Connect Squad Organization To Game Scene`. D-8 `OrganizationPanel` (UI-01: horizontal card scroll, card template with Header button + List, row template) (reuses `GameFacilitySetup` popup helpers) and `GameSquadOrganization` on the battle object; marks `Interaction.asset` dirty to save the new `O` key.
+- `TavernSetup.cs`: Menu `ProjectNeo/Setup/Create Tavern Heroes`. D-3 hero assets in `Data/GameFlow/Heroes/` (swordsman/archer tier 1 60g, knight tier 2 120g, paladin tier 3 200g; grunt prefabs as bodies) and `Facility_Tavern.asset` level hero pools (only when empty). No scene edits.
 - `GameUnitSpawnSetup.cs`: Menu `ProjectNeo/Setup/Connect Unit Spawning To Game Scene`. Wires `GameUnitSpawner` and fills soldier prefab slots.
 - `BarracksSetup.cs`: Menu `ProjectNeo/Setup/Configure Barracks Data`. Configures `Facility_TrainingGround.asset` and `allied_melee`/`allied_ranged` recruit costs/names.
 - `SiegePrototypeSetup.cs`: Menu `ProjectNeo/Setup/Create Siege Prototype`. Clones siege prototype scene.
@@ -28,12 +32,15 @@ Last Updated: 2026-11-13 23:28:23 (KST)
 ## EditMode Tests (`Assets/Tests/EditMode/`)
 
 - General Stage A: Stat sheets, wallets, facilities, squads, perks, items, shops, characters, meta progression, health rules.
-- `EquipmentUpgradeTests.cs`: PREP-01 independent upgrade rules (16 cases): per-item state, target-level gold/material cost, duplicate material totals, affordability/caps/data guards, scaled flat/percent modifiers, equip/unequip state preservation, actual-spend refund and settings overrides. Actual Game UI/character upgrade stat/sale integration pending PREP-02.
+- `EquipmentUpgradeTests.cs`: PREP-01 independent upgrade rules (16 cases): per-item state, target-level gold/material cost, duplicate material totals, affordability/caps/data guards, scaled flat/percent modifiers, equip/unequip state preservation, actual-spend refund and settings overrides. RunUpgradeTests.cs adds 6 run integration cases (config, stash ownership, actual stats, caps, next-prep retention, sales, battle guard); GameFacilityPlayTests adds 2 Game scene upgrade/equip/refund/material cases.
 - `DamageRulesTests.cs`: Defense subtraction, minimum damage, invalid parameters.
 - `BuildLayoutTests.cs`: Grid bounds, rotated footprints, stair connectivity, gate zones, fall damage curves.
 - `BuildStackingTests.cs`: Vertical stacking, max tiers, stair prohibitions, gate stacking, multi-cell uniform height, collapse settling.
 - `MountLayoutTests.cs`: Mount point vs ground occupancy separation, weapon clearing on piece removal.
-- `SquadCommanderTests.cs`: Selection, orders, arrival transitions, formation geometries, runtime `AddSquad`.
+- `SquadCommanderTests.cs`: Selection, orders, arrival transitions, formation geometries, runtime `AddSquad`/`RemoveSquad`.
+- `RunOrganizationTests.cs`: D-8 grunt moves, emptied-squad removal with captain to reserve, new squad cap, reserve-only captains, player blocked (Q-32 interim), battle lock.
+- `RunTavernTests.cs`: D-3 seeded tavern offers, locked/hired/fallen exclusion, gold hire, captain swap to reserve, shared character, battle input leader.
+- `RunCarryOverTests.cs`: C-3 empty-squad cleanup (captain-only squad kept with morale, dead captain removes squad), fled grunts stay, no double application, no cleanup while a battle is pending.
 - `MoveStallTrackerTests.cs`: Destination stall detection and progress tracking.
 - `SiegeRulesTests.cs`: Cost deductions, win/loss, ladder mechanics, upward damage reduction.
 - `MoraleRulesTests.cs`: B-8.1 morale: proportional/fixed losses, ally-only gate/wall, once-per-battle check (collapse/awaken, chance bonus), start-below-100 weak collapse, rout once at 0, Rally/Last Stand/Steadfast, attack bands (enemy low band only), Fear/Panic/Contagion strength, dispose, post-battle recovery max(+20, 80). B-8.2: squad at 150 routs exactly at 90% battle-start deaths (5/10/20 members).
@@ -69,6 +76,9 @@ Last Updated: 2026-11-13 23:28:23 (KST)
 - `GameEquipmentPlayTests.cs`: Shared Character, `I`/`Esc` input toggles, immediate stat reflection, battle lock.
 - `GameUnitSpawnPlayTests.cs`: D-0b Game scene recruit spawn in front of barracks, walk to squad, battle input/commands/result, new squad creation.
 - `GameBarracksPlayTests.cs`: D-4 Game scene barracks popup recruit with cost/squad choice, insufficient funds, battle input, upgrade bonus on existing/new grunts.
+- `GameOrganizationPlayTests.cs`: D-8 Game scene organization window moves a grunt to a new squad and back via cards (UI-01), hired hero to captain, to another squad and back to reserve, (run + scene squads + commander stay aligned, emptied squad removed); closed during battle.
+- `GameTavernPlayTests.cs`: D-3 Game scene tavern hire as captain and reserve, shared scene/run character, equipment hero selector, reserve hero deactivated in battle.
+- `GameCarryOverPlayTests.cs`: C-3 Game scene battle with deaths → next prep: dead leave scene squads (bodies stay), empty squad removed from run/scene/commander, captain-only squad kept, recruit into emptied squad and next battle input stay aligned.
 - `FocusIndependentInputScopeTests.cs`: Normal/exception restoration of InputSettings via `FocusIndependentInputScope`.
 - `SetupSmokePlayTests.cs`: Basic frame tick verification.
 - `UnitScaleBenchmark.cs` & `UnitAIQueryBenchmark.cs`: Explicit `[Explicit]` performance benchmarks (excluded from standard runs).

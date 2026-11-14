@@ -102,6 +102,7 @@ namespace ProjectNeo.Run
             state.AddHero(config.PlayerHero, true);
             state.AddFacilities(config.Facilities);
             state.SetupShop(config.Economy);
+            state.SetupEquipmentUpgrades(config.EquipmentUpgrades);
 
             foreach (RunSquadSetup setup in config.StartingSquads)
             {
@@ -143,14 +144,155 @@ namespace ProjectNeo.Run
         {
             FacilityState shop = Facility(FacilityType.Shop);
             if (Shop == null || shop == null || ShopStockedFor == BattlesFought) return false;
+            ShopStockedFor = BattlesFought;
+            ShopStockedLevel = shop.Level;
+            ShopRerolls = 0;
             Shop.Restock(shop.Current.itemPool, shop.Current.offerCount,
                 new Core.SeededRandom(ShopSeedFor(BattlesFought)), isAvailable);
-            ShopStockedFor = BattlesFought;
             return true;
+        }
+
+        /// <summary>이번 준비의 매물을 뽑은 상점 레벨. 리롤도 이 레벨의 풀을 쓴다(업그레이드는 다음 준비부터).</summary>
+        public int ShopStockedLevel { get; private set; }
+        /// <summary>이번 준비 단계에서 리롤한 횟수. 준비마다 매물을 새로 뽑을 때 0으로 돌아간다.</summary>
+        public int ShopRerolls { get; private set; }
+        /// <summary>다음 리롤의 골드(Q-46). 리롤할 때마다 오르고 준비마다 처음 값으로 돌아간다. 상점이 없으면 0.</summary>
+        public int ShopRerollCost => Shop != null ? Shop.GetRerollCost(ShopRerolls) : 0;
+
+        /// <summary>리롤 시드. 같은 런·같은 준비·같은 리롤 순번이면 같다. 준비 매물 시드와 겹치지 않게 섞는다.</summary>
+        public int ShopRerollSeedFor(int preparation, int reroll) =>
+            unchecked(ShopSeedFor(preparation) * 1000003 + (reroll + 1) * 7919);
+
+        /// <summary>
+        /// 지금 리롤할 수 있는지(PREP-02). 전투 대기 → 이번 준비 매물을 뽑았는지 → 골드 순으로 처음 걸린 이유를 돌려준다.
+        /// 런을 바꾸지 않는다.
+        /// </summary>
+        public ShopRerollCheck CheckShopReroll()
+        {
+            if (HasPendingBattle) return ShopRerollCheck.BattlePending;
+            if (Shop == null || Facility(FacilityType.Shop) == null || ShopStockedFor != BattlesFought)
+                return ShopRerollCheck.NotStocked;
+            if (!Wallet.CanAfford(new Cost(ShopRerollCost))) return ShopRerollCheck.NotEnoughFunds;
+            return ShopRerollCheck.Ok;
+        }
+
+        /// <summary>
+        /// 골드를 내고 이번 준비의 매물을 새로 뽑는다(PREP-02, Q-46). 이미 산 칸까지 매물 수만큼 다시 채운다.
+        /// 이번 준비 매물을 뽑은 레벨의 풀을 쓰고, 같은 시드·같은 리롤 순번이면 같은 매물이다.
+        /// <see cref="CheckShopReroll"/>이 Ok가 아니면 false이고 런은 바뀌지 않는다.
+        /// </summary>
+        public bool TryRerollShop(Func<ItemDefinition, bool> isAvailable = null)
+        {
+            if (CheckShopReroll() != ShopRerollCheck.Ok) return false;
+            FacilityState shop = Facility(FacilityType.Shop);
+            IReadOnlyList<FacilityLevel> levels = shop.Definition.Levels;
+            FacilityLevel level = levels[Math.Min(Math.Max(ShopStockedLevel, 0), levels.Count - 1)];
+            if (!Wallet.TrySpend(new Cost(ShopRerollCost))) return false;
+            int reroll = ShopRerolls++;
+            Shop.Restock(level.itemPool, level.offerCount,
+                new Core.SeededRandom(ShopRerollSeedFor(BattlesFought, reroll)), isAvailable);
+            return true;
+        }
+
+        /// <summary>현재 상점 레벨에 따른 최대 잠금 가능 매물 수(PREP-03). 업그레이드 직후부터 바로 늘어난다.</summary>
+        public int ShopMaxLocked
+        {
+            get
+            {
+                FacilityState shop = Facility(FacilityType.Shop);
+                return shop != null ? shop.Level + 1 : 0;
+            }
+        }
+
+        /// <summary>index번째 상점 매물의 잠금을 토글할 수 있는지 확인한다(PREP-03). 런을 바꾸지 않는다.</summary>
+        public ShopLockCheck CheckShopLock(int index)
+        {
+            if (HasPendingBattle) return ShopLockCheck.BattlePending;
+            if (Shop == null || Facility(FacilityType.Shop) == null || ShopStockedFor != BattlesFought)
+                return ShopLockCheck.NotStocked;
+            if (index < 0 || index >= Shop.Stock.Count) return ShopLockCheck.InvalidSlot;
+            if (!Shop.IsLocked(index) && Shop.LockedCount >= ShopMaxLocked) return ShopLockCheck.LimitReached;
+            return ShopLockCheck.Ok;
+        }
+
+        /// <summary>index번째 상점 매물의 잠금을 무료로 토글한다(PREP-03). <see cref="CheckShopLock"/>이 Ok가 아니면 false.</summary>
+        public bool TryToggleShopLock(int index)
+        {
+            if (CheckShopLock(index) != ShopLockCheck.Ok) return false;
+            return Shop.TryToggleLock(index, ShopMaxLocked);
+        }
+
+        readonly List<HeroDefinition> tavernOffers = new List<HeroDefinition>();
+
+        /// <summary>이번 준비의 주점 영웅 매물(D-3). 고용하면 빠진다.</summary>
+        public IReadOnlyList<HeroDefinition> TavernOffers => tavernOffers;
+        /// <summary>주점 매물을 마지막으로 뽑은 준비 번호. 아직 안 뽑았으면 -1.</summary>
+        public int TavernStockedFor { get; private set; } = -1;
+
+        /// <summary>준비 번호별 주점 시드. 상점·보상 시드와 겹치지 않게 섞는다.</summary>
+        public int TavernSeedFor(int preparation) => unchecked(SeedFor(preparation) * 7919 + 104729);
+
+        /// <summary>
+        /// 이번 준비의 주점 매물을 아직 뽑지 않았으면 주점 시설의 현재 레벨 영웅 풀에서 매물 수만큼 뽑는다(D-3, Q-34).
+        /// 이 런에 이미 있거나 영구 사망한 영웅, isAvailable(해금)을 통과하지 못한 영웅은 빼고, 같은 시드면 같은 매물이다.
+        /// 뽑았으면 true. 시설 업그레이드는 다음 준비의 매물부터 반영된다.
+        /// </summary>
+        public bool RestockTavernIfNeeded(Func<HeroDefinition, bool> isAvailable = null)
+        {
+            FacilityState tavern = Facility(FacilityType.Tavern);
+            if (tavern == null || TavernStockedFor == BattlesFought) return false;
+            tavernOffers.Clear();
+            tavernOffers.AddRange(Core.WeightedPool.Roll(tavern.Current.heroPool, tavern.Current.offerCount,
+                new Core.SeededRandom(TavernSeedFor(BattlesFought)),
+                hero => !InRunOrFallen(hero) && (isAvailable == null || isAvailable(hero))));
+            TavernStockedFor = BattlesFought;
+            Changed?.Invoke();
+            return true;
+        }
+
+        bool InRunOrFallen(HeroDefinition definition)
+        {
+            foreach (RunHero hero in heroes) if (hero.Definition == definition) return true;
+            foreach (RunHero hero in fallenHeroes) if (hero.Definition == definition) return true;
+            return false;
+        }
+
+        /// <summary>
+        /// 주점에서 이 영웅을 고용할 수 있는지(D-3). <paramref name="captainOf"/>가 있으면 그 부대의 대장을 맡기고, null이면 대기 영웅이다.
+        /// 전투 대기 → 매물 → 부대 → 비용 순으로 처음 걸린 이유를 돌려준다. 런을 바꾸지 않는다.
+        /// </summary>
+        public HireCheck CheckHire(HeroDefinition hero, Squad<RunUnit> captainOf)
+        {
+            if (HasPendingBattle) return HireCheck.BattlePending;
+            if (hero == null || !tavernOffers.Contains(hero)) return HireCheck.NotOffered;
+            if (captainOf != null && !Owns(captainOf)) return HireCheck.NoSquad;
+            if (!Wallet.CanAfford(hero.HireCost)) return HireCheck.NotEnoughFunds;
+            return HireCheck.Ok;
+        }
+
+        /// <summary>
+        /// 영웅을 고용한다(D-3, Q-36·Q-48). 비용을 내고 매물에서 빼며 런에 더한다. <paramref name="captainOf"/>가 있으면 대장을 맡기고
+        /// 원래 대장은 대기 영웅이 된다. <paramref name="character"/>는 씬 유닛과 같은 캐릭터(장비·스탯 공유)이며 null이면 새로 만든다.
+        /// <see cref="CheckHire"/>가 Ok가 아니면 null이고 런은 바뀌지 않는다.
+        /// </summary>
+        public RunHero TryHire(HeroDefinition hero, Squad<RunUnit> captainOf, Character character = null)
+        {
+            if (CheckHire(hero, captainOf) != HireCheck.Ok) return null;
+            if (character != null && character.Definition != hero)
+                throw new ArgumentException("캐릭터가 고용할 영웅의 것이 아니다.", nameof(character));
+            if (!Wallet.TrySpend(hero.HireCost)) return null;
+            tavernOffers.Remove(hero);
+            RunHero hired = AddHero(character ?? new Character(hero));
+            if (captainOf != null) captainOf.Leader = hired;
+            Changed?.Invoke();
+            return hired;
         }
 
         /// <summary>매물을 런 지갑으로 사서 보관함에 넣는다.</summary>
         public bool TryBuy(ItemDefinition item) => Shop != null && Shop.TryBuy(item, Wallet, Inventory);
+
+        /// <summary>index번째 매물을 런 지갑으로 사서 보관함에 넣는다(중복 품목 구분).</summary>
+        public bool TryBuyAt(int index) => Shop != null && Shop.TryBuyAt(index, Wallet, Inventory);
 
         /// <summary>보관함의 아이템을 판다. 보상 등 다른 경로로 얻은 아이템도 팔 수 있다.</summary>
         public bool TrySell(ItemInstance item) => Shop != null && Shop.TrySell(item, Wallet, Inventory);
@@ -402,7 +544,32 @@ namespace ProjectNeo.Run
             return crafted;
         }
 
-        /// <summary>대장간에서는 장비만 판다. 판매가는 상점과 같다(구매가 골드 × 판매 비율, Q-35).</summary>
+        public EquipmentUpgrade EquipmentUpgrades { get; private set; }
+        public int MaxEquipmentUpgrade => Smithy != null && EquipmentUpgrades != null
+            ? EquipmentUpgrades.GetMaxLevel(Smithy.Level) : 0;
+
+        public void SetupEquipmentUpgrades(EquipmentUpgradeSettings settings)
+        {
+            if (EquipmentUpgrades == null && settings != null) EquipmentUpgrades = new EquipmentUpgrade(settings);
+        }
+
+        public EquipmentUpgradeCheck CheckUpgradeEquipment(ItemInstance item)
+        {
+            if (HasPendingBattle) return EquipmentUpgradeCheck.BattlePending;
+            if (EquipmentUpgrades == null) return EquipmentUpgradeCheck.NotConfigured;
+            if (Smithy == null) return EquipmentUpgradeCheck.NoSmithy;
+            return EquipmentUpgrades.Check(item, Inventory, Wallet, Smithy.Level);
+        }
+
+        public bool TryUpgradeEquipment(ItemInstance item)
+        {
+            if (CheckUpgradeEquipment(item) != EquipmentUpgradeCheck.Allowed) return false;
+            if (!EquipmentUpgrades.TryUpgrade(item, Inventory, Wallet, Smithy.Level)) return false;
+            Changed?.Invoke();
+            return true;
+        }
+
+        /// <summary>대장간에서는 장비만 판다. 판매가는 상점과 같고 실제 강화 지출을 포함한다(Q-35).</summary>
         public bool TrySellAtSmithy(ItemInstance item)
         {
             if (item == null || item.Definition.Kind != ItemKind.Equipment || Smithy == null) return false;
@@ -423,6 +590,100 @@ namespace ProjectNeo.Run
         {
             for (int i = 0; i < Army.Squads.Count; i++) if (Army.Squads[i] == squad) return i;
             return -1;
+        }
+
+        /// <summary>
+        /// 플레이어가 부대 대장을 맡을 수 있는지(Q-32). 지금은 막아 두고(2026-11-13 임시 결정), 나중에 켤 수 있게 남겨 둔다.
+        /// </summary>
+        public bool AllowPlayerCaptain { get; set; }
+
+        /// <summary>
+        /// 대기 중인 영웅: 플레이어가 아니고 어느 부대의 대장도 아닌 살아 있는 영웅(D-8, Q-36). 지금은 전투에 나가지 않는다(Q-48).
+        /// </summary>
+        public IReadOnlyList<RunHero> ReserveHeroes
+        {
+            get
+            {
+                var reserve = new List<RunHero>();
+                foreach (RunHero hero in heroes)
+                    if (!hero.IsPlayer && LeadingSquadOf(hero) == null) reserve.Add(hero);
+                return reserve;
+            }
+        }
+
+        /// <summary>이 영웅이 대장인 부대. 없으면 null.</summary>
+        public Squad<RunUnit> LeadingSquadOf(RunHero hero)
+        {
+            if (hero == null) return null;
+            foreach (Squad<RunUnit> squad in Army.Squads)
+                if (squad.Leader == hero) return squad;
+            return null;
+        }
+
+        /// <summary>
+        /// 잡졸 하나를 <paramref name="target"/> 부대로 옮길 수 있는지(D-8, Q-45·Q-47). target이 null이면 새 부대로 옮긴다.
+        /// 전투 대기 → 런 소속 → 같은 부대 → 자리 순으로 처음 걸린 이유를 돌려준다. 런을 바꾸지 않는다.
+        /// </summary>
+        public OrganizeCheck CheckMoveSoldier(RunSoldier soldier, Squad<RunUnit> target)
+        {
+            if (HasPendingBattle) return OrganizeCheck.BattlePending;
+            if (soldier == null || Find(soldier.Id) != soldier || (target != null && !Owns(target))) return OrganizeCheck.NotInRun;
+            Squad<RunUnit> source = SquadOf(soldier);
+            if (source == target || (target == null && source != null && source.Members.Count == 1)) return OrganizeCheck.SameSquad;
+            if (target == null ? !Army.CanAddSquad : target.IsFull) return OrganizeCheck.SquadFull;
+            return OrganizeCheck.Ok;
+        }
+
+        /// <summary>
+        /// 잡졸 하나를 옮긴다(D-8). target이 null이면 맨 뒤에 새 부대를 만들어 넣는다. 받는 부대의 사기는 그대로다.
+        /// 원래 부대가 비면 그 부대를 없애고(사기도 함께 없어진다) 대장은 대기 영웅이 된다(Q-45).
+        /// <paramref name="targetIndex"/>는 옮긴 뒤 받은 부대 순번, <paramref name="removedIndex"/>는 없앤 부대의 옮기기 전 순번(없으면 -1)이다.
+        /// <see cref="CheckMoveSoldier"/>가 Ok가 아니면 false이고 런은 바뀌지 않는다.
+        /// </summary>
+        public bool TryMoveSoldier(RunSoldier soldier, Squad<RunUnit> target, out int targetIndex, out int removedIndex)
+        {
+            targetIndex = -1; removedIndex = -1;
+            if (CheckMoveSoldier(soldier, target) != OrganizeCheck.Ok) return false;
+            Squad<RunUnit> source = SquadOf(soldier);
+            if (target == null) target = Army.TryAddSquad();
+            source?.Remove(soldier);
+            target.TryAdd(soldier);
+            if (source != null && source.Members.Count == 0)
+            {
+                removedIndex = IndexOf(source);
+                source.Leader = null;
+                Army.RemoveSquad(source);
+            }
+            targetIndex = IndexOf(target);
+            Changed?.Invoke();
+            return true;
+        }
+
+        /// <summary>
+        /// 부대 대장을 정할 수 있는지(D-8). hero가 null이면 대장을 비우는 것이다. 대기 중인 영웅만 대장이 되고, 플레이어는
+        /// <see cref="AllowPlayerCaptain"/>이 켜졌을 때만 된다. 런을 바꾸지 않는다.
+        /// </summary>
+        public OrganizeCheck CheckSetCaptain(Squad<RunUnit> squad, RunHero hero)
+        {
+            if (HasPendingBattle) return OrganizeCheck.BattlePending;
+            if (squad == null || !Owns(squad) || (hero != null && Find(hero.Id) != hero)) return OrganizeCheck.NotInRun;
+            if (squad.Leader == hero) return OrganizeCheck.SameSquad;
+            if (hero == null) return OrganizeCheck.Ok;
+            if (hero.IsPlayer && !AllowPlayerCaptain) return OrganizeCheck.PlayerNotAllowed;
+            if (LeadingSquadOf(hero) != null) return OrganizeCheck.NotReserve;
+            return OrganizeCheck.Ok;
+        }
+
+        /// <summary>
+        /// 부대 대장을 정한다(D-8). 원래 대장은 대기 영웅이 된다. hero가 null이면 대장을 비운다.
+        /// <see cref="CheckSetCaptain"/>이 Ok가 아니면 false이고 런은 바뀌지 않는다.
+        /// </summary>
+        public bool TrySetCaptain(Squad<RunUnit> squad, RunHero hero)
+        {
+            if (CheckSetCaptain(squad, hero) != OrganizeCheck.Ok) return false;
+            squad.Leader = hero;
+            Changed?.Invoke();
+            return true;
         }
 
         /// <summary>영웅을 부대장으로 정한다. null이면 부대장을 비운다. 한 영웅은 한 부대만 맡는다.</summary>
@@ -509,6 +770,25 @@ namespace ProjectNeo.Run
             pendingBattle = 0;
             Changed?.Invoke();
             return BattleResultIssue.None;
+        }
+
+        /// <summary>
+        /// 전투 뒤 정리(C-3, Q-50): 잡졸도 대장도 없는 부대를 없앤다(사기도 함께 없어진다). 대장만 남은 부대는 사기와 함께 남는다.
+        /// 없앤 부대의 원래 순번을 큰 것부터 돌려준다(씬 부대를 같은 순서로 지우면 번호가 맞는다). 전투 대기 중이면 아무것도 하지 않는다.
+        /// </summary>
+        public List<int> RemoveEmptySquads()
+        {
+            var removed = new List<int>();
+            if (HasPendingBattle) return removed;
+            for (int i = Army.Squads.Count - 1; i >= 0; i--)
+            {
+                Squad<RunUnit> squad = Army.Squads[i];
+                if (squad.Members.Count > 0 || squad.Leader != null) continue;
+                Army.RemoveSquad(squad);
+                removed.Add(i);
+            }
+            if (removed.Count > 0) Changed?.Invoke();
+            return removed;
         }
 
         bool Owns(Squad<RunUnit> squad)

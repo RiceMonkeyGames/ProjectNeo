@@ -23,3 +23,19 @@ MonoBehaviour:
   - stat: 2
     kind: 0
     value: 3
+  upgradeMaterials:
+  - materials:
+    - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+      amount: 3
+  - materials:
+    - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+      amount: 6
+  - materials:
+    - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+      amount: 9
+  - materials:
+    - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+      amount: 12
+  - materials:
+    - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+      amount: 15

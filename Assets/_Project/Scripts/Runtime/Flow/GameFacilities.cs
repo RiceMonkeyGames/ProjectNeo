@@ -18,6 +18,7 @@ namespace ProjectNeo.Flow
     /// Esc나 닫기 버튼으로 닫는다. 팝업이 열린 동안은 <see cref="GamePhaseView.IsPanelView"/>로 이동·시점을 멈춘다.
     /// 모든 시설은 팝업에서 업그레이드하고, 상점은 매물 구매와 보관함 판매를 한다. 병영(D-4)은 잡졸을 모집하고 넣을 부대를 고르며,
     /// 레벨에 따른 훈련 보너스를 보여 준다. 대장간(D-6)은 레벨의 고정 레시피로 장비를 만들고 보관함 장비를 판다.
+    /// 주점(D-3)은 준비마다 뽑은 영웅을 고용해 고른 부대의 대장이나 대기 영웅으로 넣는다.
     /// 다른 시설의 기능은 후속 작업이다.
     /// 시설 목록·거래 수치는 <see cref="RunConfig"/> 에셋, 레벨·매물 풀은 시설 정의 에셋에서 바꾼다.
     /// <see cref="GameBattleController"/>와 같은 오브젝트에 붙어 그 런 연결을 쓴다.
@@ -39,6 +40,8 @@ namespace ProjectNeo.Flow
         [SerializeField] RectTransform offerList;
         [SerializeField] RectTransform inventoryList;
         [SerializeField] Button rowTemplate;
+        [SerializeField] Button rerollButton;
+        [SerializeField] TMP_Text rerollLabel;
         readonly List<Button> rows = new List<Button>();
         GameBattleController battle;
         GameUnitSpawner spawner;
@@ -47,6 +50,7 @@ namespace ProjectNeo.Flow
         string shopOfferHeader;
         string shopInventoryHeader;
         Squad<RunUnit> chosenSquad;
+        int captainSquad = -1;
         GameFlow flow;
 
         /// <summary>지금 열린 시설. 닫혀 있으면 null.</summary>
@@ -58,6 +62,10 @@ namespace ProjectNeo.Flow
         public string StatusText => status != null ? status.text : string.Empty;
         public string BodyText => body != null ? body.text : string.Empty;
         public string UpgradeText => upgradeLabel != null ? upgradeLabel.text : string.Empty;
+        /// <summary>리롤 버튼 글자(상점). 버튼이 없으면 빈 글자.</summary>
+        public string RerollText => rerollLabel != null ? rerollLabel.text : string.Empty;
+        /// <summary>리롤 버튼이 지금 보이는지(상점 팝업에서만 보인다).</summary>
+        public bool IsRerollVisible => rerollButton != null && rerollButton.gameObject.activeSelf;
         /// <summary>지금 보이는 매물 줄 수(상점).</summary>
         public int OfferRows => offerList != null ? ActiveChildren(offerList) : 0;
         /// <summary>병영에서 고른 부대 순번. -1이면 자동 배치(자리가 남은 첫 부대).</summary>
@@ -66,6 +74,22 @@ namespace ProjectNeo.Flow
         public string OfferHeaderText => offerHeader != null ? offerHeader.text : string.Empty;
         /// <summary>지금 보이는 보관함 줄 수(상점) 또는 부대 줄 수(병영).</summary>
         public int InventoryRows => inventoryList != null ? ActiveChildren(inventoryList) : 0;
+        /// <summary>index번째 상점 매물이 잠겨 있는지(PREP-03).</summary>
+        public bool IsOfferLocked(int index) => State?.Shop != null && State.Shop.IsLocked(index);
+        public int ShopMaxLocked => State != null ? State.ShopMaxLocked : 0;
+        public int ShopLockedCount => State?.Shop != null ? State.Shop.LockedCount : 0;
+        public Button OfferLockButton(int index)
+        {
+            if (offerList == null || index < 0) return null;
+            int found = 0;
+            foreach (Button button in offerList.GetComponentsInChildren<Button>(true))
+            {
+                if (button.gameObject.name != "Button_Lock" || !button.gameObject.activeInHierarchy) continue;
+                if (found == index) return button;
+                found++;
+            }
+            return null;
+        }
 
         public void Configure(RunConfig start, GamePhaseView view, GameObject popup, TMP_Text titleLabel, TMP_Text statusLabel,
             TMP_Text bodyLabel)
@@ -78,6 +102,11 @@ namespace ProjectNeo.Flow
         {
             upgradeButton = upgrade; upgradeLabel = upgradeText; tradeArea = trade; offerList = offers;
             inventoryList = inventory; rowTemplate = template;
+        }
+
+        public void ConfigureReroll(Button reroll, TMP_Text rerollText)
+        {
+            rerollButton = reroll; rerollLabel = rerollText;
         }
 
         void Awake()
@@ -102,6 +131,7 @@ namespace ProjectNeo.Flow
             if (state == null || startConfig == null) return state;
             state.AddFacilities(startConfig.Facilities);
             state.SetupShop(startConfig.Economy);
+            state.SetupEquipmentUpgrades(startConfig.EquipmentUpgrades);
             return state;
         }
 
@@ -127,9 +157,11 @@ namespace ProjectNeo.Flow
             }
             if (!phaseView.EnterPanel()) return false;
             if (type == FacilityType.Shop) State.RestockShopIfNeeded(item => GameSession.Meta.IsUnlocked(item));
+            if (type == FacilityType.Tavern) State.RestockTavernIfNeeded(hero => GameSession.Meta.IsUnlocked(hero));
             OpenFacility = type;
             Message = string.Empty;
             chosenSquad = null;
+            captainSquad = -1;
             panel.SetActive(true);
             Rebuild();
             return true;
@@ -165,7 +197,7 @@ namespace ProjectNeo.Flow
             RunState state = State;
             if (OpenFacility != FacilityType.Shop || state?.Shop == null || index < 0 || index >= state.Shop.Stock.Count) return false;
             ItemDefinition item = state.Shop.Stock[index];
-            bool bought = state.TryBuy(item);
+            bool bought = state.TryBuyAt(index);
             Message = bought ? $"{item.DisplayName} 구매 · {Describe(item.Price)}" : $"{item.DisplayName}: 비용이 모자랍니다.";
             Rebuild();
             return bought;
@@ -177,12 +209,126 @@ namespace ProjectNeo.Flow
             RunState state = State;
             if (OpenFacility != FacilityType.Shop || state?.Shop == null || index < 0 || index >= state.Inventory.Items.Count) return false;
             ItemInstance item = state.Inventory.Items[index];
-            int price = state.Shop.GetSellPrice(item.Definition);
+            int price = state.Shop.GetInstanceSellPrice(item);
             bool sold = state.TrySell(item);
-            if (sold) Message = $"{item.Definition.DisplayName} 판매 · {price}골드";
+            if (sold) Message = $"{item.DisplayName} 판매 · {price}골드";
             Rebuild();
             return sold;
         }
+
+        /// <summary>주점에서 고용할 영웅에게 대장을 맡길 부대 순번. -1이면 대기 영웅으로 고용한다.</summary>
+        public int CaptainSquad => captainSquad;
+
+        /// <summary>주점 매물의 index번째 영웅을 고른 부대 대장(없으면 대기)으로 고용한다(D-3). 비용을 내고 주점 앞에 나타난다.</summary>
+        public bool TryHire(int index)
+        {
+            RunState state = State;
+            if (OpenFacility != FacilityType.Tavern || state == null || flow.Phase != GamePhase.Preparation) return false;
+            if (index < 0 || index >= state.TavernOffers.Count) return false;
+            HeroDefinition hero = state.TavernOffers[index];
+            if (captainSquad >= state.Army.Squads.Count) captainSquad = -1;
+            UnitCombatAI unit = null;
+            HireCheck check = HireCheck.NotOffered;
+            if (spawner != null) unit = spawner.HireAtTavern(hero, captainSquad, out check);
+            Message = unit != null
+                ? $"{hero.DisplayName} 고용 · {Describe(hero.HireCost)} → " + (captainSquad < 0 ? "대기 영웅" : $"부대 {captainSquad + 1} 대장")
+                : $"{hero.DisplayName}: " + Reason(check);
+            Rebuild();
+            return unit != null;
+        }
+
+        /// <summary>주점에서 고용할 영웅에게 대장을 맡길 부대를 고른다. -1이면 대기 영웅.</summary>
+        public bool ChooseCaptainSquad(int index)
+        {
+            RunState state = State;
+            if (OpenFacility != FacilityType.Tavern || state == null || index < -1 || index >= state.Army.Squads.Count) return false;
+            captainSquad = index;
+            Message = string.Empty;
+            Rebuild();
+            return true;
+        }
+
+        static string Reason(HireCheck check) => check switch
+        {
+            HireCheck.BattlePending => "전투 중에는 고용할 수 없습니다.",
+            HireCheck.NoSquad => "대장을 맡길 부대가 없습니다.",
+            HireCheck.NotEnoughFunds => "비용이 모자랍니다.",
+            _ => "고용하지 못했습니다.",
+        };
+
+        void BuildTavernRows(RunState state)
+        {
+            IReadOnlyList<HeroDefinition> offers = state.TavernOffers;
+            if (offers.Count == 0) AddRow(offerList, "고용할 영웅이 없습니다.", null);
+            for (int i = 0; i < offers.Count; i++)
+            {
+                int index = i;
+                AddRow(offerList, $"{offers[i].DisplayName} · {offers[i].Tier}등급 · {Describe(offers[i].HireCost)}", () => TryHire(index));
+            }
+            if (captainSquad >= state.Army.Squads.Count) captainSquad = -1;
+            AddRow(inventoryList, (captainSquad < 0 ? "[선택] " : string.Empty) + "대기 영웅으로 (전투 제외)", () => ChooseCaptainSquad(-1));
+            IReadOnlyList<Squad<RunUnit>> squads = state.Army.Squads;
+            for (int i = 0; i < squads.Count && i < MaxInventoryRows; i++)
+            {
+                int index = i;
+                string mark = i == captainSquad ? "[선택] " : string.Empty;
+                string leader = squads[i].Leader is RunHero hero ? hero.Definition.DisplayName : "없음";
+                AddRow(inventoryList, $"{mark}부대 {i + 1} 대장으로 (지금: {leader})", () => ChooseCaptainSquad(index));
+            }
+        }
+
+        static string DescribeTavern(FacilityState facility)
+        {
+            var text = new StringBuilder("영웅은 준비 단계마다 새로 등장합니다. 대장을 맡기면 원래 대장은 대기로 갑니다. 대기 영웅은 전투에 나가지 않습니다.");
+            if (!facility.IsMaxLevel) text.Append("\n업그레이드하면 다음 준비부터 더 높은 등급의 영웅이 등장합니다.");
+            return text.ToString();
+        }
+
+        /// <summary>골드를 내고 상점 매물을 새로 뽑는다(PREP-02). 리롤 버튼이 부른다.</summary>
+        public bool TryReroll()
+        {
+            RunState state = State;
+            if (OpenFacility != FacilityType.Shop || state?.Shop == null || flow.Phase != GamePhase.Preparation) return false;
+            int cost = state.ShopRerollCost;
+            ShopRerollCheck check = state.CheckShopReroll();
+            bool rerolled = check == ShopRerollCheck.Ok && state.TryRerollShop(IsUnlocked);
+            Message = rerolled ? $"매물을 새로 뽑았습니다 · {cost}골드" : "리롤: " + Reason(check, cost);
+            Rebuild();
+            return rerolled;
+        }
+
+        public void TryRerollFromButton() => TryReroll();
+
+        static string Reason(ShopRerollCheck check, int cost) => check switch
+        {
+            ShopRerollCheck.BattlePending => "전투 중에는 리롤할 수 없습니다.",
+            ShopRerollCheck.NotEnoughFunds => $"비용이 모자랍니다: {cost}골드",
+            _ => "지금은 리롤할 수 없습니다.",
+        };
+
+        /// <summary>상점 매물의 index번째 잠금을 토글한다(PREP-03). 각 매물 줄의 잠금 버튼이 부른다.</summary>
+        public bool TryToggleLock(int index)
+        {
+            RunState state = State;
+            if (OpenFacility != FacilityType.Shop || state?.Shop == null || flow.Phase != GamePhase.Preparation) return false;
+            if (index < 0 || index >= state.Shop.Stock.Count) return false;
+            bool wasLocked = state.Shop.IsLocked(index);
+            ShopLockCheck check = state.CheckShopLock(index);
+            bool toggled = check == ShopLockCheck.Ok && state.TryToggleShopLock(index);
+            ItemDefinition item = state.Shop.Stock[index];
+            Message = toggled
+                ? (wasLocked ? $"{item.DisplayName} 잠금 해제" : $"{item.DisplayName} 잠금 (최대 {state.ShopMaxLocked}개)")
+                : Reason(check, state.ShopMaxLocked);
+            Rebuild();
+            return toggled;
+        }
+
+        static string Reason(ShopLockCheck check, int maxLocked) => check switch
+        {
+            ShopLockCheck.BattlePending => "전투 중에는 잠금을 바꿀 수 없습니다.",
+            ShopLockCheck.LimitReached => $"잠금은 최대 {maxLocked}개까지 가능합니다.",
+            _ => "지금은 잠금을 바꿀 수 없습니다.",
+        };
 
         static bool IsUnlocked(ItemDefinition item) => GameSession.Meta.IsUnlocked(item);
 
@@ -205,16 +351,53 @@ namespace ProjectNeo.Flow
         public bool TrySellEquipment(int index)
         {
             RunState state = State;
-            if (OpenFacility != FacilityType.Smithy || state?.Shop == null) return false;
+            if (OpenFacility != FacilityType.Smithy || state?.Shop == null || flow.Phase != GamePhase.Preparation) return false;
             List<ItemInstance> equipment = EquipmentIn(state.Inventory);
             if (index < 0 || index >= equipment.Count) return false;
             ItemInstance item = equipment[index];
-            int price = state.Shop.GetSellPrice(item.Definition);
+            int price = state.Shop.GetInstanceSellPrice(item);
             bool sold = state.TrySellAtSmithy(item);
-            if (sold) Message = $"{item.Definition.DisplayName} 판매 · {price}골드";
+            if (sold) Message = $"{item.DisplayName} 판매 · {price}골드";
             Rebuild();
             return sold;
         }
+
+        public bool TryUpgradeEquipment(int index)
+        {
+            RunState state = State;
+            if (OpenFacility != FacilityType.Smithy || state == null || flow.Phase != GamePhase.Preparation) return false;
+            List<ItemInstance> equipment = EquipmentIn(state.Inventory);
+            if (index < 0 || index >= equipment.Count) return false;
+            ItemInstance item = equipment[index];
+            EquipmentUpgradeCheck check = state.CheckUpgradeEquipment(item);
+            bool upgraded = check == EquipmentUpgradeCheck.Allowed && state.TryUpgradeEquipment(item);
+            Message = upgraded ? $"{item.DisplayName} 강화 완료" : $"{item.DisplayName}: " + UpgradeReason(check);
+            Rebuild();
+            return upgraded;
+        }
+
+        public Button EquipmentUpgradeButton(int index)
+        {
+            if (OpenFacility != FacilityType.Smithy || inventoryList == null || index < 0) return null;
+            int found = 0;
+            foreach (Transform child in inventoryList)
+                if (child.gameObject.activeSelf && child.name == "Button_UpgradeEquipment")
+                {
+                    if (found++ == index) return child.GetComponent<Button>();
+                }
+            return null;
+        }
+
+        static string UpgradeReason(EquipmentUpgradeCheck check) => check switch
+        {
+            EquipmentUpgradeCheck.MaximumLevel => "현재 대장간의 최대 강화 단계입니다.",
+            EquipmentUpgradeCheck.NotEnoughFunds => "비용이 모자랍니다.",
+            EquipmentUpgradeCheck.NotOwned => "착용한 장비는 벗어서 보관함에 넣으세요.",
+            EquipmentUpgradeCheck.MissingCostData => "이 단계의 강화 재료 데이터가 없습니다.",
+            EquipmentUpgradeCheck.NotConfigured => "강화 설정이 없습니다.",
+            EquipmentUpgradeCheck.BattlePending => "전투 중에는 강화할 수 없습니다.",
+            _ => "이 장비는 강화할 수 없습니다.",
+        };
 
         static List<ItemInstance> EquipmentIn(Inventory inventory)
         {
@@ -299,22 +482,29 @@ namespace ProjectNeo.Flow
             bool shop = type == FacilityType.Shop && state.Shop != null;
             bool barracks = type == FacilityType.TrainingGround;
             bool smithy = type == FacilityType.Smithy && state.Shop != null;
+            bool tavern = type == FacilityType.Tavern;
             if (body != null)
             {
-                string text = shop ? "매물은 준비 단계마다 새로 바뀝니다. 업그레이드는 다음 준비의 매물부터 반영됩니다."
+                string text = shop ? $"매물은 준비 단계마다 새로 바뀌고, 업그레이드는 다음 준비의 매물부터 반영됩니다.\n리롤은 할 때마다 비싸지고 다음 준비에 처음 값으로 돌아갑니다. 잠금은 무료(최대 {state.ShopMaxLocked}개)입니다."
                     : barracks ? DescribeTraining(facility)
                     : smithy ? DescribeSmithy(facility)
+                    : tavern ? DescribeTavern(facility)
                     : Purpose(type) + "\n이 시설의 기능과 업그레이드 효과는 다음 작업에서 붙습니다.";
                 body.text = string.IsNullOrEmpty(Message) ? text : Message + "\n" + text;
             }
-            if (tradeArea != null) tradeArea.SetActive(shop || barracks || smithy);
+            if (tradeArea != null) tradeArea.SetActive(shop || barracks || smithy || tavern);
+            if (rerollButton != null) rerollButton.gameObject.SetActive(shop);
+            if (shop && rerollLabel != null) rerollLabel.text = $"리롤 · {state.ShopRerollCost}골드";
             if (offerHeader != null)
-                offerHeader.text = barracks ? "모집 (클릭해서 모집)" : smithy ? "제작 (클릭해서 제작)" : shopOfferHeader;
+                offerHeader.text = barracks ? "모집 (클릭해서 모집)" : smithy ? "제작 (클릭해서 제작)"
+                    : tavern ? "영웅 (클릭해서 고용)" : shopOfferHeader;
             if (inventoryHeader != null)
-                inventoryHeader.text = barracks ? "넣을 부대 (클릭해서 선택)" : smithy ? "장비 판매 (클릭해서 판매)" : shopInventoryHeader;
+                inventoryHeader.text = barracks ? "넣을 부대 (클릭해서 선택)" : smithy ? "장비 강화 / 판매"
+                    : tavern ? "맡길 자리 (클릭해서 선택)" : shopInventoryHeader;
             ClearRows();
             if (rowTemplate == null) return;
             if (barracks) { BuildBarracksRows(state); return; }
+            if (tavern) { BuildTavernRows(state); return; }
             if (smithy) { BuildSmithyRows(state); return; }
             if (!shop) return;
             IReadOnlyList<ItemDefinition> stock = state.Shop.Stock;
@@ -322,14 +512,17 @@ namespace ProjectNeo.Flow
             for (int i = 0; i < stock.Count; i++)
             {
                 int index = i;
-                AddRow(offerList, $"{stock[i].DisplayName} · {Describe(stock[i].Price)}", () => TryBuy(index));
+                bool isLocked = state.Shop.IsLocked(index);
+                string prefix = isLocked ? "[잠금] " : string.Empty;
+                AddShopOfferRow(offerList, $"{prefix}{stock[i].DisplayName} · {Describe(stock[i].Price)}", isLocked,
+                    () => TryBuy(index), () => TryToggleLock(index));
             }
             IReadOnlyList<ItemInstance> items = state.Inventory.Items;
             if (items.Count == 0) AddRow(inventoryList, "보관함이 비었습니다.", null);
             for (int i = 0; i < items.Count && i < MaxInventoryRows; i++)
             {
                 int index = i;
-                AddRow(inventoryList, $"{items[i].Definition.DisplayName} 팔기 · {state.Shop.GetSellPrice(items[i].Definition)}골드",
+                AddRow(inventoryList, $"{items[i].DisplayName} 팔기 · {state.Shop.GetInstanceSellPrice(items[i])}골드",
                     () => TrySell(index));
             }
             if (items.Count > MaxInventoryRows) AddRow(inventoryList, $"외 {items.Count - MaxInventoryRows}개", null);
@@ -371,19 +564,31 @@ namespace ProjectNeo.Flow
             for (int i = 0; i < equipment.Count && i < MaxInventoryRows; i++)
             {
                 int index = i;
-                AddRow(inventoryList, $"{equipment[i].Definition.DisplayName} 팔기 · {state.Shop.GetSellPrice(equipment[i].Definition)}골드",
-                    () => TrySellEquipment(index));
+                ItemInstance item = equipment[i];
+                EquipmentUpgradeCheck check = state.CheckUpgradeEquipment(item);
+                string detail = check == EquipmentUpgradeCheck.MaximumLevel ? $"최대 +{state.MaxEquipmentUpgrade}"
+                    : state.EquipmentUpgrades != null && state.EquipmentUpgrades.TryGetNextCost(item, out Cost cost)
+                        ? $"+{item.UpgradeLevel + 1} 강화 · {Describe(cost)}" : UpgradeReason(check);
+                Button row = AddRow(inventoryList, $"{item.DisplayName}\n{detail}",
+                    check == EquipmentUpgradeCheck.Allowed || check == EquipmentUpgradeCheck.NotEnoughFunds
+                        ? () => TryUpgradeEquipment(index) : null);
+                if (row == null) continue;
+                row.name = "Button_UpgradeEquipment";
+                TMP_Text label = row.GetComponentInChildren<TMP_Text>(true);
+                label.fontSize = 12f;
+                label.rectTransform.offsetMax = new Vector2(-83f, 0f);
+                AddEquipmentSellButton(row, state.Shop.GetInstanceSellPrice(item), () => TrySellEquipment(index));
             }
             if (equipment.Count > MaxInventoryRows) AddRow(inventoryList, $"외 {equipment.Count - MaxInventoryRows}개", null);
         }
 
-        static string DescribeSmithy(FacilityState facility)
+        string DescribeSmithy(FacilityState facility)
         {
-            var text = new StringBuilder("레시피의 장비는 비용만 있으면 언제든 만들 수 있습니다. 착용 중인 장비는 팔 수 없습니다.");
+            var text = new StringBuilder($"레시피로 제작 / 보관함 클릭: 강화 (최대 +{State.MaxEquipmentUpgrade}) / 버튼: 판매\n착용 장비는 먼저 벗으세요.");
             if (!facility.IsMaxLevel)
             {
                 List<CraftingRecipe> next = facility.Definition.Levels[facility.Level + 1].recipes;
-                text.Append($"\n다음 레벨: 레시피 {(next != null ? next.Count : 0)}종");
+                text.Append($" 다음 레벨: 레시피 {(next != null ? next.Count : 0)}종");
             }
             return text.ToString();
         }
@@ -428,15 +633,81 @@ namespace ProjectNeo.Flow
             return header != null ? header.GetComponent<TMP_Text>() : null;
         }
 
-        void AddRow(RectTransform list, string text, UnityEngine.Events.UnityAction action)
+        Button AddRow(RectTransform list, string text, UnityEngine.Events.UnityAction action)
         {
-            if (list == null) return;
+            if (list == null) return null;
             Button row = Instantiate(rowTemplate, list);
             row.gameObject.SetActive(true);
             row.GetComponentInChildren<TMP_Text>(true).text = text;
             row.interactable = action != null;
             if (action != null) row.onClick.AddListener(action);
             rows.Add(row);
+            return row;
+        }
+
+        void AddEquipmentSellButton(Button row, int price, UnityEngine.Events.UnityAction onSell)
+        {
+            var buttonObject = new GameObject("Button_SellEquipment", typeof(RectTransform),
+                typeof(UnityEngine.UI.Image), typeof(UnityEngine.UI.Button));
+            buttonObject.transform.SetParent(row.transform, false);
+            var rect = buttonObject.GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(1f, 0.5f);
+            rect.anchoredPosition = new Vector2(-4f, 0f);
+            rect.sizeDelta = new Vector2(74f, 28f);
+            var background = buttonObject.GetComponent<UnityEngine.UI.Image>();
+            background.color = new Color(0.3f, 0.24f, 0.2f);
+            var button = buttonObject.GetComponent<UnityEngine.UI.Button>();
+            button.targetGraphic = background;
+            button.onClick.AddListener(onSell);
+            var labelObject = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
+            labelObject.transform.SetParent(rect, false);
+            var label = labelObject.GetComponent<TextMeshProUGUI>();
+            label.rectTransform.anchorMin = Vector2.zero;
+            label.rectTransform.anchorMax = Vector2.one;
+            label.rectTransform.offsetMin = label.rectTransform.offsetMax = Vector2.zero;
+            label.font = row.GetComponentInChildren<TMP_Text>().font;
+            label.fontSize = 12f;
+            label.alignment = TextAlignmentOptions.Center;
+            label.raycastTarget = false;
+            label.text = $"판매\n{price}골드";
+        }
+
+        void AddShopOfferRow(RectTransform list, string text, bool locked,
+            UnityEngine.Events.UnityAction onBuy, UnityEngine.Events.UnityAction onToggleLock)
+        {
+            Button row = AddRow(list, text, onBuy);
+            if (row == null) return;
+            TMP_Text rowLabel = row.GetComponentInChildren<TMP_Text>(true);
+            if (rowLabel != null) rowLabel.rectTransform.offsetMax = new Vector2(-78f, 0f);
+
+            var lockObject = new GameObject("Button_Lock", typeof(RectTransform), typeof(Image), typeof(Button));
+            lockObject.transform.SetParent(row.transform, false);
+            var lockRect = lockObject.GetComponent<RectTransform>();
+            lockRect.anchorMin = new Vector2(1f, 0.5f);
+            lockRect.anchorMax = new Vector2(1f, 0.5f);
+            lockRect.pivot = new Vector2(1f, 0.5f);
+            lockRect.anchoredPosition = new Vector2(-4f, 0f);
+            lockRect.sizeDelta = new Vector2(68f, 26f);
+
+            var lockImage = lockObject.GetComponent<Image>();
+            lockImage.color = locked ? new Color(0.55f, 0.42f, 0.14f) : new Color(0.22f, 0.32f, 0.38f);
+            var lockButton = lockObject.GetComponent<Button>();
+            lockButton.targetGraphic = lockImage;
+            if (onToggleLock != null) lockButton.onClick.AddListener(onToggleLock);
+
+            var labelObject = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
+            labelObject.transform.SetParent(lockObject.transform, false);
+            var labelRect = labelObject.GetComponent<RectTransform>();
+            labelRect.anchorMin = Vector2.zero;
+            labelRect.anchorMax = Vector2.one;
+            labelRect.offsetMin = labelRect.offsetMax = Vector2.zero;
+            var lockLabel = labelObject.GetComponent<TextMeshProUGUI>();
+            lockLabel.text = locked ? "해제" : "잠금";
+            lockLabel.fontSize = 14f;
+            lockLabel.alignment = TextAlignmentOptions.Center;
+            lockLabel.raycastTarget = false;
+            lockLabel.color = new Color(0.95f, 0.97f, 1f);
+            if (rowLabel != null) lockLabel.font = rowLabel.font;
         }
 
         void ClearRows()

@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e49d97490cd7c8145b0ac8870a3dce9d, type: 3}
+  m_Name: hero_swordsman
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Characters.HeroDefinition
+  id: hero_swordsman
+  displayName: "\uC6A9\uBCD1 \uAC80\uC0AC"
+  unlockedByDefault: 1
+  hireCost:
+    gold: 60
+    materials: []
+  equipmentSlots: 3
+  baseStats:
+  - stat: 0
+    value: 180
+  - stat: 1
+    value: 30
+  - stat: 2
+    value: 6
+  - stat: 5
+    value: 1.5
+  - stat: 3
+    value: 1
+  - stat: 4
+    value: 3.6
+  skills: []
+  tier: 1
+  unitPrefab: {fileID: 1914076826456804682, guid: b983b6e18928fe34d98f9442d19d1f2f, type: 3}

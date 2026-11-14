@@ -1,6 +1,6 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-13 23:28:23 (KST)
+Last Updated: 2026-11-14 14:06:56 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
@@ -10,7 +10,7 @@ Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elev
 
 ## Implemented vs Pending Real Connections
 
-**Blacksmith upgrade rules (PREP-01, In Progress)**: Independent item state, per-target-level material data on `ItemDefinition`, common upgrade settings, costs/caps, modifier/refund calculations are implemented on `feature/prep-01`. Compile and full EditMode 343/343 (16 new) passed. At the user's request, shared run/shop/facility UI integration follows youngho's PREP-02. Existing Game equipment stats/sales and item assets do not yet consume these rules. [Progress and remaining scope](../history/PREP/PREP-01.md).
+**Blacksmith equipment upgrades (PREP-01, Done on user authorization)**: Integrated on `feature/prep-01` after PREP-02/03: stash-only upgrades, per-target-level item materials, +10% equip modifiers per level, +1/+3/+5 smithy caps, actual-spend sale refund, existing Smithy popup rows and Editor API data setup. User chose crafting materials × target level; equipped items must be unequipped first. Unity compile and final full EditMode 380/380 / PlayMode 182/182 passed; physical-input play and standalone build unverified. Details and manual steps: [history](../history/PREP/PREP-01.md).
 
 Q-41 and SIEGE-04 completion/commit/push were authorized by the user on 2026-11-13 and archived as Done on `feature/siege-04`; develop integration remains pending user merge. Physical-key/HUD manual review and standalone build remain unverified.
 
@@ -19,11 +19,11 @@ Q-41 and SIEGE-04 completion/commit/push were authorized by the user on 2026-11-
 | Domain | Verified Current State | Remaining Integration Scope |
 |---|---|---|
 | Project Foundation | Unity 6000.6.8f1, URP, 4 assemblies, test runners, Windows build script | Distribution packaging, release verification |
-| Stats, Economy, Facilities | Stat modifiers, multi-material wallet, inventory, trade logic, facility pop-ups/upgrades, shop, barracks recruitment/training, blacksmith recipe crafting/sales (D-6) | Tavern/squad org UIs, blacksmith upgrades (PREP-01), shop re-roll/locks (PREP-02/03) |
+| Stats, Economy, Facilities | Stat modifiers, multi-material wallet, inventory, trade logic, facility pop-ups/upgrades, shop, barracks recruitment/training, blacksmith recipe crafting/sales (D-6) and equipment upgrades (PREP-01, on task branch), squad organization window (D-8), tavern hero hiring and hero equipment (D-3), shop gold re-roll/offer locks (PREP-02/03) | Hero skills; PREP-01 physical-input upgrade play and standalone build |
 | Characters & Combat | 1st-person movement, melee attacks, health, grunt stats, projectiles, auto-combat, Game scene siege assault/ladders/outcomes | Wall-breaker encounter integration, aerial enemies, active skills, consumables, production HUD |
 | Meta & Perks | Progression curves, reincarnation conversion, gacha unlocks, perk payloads | Disk persistence, run reward routing, runtime perk injection |
 | Squads, Morale, Walls | Squad structures, grid occupancy/rotation, stacking, async NavMesh rebuild, fall damage, weapon mounting/collapse, 1st-person commands | Morale/rout scene wiring (B-8.1 pure rules done (`BattleSquadMorale`); B-8.2 movement/exit, HUD, settings asset pending), wall-breaker encounter integration, construction delays. Siege weapon firing implemented on `feature/siege-02` (SIEGE-02, awaiting user playtest) |
-| Run Data Architecture | `RunState` container, castle persistence, combat I/O, single application rules (`C-1a`), Game scene unit binding, survivor healing (`C-1~2`), grunt spawning (`D-0b`) | `BattleResult` rout/exit fields (`B-8.2`), hero spawning (`D-3`), saved run loading, casualty replacement (`C-3`), meta file persistence |
+| Run Data Architecture | `RunState` container, castle persistence, combat I/O, single application rules (`C-1a`), Game scene unit binding, survivor healing (`C-1~2`), grunt spawning (`D-0b`), post-battle squad cleanup and casualty carry-over (`C-3`) | Saved run loading, meta file persistence |
 | Test Scenes | `CombatPrototype`, `UnitBattlePrototype`, `ConstructionPrototype`, `SquadCommandPrototype`, `WallCommandPrototype`, `SiegePrototype` | Mixed wall-breaker/aerial encounters, multi-wave sequences, morale routs, full loop integration |
 | Art & Performance | Capsule/box placeholder visuals, dual-tier NavMesh benchmark, AI query optimization (`PERF-nav-query`) | Production Synty packs, animations, VFX, full combat performance profiling |
 

@@ -115,6 +115,36 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
+        public IEnumerator 상점_팝업에서_골드를_내고_리롤하며_다른_시설에는_리롤_버튼이_없다()
+        {
+            var state = GameSession.Flow.Run.State;
+            Assert.IsTrue(Station(FacilityType.Shop).Interact());
+            Assert.IsTrue(facilities.IsRerollVisible, "Game 씬 시설 팝업에 리롤 버튼이 있어야 한다.");
+            StringAssert.Contains("10골드", facilities.RerollText);
+            int gold = state.Wallet.Gold;
+            Assert.IsTrue(facilities.TryBuy(0));
+            gold -= state.Inventory.Items[0].Definition.Price.gold;
+            Assert.AreEqual(2, facilities.OfferRows);
+
+            Assert.IsTrue(facilities.TryReroll());
+            Assert.AreEqual(gold - 10, state.Wallet.Gold);
+            Assert.AreEqual(3, facilities.OfferRows, "산 칸까지 다시 채운다.");
+            StringAssert.Contains("20골드", facilities.RerollText);
+            StringAssert.Contains("새로 뽑았습니다", facilities.BodyText);
+
+            state.Wallet.TrySpend(new ProjectNeo.Economy.Cost(state.Wallet.Gold));
+            Assert.IsFalse(facilities.TryReroll(), "골드가 모자라다.");
+            StringAssert.Contains("모자랍니다", facilities.BodyText);
+            Assert.AreEqual(1, state.ShopRerolls);
+            facilities.Close();
+            yield return null;
+
+            Assert.IsTrue(Station(FacilityType.Tavern).Interact());
+            Assert.IsFalse(facilities.IsRerollVisible, "상점이 아니면 리롤 버튼을 숨긴다.");
+            Assert.IsFalse(facilities.TryReroll());
+        }
+
+        [UnityTest]
         public IEnumerator 대장간_팝업에서_레시피로_만들고_장비를_판다()
         {
             var state = GameSession.Flow.Run.State;
@@ -162,7 +192,80 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(1, state.Facility(FacilityType.Tavern).Level);
             Assert.AreEqual(40, state.Wallet.Gold);
             StringAssert.Contains("모자랍니다", facilities.BodyText);
-            Assert.AreEqual(0, facilities.OfferRows,"상점이 아닌 시설은 거래 줄이 없다.");
+            StringAssert.Contains("고용", facilities.OfferHeaderText, "주점은 영웅 고용 줄을 보여 준다(D-3).");
+            yield break;
+        }
+
+        [UnityTest]
+        public IEnumerator 대장간_장비를_강화하고_착용_능력치와_판매_환급에_반영한다()
+        {
+            var state = GameSession.Flow.Run.State;
+            Assert.IsTrue(Station(FacilityType.Smithy).Interact());
+            Assert.IsNotNull(state.EquipmentUpgrades, "RunStart에 강화 설정이 연결되어 있어야 한다.");
+            StringAssert.Contains("최대 +1", facilities.BodyText);
+            Assert.IsTrue(facilities.TryCraft(0));
+            var item = state.Inventory.Items[0];
+            Assert.AreEqual(5, item.Definition.UpgradeMaterials.Count);
+            Assert.IsTrue(state.EquipmentUpgrades.TryGetNextCost(item, out var cost));
+            int gold = state.Wallet.Gold;
+            var row = facilities.EquipmentUpgradeButton(0);
+            Assert.IsNotNull(row);
+            Assert.IsTrue(row.interactable);
+            row.onClick.Invoke();
+            yield return null;
+            Assert.AreEqual(1, item.UpgradeLevel);
+            Assert.AreEqual(gold - cost.gold, state.Wallet.Gold);
+            StringAssert.Contains("+1 강화 완료", facilities.BodyText);
+            Assert.IsFalse(facilities.EquipmentUpgradeButton(0).interactable, "Lv1의 강화 한도");
+            gold = state.Wallet.Gold;
+            Assert.IsFalse(facilities.TryUpgradeEquipment(0));
+            Assert.AreEqual(gold, state.Wallet.Gold);
+
+            facilities.Close();
+            yield return null;
+            var equipment = Object.FindAnyObjectByType<GameEquipment>();
+            Assert.IsTrue(equipment.Open());
+            var modifier = item.Definition.EquipModifiers[0];
+            float before = state.Player.Character.Stats.GetValue(modifier.stat);
+            Assert.IsTrue(equipment.TryEquip(0));
+            Assert.That(state.Player.Character.Stats.GetValue(modifier.stat),
+                Is.EqualTo(before + modifier.value * 1.1f).Within(0.001f));
+            Assert.IsFalse(state.TryUpgradeEquipment(item), "착용 중에는 강화 대상에서 제외한다.");
+            Assert.IsTrue(equipment.TryUnequip(0));
+            Assert.That(state.Player.Character.Stats.GetValue(modifier.stat), Is.EqualTo(before).Within(0.001f));
+            equipment.Close();
+            yield return null;
+            Assert.IsTrue(Station(FacilityType.Smithy).Interact());
+            int sell = state.Shop.GetInstanceSellPrice(item);
+            var sellButton = facilities.EquipmentUpgradeButton(0).transform.Find("Button_SellEquipment")
+                .GetComponent<UnityEngine.UI.Button>();
+            Assert.IsTrue(sellButton.interactable, "강화가 최대여도 판매 버튼은 사용할 수 있다.");
+            sellButton.onClick.Invoke();
+            yield return null;
+            Assert.AreEqual(gold + sell, state.Wallet.Gold);
+            Assert.AreEqual(0, state.Inventory.Items.Count);
+            StringAssert.Contains($"{sell}골드", facilities.BodyText);
+        }
+
+        [UnityTest]
+        public IEnumerator 대장간_강화_재료는_아이템별_목표단계에_비례하고_부족하면_거부한다()
+        {
+            var state = GameSession.Flow.Run.State;
+            Assert.IsTrue(Station(FacilityType.Smithy).Interact());
+            var recipe = state.CraftableRecipes().First(r => r.cost.materials != null && r.cost.materials.Count > 0);
+            var item = state.Inventory.Add(recipe.item);
+            for (int target = 1; target <= item.Definition.UpgradeMaterials.Count; target++)
+                foreach (var material in recipe.cost.materials)
+                    Assert.AreEqual(material.amount * target,
+                        item.Definition.UpgradeMaterials[target - 1].materials.Single(m => m.material == material.material).amount);
+            int gold = state.Wallet.Gold;
+            Assert.IsFalse(facilities.TryUpgradeEquipment(0));
+            StringAssert.Contains("비용이 모자랍니다", facilities.BodyText);
+            Assert.AreEqual(gold, state.Wallet.Gold);
+            foreach (var material in recipe.cost.materials) state.Wallet.AddMaterial(material.material, material.amount);
+            Assert.IsTrue(facilities.TryUpgradeEquipment(0));
+            foreach (var material in recipe.cost.materials) Assert.AreEqual(0, state.Wallet.GetMaterial(material.material));
+            Assert.AreEqual(1, item.UpgradeLevel);
             yield break;
         }
 
@@ -217,6 +320,42 @@ namespace ProjectNeo.Tests
                 InputSystem.RemoveDevice(keyboard);
                 if (originalKeyboard != null && originalKeyboard.added) originalKeyboard.MakeCurrent();
             }
+        }
+
+        [UnityTest]
+        public IEnumerator 상점_팝업에서_매물을_잠그면_리롤에도_남고_사면_잠금이_풀린다()
+        {
+            var state = GameSession.Flow.Run.State;
+            Assert.IsTrue(Station(FacilityType.Shop).Interact());
+            Assert.AreEqual(3, facilities.OfferRows);
+            Assert.AreEqual(1, facilities.ShopMaxLocked);
+
+            int goldBefore = state.Wallet.Gold;
+            var secondLockButton = facilities.OfferLockButton(1);
+            Assert.IsNotNull(secondLockButton, "매물 줄마다 잠금 버튼이 있어야 한다.");
+            var lockedItem = state.Shop.Stock[1];
+            secondLockButton.onClick.Invoke();
+            yield return null;
+
+            Assert.AreEqual(goldBefore, state.Wallet.Gold, "잠금은 무료");
+            Assert.AreEqual(1, facilities.ShopLockedCount);
+            Assert.IsTrue(facilities.IsOfferLocked(1));
+            StringAssert.Contains("잠금", facilities.BodyText);
+
+            // 한도 초과(레벨 1: 최대 1개) 거부
+            Assert.IsFalse(facilities.TryToggleLock(0));
+            StringAssert.Contains("최대 1개", facilities.BodyText);
+
+            // 리롤 후 잠긴 매물은 유지
+            Assert.IsTrue(facilities.TryReroll());
+            Assert.AreEqual(3, facilities.OfferRows);
+            Assert.IsTrue(facilities.IsOfferLocked(0));
+            Assert.AreSame(lockedItem, state.Shop.Stock[0]);
+
+            // 잠긴 매물 구매 시 잠금이 풀린다.
+            Assert.IsTrue(facilities.TryBuy(0));
+            Assert.AreEqual(0, facilities.ShopLockedCount);
+            Assert.IsFalse(facilities.IsOfferLocked(0));
         }
     }
 }

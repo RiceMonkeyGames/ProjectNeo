@@ -23,3 +23,9 @@ MonoBehaviour:
   - stat: 2
     kind: 0
     value: 2
+  upgradeMaterials:
+  - materials: []
+  - materials: []
+  - materials: []
+  - materials: []
+  - materials: []

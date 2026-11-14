@@ -292,5 +292,95 @@ namespace ProjectNeo.Tests
             }
             yield return null;
         }
+
+        [UnityTest]
+        public IEnumerator Hold_RetaliatesOutsideHoldChaseRadius_WithinRetaliationLeash_AndReturnsToPost()
+        {
+            var defender = Unit("Defender", CombatTeam.Allied, Vector3.zero, ai: true, health: 200f);
+            var archer = Unit("EnemyArcher", CombatTeam.Hostile, new Vector3(0f, 0f, 10f), ranged: true, health: 40f);
+            var ai = defender.GetComponent<UnitCombatAI>();
+            ai.SetDirective(UnitDirective.Hold);
+            yield return Frames(10);
+            Assert.IsNull(ai.Target, "Hold 반경(6m) 밖 적은 선제 추격하지 않아야 한다.");
+
+            defender.ReceiveDamage(10f, archer);
+            yield return Frames(5);
+            Assert.AreEqual(archer, ai.Target, "반격 한계(15m) 안의 공격자에게는 반격 타겟을 잡아야 한다.");
+
+            int frames = 0;
+            while (frames++ < 600 && !archer.Health.IsDead) yield return null;
+            Assert.IsTrue(archer.Health.IsDead, "반격 추격으로 적을 처치해야 한다.");
+
+            frames = 0;
+            while (frames++ < 600 && (defender.transform.position - origin).magnitude > 1.2f) yield return null;
+            Assert.LessOrEqual((defender.transform.position - origin).magnitude, 1.2f, "반격 후 HoldPost로 복귀해야 한다.");
+        }
+
+        [UnityTest]
+        public IEnumerator Hold_DoesNotRetaliate_BeyondRetaliationLeash()
+        {
+            var defender = Unit("Defender", CombatTeam.Allied, Vector3.zero, ai: true, health: 200f);
+            var farArcher = Unit("FarArcher", CombatTeam.Hostile, new Vector3(0f, 0f, 18f), ranged: true);
+            var ai = defender.GetComponent<UnitCombatAI>();
+            ai.SetDirective(UnitDirective.Hold);
+            yield return Frames(5);
+
+            defender.ReceiveDamage(10f, farArcher);
+            yield return Frames(20);
+            Assert.IsNull(ai.Target, "Hold 반격 한계(15m) 밖의 적에게는 자리를 이탈해 추격하지 않아야 한다.");
+            Assert.LessOrEqual((defender.transform.position - origin).magnitude, 0.5f);
+        }
+
+        [UnityTest]
+        public IEnumerator Engage_SwitchesTarget_WhenHitByMeleeWhileChasingFleeingTarget()
+        {
+            var chaser = Unit("Chaser", CombatTeam.Hostile, Vector3.zero, ai: true, health: 200f);
+            var farPlayer = Unit("FarPlayer", CombatTeam.Allied, new Vector3(0f, 0f, 15f), health: 200f);
+            var ai = chaser.GetComponent<UnitCombatAI>();
+            yield return Frames(10);
+            Assert.AreEqual(farPlayer, ai.Target, "먼저 먼 대상을 추적해야 한다.");
+
+            yield return Frames(100); // 1.67초 경과 (> 1.5초 쿨다운)
+            var nearbyAlly = Unit("NearbyAlly", CombatTeam.Allied, chaser.transform.position - origin + new Vector3(1.5f, 0f, 0f), health: 200f);
+            chaser.ReceiveDamage(10f, nearbyAlly);
+            yield return null;
+            Assert.AreEqual(nearbyAlly, ai.Target, "먼 대상을 쫓는 중 옆에서 근접 공격당하면 타겟을 전환해야 한다.");
+        }
+
+        [UnityTest]
+        public IEnumerator InRangeCombat_IgnoresRangedHit_FromOtherEnemy()
+        {
+            var fighter = Unit("Fighter", CombatTeam.Allied, Vector3.zero, ai: true, health: 200f);
+            var meleeEnemy = Unit("MeleeEnemy", CombatTeam.Hostile, new Vector3(0f, 0f, 1.5f), health: 200f);
+            var rangedEnemy = Unit("RangedEnemy", CombatTeam.Hostile, new Vector3(0f, 0f, 12f), ranged: true, health: 200f);
+            var ai = fighter.GetComponent<UnitCombatAI>();
+            yield return Frames(105); // 교전 시작 + 쿨다운 경과
+            Assert.AreEqual(meleeEnemy, ai.Target);
+
+            fighter.ReceiveDamage(10f, rangedEnemy);
+            yield return Frames(5);
+            Assert.AreEqual(meleeEnemy, ai.Target, "이미 사거리 안에서 교전 중일 때는 다른 원거리 피격에 타겟을 바꾸지 않아야 한다.");
+        }
+
+        [UnityTest]
+        public IEnumerator MoveDirective_And_SuppressedRetaliation_IgnoreHits()
+        {
+            var unit = Unit("Mover", CombatTeam.Allied, Vector3.zero, ai: true, health: 200f);
+            var attacker = Unit("Attacker", CombatTeam.Hostile, new Vector3(0f, 0f, 10f), ranged: true, health: 200f);
+            var ai = unit.GetComponent<UnitCombatAI>();
+            ai.SetDirective(UnitDirective.Move, origin + new Vector3(15f, 0f, 0f));
+            yield return Frames(3);
+
+            unit.ReceiveDamage(10f, attacker);
+            yield return Frames(3);
+            Assert.IsNull(ai.Target, "Move 지시 중에는 피격당해도 적을 무시해야 한다.");
+
+            ai.SetDirective(UnitDirective.Hold);
+            ai.SetRetaliationSuppressed(true);
+            yield return Frames(3);
+            unit.ReceiveDamage(10f, attacker);
+            yield return Frames(3);
+            Assert.IsNull(ai.Target, "공성 임무 등 반격 억제 상태에서는 피격당해도 타겟을 바꾸지 않아야 한다.");
+        }
     }
 }

@@ -68,7 +68,9 @@ namespace ProjectNeo.Squads
         void LateUpdate()
         {
             EnsureDiscs();
-            for (int squad = 0; squad < destinationDiscs.Count; squad++)
+            // 편성(D-8)이나 전투 뒤 정리(C-3)로 부대가 줄면 남는 목적지 원판은 숨긴다. 부대 번호는 지금 부대 수까지만 읽는다.
+            for (int squad = center.Squads.Count; squad < destinationDiscs.Count; squad++) destinationDiscs[squad].SetActive(false);
+            for (int squad = 0; squad < center.Squads.Count && squad < destinationDiscs.Count; squad++)
             {
                 bool selected = center.Commander.IsSelected(squad);
                 foreach (UnitCombatAI member in center.Squads[squad].Members)

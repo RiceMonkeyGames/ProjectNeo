@@ -1,6 +1,6 @@
 # Game Design: Combat, Units & Win/Loss
 
-Last Updated: 2026-11-13 21:15:45 (KST)
+Last Updated: 2026-11-14 11:48:34 (KST)
 
 > Purpose: Rules for perspective, squad commands, damage, unit lifecycles, and battle outcomes. | Parent: [design/README](README.md) | Related: [WallsAndSiege](WallsAndSiege.md), [MoraleAndWave](MoraleAndWave.md)
 
@@ -29,6 +29,12 @@ Last Updated: 2026-11-13 21:15:45 (KST)
 
 - Damage formula: `Attack − Defense`, minimum damage is `1`.
 - Auto-targeting acquires closest enemy, re-evaluating on target death or unreachability.
+- **Retaliation & Target Switching (agreed 2026-11-14, BUG-ally-no-retaliation)**:
+  - **Hit retaliation & proximity re-evaluation**: Taking damage (`CharacterActor.HitReceivedFrom` carrying the attacker) or spotting a closer reachable threat during `Engage` triggers retargeting when the current target is null or cannot be struck from the current position (e.g., chasing a fleeing target).
+  - **In-range combat lock**: When already striking the current target in range (`CanStrikeFromHere`), ranged hits from other enemies do not break lock; only melee attacks (`AttackKind.Melee`) may trigger a switch.
+  - **Flip-flop prevention**: A minimum target-lock cooldown (`TargetSwitchCooldown = 1.5s` in `UnitAISettings`) prevents rapid target switching.
+  - **Hold retaliation leash**: In `Hold`, if hit by an attacker outside `HoldChaseRadius`, the unit pursues to retaliate up to a maximum `HoldPost` path/distance leash (`HoldRetaliationRadius = 15m` in `UnitAISettings`, data-configurable). Attackers beyond that leash (e.g., ground archers shooting wall-top defenders via long stair detours) do not pull defenders off post; ranged defenders still fire back if in range.
+  - **Exceptions & extensibility**: `Move` orders, routing/retreating, ladder climbing, and active siege tasks (gate/wall/cannon breaking, raising ladders) suppress retaliation/target switching. Targeting policy is structured to support future priority/fixed-target unit types.
 - No friendly fire.
 - Ranged attacks fire linear projectiles upon release: dodgeable post-launch, blocked by walls, pass through allies.
 
@@ -41,7 +47,7 @@ Last Updated: 2026-11-13 21:15:45 (KST)
 | Minion (Grunt) | Recruited at barracks. Eliminated on death; only fleeing/routed minions return next battle. |
 
 - Surviving heroes and minions fully recover HP before the next battle (2026-11-12). Only wall HP damage carries over.
-- Fallen ally corpses remain on the ground during the next preparation phase (2026-11-12), excluded from squads and run.
+- Fallen ally corpses remain on the ground during the next preparation phase (2026-11-12), excluded from squads and run. At the next prep start fallen units leave their scene squads (bodies stay), so they no longer take squad slots (Q-50, 2026-11-13).
 - Fallen hero equipment retention/loss remains undecided (Q-31).
 
 ## Win/Loss Conditions

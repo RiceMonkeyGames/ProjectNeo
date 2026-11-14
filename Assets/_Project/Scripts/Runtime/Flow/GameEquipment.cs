@@ -12,7 +12,8 @@ namespace ProjectNeo.Flow
     /// <summary>
     /// Game 씬 준비 단계의 장비 화면(D-7). 1인칭 탐색 중 장비 키(기본 I)로 열고 Esc나 닫기 버튼으로 닫는다.
     /// 보관함의 장비를 클릭하면 런 플레이어에게 끼우고, 착용 중인 장비를 클릭하면 벗긴다. 런 플레이어는 씬 플레이어와
-    /// 같은 캐릭터를 쓰므로 스탯이 씬에 바로 반영된다. 고용한 영웅의 장비는 주점(D-3) 이후에 붙인다.
+    /// 같은 캐릭터를 쓰므로 스탯이 씬에 바로 반영된다. 고용한 영웅이 있으면 착용 목록 맨 위 줄로 대상(플레이어·영웅)을 바꾼다(D-3, Q-48).
+    /// 고용 영웅도 씬 유닛과 같은 캐릭터를 써서 바로 반영된다.
     /// <see cref="GameBattleController"/>와 같은 오브젝트에 붙어 그 런 연결을 쓴다.
     /// </summary>
     [RequireComponent(typeof(GameBattleController))]
@@ -61,6 +62,32 @@ namespace ProjectNeo.Flow
 
         RunState State => battle != null ? battle.RunLink.State : null;
         RunHero Player => State?.Player;
+        RunHero selected;
+
+        /// <summary>장비를 바꿀 대상. 고용 영웅이 없으면 늘 플레이어다.</summary>
+        public RunHero SelectedHero
+        {
+            get
+            {
+                RunState state = State;
+                if (state == null) return null;
+                if (selected == null || state.Find(selected.Id) != selected) selected = state.Player;
+                return selected;
+            }
+        }
+
+        /// <summary>대상을 다음 영웅(플레이어 포함, 런에 들어온 순서)으로 바꾼다.</summary>
+        public bool NextHero()
+        {
+            RunState state = State;
+            if (!IsOpen || state == null || state.Heroes.Count == 0) return false;
+            int index = -1;
+            for (int i = 0; i < state.Heroes.Count; i++) if (state.Heroes[i] == SelectedHero) index = i;
+            selected = state.Heroes[(index + 1) % state.Heroes.Count];
+            Message = string.Empty;
+            Rebuild();
+            return true;
+        }
 
         /// <summary>준비 중 1인칭 탐색에서 장비 화면을 연다. 전투 중·다른 화면·런이 없으면 false.</summary>
         public bool Open()
@@ -69,6 +96,7 @@ namespace ProjectNeo.Flow
             if (!phaseView.EnterPanel()) return false;
             IsOpen = true;
             Message = string.Empty;
+            selected = Player;
             panel.SetActive(true);
             Rebuild();
             return true;
@@ -87,7 +115,7 @@ namespace ProjectNeo.Flow
             List<ItemInstance> gear = InventoryGear(state);
             if (!IsOpen || index < 0 || index >= gear.Count) return false;
             ItemInstance item = gear[index];
-            bool equipped = state.TryEquip(state.Player, item);
+            bool equipped = state.TryEquip(SelectedHero, item);
             Message = equipped ? $"{item.Definition.DisplayName} 착용" : "빈 장비 칸이 없습니다. 먼저 하나를 벗으세요.";
             Rebuild();
             return equipped;
@@ -97,9 +125,10 @@ namespace ProjectNeo.Flow
         public bool TryUnequip(int index)
         {
             RunState state = State;
-            if (!IsOpen || state?.Player == null || index < 0 || index >= state.Player.Character.Equipment.Count) return false;
-            ItemInstance item = state.Player.Character.Equipment[index];
-            bool removed = state.TryUnequip(state.Player, item);
+            RunHero hero = SelectedHero;
+            if (!IsOpen || hero == null || index < 0 || index >= hero.Character.Equipment.Count) return false;
+            ItemInstance item = hero.Character.Equipment[index];
+            bool removed = state.TryUnequip(hero, item);
             if (removed) Message = $"{item.Definition.DisplayName} 벗음";
             Rebuild();
             return removed;
@@ -129,12 +158,13 @@ namespace ProjectNeo.Flow
         void Rebuild()
         {
             RunState state = State;
-            RunHero player = state?.Player;
-            if (player == null) return;
-            var character = player.Character;
+            RunHero hero = SelectedHero;
+            if (hero == null) return;
+            var character = hero.Character;
             if (status != null)
             {
-                var text = new StringBuilder($"장비 칸 {character.Equipment.Count} / {character.Definition.EquipmentSlots}\n");
+                var text = new StringBuilder(state.Heroes.Count > 1 ? $"{character.Definition.DisplayName} · " : string.Empty);
+                text.Append($"장비 칸 {character.Equipment.Count} / {character.Definition.EquipmentSlots}\n");
                 for (int i = 0; i < ShownStats.Length; i++)
                 {
                     if (i > 0) text.Append(" · ");
@@ -146,19 +176,22 @@ namespace ProjectNeo.Flow
                 body.text = (string.IsNullOrEmpty(Message) ? string.Empty : Message + "\n") + "보관함의 장비를 클릭해 끼우고, 착용 중인 장비를 클릭해 벗습니다.";
             ClearRows();
             if (rowTemplate == null) return;
+            if (state.Heroes.Count > 1)
+                AddRow(equippedList, $"▶ 대상: {character.Definition.DisplayName}" + (hero.IsPlayer ? " (플레이어)" : string.Empty)
+                    + " · 눌러서 바꾸기", () => NextHero());
             if (character.Equipment.Count == 0) AddRow(equippedList, "착용한 장비가 없습니다.", null);
             for (int i = 0; i < character.Equipment.Count; i++)
             {
                 int index = i;
                 ItemInstance item = character.Equipment[i];
-                AddRow(equippedList, $"{item.Definition.DisplayName} · {Describe(item.Definition)}", () => TryUnequip(index));
+                AddRow(equippedList, $"{item.DisplayName} · {Describe(item)}", () => TryUnequip(index));
             }
             List<ItemInstance> gear = InventoryGear(state);
             if (gear.Count == 0) AddRow(inventoryList, "보관함에 장비가 없습니다.", null);
             for (int i = 0; i < gear.Count; i++)
             {
                 int index = i;
-                AddRow(inventoryList, $"{gear[i].Definition.DisplayName} · {Describe(gear[i].Definition)}", () => TryEquip(index));
+                AddRow(inventoryList, $"{gear[i].DisplayName} · {Describe(gear[i])}", () => TryEquip(index));
             }
         }
 
@@ -191,11 +224,12 @@ namespace ProjectNeo.Flow
             return count;
         }
 
-        static string Describe(ItemDefinition item)
+        string Describe(ItemInstance item)
         {
-            if (item.EquipModifiers.Count == 0) return "효과 없음";
+            IReadOnlyList<StatModifier> modifiers = item.EquipModifiers;
+            if (modifiers.Count == 0) return "효과 없음";
             var text = new StringBuilder();
-            foreach (StatModifier modifier in item.EquipModifiers)
+            foreach (StatModifier modifier in modifiers)
             {
                 if (text.Length > 0) text.Append(", ");
                 text.Append(StatName(modifier.stat)).Append(' ');

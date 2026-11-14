@@ -93,6 +93,61 @@ namespace ProjectNeo.Flow
             return unit;
         }
 
+        /// <summary>
+        /// 주점에서 영웅을 고용해 주점 앞에 만든다(D-3). <paramref name="captainOf"/>가 0 이상이면 그 부대 대장으로 부대 쪽으로 걸어가고,
+        /// -1이면 대기 영웅으로 주점 앞에 선다. 비용을 낸다. 못 하면 null이고 이유는 <paramref name="check"/>.
+        /// </summary>
+        public UnitCombatAI HireAtTavern(HeroDefinition hero, int captainOf, out HireCheck check)
+        {
+            check = HireCheck.NotOffered;
+            if (hero == null || battle == null) return null;
+            if (hero.UnitPrefab == null)
+            {
+                Debug.LogWarning("영웅 정의에 씬 몸체 프리팹이 없다: " + hero.Id, hero);
+                return null;
+            }
+            Vector3 origin = stations.TryGetValue(FacilityType.Tavern, out FacilityStation station) ? station.transform.position
+                : battle.transform.position;
+            Vector3 toward = origin + (station != null ? station.transform.forward : Vector3.forward);
+            Vector3 spawnPoint = FrontOf(origin, toward);
+            check = battle.RunLink.TryHire(hero, captainOf, def => CreateHero(def, spawnPoint, toward),
+                out UnitCombatAI unit, out Vector3 gather, out bool hasGather);
+            if (unit == null) return null;
+            unit.name = hero.Id + "_Hero" + (++spawned) + (captainOf >= 0 ? "_Captain" + (captainOf + 1) : "_Reserve");
+            if (hasGather) unit.SetDirective(UnitDirective.Move, SlotNear(gather));
+            else unit.SetDirective(UnitDirective.Hold);
+            return unit;
+        }
+
+        // 영웅 몸체를 꺼진 채 만들어 영웅 정의·AI·낙하 설정을 넣고, 제자리에 놓은 뒤 켠다. 켜야 영웅 캐릭터가 생긴다.
+        UnitCombatAI CreateHero(HeroDefinition hero, Vector3 at, Vector3 lookAt)
+        {
+            var holder = new GameObject("HeroHolder");
+            holder.SetActive(false);
+            GameObject instance = Instantiate(hero.UnitPrefab, at, Quaternion.identity, holder.transform);
+            var unit = instance.GetComponent<UnitCombatAI>();
+            var actor = instance.GetComponent<CharacterActor>();
+            if (unit == null || actor == null || actor.Profile == null)
+            {
+                Debug.LogError("영웅 몸체 프리팹에 UnitCombatAI와 전투 프로필이 있는 CharacterActor가 있어야 한다: " + hero.Id, hero);
+                Destroy(holder);
+                return null;
+            }
+            actor.Configure(hero, actor.Profile, CombatTeam.Allied);
+            if (aiSettings != null) unit.Configure(aiSettings);
+            var fall = instance.GetComponent<UnitFallController>();
+            if (fall == null) fall = instance.AddComponent<UnitFallController>();
+            fall.Configure(world, fallSettings);
+            instance.SetActive(false);
+            instance.transform.SetParent(unitRoot, true);
+            Destroy(holder);
+            Place(unit, at, lookAt);
+            unit.gameObject.SetActive(true);
+            var agent = unit.GetComponent<NavMeshAgent>();
+            if (agent != null && agent.enabled) agent.Warp(at);
+            return unit;
+        }
+
         // 비활성 상태로 만들어 AI·낙하 설정을 넣은 뒤 켠다. 프리팹 에셋은 바꾸지 않는다.
         UnitCombatAI Create(SoldierDefinition definition, Vector3 at)
         {

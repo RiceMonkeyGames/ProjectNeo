@@ -23,3 +23,29 @@ MonoBehaviour:
   - stat: 1
     kind: 0
     value: 8
+  upgradeMaterials:
+  - materials:
+    - material: {fileID: 11400000, guid: d8a422bc2c200bc4098f7e97952c696e, type: 2}
+      amount: 4
+    - material: {fileID: 11400000, guid: 983096480f690a248a516a89f583ca4f, type: 2}
+      amount: 2
+  - materials:
+    - material: {fileID: 11400000, guid: d8a422bc2c200bc4098f7e97952c696e, type: 2}
+      amount: 8
+    - material: {fileID: 11400000, guid: 983096480f690a248a516a89f583ca4f, type: 2}
+      amount: 4
+  - materials:
+    - material: {fileID: 11400000, guid: d8a422bc2c200bc4098f7e97952c696e, type: 2}
+      amount: 12
+    - material: {fileID: 11400000, guid: 983096480f690a248a516a89f583ca4f, type: 2}
+      amount: 6
+  - materials:
+    - material: {fileID: 11400000, guid: d8a422bc2c200bc4098f7e97952c696e, type: 2}
+      amount: 16
+    - material: {fileID: 11400000, guid: 983096480f690a248a516a89f583ca4f, type: 2}
+      amount: 8
+  - materials:
+    - material: {fileID: 11400000, guid: d8a422bc2c200bc4098f7e97952c696e, type: 2}
+      amount: 20
+    - material: {fileID: 11400000, guid: 983096480f690a248a516a89f583ca4f, type: 2}
+      amount: 10

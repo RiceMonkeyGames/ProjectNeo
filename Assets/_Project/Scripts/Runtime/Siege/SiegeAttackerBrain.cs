@@ -141,24 +141,39 @@ namespace ProjectNeo.Siege
                     gate = null;
                     cannon = null;
                     wallBreaker?.Clear();
+                    ai.SetRetaliationSuppressed(false);
                     ai.SetDirective(UnitDirective.Engage);
                     mode = Mode.Assault;
                 }
                 return;
             }
             // 걸어서 닿는 아군이 없을 때만 대포를 노린다(Q-21). 궁수는 기존 사격을 유지한다.
-            if (role != SiegeAttackerRole.Archer && DecideCannon()) return;
+            if (role != SiegeAttackerRole.Archer && DecideCannon())
+            {
+                ai.SetRetaliationSuppressed(true);
+                return;
+            }
             if (mode == Mode.ToCannon) { cannon = null; mode = Mode.Deciding; }
             switch (role)
             {
-                case SiegeAttackerRole.Ladder: DecideLadder(); break;
-                case SiegeAttackerRole.GateBreaker: DecideGate(); break;
+                case SiegeAttackerRole.Ladder:
+                    ai.SetRetaliationSuppressed(true);
+                    DecideLadder();
+                    break;
+                case SiegeAttackerRole.GateBreaker:
+                    ai.SetRetaliationSuppressed(true);
+                    DecideGate();
+                    break;
                 case SiegeAttackerRole.WallBreaker:
+                    ai.SetRetaliationSuppressed(true);
                     mode = Mode.ToWall;
                     if (wallBreaker != null) wallBreaker.Decide();
                     else if (ai.Directive != UnitDirective.Hold) ai.SetDirective(UnitDirective.Hold);
                     break;
-                default: DecideArcher(); break;
+                default:
+                    ai.SetRetaliationSuppressed(false);
+                    DecideArcher();
+                    break;
             }
         }
 
@@ -284,6 +299,7 @@ namespace ProjectNeo.Siege
             agent.enabled = true;
             ai.enabled = true;
             LeaveLadder();
+            ai.SetRetaliationSuppressed(false);
             ai.SetDirective(UnitDirective.Engage);
             mode = Mode.Deciding;
             think = 0f;
@@ -480,6 +496,7 @@ namespace ProjectNeo.Siege
                 retreatRemaining = settings.RetreatTimeout;
                 if (!TryGetRetreatPoint(out Vector3 point)) { Flee(); return; }
                 // 이동 지시는 적을 무시하고 끝까지 간다. 물러나는 동안 싸우지 않는다.
+                ai.SetRetaliationSuppressed(true);
                 ai.SetDirective(UnitDirective.Move, point);
                 return;
             }
