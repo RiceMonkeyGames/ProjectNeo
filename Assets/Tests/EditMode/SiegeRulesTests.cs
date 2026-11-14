@@ -128,6 +128,76 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(LadderPhase.Up, ladder.Phase);
         }
 
+        static LadderPushTuning DecidedTuning() => new LadderPushTuning(3f, 1.5f, 0.5f, 0.75f);
+
+        [TestCase(1, false, 3f)]
+        [TestCase(1, true, 4.5f)]
+        [TestCase(2, false, 2f)]
+        [TestCase(2, true, 3f)]
+        [TestCase(3, false, 3f / 1.75f)]
+        [TestCase(6, false, 3f / 1.75f)]
+        public void LadderPushTuning_HoldTimeFollowsWeightAndCooperation(int pushers, bool occupied, float expected)
+        {
+            Assert.That(DecidedTuning().SecondsToBalance(pushers, occupied), Is.EqualTo(expected).Within(0.0001f));
+        }
+
+        [Test]
+        public void LadderPushTuning_NoPusher_NeverReachesBalance_AndBonusNeverShrinks()
+        {
+            Assert.IsTrue(float.IsPositiveInfinity(DecidedTuning().SecondsToBalance(0, false)));
+            var odd = new LadderPushTuning(3f, 0.5f, 0.6f, 0.2f);
+            Assert.AreEqual(1f, odd.OccupiedMultiplier, "탑승자가 있는데 더 빨라지면 안 된다.");
+            Assert.AreEqual(0.6f, odd.CooperationBonus(3), "인원이 늘었는데 보너스가 줄었다.");
+        }
+
+        static SiegeLadderState RaisedTuned()
+        {
+            var ladder = new SiegeLadderState(3f, 2f, 0.5f, DecidedTuning());
+            ladder.Tick(0.1f, true, false, false);
+            ladder.Tick(3f, true, false, false);
+            return ladder;
+        }
+
+        [TestCase(1, false, 3f)]
+        [TestCase(1, true, 4.5f)]
+        [TestCase(2, false, 2f)]
+        [TestCase(3, true, 4.5f / 1.75f)]
+        public void Ladder_TunedPush_ReachesBalanceOnlyAfterHoldTime(int pushers, bool occupied, float hold)
+        {
+            SiegeLadderState ladder = RaisedTuned();
+            Assert.AreEqual(LadderPhase.Up, ladder.Phase);
+            if (occupied) Assert.IsTrue(ladder.TryBeginClimb());
+            int dislodged = 0;
+            ladder.ClimberDislodged += () => dislodged++;
+            Assert.That(ladder.PushToBalanceSeconds(pushers), Is.EqualTo(hold).Within(0.0001f));
+            ladder.Tick(hold - 0.05f, false, pushers, false);
+            Assert.IsFalse(ladder.IsSettling, "버텨야 하는 시간보다 먼저 균형점을 넘었다.");
+            Assert.AreEqual(occupied, ladder.HasClimber);
+            ladder.Tick(0.1f, false, pushers, false);
+            Assert.IsTrue(ladder.IsSettling, "버텨야 하는 시간이 지났는데 균형점을 넘지 않았다.");
+            Assert.AreEqual(occupied ? 1 : 0, dislodged);
+            // 균형점 이후는 손을 떼도 기존 안착 속도(전체 2초 기준)로 넘어간다.
+            ladder.Tick(1f, false, 0, false);
+            Assert.AreEqual(LadderPhase.Down, ladder.Phase);
+            Assert.AreEqual(1, ladder.ToppleCount);
+        }
+
+        [Test]
+        public void Ladder_TunedPush_ReleasedBeforeBalance_ReturnsAtSettleSpeed()
+        {
+            SiegeLadderState ladder = RaisedTuned();
+            ladder.Tick(1.5f, false, 1, false);
+            Assert.That(ladder.PushProgress, Is.EqualTo(0.25f).Within(0.0001f));
+            ladder.Tick(0.25f, false, 0, false);
+            Assert.That(ladder.PushProgress, Is.EqualTo(0.125f).Within(0.0001f));
+            ladder.Tick(1f, false, 0, false);
+            Assert.AreEqual(0f, ladder.PushProgress);
+            Assert.IsTrue(ladder.CanBoard);
+            // 막힌 동안에는 인원이 많아도 진행되지 않는다.
+            ladder.Tick(5f, false, 3, true);
+            Assert.AreEqual(0f, ladder.PushProgress);
+        }
+
         static SiegeLadderState Raised()
         {
             var ladder = new SiegeLadderState(3f, 2f);

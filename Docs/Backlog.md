@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-14 17:28:49 (KST)
+Last Updated: 2026-11-14 17:32:45 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -26,7 +26,6 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 | B-9.3 | M1 Full Integration, Iteration & Build Verification | Waiting for Prerequisite | Unassigned | Following B-4~8 integration, test repeated cycles of destruction, enemy variants, waves, morale, and outcomes; verify regressions and standalone build startup flow. |
 | PREP-04 | Combat Consumable Use | Pending Decision | Unassigned | User deferred (2026-11-13). Decide with Q-12: input keys (combat key ownership with teammate), quick slots, effects (e.g., potion heal %), limits. Existing data: `item_potion`. |
 | BUG-wall-archer-los | Wall-Top Archer LoS, Range & Hold Retaliation | Pending Decision | Unassigned | Reported 2026-11-14 during manual play: wall-top `Hold` archers fail to retaliate against enemy archers below due to `HasClearShot` wall-edge occlusion or 3D range boundary. Decisions needed before implementation: (1) high-ground ranged bonus enabled/value, (2) `HasClearShot` wall-top/edge exception vs stepping to wall edge for clear LoS, (3) `Hold` behavior when LoS and path are both blocked. |
-| SIEGE-05 | 사다리 밀기 속도·무게 페널티 및 배너로드식 개선 | In Progress | SeongminHwang | Branch `feature/siege-05`. 2026-11-14 사용자 결정: ① 균형점 자동 완료 유지, 단독·무탑승 기준 균형점까지 누르는 시간 3초(세우기 3초 유지) ② 탑승자(아군/적 1명) 있으면 밀기 시간 고정 ×1.5 ③ 위쪽 아군 협동 2명 +50%, 3명 이상 +75%(상한) ④ 상단 출구 저지는 제외(별도 작업). |
 | COMBAT-04 | Cast & Interaction Interrupt System on Hit | Pending Decision | Unassigned | Proposal 2026-11-14: taking enemy damage should interrupt active actions such as pushing ladders. Decisions needed before implementation: (1) target actions (ladder push/raise, cannon operation, battle-start hold, etc.), (2) trigger condition (any damage vs minimum damage/stagger threshold, cooldown), (3) progress handling on interrupt (reset vs settle from current tilt) and UI/feedback. |
 
 ---

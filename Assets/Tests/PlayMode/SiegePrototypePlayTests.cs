@@ -292,7 +292,7 @@ namespace ProjectNeo.Tests
             int frames = 0;
             while (!brain.IsClimbing && frames++ < 120) yield return null;
             Assert.IsTrue(brain.IsClimbing);
-            float pushToBalance = ladder.Settings.LadderPushSeconds * (1f - state.BalancePoint);
+            float pushToBalance = state.PushToBalanceSeconds(1);
             state.Tick(pushToBalance * 0.75f, false, true, false);
             yield return null;
             Assert.GreaterOrEqual(enemy.transform.position.y, ladder.BasePoint.y - 0.01f,
@@ -331,7 +331,7 @@ namespace ProjectNeo.Tests
             Assert.IsTrue(brain.IsClimbing, "적이 사다리에 탑승하지 않았다.");
             Assert.Greater(enemy.transform.position.y, ladder.BasePoint.y + 1.4f);
             Vector3 attached = enemy.transform.position;
-            float pushToBalance = ladder.Settings.LadderPushSeconds * (1f - state.BalancePoint);
+            float pushToBalance = state.PushToBalanceSeconds(1);
             state.Tick(pushToBalance * 0.75f, false, true, false);
             for (int i = 0; i < 3; i++)
             {
@@ -383,7 +383,7 @@ namespace ProjectNeo.Tests
                 && frames++ < 180) yield return null;
             Assert.IsTrue(brain.IsClimbing);
 
-            float pushToBalance = ladder.Settings.LadderPushSeconds * (1f - state.BalancePoint);
+            float pushToBalance = state.PushToBalanceSeconds(1);
             state.Tick(pushToBalance * 1.1f, false, true, false);
             Assert.IsTrue(fall.IsFalling);
 
@@ -420,7 +420,6 @@ namespace ProjectNeo.Tests
             unit.GetComponent<NavMeshAgent>().Warp(ladder.BasePoint);
             var state = ladder.State;
             float raiseSeconds = ladder.Settings.LadderRaiseSeconds;
-            float pushSeconds = ladder.Settings.LadderPushSeconds;
 
             state.Tick(0.1f, true, false, false);
             state.Tick(raiseSeconds * state.BalancePoint * 0.5f, true, false, false);
@@ -444,7 +443,7 @@ namespace ProjectNeo.Tests
             for (int i = 0; state.Phase != LadderPhase.Up && i < 200; i++) yield return null;
             Assert.AreEqual(LadderPhase.Up, state.Phase);
 
-            state.Tick(pushSeconds * (1f - state.BalancePoint) * 0.75f, false, true, false);
+            state.Tick(state.PushToBalanceSeconds(1) * 0.75f, false, true, false);
             view.SendMessage("LateUpdate");
             float pushingAngle = Vector3.Angle(ladder.OutwardWorld, view.transform.forward);
             Assert.IsFalse(ladder.TryEnter(unit.Actor), "밀고 있는 사다리에 탑승했다.");
@@ -459,7 +458,7 @@ namespace ProjectNeo.Tests
 
             var enemy = PlaceStillEnemy(SiegeAttackerRole.Ladder, ladder.BasePoint);
             Assert.IsTrue(ladder.TryEnter(enemy));
-            state.Tick(pushSeconds * (1f - state.BalancePoint) * 1.25f, false, true, false);
+            state.Tick(state.PushToBalanceSeconds(1) * 1.25f, false, true, false);
             view.SendMessage("LateUpdate");
             Assert.Greater(Vector3.Dot(view.transform.forward, ladder.OutwardWorld), 0f,
                 "눕히기 자동 완료 기준이 실제 수직 각도와 일치하지 않는다.");

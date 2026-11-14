@@ -47,7 +47,8 @@ namespace ProjectNeo.Siege
 
         void Awake()
         {
-            State = new SiegeLadderState(settings.LadderRaiseSeconds, settings.LadderPushSeconds);
+            State = new SiegeLadderState(settings.LadderRaiseSeconds, settings.LadderPushSeconds,
+                pushTuning: settings.CreateLadderPushTuning());
             State.Toppled += OnToppled;
             State.ClimberDislodged += OnClimberDislodged;
             push = settings.PushLadder.Clone();
@@ -265,15 +266,16 @@ namespace ProjectNeo.Siege
             }
             if (raiser != null && !IsNearBase(raiser)) raiser = null;
             if (!Alive(sharedRaiser) || !IsNear(sharedRaiser, false)) sharedRaiser = null;
-            bool pusher = false, blocked = false;
-            if (State.Phase == LadderPhase.Up) FindPushers(out pusher, out blocked);
-            State.Tick(Time.deltaTime, raiser != null || sharedRaiser != null, pusher, blocked);
+            int pushers = 0; bool blocked = false;
+            if (State.Phase == LadderPhase.Up) FindPushers(out pushers, out blocked);
+            State.Tick(Time.deltaTime, raiser != null || sharedRaiser != null, pushers, blocked);
             if (State.Phase == LadderPhase.Up) { raiser = null; sharedRaiser = null; }
         }
 
-        void FindPushers(out bool pusher, out bool blocked)
+        /// <summary>위쪽 끝에서 함께 밀 수 있는 아군 수와, 올라온 적 때문에 밀기가 막혔는지 센다.</summary>
+        void FindPushers(out int pushers, out bool blocked)
         {
-            pusher = false; blocked = false;
+            pushers = 0; blocked = false;
             Vector3 top = TopPoint;
             foreach (CharacterActor actor in CharacterActor.ActiveActors)
             {
@@ -294,12 +296,12 @@ namespace ProjectNeo.Siege
                 {
                     PlayerCanPush = !State.IsSettling;
                     var traversal = actor.GetComponent<LadderTraveller>();
-                    if (traversal != null && traversal.IsHoldingTopple(this) && !FriendlyUse) pusher = true;
+                    if (traversal != null && traversal.IsHoldingTopple(this) && !FriendlyUse) pushers++;
                 }
                 else
                 {
                     var ai = actor.GetComponent<UnitCombatAI>();
-                    if (ai != null && ai.Target == null && !actor.IsAttacking && !FriendlyUse) pusher = true;
+                    if (ai != null && ai.Target == null && !actor.IsAttacking && !FriendlyUse) pushers++;
                 }
             }
             if (blocked) PlayerCanPush = false;

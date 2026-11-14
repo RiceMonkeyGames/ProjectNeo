@@ -52,7 +52,15 @@ namespace ProjectNeo.Siege
 
         [Header("사다리")]
         [SerializeField, Min(0.01f)] float ladderRaiseSeconds = 3f;
+        // 눕는 전체 회전 속도. 균형점을 넘은 뒤 자동으로 넘어가는 속도와 밀기 취소 시 복귀 속도다.
         [SerializeField, Min(0.01f)] float ladderPushSeconds = 2f;
+        // 혼자, 탑승자 없는 사다리를 균형점까지 밀며 버텨야 하는 시간(SIEGE-05).
+        [SerializeField, Min(0.01f)] float ladderPushHoldSeconds = 3f;
+        // 탑승자가 있을 때 균형점까지의 시간 배율.
+        [SerializeField, Min(1f)] float ladderOccupiedPushMultiplier = 1.5f;
+        // 함께 미는 아군 2명, 3명 이상일 때 밀기 속도 보너스(0.5 = 50% 빠름). 3명 이상은 상한이다.
+        [SerializeField, Min(0f)] float ladderTwoPusherBonus = 0.5f;
+        [SerializeField, Min(0f)] float ladderThreePlusPusherBonus = 0.75f;
         [SerializeField, Min(0.01f)] float ladderClimbSeconds = 2.5f;
         [SerializeField, Min(0.05f)] float ladderTapSeconds = 0.25f;
         // 사다리 밑에서 세우기·오르기를 시작할 수 있는 거리.
@@ -91,6 +99,12 @@ namespace ProjectNeo.Siege
         public int StartingBudget => startingBudget;
         public float LadderRaiseSeconds => ladderRaiseSeconds;
         public float LadderPushSeconds => ladderPushSeconds;
+        public float LadderPushHoldSeconds => ladderPushHoldSeconds;
+        public float LadderOccupiedPushMultiplier => ladderOccupiedPushMultiplier;
+        public float LadderTwoPusherBonus => ladderTwoPusherBonus;
+        public float LadderThreePlusPusherBonus => ladderThreePlusPusherBonus;
+        public LadderPushTuning CreateLadderPushTuning() => new LadderPushTuning(ladderPushHoldSeconds,
+            ladderOccupiedPushMultiplier, ladderTwoPusherBonus, ladderThreePlusPusherBonus);
         public float LadderClimbSeconds => ladderClimbSeconds;
         public float LadderTapSeconds => ladderTapSeconds;
         public float LadderUseRadius => ladderUseRadius;
