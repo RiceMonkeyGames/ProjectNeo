@@ -1,6 +1,6 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-15 16:28:26 (KST)
+Last Updated: 2026-11-15 22:00:57 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
@@ -16,6 +16,8 @@ Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elev
 **COMBAT-03 (Done on user authorization, 2026-11-14)**: On `feature/combat-03`, existing morale attack bands/Last Stand now modify real actor stats, Fear vetoes each new squad order once, Panic moves members/captains to a runtime courtyard retreat point and waits until battle end without exiting, and Contagion ticks nearby-squad loss. The command HUD shows morale/state/latest notice. Compile, EditMode **394/394** and PlayMode **193/193** passed; API-driven Game HUD/Panic arrival check passed. Physical-input play and standalone build remain unverified. [History/manual checks](../history/COMBAT/COMBAT-03.md).
 
 **Blacksmith equipment upgrades (PREP-01, Done on user authorization)**: Integrated on `feature/prep-01` after PREP-02/03: stash-only upgrades, per-target-level item materials, +10% equip modifiers per level, +1/+3/+5 smithy caps, actual-spend sale refund, existing Smithy popup rows and Editor API data setup. User chose crafting materials × target level; equipped items must be unequipped first. Unity compile and final full EditMode 380/380 / PlayMode 182/182 passed; physical-input play and standalone build unverified. Details and manual steps: [history](../history/PREP/PREP-01.md).
+
+**PREP-04 (Done on user authorization, 2026-11-15; `feature/prep-04`, develop merge pending)**: In battle `Q` uses one potion from the run stash: instant 35% maximum HP heal, 10s cooldown, blocked at full HP, battle status shows key/count/cooldown. Choices were delegated to the agent by the user. Compile, EditMode **403/403** and PlayMode **203/203** passed; physical-key play and standalone build unverified. [History/manual checks](../history/PREP/PREP-04.md).
 
 Q-41 and SIEGE-04 completion/commit/push were authorized by the user on 2026-11-13 and archived as Done on `feature/siege-04`; develop integration remains pending user merge. Physical-key/HUD manual review and standalone build remain unverified.
 

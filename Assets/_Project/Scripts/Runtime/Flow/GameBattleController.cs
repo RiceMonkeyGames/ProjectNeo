@@ -99,9 +99,17 @@ namespace ProjectNeo.Flow
                 PrepGate = gameObject.AddComponent<GamePrepGate>();
                 PrepGate.Configure(world, FindAnyObjectByType<GamePhaseView>(), settings.Outward);
             }
+            // 전투 중 소모품 사용(PREP-04). 씬 파일을 바꾸지 않고 실행 중에 붙인다.
+            if (settings != null && player != null)
+            {
+                Consumables = gameObject.AddComponent<GameConsumables>();
+                Consumables.Configure(flow, settings, player, () => RunLink.State);
+            }
         }
         /// <summary>준비 단계 성문 열기(PREP-05).</summary>
         public GamePrepGate PrepGate { get; private set; }
+        /// <summary>전투 중 소모품 사용(PREP-04).</summary>
+        public GameConsumables Consumables { get; private set; }
         void OnEnable() => flow.PhaseChanged += OnPhaseChanged;
         void OnDisable() => flow.PhaseChanged -= OnPhaseChanged;
         void Start() => OnPhaseChanged(flow.Phase);

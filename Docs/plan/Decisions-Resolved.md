@@ -1,6 +1,6 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-15 16:28:26 (KST)
+Last Updated: 2026-11-15 22:00:57 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
@@ -10,6 +10,8 @@ Cannon usability (SIEGE-07, 2026-11-15): The user delegated the three open choic
 Wall-top archers (BUG-wall-archer-los, 2026-11-15): The user delegated the three open choices to the agent's recommendation after reproduction. Chosen: (1) high-ground range bonus on, +25% from a 1.5m drop, no damage bonus; (2) no line-of-sight exception and no stepping to the wall edge (reproduction showed the footing exemption already works and the edge protects defenders); (3) `Hold` units with neither a shot nor a path stay on post. Arrow flight now covers the aimed point of an in-range target. [Rule](../design/Combat.md), [history](../history/BUG/BUG-wall-archer-los.md).
 
 COMBAT-03 (2026-11-14): User chose Panic retreat to a point and waiting there until battle end; no automatic return or new orders during the battle. Panic stays in combat and differs from morale-0 rout/exit. Create a runtime `PanicRetreatPoint` at the existing courtyard retreat location. Shared-file edits to SquadCommander/SquadCommandCenter/GameSquadMorale/SquadCommandHud are available (user confirmed no other active editor); CharacterActor and UnitCombatAI use existing APIs. [Rule](../design/MoraleAndWave.md).
+
+Combat consumables (PREP-04, 2026-11-15): The user delegated the open choices to the agent's recommendation. Chosen: `Q` quick-use key (data binding, revisit with Q-11), no quick-slot UI while only one consumable exists, instant heal of 35% maximum HP from item data, battle-only self-use with a shared 10s cooldown and no use at full HP. Skills stay under Q-12. [Rule](../design/PrepEconomyMeta.md), [history](../history/PREP/PREP-04.md).
 
 Construction return-hint input (QA-build-zoom-ui-hover, 2026-11-14): User requested blocking camera wheel zoom over the bottom return-hint panel, matching the left construction UI. Apply to the Game scene and its setup generator. [Rule](../design/PrepEconomyMeta.md), [verification history](../history/QA/QA-build-zoom-ui-hover.md).
 

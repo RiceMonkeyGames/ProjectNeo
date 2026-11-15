@@ -1,6 +1,6 @@
 # Pending Decisions & Active Operational Policies
 
-Last Updated: 2026-11-14 22:59:29 (KST)
+Last Updated: 2026-11-15 22:00:57 (KST)
 
 > Purpose: Undecided or partial design/implementation decisions (`Q-*`) and active operational rules. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Resolved](Decisions-Resolved.md), [OpenQuestions](../design/OpenQuestions.md)
 
@@ -22,7 +22,7 @@ Last Updated: 2026-11-14 22:59:29 (KST)
 | Q-08 | Run score formula, run duration, ending conditions, boss roles | M2 score/reincarnation, M4 | Partial (2026-11-11): Clearing all stages triggers ending. Interim (Q-51, 2026-11-14): 3 stages and no bosses for M2. Final stage count, bosses, scoring undecided. |
 | Q-10 | Final troop headcount, baseline gear, performance budget | Art integration, M6 | Undecided. B-1 500-unit test is not a production guarantee. |
 | Q-11 | Command keys, combat HUD, prep UI layout | B-5.3, M2 UI | Partial: F1–F10 in Siege prototype; default F1–F4, `, 1, 2, 3. Final HUD layout undecided. |
-| Q-12 | Initial skill/consumable rules, cooldowns, targeting, perk effects | M2 minimal skill/item execution | Undecided. Skills exist as identifiers only. |
+| Q-12 | Initial skill/consumable rules, cooldowns, targeting, perk effects | M2 minimal skill/item execution | Partial (2026-11-15): consumable use has interim rules from PREP-04 (`Q`, 35% heal, 10s cooldown). Skills exist as identifiers only; skill rules, targeting and perk effects undecided. |
 | Q-13 | Mid-run saves, resume capability, save slots | M2 lifecycle, M3 persistence | Meta save mandatory; mid-run save unconfirmed. |
 | Q-14 | Release platforms, distribution channels, launch dates, scale | M4 scope, M7 delivery | Undecided. Focus on core completion criteria first. |
 | Q-15 | Supported input devices, settings, languages, accessibility | M2 framework, M5 UI | Undecided. Avoid arbitrary additions. |

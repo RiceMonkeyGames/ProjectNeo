@@ -46,6 +46,17 @@ namespace ProjectNeo.Combat
             return restored;
         }
 
+        /// <summary>살아 있으면 정한 양만큼 회복하고 실제 회복량을 돌려준다. 최대 체력을 넘지 않으며 죽은 유닛은 되살리지 않는다.</summary>
+        public float Heal(float amount)
+        {
+            if (dead || float.IsNaN(amount) || amount <= 0f) return 0f;
+            float applied = Math.Min(Maximum - current, amount);
+            if (applied <= 0f) return 0f;
+            current += applied;
+            Changed?.Invoke();
+            return applied;
+        }
+
         /// <summary>파괴된 구조물(성문 등)을 최대 체력으로 복구한다.</summary>
         public float ReviveFull()
         {
