@@ -40,11 +40,31 @@ namespace ProjectNeo.Combat
             return true;
         }
 
+        /// <summary>
+        /// 이 대상을 칠 때의 사거리. 땅에 선 원거리 공격자가 대상보다 충분히 높이 있으면 높은 곳 보너스를 받는다.
+        /// 근접 공격자와 날아다니는 공격자는 기본 사거리 그대로다.
+        /// </summary>
+        public static float AttackRange(CharacterActor attacker, CharacterActor target)
+        {
+            float range = attacker.Stats.GetValue(ProjectNeo.Stats.StatType.AttackRange);
+            if (attacker.Profile.AttackKind != AttackKind.Projectile || attacker.Airborne != null) return range;
+            return range * RangeRules.HighGroundMultiplier(attacker.transform.position.y - target.transform.position.y,
+                attacker.Profile.HighGroundMinimumDrop, attacker.Profile.HighGroundRangeBonus);
+        }
+
+        /// <summary>어떤 대상에게든 닿을 수 있는 가장 긴 사거리. 대상 후보를 미리 거를 때 쓴다.</summary>
+        public static float MaximumAttackRange(CharacterActor attacker)
+        {
+            float range = attacker.Stats.GetValue(ProjectNeo.Stats.StatType.AttackRange);
+            if (attacker.Profile.AttackKind != AttackKind.Projectile || attacker.Airborne != null) return range;
+            return range * (1f + attacker.Profile.HighGroundRangeBonus);
+        }
+
         public static bool IsInRange(CharacterActor attacker, CharacterActor target)
         {
             Collider body = target.Body;
             if (body == null || !body.enabled) return false;
-            float range = attacker.Stats.GetValue(ProjectNeo.Stats.StatType.AttackRange);
+            float range = AttackRange(attacker, target);
             // 공중 대상은 근접이면 바닥 투영점 기준으로 잰다(Q-43). 원거리는 몸통까지 그대로 잰다.
             AirborneBody air = target.Airborne;
             if (air != null && attacker.Profile.AttackKind == AttackKind.Melee)

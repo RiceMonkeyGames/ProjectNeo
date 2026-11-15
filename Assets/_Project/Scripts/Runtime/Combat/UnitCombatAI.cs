@@ -446,7 +446,8 @@ namespace ProjectNeo.Combat
             float nearestDistance = float.PositiveInfinity;
             Vector3 position = transform.position;
             Vector3 aim = actor.AimPoint;
-            float range = actor.Stats.GetValue(StatType.AttackRange);
+            // 높은 곳 보너스까지 더한 가장 긴 사거리로 거른다. 실제 사거리는 뒤의 정밀 판정이 대상별로 다시 잰다.
+            float range = CombatPhysics.MaximumAttackRange(actor);
             foreach (CharacterActor candidate in CharacterActor.ActiveActors)
             {
                 if (candidate.Team == actor.Team || candidate.Body == null) continue;

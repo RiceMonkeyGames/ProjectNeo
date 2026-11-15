@@ -1,6 +1,6 @@
 # Game Design: Combat, Units & Win/Loss
 
-Last Updated: 2026-11-15 01:09:36 (KST)
+Last Updated: 2026-11-15 16:28:26 (KST)
 
 > Purpose: Rules for perspective, squad commands, damage, unit lifecycles, and battle outcomes. | Parent: [design/README](README.md) | Related: [WallsAndSiege](WallsAndSiege.md), [MoraleAndWave](MoraleAndWave.md)
 
@@ -35,6 +35,11 @@ Last Updated: 2026-11-15 01:09:36 (KST)
   - **Flip-flop prevention**: A minimum target-lock cooldown (`TargetSwitchCooldown = 1.5s` in `UnitAISettings`) prevents rapid target switching.
   - **Hold retaliation leash**: In `Hold`, if hit by an attacker outside `HoldChaseRadius`, the unit pursues to retaliate up to a maximum `HoldPost` path/distance leash (`HoldRetaliationRadius = 15m` in `UnitAISettings`, data-configurable). Attackers beyond that leash (e.g., ground archers shooting wall-top defenders via long stair detours) do not pull defenders off post; ranged defenders still fire back if in range.
   - **Exceptions & extensibility**: `Move` orders, routing/retreating, ladder climbing, and active siege tasks (gate/wall/cannon breaking, raising ladders) suppress retaliation/target switching. Targeting policy is structured to support future priority/fixed-target unit types.
+- **High ground and wall-top archers (BUG-wall-archer-los, 2026-11-15; choices delegated to the agent by the user, open to revision after playtest)**:
+  - **High-ground range**: A grounded ranged attacker whose feet are at least `HighGroundMinimumDrop` (1.5m, same as the upward-shot rise) above the target's feet multiplies its range by `1 + HighGroundRangeBonus` (25%; `CombatProfile`, data-configurable, 0 disables). No bonus when shooting upward or level, for melee, or for flying attackers. No extra damage bonus: enemies shooting up at wall tops already deal 50%. Reason: enemy archers stop at the edge of their own range to the front-most defender, which left rear-rank wall-top archers 1–2m short and idle while their squad was being shot.
+  - **Arrow flight**: An arrow flies at least as far as the aimed point of a target that passed the range check. Range is measured to the nearest point of the target's body but arrows aim at its center, so steep shots near maximum range used to vanish just short of the target.
+  - **Line of sight**: Unchanged. The shooter's own footing piece never blocks its shots; other wall pieces still block both ways, so a wall edge that hides a defender also protects it. No walking to the wall edge.
+  - **Hold with no shot and no path**: The unit stays on its post and re-checks every decision interval; it does not leave the wall to chase.
 - No friendly fire.
 - Ranged attacks fire linear projectiles upon release: dodgeable post-launch, blocked by walls, pass through allies.
 

@@ -1,6 +1,6 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-15 16:12:06 (KST)
+Last Updated: 2026-11-15 16:28:26 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
@@ -11,6 +11,7 @@ Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elev
 ## Implemented vs Pending Real Connections
 
 **SIEGE-07 (Done on user authorization, 2026-11-15; `feature/siege-07`, develop merge pending)**: Manned cannons show fire-ready state at the crosshair (green / amber with reload bar / red, state line, ready pulse), the barrel follows the aim, and the manned traverse is ±90° (auto-fire stays ±45° / 6–60m). Choices were delegated to the agent by the user. Compile, EditMode **406/406** and PlayMode **202/202** passed; on-screen look, physical-input play and standalone build unverified. [History/manual checks](../history/SIEGE/SIEGE-07.md).
+**BUG-wall-archer-los (Done on user authorization, 2026-11-15; `fix/bug-wall-archer-los`, develop merge pending)**: Reproduction showed the wall edge was not the cause; rear-rank wall-top archers were 1–2m out of range and steep arrows could vanish short. Grounded ranged units now get +25% range from a 1.5m height advantage and arrows fly to the aimed point; line of sight and `Hold` behavior unchanged. Compile, EditMode **409/409** and PlayMode **204/204** passed; manual play and standalone build unverified; shared combat core call sites need teammate review. [History/manual checks](../history/BUG/BUG-wall-archer-los.md).
 
 **COMBAT-03 (Done on user authorization, 2026-11-14)**: On `feature/combat-03`, existing morale attack bands/Last Stand now modify real actor stats, Fear vetoes each new squad order once, Panic moves members/captains to a runtime courtyard retreat point and waits until battle end without exiting, and Contagion ticks nearby-squad loss. The command HUD shows morale/state/latest notice. Compile, EditMode **394/394** and PlayMode **193/193** passed; API-driven Game HUD/Panic arrival check passed. Physical-input play and standalone build remain unverified. [History/manual checks](../history/COMBAT/COMBAT-03.md).
 
