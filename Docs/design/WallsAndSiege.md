@@ -1,6 +1,6 @@
 # Game Design: Castle Walls, Enemies & Siege Strategy
 
-Last Updated: 2026-11-15 01:52:20 (KST)
+Last Updated: 2026-11-15 16:28:26 (KST)
 
 > Purpose: Construction stacking, build economy, enemy roles, and siege/ladder rules. | Parent: [design/README](README.md) | Related: [Combat](Combat.md), [MoraleAndWave](MoraleAndWave.md)
 
@@ -59,7 +59,7 @@ Last Updated: 2026-11-15 01:52:20 (KST)
   - Ground melee cannot strike wall-top defenders from ground level. Enemies enter via gaps, un-repaired segments, or broken gate.
   - Gate destruction (2026-11-14, `SIEGE-06`): Only the lower door breaks and opens the ground passage for allies and enemies; the surrounding stone arch is indestructible and cannot be targeted after the door breaks, while the gate-top surface and any upper stacked walls remain intact and walkable. Once the passage opens, `Gate Breaker` and `Wall Breaker` switch to `Engage` instead of continuing to strike the arch or upper pieces at the gate cell.
   - Wall-destroying enemies follow Q-43; B-6.2 implementation on `feature/b-6.2` adds wall/gate bottom-piece attacks and breach entry. Prototype prefab is available with default roster count 0; formal/mixed encounter integration remains B-6.4/B-7.1. [Verification](../history/B/B-6.2.md).
-  - **Archetypes**: `Ladder Grunt` (enters breaches or raises/climbs ladders), `Gate Breaker` (enters breaches or attacks gate), `Archer` (shoots upward at 50% damage, enters castle once path opens; ally archers shoot downward at 100%).
+  - **Archetypes**: `Ladder Grunt` (enters breaches or raises/climbs ladders), `Gate Breaker` (enters breaches or attacks gate), `Archer` (shoots upward at 50% damage, enters castle once path opens; ally archers shoot downward at 100% and gain the high-ground range bonus, see [Combat](Combat.md)).
 
 - **Additional enemy behaviors (approved 2026-11-13, Q-43 / B-6.1; implementation B-6.2~4)**:
   - **Extensibility (user requirement)**: Wall-target selection and flying movement/attack are swappable, data-selected modules (strategy/polymorphism), not hard-coded branches. Many flying enemy variants are planned; a new variant must be addable by combining existing modules plus data. Existing ladder/gate/archer behavior is kept, not re-implemented.

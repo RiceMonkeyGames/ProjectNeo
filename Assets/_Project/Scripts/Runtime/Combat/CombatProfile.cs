@@ -18,6 +18,11 @@ namespace ProjectNeo.Combat
         // 아래에서 위로 쏠 때의 피해 비율. 대상이 이 높이 이상 위에 있으면 적용한다. 1이면 변화 없음.
         [SerializeField, Min(0f)] float upwardShotMinimumRise = 1.5f;
         [SerializeField, Range(0f, 1f)] float upwardShotDamageRatio = 1f;
+        // 높은 곳에서 아래로 쏠 때의 사거리 보너스. 쏘는 쪽이 이 높이 이상 위에 있으면 사거리에 (1 + 보너스)를 곱한다. 0이면 변화 없음.
+        [SerializeField, Min(0f)] float highGroundMinimumDrop = 1.5f;
+        [SerializeField, Min(0f)] float highGroundRangeBonus = 0.25f;
+        public float HighGroundMinimumDrop => highGroundMinimumDrop;
+        public float HighGroundRangeBonus => highGroundRangeBonus;
         public float UpwardShotMinimumRise => upwardShotMinimumRise;
         public float UpwardShotDamageRatio => upwardShotDamageRatio;
         public float ImpactDelay => impactDelay;
@@ -35,7 +40,8 @@ namespace ProjectNeo.Combat
             float radius = 0.4f, float height = 2f, AttackKind attackKind = AttackKind.Melee,
             GameObject projectilePrefab = null, float projectileSpeed = 18f,
             float projectileRadius = 0.08f, float projectileLifetime = 5f, float minimumDamage = 1f,
-            float upwardShotDamageRatio = 1f, float upwardShotMinimumRise = 1.5f)
+            float upwardShotDamageRatio = 1f, float upwardShotMinimumRise = 1.5f,
+            float highGroundRangeBonus = 0.25f, float highGroundMinimumDrop = 1.5f)
         {
             var profile = CreateInstance<CombatProfile>();
             profile.impactDelay = Mathf.Max(0f, impactDelay);
@@ -50,6 +56,8 @@ namespace ProjectNeo.Combat
             profile.projectileLifetime = Mathf.Max(0.01f, projectileLifetime);
             profile.upwardShotDamageRatio = Mathf.Clamp01(upwardShotDamageRatio);
             profile.upwardShotMinimumRise = Mathf.Max(0f, upwardShotMinimumRise);
+            profile.highGroundRangeBonus = Mathf.Max(0f, highGroundRangeBonus);
+            profile.highGroundMinimumDrop = Mathf.Max(0f, highGroundMinimumDrop);
             return profile;
         }
     }

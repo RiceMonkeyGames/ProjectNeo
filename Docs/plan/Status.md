@@ -1,6 +1,6 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-14 20:58:08 (KST)
+Last Updated: 2026-11-15 16:28:26 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
@@ -9,6 +9,8 @@ Last Updated: 2026-11-14 20:58:08 (KST)
 Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elevation, and `feature/siege-prototype` test scene into `develop`. `Game` scene links 1st-person prep / construction F interaction → hold B for 1 second at current position (FLOW-01) → enemy assault, ladders, actual win/loss → rewards/results. On the M2 side, run data (`C-1~2`), victory rewards (`C-4`), build/repair costs (`D-2`), facility pop-ups (`D-0`), upgrades (`D-1`), shop (`D-5`), player equipment (`D-7`), grunt spawning (`D-0b`), and barracks recruitment/training (`D-4`) are implemented; formal stage/wave layouts, casualty carry-over (`C-3`), tavern (`D-3`), squad org (`D-8`), and blacksmith (`D-6`) remain follow-ups. Wall-breaker behavior is complete on `feature/b-6.2`, pending develop merge; mixed encounter integration, aerial enemies, morale scene wiring, and siege weapon firing (`Q-21`) remain pending.
 
 ## Implemented vs Pending Real Connections
+
+**BUG-wall-archer-los (Done on user authorization, 2026-11-15; `fix/bug-wall-archer-los`, develop merge pending)**: Reproduction showed the wall edge was not the cause; rear-rank wall-top archers were 1–2m out of range and steep arrows could vanish short. Grounded ranged units now get +25% range from a 1.5m height advantage and arrows fly to the aimed point; line of sight and `Hold` behavior unchanged. Compile, EditMode **409/409** and PlayMode **204/204** passed; manual play and standalone build unverified; shared combat core call sites need teammate review. [History/manual checks](../history/BUG/BUG-wall-archer-los.md).
 
 **COMBAT-03 (Done on user authorization, 2026-11-14)**: On `feature/combat-03`, existing morale attack bands/Last Stand now modify real actor stats, Fear vetoes each new squad order once, Panic moves members/captains to a runtime courtyard retreat point and waits until battle end without exiting, and Contagion ticks nearby-squad loss. The command HUD shows morale/state/latest notice. Compile, EditMode **394/394** and PlayMode **193/193** passed; API-driven Game HUD/Panic arrival check passed. Physical-input play and standalone build remain unverified. [History/manual checks](../history/COMBAT/COMBAT-03.md).
 
