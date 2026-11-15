@@ -1,6 +1,6 @@
 # BUG-wall-archer-los | 2026-11-15 | Combat - Wall-Top Archer Range & Hold Retaliation
 
-Last Updated: 2026-11-15 16:28:26 (KST)
+Last Updated: 2026-11-15 23:56:33 (KST)
 
 > Parent: [history/README](../README.md) | Design: [Combat](../../design/Combat.md) | Branch: `fix/bug-wall-archer-los` | Owner: Hwang Seong-min
 
@@ -52,3 +52,5 @@ Not verified: manual play in `Game.unity` and standalone build. Battle balance i
 5. Reset: stop Play mode. Nothing is saved to the scene or assets.
 
 The user pre-authorized Done, archive, and commit/push of the task branch on 2026-11-15 once the full regression passed, without a manual playtest; the manual check above remains open and develop merge remains with the user.
+
+On user request (2026-11-15) the branch was merged into develop together with the other two tasks of the same session; combined EditMode 424/424 and PlayMode 209/209 passed.

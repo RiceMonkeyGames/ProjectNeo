@@ -1,6 +1,6 @@
 # PREP-04 | 2026-11-15 | Prep/Combat - Combat Consumable Use
 
-Last Updated: 2026-11-15 22:00:57 (KST)
+Last Updated: 2026-11-15 23:56:33 (KST)
 
 Branch: `feature/prep-04`. Owner: Hwang Seong-min. Claim synchronized to develop (`docs: claim PREP-04`). Design record: [PrepEconomyMeta](../../design/PrepEconomyMeta.md) (Consumables).
 
@@ -51,3 +51,5 @@ Not verified: physical-key play, on-screen readability of the status line, and s
 7. Reset: stop Play mode. Nothing is saved to the scene or assets.
 
 The user pre-authorized Done, archive, and commit/push of the task branch on 2026-11-15 once the full regression passed, without a manual playtest; the manual check above remains open and develop merge remains with the user.
+
+On user request (2026-11-15) the branch was merged into develop together with the other two tasks of the same session; combined EditMode 424/424 and PlayMode 209/209 passed.

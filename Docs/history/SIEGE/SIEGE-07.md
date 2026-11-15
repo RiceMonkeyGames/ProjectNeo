@@ -1,6 +1,6 @@
 # SIEGE-07 | 2026-11-15 | Siege - Cannon Usability: Fire-Ready Feedback & Aim Rotation
 
-Last Updated: 2026-11-15 16:12:06 (KST)
+Last Updated: 2026-11-15 23:56:33 (KST)
 
 Branch: `feature/siege-07`. Owner: Hwang Seong-min. Claim synchronized to develop (`docs: claim SIEGE-07`). Design record: [WallsAndSiege](../../design/WallsAndSiege.md) (Cannon mechanics, Usability). Builds on [SIEGE-02](SIEGE-02.md).
 
@@ -49,3 +49,5 @@ Not verified: how the crosshair display looks on screen (layout, readability, co
 7. Reset: stop Play mode. Nothing is saved to the scene or assets.
 
 After the results were presented, the user authorized Done, archive, and commit/push of the task branch on 2026-11-15 without a manual playtest; the manual check above remains open and develop merge remains with the user.
+
+On user request (2026-11-15) the branch was merged into develop together with the other two tasks of the same session; combined EditMode 424/424 and PlayMode 209/209 passed.
