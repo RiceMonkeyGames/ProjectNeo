@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-15 01:58:01 (KST)
+Last Updated: 2026-11-15 16:01:38 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -18,7 +18,7 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 
 | Task ID | Description | Status | Assignee | Completion Criteria & Prerequisites |
 |---|---|---|---|---|
-| SIEGE-07 | Cannon Usability: Fire-Ready Feedback & Aim Rotation | Pending Decision | Unassigned | User feedback 2026-11-14 on SIEGE-02 cannons: the player cannot tell whether the cannon can fire or is on cooldown, and wants to turn the cannon while manning it. Decisions needed before implementation: (1) fire-ready/reload indicator form (crosshair state, HUD bar/text, on-cannon visual, sound) and why the existing manned-HUD reload text goes unnoticed, (2) rotation method: cannon follows the aim vs separate rotate keys, (3) rotation limits/speed versus the current ±45° / 6–60m fire arc, and whether auto-fire cannons are affected. |
+| SIEGE-07 | Cannon Usability: Fire-Ready Feedback & Aim Rotation | In Progress | Hwang Seong-min | Branch `feature/siege-07`. User feedback 2026-11-14 on SIEGE-02 cannons: the player cannot tell whether the cannon can fire or is on cooldown, and wants to turn the cannon while manning it. Decisions delegated to the agent by the user on 2026-11-15 (recorded in design/WallsAndSiege and Decisions-Resolved): (1) crosshair color state plus reload bar/text under the crosshair, (2) the cannon barrel follows the player's aim, (3) manned traverse ±90° with a visual swivel speed; auto-fire arc ±45° / 6–60m unchanged. |
 | B-7.1 | Formal Wave Data & Spawning Rules | Waiting for Prerequisite | Unassigned | Structure decided by Q-51 (2026-11-14): 3 fixed stages, 2–3 timed waves, fixed northern spawn points, stage asset with wave list referencing existing enemy prefabs. Remaining prerequisite: teammate review of the data format. Spawn according to configured types, counts, and timings; no duplicates on pause/restart. |
 | SIEGE-01 | Link Pending Spawns to Win/Loss Evaluation | Waiting for Prerequisite | Unassigned | Formerly `B-9.2-wave` (fulfills `B-9.2` wave-spawn link). After B-7.1, prevent premature victory if enemies remain to spawn; ensure battle termination and outcomes trigger exactly once. |
 | C-5 | Wave Preview & Hidden Enemy Intel | Waiting for Prerequisite | Unassigned | Following B-7.1 and run contracts, display upcoming enemy types, counts, and hidden indicators in prep UI. Scouting rules clarified first. |
