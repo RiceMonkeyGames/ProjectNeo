@@ -1,10 +1,12 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-14 22:59:29 (KST)
+Last Updated: 2026-11-15 16:11:16 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
 ## Resolved `Q-*` Table
+
+Cannon usability (SIEGE-07, 2026-11-15): The user delegated the three open choices to the agent's recommendation, to be revised after playtest if needed. Chosen: crosshair color state plus reload bar/text under the crosshair; the barrel follows the player's aim (no rotate keys); manned traverse ±90° with a cosmetic 180°/s barrel swivel; auto-fire arc ±45° and range 6–60m unchanged. [Rule](../design/WallsAndSiege.md), [history](../history/SIEGE/SIEGE-07.md).
 
 COMBAT-03 (2026-11-14): User chose Panic retreat to a point and waiting there until battle end; no automatic return or new orders during the battle. Panic stays in combat and differs from morale-0 rout/exit. Create a runtime `PanicRetreatPoint` at the existing courtyard retreat location. Shared-file edits to SquadCommander/SquadCommandCenter/GameSquadMorale/SquadCommandHud are available (user confirmed no other active editor); CharacterActor and UnitCombatAI use existing APIs. [Rule](../design/MoraleAndWave.md).
 

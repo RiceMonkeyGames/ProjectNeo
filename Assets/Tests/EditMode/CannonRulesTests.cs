@@ -80,6 +80,76 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(expected, CannonAim.ClampYawOffset(yaw, 45f), 0.001f);
         }
 
+        // ── 포신 회전·조준 상태(SIEGE-07) ─────────────────────
+
+        [TestCase(0f, 90f, 0.5f, 90f)]     // 초당 180도로 0.5초면 90도
+        [TestCase(0f, 90f, 0.25f, 45f)]
+        [TestCase(30f, -60f, 0.25f, -15f)]
+        [TestCase(10f, 12f, 1f, 12f)]      // 목표를 지나치지 않는다
+        [TestCase(10f, 50f, 0f, 10f)]
+        public void Aim_SwivelMovesTowardTargetAtSpeed(float current, float target, float seconds, float expected)
+        {
+            Assert.AreEqual(expected, CannonAim.StepSwivel(current, target, 180f, seconds), 0.001f);
+        }
+
+        [Test]
+        public void Aim_ManualContextWidensArcOnly()
+        {
+            CannonSettings settings = CannonSettings.Create();
+            try
+            {
+                Assert.AreEqual(90f, settings.ManualAimHalfAngle);
+                Assert.AreEqual(180f, settings.SwivelSpeed);
+                CannonAimContext auto = CannonAimContext.From(settings, Vector3.zero, Vector3.forward);
+                CannonAimContext manual = CannonAimContext.Manual(settings, Vector3.zero, Vector3.forward);
+                var side = new Vector3(20f, 0f, 5f); // 약 76도
+                Assert.IsFalse(CannonAim.CanTarget(auto, side), "자동 사격 범위는 그대로 ±45도다.");
+                Assert.IsTrue(CannonAim.CanTarget(manual, side), "직접 조작은 ±90도까지 겨눈다.");
+                Assert.IsFalse(CannonAim.CanTarget(manual, new Vector3(5f, 0f, -20f)), "뒤쪽은 직접 조작으로도 쏘지 못한다.");
+                Assert.AreEqual(auto.MinimumRange, manual.MinimumRange);
+                Assert.AreEqual(auto.MaximumRange, manual.MaximumRange);
+            }
+            finally { Object.DestroyImmediate(settings); }
+        }
+
+        [Test]
+        public void Settings_ManualArcNeverNarrowerThanAutoArc()
+        {
+            CannonSettings settings = CannonSettings.Create(aimHalfAngle: 60f, manualAimHalfAngle: 30f);
+            try { Assert.AreEqual(60f, settings.ManualAimHalfAngle); }
+            finally { Object.DestroyImmediate(settings); }
+        }
+
+        [Test]
+        public void Operator_AimStatePriority_ReloadThenPointThenRangeThenArc()
+        {
+            var context = new CannonAimContext(Vector3.zero, Vector3.forward, 6f, 60f, 90f);
+            var good = new Vector3(0f, 0f, 20f);
+            Assert.AreEqual(CannonAimState.Ready, CannonOperatorRules.EvaluateAim(true, true, context, good));
+            Assert.AreEqual(CannonAimState.Reloading, CannonOperatorRules.EvaluateAim(false, true, context, good));
+            Assert.AreEqual(CannonAimState.Reloading, CannonOperatorRules.EvaluateAim(false, false, context, default));
+            Assert.AreEqual(CannonAimState.NoTarget, CannonOperatorRules.EvaluateAim(true, false, context, good));
+            Assert.AreEqual(CannonAimState.OutOfRange, CannonOperatorRules.EvaluateAim(true, true, context, new Vector3(0f, 0f, 3f)));
+            Assert.AreEqual(CannonAimState.OutOfRange, CannonOperatorRules.EvaluateAim(true, true, context, new Vector3(0f, 0f, 70f)));
+            Assert.AreEqual(CannonAimState.OutOfArc, CannonOperatorRules.EvaluateAim(true, true, context, new Vector3(0f, 0f, -20f)));
+        }
+
+        [Test]
+        public void OperatorSettings_StateColorsDiffer()
+        {
+            CannonOperatorSettings settings = CannonOperatorSettings.Create();
+            try
+            {
+                Assert.AreEqual(settings.ReadyColor, settings.ColorFor(CannonAimState.Ready));
+                Assert.AreEqual(settings.ReloadingColor, settings.ColorFor(CannonAimState.Reloading));
+                foreach (CannonAimState blocked in new[] { CannonAimState.NoTarget, CannonAimState.OutOfRange, CannonAimState.OutOfArc })
+                    Assert.AreEqual(settings.BlockedColor, settings.ColorFor(blocked));
+                Assert.AreNotEqual(settings.ReadyColor, settings.ReloadingColor);
+                Assert.AreNotEqual(settings.ReadyColor, settings.BlockedColor);
+            }
+            finally { Object.DestroyImmediate(settings); }
+        }
+
         [Test]
         public void Aim_ContextFlattensFacing()
         {

@@ -26,6 +26,9 @@ namespace ProjectNeo.UI
         [SerializeField] GameBattleController battle;
         [SerializeField] TMP_Text battleStatus;
         [SerializeField] CannonOperator cannonOperator;
+        CannonReticleView cannonReticle;
+        /// <summary>대포 조작 중 조준선 표시(SIEGE-07). 한 번도 타지 않았으면 null.</summary>
+        public CannonReticleView CannonReticle => cannonReticle;
         GameFlow flow;
         public string InteractionHint => interactionHint != null ? interactionHint.text : string.Empty;
         public string PhaseText => phaseLabel != null ? phaseLabel.text : string.Empty;
@@ -80,6 +83,13 @@ namespace ProjectNeo.UI
             if (battleStatus != null) battleStatus.transform.parent.gameObject.SetActive(fighting || rewarding);
             explorationReticle.SetActive(preparation && phaseView.IsExplorationView);
             bool korean = font != null && font.Available;
+            // 대포에 탄 동안에만 조준선에 발사 가능·재장전 상태를 보여준다.
+            if (fighting && cannonOperator != null && cannonOperator.Manned != null)
+            {
+                if (cannonReticle == null) cannonReticle = CannonReticleView.Attach(explorationReticle);
+                cannonReticle.Show(cannonOperator, korean);
+            }
+            else if (cannonReticle != null) cannonReticle.Hide();
             if (rewarding)
             {
                 // 전투 상태 자리에 이번 승리의 보상 내역을 보여준다.

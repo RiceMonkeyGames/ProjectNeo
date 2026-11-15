@@ -12,6 +12,8 @@ namespace ProjectNeo.Siege
         [SerializeField, Min(0f)] float minimumRange = 6f;
         [SerializeField, Min(0.1f)] float maximumRange = 60f;
         [SerializeField, Range(0f, 180f)] float aimHalfAngle = 45f;
+        [SerializeField, Range(0f, 180f)] float manualAimHalfAngle = 90f;
+        [SerializeField, Min(1f)] float swivelSpeed = 180f;
         [SerializeField, Min(0.1f)] float blastRadius = 3f;
         [SerializeField, Min(0f)] float centerDamage = 40f;
         [SerializeField, Range(0f, 1f)] float edgeDamageRatio = 0.5f;
@@ -29,6 +31,10 @@ namespace ProjectNeo.Siege
         public float MaximumRange => Mathf.Max(minimumRange, maximumRange);
         /// <summary>설치 방향 기준 좌우 회전 한계(도).</summary>
         public float AimHalfAngle => aimHalfAngle;
+        /// <summary>사람이 탔을 때의 좌우 회전 한계(도). 자동 사격 한계보다 좁아지지 않는다(SIEGE-07).</summary>
+        public float ManualAimHalfAngle => Mathf.Max(aimHalfAngle, manualAimHalfAngle);
+        /// <summary>포신이 조준 방향을 따라 도는 속도(도/초). 쏠 수 있는지는 바꾸지 않는 외형 속도다.</summary>
+        public float SwivelSpeed => swivelSpeed;
         public float BlastRadius => blastRadius;
         public float CenterDamage => centerDamage;
         /// <summary>폭발 가장자리에서 중심 피해에 곱하는 비율.</summary>
@@ -46,7 +52,8 @@ namespace ProjectNeo.Siege
 
         public static CannonSettings Create(float minimumRange = 6f, float maximumRange = 60f, float aimHalfAngle = 45f,
             float blastRadius = 3f, float centerDamage = 40f, float edgeDamageRatio = 0.5f, float reloadSeconds = 6f,
-            float autoScatterRadius = 2f, float shellSpeed = 30f, float shellGravity = 9.81f, bool friendlyFire = false)
+            float autoScatterRadius = 2f, float shellSpeed = 30f, float shellGravity = 9.81f, bool friendlyFire = false,
+            float manualAimHalfAngle = 90f, float swivelSpeed = 180f)
         {
             var value = CreateInstance<CannonSettings>();
             value.minimumRange = Mathf.Max(0f, minimumRange);
@@ -60,6 +67,8 @@ namespace ProjectNeo.Siege
             value.shellSpeed = Mathf.Max(0.1f, shellSpeed);
             value.shellGravity = Mathf.Max(0.1f, shellGravity);
             value.friendlyFire = friendlyFire;
+            value.manualAimHalfAngle = Mathf.Clamp(manualAimHalfAngle, 0f, 180f);
+            value.swivelSpeed = Mathf.Max(1f, swivelSpeed);
             return value;
         }
     }

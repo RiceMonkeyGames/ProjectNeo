@@ -23,6 +23,10 @@ namespace ProjectNeo.Siege
 
         public static CannonAimContext From(CannonSettings settings, Vector3 origin, Vector3 facing) =>
             new CannonAimContext(origin, facing, settings.MinimumRange, settings.MaximumRange, settings.AimHalfAngle);
+
+        /// <summary>사람이 탔을 때의 조준 조건. 사거리는 같고 회전 한계만 넓다(SIEGE-07).</summary>
+        public static CannonAimContext Manual(CannonSettings settings, Vector3 origin, Vector3 facing) =>
+            new CannonAimContext(origin, facing, settings.MinimumRange, settings.MaximumRange, settings.ManualAimHalfAngle);
     }
 
     /// <summary>회전 범위·사거리 판정. 거리와 각도는 수평면 기준이다.</summary>
@@ -56,6 +60,13 @@ namespace ProjectNeo.Siege
 
         public static bool CanTarget(in CannonAimContext context, Vector3 point) =>
             IsInRange(context, point) && IsWithinArc(context, point);
+
+        /// <summary>포신 각도를 목표 각도 쪽으로 정해진 속도만큼 돌린다. 각도는 설치 방향 기준(도)이다.</summary>
+        public static float StepSwivel(float current, float target, float degreesPerSecond, float deltaTime)
+        {
+            if (deltaTime <= 0f || degreesPerSecond <= 0f) return current;
+            return Mathf.MoveTowards(current, target, degreesPerSecond * deltaTime);
+        }
 
         /// <summary>직접 조준할 때 회전 한계 밖으로 나가지 않게 각도를 자른다.</summary>
         public static float ClampYawOffset(float yawOffset, float halfAngle)

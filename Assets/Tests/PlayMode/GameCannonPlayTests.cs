@@ -111,7 +111,36 @@ namespace ProjectNeo.Tests
             Assert.IsTrue(op.TryMan(cannon));
             yield return null;
             StringAssert.Contains("좌클릭", hud.CannonHint(true));
+
+            // 조준선에 발사 가능·재장전 상태가 보인다(SIEGE-07).
+            yield return null;
+            CannonReticleView reticle = hud.CannonReticle;
+            Assert.IsNotNull(reticle, "대포에 타면 조준선 표시가 생긴다.");
+            Assert.IsTrue(reticle.IsShowing);
+            Assert.AreEqual(1f, reticle.BarFill, 0.001f, "장전된 상태에서는 막대가 가득 차 있다.");
+            Assert.AreEqual(op.Settings.ColorFor(op.AimState), reticle.ReticleColor);
+            Assert.IsNotEmpty(reticle.LabelText);
+
+            // 설치 방향 옆 60도로 시점을 돌리면 자동 사격 범위(±45도) 밖까지 시점과 포신이 따라간다.
+            view.SetOrientation(yaw + 60f, 10f);
+            op.ApplyLook(Vector2.zero);
+            Assert.AreEqual(0f, Mathf.DeltaAngle(yaw + 60f, view.Yaw), 0.01f);
+            for (int i = 0; i < 60 && cannon.Swivel < 59.9f; i++) yield return null;
+            Assert.AreEqual(60f, cannon.Swivel, 0.1f);
+            view.SetOrientation(yaw + 150f, 10f);
+            op.ApplyLook(Vector2.zero);
+            Assert.AreEqual(0f, Mathf.DeltaAngle(yaw + 90f, view.Yaw), 0.01f, "시점은 ±90도에서 멈춘다.");
+
+            Assert.IsTrue(cannon.FireWithVelocity(cannon.BarrelFacing * 20f + Vector3.up * 5f));
+            yield return null; yield return null;
+            Assert.AreEqual(CannonAimState.Reloading, op.AimState);
+            Assert.Less(reticle.BarFill, 0.5f, "쏜 직후에는 막대가 비어 있다가 찬다.");
+            Assert.AreEqual(op.Settings.ReloadingColor, reticle.ReticleColor);
+            Assert.IsTrue(reticle.LabelText.Contains("재장전") || reticle.LabelText.Contains("Reloading"));
+
             op.Leave();
+            yield return null;
+            Assert.IsFalse(reticle.IsShowing, "내리면 조준선 표시를 숨긴다.");
             Assert.IsFalse(cannon.IsManned);
         }
     }
