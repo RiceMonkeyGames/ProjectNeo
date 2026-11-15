@@ -103,6 +103,8 @@ namespace ProjectNeo.UI
                 foreach (var ladder in battle.Ladders)
                     if (ladder.PlayerCanPush)
                     { battleStatus.text += $"\n{battle.Settings.Siege.PushLadder.GetBindingDisplayString()} · 사다리 밀기 {Mathf.RoundToInt(ladder.State.PushProgress * 100f)}%"; break; }
+                string consumable = battle.Consumables != null ? battle.Consumables.Hint(korean) : string.Empty;
+                if (consumable.Length > 0) battleStatus.text += "\n" + consumable;
                 string cannon = CannonHint(korean);
                 if (cannon.Length > 0) battleStatus.text += "\n" + cannon;
                 explorationReticle.SetActive(cannonOperator != null && cannonOperator.Manned != null);

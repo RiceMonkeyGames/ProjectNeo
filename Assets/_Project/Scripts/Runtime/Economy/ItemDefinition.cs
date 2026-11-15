@@ -23,6 +23,8 @@ namespace ProjectNeo.Economy
         [SerializeField] Cost price;
         [SerializeField] bool unlockedByDefault = true;
         [SerializeField] List<StatModifier> equipModifiers = new List<StatModifier>();
+        // 소모품을 썼을 때 바로 회복하는 양(최대 체력 대비 비율, PREP-04 임시값). 장비에는 쓰지 않는다. 0이면 회복 효과 없음.
+        [SerializeField, Range(0f, 1f)] float useHealRatio = 0.35f;
         [SerializeField] List<ItemUpgradeMaterials> upgradeMaterials = new List<ItemUpgradeMaterials>();
 
         public string Id => id;
@@ -34,6 +36,8 @@ namespace ProjectNeo.Economy
         public UnlockCategory UnlockCategory => UnlockCategory.Item;
         /// <summary>착용한 캐릭터에게 붙는 스탯 수정값(장비만).</summary>
         public IReadOnlyList<StatModifier> EquipModifiers => equipModifiers;
+        /// <summary>소모품을 썼을 때 회복하는 최대 체력 대비 비율(0~1). 소모품이 아니면 0이다.</summary>
+        public float UseHealRatio => kind == ItemKind.Consumable ? Mathf.Clamp01(useHealRatio) : 0f;
         /// <summary>목표 +1부터 순서대로 적은 강화 재료. 빈 단계는 재료 없음, 단계 누락은 강화 불가.</summary>
         public IReadOnlyList<ItemUpgradeMaterials> UpgradeMaterials => upgradeMaterials;
 
@@ -47,6 +51,14 @@ namespace ProjectNeo.Economy
             item.price = price;
             item.unlockedByDefault = unlockedByDefault;
             item.equipModifiers = new List<StatModifier>(equipModifiers);
+            return item;
+        }
+
+        /// <summary>회복 비율을 정한 소모품을 만든다(테스트용).</summary>
+        public static ItemDefinition CreateConsumable(string id, Cost price, float useHealRatio, bool unlockedByDefault = true)
+        {
+            var item = Create(id, ItemKind.Consumable, price, unlockedByDefault);
+            item.useHealRatio = Mathf.Clamp01(useHealRatio);
             return item;
         }
 
