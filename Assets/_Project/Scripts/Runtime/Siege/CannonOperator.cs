@@ -31,6 +31,9 @@ namespace ProjectNeo.Siege
         public CannonModule Nearby { get; private set; }
         /// <summary>마지막으로 쏘지 못한 이유 등 안내 문구. HUD가 읽는다.</summary>
         public string Message { get; private set; } = string.Empty;
+        /// <summary>타고 있는 동안 지금 조준한 곳에 쏠 수 있는지. 조준선 표시가 읽는다(SIEGE-07).</summary>
+        public CannonAimState AimState { get; private set; } = CannonAimState.NoTarget;
+        public CannonOperatorSettings Settings => settings;
         public string InteractKey => interact != null ? interact.GetBindingDisplayString() : "F";
         public event Action<CannonModule> MannedChanged;
 
@@ -94,6 +97,7 @@ namespace ProjectNeo.Siege
                 if (interact.WasPressedThisFrame()) { Leave(); return; }
                 ApplyLook(look.ReadValue<Vector2>());
                 if (fire.WasPressedThisFrame()) TryFireAtCrosshair();
+                RefreshAim();
                 return;
             }
             Nearby = FindNearby();
@@ -148,6 +152,7 @@ namespace ProjectNeo.Siege
             cannon.Weapon.Removed += OnWeaponRemoved;
             input?.SetMovementSuspended(true);
             if (view != null) view.SetOrientation(ClampedYaw(view.Yaw), view.Pitch);
+            RefreshAim();
             MannedChanged?.Invoke(cannon);
             return true;
         }
@@ -162,6 +167,7 @@ namespace ProjectNeo.Siege
             if (cannon != null) cannon.SetManned(false);
             input?.SetMovementSuspended(false);
             Message = string.Empty;
+            AimState = CannonAimState.NoTarget;
             MannedChanged?.Invoke(null);
         }
 
@@ -171,7 +177,7 @@ namespace ProjectNeo.Siege
         {
             Vector3 facing = Manned.Facing;
             float facingYaw = Mathf.Atan2(facing.x, facing.z) * Mathf.Rad2Deg;
-            return CannonOperatorRules.ClampViewYaw(yaw, facingYaw, Manned.Settings.AimHalfAngle);
+            return CannonOperatorRules.ClampViewYaw(yaw, facingYaw, Manned.Settings.ManualAimHalfAngle);
         }
 
         /// <summary>조작 중 마우스 움직임으로 시점을 돌리되, 대포 회전 범위 밖으로는 나가지 않는다.</summary>
@@ -180,16 +186,26 @@ namespace ProjectNeo.Siege
             if (Manned == null || view == null) return;
             view.Look(delta);
             view.SetOrientation(ClampedYaw(view.Yaw), view.Pitch);
+            // 포신이 시점을 따라 돈다.
+            Vector3 facing = Manned.Facing;
+            Manned.SetSwivel(Mathf.DeltaAngle(Mathf.Atan2(facing.x, facing.z) * Mathf.Rad2Deg, view.Yaw));
         }
 
-        /// <summary>화면 가운데 조준선이 가리킨 곳을 찾아 쏜다.</summary>
-        public bool TryFireAtCrosshair()
+        /// <summary>조준선이 가리킨 곳에 지금 쏠 수 있는지 다시 본다. 타고 있는 동안 매 프레임 부른다.</summary>
+        public void RefreshAim()
         {
-            if (Manned == null || viewCamera == null) return false;
+            if (Manned == null) { AimState = CannonAimState.NoTarget; return; }
+            bool hasPoint = TryGetAimPoint(out Vector3 point);
+            AimState = CannonOperatorRules.EvaluateAim(Manned.Reload.IsReady, hasPoint, Manned.ManualAimContext, point);
+        }
+
+        bool TryGetAimPoint(out Vector3 point)
+        {
+            point = default;
+            if (viewCamera == null) return false;
             Ray ray = viewCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
             int count = Physics.RaycastNonAlloc(ray, hits, settings.AimDistance, ~0, QueryTriggerInteraction.Ignore);
             float nearest = float.PositiveInfinity;
-            Vector3 point = default;
             for (int i = 0; i < count; i++)
             {
                 Collider collider = hits[i].collider;
@@ -198,7 +214,14 @@ namespace ProjectNeo.Siege
                 nearest = hits[i].distance;
                 point = hits[i].point;
             }
-            if (nearest == float.PositiveInfinity) { Message = "조준한 곳이 너무 멉니다."; return false; }
+            return nearest != float.PositiveInfinity;
+        }
+
+        /// <summary>화면 가운데 조준선이 가리킨 곳을 찾아 쏜다.</summary>
+        public bool TryFireAtCrosshair()
+        {
+            if (Manned == null || viewCamera == null) return false;
+            if (!TryGetAimPoint(out Vector3 point)) { Message = "조준한 곳이 너무 멉니다."; return false; }
             return FireAt(point);
         }
 
@@ -207,7 +230,7 @@ namespace ProjectNeo.Siege
         {
             if (Manned == null) return false;
             if (!Manned.Reload.IsReady) { Message = "재장전 중입니다."; return false; }
-            if (!CannonAim.CanTarget(Manned.AimContext, point)) { Message = "사거리나 회전 범위 밖입니다."; return false; }
+            if (!CannonAim.CanTarget(Manned.ManualAimContext, point)) { Message = "사거리나 회전 범위 밖입니다."; return false; }
             bool fired = Manned.FireAt(point);
             Message = fired ? string.Empty : "포탄이 닿지 않는 곳입니다.";
             return fired;

@@ -281,6 +281,79 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
+        public IEnumerator Operator_ManualFire_ReachesWideArc_AndBarrelSwivelsWithoutMovingFacing()
+        {
+            // 옆 약 63도: 자동 사격(±45도)은 못 쏘지만 직접 조작(±90도)은 쏜다(SIEGE-07).
+            CannonModule cannon = MountCannon(Own(CannonSettings.Create(autoScatterRadius: 0f)));
+            Vector3 facing = cannon.Facing;
+            Vector3 muzzle = cannon.Muzzle;
+            Vector3 wide = Ground(cannon, 10f, 20f);
+            CharacterActor enemy = Dummy(wide, CombatTeam.Hostile);
+            CannonOperator op = Operator(cannon, 1.5f);
+            Physics.SyncTransforms();
+            cannon.SetArmed(true);
+            Assert.IsFalse(cannon.TryAutoFire(), "자동 사격 회전 범위는 넓어지지 않는다.");
+            Assert.IsTrue(op.TryMan(cannon));
+
+            // 조준만 하면 포신이 설정 속도로 따라 돌고, 설치 방향과 판정은 그대로다.
+            cannon.SetSwivel(60f);
+            yield return null;
+            Assert.Greater(cannon.Swivel, 0f);
+            Assert.Less(cannon.Swivel, 60f, "한 프레임에 다 돌지 않는다.");
+            for (int i = 0; i < 60 && cannon.Swivel < 59.9f; i++) yield return null;
+            Assert.AreEqual(60f, cannon.Swivel, 0.01f);
+            Assert.AreEqual(0f, Vector3.Angle(facing, cannon.Facing), 0.05f, "설치 방향은 포신이 돌아도 그대로다.");
+            Assert.AreEqual(60f, Vector3.SignedAngle(facing, cannon.BarrelFacing, Vector3.up), 0.05f);
+            Assert.AreEqual(0f, Vector3.Distance(muzzle, cannon.AimContext.Origin), 0.01f, "판정 기준점은 포신 방향에 흔들리지 않는다.");
+            cannon.SetSwivel(170f);
+            Assert.IsFalse(cannon.TryAutoFire());
+            for (int i = 0; i < 60; i++) yield return null;
+            Assert.AreEqual(90f, cannon.Swivel, 0.01f, "회전 한계 밖으로는 돌지 않는다.");
+
+            Assert.IsTrue(op.FireAt(enemy.transform.position + Vector3.up));
+            float expectedYaw = Vector3.SignedAngle(facing, wide - cannon.transform.position, Vector3.up);
+            Assert.AreEqual(expectedYaw, cannon.Swivel, 1f, "쏘는 순간 포신이 목표를 향한다.");
+            float expected = DamageRules.Calculate(40f, enemy.Stats.GetValue(StatType.Defense), 1f);
+            for (int i = 0; i < 300 && enemy.Health.Current >= enemy.Health.Maximum; i++) yield return null;
+            Assert.AreEqual(enemy.Health.Maximum - expected, enemy.Health.Current, 0.01f, "넓은 각도에서도 겨눈 곳에 떨어진다.");
+            yield return WaitForShells();
+
+            cannon.SetArmed(false);
+            Assert.AreEqual(0f, cannon.Swivel, "전투가 끝나면 포신이 설치 방향으로 돌아온다.");
+            Assert.AreEqual(0f, Vector3.Angle(facing, cannon.BarrelFacing), 0.05f);
+        }
+
+        [UnityTest]
+        public IEnumerator Operator_AimState_TracksReloadAndUnmannedState()
+        {
+            CannonModule cannon = MountCannon(Own(CannonSettings.Create(autoScatterRadius: 0f, reloadSeconds: 0.5f)));
+            CannonOperator op = Operator(cannon, 1.5f);
+            Physics.SyncTransforms();
+            cannon.SetArmed(true);
+            Assert.IsTrue(op.TryMan(cannon));
+            op.RefreshAim();
+            Assert.AreEqual(CannonAimState.NoTarget, op.AimState, "조준 카메라가 없으면 겨눈 곳이 없다.");
+
+            Assert.IsTrue(op.FireAt(Ground(cannon, 20f)));
+            op.RefreshAim();
+            Assert.AreEqual(CannonAimState.Reloading, op.AimState);
+            for (int i = 0; i < 60 && !cannon.Reload.IsReady; i++) yield return null;
+            yield return null;
+            Assert.AreNotEqual(CannonAimState.Reloading, op.AimState, "장전이 끝나면 재장전 표시가 풀린다.");
+
+            // 받침이 다시 자세를 잡으면(내려앉기 등) 그 자세가 새 설치 방향이 된다.
+            cannon.SetSwivel(40f, true);
+            Quaternion reset = cannon.transform.rotation * Quaternion.Euler(0f, 90f, 0f);
+            cannon.transform.rotation = reset;
+            Assert.AreEqual(0f, cannon.Swivel);
+            Assert.AreEqual(0f, Quaternion.Angle(reset, cannon.transform.rotation), 0.01f);
+
+            op.Leave();
+            Assert.AreEqual(CannonAimState.NoTarget, op.AimState);
+            yield return WaitForShells();
+        }
+
+        [UnityTest]
         public IEnumerator Operator_LeavesAutomatically_WhenBattleEndsOrCannonIsDestroyed()
         {
             CannonModule cannon = MountCannon(Own(CannonSettings.Create(autoScatterRadius: 0f)));

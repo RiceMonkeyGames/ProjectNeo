@@ -1,6 +1,6 @@
 # Open Design Questions
 
-Last Updated: 2026-11-15 02:08:01 (KST)
+Last Updated: 2026-11-15 16:11:16 (KST)
 
 > Purpose: Undecided game design topics tracked alongside `plan/Decisions-Pending.md`. | Parent: [design/README](README.md) | Related: [Decisions-Pending](../plan/Decisions-Pending.md)
 
@@ -15,5 +15,5 @@ Last Updated: 2026-11-15 02:08:01 (KST)
 - Equipment handling on hero permadeath (Q-31); player character as squad captain later (Q-32 interim: not now).
 - Tavern gold re-roll costs and locking slots (Shop rules decided as Q-46, 2026-11-13).
 - Combat consumable use (keys, effects, limits) with Q-12; deferred 2026-11-13.
-- **UI improvement pass** (user request 2026-11-15): Current HUDs are test displays (`SquadCommandHud`, `GameFlowHud` hint lines, construction panel). Scope, priorities and layout are undecided; collect concrete issues from playtests first. Known items: final combat HUD / command keys / prep UI layout (Q-11), the temporary merged squad-key line in the preparation hint (PREP-05, `GameFlowHud.PreparationSquadHint`), and cannon fire-ready feedback (SIEGE-07).
+- **UI improvement pass** (user request 2026-11-15): Current HUDs are test displays (`SquadCommandHud`, `GameFlowHud` hint lines, construction panel). Scope, priorities and layout are undecided; collect concrete issues from playtests first. Known items: final combat HUD / command keys / prep UI layout (Q-11), the temporary merged squad-key line in the preparation hint (PREP-05, `GameFlowHud.PreparationSquadHint`), and any follow-up to the cannon fire-ready feedback implemented by SIEGE-07 (sound/on-cannon effects).
 - **Enemy and ally AI improvement pass** (user request 2026-11-15): Enemy siege AI and ally squad AI need a quality pass; scope and priorities are undecided and the enemy side is the teammate's area ([Team](../plan/Team.md)). Known items: wall-top archer line of sight / Hold retaliation (BUG-wall-archer-los); recent fixes to reference: far enemies idling in Assault when a path is already open (BUG-stage2-enemies-idle), ally retaliation (BUG-ally-no-retaliation).
