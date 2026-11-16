@@ -1,6 +1,6 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-15 22:00:57 (KST)
+Last Updated: 2026-11-16 11:58:03 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
@@ -54,6 +54,7 @@ Construction return-hint input (QA-build-zoom-ui-hover, 2026-11-14): User reques
 | Q-49 | Squad organization window layout | UI-01 | Resolved (2026-11-13): Side-by-side squad cards (captain slot on top, grunts below), new-squad card, reserve-hero card; click a unit then the destination card. Replaces the D-8 two-column layout after user feedback. |
 | Q-50 | Post-battle squad cleanup | C-3 | Resolved (2026-11-13): At the next prep start, fallen units leave scene squads (bodies stay on the ground); squads with no grunts and no living captain are removed from run and scene; a squad with a living captain but no grunts stays with its morale. |
 | Q-51 | Stage & wave structure | B-7.1, SIEGE-01, C-5 | Resolved (2026-11-14): 3 fixed stages for M2 (final count in M4); 2–3 waves per battle started by a fixed timetable; several fixed northern spawn points chosen per wave; no M2 bosses; victory after all waves spawned and all enemies dead/retreated; hand-authored stage compositions; one stage asset with a wave list referencing existing enemy prefabs (teammate review pending). See [MoraleAndWave](../design/MoraleAndWave.md). |
+| Q-52 | Stage data format & wave rules | B-7.1, SIEGE-01, C-5 | Resolved (2026-11-16): fixed timetable kept (no pull-forward on an empty field; start condition replaceable); retreat while waves remain is a settings switch, default off; decoupled format = stage catalog → stage → waves → groups (enemy prefab, count, spawn point asset), with a pure timetable rule, a neutral encounter plan that also wraps the old single enemy list, and a separate spawner; last stage repeats past the catalog until Q-08. User started implementation before teammate review, which continues in parallel. See [MoraleAndWave](../design/MoraleAndWave.md). |
 
 ## Detailed Decision Records
 

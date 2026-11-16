@@ -8,7 +8,13 @@ namespace ProjectNeo.Flow
     public sealed class GameBattleSettings : ScriptableObject
     {
         [SerializeField] SiegeSettings siege;
+        [Tooltip("스테이지 목록이 비어 있을 때 쓰는 단일 적 목록(전투 시작과 함께 모두 나온다).")]
         [SerializeField] SiegeUnitGroup[] enemies = new SiegeUnitGroup[0];
+        [Tooltip("스테이지별 웨이브 편성(B-7.1). 비우면 위의 단일 적 목록을 쓴다.")]
+        [SerializeField] ProjectNeo.Stages.StageCatalog stages;
+        [Tooltip("나올 웨이브가 남아 있어도 공성 수단을 잃은 적이 후퇴할지(Q-52). 기본은 후퇴하지 않고 다음 웨이브와 합류한다.")]
+        [SerializeField] bool retreatWhileWavesPending;
+        [Tooltip("기본 스폰 칸. 스폰 지점을 지정하지 않은 무리와 단일 적 목록이 쓴다.")]
         [SerializeField] Vector2 spawnCell = new Vector2(40f, 90f);
         [SerializeField] Vector2Int outward = Vector2Int.up;
         [SerializeField, Min(1)] int columns = 10;
@@ -29,6 +35,11 @@ namespace ProjectNeo.Flow
         public SiegeSettings Siege => siege;
         public ProjectNeo.Morale.MoraleSettings Morale => morale;
         public System.Collections.Generic.IReadOnlyList<SiegeUnitGroup> Enemies => enemies;
+        public ProjectNeo.Stages.StageCatalog Stages => stages;
+        public bool RetreatWhileWavesPending => retreatWhileWavesPending;
+        /// <summary>스테이지 편성과 웨이브 중 후퇴 여부를 바꾼다(에디터 설정·테스트용).</summary>
+        public void ConfigureStages(ProjectNeo.Stages.StageCatalog catalog, bool retreatWhilePending = false)
+        { stages = catalog; retreatWhileWavesPending = retreatWhilePending; }
         public Vector2 SpawnCell => spawnCell;
         public Vector2Int Outward => outward;
         public int Columns => columns;

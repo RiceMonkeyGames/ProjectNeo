@@ -1,6 +1,6 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-15 23:56:33 (KST)
+Last Updated: 2026-11-16 13:47:53 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
@@ -9,6 +9,8 @@ Last Updated: 2026-11-15 23:56:33 (KST)
 Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elevation, and `feature/siege-prototype` test scene into `develop`. `Game` scene links 1st-person prep / construction F interaction → hold B for 1 second at current position (FLOW-01) → enemy assault, ladders, actual win/loss → rewards/results. On the M2 side, run data (`C-1~2`), victory rewards (`C-4`), build/repair costs (`D-2`), facility pop-ups (`D-0`), upgrades (`D-1`), shop (`D-5`), player equipment (`D-7`), grunt spawning (`D-0b`), and barracks recruitment/training (`D-4`) are implemented; formal stage/wave layouts, casualty carry-over (`C-3`), tavern (`D-3`), squad org (`D-8`), and blacksmith (`D-6`) remain follow-ups. Wall-breaker behavior is complete on `feature/b-6.2`, pending develop merge; mixed encounter integration, aerial enemies, morale scene wiring, and siege weapon firing (`Q-21`) remain pending.
 
 ## Implemented vs Pending Real Connections
+
+**B-7.1 (Done on user confirmation, 2026-11-16; `feature/b-7.1`, develop merge pending)**: The `Game` scene now reads stage data: catalog → stage → timed waves → groups (enemy prefab, count, spawn point asset), 3 interim stages (12 / 18 / 27 enemies, 2–3 waves, Left/Center/Right northern points). A pure timetable releases each wave once; pending enemies block victory; retreat while waves remain is a settings switch (default off, Q-52). The old single enemy list remains as fallback and as the fixed roster for the existing PlayMode suites. Compile, EditMode **437/437** and PlayMode **213/213** passed; user confirmed the manual check (2026-11-16). Composition balance and standalone build unverified; teammate format review open. [History/manual checks](../history/B/B-7.1.md).
 
 **SIEGE-07 (Done on user authorization, 2026-11-15; `feature/siege-07`, merged into develop)**: Manned cannons show fire-ready state at the crosshair (green / amber with reload bar / red, state line, ready pulse), the barrel follows the aim, and the manned traverse is ±90° (auto-fire stays ±45° / 6–60m). Choices were delegated to the agent by the user. Compile, EditMode **406/406** and PlayMode **202/202** passed; on-screen look, physical-input play and standalone build unverified. [History/manual checks](../history/SIEGE/SIEGE-07.md).
 **BUG-wall-archer-los (Done on user authorization, 2026-11-15; `fix/bug-wall-archer-los`, merged into develop)**: Reproduction showed the wall edge was not the cause; rear-rank wall-top archers were 1–2m out of range and steep arrows could vanish short. Grounded ranged units now get +25% range from a 1.5m height advantage and arrows fly to the aimed point; line of sight and `Hold` behavior unchanged. Compile, EditMode **409/409** and PlayMode **204/204** passed; manual play and standalone build unverified; shared combat core call sites need teammate review. [History/manual checks](../history/BUG/BUG-wall-archer-los.md).

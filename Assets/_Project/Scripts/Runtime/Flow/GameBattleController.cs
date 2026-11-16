@@ -6,6 +6,7 @@ using ProjectNeo.Morale;
 using ProjectNeo.Run;
 using ProjectNeo.Siege;
 using ProjectNeo.Squads;
+using ProjectNeo.Stages;
 using ProjectNeo.Walls;
 using UnityEngine;
 using UnityEngine.AI;
@@ -29,10 +30,36 @@ namespace ProjectNeo.Flow
         readonly Dictionary<SiegeAttacker, Vector3> retreatTargets = new Dictionary<SiegeAttacker, Vector3>();
         // 처치 수를 적 종류별로 세기 위한 적 ID. 지금은 적 프리팹 이름을 쓴다.
         readonly Dictionary<SiegeAttacker, string> enemyIds = new Dictionary<SiegeAttacker, string>();
+        // 웨이브(B-7.1). 적은 준비 단계에 모두 꺼진 채로 만들어 두고, 시간표가 내보낼 때 웨이브 단위로 켠다.
+        readonly List<List<SiegeAttacker>> waveUnits = new List<List<SiegeAttacker>>();
+        readonly HashSet<SiegeAttacker> unreleased = new HashSet<SiegeAttacker>();
+        readonly List<int> dueWaves = new List<int>();
+        EncounterPlan plan;
+        WaveSchedule schedule;
+        BattleEnemySpawner spawner;
         GameFlow flow;
         GameRunLink runLink;
         Transform enemyRoot;
         bool battleRunning;
+        /// <summary>이번 전투의 적 편성. 스테이지 에셋 또는 단일 적 목록에서 만든다.</summary>
+        public EncounterPlan Plan => plan;
+        public int WaveCount => schedule != null ? schedule.WaveCount : 0;
+        public int WavesReleased => schedule != null ? schedule.ReleasedWaves : 0;
+        /// <summary>다음 웨이브까지 남은 초. 남은 웨이브가 없으면 -1.</summary>
+        public float SecondsUntilNextWave => schedule != null ? schedule.SecondsUntilNext : -1f;
+        /// <summary>아직 나오지 않은 적 수. 승리 판정에서 나올 예정인 적으로 센다.</summary>
+        public int EnemiesPending
+        {
+            get
+            {
+                int count = 0;
+                foreach (SiegeAttacker enemy in unreleased)
+                    if (enemy != null && (enemy.Actor == null || enemy.Actor.Health == null || !enemy.Actor.Health.IsDead)) count++;
+                return count;
+            }
+        }
+        /// <summary>웨이브가 전장에 나올 때마다 그 번호(0부터)로 알린다.</summary>
+        public event System.Action<int> WaveReleased;
         public GameBattleSettings Settings => settings;
         public IReadOnlyList<SiegeAttacker> Enemies => enemies;
         public IReadOnlyList<SiegeLadder> Ladders => ladders;
@@ -62,19 +89,20 @@ namespace ProjectNeo.Flow
         {
             get { int count = 0; for (int i = 0; i < commander.Squads.Count; i++) count += commander.AliveCount(i); return count; }
         }
-        public int EnemiesAlive
+        /// <summary>남은 적 전체: 전장에 있는 적과 아직 나오지 않은 적.</summary>
+        public int EnemiesAlive => CountEnemies(true);
+        /// <summary>이미 나와서 전장에 살아 있는 적.</summary>
+        public int EnemiesOnField => CountEnemies(false);
+        int CountEnemies(bool includePending)
         {
-            get
-            {
-                int count = 0;
-                foreach (SiegeAttacker enemy in enemies)
-                    if (enemy != null && !retreated.Contains(enemy))
-                    {
-                        var actor = enemy.GetComponent<CharacterActor>();
-                        if (actor.Health == null || !actor.Health.IsDead) count++;
-                    }
-                return count;
-            }
+            int count = 0;
+            foreach (SiegeAttacker enemy in enemies)
+                if (enemy != null && !retreated.Contains(enemy) && (includePending || !unreleased.Contains(enemy)))
+                {
+                    var actor = enemy.GetComponent<CharacterActor>();
+                    if (actor.Health == null || !actor.Health.IsDead) count++;
+                }
+            return count;
         }
 
         public void Configure(ConstructionWorld castle, GameBattleSettings config, SquadCommandCenter center,
@@ -132,7 +160,8 @@ namespace ProjectNeo.Flow
                 BattleNumber++;
                 RunLink.OnBattleStart();
                 foreach (SiegeLadder ladder in ladders) ladder.enabled = true;
-                foreach (SiegeAttacker enemy in enemies) enemy.gameObject.SetActive(true);
+                schedule?.Reset();
+                ReleaseDueWaves(0f);
                 SetCannonsArmed(true);
             }
             else if (phase == GamePhase.Reward || phase == GamePhase.RunResult)
@@ -147,33 +176,64 @@ namespace ProjectNeo.Flow
         void LateUpdate()
         {
             if (!battleRunning || flow.Phase != GamePhase.Battle) return;
+            // 전투가 실제로 진행된 시간만큼만 시간표를 넘긴다(멈춘 동안은 0).
+            ReleaseDueWaves(Time.deltaTime);
             // 이 프레임의 공격·투사체 처리가 끝난 뒤 동시 성립은 패배를 우선한다.
             SiegeOutcome outcome = Evaluate();
             if (outcome == SiegeOutcome.Ongoing)
             {
                 if (!IsRetreating && ShouldRetreat()) BeginRetreat();
-                if (IsRetreating) UpdateRetreat();
+                if (retreatTargets.Count > 0) UpdateRetreat();
                 outcome = Evaluate();
             }
             Resolve(outcome);
         }
+        // 아직 나오지 않은 적이 있으면 전장이 비어도 승리가 아니다(Q-51).
         SiegeOutcome Evaluate() => SiegeOutcomeRules.Evaluate(player.Health == null || player.Health.IsDead,
-            GateDestroyed, AlliesAlive, EnemiesAlive, 0);
+            GateDestroyed, AlliesAlive, EnemiesOnField, EnemiesPending);
+
+        /// <summary>시간표를 넘기고, 나올 차례가 된 웨이브의 적을 켠다. 각 웨이브는 전투마다 한 번만 나온다.</summary>
+        void ReleaseDueWaves(float deltaSeconds)
+        {
+            if (schedule == null || schedule.AllReleased) return;
+            dueWaves.Clear();
+            if (schedule.Advance(deltaSeconds, EnemiesOnField, dueWaves) == 0) return;
+            foreach (int index in dueWaves)
+            {
+                foreach (SiegeAttacker enemy in waveUnits[index])
+                {
+                    if (enemy == null) continue;
+                    unreleased.Remove(enemy);
+                    enemy.gameObject.SetActive(true);
+                }
+                WaveReleased?.Invoke(index);
+            }
+            // 새 적이 합류했으므로 후퇴 여부를 다시 판단한다. 이미 떠나던 적은 그대로 떠난다.
+            IsRetreating = false;
+        }
+
+        // 후퇴 판단 대상: 전장에 나와 살아 있고, 떠났거나 떠나는 중이 아닌 적.
+        bool CanJudgeRetreat(SiegeAttacker enemy) => enemy != null && !unreleased.Contains(enemy)
+            && !retreated.Contains(enemy) && !retreatTargets.ContainsKey(enemy)
+            && enemy.Actor != null && !enemy.Actor.Health.IsDead;
 
         bool ShouldRetreat()
         {
-            int siegeUnits = 0;
+            // 나올 웨이브가 남아 있으면 설정으로 허용한 경우에만 후퇴를 판단한다(Q-52).
+            if (schedule != null && !WaveSchedule.RetreatAllowed(schedule.PendingWaves, settings.RetreatWhileWavesPending))
+                return false;
+            int alive = 0, siegeUnits = 0;
             foreach (SiegeAttacker enemy in enemies)
-                if (enemy != null && !retreated.Contains(enemy) && enemy.Actor != null && !enemy.Actor.Health.IsDead
-                    && enemy.Role != SiegeAttackerRole.Archer) siegeUnits++;
-            if (!SiegeOutcomeRules.ShouldRetreat(EnemiesAlive, siegeUnits, false,
+            {
+                if (!CanJudgeRetreat(enemy)) continue;
+                alive++;
+                if (enemy.Role != SiegeAttackerRole.Archer) siegeUnits++;
+            }
+            if (!SiegeOutcomeRules.ShouldRetreat(alive, siegeUnits, false,
                 !world.IsRebuilding && !world.RebuildPending)) return false;
             // 오르기·떨어지기 중이거나 자기 방식(걷기·날기)으로 아군에 닿는 적이 있으면 아직 후퇴하지 않는다.
             foreach (SiegeAttacker enemy in enemies)
-            {
-                if (enemy == null || retreated.Contains(enemy) || enemy.Actor == null || enemy.Actor.Health.IsDead) continue;
-                if (enemy.IsMidAction || enemy.CanReachAnyEnemy()) return false;
-            }
+                if (CanJudgeRetreat(enemy) && (enemy.IsMidAction || enemy.CanReachAnyEnemy())) return false;
             return true;
         }
 
@@ -182,7 +242,7 @@ namespace ProjectNeo.Flow
             IsRetreating = true;
             foreach (SiegeAttacker enemy in enemies)
             {
-                if (enemy == null || enemy.Actor.Health.IsDead) continue;
+                if (!CanJudgeRetreat(enemy)) continue;
                 Vector3 local = world.LocalPoint(enemy.transform.position);
                 if (settings.Outward.x != 0) local.x = settings.Outward.x > 0
                     ? world.Grid.Width * world.Grid.CellSize - settings.RetreatExitMargin : settings.RetreatExitMargin;
@@ -209,39 +269,60 @@ namespace ProjectNeo.Flow
 
         void SpawnEnemies()
         {
-            Vector3 outward = world.transform.TransformDirection(new Vector3(settings.Outward.x, 0f, settings.Outward.y)).normalized;
-            Vector3 right = Vector3.Cross(Vector3.up, outward);
-            Vector3 origin = world.transform.TransformPoint(new Vector3(settings.SpawnCell.x * world.Grid.CellSize,
-                0f, settings.SpawnCell.y * world.Grid.CellSize));
-            int row = 0;
-            foreach (SiegeUnitGroup group in settings.Enemies)
+            plan = BuildPlan();
+            schedule = new WaveSchedule(plan.Timings());
+            spawner ??= new BattleEnemySpawner(world, settings, fallSettings, ladders, enemyRoot, this);
+            spawner.ResetNumbering();
+            foreach (EncounterWave wave in plan.Waves)
             {
-                if (group.unitPrefab == null || group.count <= 0) continue;
-                if (group.unitPrefab.activeSelf)
-                { Debug.LogError("Battle enemy prefab must be inactive: " + group.unitPrefab.name, this); continue; }
-                for (int i = 0; i < group.count; i++)
+                var units = new List<SiegeAttacker>();
+                foreach (BattleEnemySpawner.Spawned spawned in spawner.SpawnWave(wave))
                 {
-                    int inRow = Mathf.Min(settings.Columns, group.count - i / settings.Columns * settings.Columns);
-                    Vector3 position = origin + right * ((i % settings.Columns - (inRow - 1) * 0.5f) * settings.Spacing)
-                        + outward * ((row + i / settings.Columns) * settings.RowSpacing);
-                    GameObject unit = Instantiate(group.unitPrefab, enemyRoot);
-                    unit.name = group.unitPrefab.name + "_" + enemies.Count;
-                    unit.transform.SetPositionAndRotation(position, Quaternion.LookRotation(-outward));
-                    var brain = unit.GetComponent<SiegeAttacker>();
-                    if (brain == null) { Debug.LogError("Battle enemy needs a SiegeAttacker", unit); Destroy(unit); continue; }
-                    // 나는 적은 발판이 무너져도 떨어지지 않으므로 낙하 부품을 붙이지 않는다.
-                    if (brain.UsesFallController)
-                    {
-                        var fall = unit.GetComponent<UnitFallController>();
-                        if (fall == null) fall = unit.AddComponent<UnitFallController>();
-                        fall.Configure(world, fallSettings);
-                    }
-                    brain.Bind(world, ladders, settings.Outward, settings.Siege);
-                    enemies.Add(brain);
-                    enemyIds[brain] = group.unitPrefab.name;
+                    units.Add(spawned.Attacker);
+                    enemies.Add(spawned.Attacker);
+                    unreleased.Add(spawned.Attacker);
+                    enemyIds[spawned.Attacker] = spawned.EnemyId;
                 }
-                row += (group.count + settings.Columns - 1) / settings.Columns;
+                waveUnits.Add(units);
             }
+        }
+
+        /// <summary>
+        /// 이번 스테이지의 편성을 고른다. 스테이지 목록이 있으면 스테이지 번호에 맞는 웨이브를,
+        /// 없으면 전투 설정의 단일 적 목록을 전투 시작과 함께 나오는 웨이브 하나로 쓴다.
+        /// </summary>
+        EncounterPlan BuildPlan()
+        {
+            int stageNumber = flow != null && flow.Run != null ? flow.Run.StageNumber : 1;
+            EncounterPlan custom = EncounterSourceOverride?.Invoke(settings, stageNumber);
+            return custom ?? DefaultEncounter(settings, stageNumber);
+        }
+
+        /// <summary>
+        /// 편성을 고르는 방법을 통째로 바꾼다(디버그 편성·테스트용). 전투 설정과 스테이지 번호를 받아 편성을 돌려주며,
+        /// null을 돌려주거나 비워 두면 기본 방법(DefaultEncounter)을 쓴다. 다음 준비 단계부터 적용되고,
+        /// 지금 준비 단계에 바로 적용하려면 RebuildEncounter를 부른다.
+        /// </summary>
+        public static System.Func<GameBattleSettings, int, EncounterPlan> EncounterSourceOverride { get; set; }
+
+        /// <summary>기본 편성: 스테이지 목록이 있으면 그 스테이지의 웨이브, 없으면 단일 적 목록.</summary>
+        public static EncounterPlan DefaultEncounter(GameBattleSettings config, int stageNumber)
+        {
+            StageDefinition stage = config.Stages != null ? config.Stages.StageFor(stageNumber) : null;
+            return stage != null ? EncounterPlan.FromStage(stage, config.SpawnCell) : SingleWaveEncounter(config);
+        }
+
+        /// <summary>전투 설정의 단일 적 목록을 전투 시작과 함께 나오는 웨이브 하나로 만든 편성.</summary>
+        public static EncounterPlan SingleWaveEncounter(GameBattleSettings config, int stageNumber = 1) =>
+            EncounterPlan.FromGroups(config.Enemies, config.SpawnCell);
+
+        /// <summary>준비 단계에서 적을 지우고 지금 편성으로 다시 만든다. 준비 단계가 아니면 아무것도 하지 않는다.</summary>
+        public bool RebuildEncounter()
+        {
+            if (flow == null || flow.Phase != GamePhase.Preparation) return false;
+            ClearEnemies();
+            SpawnEnemies();
+            return true;
         }
 
         void ClearEnemies()
@@ -250,6 +331,7 @@ namespace ProjectNeo.Flow
                 if (enemy != null) { enemy.gameObject.SetActive(false); Destroy(enemy.gameObject); }
             enemies.Clear();
             enemyIds.Clear();
+            waveUnits.Clear(); unreleased.Clear();
             retreated.Clear(); retreatTargets.Clear(); IsRetreating = false;
         }
 
@@ -352,7 +434,7 @@ namespace ProjectNeo.Flow
         Dictionary<string, int> CountRetreats()
         {
             var retreats = new Dictionary<string, int>();
-            foreach (SiegeAttackerBrain enemy in retreated)
+            foreach (SiegeAttacker enemy in retreated)
             {
                 if (enemy == null || !enemyIds.TryGetValue(enemy, out string id)) continue;
                 retreats.TryGetValue(id, out int count);
