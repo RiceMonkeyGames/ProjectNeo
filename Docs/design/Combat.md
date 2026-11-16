@@ -1,6 +1,6 @@
 # Game Design: Combat, Units & Win/Loss
 
-Last Updated: 2026-11-15 01:09:36 (KST)
+Last Updated: 2026-11-16 11:47:49 (KST)
 
 > Purpose: Rules for perspective, squad commands, damage, unit lifecycles, and battle outcomes. | Parent: [design/README](README.md) | Related: [WallsAndSiege](WallsAndSiege.md), [MoraleAndWave](MoraleAndWave.md)
 
@@ -76,3 +76,12 @@ Combat continues if main gate falls as long as surviving allies remain.
 - Air control **30%** (PlayerControlSettings.AirControl): while airborne, horizontal velocity keeps 70% of the takeoff velocity and blends in 30% of the current input velocity. A sprint jump keeps the sprint takeoff speed.
 - No jump while crouched; crouch input is ignored until landing. No double jump. Hitting a ceiling stops the rise.
 - Available in both preparation and battle wherever the player can move; ladders, cannon manning, construction view and falls already suspend movement, so jumping is unavailable there. Keyboard only for now (Q-15).
+
+## Action Interrupt & Poise System (COMBAT-04, user approved 2026-11-16)
+
+- **Model**: Single-hit threshold comparison. Each attack/damage source carries `StaggerPower` (configured on `CombatProfile`), and each active action exposes `IsInterruptible` and `Poise`. On receiving effective damage (`> 0`), if `action.IsInterruptible && incomingStagger >= action.Poise`, the active action is interrupted.
+- **Initial Scope**: Ladder pushing (shared across player, allied AI, and enemies) is connected first; other actions (such as cannon operation) can adopt the same interruptible action contract later.
+- **Ladder Rules**:
+  - **Ladder pushing**: Interruptible (`Poise` <= ranged `StaggerPower`), so both melee and ranged hits interrupt pushing. When interrupted before passing the ladder's balance point, the ladder settles back onto the wall (Bannerlord style) just like releasing the push.
+  - **Ladder raising**: Uninterruptible (`IsInterruptible = false`), so hits do not cancel raising.
+- **Re-interaction Cooldown & Feedback**: Interrupted units wait `0.3s` (`SiegeSettings.LadderPushInterruptCooldown` / configurable) before re-engaging the push/interaction. For testing, only player action interruptions display a temporary HUD notice.

@@ -97,7 +97,11 @@ namespace ProjectNeo.UI
                 {
                     if (actor.gameObject.scene != gameObject.scene || actor.GetComponent<ProjectNeo.Characters.PlayerInputController>() == null) continue;
                     var traveller = actor.GetComponent<ProjectNeo.Siege.LadderTraveller>();
-                    if (traveller != null && traveller.PlayerHint.Length > 0) battleStatus.text += "\n" + traveller.PlayerHint;
+                    if (traveller != null)
+                    {
+                        if (traveller.PlayerHint.Length > 0) battleStatus.text += "\n" + traveller.PlayerHint;
+                        if (traveller.HasInterruptNotice) battleStatus.text += "\n" + (korean ? "피격으로 사다리 밀기가 중단되었습니다!" : "Ladder push interrupted by hit!");
+                    }
                     break;
                 }
                 foreach (var ladder in battle.Ladders)

@@ -14,6 +14,7 @@ namespace ProjectNeo.Combat
         [SerializeField] CombatProfile profile;
         [SerializeField] CombatTeam team = CombatTeam.Allied;
         static readonly List<CharacterActor> activeActors = new List<CharacterActor>();
+        readonly List<IInterruptibleAction> interruptibleActions = new List<IInterruptibleAction>();
         float cooldown;
         float impactRemaining;
         bool pendingImpact;
@@ -41,7 +42,15 @@ namespace ProjectNeo.Combat
         public event Action AttackStarted;
         public event Action HitReceived;
         public event Action<CharacterActor> HitReceivedFrom;
+        public event Action<IInterruptibleAction, float> ActionInterrupted;
         public event Action Died;
+
+        public void RegisterInterruptible(IInterruptibleAction action)
+        {
+            if (action != null && !interruptibleActions.Contains(action)) interruptibleActions.Add(action);
+        }
+
+        public void UnregisterInterruptible(IInterruptibleAction action) => interruptibleActions.Remove(action);
 
         public void Configure(HeroDefinition hero, CombatProfile combatProfile, CombatTeam combatTeam = CombatTeam.Allied)
         {
@@ -169,6 +178,19 @@ namespace ProjectNeo.Combat
             {
                 HitReceived?.Invoke();
                 HitReceivedFrom?.Invoke(attacker);
+                EvaluateInterrupts(attacker != null && attacker.Profile != null ? attacker.Profile.StaggerPower : 0f);
+            }
+        }
+
+        void EvaluateInterrupts(float incomingStagger)
+        {
+            for (int i = interruptibleActions.Count - 1; i >= 0; i--)
+            {
+                if (i >= interruptibleActions.Count) continue;
+                IInterruptibleAction action = interruptibleActions[i];
+                if (action == null || !ActionInterruptRules.ShouldInterrupt(action.InterruptPoise, incomingStagger)) continue;
+                action.InterruptAction();
+                ActionInterrupted?.Invoke(action, incomingStagger);
             }
         }
 

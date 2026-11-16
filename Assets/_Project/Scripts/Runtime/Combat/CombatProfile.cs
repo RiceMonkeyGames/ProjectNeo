@@ -18,8 +18,10 @@ namespace ProjectNeo.Combat
         // 아래에서 위로 쏠 때의 피해 비율. 대상이 이 높이 이상 위에 있으면 적용한다. 1이면 변화 없음.
         [SerializeField, Min(0f)] float upwardShotMinimumRise = 1.5f;
         [SerializeField, Range(0f, 1f)] float upwardShotDamageRatio = 1f;
+        [SerializeField, Min(0f)] float staggerPower = 10f;
         public float UpwardShotMinimumRise => upwardShotMinimumRise;
         public float UpwardShotDamageRatio => upwardShotDamageRatio;
+        public float StaggerPower => staggerPower;
         public float ImpactDelay => impactDelay;
         public float AttackHalfAngle => attackHalfAngle;
         public float Radius => radius;
@@ -35,7 +37,7 @@ namespace ProjectNeo.Combat
             float radius = 0.4f, float height = 2f, AttackKind attackKind = AttackKind.Melee,
             GameObject projectilePrefab = null, float projectileSpeed = 18f,
             float projectileRadius = 0.08f, float projectileLifetime = 5f, float minimumDamage = 1f,
-            float upwardShotDamageRatio = 1f, float upwardShotMinimumRise = 1.5f)
+            float upwardShotDamageRatio = 1f, float upwardShotMinimumRise = 1.5f, float staggerPower = -1f)
         {
             var profile = CreateInstance<CombatProfile>();
             profile.impactDelay = Mathf.Max(0f, impactDelay);
@@ -50,6 +52,7 @@ namespace ProjectNeo.Combat
             profile.projectileLifetime = Mathf.Max(0.01f, projectileLifetime);
             profile.upwardShotDamageRatio = Mathf.Clamp01(upwardShotDamageRatio);
             profile.upwardShotMinimumRise = Mathf.Max(0f, upwardShotMinimumRise);
+            profile.staggerPower = staggerPower >= 0f ? staggerPower : (attackKind == AttackKind.Projectile ? 10f : 25f);
             return profile;
         }
     }

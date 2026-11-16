@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using NUnit.Framework;
 using ProjectNeo.Characters;
+using ProjectNeo.Combat;
 using ProjectNeo.Economy;
 using ProjectNeo.Stats;
 using UnityEngine;
@@ -142,6 +143,23 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(1.2f, settings.JumpHeight);
             Assert.AreEqual(0.3f, settings.AirControl);
             Object.DestroyImmediate(settings);
+        }
+
+        [Test]
+        public void ActionInterruptRules_ComparesStaggerAgainstPoiseAndInterruptibility()
+        {
+            ActionPoise push = ActionPoise.Interruptible(10f);
+            Assert.IsFalse(ActionInterruptRules.ShouldInterrupt(push, 9.9f));
+            Assert.IsTrue(ActionInterruptRules.ShouldInterrupt(push, 10f));
+            Assert.IsTrue(ActionInterruptRules.ShouldInterrupt(push, 25f));
+            Assert.IsFalse(ActionInterruptRules.ShouldInterrupt(ActionPoise.Uninterruptible, 999f));
+
+            CombatProfile ranged = Track(CombatProfile.Create(attackKind: AttackKind.Projectile));
+            CombatProfile melee = Track(CombatProfile.Create(attackKind: AttackKind.Melee));
+            CombatProfile custom = Track(CombatProfile.Create(attackKind: AttackKind.Melee, staggerPower: 40f));
+            Assert.AreEqual(10f, ranged.StaggerPower);
+            Assert.AreEqual(25f, melee.StaggerPower);
+            Assert.AreEqual(40f, custom.StaggerPower);
         }
     }
 }

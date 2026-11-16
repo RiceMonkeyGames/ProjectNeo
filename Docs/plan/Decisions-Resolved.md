@@ -1,10 +1,12 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-14 22:59:29 (KST)
+Last Updated: 2026-11-16 11:47:49 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
 ## Resolved `Q-*` Table
+
+COMBAT-04 (2026-11-16): User approved a data-driven single-hit poise vs stagger threshold system (`IsInterruptible && incomingStagger >= actionPoise`). Initial scope covers ladder pushing/raising (player, allies, enemies); ladder pushing is interruptible by both ranged and melee hits and settles back onto the wall before the balance point, whereas ladder raising is uninterruptible. Interrupted units have a `0.3s` re-interaction cooldown, and player interruptions show a temporary test HUD notice. [Rule](../design/Combat.md).
 
 COMBAT-03 (2026-11-14): User chose Panic retreat to a point and waiting there until battle end; no automatic return or new orders during the battle. Panic stays in combat and differs from morale-0 rout/exit. Create a runtime `PanicRetreatPoint` at the existing courtyard retreat location. Shared-file edits to SquadCommander/SquadCommandCenter/GameSquadMorale/SquadCommandHud are available (user confirmed no other active editor); CharacterActor and UnitCombatAI use existing APIs. [Rule](../design/MoraleAndWave.md).
 
