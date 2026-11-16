@@ -1,6 +1,6 @@
 # Editor Setup & Test Scripts
 
-Last Updated: 2026-11-16 12:08:55 (KST)
+Last Updated: 2026-11-16 21:40:22 (KST)
 
 > Purpose: Map of Editor setup menus, build scripts, and EditMode/PlayMode test suites. | Parent: [codemap/README](README.md) | Related: [UnityCLI](../workflow/UnityCLI.md), [Status](../plan/Status.md)
 
@@ -8,6 +8,7 @@ Last Updated: 2026-11-16 12:08:55 (KST)
 
 - `EquipmentUpgradeSetup.cs`: `ProjectNeo/Setup/Configure Equipment Upgrades` creates the shared settings, binds RunStart and fills only empty item upgrade-material lists from crafting materials × target level; keeps existing data and does not edit the scene. Also called by the facility generator.
 
+- `RunSaveSetup.cs` (`FLOW-02`): Menu `ProjectNeo/Setup/Refresh Run Save Content (FLOW-02)`. Rebuilds `Data/GameFlow/RunContent.asset` from every definition asset under `Assets/_Project` (items, materials, heroes, soldiers, run-start facilities, castle pieces with asset GUID ids, siege weapons), logs id problems, and links it into `Battle.asset`; no scene edit. Re-run after adding or deleting definitions. `GameFlowSetup.ApplyTitleSaveSlots` also creates the Title `Button_Continue`. Tests: EditMode `RunSaveTests` (14, includes a stale-catalog guard); PlayMode `GameRunSavePlayTests` (5, Title → Game with a temporary save folder).
 - `StageSetup.cs` (`B-7.1`): Menu `ProjectNeo/Setup/Create Stage Data (B-7.1)`. Idempotently creates `Data/GameFlow/Stages/` spawn points (Left/Center/Right), `Stage01–03.asset`, `StageCatalog.asset` and links the catalog into `Battle.asset` only when empty; keeps existing assets; no scene edit. Tests: EditMode `StageWaveTests` (13: timetable, replaceable start rule, retreat switch, plan building, catalog); PlayMode `GameWavePlayTests` (4, Game scene: timed single release, pending blocks victory, retreat switch, real Stage 1 asset). `SingleWaveEncounterFixture` (PlayMode `[SetUpFixture]`) makes all other PlayMode suites use the old single enemy list via `GameBattleController.EncounterSourceOverride`.
 - `CombatPrototypeSetup.cs`: Menu `ProjectNeo/Setup/Create Combat Prototype`. Generates B-2 scene, prefabs, and assets.
 - `UnitBattleSetup.cs`: Menu `ProjectNeo/Setup/Create Unit Battle Prototype`. Generates B-3 scene, prefabs, assets, and NavMesh.

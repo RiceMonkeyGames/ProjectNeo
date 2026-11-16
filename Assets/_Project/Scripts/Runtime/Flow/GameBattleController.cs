@@ -64,7 +64,36 @@ namespace ProjectNeo.Flow
         public IReadOnlyList<SiegeAttacker> Enemies => enemies;
         public IReadOnlyList<SiegeLadder> Ladders => ladders;
         /// <summary>런 데이터 연결(C-1~2). 씬 유닛의 런 번호와 이번 전투 입력을 읽을 때 쓴다.</summary>
-        public GameRunLink RunLink => runLink ??= new GameRunLink(flow, commander, player, world);
+        public GameRunLink RunLink => runLink ??= CreateRunLink();
+
+        // 런 저장·이어 하기(FLOW-02)에 필요한 것을 붙여 만든다. ID 목록이 없으면 저장도 이어 하기도 하지 않는다.
+        GameRunLink CreateRunLink()
+        {
+            var link = new GameRunLink(flow, commander, player, world);
+            RunContentCatalog content = settings != null ? settings.RunContent : null;
+            if (content == null) return link;
+            link.Content = content;
+            var facilities = GetComponent<GameFacilities>();
+            link.Restorer = new GameRunRestorer(commander, player, world, GetComponent<GameUnitSpawner>(), content,
+                facilities != null ? facilities.StartConfig : null);
+            return link;
+        }
+
+        /// <summary>
+        /// 정해 둔 저장 계기면 런을 지금 슬롯에 저장한다(FLOW-02). 저장 시점은 <see cref="GameSession.RunSavePolicy"/>에서 바꾼다.
+        /// 슬롯 없이 Game 씬을 바로 실행했거나 런이 연결되지 않았으면 아무것도 하지 않는다.
+        /// </summary>
+        public bool SaveRun(RunSaveTrigger trigger)
+        {
+            if (GameSession.ActiveSlot < 0 || !GameSession.RunSavePolicy.Allows(trigger)) return false;
+            RunSnapshot snapshot = RunLink.CaptureSnapshot(trigger == RunSaveTrigger.RewardGranted ? 1 : 0);
+            return snapshot != null && GameSession.SaveRun(snapshot);
+        }
+
+        void SaveRunOnQuit()
+        {
+            if (flow != null && flow.Phase == GamePhase.Preparation) SaveRun(RunSaveTrigger.QuitDuringPreparation);
+        }
         /// <summary>아군 부대 사기 연결(B-8.2). 사기 설정이 없으면 null.</summary>
         public GameSquadMorale Morale => morale;
         GameSquadMorale morale;
@@ -138,8 +167,8 @@ namespace ProjectNeo.Flow
         public GamePrepGate PrepGate { get; private set; }
         /// <summary>전투 중 소모품 사용(PREP-04).</summary>
         public GameConsumables Consumables { get; private set; }
-        void OnEnable() => flow.PhaseChanged += OnPhaseChanged;
-        void OnDisable() => flow.PhaseChanged -= OnPhaseChanged;
+        void OnEnable() { flow.PhaseChanged += OnPhaseChanged; GameSession.Quitting += SaveRunOnQuit; }
+        void OnDisable() { flow.PhaseChanged -= OnPhaseChanged; GameSession.Quitting -= SaveRunOnQuit; }
         void Start() => OnPhaseChanged(flow.Phase);
 
         void OnPhaseChanged(GamePhase phase)
@@ -149,15 +178,21 @@ namespace ProjectNeo.Flow
                 battleRunning = false;
                 ClearEnemies();
                 RunLink.OnPreparation();
+                // 시작 재화는 첫 저장 전에 정해져야 한다. 되살린 런에는 다시 주지 않는다(FLOW-02).
+                var build = GetComponent<GameBuildEconomy>();
+                if (build != null && RunLink.State != null) build.OnRunReady(RunLink.WasRestored);
                 foreach (SiegeLadder ladder in ladders) { ladder.ResetBattle(); ladder.enabled = false; }
                 SetCannonsArmed(false);
                 StartCoroutine(RestoreWhenReady());
                 SpawnEnemies();
+                SaveRun(RunSaveTrigger.PreparationStart);
             }
             else if (phase == GamePhase.Battle)
             {
                 battleRunning = true;
                 BattleNumber++;
+                // 전투 입력을 만들기 전에 저장한다. 전투 중에 끄면 이 준비 상태로 돌아온다.
+                SaveRun(RunSaveTrigger.BattleStart);
                 RunLink.OnBattleStart();
                 foreach (SiegeLadder ladder in ladders) ladder.enabled = true;
                 schedule?.Reset();
@@ -168,6 +203,8 @@ namespace ProjectNeo.Flow
             {
                 battleRunning = false;
                 FreezeBattle();
+                // 패배로 런이 끝나면 이어 할 런이 없다.
+                if (phase == GamePhase.RunResult && GameSession.RunSavePolicy.deleteOnDefeat) GameSession.DeleteRunSave();
             }
         }
 

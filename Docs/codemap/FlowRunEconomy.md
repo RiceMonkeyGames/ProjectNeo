@@ -1,6 +1,6 @@
 # Runtime Codemap: Flow, Run, Economy, Facilities & Meta
 
-Last Updated: 2026-11-16 14:44:31 (KST)
+Last Updated: 2026-11-16 21:40:22 (KST)
 
 > Purpose: Class map for game flow, run state, economy, facilities, rewards, meta progression, and flow UI. | Parent: [codemap/README](README.md) | Related: [CombatAndSquads](CombatAndSquads.md), [design/PrepEconomyMeta](../design/PrepEconomyMeta.md)
 
@@ -8,6 +8,10 @@ Base path: `Assets/_Project/Scripts/Runtime/`. Assembly: `ProjectNeo.Runtime`. N
 
 | Folder | Key Classes | Role |
 |---|---|---|
+| Run | `RunSnapshot` + records, `RunState.Capture` / `TryValidate` / `Restore` (`RunStateSnapshot.cs`), `RunRestoreOptions` (`FLOW-02`) | Pure run save rules: the run as ids and numbers, validation before anything is created, and a restore that reproduces unit ids, seed, stock, upgrades and morale. |
+| Run | `IRunContentLookup`, `RunContentCatalog` (`FLOW-02`) | Id ↔ definition asset lookup. Catalog asset `Data/GameFlow/RunContent.asset` is filled by `Editor/RunSaveSetup`; castle pieces use recorded asset GUIDs. |
+| Run | `RunSaveStore`, `RunSaveFile`, `RunLoadResult`, `RunSaveStatus`, `RunSavePolicy`, `RunSaveTrigger` (`FLOW-02`) | `run_slotN.json` beside the meta files with the same backup/quarantine rules; `Discard` sets an unrestorable save aside. The policy switches each automatic save moment and delete-on-defeat. |
+| Flow | `GameRunRestorer`, `GameRunLink.Restorer` / `CaptureSnapshot` / `WasRestored`, `GameBattleController.SaveRun`, `GameSession` run API, `GameFlow.ResumeRun` (`FLOW-02`) | Scene side of continue: rebuilds castle and units from a snapshot and binds them; saves at preparation start, battle start, reward, quit during preparation; deletes on defeat. `GameBuildEconomy.OnRunReady` grants start funds once per new run. [History](../history/FLOW/FLOW-02.md). |
 | Stages | `WaveSchedule`, `WaveTiming`, `IWaveStartRule`, `TimedWaveStartRule` (`B-7.1`) | Pure wave timetable: releases each wave once in order as passed-in time advances, reports pending waves/units and seconds to the next wave; start condition is a replaceable rule; `RetreatAllowed` gates Q-30 retreat while waves remain (Q-52). |
 | Stages | `StageCatalog`, `StageDefinition`, `StageWave`, `StageWaveGroup`, `SpawnPointDefinition` (`B-7.1`) | Stage data assets in `Data/GameFlow/Stages/`: catalog → stage → waves (start seconds) → groups (enemy prefab, count, spawn point asset = build-grid cell). `StageFor(n)` repeats the last stage past the end. |
 | Stages | `EncounterPlan`, `EncounterWave`, `EncounterGroup` (`B-7.1`) | Neutral per-battle enemy plan; built `FromStage` or `FromGroups` (old single list as one wave at 0s). The only shape the battle and spawner read. |

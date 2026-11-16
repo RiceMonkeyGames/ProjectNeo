@@ -91,6 +91,18 @@ namespace ProjectNeo.Flow
             return economy;
         }
 
+        /// <summary>
+        /// 런 데이터가 씬에 붙은 직후 한 번 부른다(FLOW-02). 새 런이면 시작 재화를 바로 주어 첫 저장에 담기게 하고,
+        /// 저장에서 되살린 런이면 시작 재화를 다시 주지 않는다.
+        /// </summary>
+        public void OnRunReady(bool restored)
+        {
+            if (startFundsGranted) return;
+            if (!restored) { EnsureEconomy(); return; }
+            startFundsGranted = true;
+            EnsureEconomy()?.BeginPreparation();
+        }
+
         void OnPhaseChanged(GamePhase phase)
         {
             Dismantling = false;

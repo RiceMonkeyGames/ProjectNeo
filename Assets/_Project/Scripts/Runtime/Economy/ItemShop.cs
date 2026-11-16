@@ -85,6 +85,20 @@ namespace ProjectNeo.Economy
             Changed?.Invoke();
         }
 
+        /// <summary>저장된 매물과 잠금을 그대로 되살린다(FLOW-02). 다시 뽑지 않는다.</summary>
+        internal void RestoreStock(IReadOnlyList<ItemDefinition> items, IReadOnlyList<bool> locks)
+        {
+            stock.Clear();
+            locked.Clear();
+            for (int i = 0; items != null && i < items.Count; i++)
+            {
+                if (items[i] == null) continue;
+                stock.Add(items[i]);
+                locked.Add(locks != null && i < locks.Count && locks[i]);
+            }
+            Changed?.Invoke();
+        }
+
         /// <summary>이번 준비 단계에서 이미 rerollsDone번 리롤했을 때 다음 리롤의 골드(PREP-02).</summary>
         public int GetRerollCost(int rerollsDone) => config.GetRerollCost(rerollsDone);
 

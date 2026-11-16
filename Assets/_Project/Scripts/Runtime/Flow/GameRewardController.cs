@@ -63,6 +63,8 @@ namespace ProjectNeo.Flow
             if (metaConfig == null) meta.commanderXp += reward.CommanderXp;
             meta.unlockPoints += reward.UnlockPoints;
             GameSession.SaveMeta();
+            // 보상을 받은 런을 다음 스테이지 준비로 이어지게 저장한다. 여기서 꺼도 같은 전투의 보상을 다시 받지 못한다(FLOW-02).
+            battle.SaveRun(RunSaveTrigger.RewardGranted);
             LastReward = reward;
             RewardGranted?.Invoke(reward);
             return true;

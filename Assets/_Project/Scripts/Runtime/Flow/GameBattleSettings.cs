@@ -35,6 +35,10 @@ namespace ProjectNeo.Flow
         public SiegeSettings Siege => siege;
         public ProjectNeo.Morale.MoraleSettings Morale => morale;
         public System.Collections.Generic.IReadOnlyList<SiegeUnitGroup> Enemies => enemies;
+        [Tooltip("런 저장의 ID를 에셋으로 바꾸는 목록(FLOW-02). 비우면 런을 저장하지 않고 이어 하기도 되지 않는다.")]
+        [SerializeField] ProjectNeo.Run.RunContentCatalog runContent;
+        public ProjectNeo.Run.RunContentCatalog RunContent => runContent;
+        public void ConfigureRunContent(ProjectNeo.Run.RunContentCatalog catalog) => runContent = catalog;
         public ProjectNeo.Stages.StageCatalog Stages => stages;
         public bool RetreatWhileWavesPending => retreatWhileWavesPending;
         /// <summary>스테이지 편성과 웨이브 중 후퇴 여부를 바꾼다(에디터 설정·테스트용).</summary>

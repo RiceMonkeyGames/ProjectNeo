@@ -18,9 +18,26 @@ namespace ProjectNeo.UI
         [SerializeField] TMP_Text statusLabel;
         [SerializeField] RuntimeSystemFont font;
 
+        [SerializeField] UnityEngine.UI.Button continueButton;
+        [SerializeField] TMP_Text continueLabel;
+
         int selectedSlot;
         int deleteArmedSlot = NoSlot;
+        int newGameArmedSlot = NoSlot;
         string notice = string.Empty;
+
+        /// <summary>고른 슬롯에 이어 할 런 저장이 있는지(FLOW-02).</summary>
+        public bool CanContinue => GameSession.HasRunSave(selectedSlot);
+        /// <summary>새 게임을 한 번 눌러, 저장된 런을 버릴지 확인을 기다리는 중인지.</summary>
+        public bool IsNewGameArmed => newGameArmedSlot != NoSlot;
+        /// <summary>이어 하기 버튼에 지금 보이는 글. 버튼이 없으면 빈 문자열.</summary>
+        public string ContinueText => continueLabel != null ? continueLabel.text : string.Empty;
+
+        public void ConfigureContinue(UnityEngine.UI.Button button, TMP_Text label)
+        {
+            continueButton = button;
+            continueLabel = label;
+        }
 
         public int SelectedSlot => selectedSlot;
         /// <summary>삭제 버튼을 한 번 눌러 확인을 기다리는 중인지.</summary>
@@ -54,8 +71,24 @@ namespace ProjectNeo.UI
             if (!MetaSaveStore.IsValidSlot(slot)) return;
             selectedSlot = slot;
             deleteArmedSlot = NoSlot;
+            newGameArmedSlot = NoSlot;
             notice = string.Empty;
             Refresh();
+        }
+
+        /// <summary>고른 슬롯의 저장된 런을 이어 한다(FLOW-02). 런 저장이 없으면 아무 일도 없다.</summary>
+        public void ContinueGame()
+        {
+            if (SceneSwitcher.IsLoading) return;
+            deleteArmedSlot = NoSlot;
+            newGameArmedSlot = NoSlot;
+            if (!GameSession.ContinueRun(selectedSlot))
+            {
+                notice = "There is no run to continue.";
+                Refresh();
+                return;
+            }
+            SceneSwitcher.Load(catalog.GameScene);
         }
 
         /// <summary>고른 슬롯을 지운다. 처음 누르면 확인을 기다리고, 같은 슬롯에서 다시 누르면 지운다.</summary>
@@ -63,7 +96,9 @@ namespace ProjectNeo.UI
         {
             bool korean = Korean;
             MetaSaveStore store = GameSession.SaveStore;
-            if (store.Inspect(selectedSlot).Status == MetaLoadStatus.Empty)
+            newGameArmedSlot = NoSlot;
+            bool hasRunFile = GameSession.RunSaves.Inspect(selectedSlot).Status != ProjectNeo.Run.RunSaveStatus.Empty;
+            if (store.Inspect(selectedSlot).Status == MetaLoadStatus.Empty && !hasRunFile)
             {
                 deleteArmedSlot = NoSlot;
                 notice = korean ? "빈 슬롯입니다." : "This slot is empty.";
@@ -76,7 +111,9 @@ namespace ProjectNeo.UI
             else
             {
                 deleteArmedSlot = NoSlot;
-                notice = store.Delete(selectedSlot)
+                // 슬롯을 지우면 그 슬롯에서 진행 중이던 런 저장도 함께 지운다.
+                bool runDeleted = GameSession.RunSaves.Delete(selectedSlot);
+                notice = store.Delete(selectedSlot) && runDeleted
                     ? (korean ? $"슬롯 {selectedSlot + 1}을 지웠습니다." : $"Slot {selectedSlot + 1} deleted.")
                     : (korean ? "슬롯을 지우지 못했습니다." : "Could not delete the slot.");
             }
@@ -86,6 +123,17 @@ namespace ProjectNeo.UI
         public void StartGame()
         {
             if (SceneSwitcher.IsLoading) return;
+            // 저장된 런이 있으면 한 번 더 눌러야 버리고 새로 시작한다(FLOW-02).
+            if (GameSession.HasRunSave(selectedSlot) && newGameArmedSlot != selectedSlot)
+            {
+                newGameArmedSlot = selectedSlot;
+                deleteArmedSlot = NoSlot;
+                notice = "A run is in progress. Click New Game again to discard it.";
+                Refresh();
+                return;
+            }
+            if (GameSession.Flow.Phase != GamePhase.Title) return;
+            GameSession.RunSaves.Delete(selectedSlot);
             if (!GameSession.Flow.StartRun()) return;
             GameSession.SelectSlot(selectedSlot);
             SceneSwitcher.Load(catalog.GameScene);
@@ -110,13 +158,24 @@ namespace ProjectNeo.UI
             {
                 if (slotLabels[i] == null) continue;
                 string mark = i == selectedSlot ? "> " : "  ";
-                slotLabels[i].text = mark + Describe(i, store.Inspect(i), korean);
+                slotLabels[i].text = mark + Describe(i, store.Inspect(i), korean) + DescribeRun(i);
             }
+            ProjectNeo.Run.RunLoadResult run = GameSession.RunSaves.Inspect(selectedSlot);
+            if (continueButton != null) continueButton.interactable = run.HasRun;
+            if (continueLabel != null)
+                continueLabel.text = run.HasRun ? $"Continue (Stage {run.Snapshot.stageNumber})" : "Continue";
             if (deleteLabel != null)
                 deleteLabel.text = deleteArmedSlot == selectedSlot
                     ? (korean ? $"한 번 더 누르면 슬롯 {selectedSlot + 1} 삭제" : $"Click again to delete slot {selectedSlot + 1}")
                     : (korean ? "고른 슬롯 삭제" : "Delete selected slot");
             if (statusLabel != null) statusLabel.text = notice;
+        }
+
+        // 슬롯 글 뒤에 붙이는 진행 중인 런 표시. 런 저장이 없으면 빈 문자열. 새 UI 글은 영어 하나로 쓴다(UI-02 결정).
+        static string DescribeRun(int slot)
+        {
+            ProjectNeo.Run.RunLoadResult run = GameSession.RunSaves.Inspect(slot);
+            return run.HasRun ? $" - Stage {run.Snapshot.stageNumber} in progress" : string.Empty;
         }
 
         static string Describe(int slot, MetaLoadResult result, bool korean)

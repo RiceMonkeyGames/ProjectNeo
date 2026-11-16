@@ -119,6 +119,52 @@ namespace ProjectNeo.Flow
             return unit;
         }
 
+        /// <summary>
+        /// 저장된 런의 잡졸을 씬에 다시 만든다(FLOW-02). 런·부대에 넣는 일은 부르는 쪽이 한다.
+        /// <paramref name="gather"/>(부대가 모인 곳)가 있으면 그 주변에, 없으면 병영 앞에 서서 자리를 지킨다. 못 만들면 null.
+        /// </summary>
+        public UnitCombatAI SpawnRestoredSoldier(SoldierDefinition definition, Vector3? gather)
+        {
+            if (definition == null || definition.UnitPrefab == null) return null;
+            Vector3 origin = RestoreOrigin(FacilityType.TrainingGround, out Vector3 toward);
+            UnitCombatAI unit = Create(definition, origin);
+            if (unit == null) return null;
+            spawned++;
+            Vector3 point = SlotNear(gather ?? FrontOf(origin, toward));
+            Place(unit, point, point + (toward - origin));
+            unit.name = definition.Id + "_Restored" + spawned;
+            unit.gameObject.SetActive(true);
+            var agent = unit.GetComponent<NavMeshAgent>();
+            if (agent != null && agent.enabled) agent.Warp(point);
+            unit.SetDirective(UnitDirective.Hold);
+            return unit;
+        }
+
+        /// <summary>
+        /// 저장된 런의 고용 영웅을 씬에 다시 만든다(FLOW-02). 대장이면 부대가 모인 곳 주변에, 대기 영웅이면 주점 앞에 선다.
+        /// 켜진 채로 돌려주므로 영웅 캐릭터가 이미 있다. 못 만들면 null.
+        /// </summary>
+        public UnitCombatAI SpawnRestoredHero(HeroDefinition hero, Vector3? gather)
+        {
+            if (hero == null || hero.UnitPrefab == null) return null;
+            Vector3 origin = RestoreOrigin(FacilityType.Tavern, out Vector3 toward);
+            spawned++;
+            Vector3 point = SlotNear(gather ?? FrontOf(origin, toward));
+            UnitCombatAI unit = CreateHero(hero, point, point + (toward - origin));
+            if (unit == null) return null;
+            unit.name = hero.Id + "_RestoredHero" + spawned;
+            unit.SetDirective(UnitDirective.Hold);
+            return unit;
+        }
+
+        Vector3 RestoreOrigin(FacilityType facility, out Vector3 toward)
+        {
+            bool found = stations.TryGetValue(facility, out FacilityStation station);
+            Vector3 origin = found ? station.transform.position : transform.position;
+            toward = origin + (found ? station.transform.forward : Vector3.forward);
+            return origin;
+        }
+
         // 영웅 몸체를 꺼진 채 만들어 영웅 정의·AI·낙하 설정을 넣고, 제자리에 놓은 뒤 켠다. 켜야 영웅 캐릭터가 생긴다.
         UnitCombatAI CreateHero(HeroDefinition hero, Vector3 at, Vector3 lookAt)
         {

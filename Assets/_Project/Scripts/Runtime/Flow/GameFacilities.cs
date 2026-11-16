@@ -29,6 +29,8 @@ namespace ProjectNeo.Flow
         const int MaxInventoryRows = 8;
 
         [SerializeField] RunConfig startConfig;
+        /// <summary>새 런의 시작 설정(시설·거래·강화 수치). 저장된 런을 되살릴 때도 같은 수치를 쓴다(FLOW-02).</summary>
+        public RunConfig StartConfig => startConfig;
         [SerializeField] GamePhaseView phaseView;
         [SerializeField] GameObject panel;
         [SerializeField] TMP_Text title;

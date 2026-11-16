@@ -49,3 +49,4 @@ MonoBehaviour:
     m_Flags: 0
     m_Priority: 0
   consumableCooldown: 10
+  runContent: {fileID: 11400000, guid: 767a092b4d6561640ba8b7333e002ee2, type: 2}

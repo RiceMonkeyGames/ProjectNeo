@@ -114,6 +114,39 @@ namespace ProjectNeo.Walls
             return true;
         }
 
+        /// <summary>
+        /// 조각과 수성 무기를 모두 없애 빈 격자로 만든다(FLOW-02 저장된 성 되살리기). 무너짐·파괴 알림은 보내지 않고
+        /// 고정 성문도 없앤다. 이어서 <see cref="TryPlaceRestored"/>로 기록대로 다시 놓는다.
+        /// </summary>
+        public void ClearForRestore()
+        {
+            foreach (PlacedSiegeWeapon weapon in new List<PlacedSiegeWeapon>(weapons.Values))
+            {
+                Mounts.Remove(weapon.Mount.Id);
+                Discard(weapon, SiegeWeaponRemoval.Dismantled);
+            }
+            foreach (PlacedStructure body in new List<PlacedStructure>(structures.Values)) RemoveBody(body);
+            // 격자는 새로 만든다. 쓰던 격자는 고정 성문을 이미 등록했다고 기억해 성문을 다시 놓지 못한다.
+            Layout = new BuildLayout(grid);
+            Mounts = new MountLayout(Layout);
+            rebuildPending = true;
+            Changed?.Invoke();
+        }
+
+        /// <summary>
+        /// 저장된 조각 하나를 놓는다(FLOW-02). 아래층부터 순서대로 불러야 한다. 고정 성문도 놓고, 유닛을 들어 올리지 않는다.
+        /// </summary>
+        public bool TryPlaceRestored(BuildPieceDefinition definition, Vector2Int cell, int rotation, bool fixedGate,
+            out PlacedStructure body)
+        {
+            body = null;
+            if (definition == null || !Layout.TryPlace(definition, cell, rotation, out var placement, fixedGate)) return false;
+            body = CreateBody(placement);
+            rebuildPending = true;
+            Changed?.Invoke();
+            return true;
+        }
+
         // 미리보기는 유닛을 움직이지 않고, 확정한 실제 조각과 겹친 살아 있는 몸통만 옮긴다.
         void LiftOverlappingUnits(PlacedStructure structure)
         {
