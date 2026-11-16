@@ -20,7 +20,6 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 |---|---|---|---|---|
 | C-5 | Wave Preview & Hidden Enemy Intel | Waiting for Prerequisite | Unassigned | B-7.1 Done 2026-11-16 (stage data readable without a running battle). Following run contracts, display upcoming enemy types, counts, and hidden indicators in prep UI. Scouting rules clarified first. |
 | B-9.3 | M1 Full Integration, Iteration & Build Verification | Waiting for Prerequisite | Unassigned | Following B-4~8 integration, test repeated cycles of destruction, enemy variants, waves, morale, and outcomes; verify regressions and standalone build startup flow. |
-| COMBAT-04 | Cast & Interaction Interrupt System on Hit | In Progress | youngho | Branch `feature/combat-04`. Proposal 2026-11-14: taking enemy damage should interrupt active actions such as pushing ladders. Decisions needed before implementation: (1) target actions (ladder push/raise, cannon operation, battle-start hold, etc.), (2) trigger condition (any damage vs minimum damage/stagger threshold, cooldown), (3) progress handling on interrupt (reset vs settle from current tilt) and UI/feedback. |
 
 ---
 

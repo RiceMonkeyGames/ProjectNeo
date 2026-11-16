@@ -21,10 +21,12 @@ namespace ProjectNeo.Combat
         // 높은 곳에서 아래로 쏠 때의 사거리 보너스. 쏘는 쪽이 이 높이 이상 위에 있으면 사거리에 (1 + 보너스)를 곱한다. 0이면 변화 없음.
         [SerializeField, Min(0f)] float highGroundMinimumDrop = 1.5f;
         [SerializeField, Min(0f)] float highGroundRangeBonus = 0.25f;
+        [SerializeField, Min(0f)] float staggerPower = 10f;
         public float HighGroundMinimumDrop => highGroundMinimumDrop;
         public float HighGroundRangeBonus => highGroundRangeBonus;
         public float UpwardShotMinimumRise => upwardShotMinimumRise;
         public float UpwardShotDamageRatio => upwardShotDamageRatio;
+        public float StaggerPower => staggerPower;
         public float ImpactDelay => impactDelay;
         public float AttackHalfAngle => attackHalfAngle;
         public float Radius => radius;
@@ -41,7 +43,7 @@ namespace ProjectNeo.Combat
             GameObject projectilePrefab = null, float projectileSpeed = 18f,
             float projectileRadius = 0.08f, float projectileLifetime = 5f, float minimumDamage = 1f,
             float upwardShotDamageRatio = 1f, float upwardShotMinimumRise = 1.5f,
-            float highGroundRangeBonus = 0.25f, float highGroundMinimumDrop = 1.5f)
+            float highGroundRangeBonus = 0.25f, float highGroundMinimumDrop = 1.5f, float staggerPower = -1f)
         {
             var profile = CreateInstance<CombatProfile>();
             profile.impactDelay = Mathf.Max(0f, impactDelay);
@@ -58,6 +60,7 @@ namespace ProjectNeo.Combat
             profile.upwardShotMinimumRise = Mathf.Max(0f, upwardShotMinimumRise);
             profile.highGroundRangeBonus = Mathf.Max(0f, highGroundRangeBonus);
             profile.highGroundMinimumDrop = Mathf.Max(0f, highGroundMinimumDrop);
+            profile.staggerPower = staggerPower >= 0f ? staggerPower : (attackKind == AttackKind.Projectile ? 10f : 25f);
             return profile;
         }
     }
