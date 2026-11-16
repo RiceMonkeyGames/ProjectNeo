@@ -34,6 +34,7 @@
       "Read(./*.slnx)",
 
       "Read(./Assets/TextMesh Pro/**)",
+      "Read(./Assets/ThirdParty/**)",
       "Read(./Assets/Synty/**)",
       "Read(./Assets/Polygon*/**)",
       "Read(./Assets/Plugins/**)",
