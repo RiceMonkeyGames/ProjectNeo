@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/_Project/Scenes/Title.unity
+    guid: ac0c0b758ee6cbe48b804351c579e274
+  - enabled: 1
     path: Assets/_Project/Scenes/ConstructionPrototype.unity
     guid: b39e1fe6b13bbbf45b350931c87d753f
   - enabled: 1
@@ -23,9 +26,6 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/_Project/Scenes/WallCommandPrototype.unity
     guid: a2e126d953a27f64f81c67bb66dbe29b
-  - enabled: 1
-    path: Assets/_Project/Scenes/Title.unity
-    guid: ac0c0b758ee6cbe48b804351c579e274
   - enabled: 1
     path: Assets/_Project/Scenes/Game.unity
     guid: ff321af91d552184ba73ebbbd5332fa2

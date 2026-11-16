@@ -1,6 +1,6 @@
 # Team Division of Labor & Roadmap Governance
 
-Last Updated: 2026-11-13 13:17:37 (KST)
+Last Updated: 2026-11-16 17:37:56 (KST)
 
 > Purpose: Assignee ownership matrix, shared modification rights, and roadmap governance rules. | Parent: [INDEX](../INDEX.md) | Related: [Collaboration](../workflow/Collaboration.md), [Backlog](../Backlog.md)
 
@@ -14,8 +14,8 @@ Last Updated: 2026-11-13 13:17:37 (KST)
 Teammate scope (`B-6~B-9`) is our working split; confirm exact boundaries before touching shared contracts. Design questions go to the user first.
 
 - **Prototype vs real scenes (2026-11-11)**: `*Prototype` scenes stay as standalone demos; real game loop lives in `Title` and `Game`.
-- **G-0 / G-1 state**: Wired in `Title` and `Game`; both scenes appended to build list (first build scene still `ConstructionPrototype`). Default castle (2026-11-12): 80×100 grid (240×300m), 3m cells, up to 3 tiers, 96×96m castle, 90×90m courtyard, 120m northern field, 5 placeholder facilities, player start at south courtyard `(40, 34)`. Temporary G-1 defaults: 3 × 4 squads, reused `ConstructionHud`, no stage reset except survivor healing.
-- **Battle–flow interface (2026-11-12)**: `GameBattleController` starts on entering `GamePhase.Battle` via `GameSession.Flow.PhaseChanged` and calls `GameSession.Flow.FinishBattle` once on end. Change build list first scene only after notifying teammate. Only one person edits `Game.unity` at a time.
+- **G-0 / G-1 state**: Wired in `Title` and `Game`; both scenes appended to build list (first build scene is `Title` since QA-standalone-build, 2026-11-16; prototype scenes follow). Default castle (2026-11-12): 80×100 grid (240×300m), 3m cells, up to 3 tiers, 96×96m castle, 90×90m courtyard, 120m northern field, 5 placeholder facilities, player start at south courtyard `(40, 34)`. Temporary G-1 defaults: 3 × 4 squads, reused `ConstructionHud`, no stage reset except survivor healing.
+- **Battle–flow interface (2026-11-12)**: `GameBattleController` starts on entering `GamePhase.Battle` via `GameSession.Flow.PhaseChanged` and calls `GameSession.Flow.FinishBattle` once on end. Change build list first scene only after notifying teammate (changed to `Title` on user decision 2026-11-16). Only one person edits `Game.unity` at a time.
 
 ## Parallel Workflow Matrix (3-Developer Reference)
 

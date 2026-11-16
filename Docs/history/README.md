@@ -1,6 +1,6 @@
 # Past Verification History Index
 
-Last Updated: 2026-11-16 14:44:31 (KST)
+Last Updated: 2026-11-16 17:37:56 (KST)
 
 > Purpose: Route historical log lookups by Task ID prefix. | Parent: [INDEX](../INDEX.md) | Related: [Backlog-Done](../archive/Backlog-Done.md), [Status](../plan/Status.md)
 
@@ -18,7 +18,7 @@ Read this folder only when researching past design rationales, benchmarks, or ve
 - `Q/` — [Q-04-05](Q/Q-04-05.md), [Q-27](Q/Q-27.md), [Q-30](Q/Q-30.md), [Q-38](Q/Q-38.md), [Q-39](Q/Q-39.md), [Q-41](Q/Q-41.md), [Q-44](Q/Q-44.md)
 - `BUG/` — [BUG-wall-archer-los](BUG/BUG-wall-archer-los.md), [BUG-ladder-push-visual](BUG/BUG-ladder-push-visual.md), [BUG-ladder-fall-clipping](BUG/BUG-ladder-fall-clipping.md), [BUG-ladder-fall-test-after-gate-arch](BUG/BUG-ladder-fall-test-after-gate-arch.md), [BUG-wall-hold](BUG/BUG-wall-hold.md), [BUG-playmode-input-focus](BUG/BUG-playmode-input-focus.md), [BUG-wall-destination-replan](BUG/BUG-wall-destination-replan.md), [BUG-ally-no-retaliation](BUG/BUG-ally-no-retaliation.md), [BUG-stage2-enemies-idle](BUG/BUG-stage2-enemies-idle.md)
 - `PERF/` — [PERF-nav-query](PERF/PERF-nav-query.md)
-- `QA/` — [QA-ladder-controls](QA/QA-ladder-controls.md), [QA-game-loop](QA/QA-game-loop.md), [QA-opening-battle-balance](QA/QA-opening-battle-balance.md), [QA-victory-flow](QA/QA-victory-flow.md), [QA-smithy-popup](QA/QA-smithy-popup.md), [QA-build-zoom-ui-hover](QA/QA-build-zoom-ui-hover.md)
+- `QA/` — [QA-standalone-build](QA/QA-standalone-build.md), [QA-ladder-controls](QA/QA-ladder-controls.md), [QA-game-loop](QA/QA-game-loop.md), [QA-opening-battle-balance](QA/QA-opening-battle-balance.md), [QA-victory-flow](QA/QA-victory-flow.md), [QA-smithy-popup](QA/QA-smithy-popup.md), [QA-build-zoom-ui-hover](QA/QA-build-zoom-ui-hover.md)
 - `PREP/` — [PREP-04](PREP/PREP-04.md), [PREP-01](PREP/PREP-01.md), [PREP-02](PREP/PREP-02.md), [PREP-03](PREP/PREP-03.md), [PREP-05](PREP/PREP-05.md)
 - `FLOW/` — [FLOW-01](FLOW/FLOW-01.md)
 - `COMBAT/` — [COMBAT-01](COMBAT/COMBAT-01.md), [COMBAT-02](COMBAT/COMBAT-02.md), [COMBAT-03](COMBAT/COMBAT-03.md), [COMBAT-05](COMBAT/COMBAT-05.md)

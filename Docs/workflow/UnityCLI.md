@@ -1,6 +1,6 @@
 # Unity CLI Workflow
 
-Last Updated: 2026-11-13 13:58:01 (KST)
+Last Updated: 2026-11-16 17:37:56 (KST)
 
 > Purpose: Unity CLI 1.0.0-beta.17 commands for compile, tests, benchmarks, builds, and Editor-API asset edits. | Parent: [INDEX](../INDEX.md) | Related: [Principles](Principles.md), [Scenes](../codemap/Scenes.md)
 
@@ -75,6 +75,7 @@ unity command package add --caller plugin --skill unity-package-management --nam
 - Shell heredocs containing non-ASCII characters across batch C# file generation have caused encoding corruption; write files individually via dedicated tools.
 - Do not merge `2>&1` when parsing CLI output; read stdout only.
 - Standalone builds may automatically mutate URP assets under `Assets/Settings/` and files in `ProjectSettings/`.
+- **Restore then reimport (QA-standalone-build)**: if you `git checkout` `Assets/Settings/UniversalRenderPipelineGlobalSettings.asset` after a build while the Editor stays open, reimport it before the next build (`UnityEditor.AssetDatabase.ImportAsset("Assets/Settings/UniversalRenderPipelineGlobalSettings.asset", UnityEditor.ImportAssetOptions.ForceUpdate); UnityEditor.AssetDatabase.Refresh();`). Without the reimport the next build succeeds but the player cannot create the render pipeline (`Cannot create required material because shader is null`, repeating `NullReferenceException` in `Blitter.Initialize`). Always boot the player once and check its log after building.
 ## Destination-Wall Collapse Regression
 
 - Source: `Assets/Tests/PlayMode/ConstructionPlayTests.cs`; methods `MoveDirective_ReplansWhenDestinationWallDisappears` and `EngageDirective_ReplansWhenDestinationWallDisappears`. Each has rebuild-delay cases 0–7 frames at 1/30s. Expected: all 16 reach within 0.6m of the exposed ground under the destroyed wall and move >1m. Move ends in Hold; Engage stops while retaining Engage.
