@@ -24,6 +24,7 @@ namespace ProjectNeo.Siege
         SiegeAttackerBrain climber;
         readonly LadderTraffic<CharacterActor> traffic = new LadderTraffic<CharacterActor>();
         readonly List<CharacterActor> removedRequests = new List<CharacterActor>();
+        readonly Dictionary<CharacterActor, LadderPushInterruptHandle> aiPushHandles = new Dictionary<CharacterActor, LadderPushInterruptHandle>();
         CharacterActor sharedRaiser;
         static readonly List<SiegeLadder> active = new List<SiegeLadder>();
         public static IReadOnlyList<SiegeLadder> Active => active;
@@ -62,9 +63,11 @@ namespace ProjectNeo.Siege
             State.Topple();
             traffic.Clear();
             sharedRaiser = null;
+            ClearAiPushHandles();
         }
         void OnDestroy()
         {
+            ClearAiPushHandles();
             if (State != null)
             {
                 State.Toppled -= OnToppled;
@@ -96,7 +99,14 @@ namespace ProjectNeo.Siege
         {
             State.Topple();
             traffic.Clear(); sharedRaiser = null;
+            ClearAiPushHandles();
             crowd.Clear(); raiser = null; climber = null; supportId = 0; PlayerCanPush = false;
+        }
+
+        void ClearAiPushHandles()
+        {
+            foreach (var pair in aiPushHandles) pair.Value.Dispose();
+            aiPushHandles.Clear();
         }
         public Vector3 OutwardWorld => world.transform.TransformDirection(new Vector3(outward.x, 0f, outward.y)).normalized;
 
@@ -256,6 +266,7 @@ namespace ProjectNeo.Siege
         void Update()
         {
             PlayerCanPush = false;
+            TickAiPushHandles(Time.deltaTime);
             CleanTraffic();
             if (!HasWall)
             {
@@ -270,6 +281,15 @@ namespace ProjectNeo.Siege
             if (State.Phase == LadderPhase.Up) FindPushers(out pushers, out blocked);
             State.Tick(Time.deltaTime, raiser != null || sharedRaiser != null, pushers, blocked);
             if (State.Phase == LadderPhase.Up) { raiser = null; sharedRaiser = null; }
+        }
+
+        void TickAiPushHandles(float deltaTime)
+        {
+            foreach (var pair in aiPushHandles)
+            {
+                pair.Value.SetPushing(false, settings.LadderPushPoise, settings.LadderPushInterruptCooldown);
+                pair.Value.Tick(deltaTime);
+            }
         }
 
         /// <summary>위쪽 끝에서 함께 밀 수 있는 아군 수와, 올라온 적 때문에 밀기가 막혔는지 센다.</summary>
@@ -301,7 +321,19 @@ namespace ProjectNeo.Siege
                 else
                 {
                     var ai = actor.GetComponent<UnitCombatAI>();
-                    if (ai != null && ai.Target == null && !actor.IsAttacking && !FriendlyUse) pushers++;
+                    if (ai != null && ai.Target == null && !actor.IsAttacking && !FriendlyUse)
+                    {
+                        if (!aiPushHandles.TryGetValue(actor, out var handle))
+                        {
+                            handle = new LadderPushInterruptHandle(actor);
+                            aiPushHandles[actor] = handle;
+                        }
+                        if (!handle.IsOnCooldown)
+                        {
+                            handle.SetPushing(true, settings.LadderPushPoise, settings.LadderPushInterruptCooldown);
+                            pushers++;
+                        }
+                    }
                 }
             }
             if (blocked) PlayerCanPush = false;

@@ -8,7 +8,7 @@ using UnityEngine.InputSystem;
 namespace ProjectNeo.Siege
 {
     /// <summary>아군 경로와 플레이어 입력을 공용 사다리 대기열에 연결한다.</summary>
-    public sealed class LadderTraveller : MonoBehaviour
+    public sealed class LadderTraveller : MonoBehaviour, IInterruptibleAction
     {
         CharacterActor actor;
         NavMeshAgent agent;
@@ -16,13 +16,21 @@ namespace ProjectNeo.Siege
         PlayerInputController player;
         UnitCombatAI ai;
         SiegeLadder ladder, interaction;
-        float progress, held, retry;
+        float progress, held, retry, pushInterruptCooldown, interruptNoticeTimer;
         bool ascending, queuedPlayer, deferred, deferredPoint, agentWasEnabled, motorWasEnabled, tapBoardEligible;
         UnitDirective nextDirective;
         Vector3 nextPoint;
         NavMeshPath path;
         public bool IsTraversing { get; private set; }
         public string PlayerHint { get; private set; } = "";
+        public bool HasInterruptNotice => interruptNoticeTimer > 0f;
+        public ActionPoise InterruptPoise => interaction != null
+            && interaction.State.Phase == LadderPhase.Up
+            && interaction.IsNear(actor, true)
+            && IsHoldingTopple(interaction)
+            && pushInterruptCooldown <= 0f
+            ? ActionPoise.Interruptible(interaction.Settings.LadderPushPoise)
+            : ActionPoise.Uninterruptible;
 
         void Awake()
         {
@@ -31,15 +39,33 @@ namespace ProjectNeo.Siege
             ai = GetComponent<UnitCombatAI>();
             path = new NavMeshPath();
         }
-        void OnEnable() { if (actor != null) actor.Died += OnDied; }
+        void OnEnable()
+        {
+            if (actor == null) return;
+            actor.Died += OnDied;
+            actor.RegisterInterruptible(this);
+        }
         void OnDisable()
         {
-            if (actor != null) actor.Died -= OnDied;
+            if (actor != null)
+            {
+                actor.Died -= OnDied;
+                actor.UnregisterInterruptible(this);
+            }
             if (IsTraversing) Drop();
             CancelWaiting();
         }
         void OnDied() { if (IsTraversing) Drop(); else CancelWaiting(); }
-        public bool IsHoldingTopple(SiegeLadder target) => interaction == target && held >= target.Settings.LadderTapSeconds;
+        public bool IsHoldingTopple(SiegeLadder target) => pushInterruptCooldown <= 0f && interaction == target && held >= target.Settings.LadderTapSeconds;
+
+        public void InterruptAction()
+        {
+            if (interaction == null || interaction.State.Phase != LadderPhase.Up || !IsHoldingTopple(interaction)) return;
+            pushInterruptCooldown = interaction.Settings != null ? interaction.Settings.LadderPushInterruptCooldown : 0.3f;
+            held = 0f;
+            tapBoardEligible = false;
+            interruptNoticeTimer = 1.5f;
+        }
 
         public bool Defer(UnitDirective directive, bool point, Vector3 destination)
         {
@@ -58,7 +84,7 @@ namespace ProjectNeo.Siege
             if (IsTraversing) Drop();
             CancelWaiting();
             if (interaction != null) interaction.StopRaising(actor);
-            interaction = null; held = 0f; PlayerHint = "";
+            interaction = null; held = 0f; pushInterruptCooldown = 0f; interruptNoticeTimer = 0f; PlayerHint = "";
         }
         public static bool HandleAI(UnitCombatAI unit)
         {
@@ -125,6 +151,8 @@ namespace ProjectNeo.Siege
         bool TickPlayer(bool captured, float vertical)
         {
             PlayerHint = "";
+            if (pushInterruptCooldown > 0f) pushInterruptCooldown = Mathf.Max(0f, pushInterruptCooldown - Time.deltaTime);
+            if (interruptNoticeTimer > 0f) interruptNoticeTimer = Mathf.Max(0f, interruptNoticeTimer - Time.deltaTime);
             if (IsTraversing)
             {
                 PlayerHint = "W/S · 사다리 오르내리기";
@@ -153,10 +181,18 @@ namespace ProjectNeo.Siege
             bool pressed = Keyboard.current != null && Keyboard.current.fKey.isPressed;
             if (pressed)
             {
-                // 자동 안착 중 시작한 입력은 완료 직후 놓아도 탑승 입력으로 바뀌지 않는다.
-                if (held == 0f) tapBoardEligible = nearest.State.CanBoard;
-                held += Time.deltaTime;
-                if (!upper && nearest.State.Phase != LadderPhase.Up) nearest.TryRaise(actor);
+                if (upper && pushInterruptCooldown > 0f)
+                {
+                    held = 0f;
+                    tapBoardEligible = false;
+                }
+                else
+                {
+                    // 자동 안착 중 시작한 입력은 완료 직후 놓아도 탑승 입력으로 바뀌지 않는다.
+                    if (held == 0f) tapBoardEligible = nearest.State.CanBoard;
+                    held += Time.deltaTime;
+                    if (!upper && nearest.State.Phase != LadderPhase.Up) nearest.TryRaise(actor);
+                }
             }
             else
             {

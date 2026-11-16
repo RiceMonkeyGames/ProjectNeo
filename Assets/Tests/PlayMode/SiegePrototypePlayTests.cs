@@ -810,5 +810,80 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(SiegeOutcome.Defeat, director.Outcome);
             Assert.AreEqual(SiegePhase.Finished, director.Phase);
         }
+
+        [UnityTest]
+        public IEnumerator Ladder_AllyPushInterruptedByRangedHit_SettlesBackAndEnforcesCooldown()
+        {
+            yield return CloseWalls();
+            IsolateSharedLadder();
+            SiegeLadder ladder = ladders[0];
+            var state = ladder.State;
+            state.Tick(0.1f, true, false, false);
+            state.Tick(ladder.Settings.LadderRaiseSeconds, true, false, false);
+            Assert.AreEqual(LadderPhase.Up, state.Phase);
+
+            // 성벽 위에서 사다리를 미는 아군 1명과, 원거리 경직도를 가진 적 공격자 1명 배치
+            int meleeSquad = SquadOf(AttackKind.Melee);
+            UnitCombatAI allyAi = center.Squads[meleeSquad].Members[0];
+            foreach (var squad in center.Squads)
+                foreach (var member in squad.Members)
+                    if (member != allyAi)
+                    {
+                        member.enabled = false;
+                        member.GetComponent<NavMeshAgent>().Warp(WallTop(0));
+                    }
+            CharacterActor ally = allyAi.Actor;
+            allyAi.GetComponent<NavMeshAgent>().Warp(ladder.TopPoint);
+            allyAi.enabled = false;
+            CharacterActor archer = PlaceStillEnemy(SiegeAttackerRole.Archer, ladder.BasePoint + ladder.OutwardWorld * 6f);
+            bool interrupted = false;
+            ally.ActionInterrupted += (_, __) => interrupted = true;
+
+            int frames = 0;
+            while (state.PushProgress < 0.05f && frames++ < 180) yield return null;
+            Assert.Greater(state.PushProgress, 0.04f, "아군이 사다리 밀기를 시작하지 못했다.");
+            Assert.IsFalse(state.IsSettling, "균형점을 넘기기 전에 피격되어야 한다.");
+
+            float progressAtHit = state.PushProgress;
+            ally.ReceiveDamage(1f, archer);
+            Assert.IsTrue(interrupted, "원거리 피격으로 사다리 밀기가 중단되지 않았다.");
+
+            // 중단 후 0.3초 재시도 방지 동안에는 밀기 대신 성벽 쪽으로 다시 걸쳐져야 한다.
+            yield return new WaitForSeconds(0.15f);
+            Assert.Less(state.PushProgress, progressAtHit, "중단 후 사다리가 성벽으로 되돌아가지 않았다.");
+
+            // 0.3초 쿨다운이 지난 뒤에는 다시 밀기를 재개할 수 있어야 한다.
+            yield return new WaitForSeconds(0.25f);
+            float afterCooldown = state.PushProgress;
+            frames = 0;
+            while (state.PushProgress <= afterCooldown && frames++ < 60) yield return null;
+            Assert.Greater(state.PushProgress, afterCooldown, "0.3초 쿨다운 후 사다리 밀기가 재개되지 않았다.");
+        }
+
+        [UnityTest]
+        public IEnumerator Ladder_EnemyRaiseNotInterruptedByHit()
+        {
+            yield return CloseWalls();
+            IsolateSharedLadder();
+            SiegeLadder ladder = ladders[0];
+            var state = ladder.State;
+            CharacterActor enemy = PlaceStillEnemy(SiegeAttackerRole.Ladder, ladder.BasePoint);
+            var brain = enemy.GetComponent<SiegeAttackerBrain>();
+            brain.Bind(world, new[] { ladder }, Vector2Int.up);
+            brain.enabled = true;
+            CharacterActor ally = center.Squads[SquadOf(AttackKind.Melee)].Members[0].Actor;
+            bool interrupted = false;
+            enemy.ActionInterrupted += (_, __) => interrupted = true;
+
+            int frames = 0;
+            while (state.RaiseProgress < 0.05f && frames++ < 120) yield return null;
+            float beforeHit = state.RaiseProgress;
+            Assert.Greater(beforeHit, 0.04f, "적이 사다리 올리기를 시작하지 못했다.");
+
+            enemy.ReceiveDamage(1f, ally);
+            Assert.IsFalse(interrupted, "사다리 올리기는 피격으로 중단되면 안 된다.");
+            yield return null;
+            Assert.Greater(state.RaiseProgress, beforeHit, "피격 후 사다리 올리기 진행이 멈췄다.");
+        }
     }
 }

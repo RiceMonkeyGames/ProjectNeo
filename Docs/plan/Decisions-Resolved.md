@@ -1,12 +1,15 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-15 22:00:57 (KST)
+Last Updated: 2026-11-16 11:47:49 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
 ## Resolved `Q-*` Table
 
+COMBAT-04 (2026-11-16): User approved a data-driven single-hit poise vs stagger threshold system (`IsInterruptible && incomingStagger >= actionPoise`). Initial scope covers ladder pushing/raising (player, allies, enemies); ladder pushing is interruptible by both ranged and melee hits and settles back onto the wall before the balance point, whereas ladder raising is uninterruptible. Interrupted units have a `0.3s` re-interaction cooldown, and player interruptions show a temporary test HUD notice. [Rule](../design/Combat.md).
+
 Cannon usability (SIEGE-07, 2026-11-15): The user delegated the three open choices to the agent's recommendation, to be revised after playtest if needed. Chosen: crosshair color state plus reload bar/text under the crosshair; the barrel follows the player's aim (no rotate keys); manned traverse ±90° with a cosmetic 180°/s barrel swivel; auto-fire arc ±45° and range 6–60m unchanged. [Rule](../design/WallsAndSiege.md), [history](../history/SIEGE/SIEGE-07.md).
+
 Wall-top archers (BUG-wall-archer-los, 2026-11-15): The user delegated the three open choices to the agent's recommendation after reproduction. Chosen: (1) high-ground range bonus on, +25% from a 1.5m drop, no damage bonus; (2) no line-of-sight exception and no stepping to the wall edge (reproduction showed the footing exemption already works and the edge protects defenders); (3) `Hold` units with neither a shot nor a path stay on post. Arrow flight now covers the aimed point of an in-range target. [Rule](../design/Combat.md), [history](../history/BUG/BUG-wall-archer-los.md).
 
 COMBAT-03 (2026-11-14): User chose Panic retreat to a point and waiting there until battle end; no automatic return or new orders during the battle. Panic stays in combat and differs from morale-0 rout/exit. Create a runtime `PanicRetreatPoint` at the existing courtyard retreat location. Shared-file edits to SquadCommander/SquadCommandCenter/GameSquadMorale/SquadCommandHud are available (user confirmed no other active editor); CharacterActor and UnitCombatAI use existing APIs. [Rule](../design/MoraleAndWave.md).

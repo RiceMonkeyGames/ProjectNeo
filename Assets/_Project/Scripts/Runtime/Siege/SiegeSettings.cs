@@ -78,6 +78,8 @@ namespace ProjectNeo.Siege
         // 사다리에서 떨어질 때 레일 외형과 겹치지 않도록 확보하는 최소 바깥 간격과 수평 낙하 속도.
         [SerializeField, Min(0f)] float ladderFallClearance = 0.55f;
         [SerializeField, Min(0f)] float ladderFallOutwardSpeed = 3.5f;
+        [SerializeField, Min(0f)] float ladderPushPoise = 10f;
+        [SerializeField, Min(0f)] float ladderPushInterruptCooldown = 0.3f;
 
         [Header("적 판단")]
         [SerializeField, Min(0.05f)] float attackerDecisionInterval = 0.5f;
@@ -116,6 +118,8 @@ namespace ProjectNeo.Siege
         public float LadderCrowdPenalty => ladderCrowdPenalty;
         public float LadderFallClearance => ladderFallClearance;
         public float LadderFallOutwardSpeed => ladderFallOutwardSpeed;
+        public float LadderPushPoise => ladderPushPoise;
+        public float LadderPushInterruptCooldown => ladderPushInterruptCooldown;
         public float AttackerDecisionInterval => attackerDecisionInterval;
         public float GateStandOffset => gateStandOffset;
         public float GateSpread => gateSpread;
