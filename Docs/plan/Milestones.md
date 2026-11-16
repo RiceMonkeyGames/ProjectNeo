@@ -1,6 +1,6 @@
 # Project Milestones & M2 Breakdown
 
-Last Updated: 2026-11-13 13:17:37 (KST)
+Last Updated: 2026-11-16 13:41:43 (KST)
 
 > Purpose: M0–M7 roadmap, M1→M2 criteria, M2 sub-batches, and M3+ detailing rules. | Parent: [INDEX](../INDEX.md) | Related: [Status](Status.md), [M1](M1.md), [Backlog](../Backlog.md)
 
@@ -51,13 +51,13 @@ flowchart LR
 | D-5 | Shop (tier seed rolls, buy/sell) | D-0 / Q-34 | **Done**: Deterministic per seed; 50% sell ratio. | |
 | D-0b | Spawning Run Grunts into Scene (`SoldierDefinition.UnitPrefab`, `RunState.TryRecruit`, `GameUnitSpawner`) | C-1~2 / Q-36 | **Done (2026-11-13)**: Recruited grunts spawn in front of facility, walk to squad, join battle. | `SoldierDefinition`, `SquadCommandCenter`, `SquadCommander`, `PlaceholderSquadMarkers`, `GameRunLink`, `Game.unity` |
 | D-4 | Barracks (recruit grunts, choose squad, auto level training buffs) | D-0, D-0b, D-1 / Q-36, Q-37 | **Done (2026-11-13)**: Recruits pay gold, apply Lv2 +10% / Lv3 +20% HP & attack. | `CharacterActor` |
-| D-8 | Squad Organization (reassign grunts, hero captains, caps) | D-0, D-0b / Q-32, Q-36 | UI rearrangements reflect into battle commands. | `SquadCommandCenter` |
-| D-3 | Tavern (hero pool rolls, hire, captain swap, hero prefab/spawning moved from D-0b) | D-0, D-0b, D-8 / Q-34, Q-36 | Hired heroes spawn at tavern, walk to squad as captain; permadeath applies. | `HeroDefinition`, `SquadCommandCenter` |
+| D-8 | Squad Organization (reassign grunts, hero captains, caps) | D-0, D-0b / Q-32, Q-36 | **Done**: UI rearrangements reflect into battle commands. | `SquadCommandCenter` |
+| D-3 | Tavern (hero pool rolls, hire, captain swap, hero prefab/spawning moved from D-0b) | D-0, D-0b, D-8 / Q-34, Q-36 | **Done**: Hired heroes spawn at tavern, walk to squad as captain; permadeath applies. | `HeroDefinition`, `SquadCommandCenter` |
 | D-7 | Equipment (player equip UI, `Character` binding) | D-0 (heroes: D-3) / Q-31 | **Done**: Player equip UI (`I`) alters stats in scene (hero equip post-D-3). | `CharacterActor` |
-| D-6 | Blacksmith (craft, upgrade, sell equipment) | D-0, D-1, D-7 / Q-35 | Craft via materials/gold; upgrades boost item stats. | `ItemInstance` |
+| D-6 | Blacksmith (craft, upgrade, sell equipment) | D-0, D-1, D-7 / Q-35 | **Done** (upgrades via PREP-01): Craft via materials/gold; upgrades boost item stats. | `ItemInstance` |
 | D-2 | Build Economy (build/demolish/repair gold) | C-1~2 / Costs | **Done**: Gold spent/refunded in prep; locked in battle. | `ConstructionWorld`, `PlacementController` |
 
-Recommended remaining order: `D-8` → `D-3` → `D-6` (plus hero equip follow-up). Consumable use (`Q-12`) and unlock point spending (`Q-07`) are outside this batch.
+All D batch tasks are Done (2026-11-16 check against [Backlog-Done](../archive/Backlog-Done.md)). Consumable use shipped as PREP-04; skills (`Q-12`, COMBAT-06) and unlock point spending (`Q-07`, META-02) are tracked in [Backlog](../Backlog.md).
 
 ## When to Detail M3 and Later
 

@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-16 12:49:16 (KST)
+Last Updated: 2026-11-16 13:41:43 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -22,6 +22,12 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 | SIEGE-01 | Link Pending Spawns to Win/Loss Evaluation | Waiting for Prerequisite | Unassigned | Formerly `B-9.2-wave` (fulfills `B-9.2` wave-spawn link). After B-7.1, prevent premature victory if enemies remain to spawn; ensure battle termination and outcomes trigger exactly once. |
 | C-5 | Wave Preview & Hidden Enemy Intel | Waiting for Prerequisite | Unassigned | Following B-7.1 and run contracts, display upcoming enemy types, counts, and hidden indicators in prep UI. Scouting rules clarified first. |
 | B-9.3 | M1 Full Integration, Iteration & Build Verification | Waiting for Prerequisite | Unassigned | Following B-4~8 integration, test repeated cycles of destruction, enemy variants, waves, morale, and outcomes; verify regressions and standalone build startup flow. |
+| QA-standalone-build | Standalone Build Startup Flow Check | Waiting | Unassigned | Registered 2026-11-16 from [Status](plan/Status.md) remaining scope: most Done tasks record "standalone build unverified". Build the Windows player with the existing build script and check Title → Game → prep → battle → result once. Changing the first build scene requires notifying the teammate first ([Team](plan/Team.md)). Independent of B-7.1; full M1 regression stays in B-9.3. |
+| QA-physical-input | Physical-Input Manual Play Sweep | Waiting | Unassigned | Registered 2026-11-16: user-driven Editor play pass over the manual checks still recorded as unverified in history — PREP-01 (smithy upgrades), PREP-04 (`Q` potion), SIEGE-07 (cannon crosshair/traverse), COMBAT-03 (morale HUD/Panic), SIEGE-04 (ladder keys/HUD), FLOW-01 (hold `B`). Record pass/fail per item; register `BUG-<slug>` rows for failures. No code changes expected. |
+| META-01 | Meta Progression Disk Persistence | Waiting | Unassigned | Registered 2026-11-16: meta save is mandatory (Q-13); mid-run save stays out of scope until Q-13 is decided. First M3 task, overlapping reserved `E-1~4`; save targets, timing, versioning, and failure handling ([Milestones](plan/Milestones.md) M3 detailing) must be confirmed with the user at claim time. Meta state survives an application restart; pure C# rules covered by EditMode tests. |
+| META-02 | Runtime Perk Injection & Reward Routing | Pending Decision | Unassigned | Registered 2026-11-16: apply perk payloads to real run/battle stats and route victory unlock points. Blocked by Q-06 (perk allocation timing/pause) and Q-07 (unlock point distribution timing). |
+| COMBAT-06 | Minimal Hero/Active Skill Execution | Pending Decision | Unassigned | Registered 2026-11-16: skills exist as identifiers only. Blocked by Q-12 (skill rules, cooldowns, targeting, perk effects). Shared combat core edits need teammate coordination. |
+| SIEGE-08 | Construction Delays | Pending Decision | Unassigned | Registered 2026-11-16 (formerly roadmap bundle `C-6` construction pacing). No delay rule is recorded in `Docs/design/`; the user must decide whether builds take time, how long, and whether it applies in prep only. |
 
 ---
 
