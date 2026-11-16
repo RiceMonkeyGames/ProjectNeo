@@ -1,6 +1,6 @@
 # Game Design: Morale, Rout & Wave Preview
 
-Last Updated: 2026-11-16 11:58:03 (KST)
+Last Updated: 2026-11-16 13:49:52 (KST)
 
 > Purpose: Ally Breaking Point morale, enemy morale, rout/exit accounting, and wave preview rules. | Parent: [design/README](README.md) | Related: [Combat](Combat.md), [OpenQuestions](OpenQuestions.md)
 
@@ -90,7 +90,7 @@ Layering, so each part can change alone:
 3. **Encounter plan** (plain data): the battle reads one neutral plan built either from a stage asset or from the old single enemy list, so prototype scenes and existing tests keep working unchanged.
 4. **Spawner + battle controller** (scene): places units for a group and releases them when the timetable says so.
 
-Interim stage compositions are placeholders for tuning, not balance decisions.
+The three stage compositions created with B-7.1 were accepted by the user after a balance check on 2026-11-16; they stay data in the stage assets and can be retuned without code changes.
 
 ## Wave Preview
 
