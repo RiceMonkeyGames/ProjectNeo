@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-16 15:03:30 (KST)
+Last Updated: 2026-11-16 15:40:36 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -18,6 +18,7 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 
 | Task ID | Description | Status | Assignee | Completion Criteria & Prerequisites |
 |---|---|---|---|---|
+| COMBAT-07 | Hooks for Morale Skills, Captains, and Perk Effects | In Progress | youngho | Branch `feature/combat-07`. Normalized from M1 roadmap `B-8.3` (prerequisites B-8.1, B-8.2, COMBAT-03 Done). Verify that a sample morale boost applies once to a real squad and unsubscribes cleanly (full skills in `COMBAT-06` / `META-02`). |
 | C-5 | Wave Preview & Hidden Enemy Intel | Waiting for Prerequisite | Unassigned | B-7.1 Done 2026-11-16 (stage data readable without a running battle). Following run contracts, display upcoming enemy types, counts, and hidden indicators in prep UI. Scouting rules clarified first. |
 | B-9.3 | M1 Full Integration, Iteration & Build Verification | Waiting for Prerequisite | Unassigned | Following B-4~8 integration, test repeated cycles of destruction, enemy variants, waves, morale, and outcomes; verify regressions and standalone build startup flow. |
 | QA-standalone-build | Standalone Build Startup Flow Check | Waiting | Unassigned | Registered 2026-11-16 from [Status](plan/Status.md) remaining scope: most Done tasks record "standalone build unverified". Build the Windows player with the existing build script and check Title → Game → prep → battle → result once. Changing the first build scene requires notifying the teammate first ([Team](plan/Team.md)). Independent of B-7.1; full M1 regression stays in B-9.3. |
