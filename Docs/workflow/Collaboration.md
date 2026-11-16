@@ -1,6 +1,6 @@
 # Collaboration, Backlog & Task ID Rules
 
-Last Updated: 2026-11-16 21:12:35 (KST)
+Last Updated: 2026-11-16 21:40:06 (KST)
 
 > Purpose: Team workflow, Task ID rules, shared file locks, and `.claude` boundaries. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [Team](../plan/Team.md)
 
@@ -61,7 +61,7 @@ Avoid opening one project folder in multiple editor instances; use `--project-pa
 
 Licensed third-party assets (Synty packs, paid Asset Store content) live in the **private** repository `RiceMonkeyGames/ProjectNeo-Assets`, mounted as a git submodule at `Assets/ThirdParty` (`.gitmodules` uses the relative URL `../ProjectNeo-Assets.git`, so it follows the main remote's SSH/HTTPS scheme). This keeps the main repository publishable without redistributing licensed files ([TOOL-asset-submodule](../history/TOOL/TOOL-asset-submodule.md)).
 - **Import location**: import every third-party package under `Assets/ThirdParty/` (e.g. `Assets/ThirdParty/Synty/...`). Never import licensed assets anywhere else in the main repository: once committed there they stay in its history even after moving.
-- **Clone**: `git clone --recurse-submodules <ProjectNeo URL>`; existing clones run `git submodule update --init --recursive`. Each member needs read access to the private repository. Optional: `git config submodule.recurse true` so checkout/pull update the submodule automatically.
+- **Clone**: `git clone --recurse-submodules <ProjectNeo URL>`; existing clones run `git submodule update --init --recursive`. Each member needs read access to the private repository. Optional: `git config submodule.recurse true` so checkout/pull update the submodule automatically. Agents check `git submodule status` at session start and after pull/merge/branch switch and run the update themselves when it shows `-` or `+` ([AGENTS.md](../../AGENTS.md) "Session Start: Third-Party Asset Submodule").
 - **No Git LFS in the asset repository**: third-party packs rarely change, so binaries are stored as regular git objects (`binary` attribute) to avoid LFS storage/bandwidth quotas (initial import ~1.36 GB, ~965 MB of it LFS-type files). Keep every file under GitHub's 100 MB per-file limit. The main repository keeps LFS for team-authored binaries.
 - **Bundled libraries**: packs sometimes ship code libraries next to their art (e.g. the HUD pack's `Unity UI Extensions`). Check they compile on the project's Unity version; if not, keep only what the pack references (`AssetDatabase.GetDependencies`) and record it in the task history ([TOOL-asset-submodule](../history/TOOL/TOOL-asset-submodule.md)).
 - **Commit order**: commit and push inside `Assets/ThirdParty` first (asset files **with** their `.meta` files), then commit the updated submodule pointer (`git add Assets/ThirdParty`) in the main repository. Pushing the main repository with a pointer to an unpushed submodule commit breaks teammates' checkouts.

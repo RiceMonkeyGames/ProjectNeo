@@ -1,6 +1,6 @@
 # TOOL-asset-submodule | 2026-11-16 | Tooling - Third-Party Asset Submodule (Private Repo)
 
-Last Updated: 2026-11-16 21:12:35 (KST)
+Last Updated: 2026-11-16 21:40:06 (KST)
 
 > Task ID: `TOOL-asset-submodule` | Branch: `feature/tool-asset-submodule` | Assignee: youngho
 
@@ -35,4 +35,8 @@ Keep licensed third-party assets (Synty packs and other paid content) out of the
 - No `.cs`/`.asmdef` outside the library references `UnityEngine.UI.Extensions`/`UnityUIExtensions`; no reference from `Assets/_Project` or the other four Synty packs.
 - `Tools/Agent/unity-verify.ps1 -Mode compile`: `COMPILE=PASSED` after the trim.
 - Editor API scan of `Synty/InterfaceFantasyWarriorHUD`: 261 prefabs, 0 with missing scripts; 11 materials, 0 on the error shader; `Shader.Find("UI Extensions/Particles/Additive")` resolves.
-- Not verified: visual check of HUD particle effects in Play Mode (manual); fresh `git clone --recurse-submodules` on another machine/account.
+- Manual (user, 2026-11-16): `Synty/InterfaceFantasyWarriorHUD/Samples/Scenes/15_Demo_FantasyWarrior_VFX.unity` in Play Mode shows the UI particle effects correctly. The Synty demo scenes' `EventSystem` uses `StandaloneInputModule`, which throws `InvalidOperationException` under the project's Input System-only setting (`activeInputHandler=1`), so demo buttons do not respond until the module is replaced during Play ("Replace with InputSystemUIInputModule", not saved). Game scenes use their own Input System EventSystem; demo scenes were left unmodified.
+- Not verified: fresh `git clone --recurse-submodules` on another machine/account.
+
+## Agent Session-Start Rule
+[AGENTS.md](../../../AGENTS.md) "Session Start: Third-Party Asset Submodule" tells every agent to run `git submodule status` at session start and after pull/merge/branch switch, and to run `git submodule update --init --recursive` itself on `-`/`+`; on access errors it stops and reports instead of retrying.
