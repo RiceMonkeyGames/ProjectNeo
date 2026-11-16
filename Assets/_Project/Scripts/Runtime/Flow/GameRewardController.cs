@@ -62,6 +62,7 @@ namespace ProjectNeo.Flow
             LevelsGained = metaConfig != null ? CommanderProgression.AddXp(meta, metaConfig, reward.CommanderXp) : 0;
             if (metaConfig == null) meta.commanderXp += reward.CommanderXp;
             meta.unlockPoints += reward.UnlockPoints;
+            GameSession.SaveMeta();
             LastReward = reward;
             RewardGranted?.Invoke(reward);
             return true;

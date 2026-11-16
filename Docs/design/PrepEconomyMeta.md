@@ -1,6 +1,6 @@
 # Game Design: Preparation, Economy, Rewards & Meta
 
-Last Updated: 2026-11-15 22:00:57 (KST)
+Last Updated: 2026-11-16 14:44:31 (KST)
 
 > Purpose: Rules for courtyard facilities, unit deployment, currencies, rewards, and meta progression. | Parent: [design/README](README.md) | Related: [WallsAndSiege](WallsAndSiege.md), [OpenQuestions](OpenQuestions.md)
 
@@ -46,4 +46,5 @@ Two elements survive run failure: **Perk Point Count** (spent allocations reset 
 
 - **Commander Level & Perks**: EXP gained from stage clears and Reincarnation Bonus (% of run score on run end). Perks allocatable anytime during a run (mid-combat allocation undecided). Categories: `Combat` (player), `Economy` (gold/items/prep), `Unit Enhancement` (squads/heroes), including stat buffs and special traits (e.g., morale boost).
 - **Unlocks**: Spend unlock points for randomized gacha unlocks with duplicate protection (guaranteed initial appearances supported).
+- **Meta Save** (META-01, 2026-11-16): Meta progression (commander level/XP, perk point count, unlock points, unlocks, guaranteed next-run unlocks) is saved to disk in one of **three slots** chosen on the Title screen. It is saved right after every meta change and once more when the application quits. Each save keeps the previous file as a backup; an unreadable file falls back to the backup, and if both are unreadable the damaged files are kept under another name and the slot starts fresh. A slot can be deleted from the Title screen with a second confirming click. Run state is not saved (mid-run save: Q-13).
 - **Balance Risks**: Mitigate pool dilution via tavern re-rolls/locked slots; mitigate power creep via point caps and trait-oriented perks.

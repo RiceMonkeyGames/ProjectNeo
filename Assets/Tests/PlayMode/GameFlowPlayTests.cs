@@ -20,8 +20,16 @@ namespace ProjectNeo.Tests
     {
         static int cleanupCount;
 
+        string saveDirectory;
+
+        // 타이틀에서 시작하는 테스트가 실제 저장 폴더를 읽거나 쓰지 않게 임시 폴더를 쓴다(META-01).
         [SetUp]
-        public void SetUp() => GameSession.Reset();
+        public void SetUp()
+        {
+            GameSession.Reset();
+            saveDirectory = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "ProjectNeoFlowPlayTests_" + System.Guid.NewGuid().ToString("N"));
+            GameSession.UseSaveStore(new ProjectNeo.Meta.MetaSaveStore(saveDirectory));
+        }
 
         // 씬을 통째로 바꾸는 테스트이므로 끝나면 빈 씬만 남겨 다른 테스트에 카메라·UI가 남지 않게 한다.
         [UnityTearDown]
@@ -36,6 +44,59 @@ namespace ProjectNeo.Tests
                 if (scene != empty) yield return SceneManager.UnloadSceneAsync(scene);
             }
             GameSession.Reset();
+            GameSession.UseSaveStore(null);
+            if (System.IO.Directory.Exists(saveDirectory)) System.IO.Directory.Delete(saveDirectory, true);
+        }
+
+        [UnityTest]
+        public IEnumerator 타이틀에서_고른_슬롯의_메타를_불러와_시작하고_빈_슬롯_삭제는_확인을_요구하지_않는다()
+        {
+            var saved = new ProjectNeo.Meta.MetaProgress { commanderLevel = 5, unlockPoints = 40 };
+            GameSession.SaveStore.Save(1, saved);
+            yield return SceneManager.LoadSceneAsync("Title", LoadSceneMode.Single);
+            yield return null;
+            var title = Object.FindAnyObjectByType<TitleScreen>();
+            Transform panel = title.transform.Find("Panel");
+            Assert.IsNotNull(panel.Find("Button_Slot 3"), "Title 씬에 저장 슬롯 버튼 3개가 있어야 한다.");
+            StringAssert.Contains("Lv 5", title.SlotText(1));
+            StringAssert.StartsWith("> ", title.SlotText(GameSession.SaveStore.GetLastSlot()), "마지막에 쓴 슬롯이 골라져 있다.");
+
+            title.SelectSlot(0);
+            title.DeleteSelectedSlot();
+            Assert.IsFalse(title.IsDeleteArmed, "빈 슬롯은 지울 것이 없다.");
+
+            title.SelectSlot(1);
+            title.DeleteSelectedSlot();
+            Assert.IsTrue(title.IsDeleteArmed, "저장된 슬롯은 한 번 더 눌러야 지운다.");
+            title.SelectSlot(1);
+            Assert.IsFalse(title.IsDeleteArmed, "슬롯을 다시 고르면 삭제 대기가 풀린다.");
+
+            title.StartGame();
+            yield return WaitForActiveScene("Game");
+
+            Assert.AreEqual(1, GameSession.ActiveSlot);
+            Assert.AreEqual(5, GameSession.Meta.commanderLevel);
+            GameSession.Meta.unlockPoints += 3;
+            Assert.IsTrue(GameSession.SaveMeta());
+            Assert.AreEqual(43, GameSession.SaveStore.Inspect(1).Progress.unlockPoints);
+            Assert.AreEqual(1, GameSession.SaveStore.GetLastSlot());
+        }
+
+        [UnityTest]
+        public IEnumerator 타이틀에서_저장된_슬롯을_두_번_눌러_지운다()
+        {
+            GameSession.SaveStore.Save(2, new ProjectNeo.Meta.MetaProgress { commanderLevel = 3 });
+            yield return SceneManager.LoadSceneAsync("Title", LoadSceneMode.Single);
+            yield return null;
+            var title = Object.FindAnyObjectByType<TitleScreen>();
+
+            title.SelectSlot(2);
+            title.DeleteSelectedSlot();
+            Assert.AreEqual(ProjectNeo.Meta.MetaLoadStatus.Loaded, GameSession.SaveStore.Inspect(2).Status);
+            title.DeleteSelectedSlot();
+
+            Assert.AreEqual(ProjectNeo.Meta.MetaLoadStatus.Empty, GameSession.SaveStore.Inspect(2).Status);
+            Assert.IsFalse(title.IsDeleteArmed);
         }
 
         static IEnumerator WaitForActiveScene(string name)

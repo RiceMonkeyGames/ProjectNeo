@@ -60,9 +60,59 @@ namespace ProjectNeo.Editor
             Label(panel, "ProjectNeo", 80f, 44f).alignment = TextAlignmentOptions.Center;
             ConstructionPrototypeSetup.Button(panel, "New Game", "새 게임", screen.StartGame, labels, captions);
             ConstructionPrototypeSetup.Button(panel, "Quit", "종료", screen.Quit, labels, captions);
-            root.AddComponent<RuntimeSystemFont>().Configure(labels.ToArray(), captions.ToArray());
+            var font = root.AddComponent<RuntimeSystemFont>();
+            font.Configure(labels.ToArray(), captions.ToArray());
+            SaveSlots(panel, screen, font);
             EventSystem();
             EditorSceneManager.SaveScene(scene, TitlePath);
+        }
+
+        /// <summary>META-01 저장된 Title 씬에 저장 슬롯 3개와 삭제 버튼을 더한다. 다시 실행하면 같은 것을 새로 만든다.</summary>
+        [MenuItem("ProjectNeo/Setup/Add Save Slots To Title Scene")]
+        public static void ApplyTitleSaveSlots()
+        {
+            if (EditorSceneManager.GetActiveScene().isDirty) throw new InvalidOperationException("Save the active scene first.");
+            Scene scene = EditorSceneManager.OpenScene(TitlePath, OpenSceneMode.Single);
+            TitleScreen screen = null;
+            foreach (GameObject root in scene.GetRootGameObjects())
+                screen = screen != null ? screen : root.GetComponentInChildren<TitleScreen>(true);
+            if (screen == null) throw new InvalidOperationException("Title scene has no TitleScreen.");
+            Transform panel = screen.transform.Find("Panel") ?? throw new InvalidOperationException("TitleScreen has no Panel.");
+            SaveSlots(panel, screen, screen.GetComponent<RuntimeSystemFont>());
+            EditorUtility.SetDirty(screen);
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+        }
+
+        // 제목 바로 아래에 슬롯 버튼 3개와 안내 글, 맨 아래 종료 버튼 위에 삭제 버튼을 둔다. 글자는 TitleScreen이 실행 중에 채운다.
+        static void SaveSlots(Transform panel, TitleScreen screen, RuntimeSystemFont font)
+        {
+            for (int i = panel.childCount - 1; i >= 0; i--)
+            {
+                Transform child = panel.GetChild(i);
+                if (child.name.StartsWith("Button_Slot ") || child.name == "Button_Delete slot" || child.name == "Label_SaveStatus")
+                    UnityEngine.Object.DestroyImmediate(child.gameObject);
+            }
+
+            var slotLabels = new TMP_Text[ProjectNeo.Meta.MetaSaveStore.SlotCount];
+            for (int i = 0; i < slotLabels.Length; i++)
+            {
+                GameObject slot = ConstructionPrototypeSetup.Button(panel, "Slot " + (i + 1), null, null, null, null);
+                UnityEditor.Events.UnityEventTools.AddIntPersistentListener(slot.GetComponent<Button>().onClick, screen.SelectSlot, i);
+                slot.transform.SetSiblingIndex(1 + i);
+                slotLabels[i] = slot.GetComponentInChildren<TMP_Text>();
+            }
+            TMP_Text status = Label(panel, string.Empty, 24f, 15f);
+            status.name = "Label_SaveStatus";
+            status.alignment = TextAlignmentOptions.Center;
+            status.transform.SetSiblingIndex(1 + slotLabels.Length);
+
+            GameObject delete = ConstructionPrototypeSetup.Button(panel, "Delete slot", null, screen.DeleteSelectedSlot, null, null);
+            delete.GetComponent<Image>().color = new Color(0.32f, 0.16f, 0.16f);
+            Transform quit = panel.Find("Button_Quit");
+            if (quit != null) delete.transform.SetSiblingIndex(quit.GetSiblingIndex());
+
+            screen.ConfigureSlots(slotLabels, delete.GetComponentInChildren<TMP_Text>(), status, font);
         }
 
         static void CreateGame(SceneCatalog catalog)

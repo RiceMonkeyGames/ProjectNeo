@@ -1,10 +1,12 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-16 11:58:03 (KST)
+Last Updated: 2026-11-16 14:44:31 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
 ## Resolved `Q-*` Table
+
+Meta save (META-01, 2026-11-16; partial Q-13): User chose (1) save right after every meta change and once more on application quit, (2) three save slots with a Title selection UI implemented now, (3) keep the previous file as a backup, read it when the main file is unreadable, and if both fail keep the damaged files and start fresh. Mid-run save and resume stay undecided under Q-13. [Rule](../design/PrepEconomyMeta.md), [history](../history/META/META-01.md).
 
 COMBAT-04 (2026-11-16): User approved a data-driven single-hit poise vs stagger threshold system (`IsInterruptible && incomingStagger >= actionPoise`). Initial scope covers ladder pushing/raising (player, allies, enemies); ladder pushing is interruptible by both ranged and melee hits and settles back onto the wall before the balance point, whereas ladder raising is uninterruptible. Interrupted units have a `0.3s` re-interaction cooldown, and player interruptions show a temporary test HUD notice. [Rule](../design/Combat.md).
 
