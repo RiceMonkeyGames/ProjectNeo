@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-17 00:45:01 (KST)
+Last Updated: 2026-11-17 01:25:05 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -19,7 +19,6 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 | Task ID | Description | Status | Assignee | Completion Criteria & Prerequisites |
 |---|---|---|---|---|
 | COMBAT-07 | Hooks for Morale Skills, Captains, and Perk Effects | In Progress | youngho | Branch `feature/combat-07`. Normalized from M1 roadmap `B-8.3` (prerequisites B-8.1, B-8.2, COMBAT-03 Done). Verify that a sample morale boost applies once to a real squad and unsubscribes cleanly (full skills in `COMBAT-06` / `META-02`). |
-| TOOL-asset-packs-2 | Import Second Batch of Synty Packs into Asset Submodule | In Progress | youngho | Branch `feature/tool-asset-packs-2`. Registered 2026-11-17: import the user's `.unitypackage` files (AncientEmpire, Dungeon Realms, Dungeon, Elven Realm, Knights, Modular Fantasy Hero) via Editor API, move them under `Assets/ThirdParty`, verify compile/ProjectSettings/file sizes, commit and push the `ProjectNeo-Assets` submodule, then commit the submodule pointer. No scene placement. |
 | C-5 | Wave Preview & Hidden Enemy Intel | Waiting for Prerequisite | Unassigned | B-7.1 Done 2026-11-16 (stage data readable without a running battle). Following run contracts, display upcoming enemy types, counts, and hidden indicators in prep UI. Scouting rules clarified first. |
 | B-9.3 | M1 Full Integration, Iteration & Build Verification | Waiting for Prerequisite | Unassigned | Following B-4~8 integration, test repeated cycles of destruction, enemy variants, waves, morale, and outcomes; verify regressions and standalone build startup flow. |
 | QA-physical-input | Physical-Input Manual Play Sweep | Waiting | Unassigned | Registered 2026-11-16: user-driven Editor play pass over the manual checks still recorded as unverified in history — PREP-01 (smithy upgrades), PREP-04 (`Q` potion), SIEGE-07 (cannon crosshair/traverse), COMBAT-03 (morale HUD/Panic), SIEGE-04 (ladder keys/HUD), FLOW-01 (hold `B`). Record pass/fail per item; register `BUG-<slug>` rows for failures. No code changes expected. |
