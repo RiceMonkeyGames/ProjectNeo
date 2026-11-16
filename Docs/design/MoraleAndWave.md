@@ -1,6 +1,6 @@
 # Game Design: Morale, Rout & Wave Preview
 
-Last Updated: 2026-11-14 22:59:29 (KST)
+Last Updated: 2026-11-16 13:49:52 (KST)
 
 > Purpose: Ally Breaking Point morale, enemy morale, rout/exit accounting, and wave preview rules. | Parent: [design/README](README.md) | Related: [Combat](Combat.md), [OpenQuestions](OpenQuestions.md)
 
@@ -63,6 +63,34 @@ Stages stay fixed per run (the same stage number always brings the same waves), 
 | Data format | One stage data asset per stage holding a wave list; each entry gives enemy prefab, count, start time, and spawn point. Enemy types reference the **existing enemy prefabs** (no separate enemy definition asset yet). Teammate (enemy domain owner) review is pending before B-7.1 implementation. |
 
 Tuning numbers (wave start times, counts per stage) live in the stage assets and are set during B-7.1. Hidden-enemy scouting rules remain with C-5.
+
+### Stage Data Format & Wave Rules (Q-52, user decision 2026-11-16)
+
+The user asked for a format that stays decoupled and easy to change, and started B-7.1 on it; teammate review of the format runs in parallel and may still adjust it.
+
+| Item | Decision |
+|---|---|
+| Wave start | **Fixed timetable kept** (Q-51). An empty field does not pull the next wave forward. The start condition is a replaceable rule so this can change later without touching the spawner. |
+| Retreat while waves remain | **Settings switch**, default **off**: enemies that lost their siege means (Q-30) do not retreat while a wave is still to come and fight on with the next wave. With the switch on, each wave is judged on its own as before. |
+| Victory | Unchanged from Q-51: every wave released and every enemy dead or retreated. Enemies not yet released count as pending and block victory. |
+| Stage beyond the catalog | Interim: the **last stage repeats** until the run ending (Q-08) is wired. The catalog length is the run length. |
+| Pause / restart | Battle time advances only while the battle is running; each wave is released exactly once per battle and the timetable resets with every battle. |
+
+Data shape (assets under `Data/GameFlow/Stages/`):
+
+- **Stage catalog**: ordered stage list; stage number `N` uses entry `N`.
+- **Stage**: wave list. Each **wave** has a start time (seconds after battle start) and one or more **groups**.
+- **Group**: enemy prefab, count, and a **spawn point asset**.
+- **Spawn point asset**: a named point given as a build-grid cell in the northern field (initially Left / Center / Right). Adding a point is adding an asset; no code or scene change. Formation spacing stays in the battle settings.
+
+Layering, so each part can change alone:
+
+1. **Timetable rule** (pure C#): decides which wave is due and how many enemies are pending. Knows nothing about prefabs, scenes, or Unity time.
+2. **Stage data** (assets): who, how many, when, where. Read-only for C-5 preview, which needs no battle to be running.
+3. **Encounter plan** (plain data): the battle reads one neutral plan built either from a stage asset or from the old single enemy list, so prototype scenes and existing tests keep working unchanged.
+4. **Spawner + battle controller** (scene): places units for a group and releases them when the timetable says so.
+
+The three stage compositions created with B-7.1 were accepted by the user after a balance check on 2026-11-16; they stay data in the stage assets and can be retuned without code changes.
 
 ## Wave Preview
 

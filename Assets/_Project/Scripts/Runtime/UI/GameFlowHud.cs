@@ -103,6 +103,14 @@ namespace ProjectNeo.UI
                     ? $"남은 적 {battle.EnemiesAlive} · 부대원 {battle.AlliesAlive}\n성문: " + (battle.GateDestroyed ? "파괴됨" : "정상")
                     : $"Enemies {battle.EnemiesAlive} - Allies {battle.AlliesAlive}\nGate: " + (battle.GateDestroyed ? "Destroyed" : "Intact");
                 if (battle.IsRetreating) battleStatus.text += korean ? " · 적 퇴각 중" : " - Retreating";
+                // 웨이브가 여럿인 전투에서만 진행 상황을 보여 준다(B-7.1).
+                if (battle.WaveCount > 1)
+                {
+                    float next = battle.SecondsUntilNextWave;
+                    battleStatus.text += korean
+                        ? $"\n웨이브 {battle.WavesReleased}/{battle.WaveCount}" + (next >= 0f ? $" · 다음 {Mathf.CeilToInt(next)}초" : " · 마지막")
+                        : $"\nWave {battle.WavesReleased}/{battle.WaveCount}" + (next >= 0f ? $" - next {Mathf.CeilToInt(next)}s" : " - final");
+                }
                 foreach (var actor in ProjectNeo.Combat.CharacterActor.ActiveActors)
                 {
                     if (actor.gameObject.scene != gameObject.scene || actor.GetComponent<ProjectNeo.Characters.PlayerInputController>() == null) continue;

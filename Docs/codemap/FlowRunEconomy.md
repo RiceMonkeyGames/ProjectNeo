@@ -1,6 +1,6 @@
 # Runtime Codemap: Flow, Run, Economy, Facilities & Meta
 
-Last Updated: 2026-11-15 22:00:57 (KST)
+Last Updated: 2026-11-16 12:08:55 (KST)
 
 > Purpose: Class map for game flow, run state, economy, facilities, rewards, meta progression, and flow UI. | Parent: [codemap/README](README.md) | Related: [CombatAndSquads](CombatAndSquads.md), [design/PrepEconomyMeta](../design/PrepEconomyMeta.md)
 
@@ -8,6 +8,11 @@ Base path: `Assets/_Project/Scripts/Runtime/`. Assembly: `ProjectNeo.Runtime`. N
 
 | Folder | Key Classes | Role |
 |---|---|---|
+| Stages | `WaveSchedule`, `WaveTiming`, `IWaveStartRule`, `TimedWaveStartRule` (`B-7.1`) | Pure wave timetable: releases each wave once in order as passed-in time advances, reports pending waves/units and seconds to the next wave; start condition is a replaceable rule; `RetreatAllowed` gates Q-30 retreat while waves remain (Q-52). |
+| Stages | `StageCatalog`, `StageDefinition`, `StageWave`, `StageWaveGroup`, `SpawnPointDefinition` (`B-7.1`) | Stage data assets in `Data/GameFlow/Stages/`: catalog → stage → waves (start seconds) → groups (enemy prefab, count, spawn point asset = build-grid cell). `StageFor(n)` repeats the last stage past the end. |
+| Stages | `EncounterPlan`, `EncounterWave`, `EncounterGroup` (`B-7.1`) | Neutral per-battle enemy plan; built `FromStage` or `FromGroups` (old single list as one wave at 0s). The only shape the battle and spawner read. |
+| Flow | `BattleEnemySpawner` (`B-7.1`) | Plain class that instantiates one `EncounterWave` inactive, in formation per spawn cell, binding each `SiegeAttacker`. Knows nothing about timing or outcomes. |
+| Flow | `GameBattleController` waves (`B-7.1`) | Builds the plan per preparation (`EncounterSourceOverride` → `DefaultEncounter`: catalog stage, else old list), pre-creates all waves inactive, releases due waves from `LateUpdate` battle time; `WaveCount`, `WavesReleased`, `SecondsUntilNextWave`, `EnemiesOnField`, `EnemiesPending`, `WaveReleased`, `RebuildEncounter()`. Victory counts pending enemies. `GameBattleSettings.Stages` / `RetreatWhileWavesPending`. [History](../history/B/B-7.1.md). |
 | Economy | `Cost`, `Wallet`, `MaterialDefinition` | Costs and wallet storage for gold and various monster material types. |
 | Economy | `ItemDefinition`, `Inventory`, `EconomyConfig`, `ItemShop` | Equipment/consumable definitions, inventory containers, sale ratios, shop roll, offer lock (`TryToggleLock`, `Restock` preserves locked), and trade logic (`TryBuyAt`). |
 | Economy | `ItemInstance`, `ItemUpgradeMaterials`, `EquipmentUpgradeSettings`, `EquipmentUpgrade`, `EquipmentUpgradeCheck` | PREP-01 independent rules: item level/actual gold spend, materials per target level on `ItemDefinition.UpgradeMaterials`, common bonus/gold ratio/limits in settings; cost/check/payment, scaled modifiers and refund calculation. `smithyLevel` uses the same zero-based index as `FacilityState.Level`. RunConfig.EquipmentUpgrades → RunState.SetupEquipmentUpgrades / CheckUpgradeEquipment / TryUpgradeEquipment; preparation UI and battle-pending guards, stash ownership, scaled Character equip stats, instance sale quotes/payouts through ItemShop.GetInstanceSellPrice. |
