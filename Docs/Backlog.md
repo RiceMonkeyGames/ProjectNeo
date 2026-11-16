@@ -1,4 +1,4 @@
-﻿# ProjectNeo Development Backlog
+# ProjectNeo Development Backlog
 
 Last Updated: 2026-11-16 21:17:18 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
