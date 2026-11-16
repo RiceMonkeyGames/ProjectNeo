@@ -1,6 +1,6 @@
 # QA-standalone-build | 2026-11-16 | QA - Standalone Build Startup Flow Check
 
-Last Updated: 2026-11-16 17:37:56 (KST)
+Last Updated: 2026-11-16 19:20:37 (KST)
 
 Branch: `feature/qa-standalone-build`. Owner: 신용준. Claim synchronized to develop (`docs: claim QA-standalone-build`). No code, scene, or asset changes.
 
@@ -32,6 +32,10 @@ To check the real game flow without touching project settings, a verification pl
 ## Not verified
 
 The agent could not click inside the built player (the desktop-control tool only accepts installed applications), so everything past the first frame is unverified: Title rendering and Korean font, slot selection, `New Game` → `Game` load, preparation, hold `B`, battle, result/reward, `Return to Title`, the META-01 save on reward and on real quit, and `Quit`. No tests were re-run for this task.
+
+## Closeout (2026-11-16)
+
+The user played the default build and reported two findings: Title has no "Continue" although the slot file remains (registered as `FLOW-02`), and the runtime English → Korean UI swap is unwanted (decision recorded, cleanup registered as `UI-02`). The user then confirmed `Done`. The agent did not observe the in-player click-through; which of the steps below the user covered is not recorded.
 
 ## Manual check (user)
 

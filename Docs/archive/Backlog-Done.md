@@ -1,11 +1,12 @@
 # Completed Backlog Archive (Done)
 
-Last Updated: 2026-11-16 15:03:30 (KST)
+Last Updated: 2026-11-16 19:20:37 (KST)
 
 > Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
 | Task ID | Description | Assignee | Outcome & History Link |
 |---|---|---|---|
+| QA-standalone-build | Standalone Build Startup Flow Check | 신용준 | Done 2026-11-16 on user confirmation; branch `feature/qa-standalone-build`. `Title` is now the first build scene (user decision; teammate notice owed by the user). Default Windows build succeeds and boots to Title with no exception in the player log (agent-verified); the in-player click-through was played by the user, not by the agent. Recorded the URP restore-then-reimport build rule. Follow-ups from the playtest: `FLOW-02`, `UI-02`. `GameFlow` PlayMode 13/13. [History](../history/QA/QA-standalone-build.md) |
 | META-01 | Meta Progression Disk Persistence | 신용준 | Done 2026-11-16 on user confirmation after manual check; branch `feature/meta-01`. Three save slots (`meta_slotN.json` + `.bak`) with Title selection/deletion UI, save after every meta change and on quit, backup recovery and damaged-file quarantine (partial Q-13; mid-run save still undecided). EditMode 453/453, PlayMode 217/217. Standalone build unverified. [History](../history/META/META-01.md) |
 | SIEGE-01 | Link Pending Spawns to Win/Loss Evaluation | Hwang Seong-min | Done 2026-11-16; implemented inside B-7.1 on branch `feature/b-7.1` (no separate branch). Victory check receives pending (not yet released) enemies, so an empty field with waves to come is not a victory; outcome still resolves once through the existing single `Resolve` guard. Automated: `GameWavePlayTests` and existing single-result PlayMode cases (PlayMode 213/213). User confirmed the once-only termination/outcome check in multi-wave battles on 2026-11-16. [History](../history/SIEGE/SIEGE-01.md). |
 | B-7.1 | Formal Wave Data & Spawning Rules | Hwang Seong-min | Done 2026-11-16; branch `feature/b-7.1`. Decoupled stage data (catalog → stage → timed waves → groups with spawn point assets), pure `WaveSchedule` timetable with replaceable start rule, neutral `EncounterPlan`, separate `BattleEnemySpawner`; 3 interim stages (12/18/27 enemies). Pending enemies block victory; retreat while waves remain is a settings switch, default off (Q-52). Compile, EditMode 437/437, PlayMode 213/213 passed; user confirmed manual check, standalone build and composition balance on 2026-11-16. Teammate format review still open. [History](../history/B/B-7.1.md). |
