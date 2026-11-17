@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-18 02:52:45 (KST)
+Last Updated: 2026-11-18 02:54:33 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -18,7 +18,7 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 
 | Task ID | Description | Status | Assignee | Completion Criteria & Prerequisites |
 |---|---|---|---|---|
-| PREP-06 | Preparation Time Clock | Waiting | Unassigned | Registered 2026-11-18 (Q-53). 12-hour budget per preparation in data; clock HUD; clock actions (blacksmith craft/upgrade 1h, Wait 1h; scouting cost used by C-5) blocked when hours are short; free actions unchanged; unused hours lost; budget restored each preparation and kept in run save. Rules: [PrepEconomyMeta](design/PrepEconomyMeta.md). |
+| PREP-06 | Preparation Time Clock | In Progress | Hwang Seong-min | Branch `feature/prep-06`. Registered 2026-11-18 (Q-53). 12-hour budget per preparation in data; clock HUD; clock actions (blacksmith craft/upgrade 1h, Wait 1h; scouting cost used by C-5) blocked when hours are short; free actions unchanged; unused hours lost; budget restored each preparation and kept in run save. Rules: [PrepEconomyMeta](design/PrepEconomyMeta.md). |
 | C-5 | Wave Preview & Hidden Enemy Intel | Waiting | Unassigned | Rules decided 2026-11-18 (Q-53): whole-stage enemy types and counts in preparation; per-group hidden flag in stage data shown as `? × N`; 3h scouting action reveals every hidden group; revealed on appearing in battle. Preview can start now; the scouting time cost needs PREP-06. Hero trait/perk reveal follows META-02. Rules: [MoraleAndWave](design/MoraleAndWave.md). |
 | META-02 | Runtime Perk Injection & Reward Routing | Pending Decision | Unassigned | Registered 2026-11-16: apply perk payloads to real run/battle stats and route victory unlock points. Blocked by Q-06 (perk allocation timing/pause) and Q-07 (unlock point distribution timing). |
 | COMBAT-06 | Minimal Hero/Active Skill Execution | Pending Decision | Unassigned | Registered 2026-11-16: skills exist as identifiers only. Blocked by Q-12 (skill rules, cooldowns, targeting, perk effects). Shared combat core edits need teammate coordination. |
