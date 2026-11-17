@@ -1,10 +1,12 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-17 07:31:13 (KST)
+Last Updated: 2026-11-18 01:23:21 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
 ## Resolved `Q-*` Table
+
+B-7.2 scope (2026-11-18, user): B-7.2 is closed without new code. Post-battle cleanup is already in place and its no-leak check across repeated stages moves into B-9.3; enemy squad linking is dropped because enemies have no morale (Q-44); corpse explosion is dropped with no follow-up task. [Plan](M1.md).
 
 Morale gain hooks (COMBAT-07, 2026-11-17, user): (1) a morale gain never triggers the Breaking Point Check, even across `100`; (2) a routed squad (morale `0`) receives no gain and its rout is not cancelled; (3) the sample hook is a battle-start perk effect (`PerkTrigger.BattleStart`), firing once per battle. Full skills stay in COMBAT-06, perk injection in META-02. [Rule](../design/MoraleAndWave.md).
 

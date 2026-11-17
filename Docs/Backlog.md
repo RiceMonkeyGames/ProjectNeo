@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-18 01:23:21 (KST)
+Last Updated: 2026-11-18 01:34:45 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -19,7 +19,7 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 | Task ID | Description | Status | Assignee | Completion Criteria & Prerequisites |
 |---|---|---|---|---|
 | C-5 | Wave Preview & Hidden Enemy Intel | Waiting for Prerequisite | Unassigned | B-7.1 Done 2026-11-16 (stage data readable without a running battle). Following run contracts, display upcoming enemy types, counts, and hidden indicators in prep UI. Scouting rules clarified first. |
-| B-9.3 | M1 Full Integration, Iteration & Build Verification | In Progress | Hwang Seong-min | Branch `feature/b-9.3`. B-4~8 linked; B-7.2 closed by user decision 2026-11-18 (post-battle cleanup absorbed here, enemy squad linking dropped per Q-44, corpse explosion dropped). Test repeated cycles of destruction, enemy variants, waves, morale, and outcomes across the three stages with no state leaking into the next battle; verify regressions and standalone build startup flow. |
+| B-9.3 | M1 Full Integration, Iteration & Build Verification | Waiting for Verification | Hwang Seong-min | Branch `feature/b-9.3`. 2026-11-18: 3-stage loop test, full EditMode 471/471 / PlayMode 231/231 and build boot passed; manual 3-stage play pending ([history](history/B/B-9.3.md)). B-4~8 linked; B-7.2 closed by user decision 2026-11-18 (post-battle cleanup absorbed here, enemy squad linking dropped per Q-44, corpse explosion dropped). Test repeated cycles of destruction, enemy variants, waves, morale, and outcomes across the three stages with no state leaking into the next battle; verify regressions and standalone build startup flow. |
 | META-02 | Runtime Perk Injection & Reward Routing | Pending Decision | Unassigned | Registered 2026-11-16: apply perk payloads to real run/battle stats and route victory unlock points. Blocked by Q-06 (perk allocation timing/pause) and Q-07 (unlock point distribution timing). |
 | COMBAT-06 | Minimal Hero/Active Skill Execution | Pending Decision | Unassigned | Registered 2026-11-16: skills exist as identifiers only. Blocked by Q-12 (skill rules, cooldowns, targeting, perk effects). Shared combat core edits need teammate coordination. |
 | SIEGE-08 | Construction Delays | Pending Decision | Unassigned | Registered 2026-11-16 (formerly roadmap bundle `C-6` construction pacing). No delay rule is recorded in `Docs/design/`; the user must decide whether builds take time, how long, and whether it applies in prep only. |
