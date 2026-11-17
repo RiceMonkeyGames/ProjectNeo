@@ -16,6 +16,7 @@ namespace ProjectNeo.Morale
         float panicTimer;
         float contagionTimer;
         bool evaluating;
+        bool gaining;
         bool disposed;
 
         public SquadMorale Morale { get; }
@@ -103,6 +104,20 @@ namespace ProjectNeo.Morale
         /// <summary>근처의 같은 편 부대가 도망을 시작했다.</summary>
         public void OnNearbySquadRouted() => ApplyLoss(settings.NearbySquadRoutLoss);
 
+        /// <summary>
+        /// 퍽·스킬·사기 상승(각성)이 사기를 올린다(COMBAT-07). 도망 중인 부대는 오르지 않고,
+        /// 100을 넘어 오르더라도 한계 판정을 하지 않는다. 실제로 오른 양을 돌려준다(최대값에서 잘림).
+        /// </summary>
+        public float ApplyGain(float amount)
+        {
+            if (disposed || IsRouted || amount <= 0f) return 0f;
+            float before = Morale.Value;
+            gaining = true;
+            try { Morale.Add(amount); }
+            finally { gaining = false; }
+            return Morale.Value - before;
+        }
+
         /// <summary>공격력 배율. 사기 구간 보정과 결사항전을 합친다.</summary>
         public float AttackMultiplier
         {
@@ -176,7 +191,8 @@ namespace ProjectNeo.Morale
         // 사기는 퍽·스킬이 SquadMorale.Add로 직접 바꿀 수도 있어 값이 바뀔 때마다 판정한다.
         void OnMoraleChanged()
         {
-            if (evaluating || disposed || IsRouted) return;
+            // 사기 상승(ApplyGain)은 한계 판정·도망을 일으키지 않는다(COMBAT-07).
+            if (evaluating || gaining || disposed || IsRouted) return;
             evaluating = true;
             try
             {
@@ -217,6 +233,7 @@ namespace ProjectNeo.Morale
 
             if (Awaken == AwakenEffect.Rally)
             {
+                // evaluating 중이라 재판정은 없다. 같은 상승 규칙(도망 제외·상한)을 따른다.
                 Morale.Add(settings.RallyAmount);
                 NearbyMoraleChange?.Invoke(this, settings.RallyAmount);
             }

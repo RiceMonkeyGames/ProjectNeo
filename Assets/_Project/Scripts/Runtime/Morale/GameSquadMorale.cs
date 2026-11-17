@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using ProjectNeo.Combat;
 using ProjectNeo.Core;
 using ProjectNeo.Flow;
+using ProjectNeo.Meta;
 using ProjectNeo.Run;
 using ProjectNeo.Squads;
 using ProjectNeo.Stats;
@@ -21,8 +22,10 @@ namespace ProjectNeo.Morale
     /// 다음 준비 단계에 도망친 유닛을 퇴각 지점에서 다시 나타나게 해 부대로 돌려보낸다.
     /// 사기 값은 런 부대(<see cref="Squad{TUnit}.Morale"/>)에 둔다. 런이 없으면 씬 부대에 둔다.
     /// COMBAT-03: 공격력 보정, 공포 지시 거부, 패닉 대기, 전염 및 HUD 상태를 연결한다.
+    /// COMBAT-07: 퍽·스킬·부대장이 사기에 닿는 창구. 전투 중에만 <see cref="IPerkEffectContext"/>로 동작하고,
+    /// 전투 시작 때 <see cref="PerkTrigger.BattleStart"/> 퍽을 한 번 발동하며, 부대장 각성 확률 보너스를 넣는다.
     /// </summary>
-    public sealed class GameSquadMorale : MonoBehaviour
+    public sealed class GameSquadMorale : MonoBehaviour, IPerkEffectContext
     {
         // 다시 나타난 유닛이 길찾기에 올라설 때까지 기다리는 최대 프레임 수.
         const int ReturnWaitFrames = 300;
@@ -34,6 +37,8 @@ namespace ProjectNeo.Morale
         Vector2Int outward;
         Func<RunState> runState;
         IRandomSource random;
+        PerkLoadout perks;
+        Func<UnitCombatAI, float> captainAwakenBonus;
 
         readonly List<BattleSquadMorale> battles = new List<BattleSquadMorale>();
         readonly List<KeyValuePair<CharacterActor, Action>> deathHandlers = new List<KeyValuePair<CharacterActor, Action>>();
@@ -69,6 +74,34 @@ namespace ProjectNeo.Morale
         public void UseRandom(IRandomSource source)
         {
             if (source != null) random = source;
+        }
+
+        /// <summary>
+        /// 이번 런에서 찍은 퍽(COMBAT-07). 다음 전투 시작부터 <see cref="PerkTrigger.BattleStart"/> 특수 효과가 발동한다.
+        /// null이면 퍽을 쓰지 않는다. 런 퍽 연결은 META-02에서 한다.
+        /// </summary>
+        public void UsePerks(PerkLoadout loadout) => perks = loadout;
+
+        /// <summary>
+        /// 부대장 특성이 더하는 각성 확률(COMBAT-07). 전투 시작 때 살아 있는 부대장마다 한 번 부르고,
+        /// 결과를 그 부대의 <see cref="BattleSquadMorale.AwakenChanceBonus"/>에 넣는다. null이면 0.
+        /// </summary>
+        public void UseCaptainAwakenBonus(Func<UnitCombatAI, float> bonus) => captainAwakenBonus = bonus;
+
+        /// <summary>
+        /// 전투 중인 모든 아군 부대의 사기를 올린다(퍽·스킬). 도망 중인 부대와 전투 밖에서는 아무 일도 없다.
+        /// </summary>
+        public void AddMoraleToAllySquads(float amount)
+        {
+            if (!battleActive) return;
+            foreach (BattleSquadMorale battle in battles) battle?.ApplyGain(amount);
+        }
+
+        /// <summary>전투 중인 한 부대의 사기를 올린다(대상 지정 스킬). 실제로 오른 양을 돌려준다.</summary>
+        public float AddMorale(int squad, float amount)
+        {
+            BattleSquadMorale battle = BattleOf(squad);
+            return battle != null ? battle.ApplyGain(amount) : 0f;
         }
 
         void OnDestroy()
@@ -225,6 +258,8 @@ namespace ProjectNeo.Morale
                 foreach (UnitCombatAI member in squad.Members) if (IsAlive(member)) alive++;
                 if (alive == 0 && !IsAlive(squad.Leader)) { battles.Add(null); continue; }
                 var battle = new BattleSquadMorale(MoraleOf(i), MoraleSide.Ally, Mathf.Max(1, alive), settings, random);
+                if (captainAwakenBonus != null && IsAlive(squad.Leader))
+                    battle.AwakenChanceBonus = captainAwakenBonus(squad.Leader);
                 battle.Routed += OnRouted;
                 battle.NearbyMoraleChange += OnNearbyMoraleChange;
                 battle.PanicRetreat += OnPanic;
@@ -244,6 +279,8 @@ namespace ProjectNeo.Morale
             if (world != null) world.PieceCollapsing += OnPieceCollapsing;
             center.Commander.OrderRequested += AcceptOrder;
             battleActive = true;
+            // 모든 부대의 전투 사기와 공격력 보정이 준비된 뒤 한 번만 발동한다.
+            perks?.RaiseTrigger(PerkTrigger.BattleStart, this);
         }
 
         void EndBattle(bool recover)
@@ -320,7 +357,11 @@ namespace ProjectNeo.Morale
             if (index < 0 || !TryGetCenter(index, out Vector3 point)) return;
             for (int i = 0; i < battles.Count; i++)
                 if (i != index && battles[i] != null && !battles[i].IsRouted && IsNear(i, point))
-                    battles[i].Morale.Add(amount);
+                {
+                    // 사기 상승(근처 부대 사기 상승)은 상승 규칙, 전염은 그대로 깎는다.
+                    if (amount > 0f) battles[i].ApplyGain(amount);
+                    else battles[i].Morale.Add(amount);
+                }
         }
 
         void OnPieceCollapsing(PlacedStructure piece)

@@ -445,6 +445,60 @@ namespace ProjectNeo.Tests
             Assert.IsFalse(routed);
         }
 
+        // --- 사기 상승 (COMBAT-07) ---
+
+        [Test]
+        public void Gain_RaisesMorale_CappedAtMax_AndReturnsAppliedAmount()
+        {
+            BattleSquadMorale battle = Battle(190f);
+
+            Assert.AreEqual(10f, battle.ApplyGain(30f), 0.001f);
+            Assert.AreEqual(200f, battle.Morale.Value, 0.001f);
+            Assert.AreEqual(0f, battle.ApplyGain(0f));
+            Assert.AreEqual(0f, battle.ApplyGain(-5f));
+            Assert.AreEqual(200f, battle.Morale.Value, 0.001f);
+        }
+
+        [Test]
+        public void Gain_AcrossBreakingPoint_DoesNotRunOrUseTheCheck()
+        {
+            var random = new ScriptedRandom().Floats(0.99f);
+            BattleSquadMorale battle = Battle(100f, random: random);
+            int checks = 0;
+            battle.BreakingPointReached += _ => checks++;
+
+            battle.ApplyGain(20f);
+
+            Assert.AreEqual(0, checks);
+            Assert.IsFalse(battle.CheckUsed);
+            Assert.AreEqual(0, random.FloatCalls);
+
+            battle.Morale.Add(-30f);
+            Assert.AreEqual(1, checks, "상승 뒤에도 100 이하로 떨어지면 판정은 그대로 남아 있다.");
+        }
+
+        [Test]
+        public void Gain_OnRoutedSquad_IsIgnored_AndRoutStays()
+        {
+            BattleSquadMorale battle = Battle(30f);
+            battle.Morale.Add(-100f);
+            Assert.IsTrue(battle.IsRouted);
+
+            Assert.AreEqual(0f, battle.ApplyGain(50f));
+            Assert.AreEqual(0f, battle.Morale.Value);
+            Assert.IsTrue(battle.IsRouted);
+        }
+
+        [Test]
+        public void Gain_AfterDispose_IsIgnored()
+        {
+            BattleSquadMorale battle = Battle(150f);
+            battle.Dispose();
+
+            Assert.AreEqual(0f, battle.ApplyGain(20f));
+            Assert.AreEqual(150f, battle.Morale.Value, 0.001f);
+        }
+
         // --- 전투 후 회복 (Q-39) ---
 
         [TestCase(0f, 80f)]

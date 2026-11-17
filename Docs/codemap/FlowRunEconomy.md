@@ -1,6 +1,6 @@
 # Runtime Codemap: Flow, Run, Economy, Facilities & Meta
 
-Last Updated: 2026-11-16 14:44:31 (KST)
+Last Updated: 2026-11-17 05:46:20 (KST)
 
 > Purpose: Class map for game flow, run state, economy, facilities, rewards, meta progression, and flow UI. | Parent: [codemap/README](README.md) | Related: [CombatAndSquads](CombatAndSquads.md), [design/PrepEconomyMeta](../design/PrepEconomyMeta.md)
 
@@ -39,6 +39,6 @@ Base path: `Assets/_Project/Scripts/Runtime/`. Assembly: `ProjectNeo.Runtime`. N
 | Run | `BuildCostTable`, `PieceGoldCost`, `WeaponGoldCost`, `BuildEconomy` | Build cost table asset (piece/weapon gold, past refund ratio, repair gold per HP) and pure C# refund/repair logic (heaviest damaged first). |
 | Run | `StageRewardTable`, `KillReward`, `StageReward` | Reward table asset and deterministic `StageReward.Roll` via `IRandomSource`. `RunState.ApplyReward` enforces single payout per battle via `SeedFor`. |
 | UI | `TitleScreen`, `GameFlowHud`, `RuntimeSystemFont` | Title callbacks, phase display, prompts, troop counters, reward breakdown, prep gold balance, runtime Malgun Gothic applicator. Not final UI. |
-| Meta | `PerkDefinition`, `PerkLoadout`, `PerkSpecialEffect`, `MoraleBoostPerkEffect` | Perk definitions, point allocation/resets, event-driven perk hooks. Runtime combat wiring deferred. |
+| Meta | `PerkDefinition`, `PerkLoadout`, `PerkSpecialEffect`, `MoraleBoostPerkEffect` | Perk definitions, point allocation/resets, event-driven perk hooks. COMBAT-07: `GameSquadMorale` is the battle `IPerkEffectContext` and raises `BattleStart` via `UsePerks`; feeding the run's loadout is META-02. |
 | Meta | `MetaProgress`, `MetaConfig`, `CommanderProgression`, `UnlockGacha` | Persistent meta state, Commander EXP, perk points, reincarnation conversion, duplicate-protected gacha unlock pool. |
 | Meta / Flow / UI | `MetaSaveStore`, `MetaSaveFile`, `MetaLoadResult`, `MetaLoadStatus`, `GameSession` save API, `TitleScreen` slots (META-01) | Disk persistence of `MetaProgress`. `MetaSaveStore(directory)`: 3 slots (`meta_slotN.json` + `.bak`), `Inspect` (read-only), `Load` (backup restore / `*.corrupt-*` quarantine), `Save` (temp then swap), `Delete`, `GetLastSlot`/`SetLastSlot`; version 1, newer versions unreadable. `GameSession.SaveStore` (default `persistentDataPath/Saves`), `UseSaveStore` (tests), `SelectSlot`, `ActiveSlot` (-1 = none, never writes), `SaveMeta()` — call after any meta change; also runs on `Application.quitting`. `GameRewardController` saves after granting XP/unlock points. `TitleScreen.SelectSlot`/`DeleteSelectedSlot`/`SlotText`; rows built by `GameFlowSetup.ApplyTitleSaveSlots`. Tests: EditMode `MetaSaveStoreTests`, PlayMode `GameFlowPlayTests`. [History](../history/META/META-01.md). |

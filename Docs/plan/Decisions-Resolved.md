@@ -1,10 +1,12 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-16 17:51:39 (KST)
+Last Updated: 2026-11-17 05:43:55 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
 ## Resolved `Q-*` Table
+
+Morale gain hooks (COMBAT-07, 2026-11-17, user): (1) a morale gain never triggers the Breaking Point Check, even across `100`; (2) a routed squad (morale `0`) receives no gain and its rout is not cancelled; (3) the sample hook is a battle-start perk effect (`PerkTrigger.BattleStart`), firing once per battle. Full skills stay in COMBAT-06, perk injection in META-02. [Rule](../design/MoraleAndWave.md).
 
 UI language (2026-11-16, user): UI text is authored in one language only; the English-then-runtime-Korean swap (`RuntimeSystemFont` captions, `korean ? … : …` branches) is to be removed and no new UI adds it. English is acceptable. Cleanup tracked as UI-02; device/language support in general stays under Q-15.
 
