@@ -45,9 +45,7 @@ namespace ProjectNeo.Editor
         static void BuildPanel(GameFlowHud hud, GameSquadOrganization organization, out GameObject panel, out TMP_Text status,
             out TMP_Text body, out RectTransform cards, out RectTransform card, out Button row)
         {
-            // 한글 글꼴(RuntimeSystemFont)이 실행 중에 바꿔 주는 범위 안에 둔다(장비 팝업과 같다).
-            var font = (RuntimeSystemFont)new SerializedObject(hud).FindProperty("font").objectReferenceValue;
-            Transform parent = font != null && !hud.transform.IsChildOf(font.transform) ? font.transform : hud.transform;
+            Transform parent = hud.transform;
             Transform existing = parent.Find("OrganizationPanel");
             if (existing != null) UnityEngine.Object.DestroyImmediate(existing.gameObject);
 
@@ -57,7 +55,7 @@ namespace ProjectNeo.Editor
             rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
             rect.sizeDelta = new Vector2(1120f, 660f);
             panel.GetComponent<Image>().color = new Color(0.06f, 0.08f, 0.1f, 0.94f);
-            TMP_Text title = GameFacilitySetup.Text(panel.transform, "Title", "부대 편성", 32f, new Vector2(24f, -20f), new Vector2(-24f, -66f));
+            TMP_Text title = GameFacilitySetup.Text(panel.transform, "Title", "Squad organization", 32f, new Vector2(24f, -20f), new Vector2(-24f, -66f));
             title.fontStyle = FontStyles.Bold;
             status = GameFacilitySetup.Text(panel.transform, "Status", "Squads", 18f, new Vector2(24f, -70f), new Vector2(-24f, -100f));
             status.color = new Color(1f, 0.9f, 0.55f);
@@ -97,7 +95,7 @@ namespace ProjectNeo.Editor
             cardObject.GetComponent<Image>().color = new Color(0.11f, 0.15f, 0.19f, 1f);
             var cardSize = cardObject.GetComponent<LayoutElement>();
             cardSize.preferredWidth = cardSize.minWidth = 210f;
-            Button header = GameFacilitySetup.ButtonAt(cardObject.transform, "Header", "부대", new Vector2(0.5f, 1f), new Vector2(0f, -6f),
+            Button header = GameFacilitySetup.ButtonAt(cardObject.transform, "Header", "Squad", new Vector2(0.5f, 1f), new Vector2(0f, -6f),
                 new Vector2(198f, 52f), null, out TMP_Text headerLabel);
             headerLabel.fontSize = 15f;
             header.GetComponent<RectTransform>().pivot = new Vector2(0.5f, 1f);
@@ -119,7 +117,7 @@ namespace ProjectNeo.Editor
             row.gameObject.AddComponent<LayoutElement>().preferredHeight = 26f;
             row.gameObject.SetActive(false);
 
-            GameFacilitySetup.ButtonAt(panel.transform, "Button_Close", "닫기 (Esc)", new Vector2(0.5f, 0f), new Vector2(0f, 20f),
+            GameFacilitySetup.ButtonAt(panel.transform, "Button_Close", "Close (Esc)", new Vector2(0.5f, 0f), new Vector2(0f, 20f),
                 new Vector2(200f, 48f), organization.Close, out _);
             panel.SetActive(false);
         }

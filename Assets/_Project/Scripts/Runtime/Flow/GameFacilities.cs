@@ -180,11 +180,11 @@ namespace ProjectNeo.Flow
             if (!IsOpen || flow.Phase != GamePhase.Preparation) return false;
             FacilityState facility = Facility(OpenFacility.Value);
             if (facility == null) return false;
-            if (facility.IsMaxLevel) { Message = "이미 최대 레벨입니다."; Rebuild(); return false; }
+            if (facility.IsMaxLevel) { Message = "Already at maximum level."; Rebuild(); return false; }
             Cost cost = facility.NextUpgradeCost;
             bool upgraded = State.TryUpgradeFacility(OpenFacility.Value);
             if (upgraded && OpenFacility == FacilityType.TrainingGround) battle.RunLink.ApplyTraining();
-            Message = upgraded ? $"레벨 {facility.Level + 1}(으)로 올렸습니다 · {Describe(cost)}" : "비용이 모자랍니다: " + Describe(cost);
+            Message = upgraded ? $"Upgraded to level {facility.Level + 1} · {Describe(cost)}" : "Not enough funds: " + Describe(cost);
             Rebuild();
             return upgraded;
         }
@@ -198,7 +198,7 @@ namespace ProjectNeo.Flow
             if (OpenFacility != FacilityType.Shop || state?.Shop == null || index < 0 || index >= state.Shop.Stock.Count) return false;
             ItemDefinition item = state.Shop.Stock[index];
             bool bought = state.TryBuyAt(index);
-            Message = bought ? $"{item.DisplayName} 구매 · {Describe(item.Price)}" : $"{item.DisplayName}: 비용이 모자랍니다.";
+            Message = bought ? $"{item.DisplayName} purchased · {Describe(item.Price)}" : $"{item.DisplayName}: Not enough funds.";
             Rebuild();
             return bought;
         }
@@ -211,7 +211,7 @@ namespace ProjectNeo.Flow
             ItemInstance item = state.Inventory.Items[index];
             int price = state.Shop.GetInstanceSellPrice(item);
             bool sold = state.TrySell(item);
-            if (sold) Message = $"{item.DisplayName} 판매 · {price}골드";
+            if (sold) Message = $"{item.DisplayName} sold · {price} gold";
             Rebuild();
             return sold;
         }
@@ -231,7 +231,7 @@ namespace ProjectNeo.Flow
             HireCheck check = HireCheck.NotOffered;
             if (spawner != null) unit = spawner.HireAtTavern(hero, captainSquad, out check);
             Message = unit != null
-                ? $"{hero.DisplayName} 고용 · {Describe(hero.HireCost)} → " + (captainSquad < 0 ? "대기 영웅" : $"부대 {captainSquad + 1} 대장")
+                ? $"{hero.DisplayName} hired · {Describe(hero.HireCost)} → " + (captainSquad < 0 ? "Reserve hero" : $"Squad {captainSquad + 1} captain")
                 : $"{hero.DisplayName}: " + Reason(check);
             Rebuild();
             return unit != null;
@@ -250,37 +250,37 @@ namespace ProjectNeo.Flow
 
         static string Reason(HireCheck check) => check switch
         {
-            HireCheck.BattlePending => "전투 중에는 고용할 수 없습니다.",
-            HireCheck.NoSquad => "대장을 맡길 부대가 없습니다.",
-            HireCheck.NotEnoughFunds => "비용이 모자랍니다.",
-            _ => "고용하지 못했습니다.",
+            HireCheck.BattlePending => "Cannot hire during battle.",
+            HireCheck.NoSquad => "No squad available for a captain.",
+            HireCheck.NotEnoughFunds => "Not enough funds.",
+            _ => "Could not hire.",
         };
 
         void BuildTavernRows(RunState state)
         {
             IReadOnlyList<HeroDefinition> offers = state.TavernOffers;
-            if (offers.Count == 0) AddRow(offerList, "고용할 영웅이 없습니다.", null);
+            if (offers.Count == 0) AddRow(offerList, "No heroes available to hire.", null);
             for (int i = 0; i < offers.Count; i++)
             {
                 int index = i;
-                AddRow(offerList, $"{offers[i].DisplayName} · {offers[i].Tier}등급 · {Describe(offers[i].HireCost)}", () => TryHire(index));
+                AddRow(offerList, $"{offers[i].DisplayName} · {offers[i].Tier} tier · {Describe(offers[i].HireCost)}", () => TryHire(index));
             }
             if (captainSquad >= state.Army.Squads.Count) captainSquad = -1;
-            AddRow(inventoryList, (captainSquad < 0 ? "[선택] " : string.Empty) + "대기 영웅으로 (전투 제외)", () => ChooseCaptainSquad(-1));
+            AddRow(inventoryList, (captainSquad < 0 ? "[Selected] " : string.Empty) + "Reserve hero (out of battle)", () => ChooseCaptainSquad(-1));
             IReadOnlyList<Squad<RunUnit>> squads = state.Army.Squads;
             for (int i = 0; i < squads.Count && i < MaxInventoryRows; i++)
             {
                 int index = i;
-                string mark = i == captainSquad ? "[선택] " : string.Empty;
-                string leader = squads[i].Leader is RunHero hero ? hero.Definition.DisplayName : "없음";
-                AddRow(inventoryList, $"{mark}부대 {i + 1} 대장으로 (지금: {leader})", () => ChooseCaptainSquad(index));
+                string mark = i == captainSquad ? "[Selected] " : string.Empty;
+                string leader = squads[i].Leader is RunHero hero ? hero.Definition.DisplayName : "None";
+                AddRow(inventoryList, $"{mark}Captain of squad {i + 1} (current: {leader})", () => ChooseCaptainSquad(index));
             }
         }
 
         static string DescribeTavern(FacilityState facility)
         {
-            var text = new StringBuilder("영웅은 준비 단계마다 새로 등장합니다. 대장을 맡기면 원래 대장은 대기로 갑니다. 대기 영웅은 전투에 나가지 않습니다.");
-            if (!facility.IsMaxLevel) text.Append("\n업그레이드하면 다음 준비부터 더 높은 등급의 영웅이 등장합니다.");
+            var text = new StringBuilder("Hero offers refresh each preparation. Replacing a captain sends the old captain to reserve. Reserve heroes do not enter battle.");
+            if (!facility.IsMaxLevel) text.Append("\nUpgrades unlock higher tier heroes from the next preparation.");
             return text.ToString();
         }
 
@@ -292,7 +292,7 @@ namespace ProjectNeo.Flow
             int cost = state.ShopRerollCost;
             ShopRerollCheck check = state.CheckShopReroll();
             bool rerolled = check == ShopRerollCheck.Ok && state.TryRerollShop(IsUnlocked);
-            Message = rerolled ? $"매물을 새로 뽑았습니다 · {cost}골드" : "리롤: " + Reason(check, cost);
+            Message = rerolled ? $"Offers rerolled · {cost} gold" : "Reroll: " + Reason(check, cost);
             Rebuild();
             return rerolled;
         }
@@ -301,9 +301,9 @@ namespace ProjectNeo.Flow
 
         static string Reason(ShopRerollCheck check, int cost) => check switch
         {
-            ShopRerollCheck.BattlePending => "전투 중에는 리롤할 수 없습니다.",
-            ShopRerollCheck.NotEnoughFunds => $"비용이 모자랍니다: {cost}골드",
-            _ => "지금은 리롤할 수 없습니다.",
+            ShopRerollCheck.BattlePending => "Cannot reroll during battle.",
+            ShopRerollCheck.NotEnoughFunds => $"Not enough funds: {cost} gold",
+            _ => "Cannot reroll now.",
         };
 
         /// <summary>상점 매물의 index번째 잠금을 토글한다(PREP-03). 각 매물 줄의 잠금 버튼이 부른다.</summary>
@@ -317,7 +317,7 @@ namespace ProjectNeo.Flow
             bool toggled = check == ShopLockCheck.Ok && state.TryToggleShopLock(index);
             ItemDefinition item = state.Shop.Stock[index];
             Message = toggled
-                ? (wasLocked ? $"{item.DisplayName} 잠금 해제" : $"{item.DisplayName} 잠금 (최대 {state.ShopMaxLocked}개)")
+                ? (wasLocked ? $"{item.DisplayName} unlocked" : $"{item.DisplayName} locked (limit {state.ShopMaxLocked})")
                 : Reason(check, state.ShopMaxLocked);
             Rebuild();
             return toggled;
@@ -325,9 +325,9 @@ namespace ProjectNeo.Flow
 
         static string Reason(ShopLockCheck check, int maxLocked) => check switch
         {
-            ShopLockCheck.BattlePending => "전투 중에는 잠금을 바꿀 수 없습니다.",
-            ShopLockCheck.LimitReached => $"잠금은 최대 {maxLocked}개까지 가능합니다.",
-            _ => "지금은 잠금을 바꿀 수 없습니다.",
+            ShopLockCheck.BattlePending => "Cannot change locks during battle.",
+            ShopLockCheck.LimitReached => $"Lock limit: {maxLocked} offers.",
+            _ => "Cannot change locks now.",
         };
 
         static bool IsUnlocked(ItemDefinition item) => GameSession.Meta.IsUnlocked(item);
@@ -342,7 +342,7 @@ namespace ProjectNeo.Flow
             CraftingRecipe recipe = recipes[index];
             CraftCheck check = state.CheckCraft(recipe.item, IsUnlocked);
             bool crafted = check == CraftCheck.Ok && state.TryCraft(recipe.item, IsUnlocked) != null;
-            Message = crafted ? $"{recipe.item.DisplayName} 제작 · {Describe(recipe.cost)}" : $"{recipe.item.DisplayName}: " + Reason(check);
+            Message = crafted ? $"{recipe.item.DisplayName} crafted · {Describe(recipe.cost)}" : $"{recipe.item.DisplayName}: " + Reason(check);
             Rebuild();
             return crafted;
         }
@@ -357,7 +357,7 @@ namespace ProjectNeo.Flow
             ItemInstance item = equipment[index];
             int price = state.Shop.GetInstanceSellPrice(item);
             bool sold = state.TrySellAtSmithy(item);
-            if (sold) Message = $"{item.DisplayName} 판매 · {price}골드";
+            if (sold) Message = $"{item.DisplayName} sold · {price} gold";
             Rebuild();
             return sold;
         }
@@ -371,7 +371,7 @@ namespace ProjectNeo.Flow
             ItemInstance item = equipment[index];
             EquipmentUpgradeCheck check = state.CheckUpgradeEquipment(item);
             bool upgraded = check == EquipmentUpgradeCheck.Allowed && state.TryUpgradeEquipment(item);
-            Message = upgraded ? $"{item.DisplayName} 강화 완료" : $"{item.DisplayName}: " + UpgradeReason(check);
+            Message = upgraded ? $"{item.DisplayName} upgraded" : $"{item.DisplayName}: " + UpgradeReason(check);
             Rebuild();
             return upgraded;
         }
@@ -390,13 +390,13 @@ namespace ProjectNeo.Flow
 
         static string UpgradeReason(EquipmentUpgradeCheck check) => check switch
         {
-            EquipmentUpgradeCheck.MaximumLevel => "현재 대장간의 최대 강화 단계입니다.",
-            EquipmentUpgradeCheck.NotEnoughFunds => "비용이 모자랍니다.",
-            EquipmentUpgradeCheck.NotOwned => "착용한 장비는 벗어서 보관함에 넣으세요.",
-            EquipmentUpgradeCheck.MissingCostData => "이 단계의 강화 재료 데이터가 없습니다.",
-            EquipmentUpgradeCheck.NotConfigured => "강화 설정이 없습니다.",
-            EquipmentUpgradeCheck.BattlePending => "전투 중에는 강화할 수 없습니다.",
-            _ => "이 장비는 강화할 수 없습니다.",
+            EquipmentUpgradeCheck.MaximumLevel => "Maximum upgrade level for this smithy.",
+            EquipmentUpgradeCheck.NotEnoughFunds => "Not enough funds.",
+            EquipmentUpgradeCheck.NotOwned => "Unequip the item into the stash first.",
+            EquipmentUpgradeCheck.MissingCostData => "Upgrade material data is missing for this level.",
+            EquipmentUpgradeCheck.NotConfigured => "Upgrade settings are missing.",
+            EquipmentUpgradeCheck.BattlePending => "Cannot upgrade during battle.",
+            _ => "This equipment cannot be upgraded.",
         };
 
         static List<ItemInstance> EquipmentIn(Inventory inventory)
@@ -409,10 +409,10 @@ namespace ProjectNeo.Flow
 
         static string Reason(CraftCheck check) => check switch
         {
-            CraftCheck.BattlePending => "전투 중에는 만들 수 없습니다.",
-            CraftCheck.NotCraftable => "지금 대장간 레벨에서는 만들 수 없습니다.",
-            CraftCheck.NotEnoughFunds => "비용이 모자랍니다.",
-            _ => "만들지 못했습니다.",
+            CraftCheck.BattlePending => "Cannot craft during battle.",
+            CraftCheck.NotCraftable => "Cannot craft at this smithy level.",
+            CraftCheck.NotEnoughFunds => "Not enough funds.",
+            _ => "Could not craft.",
         };
 
         /// <summary>병영에서 모집할 수 있는 잡졸의 index번째를 고른 부대(없으면 자동 배치)로 모집한다(D-4). 비용을 낸다.</summary>
@@ -428,7 +428,7 @@ namespace ProjectNeo.Flow
             UnitCombatAI unit = null;
             int squad = -1;
             if (check == RecruitCheck.Ok && spawner != null) unit = spawner.RecruitAtBarracks(soldier, chosenSquad, out squad);
-            Message = unit != null ? $"{soldier.DisplayName} 모집 · {Describe(soldier.RecruitCost)} → 부대 {squad + 1}"
+            Message = unit != null ? $"{soldier.DisplayName} recruited · {Describe(soldier.RecruitCost)} -> Squad {squad + 1}"
                 : $"{soldier.DisplayName}: " + Reason(check);
             Rebuild();
             return unit != null;
@@ -447,11 +447,11 @@ namespace ProjectNeo.Flow
 
         static string Reason(RecruitCheck check) => check switch
         {
-            RecruitCheck.BattlePending => "전투 중에는 모집할 수 없습니다.",
-            RecruitCheck.NotRecruitable => "지금 병영 레벨에서는 모집할 수 없습니다.",
-            RecruitCheck.NoSquad => "넣을 부대가 없습니다(고른 부대가 꽉 찼거나 부대 수 상한).",
-            RecruitCheck.NotEnoughFunds => "비용이 모자랍니다.",
-            _ => "모집하지 못했습니다.",
+            RecruitCheck.BattlePending => "Cannot recruit during battle.",
+            RecruitCheck.NotRecruitable => "Cannot recruit at this barracks level.",
+            RecruitCheck.NoSquad => "No squad available (squad full or squad limit reached).",
+            RecruitCheck.NotEnoughFunds => "Not enough funds.",
+            _ => "Could not recruit.",
         };
 
         void Hide()
@@ -475,9 +475,9 @@ namespace ProjectNeo.Flow
             FacilityType type = facility.Definition.Type;
             if (title != null) title.text = facility.Definition.DisplayName;
             if (status != null)
-                status.text = $"레벨 {facility.Level + 1} / {facility.Definition.Levels.Count}\n" + DescribeWallet(state.Wallet);
+                status.text = $"Level {facility.Level + 1} / {facility.Definition.Levels.Count}\n" + DescribeWallet(state.Wallet);
             if (upgradeLabel != null)
-                upgradeLabel.text = facility.IsMaxLevel ? "최대 레벨" : "업그레이드 · " + Describe(facility.NextUpgradeCost);
+                upgradeLabel.text = facility.IsMaxLevel ? "Max level" : "Upgrade - " + Describe(facility.NextUpgradeCost);
             if (upgradeButton != null) upgradeButton.interactable = !facility.IsMaxLevel;
             bool shop = type == FacilityType.Shop && state.Shop != null;
             bool barracks = type == FacilityType.TrainingGround;
@@ -485,22 +485,22 @@ namespace ProjectNeo.Flow
             bool tavern = type == FacilityType.Tavern;
             if (body != null)
             {
-                string text = shop ? $"매물은 준비 단계마다 새로 바뀌고, 업그레이드는 다음 준비의 매물부터 반영됩니다.\n리롤은 할 때마다 비싸지고 다음 준비에 처음 값으로 돌아갑니다. 잠금은 무료(최대 {state.ShopMaxLocked}개)입니다."
+                string text = shop ? $"Offers refresh each preparation; upgrades apply to the next preparation's offers.\nReroll costs increase until the next preparation. Locking is free (limit {state.ShopMaxLocked})."
                     : barracks ? DescribeTraining(facility)
                     : smithy ? DescribeSmithy(facility)
                     : tavern ? DescribeTavern(facility)
-                    : Purpose(type) + "\n이 시설의 기능과 업그레이드 효과는 다음 작업에서 붙습니다.";
+                    : Purpose(type) + "\nFacility functions and upgrade effects will be added later.";
                 body.text = string.IsNullOrEmpty(Message) ? text : Message + "\n" + text;
             }
             if (tradeArea != null) tradeArea.SetActive(shop || barracks || smithy || tavern);
             if (rerollButton != null) rerollButton.gameObject.SetActive(shop);
-            if (shop && rerollLabel != null) rerollLabel.text = $"리롤 · {state.ShopRerollCost}골드";
+            if (shop && rerollLabel != null) rerollLabel.text = $"Reroll - {state.ShopRerollCost} gold";
             if (offerHeader != null)
-                offerHeader.text = barracks ? "모집 (클릭해서 모집)" : smithy ? "제작 (클릭해서 제작)"
-                    : tavern ? "영웅 (클릭해서 고용)" : shopOfferHeader;
+                offerHeader.text = barracks ? "Recruit (click to recruit)" : smithy ? "Craft (click to craft)"
+                    : tavern ? "Heroes (click to hire)" : shopOfferHeader;
             if (inventoryHeader != null)
-                inventoryHeader.text = barracks ? "넣을 부대 (클릭해서 선택)" : smithy ? "장비 강화 / 판매"
-                    : tavern ? "맡길 자리 (클릭해서 선택)" : shopInventoryHeader;
+                inventoryHeader.text = barracks ? "Squad (click to select)" : smithy ? "Upgrade / Sell equipment"
+                    : tavern ? "Assignment (click to select)" : shopInventoryHeader;
             ClearRows();
             if (rowTemplate == null) return;
             if (barracks) { BuildBarracksRows(state); return; }
@@ -508,30 +508,30 @@ namespace ProjectNeo.Flow
             if (smithy) { BuildSmithyRows(state); return; }
             if (!shop) return;
             IReadOnlyList<ItemDefinition> stock = state.Shop.Stock;
-            if (stock.Count == 0) AddRow(offerList, "매물이 없습니다.", null);
+            if (stock.Count == 0) AddRow(offerList, "No offers available.", null);
             for (int i = 0; i < stock.Count; i++)
             {
                 int index = i;
                 bool isLocked = state.Shop.IsLocked(index);
-                string prefix = isLocked ? "[잠금] " : string.Empty;
+                string prefix = isLocked ? "[Locked] " : string.Empty;
                 AddShopOfferRow(offerList, $"{prefix}{stock[i].DisplayName} · {Describe(stock[i].Price)}", isLocked,
                     () => TryBuy(index), () => TryToggleLock(index));
             }
             IReadOnlyList<ItemInstance> items = state.Inventory.Items;
-            if (items.Count == 0) AddRow(inventoryList, "보관함이 비었습니다.", null);
+            if (items.Count == 0) AddRow(inventoryList, "The stash is empty.", null);
             for (int i = 0; i < items.Count && i < MaxInventoryRows; i++)
             {
                 int index = i;
-                AddRow(inventoryList, $"{items[i].DisplayName} 팔기 · {state.Shop.GetInstanceSellPrice(items[i])}골드",
+                AddRow(inventoryList, $"{items[i].DisplayName} sell - {state.Shop.GetInstanceSellPrice(items[i])} gold",
                     () => TrySell(index));
             }
-            if (items.Count > MaxInventoryRows) AddRow(inventoryList, $"외 {items.Count - MaxInventoryRows}개", null);
+            if (items.Count > MaxInventoryRows) AddRow(inventoryList, $"{items.Count - MaxInventoryRows} more", null);
         }
 
         void BuildBarracksRows(RunState state)
         {
             IReadOnlyList<SoldierDefinition> soldiers = state.RecruitableSoldiers;
-            if (soldiers.Count == 0) AddRow(offerList, "모집할 수 있는 잡졸이 없습니다.", null);
+            if (soldiers.Count == 0) AddRow(offerList, "No soldiers available to recruit.", null);
             for (int i = 0; i < soldiers.Count; i++)
             {
                 int index = i;
@@ -539,36 +539,36 @@ namespace ProjectNeo.Flow
                 AddRow(offerList, $"{soldiers[i].DisplayName} · {Describe(soldiers[i].RecruitCost)}", () => TryRecruit(index));
             }
             if (chosenSquad != null && state.IndexOf(chosenSquad) < 0) chosenSquad = null;
-            AddRow(inventoryList, (chosenSquad == null ? "[선택] " : string.Empty) + "자동 배치 (빈자리 있는 첫 부대)", () => ChooseSquad(-1));
+            AddRow(inventoryList, (chosenSquad == null ? "[Selected] " : string.Empty) + "Auto assign (first squad with room)", () => ChooseSquad(-1));
             IReadOnlyList<Squad<RunUnit>> squads = state.Army.Squads;
             for (int i = 0; i < squads.Count && i < MaxInventoryRows; i++)
             {
                 int index = i;
-                string mark = squads[i] == chosenSquad ? "[선택] " : string.Empty;
-                AddRow(inventoryList, $"{mark}부대 {i + 1} · {squads[i].Members.Count}/{squads[i].Capacity}명", () => ChooseSquad(index));
+                string mark = squads[i] == chosenSquad ? "[Selected] " : string.Empty;
+                AddRow(inventoryList, $"{mark}Squad {i + 1} - {squads[i].Members.Count}/{squads[i].Capacity} units", () => ChooseSquad(index));
             }
-            if (state.Army.CanAddSquad) AddRow(inventoryList, "모두 차면 새 부대를 만듭니다", null);
+            if (state.Army.CanAddSquad) AddRow(inventoryList, "A new squad is created if all squads are full", null);
         }
 
         void BuildSmithyRows(RunState state)
         {
             IReadOnlyList<CraftingRecipe> recipes = state.CraftableRecipes(IsUnlocked);
-            if (recipes.Count == 0) AddRow(offerList, "만들 수 있는 장비가 없습니다.", null);
+            if (recipes.Count == 0) AddRow(offerList, "No equipment available to craft.", null);
             for (int i = 0; i < recipes.Count; i++)
             {
                 int index = i;
                 AddRow(offerList, $"{recipes[i].item.DisplayName} · {Describe(recipes[i].cost)}", () => TryCraft(index));
             }
             List<ItemInstance> equipment = EquipmentIn(state.Inventory);
-            if (equipment.Count == 0) AddRow(inventoryList, "팔 장비가 없습니다.", null);
+            if (equipment.Count == 0) AddRow(inventoryList, "No equipment to sell.", null);
             for (int i = 0; i < equipment.Count && i < MaxInventoryRows; i++)
             {
                 int index = i;
                 ItemInstance item = equipment[i];
                 EquipmentUpgradeCheck check = state.CheckUpgradeEquipment(item);
-                string detail = check == EquipmentUpgradeCheck.MaximumLevel ? $"최대 +{state.MaxEquipmentUpgrade}"
+                string detail = check == EquipmentUpgradeCheck.MaximumLevel ? $"Max +{state.MaxEquipmentUpgrade}"
                     : state.EquipmentUpgrades != null && state.EquipmentUpgrades.TryGetNextCost(item, out Cost cost)
-                        ? $"+{item.UpgradeLevel + 1} 강화 · {Describe(cost)}" : UpgradeReason(check);
+                        ? $"+{item.UpgradeLevel + 1} upgrade - {Describe(cost)}" : UpgradeReason(check);
                 Button row = AddRow(inventoryList, $"{item.DisplayName}\n{detail}",
                     check == EquipmentUpgradeCheck.Allowed || check == EquipmentUpgradeCheck.NotEnoughFunds
                         ? () => TryUpgradeEquipment(index) : null);
@@ -579,26 +579,26 @@ namespace ProjectNeo.Flow
                 label.rectTransform.offsetMax = new Vector2(-83f, 0f);
                 AddEquipmentSellButton(row, state.Shop.GetInstanceSellPrice(item), () => TrySellEquipment(index));
             }
-            if (equipment.Count > MaxInventoryRows) AddRow(inventoryList, $"외 {equipment.Count - MaxInventoryRows}개", null);
+            if (equipment.Count > MaxInventoryRows) AddRow(inventoryList, $"{equipment.Count - MaxInventoryRows} more", null);
         }
 
         string DescribeSmithy(FacilityState facility)
         {
-            var text = new StringBuilder($"레시피로 제작 / 보관함 클릭: 강화 (최대 +{State.MaxEquipmentUpgrade}) / 버튼: 판매\n착용 장비는 먼저 벗으세요.");
+            var text = new StringBuilder($"Craft from recipes / click stash: upgrade (max +{State.MaxEquipmentUpgrade}) / button: sell\nUnequip equipped items first.");
             if (!facility.IsMaxLevel)
             {
                 List<CraftingRecipe> next = facility.Definition.Levels[facility.Level + 1].recipes;
-                text.Append($" 다음 레벨: 레시피 {(next != null ? next.Count : 0)}종");
+                text.Append($" Next level: {(next != null ? next.Count : 0)} recipes");
             }
             return text.ToString();
         }
 
         static string DescribeTraining(FacilityState facility)
         {
-            var text = new StringBuilder("훈련 보너스(모든 잡졸): " + DescribeModifiers(SoldierTraining.ModifiersOf(facility)));
+            var text = new StringBuilder("Training bonus (all soldiers): " + DescribeModifiers(SoldierTraining.ModifiersOf(facility)));
             if (!facility.IsMaxLevel)
-                text.Append("\n다음 레벨: " + DescribeModifiers(facility.Definition.Levels[facility.Level + 1].soldierModifiers));
-            text.Append("\n업그레이드하면 지금 있는 잡졸에게도 바로 붙습니다.");
+                text.Append("\nNext level: " + DescribeModifiers(facility.Definition.Levels[facility.Level + 1].soldierModifiers));
+            text.Append("\nUpgrades apply to existing soldiers immediately.");
             return text.ToString();
         }
 
@@ -612,17 +612,17 @@ namespace ProjectNeo.Flow
                     string amount = modifier.kind == ModifierKind.Percent ? $"{modifier.value * 100f:+0;-0}%" : $"{modifier.value:+0.#;-0.#}";
                     text.Append(StatName(modifier.stat) + " " + amount);
                 }
-            return text.Length > 0 ? text.ToString() : "없음";
+            return text.Length > 0 ? text.ToString() : "None";
         }
 
         static string StatName(StatType stat) => stat switch
         {
-            StatType.MaxHealth => "체력",
-            StatType.Attack => "공격력",
-            StatType.Defense => "방어력",
-            StatType.AttackSpeed => "공격 속도",
-            StatType.MoveSpeed => "이동 속도",
-            StatType.AttackRange => "사거리",
+            StatType.MaxHealth => "Health",
+            StatType.Attack => "Attack",
+            StatType.Defense => "Defense",
+            StatType.AttackSpeed => "Attack speed",
+            StatType.MoveSpeed => "Move speed",
+            StatType.AttackRange => "Range",
             _ => stat.ToString(),
         };
 
@@ -669,7 +669,7 @@ namespace ProjectNeo.Flow
             label.fontSize = 12f;
             label.alignment = TextAlignmentOptions.Center;
             label.raycastTarget = false;
-            label.text = $"판매\n{price}골드";
+            label.text = $"Sell\n{price} gold";
         }
 
         void AddShopOfferRow(RectTransform list, string text, bool locked,
@@ -702,7 +702,7 @@ namespace ProjectNeo.Flow
             labelRect.anchorMax = Vector2.one;
             labelRect.offsetMin = labelRect.offsetMax = Vector2.zero;
             var lockLabel = labelObject.GetComponent<TextMeshProUGUI>();
-            lockLabel.text = locked ? "해제" : "잠금";
+            lockLabel.text = locked ? "Unlock" : "Lock";
             lockLabel.fontSize = 14f;
             lockLabel.alignment = TextAlignmentOptions.Center;
             lockLabel.raycastTarget = false;
@@ -731,7 +731,7 @@ namespace ProjectNeo.Flow
 
         static string Describe(Cost cost)
         {
-            var text = new StringBuilder($"{Mathf.Max(0, cost.gold)}골드");
+            var text = new StringBuilder($"{Mathf.Max(0, cost.gold)} gold");
             if (cost.materials != null)
                 foreach (MaterialAmount entry in cost.materials)
                     if (entry.material != null && entry.amount > 0) text.Append($" · {entry.material.DisplayName} {entry.amount}");
@@ -740,7 +740,7 @@ namespace ProjectNeo.Flow
 
         static string DescribeWallet(Wallet wallet)
         {
-            var text = new StringBuilder($"골드 {wallet.Gold}");
+            var text = new StringBuilder($"Gold {wallet.Gold}");
             foreach (KeyValuePair<MaterialDefinition, int> material in wallet.Materials)
                 if (material.Key != null && material.Value > 0) text.Append($" · {material.Key.DisplayName} {material.Value}");
             return text.ToString();
@@ -748,11 +748,11 @@ namespace ProjectNeo.Flow
 
         static string Purpose(FacilityType type) => type switch
         {
-            FacilityType.Tavern => "영웅 고용",
-            FacilityType.Shop => "아이템 구매·판매",
-            FacilityType.TrainingGround => "잡졸 모집·강화",
-            FacilityType.Smithy => "장비 생산·강화·판매",
-            FacilityType.Defense => "성벽·무기 준비",
+            FacilityType.Tavern => "Hire heroes",
+            FacilityType.Shop => "Buy / sell items",
+            FacilityType.TrainingGround => "Recruit / train soldiers",
+            FacilityType.Smithy => "Craft / upgrade / sell equipment",
+            FacilityType.Defense => "Prepare walls / weapons",
             _ => string.Empty,
         };
     }

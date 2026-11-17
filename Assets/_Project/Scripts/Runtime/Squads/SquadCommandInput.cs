@@ -58,7 +58,7 @@ namespace ProjectNeo.Squads
         public bool SelectSquad(int index)
         {
             bool selected = center.Commander.Select(index);
-            Message = selected ? "" : (index + 1) + "번 부대가 없습니다.";
+            Message = selected ? "" : $"Squad {index + 1} does not exist.";
             return selected;
         }
 
@@ -66,8 +66,8 @@ namespace ProjectNeo.Squads
 
         public bool OrderMove()
         {
-            if (center.Commander.SelectedCount == 0) { Message = "먼저 부대를 선택하세요."; return false; }
-            if (!TryGetAimPoint(out Vector3 point)) { Message = "갈 수 없는 곳입니다."; return false; }
+            if (center.Commander.SelectedCount == 0) { Message = "Select a squad first."; return false; }
+            if (!TryGetAimPoint(out Vector3 point)) { Message = "Cannot move there."; return false; }
             string rejected = DestinationCheck?.Invoke(point);
             if (!string.IsNullOrEmpty(rejected)) { Message = rejected; return false; }
             center.Commander.Issue(new SquadOrder(SquadOrderKind.Move, point, view.transform.eulerAngles.y));
@@ -78,7 +78,7 @@ namespace ProjectNeo.Squads
         public bool Order(SquadOrderKind kind)
         {
             if (kind == SquadOrderKind.Move) return OrderMove();
-            if (center.Commander.SelectedCount == 0) { Message = "먼저 부대를 선택하세요."; return false; }
+            if (center.Commander.SelectedCount == 0) { Message = "Select a squad first."; return false; }
             Message = "";
             // 공격은 가리킨 지점으로 가면서 싸운다. 가리킨 곳이 없으면 지금 자리에서 싸운다.
             if (kind == SquadOrderKind.Attack && TryGetAimPoint(out Vector3 point))
@@ -90,7 +90,7 @@ namespace ProjectNeo.Squads
             else
             {
                 center.Commander.Issue(new SquadOrder(kind));
-                if (kind == SquadOrderKind.Attack) Message = "가리킨 곳이 없어 제자리에서 싸웁니다.";
+                if (kind == SquadOrderKind.Attack) Message = "No target point; engaging in place.";
             }
             return true;
         }

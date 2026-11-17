@@ -88,7 +88,7 @@ namespace ProjectNeo.Editor
             center.Configure(config, commandSettings, rosters);
             var input = commandRoot.AddComponent<SquadCommandInput>();
             input.Configure(center, camera); input.enabled = false;
-            SquadCommandSetup.CreateHud(center, input, "\nTab 건설 시점으로 전환");
+            SquadCommandSetup.CreateHud(center, input, "\nTab: construction view");
             SquadCommandSetup.AddMarkers(center);
             GameObject commandHud = Find<SquadCommandHud>(scene).gameObject;
             AddHudBacking(commandHud.GetComponent<SquadCommandHud>());
@@ -120,8 +120,7 @@ namespace ProjectNeo.Editor
             label.font = Required<TMP_FontAsset>("Assets/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF.asset");
             label.text = "Tab: first-person commands"; label.fontSize = 22f;
             label.alignment = TextAlignmentOptions.TopRight; label.raycastTarget = false;
-            hud.ConfigureWeapons(new List<SiegeWeaponDefinition>(hud.Weapons).ToArray(),
-                new TMP_Text[] { label }, new string[] { "Tab 1인칭 지휘 시점\n전환해도 유닛의 지시는 유지됩니다" });
+            hud.ConfigureWeapons(new List<SiegeWeaponDefinition>(hud.Weapons).ToArray());
         }
 
         public static void AddHudBacking(SquadCommandHud hud)

@@ -4913,7 +4913,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uBCF4\uAD00\uD568 \uC7A5\uBE44 (\uD074\uB9AD\uD574\uC11C \uCC29\uC6A9)"
+  m_text: Stash equipment (click to equip)
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -6865,7 +6865,6 @@ MonoBehaviour:
   input: {fileID: 1621472876}
   squads: {fileID: 163431205}
   help: {fileID: 932210738}
-  helpText: "F1~F3 \uBD80\uB300 \uC120\uD0DD \xB7 ` \uC804\uCCB4 \xB7 1 \uC774\uB3D9 \xB7 2 \uACF5\uACA9 \xB7 3 \uC911\uC9C0\nWASD \uC774\uB3D9 \xB7 \uB9C8\uC6B0\uC2A4 \uC2DC\uC810 \xB7 \uC88C\uD074\uB9AD \uACF5\uACA9 \xB7 Esc \uCEE4\uC11C \uD574\uC81C"
 --- !u!114 &648553700
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8075,7 +8074,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uB2EB\uAE30 (Esc)"
+  m_text: Close (Esc)
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -9813,7 +9812,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: F1-F4 select, ` all, 1 move, 2 attack, 3 hold
+  m_text: "F1~F3 select squad \xB7 ` select all \xB7 1 move \xB7 2 attack \xB7 3 hold\nWASD move \xB7 Mouse: look \xB7 Click: attack \xB7 Esc release cursor"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -10729,7 +10728,6 @@ GameObject:
   - component: {fileID: 1033697232}
   - component: {fileID: 1033697231}
   - component: {fileID: 1033697230}
-  - component: {fileID: 1033697229}
   m_Layer: 0
   m_Name: GameFlowHUD
   m_TagString: Untagged
@@ -10737,30 +10735,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1033697229
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1033697228}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: baffff9c87934a742b5ed7a8c11a1de4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.UI.RuntimeSystemFont
-  captionLabels:
-  - {fileID: 575481701}
-  - {fileID: 1039851952}
-  - {fileID: 551801434}
-  - {fileID: 683949553}
-  - {fileID: 1726892086}
-  captions:
-  - "\uC804\uD22C \uC2DC\uC791"
-  - "\uC2B9\uB9AC (\uC790\uB9AC\uD45C\uC2DC)"
-  - "\uD328\uBC30 (\uC790\uB9AC\uD45C\uC2DC)"
-  - "\uBCF4\uC0C1 \uBC1B\uACE0 \uB2E4\uC74C \uC2A4\uD14C\uC774\uC9C0"
-  - "\uD0C0\uC774\uD2C0\uB85C"
 --- !u!114 &1033697230
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10773,7 +10747,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c2751a72fc95e114dafb2ae92a12432f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.UI.GameFlowHud
-  font: {fileID: 1033697229}
   phaseLabel: {fileID: 942946993}
   startBattleButton: {fileID: 1378440902}
   victoryButton: {fileID: 478296005}
@@ -11071,7 +11044,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uB9AC\uB864"
+  m_text: Reroll
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -12599,7 +12572,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uB2EB\uAE30 (Esc)"
+  m_text: Close (Esc)
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -12826,7 +12799,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uBD80\uB300"
+  m_text: Squad
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -13053,7 +13026,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uCC29\uC6A9 \uC911 (\uD074\uB9AD\uD574\uC11C \uBC97\uAE30)"
+  m_text: Equipped (click to unequip)
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -15140,7 +15113,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uB9E4\uBB3C (\uD074\uB9AD\uD574\uC11C \uAD6C\uB9E4)"
+  m_text: Offers (click to buy)
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -16122,7 +16095,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uBD80\uB300 \uD3B8\uC131"
+  m_text: Squad organization
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -17964,7 +17937,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1667311932}
-  - component: {fileID: 1667311933}
   m_Layer: 0
   m_Name: CourtyardLayout
   m_TagString: Untagged
@@ -17995,40 +17967,6 @@ Transform:
   - {fileID: 1502801889}
   m_Father: {fileID: 771676910}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1667311933
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1667311931}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: baffff9c87934a742b5ed7a8c11a1de4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.UI.RuntimeSystemFont
-  captionLabels:
-  - {fileID: 533879308}
-  - {fileID: 85143980}
-  - {fileID: 1948409217}
-  - {fileID: 287720209}
-  - {fileID: 1418626859}
-  - {fileID: 878770604}
-  - {fileID: 775532436}
-  - {fileID: 1723192799}
-  - {fileID: 431771396}
-  - {fileID: 1971460988}
-  captions:
-  - "\uC8FC\uC810"
-  - "\uC8FC\uC810"
-  - "\uC0C1\uC810"
-  - "\uC0C1\uC810"
-  - "\uD6C8\uB828\uC7A5"
-  - "\uD6C8\uB828\uC7A5"
-  - "\uB300\uC7A5\uAC04"
-  - "\uB300\uC7A5\uAC04"
-  - "\uAC74\uC124\uC18C"
-  - "\uAC74\uC124\uC18C"
 --- !u!1 &1686780458
 GameObject:
   m_ObjectHideFlags: 0
@@ -19394,7 +19332,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uB2EB\uAE30 (Esc)"
+  m_text: Close (Esc)
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -19800,7 +19738,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1852945400}
-  - component: {fileID: 1852945401}
   m_Layer: 0
   m_Name: Visual
   m_TagString: Untagged
@@ -19826,22 +19763,6 @@ Transform:
   - {fileID: 966408518}
   m_Father: {fileID: 105512814}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1852945401
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1852945399}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: baffff9c87934a742b5ed7a8c11a1de4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.UI.RuntimeSystemFont
-  captionLabels:
-  - {fileID: 966408519}
-  captions:
-  - "\uC804\uD22C \uC2DC\uC791"
 --- !u!1 &1854601929
 GameObject:
   m_ObjectHideFlags: 0
@@ -20560,7 +20481,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uBCF4\uAD00\uD568 (\uD074\uB9AD\uD574\uC11C \uD310\uB9E4)"
+  m_text: Stash (click to sell)
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -21280,38 +21201,6 @@ MonoBehaviour:
   selection: {fileID: 1165030794}
   status: {fileID: 743693642}
   unitHealth: {fileID: 1291452917}
-  captionLabels:
-  - {fileID: 1725623172}
-  - {fileID: 1241264590}
-  - {fileID: 1726038708}
-  - {fileID: 1892461040}
-  - {fileID: 345218132}
-  - {fileID: 1128053619}
-  - {fileID: 1854601933}
-  - {fileID: 1919129857}
-  - {fileID: 1921723233}
-  - {fileID: 579995752}
-  - {fileID: 927758953}
-  - {fileID: 620730710}
-  - {fileID: 1556863721}
-  - {fileID: 1141785765}
-  - {fileID: 1402115085}
-  captions:
-  - "\uC131\uBCBD \uBC30\uCE58"
-  - "Q/E \uC2DC\uC810 \uD68C\uC804 \xB7 R \uC870\uAC01 \uD68C\uC804"
-  - "\uC131\uBCBD"
-  - "\uACC4\uB2E8"
-  - "\uD68C\uC804  R"
-  - "\uBC30\uCE58 \uCDE8\uC18C"
-  - "\uC88C\uD074\uB9AD \uC124\uCE58 \xB7 \uC6B0\uD074\uB9AD \uCDE8\uC18C\n\uCD08\uB85D: \uC124\uCE58 \uAC00\uB2A5 / \uBE68\uAC15: \uC124\uCE58 \uBD88\uAC00"
-  - "\uC774\uB3D9\xB7\uBD95\uAD34 \uC2DC\uD5D8"
-  - "\uC131\uBCBD \uC704\uB85C \uC774\uB3D9"
-  - "\uBC1C\uBC11 \uC870\uAC01 \uD30C\uAD34"
-  - "\uB300\uD3EC"
-  - "\uBB34\uAE30 \uBC1B\uCE68 \uC131\uBCBD \uD30C\uAD34"
-  - "\uAC74\uC124 \uC2DC\uC810\n\uC911\uD074\uB9AD \uC774\uB3D9 \xB7 \uD720 \uD655\uB300/\uCD95\uC18C\nQ/E \uD68C\uC804 \xB7 Home \uCD08\uAE30\uD654"
-  - "\uCCA0\uAC70 (\uD074\uB9AD)"
-  - "\uBAA8\uB450 \uC218\uB9AC"
   weapons:
   - {fileID: 11400000, guid: dcd5362db7ff6a84db2f93ac232125a8, type: 2}
 --- !u!114 &1927906513
@@ -22059,7 +21948,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uC7A5\uBE44 \xB7 \uD50C\uB808\uC774\uC5B4"
+  m_text: Equipment - Player
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}

@@ -221,7 +221,7 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(rolls + 1, random.FloatCalls);
             Assert.AreEqual(old.Kind, center.Commander.OrderOf(0).Kind);
             foreach (var member in AliveMembers(0)) Assert.AreEqual(UnitDirective.Hold, member.Directive);
-            StringAssert.Contains("명령 무시", morale.NoticeOf(0));
+            StringAssert.Contains("Order ignored", morale.NoticeOf(0));
             center.Commander.Select(0);
             random.Roll = 0.99f;
             Assert.AreEqual(1, center.Commander.Issue(new SquadOrder(SquadOrderKind.Move, AliveMembers(0)[0].transform.position)));
@@ -307,9 +307,9 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(nearBefore - settings.ContagionAmount, morale.MoraleOf(1).Value, 0.01f);
             Assert.AreEqual(farBefore, morale.MoraleOf(farSquad).Value, 0.01f);
             var hud = Object.FindAnyObjectByType<SquadCommandHud>();
-            StringAssert.Contains("사기", hud.DisplayText);
-            StringAssert.Contains("전염", hud.DisplayText);
-            StringAssert.Contains("한계 판정", morale.NoticeOf(0));
+            StringAssert.Contains("Morale", hud.DisplayText);
+            StringAssert.Contains("Contagion", hud.DisplayText);
+            StringAssert.Contains("Limit check", morale.NoticeOf(0));
         }
 
         [UnityTest]

@@ -12,7 +12,6 @@ namespace ProjectNeo.UI
     /// </summary>
     public sealed class GameFlowHud : MonoBehaviour
     {
-        [SerializeField] RuntimeSystemFont font;
         [SerializeField] TMP_Text phaseLabel;
         [SerializeField] GameObject startBattleButton;
         [SerializeField] GameObject victoryButton;
@@ -43,10 +42,10 @@ namespace ProjectNeo.UI
         public void ConfigureInteraction(GamePhaseView view, PreparationInteraction controller, TMP_Text hint, GameObject reticle)
         { phaseView = view; interaction = controller; interactionHint = hint; explorationReticle = reticle; }
 
-        public void Configure(RuntimeSystemFont systemFont, TMP_Text phase, GameObject startBattle, GameObject victory,
+        public void Configure(TMP_Text phase, GameObject startBattle, GameObject victory,
             GameObject defeat, GameObject nextStage, GameObject returnToTitle)
         {
-            font = systemFont; phaseLabel = phase; startBattleButton = startBattle; victoryButton = victory;
+            phaseLabel = phase; startBattleButton = startBattle; victoryButton = victory;
             defeatButton = defeat; nextStageButton = nextStage; returnToTitleButton = returnToTitle;
         }
 
@@ -82,34 +81,30 @@ namespace ProjectNeo.UI
             interactionHint.transform.parent.gameObject.SetActive(preparation);
             if (battleStatus != null) battleStatus.transform.parent.gameObject.SetActive(fighting || rewarding);
             explorationReticle.SetActive(preparation && phaseView.IsExplorationView);
-            bool korean = font != null && font.Available;
+
             // 대포에 탄 동안에만 조준선에 발사 가능·재장전 상태를 보여준다.
             if (fighting && cannonOperator != null && cannonOperator.Manned != null)
             {
                 if (cannonReticle == null) cannonReticle = CannonReticleView.Attach(explorationReticle);
-                cannonReticle.Show(cannonOperator, korean);
+                cannonReticle.Show(cannonOperator);
             }
             else if (cannonReticle != null) cannonReticle.Hide();
             if (rewarding)
             {
                 // 전투 상태 자리에 이번 승리의 보상 내역을 보여준다.
-                if (battleStatus != null) battleStatus.text = rewards.Describe(korean);
+                if (battleStatus != null) battleStatus.text = rewards.Describe();
                 return;
             }
             if (fighting)
             {
                 if (battleStatus == null) return;
-                battleStatus.text = korean
-                    ? $"남은 적 {battle.EnemiesAlive} · 부대원 {battle.AlliesAlive}\n성문: " + (battle.GateDestroyed ? "파괴됨" : "정상")
-                    : $"Enemies {battle.EnemiesAlive} - Allies {battle.AlliesAlive}\nGate: " + (battle.GateDestroyed ? "Destroyed" : "Intact");
-                if (battle.IsRetreating) battleStatus.text += korean ? " · 적 퇴각 중" : " - Retreating";
+                battleStatus.text = $"Enemies {battle.EnemiesAlive} - Allies {battle.AlliesAlive}\nGate: " + (battle.GateDestroyed ? "Destroyed" : "Intact");
+                if (battle.IsRetreating) battleStatus.text += " - Retreating";
                 // 웨이브가 여럿인 전투에서만 진행 상황을 보여 준다(B-7.1).
                 if (battle.WaveCount > 1)
                 {
                     float next = battle.SecondsUntilNextWave;
-                    battleStatus.text += korean
-                        ? $"\n웨이브 {battle.WavesReleased}/{battle.WaveCount}" + (next >= 0f ? $" · 다음 {Mathf.CeilToInt(next)}초" : " · 마지막")
-                        : $"\nWave {battle.WavesReleased}/{battle.WaveCount}" + (next >= 0f ? $" - next {Mathf.CeilToInt(next)}s" : " - final");
+                    battleStatus.text += $"\nWave {battle.WavesReleased}/{battle.WaveCount}" + (next >= 0f ? $" - next {Mathf.CeilToInt(next)}s" : " - final");
                 }
                 foreach (var actor in ProjectNeo.Combat.CharacterActor.ActiveActors)
                 {
@@ -118,16 +113,16 @@ namespace ProjectNeo.UI
                     if (traveller != null)
                     {
                         if (traveller.PlayerHint.Length > 0) battleStatus.text += "\n" + traveller.PlayerHint;
-                        if (traveller.HasInterruptNotice) battleStatus.text += "\n" + (korean ? "피격으로 사다리 밀기가 중단되었습니다!" : "Ladder push interrupted by hit!");
+                        if (traveller.HasInterruptNotice) battleStatus.text += "\n" + "Ladder push interrupted by hit!";
                     }
                     break;
                 }
                 foreach (var ladder in battle.Ladders)
                     if (ladder.PlayerCanPush)
-                    { battleStatus.text += $"\n{battle.Settings.Siege.PushLadder.GetBindingDisplayString()} · 사다리 밀기 {Mathf.RoundToInt(ladder.State.PushProgress * 100f)}%"; break; }
-                string consumable = battle.Consumables != null ? battle.Consumables.Hint(korean) : string.Empty;
+                    { battleStatus.text += $"\n{battle.Settings.Siege.PushLadder.GetBindingDisplayString()} · Push ladder {Mathf.RoundToInt(ladder.State.PushProgress * 100f)}%"; break; }
+                string consumable = battle.Consumables != null ? battle.Consumables.Hint() : string.Empty;
                 if (consumable.Length > 0) battleStatus.text += "\n" + consumable;
-                string cannon = CannonHint(korean);
+                string cannon = CannonHint();
                 if (cannon.Length > 0) battleStatus.text += "\n" + cannon;
                 explorationReticle.SetActive(cannonOperator != null && cannonOperator.Manned != null);
                 return;
@@ -142,22 +137,21 @@ namespace ProjectNeo.UI
             // 탐색 안내는 부대 키 줄과 성문 알림까지 담는다(PREP-05).
             prompt.sizeDelta = new Vector2(-32f, phaseView.IsExplorationView || phaseView.IsPlacementView ? 96f : 64f);
             interactionHint.text = phaseView.IsBuildView
-                ? (korean ? $"건설 모드 · {interaction.CloseKey} 돌아가기" : $"Construction - {interaction.CloseKey} to return")
-                : phaseView.IsPlacementView ? PlacementHint(korean)
+                ? $"Construction - {interaction.CloseKey} to return"
+                : phaseView.IsPlacementView ? PlacementHint()
                 : phaseView.IsPanelView
-                ? (korean ? $"{interaction.CloseKey} 닫기" : $"{interaction.CloseKey} to close")
+                ? $"{interaction.CloseKey} to close"
                 : interaction.Target != null
                     ? $"{interaction.InteractKey} · {interaction.Target.Prompt}"
-                    : (korean ? $"WASD 이동 · {interaction.InteractKey} 상호작용 · {interaction.EquipmentKey} 장비 · {interaction.OrganizationKey} 편성"
-                        : $"WASD move - {interaction.InteractKey} interact - {interaction.EquipmentKey} gear - {interaction.OrganizationKey} squads");
+                    : $"WASD move - {interaction.InteractKey} interact - {interaction.EquipmentKey} gear - {interaction.OrganizationKey} squads";
             if (phaseView.IsExplorationView && battle != null)
             {
                 string startHint = interaction.CanStartBattle
-                    ? (korean ? $"{interaction.BattleStartKey} 길게 누르기 · 전투 시작" : $"Hold {interaction.BattleStartKey} - Start battle")
-                    : (korean ? "전장 준비 중" : "Preparing battlefield");
+                    ? $"Hold {interaction.BattleStartKey} - Start battle"
+                    : "Preparing battlefield";
                 if (interaction.BattleStartProgress > 0f) startHint += $" · {Mathf.FloorToInt(interaction.BattleStartProgress * 100f)}%";
                 interactionHint.text += "\n" + startHint;
-                string squadHint = PreparationSquadHint(korean);
+                string squadHint = PreparationSquadHint();
                 if (squadHint.Length > 0) interactionHint.text += "\n" + squadHint;
                 string gateMessage = battle.PrepGate != null ? battle.PrepGate.Message : "";
                 if (gateMessage.Length > 0) interactionHint.text += "\n" + gateMessage;
@@ -168,47 +162,43 @@ namespace ProjectNeo.UI
         /// 준비 중 1인칭 탐색에서 보여주는 부대 키 한 줄(PREP-05). 전투용 키 안내 상자 대신 여기 한 곳에서만 만든다.
         /// 나중에 안내 방식을 바꿀 때는 이 함수만 고친다.
         /// </summary>
-        string PreparationSquadHint(bool korean)
+        string PreparationSquadHint()
         {
             GamePrepPlacement prep = phaseView.PrepPlacement;
             if (prep == null || prep.Center == null) return "";
             string keys = SquadCommandHud.KeyLine(prep.Center.Settings);
             string open = interaction.PlacementKey;
-            return korean ? $"{keys} · {open} 부대 배치 화면" : $"{keys} - {open} squad placement view";
+            return $"{keys} - {open} squad placement view";
         }
 
         /// <summary>부대 배치 화면 안내(PREP-05). 조작과 고른 부대, 마지막 알림을 보여준다.</summary>
-        string PlacementHint(bool korean)
+        string PlacementHint()
         {
             GamePrepPlacement prep = phaseView.PrepPlacement;
             string back = $"{interaction.PlacementKey}·{interaction.CloseKey}";
-            string text = korean
-                ? $"부대 배치 · F1~F4·` 또는 유닛 클릭으로 선택 · 좌클릭 이동 · 우클릭 해제 · {back} 돌아가기"
-                : $"Squad placement - F1-F4/` or click a unit to select - left click to move - right click to clear - {back} to return";
+            string text = $"Squad placement - F1-F4/` or click a unit to select - left click to move - right click to clear - {back} to return";
             if (prep == null) return text;
-            text += "\n" + (korean ? "선택: " : "Selected: ") + prep.SelectionText();
+            text += "\n" + "Selected: " + prep.SelectionText();
             if (prep.Message.Length > 0) text += " · " + prep.Message;
             return text;
         }
 
         /// <summary>대포 안내 한 줄. 타고 있으면 조작법과 장전 상태, 가까이 있으면 타는 키를 보여준다.</summary>
-        public string CannonHint(bool korean)
+        public string CannonHint()
         {
             if (cannonOperator == null) return string.Empty;
             CannonModule manned = cannonOperator.Manned;
             if (manned != null)
             {
                 string reload = manned.Reload.IsReady
-                    ? (korean ? "장전 완료" : "Loaded")
-                    : (korean ? $"재장전 {Mathf.FloorToInt(manned.Reload.Progress * 100f)}%" : $"Reloading {Mathf.FloorToInt(manned.Reload.Progress * 100f)}%");
-                string text = korean
-                    ? $"대포 조작 · 좌클릭 발사 · {cannonOperator.InteractKey}/Esc 내리기 · {reload}"
-                    : $"Cannon - Click fire - {cannonOperator.InteractKey}/Esc leave - {reload}";
+                    ? "Loaded"
+                    : $"Reloading {Mathf.FloorToInt(manned.Reload.Progress * 100f)}%";
+                string text = $"Cannon - Click fire - {cannonOperator.InteractKey}/Esc leave - {reload}";
                 if (!string.IsNullOrEmpty(cannonOperator.Message)) text += "\n" + cannonOperator.Message;
                 return text;
             }
             return cannonOperator.Nearby != null
-                ? (korean ? $"{cannonOperator.InteractKey} · 대포 조작" : $"{cannonOperator.InteractKey} - Man cannon")
+                ? $"{cannonOperator.InteractKey} - Man cannon"
                 : string.Empty;
         }
 
@@ -220,16 +210,16 @@ namespace ProjectNeo.UI
             nextStageButton.SetActive(phase == GamePhase.Reward);
             returnToTitleButton.SetActive(phase == GamePhase.RunResult);
             int stage = flow.Run != null ? flow.Run.StageNumber : 0;
-            bool korean = font != null && font.Available;
+
             // 런 데이터가 붙어 있으면 준비 중 보유 골드를 함께 보여준다.
             int? gold = flow.Run != null && flow.Run.State != null ? flow.Run.State.Wallet.Gold : (int?)null;
-            string goldLabel = gold.HasValue ? (korean ? $" · 골드 {gold}" : $" - Gold {gold}") : string.Empty;
+            string goldLabel = gold.HasValue ? $" - Gold {gold}" : string.Empty;
             phaseLabel.text = phase switch
             {
-                GamePhase.Preparation => (korean ? $"준비 · 스테이지 {stage}" : $"Preparation - Stage {stage}") + goldLabel,
-                GamePhase.Battle => korean ? $"전투 · 스테이지 {stage}" : $"Battle - Stage {stage}",
-                GamePhase.Reward => korean ? $"승리 · 보상 (스테이지 {stage})" : $"Victory - Reward (Stage {stage})",
-                GamePhase.RunResult => korean ? $"패배 · 런 결과 (도달 스테이지 {stage})" : $"Defeat - Run result (Stage {stage})",
+                GamePhase.Preparation => ($"Preparation - Stage {stage}") + goldLabel,
+                GamePhase.Battle => $"Battle - Stage {stage}",
+                GamePhase.Reward => $"Victory - Reward (Stage {stage})",
+                GamePhase.RunResult => $"Defeat - Run result (Stage {stage})",
                 _ => string.Empty,
             };
         }

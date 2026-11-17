@@ -31,10 +31,10 @@ namespace ProjectNeo.Editor
         {
             if (!AssetDatabase.IsValidFolder(Folder)) AssetDatabase.CreateFolder("Assets/_Project/Data/GameFlow", "Heroes");
             // 프로토타입 임의 값(2026-11-13). 같은 등급 잡졸보다 체력·공격·방어가 높고, 등급이 오를수록 강하다.
-            HeroDefinition swordsman = Hero("hero_swordsman", "용병 검사", 1, 60, MeleeBody, 180f, 30f, 6f, 1.5f);
-            HeroDefinition archer = Hero("hero_archer", "용병 궁수", 1, 60, RangedBody, 130f, 26f, 3f, 12f);
-            HeroDefinition knight = Hero("hero_knight", "기사", 2, 120, MeleeBody, 260f, 38f, 9f, 1.6f);
-            HeroDefinition paladin = Hero("hero_paladin", "성기사", 3, 200, MeleeBody, 360f, 48f, 12f, 1.6f);
+            HeroDefinition swordsman = Hero("hero_swordsman", "Mercenary swordsman", 1, 60, MeleeBody, 180f, 30f, 6f, 1.5f);
+            HeroDefinition archer = Hero("hero_archer", "Mercenary archer", 1, 60, RangedBody, 130f, 26f, 3f, 12f);
+            HeroDefinition knight = Hero("hero_knight", "Knight", 2, 120, MeleeBody, 260f, 38f, 9f, 1.6f);
+            HeroDefinition paladin = Hero("hero_paladin", "Paladin", 3, 200, MeleeBody, 360f, 48f, 12f, 1.6f);
 
             var tavern = AssetDatabase.LoadAssetAtPath<FacilityDefinition>(TavernPath);
             if (tavern == null) return;

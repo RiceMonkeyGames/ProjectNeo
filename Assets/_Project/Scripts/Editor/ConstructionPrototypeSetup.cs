@@ -42,12 +42,12 @@ namespace ProjectNeo.Editor
             Material gridMaterial = CombatPrototypeSetup.MaterialAsset("ConstructionGrid", new Color(0.48f, 0.65f, 0.52f));
             Material ghostMaterial = GhostMaterial();
             var preview = CombatPrototypeSetup.Save(PlacementViewSettings.Create(ghostMaterial), Data + "/Preview.asset");
-            var wall = CombatPrototypeSetup.Save(BuildPieceDefinition.Create(BuildPieceKind.Wall, "성벽", Vector2Int.one,
+            var wall = CombatPrototypeSetup.Save(BuildPieceDefinition.Create(BuildPieceKind.Wall, "Wall", Vector2Int.one,
                 prefab: PiecePrefab("Wall", BuildPieceKind.Wall, stone),
                 mountPoints: new[] { new BuildMountPoint("top", Vector3.up) }), Data + "/Wall.asset");
-            var stairs = CombatPrototypeSetup.Save(BuildPieceDefinition.Create(BuildPieceKind.Stairs, "계단", Vector2Int.one,
+            var stairs = CombatPrototypeSetup.Save(BuildPieceDefinition.Create(BuildPieceKind.Stairs, "Stairs", Vector2Int.one,
                 prefab: PiecePrefab("Stairs", BuildPieceKind.Stairs, stone)), Data + "/Stairs.asset");
-            var gate = CombatPrototypeSetup.Save(BuildPieceDefinition.Create(BuildPieceKind.Gate, "메인 성문", new Vector2Int(2, 1),
+            var gate = CombatPrototypeSetup.Save(BuildPieceDefinition.Create(BuildPieceKind.Gate, "Main gate", new Vector2Int(2, 1),
                 maxHealth: 300f, prefab: PiecePrefab("MainGate", BuildPieceKind.Gate, gateMaterial)), Data + "/Gate.asset");
 
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -234,28 +234,26 @@ namespace ProjectNeo.Editor
             var layout = panel.GetComponent<UnityEngine.UI.VerticalLayoutGroup>();
             layout.padding = new RectOffset(16, 16, 18, 18); layout.spacing = 9f;
             layout.childControlWidth = true; layout.childControlHeight = true; layout.childForceExpandHeight = false;
-            var labels = new List<TMP_Text>(); var captions = new List<string>();
-            Label(panel.transform, "WALL BUILDER", 36f, 24f, "성벽 배치", labels, captions);
-            Label(panel.transform, "Q/E: view, R: piece", 25f, 14f, "Q/E 시점 회전 · R 조각 회전", labels, captions);
-            Button(panel.transform, "Wall", "성벽", hud.SelectWall, labels, captions);
-            Button(panel.transform, "Stairs", "계단", hud.SelectStairs, labels, captions);
-            Button(panel.transform, "Rotate (R)", "회전  R", hud.Rotate, labels, captions);
-            Button(panel.transform, "Cancel", "배치 취소", hud.Cancel, labels, captions);
+
+            Label(panel.transform, "WALL BUILDER", 36f, 24f);
+            Label(panel.transform, "Q/E: view, R: piece", 25f, 14f);
+            Button(panel.transform, "Wall", hud.SelectWall);
+            Button(panel.transform, "Stairs", hud.SelectStairs);
+            Button(panel.transform, "Rotate (R)", hud.Rotate);
+            Button(panel.transform, "Cancel", hud.Cancel);
             TMP_Text selection = Label(panel.transform, "Choose a piece", 86f, 16f);
-            Label(panel.transform, "Click: place / Right click: cancel", 42f, 14f,
-                "좌클릭 설치 · 우클릭 취소\n초록: 설치 가능 / 빨강: 설치 불가", labels, captions);
-            Label(panel.transform, "MOVEMENT / COLLAPSE TEST", 28f, 15f, "이동·붕괴 시험", labels, captions);
-            Button(panel.transform, "Walk onto wall", "성벽 위로 이동", hud.WalkToWall, labels, captions);
-            Button(panel.transform, "Break support", "발밑 조각 파괴", hud.CollapseUnderUnit, labels, captions);
+            Label(panel.transform, "Click: place / Right click: cancel", 42f, 14f);
+            Label(panel.transform, "MOVEMENT / COLLAPSE TEST", 28f, 15f);
+            Button(panel.transform, "Walk onto wall", hud.WalkToWall);
+            Button(panel.transform, "Break support", hud.CollapseUnderUnit);
             TMP_Text health = Label(panel.transform, "Unit health", 28f, 15f);
             TMP_Text status = Label(panel.transform, "Build walls and stairs.", 70f, 14f);
-            hud.Configure(controller, sandbox, wall, stairs, selection, status, health, labels.ToArray(), captions.ToArray());
+            hud.Configure(controller, sandbox, wall, stairs, selection, status, health);
             var eventSystem = new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
             eventSystem.GetComponent<InputSystemUIInputModule>().AssignDefaultActions();
         }
 
-        static TMP_Text Label(Transform parent, string text, float height, float size,
-            string caption = null, List<TMP_Text> labels = null, List<string> captions = null)
+        static TMP_Text Label(Transform parent, string text, float height, float size)
         {
             var root = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI), typeof(UnityEngine.UI.LayoutElement));
             root.transform.SetParent(parent, false);
@@ -263,12 +261,10 @@ namespace ProjectNeo.Editor
             var label = root.GetComponent<TextMeshProUGUI>(); label.text = text; label.fontSize = size;
             label.color = new Color(0.92f, 0.96f, 1f); label.raycastTarget = false;
             label.font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF.asset");
-            if (caption != null) { labels.Add(label); captions.Add(caption); }
             return label;
         }
 
-        internal static GameObject Button(Transform parent, string title, string caption, UnityAction action,
-            List<TMP_Text> labels, List<string> captions)
+        internal static GameObject Button(Transform parent, string title, UnityAction action)
         {
             var root = new GameObject("Button_" + title, typeof(RectTransform), typeof(UnityEngine.UI.Image),
                 typeof(UnityEngine.UI.Button), typeof(UnityEngine.UI.LayoutElement));
@@ -277,7 +273,7 @@ namespace ProjectNeo.Editor
             var image = root.GetComponent<UnityEngine.UI.Image>(); image.color = new Color(0.15f, 0.24f, 0.29f);
             var button = root.GetComponent<UnityEngine.UI.Button>(); button.targetGraphic = image;
             if (action != null) UnityEventTools.AddPersistentListener(button.onClick, action);
-            TMP_Text text = Label(root.transform, title, 38f, 17f, caption, labels, captions);
+            TMP_Text text = Label(root.transform, title, 38f, 17f);
             var rect = text.GetComponent<RectTransform>(); rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
             rect.offsetMin = new Vector2(10f, 0f); rect.offsetMax = new Vector2(-10f, 0f);
             text.alignment = TextAlignmentOptions.MidlineLeft;

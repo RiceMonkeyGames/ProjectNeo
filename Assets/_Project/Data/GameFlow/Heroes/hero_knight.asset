@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: hero_knight
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Characters.HeroDefinition
   id: hero_knight
-  displayName: "\uAE30\uC0AC"
+  displayName: Knight
   unlockedByDefault: 1
   hireCost:
     gold: 120

@@ -16,11 +16,12 @@ namespace ProjectNeo.UI
         [SerializeField] TMP_Text[] slotLabels = new TMP_Text[0];
         [SerializeField] TMP_Text deleteLabel;
         [SerializeField] TMP_Text statusLabel;
-        [SerializeField] RuntimeSystemFont font;
 
         int selectedSlot;
         int deleteArmedSlot = NoSlot;
         string notice = string.Empty;
+        string defaultDeleteCaption;
+        bool deleteCaptionWasArmed;
 
         public int SelectedSlot => selectedSlot;
         /// <summary>삭제 버튼을 한 번 눌러 확인을 기다리는 중인지.</summary>
@@ -32,12 +33,11 @@ namespace ProjectNeo.UI
 
         public void Configure(SceneCatalog sceneCatalog) => catalog = sceneCatalog;
 
-        public void ConfigureSlots(TMP_Text[] slots, TMP_Text delete, TMP_Text status, RuntimeSystemFont systemFont)
+        public void ConfigureSlots(TMP_Text[] slots, TMP_Text delete, TMP_Text status)
         {
             slotLabels = slots;
             deleteLabel = delete;
             statusLabel = status;
-            font = systemFont;
         }
 
         void Start()
@@ -45,6 +45,7 @@ namespace ProjectNeo.UI
             // 전투 중 잠근 커서가 남아 있지 않게 한다.
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
+            defaultDeleteCaption = deleteLabel != null ? deleteLabel.text : string.Empty;
             selectedSlot = GameSession.SaveStore.GetLastSlot();
             Refresh();
         }
@@ -61,12 +62,11 @@ namespace ProjectNeo.UI
         /// <summary>고른 슬롯을 지운다. 처음 누르면 확인을 기다리고, 같은 슬롯에서 다시 누르면 지운다.</summary>
         public void DeleteSelectedSlot()
         {
-            bool korean = Korean;
             MetaSaveStore store = GameSession.SaveStore;
             if (store.Inspect(selectedSlot).Status == MetaLoadStatus.Empty)
             {
                 deleteArmedSlot = NoSlot;
-                notice = korean ? "빈 슬롯입니다." : "This slot is empty.";
+                notice = "This slot is empty.";
             }
             else if (deleteArmedSlot != selectedSlot)
             {
@@ -77,8 +77,8 @@ namespace ProjectNeo.UI
             {
                 deleteArmedSlot = NoSlot;
                 notice = store.Delete(selectedSlot)
-                    ? (korean ? $"슬롯 {selectedSlot + 1}을 지웠습니다." : $"Slot {selectedSlot + 1} deleted.")
-                    : (korean ? "슬롯을 지우지 못했습니다." : "Could not delete the slot.");
+                    ? $"Slot {selectedSlot + 1} deleted."
+                    : "Could not delete the slot.";
             }
             Refresh();
         }
@@ -100,40 +100,38 @@ namespace ProjectNeo.UI
 #endif
         }
 
-        bool Korean => font != null && font.Available;
-
         void Refresh()
         {
-            bool korean = Korean;
             MetaSaveStore store = GameSession.SaveStore;
             for (int i = 0; i < slotLabels.Length; i++)
             {
                 if (slotLabels[i] == null) continue;
                 string mark = i == selectedSlot ? "> " : "  ";
-                slotLabels[i].text = mark + Describe(i, store.Inspect(i), korean);
+                slotLabels[i].text = mark + Describe(i, store.Inspect(i));
             }
             if (deleteLabel != null)
-                deleteLabel.text = deleteArmedSlot == selectedSlot
-                    ? (korean ? $"한 번 더 누르면 슬롯 {selectedSlot + 1} 삭제" : $"Click again to delete slot {selectedSlot + 1}")
-                    : (korean ? "고른 슬롯 삭제" : "Delete selected slot");
+            {
+                bool armed = deleteArmedSlot == selectedSlot;
+                if (armed) deleteLabel.text = $"Click again to delete slot {selectedSlot + 1}";
+                else if (deleteCaptionWasArmed) deleteLabel.text = defaultDeleteCaption;
+                deleteCaptionWasArmed = armed;
+            }
             if (statusLabel != null) statusLabel.text = notice;
         }
 
-        static string Describe(int slot, MetaLoadResult result, bool korean)
+        static string Describe(int slot, MetaLoadResult result)
         {
-            string name = korean ? $"슬롯 {slot + 1}" : $"Slot {slot + 1}";
+            string name = $"Slot {slot + 1}";
             MetaProgress progress = result.Progress;
-            string summary = korean
-                ? $"지휘관 Lv {progress.commanderLevel} · 해금 {progress.unlockedIds.Count}"
-                : $"Commander Lv {progress.commanderLevel} - Unlocks {progress.unlockedIds.Count}";
+            string summary = $"Commander Lv {progress.commanderLevel} - Unlocks {progress.unlockedIds.Count}";
             switch (result.Status)
             {
                 case MetaLoadStatus.Loaded: return $"{name}: {summary}";
                 case MetaLoadStatus.RestoredFromBackup:
-                    return korean ? $"{name}: {summary} (백업에서 복구)" : $"{name}: {summary} (from backup)";
+                    return $"{name}: {summary} (from backup)";
                 case MetaLoadStatus.Unreadable:
-                    return korean ? $"{name}: 손상됨 - 새로 시작" : $"{name}: Damaged - starts fresh";
-                default: return korean ? $"{name}: 비어 있음" : $"{name}: Empty";
+                    return $"{name}: Damaged - starts fresh";
+                default: return $"{name}: Empty";
             }
         }
     }

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: item_leather_armor
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Economy.ItemDefinition
   id: item_leather_armor
-  displayName: "\uAC00\uC8FD \uAC11\uC637"
+  displayName: Leather armor
   kind: 0
   price:
     gold: 30
@@ -23,6 +23,7 @@ MonoBehaviour:
   - stat: 2
     kind: 0
     value: 3
+  useHealRatio: 0.35
   upgradeMaterials:
   - materials:
     - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}

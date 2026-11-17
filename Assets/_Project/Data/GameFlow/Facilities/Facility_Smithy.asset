@@ -116,4 +116,4 @@ MonoBehaviour:
           amount: 4
         - material: {fileID: 11400000, guid: 983096480f690a248a516a89f583ca4f, type: 2}
           amount: 2
-  displayName: "\uB300\uC7A5\uAC04"
+  displayName: Smithy

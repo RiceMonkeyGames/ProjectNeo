@@ -1,6 +1,6 @@
 # Coding, Verification & Art-Swap Principles
 
-Last Updated: 2026-11-13 13:17:37 (KST)
+Last Updated: 2026-11-17 11:49:44 (KST)
 
 > Purpose: Architecture standards, pure C# vs MonoBehaviour split, and Synty art-swap decoupling rules. | Parent: [INDEX](../INDEX.md) | Related: [UnityCLI](UnityCLI.md), [codemap/README](../codemap/README.md)
 
@@ -11,6 +11,7 @@ Last Updated: 2026-11-13 13:17:37 (KST)
   - Editor: `Assets/_Project/Scripts/Editor/`, Assembly `ProjectNeo.Editor`.
   - Tests: `Assets/Tests/EditMode/`, `Assets/Tests/PlayMode/`, Namespace `ProjectNeo.Tests`.
 - Decouple rules and calculations into pure C# classes; verify via EditMode. Verify movement, scene integration, and destruction via PlayMode and manual play.
+- Author fixed UI captions directly on the scene/prefab text component. Do not store a second caption field or reassign fixed text during runtime initialization. Runtime updates are for state-dependent text; temporary confirmations restore the authored caption afterward.
 - Store numerical parameters in ScriptableObjects. Provide static `Create(...)` factory methods for testing.
 - Maintain one class per file for ScriptableObjects and MonoBehaviours; match file name to class name.
 - Explicitly assign numeric values to persistent enums; append new entries to the end.

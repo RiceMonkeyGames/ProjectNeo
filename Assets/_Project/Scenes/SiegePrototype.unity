@@ -3041,7 +3041,6 @@ MonoBehaviour:
   input: {fileID: 1621472876}
   squads: {fileID: 163431205}
   help: {fileID: 932210738}
-  helpText: "F1~F10 \uBD80\uB300 \uC120\uD0DD \xB7 ` \uC804\uCCB4 \uC120\uD0DD\n1 \uC774\uB3D9(\uD654\uBA74 \uAC00\uC6B4\uB370\uAC00 \uAC00\uB9AC\uD0A4\uB294 \uACF3) \xB7 2 \uACF5\uACA9 \xB7 3 \uC911\uC9C0\nWASD \uC774\uB3D9 \xB7 \uB9C8\uC6B0\uC2A4 \uC2DC\uC810 \xB7 \uC88C\uD074\uB9AD \uACF5\uACA9 \xB7 Esc \uCEE4\uC11C \uD574\uC81C\nF \uB204\uB974\uACE0 \uC788\uAE30: \uAC00\uAE4C\uC6B4 \uC0AC\uB2E4\uB9AC \uBC00\uAE30"
 --- !u!114 &648553700
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4136,36 +4135,6 @@ MonoBehaviour:
   selection: {fileID: 780403420}
   status: {fileID: 319567923}
   enemies: {fileID: 793256436}
-  captionLabels:
-  - {fileID: 940366461}
-  - {fileID: 1527662461}
-  - {fileID: 370279851}
-  - {fileID: 876524963}
-  - {fileID: 160788017}
-  - {fileID: 262139163}
-  - {fileID: 780132896}
-  - {fileID: 975028185}
-  - {fileID: 880929123}
-  - {fileID: 1512576079}
-  - {fileID: 672635946}
-  - {fileID: 1402570702}
-  - {fileID: 68201406}
-  - {fileID: 213655194}
-  captions:
-  - "\uC218\uC131\uC804 \uC900\uBE44"
-  - "\uC131\uBCBD  (\uCF54\uC2A4\uD2B8 2)"
-  - "\uACC4\uB2E8  (\uCF54\uC2A4\uD2B8 3)"
-  - "\uB300\uD3EC  (\uCF54\uC2A4\uD2B8 6)"
-  - "\uC870\uAC01 \uD68C\uC804  R"
-  - "\uCCA0\uAC70 (\uC804\uC561 \uD658\uBD88)"
-  - "\uCDE8\uC18C"
-  - "\uBD80\uB300 \uBC14\uB85C \uBC30\uCE58"
-  - "1\uBC88 \uBD80\uB300"
-  - "2\uBC88 \uBD80\uB300"
-  - "3\uBC88 \uBD80\uB300"
-  - "4\uBC88 \uBD80\uB300"
-  - "\uC804\uD22C \uC2DC\uC791"
-  - "Q/E \uC2DC\uC810 \uD68C\uC804 \xB7 \uC88C\uD074\uB9AD \uC124\uCE58\xB7\uBC30\uCE58 \xB7 \uC6B0\uD074\uB9AD \uCDE8\uC18C\n\uAC08\uC0C9 \uB9C9\uB300\uAC00 \uB193\uC778 \uACF3\uC774 \uC0AC\uB2E4\uB9AC \uC790\uB9AC\uC785\uB2C8\uB2E4\n\uADF8 \uCE78\uC5D0 \uC131\uBCBD\uC774 \uC788\uC73C\uBA74 \uC801\uC774 \uC0AC\uB2E4\uB9AC\uB97C \uC138\uC6C1\uB2C8\uB2E4"
   center: {fileID: 1621472877}
   squadButtons:
   - {fileID: 327445748}
@@ -5040,7 +5009,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: F1-F4 select, ` all, 1 move, 2 attack, 3 hold
+  m_text: "F1~F10 select squad \xB7 ` select all\n1 move to aim point \xB7 2 attack \xB7 3 hold\nWASD move \xB7 Mouse: look \xB7 Click: attack \xB7 Esc release cursor\nHold F: push nearby ladder"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}

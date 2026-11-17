@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: hero_paladin
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Characters.HeroDefinition
   id: hero_paladin
-  displayName: "\uC131\uAE30\uC0AC"
+  displayName: Paladin
   unlockedByDefault: 1
   hireCost:
     gold: 200

@@ -116,7 +116,7 @@ namespace ProjectNeo.Flow
             if (!IsOpen || index < 0 || index >= gear.Count) return false;
             ItemInstance item = gear[index];
             bool equipped = state.TryEquip(SelectedHero, item);
-            Message = equipped ? $"{item.Definition.DisplayName} 착용" : "빈 장비 칸이 없습니다. 먼저 하나를 벗으세요.";
+            Message = equipped ? $"{item.Definition.DisplayName} equipped" : "No free equipment slots. Unequip an item first.";
             Rebuild();
             return equipped;
         }
@@ -129,7 +129,7 @@ namespace ProjectNeo.Flow
             if (!IsOpen || hero == null || index < 0 || index >= hero.Character.Equipment.Count) return false;
             ItemInstance item = hero.Character.Equipment[index];
             bool removed = state.TryUnequip(hero, item);
-            if (removed) Message = $"{item.Definition.DisplayName} 벗음";
+            if (removed) Message = $"{item.Definition.DisplayName} unequipped";
             Rebuild();
             return removed;
         }
@@ -164,7 +164,7 @@ namespace ProjectNeo.Flow
             if (status != null)
             {
                 var text = new StringBuilder(state.Heroes.Count > 1 ? $"{character.Definition.DisplayName} · " : string.Empty);
-                text.Append($"장비 칸 {character.Equipment.Count} / {character.Definition.EquipmentSlots}\n");
+                text.Append($"Equipment slots {character.Equipment.Count} / {character.Definition.EquipmentSlots}\n");
                 for (int i = 0; i < ShownStats.Length; i++)
                 {
                     if (i > 0) text.Append(" · ");
@@ -173,13 +173,13 @@ namespace ProjectNeo.Flow
                 status.text = text.ToString();
             }
             if (body != null)
-                body.text = (string.IsNullOrEmpty(Message) ? string.Empty : Message + "\n") + "보관함의 장비를 클릭해 끼우고, 착용 중인 장비를 클릭해 벗습니다.";
+                body.text = (string.IsNullOrEmpty(Message) ? string.Empty : Message + "\n") + "Click stash equipment to equip it; click equipped gear to unequip it.";
             ClearRows();
             if (rowTemplate == null) return;
             if (state.Heroes.Count > 1)
-                AddRow(equippedList, $"▶ 대상: {character.Definition.DisplayName}" + (hero.IsPlayer ? " (플레이어)" : string.Empty)
-                    + " · 눌러서 바꾸기", () => NextHero());
-            if (character.Equipment.Count == 0) AddRow(equippedList, "착용한 장비가 없습니다.", null);
+                AddRow(equippedList, $"Target: {character.Definition.DisplayName}" + (hero.IsPlayer ? " (Player)" : string.Empty)
+                    + " - Click to switch", () => NextHero());
+            if (character.Equipment.Count == 0) AddRow(equippedList, "No equipment equipped.", null);
             for (int i = 0; i < character.Equipment.Count; i++)
             {
                 int index = i;
@@ -187,7 +187,7 @@ namespace ProjectNeo.Flow
                 AddRow(equippedList, $"{item.DisplayName} · {Describe(item)}", () => TryUnequip(index));
             }
             List<ItemInstance> gear = InventoryGear(state);
-            if (gear.Count == 0) AddRow(inventoryList, "보관함에 장비가 없습니다.", null);
+            if (gear.Count == 0) AddRow(inventoryList, "No equipment in the stash.", null);
             for (int i = 0; i < gear.Count; i++)
             {
                 int index = i;
@@ -227,7 +227,7 @@ namespace ProjectNeo.Flow
         string Describe(ItemInstance item)
         {
             IReadOnlyList<StatModifier> modifiers = item.EquipModifiers;
-            if (modifiers.Count == 0) return "효과 없음";
+            if (modifiers.Count == 0) return "No effects";
             var text = new StringBuilder();
             foreach (StatModifier modifier in modifiers)
             {
@@ -240,12 +240,12 @@ namespace ProjectNeo.Flow
 
         static string StatName(StatType stat) => stat switch
         {
-            StatType.MaxHealth => "최대 체력",
-            StatType.Attack => "공격력",
-            StatType.Defense => "방어력",
-            StatType.AttackSpeed => "공격 속도",
-            StatType.MoveSpeed => "이동 속도",
-            StatType.AttackRange => "사거리",
+            StatType.MaxHealth => "Max health",
+            StatType.Attack => "Attack",
+            StatType.Defense => "Defense",
+            StatType.AttackSpeed => "Attack speed",
+            StatType.MoveSpeed => "Move speed",
+            StatType.AttackRange => "Range",
             _ => stat.ToString(),
         };
     }

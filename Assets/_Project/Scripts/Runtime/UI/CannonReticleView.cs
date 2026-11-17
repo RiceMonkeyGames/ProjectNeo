@@ -92,7 +92,7 @@ namespace ProjectNeo.UI
         }
 
         /// <summary>조작 상태를 조준선에 반영한다. 타고 있는 동안 매 프레임 부른다.</summary>
-        public void Show(CannonOperator cannonOperator, bool korean)
+        public void Show(CannonOperator cannonOperator)
         {
             CannonModule cannon = cannonOperator.Manned;
             CannonOperatorSettings settings = cannonOperator.Settings;
@@ -118,7 +118,7 @@ namespace ProjectNeo.UI
             if (label != null)
             {
                 label.color = color;
-                label.text = Describe(state, cannon.Reload.Remaining, korean);
+                label.text = Describe(state, cannon.Reload.Remaining);
             }
         }
 
@@ -138,16 +138,16 @@ namespace ProjectNeo.UI
             if (panel != null) Destroy(panel);
         }
 
-        public static string Describe(CannonAimState state, float reloadRemaining, bool korean)
+        public static string Describe(CannonAimState state, float reloadRemaining)
         {
             switch (state)
             {
-                case CannonAimState.Ready: return korean ? "발사 가능" : "Ready";
+                case CannonAimState.Ready: return "Ready";
                 case CannonAimState.Reloading:
-                    return korean ? $"재장전 {reloadRemaining:0.0}초" : $"Reloading {reloadRemaining:0.0}s";
-                case CannonAimState.OutOfRange: return korean ? "사거리 밖" : "Out of range";
-                case CannonAimState.OutOfArc: return korean ? "회전 범위 밖" : "Outside arc";
-                default: return korean ? "조준한 곳 없음" : "No target";
+                    return $"Reloading {reloadRemaining:0.0}s";
+                case CannonAimState.OutOfRange: return "Out of range";
+                case CannonAimState.OutOfArc: return "Outside arc";
+                default: return "No target";
             }
         }
     }

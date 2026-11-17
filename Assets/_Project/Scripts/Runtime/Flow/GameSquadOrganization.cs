@@ -93,7 +93,7 @@ namespace ProjectNeo.Flow
             if (!IsOpen || state == null || unit == null || state.Find(unit.Id) != unit) return false;
             if (unit is RunHero hero && hero.IsPlayer && !state.AllowPlayerCaptain) return false;
             Selected = Selected == unit ? null : unit;
-            Message = Selected == null ? string.Empty : $"{NameOf(Selected)} 선택 → 보낼 카드의 머리 버튼을 누르세요.";
+            Message = Selected == null ? string.Empty : $"{NameOf(Selected)} selected -> Click the destination card header.";
             Rebuild();
             return true;
         }
@@ -110,12 +110,12 @@ namespace ProjectNeo.Flow
                 OrganizeCheck check = battle.RunLink.TryMoveSoldier(soldier, index, out int movedTo);
                 done = check == OrganizeCheck.Ok;
                 bool removed = done && state.Army.Squads.Count < before + (index == NewSquad ? 1 : 0);
-                Message = done ? $"{NameOf(soldier)} → 부대 {movedTo + 1}" + (removed ? " · 빈 부대를 없앴습니다(대장은 대기)" : string.Empty)
+                Message = done ? $"{NameOf(soldier)} -> Squad {movedTo + 1}" + (removed ? " - Empty squad removed (captain in reserve)" : string.Empty)
                     : Reason(check);
             }
             else if (Selected is RunHero hero)
             {
-                if (index == NewSquad) { Message = "영웅은 잡졸이 있는 부대의 대장만 맡을 수 있습니다."; done = false; }
+                if (index == NewSquad) { Message = "Heroes can only captain squads with soldiers."; done = false; }
                 else
                 {
                     Squad<RunUnit> leading = state.LeadingSquadOf(hero);
@@ -123,7 +123,7 @@ namespace ProjectNeo.Flow
                     if (check == OrganizeCheck.Ok && leading != null) check = battle.RunLink.TrySetCaptain(state.IndexOf(leading), null);
                     if (check == OrganizeCheck.Ok) check = battle.RunLink.TrySetCaptain(index, hero);
                     done = check == OrganizeCheck.Ok;
-                    Message = done ? $"부대 {index + 1} 대장: {NameOf(hero)}" : Reason(check);
+                    Message = done ? $"Squad {index + 1} captain: {NameOf(hero)}" : Reason(check);
                 }
             }
             else done = false;
@@ -142,9 +142,9 @@ namespace ProjectNeo.Flow
             {
                 OrganizeCheck check = battle.RunLink.TrySetCaptain(state.IndexOf(leading), null);
                 done = check == OrganizeCheck.Ok;
-                Message = done ? $"{NameOf(hero)}을(를) 대기로 돌렸습니다." : Reason(check);
+                Message = done ? $"{NameOf(hero)} sent to reserve." : Reason(check);
             }
-            else Message = Selected is RunSoldier ? "잡졸은 대기로 보낼 수 없습니다. 다른 부대 카드에 놓으세요." : "이미 대기 중입니다.";
+            else Message = Selected is RunSoldier ? "Soldiers cannot enter reserve. Choose another squad card." : "Already in reserve.";
             if (done) Selected = null;
             Rebuild();
             return done;
@@ -152,12 +152,12 @@ namespace ProjectNeo.Flow
 
         static string Reason(OrganizeCheck check) => check switch
         {
-            OrganizeCheck.BattlePending => "전투 중에는 편성을 바꿀 수 없습니다.",
-            OrganizeCheck.SameSquad => "이미 그 부대에 있습니다.",
-            OrganizeCheck.SquadFull => "받을 부대가 꽉 찼거나 부대 수 상한입니다.",
-            OrganizeCheck.PlayerNotAllowed => "플레이어는 아직 대장을 맡을 수 없습니다.",
-            OrganizeCheck.NotReserve => "대기 중인 영웅만 대장이 될 수 있습니다.",
-            _ => "편성을 바꾸지 못했습니다.",
+            OrganizeCheck.BattlePending => "Cannot reorganize during battle.",
+            OrganizeCheck.SameSquad => "Already in that squad.",
+            OrganizeCheck.SquadFull => "The squad is full or the squad limit is reached.",
+            OrganizeCheck.PlayerNotAllowed => "The player cannot be a captain yet.",
+            OrganizeCheck.NotReserve => "Only reserve heroes can become captains.",
+            _ => "Could not reorganize.",
         };
 
         static string NameOf(RunUnit unit) => unit switch
@@ -189,35 +189,35 @@ namespace ProjectNeo.Flow
             if (Selected != null && state.Find(Selected.Id) != Selected) Selected = null;
             IReadOnlyList<RunHero> reserve = state.ReserveHeroes;
             if (status != null)
-                status.text = $"부대 {squads.Count}개 · 대기 영웅 {reserve.Count}명 · 선택: " + (Selected != null ? NameOf(Selected) : "없음");
+                status.text = $"Squads {squads.Count} - Reserve heroes {reserve.Count} - Selected: " + (Selected != null ? NameOf(Selected) : "None");
             if (body != null)
                 body.text = (string.IsNullOrEmpty(Message) ? string.Empty : Message + "\n")
-                    + "잡졸·영웅을 눌러 고른 뒤, 보낼 카드의 머리 버튼을 누르세요. 다시 누르면 선택을 풉니다. 빈 부대는 없어집니다.";
+                    + "Select a soldier or hero, then click the destination card header. Click again to deselect. Empty squads are removed.";
             ClearCards();
             if (cardTemplate == null || rowTemplate == null) return;
 
-            string hint = Selected != null ? "\n▼ 여기로 보내기" : string.Empty;
+            string hint = Selected != null ? "\nSend here" : string.Empty;
             for (int i = 0; i < squads.Count; i++)
             {
                 int index = i;
                 Squad<RunUnit> squad = squads[i];
-                RectTransform list = AddCard($"부대 {i + 1} · {squad.Members.Count}/{squad.Capacity}명" + hint, () => DropOnSquad(index));
-                if (squad.Leader is RunHero leader) AddRow(list, Mark(leader) + "대장: " + NameOf(leader), () => Select(leader));
-                else AddRow(list, "대장: 없음", null);
+                RectTransform list = AddCard($"Squad {i + 1} - {squad.Members.Count}/{squad.Capacity} units" + hint, () => DropOnSquad(index));
+                if (squad.Leader is RunHero leader) AddRow(list, Mark(leader) + "Captain: " + NameOf(leader), () => Select(leader));
+                else AddRow(list, "Captain: None", null);
                 foreach (RunUnit member in squad.Members)
                     if (member is RunSoldier soldier) AddRow(list, Mark(soldier) + NameOf(soldier), () => Select(soldier));
             }
             if (state.Army.CanAddSquad)
             {
-                RectTransform list = AddCard("새 부대 만들기" + hint, () => DropOnSquad(NewSquad));
-                AddRow(list, "잡졸을 고르고 이 카드를 누르면 새 부대로 옮깁니다.", null);
+                RectTransform list = AddCard("Create new squad" + hint, () => DropOnSquad(NewSquad));
+                AddRow(list, "Select a soldier, then click here to create a squad.", null);
             }
-            RectTransform reserveList = AddCard("대기 영웅 (전투 제외)" + (Selected is RunHero ? "\n▼ 대장에서 빼기" : string.Empty), () => DropOnReserve());
-            if (reserve.Count == 0) AddRow(reserveList, "대기 영웅이 없습니다(주점에서 고용).", null);
+            RectTransform reserveList = AddCard("Reserve heroes (out of battle)" + (Selected is RunHero ? "\nRemove captain" : string.Empty), () => DropOnReserve());
+            if (reserve.Count == 0) AddRow(reserveList, "No reserve heroes (hire at the tavern).", null);
             foreach (RunHero hero in reserve) AddRow(reserveList, Mark(hero) + NameOf(hero), () => Select(hero));
         }
 
-        string Mark(RunUnit unit) => unit == Selected ? "▶ " : string.Empty;
+        string Mark(RunUnit unit) => unit == Selected ? "> " : string.Empty;
 
         RectTransform AddCard(string header, UnityEngine.Events.UnityAction onHeader)
         {
