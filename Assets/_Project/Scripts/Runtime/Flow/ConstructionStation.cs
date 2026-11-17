@@ -7,7 +7,7 @@ namespace ProjectNeo.Flow
     {
         [SerializeField] GamePhaseView phaseView;
         public override GamePhaseView PhaseView => phaseView;
-        public override string Prompt => "건설소 이용";
+        public override string Prompt => "Use construction station";
         public void Configure(GamePhaseView view) => phaseView = view;
         public override bool Interact() => phaseView != null && phaseView.EnterConstruction();
     }

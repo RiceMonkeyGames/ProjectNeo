@@ -1,6 +1,6 @@
 # Playable Scenes & Manual Controls
 
-Last Updated: 2026-11-16 14:44:31 (KST)
+Last Updated: 2026-11-17 11:37:09 (KST)
 
 > Purpose: Executable scene table and `Title`/`Game` scene verification controls. | Parent: [codemap/README](README.md) | Related: [PrototypeScenes](PrototypeScenes.md), [Status](../plan/Status.md)
 
@@ -22,5 +22,5 @@ Player movement (COMBAT-01 / COMBAT-02): hold left/right Ctrl to crouch (50% Mov
 
 `*Prototype` scenes are standalone mechanism validation demos; the actual game consists of `Title` and `Game`. Currently, `Game` links construction station interaction, battle trigger, siege combat, win/loss, run data, victory reward payout, build/repair costs, facility pop-ups with upgrades, the shop, barracks recruitment/training (D-4), grunt scene spawning (D-0b), and player equipment (`I` during prep). Tavern (D-3), squad organization (D-8), blacksmith (D-6), and formal wave sequencing remain unlinked. Check [Status.md](../plan/Status.md) for latest test pass baselines.
 
-- **Game battle consumables (PREP-04)**: In `Game.unity` battles, `Q` uses one potion from the run stash (35% maximum HP, 10s cooldown, not at full HP); the battle status panel shows `Q · 회복약 ×N`.
+- **Game battle consumables (PREP-04 / UI-02)**: In `Game.unity` battles, `Q` uses one potion from the run stash (35% maximum HP, 10s cooldown, not at full HP); the battle status panel shows `Q · Healing potion ×N`. UI text is authored in English and uses project TMP fonts. See [UI-02](../history/UI/UI-02.md) for the language verification walkthrough.
 - **User-approved crouch view refinement (2026-11-13)**: First-person eye height transitions with SmoothStep over 0.18 seconds (PlayerControlSettings.CrouchViewTransitionSeconds); capsule changes remain immediate. Reversing Ctrl mid-transition continues from the currently displayed height. Root movement/falls follow immediately; camera re-enable resets the transition.

@@ -112,32 +112,32 @@ namespace ProjectNeo.Morale
         public string StateOf(int squad)
         {
             BattleSquadMorale battle = BattleOf(squad);
-            if (battle == null) return "정상";
-            if (battle.IsRouted) return "도주";
-            if (battle.State == MoraleState.Collapsed) return "붕괴: " + CollapseName(battle.Collapse);
-            if (battle.State == MoraleState.Awakened) return "각성: " + AwakenName(battle.Awaken);
-            return "정상";
+            if (battle == null) return "Normal";
+            if (battle.IsRouted) return "Routed";
+            if (battle.State == MoraleState.Collapsed) return "Collapsed: " + CollapseName(battle.Collapse);
+            if (battle.State == MoraleState.Awakened) return "Awakened: " + AwakenName(battle.Awaken);
+            return "Normal";
         }
 
-        static string CollapseName(CollapseEffect effect) => effect == CollapseEffect.Fear ? "공포"
-            : effect == CollapseEffect.Panic ? "패닉" : "전염";
-        static string AwakenName(AwakenEffect effect) => effect == AwakenEffect.Rally ? "사기 상승"
-            : effect == AwakenEffect.LastStand ? "결사항전" : "굳건함";
+        static string CollapseName(CollapseEffect effect) => effect == CollapseEffect.Fear ? "Fear"
+            : effect == CollapseEffect.Panic ? "Panic" : "Contagion";
+        static string AwakenName(AwakenEffect effect) => effect == AwakenEffect.Rally ? "Rally"
+            : effect == AwakenEffect.LastStand ? "Last stand" : "Steadfast";
 
         void SetNotice(int squad, string notice)
         {
             notices[squad] = notice;
-            LastNotice = (squad + 1) + "번 부대: " + notice;
+            LastNotice = "Squad " + (squad + 1) + ": " + notice;
         }
 
         void OnBreakingPoint(BattleSquadMorale battle)
         {
             int squad = battles.IndexOf(battle);
-            if (squad >= 0) SetNotice(squad, "한계 판정 — " + StateOfBattle(battle));
+            if (squad >= 0) SetNotice(squad, "Limit check - " + StateOfBattle(battle));
         }
 
         static string StateOfBattle(BattleSquadMorale battle) => battle.State == MoraleState.Awakened
-            ? "각성: " + AwakenName(battle.Awaken) : "붕괴: " + CollapseName(battle.Collapse);
+            ? "Awakened: " + AwakenName(battle.Awaken) : "Collapsed: " + CollapseName(battle.Collapse);
 
         bool AcceptOrder(int squad, SquadOrder order)
         {
@@ -145,7 +145,7 @@ namespace ProjectNeo.Morale
             if (battle == null) return true;
             if (battle.IsRouted || SquadIsPanicking(squad)) return false;
             if (!battle.ShouldIgnoreOrder()) return true;
-            SetNotice(squad, "공포로 명령 무시");
+            SetNotice(squad, "Order ignored due to fear");
             return false;
         }
 
@@ -163,7 +163,7 @@ namespace ProjectNeo.Morale
             if (squad < 0 || battle.IsRouted || SquadIsPanicking(squad)) return;
             foreach (UnitCombatAI member in center.Squads[squad].Members) StartPanic(member);
             StartPanic(center.Squads[squad].Leader);
-            SetNotice(squad, "패닉: 도주 지점에서 전투 종료까지 대기");
+            SetNotice(squad, "Panic: waiting at retreat point until battle ends");
         }
 
         void StartPanic(UnitCombatAI unit)
@@ -236,7 +236,7 @@ namespace ProjectNeo.Morale
                 battle.Morale.Changed += changed;
                 moraleHandlers.Add(new KeyValuePair<SquadMorale, Action>(battle.Morale, changed));
                 RefreshAttack(battle);
-                if (battle.StartedShaken) SetNotice(i, "사기 부족: 약한 " + CollapseName(battle.Collapse));
+                if (battle.StartedShaken) SetNotice(i, "Low morale: weakened " + CollapseName(battle.Collapse));
                 foreach (UnitCombatAI member in squad.Members)
                     if (IsAlive(member)) WatchDeath(member.Actor, battle.OnMemberDied);
                 if (IsAlive(squad.Leader)) WatchDeath(squad.Leader.Actor, battle.OnCaptainDied);

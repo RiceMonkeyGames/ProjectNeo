@@ -62,4 +62,4 @@ MonoBehaviour:
     - item: {fileID: 11400000, guid: 1b1a67a7924861849808913352a1d76b, type: 2}
       weight: 1
     recipes: []
-  displayName: "\uC8FC\uC810"
+  displayName: Tavern

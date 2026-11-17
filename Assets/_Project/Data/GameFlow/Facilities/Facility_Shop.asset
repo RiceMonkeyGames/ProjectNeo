@@ -31,6 +31,7 @@ MonoBehaviour:
     - item: {fileID: 11400000, guid: 460dfb0830ad07e44b81096701286eeb, type: 2}
       weight: 1
     heroPool: []
+    recipes: []
   - upgradeCost:
       gold: 60
       materials: []
@@ -52,6 +53,7 @@ MonoBehaviour:
     - item: {fileID: 11400000, guid: b916f3e660b272b4791179bd0f5b8dc5, type: 2}
       weight: 0.5
     heroPool: []
+    recipes: []
   - upgradeCost:
       gold: 120
       materials: []
@@ -73,4 +75,5 @@ MonoBehaviour:
     - item: {fileID: 11400000, guid: b916f3e660b272b4791179bd0f5b8dc5, type: 2}
       weight: 1.5
     heroPool: []
-  displayName: "\uC0C1\uC810"
+    recipes: []
+  displayName: Shop

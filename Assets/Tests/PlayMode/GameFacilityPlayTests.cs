@@ -75,8 +75,8 @@ namespace ProjectNeo.Tests
                 Assert.IsFalse(player.enabled, "팝업 중에는 이동·시점을 멈춘다.");
                 Assert.AreEqual(CursorLockMode.None, Cursor.lockState);
                 Assert.AreEqual(facilities.NameOf(type), facilities.TitleText);
-                StringAssert.Contains("레벨 1 / 3", facilities.StatusText);
-                StringAssert.Contains("골드 100", facilities.StatusText);
+                StringAssert.Contains("Level 1 / 3", facilities.StatusText);
+                StringAssert.Contains("Gold 100", facilities.StatusText);
                 Assert.IsFalse(view.EnterConstruction(), "팝업 중에는 건설 모드에 들어가지 않는다.");
                 Assert.IsFalse(station.Interact(), "이미 열려 있으면 다시 열지 않는다.");
                 facilities.Close();
@@ -103,7 +103,7 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(gold - item.Price.gold, state.Wallet.Gold);
             Assert.AreEqual(1, state.Inventory.CountOf(item));
             Assert.AreEqual(2, facilities.OfferRows);
-            StringAssert.Contains("구매", facilities.BodyText);
+            StringAssert.Contains("purchased", facilities.BodyText);
             int sell = state.Shop.GetSellPrice(item);
             Assert.IsTrue(facilities.TrySell(0));
             Assert.AreEqual(gold - item.Price.gold + sell, state.Wallet.Gold);
@@ -120,7 +120,7 @@ namespace ProjectNeo.Tests
             var state = GameSession.Flow.Run.State;
             Assert.IsTrue(Station(FacilityType.Shop).Interact());
             Assert.IsTrue(facilities.IsRerollVisible, "Game 씬 시설 팝업에 리롤 버튼이 있어야 한다.");
-            StringAssert.Contains("10골드", facilities.RerollText);
+            StringAssert.Contains("10 gold", facilities.RerollText);
             int gold = state.Wallet.Gold;
             Assert.IsTrue(facilities.TryBuy(0));
             gold -= state.Inventory.Items[0].Definition.Price.gold;
@@ -129,12 +129,12 @@ namespace ProjectNeo.Tests
             Assert.IsTrue(facilities.TryReroll());
             Assert.AreEqual(gold - 10, state.Wallet.Gold);
             Assert.AreEqual(3, facilities.OfferRows, "산 칸까지 다시 채운다.");
-            StringAssert.Contains("20골드", facilities.RerollText);
-            StringAssert.Contains("새로 뽑았습니다", facilities.BodyText);
+            StringAssert.Contains("20 gold", facilities.RerollText);
+            StringAssert.Contains("Offers rerolled", facilities.BodyText);
 
             state.Wallet.TrySpend(new ProjectNeo.Economy.Cost(state.Wallet.Gold));
             Assert.IsFalse(facilities.TryReroll(), "골드가 모자라다.");
-            StringAssert.Contains("모자랍니다", facilities.BodyText);
+            StringAssert.Contains("Not enough funds", facilities.BodyText);
             Assert.AreEqual(1, state.ShopRerolls);
             facilities.Close();
             yield return null;
@@ -152,13 +152,13 @@ namespace ProjectNeo.Tests
             var recipes = state.CraftableRecipes();
             Assert.AreEqual(3, recipes.Count, "대장간 1레벨 레시피 수");
             Assert.AreEqual(3, facilities.OfferRows);
-            StringAssert.Contains("제작", facilities.OfferHeaderText);
+            StringAssert.Contains("Craft", facilities.OfferHeaderText);
             Assert.AreEqual(1, facilities.InventoryRows, "팔 장비가 없다는 안내 한 줄");
 
             int gold = state.Wallet.Gold;
             var expensive = recipes.First(recipe => !state.Wallet.CanAfford(recipe.cost));
             Assert.IsFalse(facilities.TryCraft(recipes.ToList().IndexOf(expensive)), "재료가 모자라면 만들 수 없다.");
-            StringAssert.Contains("모자랍니다", facilities.BodyText);
+            StringAssert.Contains("Not enough funds", facilities.BodyText);
             Assert.AreEqual(gold, state.Wallet.Gold);
 
             var shield = recipes[0];
@@ -167,7 +167,7 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(1, state.Inventory.CountOf(shield.item));
             Assert.AreEqual(3, facilities.OfferRows, "고정 레시피라 만든 뒤에도 남는다.");
             Assert.AreEqual(1, facilities.InventoryRows);
-            StringAssert.Contains("제작", facilities.BodyText);
+            StringAssert.Contains("craft", facilities.BodyText);
 
             int sell = state.Shop.GetSellPrice(shield.item);
             Assert.IsTrue(facilities.TrySellEquipment(0));
@@ -181,18 +181,18 @@ namespace ProjectNeo.Tests
         {
             var state = GameSession.Flow.Run.State;
             Assert.IsTrue(Station(FacilityType.Tavern).Interact());
-            StringAssert.Contains("60골드", facilities.UpgradeText);
+            StringAssert.Contains("60 gold", facilities.UpgradeText);
             Assert.AreEqual(100, state.Wallet.Gold);
             Assert.IsTrue(facilities.TryUpgrade());
             Assert.AreEqual(1, state.Facility(FacilityType.Tavern).Level);
             Assert.AreEqual(40, state.Wallet.Gold);
-            StringAssert.Contains("레벨 2 / 3", facilities.StatusText);
-            StringAssert.Contains("120골드", facilities.UpgradeText);
+            StringAssert.Contains("Level 2 / 3", facilities.StatusText);
+            StringAssert.Contains("120 gold", facilities.UpgradeText);
             Assert.IsFalse(facilities.TryUpgrade(), "골드가 모자라다.");
             Assert.AreEqual(1, state.Facility(FacilityType.Tavern).Level);
             Assert.AreEqual(40, state.Wallet.Gold);
-            StringAssert.Contains("모자랍니다", facilities.BodyText);
-            StringAssert.Contains("고용", facilities.OfferHeaderText, "주점은 영웅 고용 줄을 보여 준다(D-3).");
+            StringAssert.Contains("Not enough funds", facilities.BodyText);
+            StringAssert.Contains("hire", facilities.OfferHeaderText, "주점은 영웅 고용 줄을 보여 준다(D-3).");
             yield break;
         }
 
@@ -202,7 +202,7 @@ namespace ProjectNeo.Tests
             var state = GameSession.Flow.Run.State;
             Assert.IsTrue(Station(FacilityType.Smithy).Interact());
             Assert.IsNotNull(state.EquipmentUpgrades, "RunStart에 강화 설정이 연결되어 있어야 한다.");
-            StringAssert.Contains("최대 +1", facilities.BodyText);
+            StringAssert.Contains("max +1", facilities.BodyText);
             Assert.IsTrue(facilities.TryCraft(0));
             var item = state.Inventory.Items[0];
             Assert.AreEqual(5, item.Definition.UpgradeMaterials.Count);
@@ -215,7 +215,7 @@ namespace ProjectNeo.Tests
             yield return null;
             Assert.AreEqual(1, item.UpgradeLevel);
             Assert.AreEqual(gold - cost.gold, state.Wallet.Gold);
-            StringAssert.Contains("+1 강화 완료", facilities.BodyText);
+            StringAssert.Contains("+1 upgraded", facilities.BodyText);
             Assert.IsFalse(facilities.EquipmentUpgradeButton(0).interactable, "Lv1의 강화 한도");
             gold = state.Wallet.Gold;
             Assert.IsFalse(facilities.TryUpgradeEquipment(0));
@@ -244,7 +244,7 @@ namespace ProjectNeo.Tests
             yield return null;
             Assert.AreEqual(gold + sell, state.Wallet.Gold);
             Assert.AreEqual(0, state.Inventory.Items.Count);
-            StringAssert.Contains($"{sell}골드", facilities.BodyText);
+            StringAssert.Contains($"{sell} gold", facilities.BodyText);
         }
 
         [UnityTest]
@@ -260,7 +260,7 @@ namespace ProjectNeo.Tests
                         item.Definition.UpgradeMaterials[target - 1].materials.Single(m => m.material == material.material).amount);
             int gold = state.Wallet.Gold;
             Assert.IsFalse(facilities.TryUpgradeEquipment(0));
-            StringAssert.Contains("비용이 모자랍니다", facilities.BodyText);
+            StringAssert.Contains("Not enough funds", facilities.BodyText);
             Assert.AreEqual(gold, state.Wallet.Gold);
             foreach (var material in recipe.cost.materials) state.Wallet.AddMaterial(material.material, material.amount);
             Assert.IsTrue(facilities.TryUpgradeEquipment(0));
@@ -291,13 +291,13 @@ namespace ProjectNeo.Tests
                 Physics.SyncTransforms();
                 interaction.RefreshTarget();
                 Assert.AreSame(shop, interaction.Target);
-                Assert.AreEqual("상점 이용", shop.Prompt);
+                Assert.AreEqual("Shop - Use", shop.Prompt);
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.F));
                 yield return null;
                 Assert.IsTrue(facilities.IsOpen && view.IsPanelView);
                 Assert.AreEqual(FacilityType.Shop, facilities.OpenFacility);
                 yield return null; // 안내 글자는 LateUpdate에서 갱신한다.
-                StringAssert.Contains("닫기", hud.InteractionHint);
+                StringAssert.Contains("close", hud.InteractionHint);
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState());
                 yield return null;
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Escape));
@@ -340,11 +340,11 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(goldBefore, state.Wallet.Gold, "잠금은 무료");
             Assert.AreEqual(1, facilities.ShopLockedCount);
             Assert.IsTrue(facilities.IsOfferLocked(1));
-            StringAssert.Contains("잠금", facilities.BodyText);
+            StringAssert.Contains("lock", facilities.BodyText);
 
             // 한도 초과(레벨 1: 최대 1개) 거부
             Assert.IsFalse(facilities.TryToggleLock(0));
-            StringAssert.Contains("최대 1개", facilities.BodyText);
+            StringAssert.Contains("limit 1", facilities.BodyText);
 
             // 리롤 후 잠긴 매물은 유지
             Assert.IsTrue(facilities.TryReroll());

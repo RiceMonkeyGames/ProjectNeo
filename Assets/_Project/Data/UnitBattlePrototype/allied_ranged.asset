@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: allied_ranged
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Characters.SoldierDefinition
   id: allied_ranged
-  displayName: "\uC6D0\uAC70\uB9AC \uC7A1\uC878"
+  displayName: Ranged soldier
   recruitCost:
     gold: 20
     materials: []

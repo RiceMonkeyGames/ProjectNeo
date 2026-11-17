@@ -5,7 +5,8 @@
         "ProjectNeo.Runtime",
         "UnityEngine.TestRunner",
         "Unity.InputSystem",
-        "Unity.AI.Navigation"
+        "Unity.AI.Navigation",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

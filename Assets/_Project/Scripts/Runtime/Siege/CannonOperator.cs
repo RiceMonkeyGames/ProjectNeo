@@ -221,7 +221,7 @@ namespace ProjectNeo.Siege
         public bool TryFireAtCrosshair()
         {
             if (Manned == null || viewCamera == null) return false;
-            if (!TryGetAimPoint(out Vector3 point)) { Message = "조준한 곳이 너무 멉니다."; return false; }
+            if (!TryGetAimPoint(out Vector3 point)) { Message = "Target is too far away."; return false; }
             return FireAt(point);
         }
 
@@ -229,10 +229,10 @@ namespace ProjectNeo.Siege
         public bool FireAt(Vector3 point)
         {
             if (Manned == null) return false;
-            if (!Manned.Reload.IsReady) { Message = "재장전 중입니다."; return false; }
-            if (!CannonAim.CanTarget(Manned.ManualAimContext, point)) { Message = "사거리나 회전 범위 밖입니다."; return false; }
+            if (!Manned.Reload.IsReady) { Message = "Reloading."; return false; }
+            if (!CannonAim.CanTarget(Manned.ManualAimContext, point)) { Message = "Out of range or outside arc."; return false; }
             bool fired = Manned.FireAt(point);
-            Message = fired ? string.Empty : "포탄이 닿지 않는 곳입니다.";
+            Message = fired ? string.Empty : "The shell cannot reach that point.";
             return fired;
         }
     }

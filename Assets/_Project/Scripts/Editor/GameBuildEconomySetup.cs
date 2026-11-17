@@ -74,23 +74,14 @@ namespace ProjectNeo.Editor
         {
             Transform panel = hud.transform.Find("BuildPanel");
             if (panel == null) throw new InvalidOperationException("ConstructionHud has no BuildPanel.");
-            var newLabels = new List<TMP_Text>();
-            var newCaptions = new List<string>();
             Transform dismantle = panel.Find("Button_Dismantle");
             if (dismantle == null)
-                ConstructionPrototypeSetup.Button(panel, "Dismantle", "철거 (클릭)", economy.ToggleDismantle, newLabels, newCaptions);
+                ConstructionPrototypeSetup.Button(panel, "Dismantle", economy.ToggleDismantle);
             else Rewire(dismantle, economy.ToggleDismantle);
             Transform repair = panel.Find("Button_Repair all");
             if (repair == null)
-                ConstructionPrototypeSetup.Button(panel, "Repair all", "모두 수리", economy.RepairAllFromButton, newLabels, newCaptions);
+                ConstructionPrototypeSetup.Button(panel, "Repair all", economy.RepairAllFromButton);
             else Rewire(repair, economy.RepairAllFromButton);
-            if (newLabels.Count > 0)
-            {
-                // 한글 글꼴을 쓸 수 있을 때 바꿔 줄 문구로 등록한다. 무기 목록은 그대로 둔다.
-                var weapons = new List<SiegeWeaponDefinition>(hud.Weapons);
-                hud.ConfigureWeapons(weapons.ToArray(), newLabels.ToArray(), newCaptions.ToArray());
-                EditorUtility.SetDirty(hud);
-            }
 
             Transform existing = panel.Find("EconomyStatus");
             if (existing != null) return existing.GetComponent<TMP_Text>();

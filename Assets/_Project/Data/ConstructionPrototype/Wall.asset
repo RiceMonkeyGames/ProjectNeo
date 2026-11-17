@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Wall
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Walls.BuildPieceDefinition
   kind: 0
-  displayName: "\uC131\uBCBD"
+  displayName: Wall
   footprint: {x: 1, y: 1}
   height: 3
   maxHealth: 100

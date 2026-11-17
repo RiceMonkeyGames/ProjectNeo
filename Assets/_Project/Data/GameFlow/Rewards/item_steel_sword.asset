@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: item_steel_sword
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Economy.ItemDefinition
   id: item_steel_sword
-  displayName: "\uAC15\uCCA0\uAC80"
+  displayName: Steel sword
   kind: 0
   price:
     gold: 80
@@ -23,6 +23,7 @@ MonoBehaviour:
   - stat: 1
     kind: 0
     value: 8
+  useHealRatio: 0.35
   upgradeMaterials:
   - materials:
     - material: {fileID: 11400000, guid: d8a422bc2c200bc4098f7e97952c696e, type: 2}

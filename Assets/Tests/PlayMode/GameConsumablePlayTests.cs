@@ -91,7 +91,7 @@ namespace ProjectNeo.Tests
 
             Assert.AreEqual(ConsumableUseCheck.CoolingDown, consumables.TryUse(), "재사용 대기 중에는 쓰지 못한다.");
             Assert.AreEqual(1, consumables.Count);
-            StringAssert.Contains("다시", consumables.Message);
+            StringAssert.Contains("Not ready", consumables.Message);
         }
 
         [UnityTest]
@@ -120,8 +120,8 @@ namespace ProjectNeo.Tests
             float hurt = player.Health.Current;
             var hud = Object.FindAnyObjectByType<GameFlowHud>();
             yield return null;
-            StringAssert.Contains("×2", consumables.Hint(true));
-            StringAssert.Contains(consumables.Hint(true), hud.StatusText, "전투 상태 칸에 소모품 안내가 보인다.");
+            StringAssert.Contains("×2", consumables.Hint());
+            StringAssert.Contains(consumables.Hint(), hud.StatusText, "전투 상태 칸에 소모품 안내가 보인다.");
 
             using var inputScope = new FocusIndependentInputScope();
             var keyboard = InputSystem.AddDevice<Keyboard>();
@@ -131,8 +131,8 @@ namespace ProjectNeo.Tests
                 yield return null; yield return null;
                 Assert.Greater(player.Health.Current, hurt, "Q로 회복약을 쓴다.");
                 Assert.AreEqual(1, consumables.Count);
-                StringAssert.Contains("×1", consumables.Hint(true));
-                StringAssert.Contains("재사용", consumables.Hint(true));
+                StringAssert.Contains("×1", consumables.Hint());
+                StringAssert.Contains("ready in", consumables.Hint());
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState());
                 yield return null;
             }
@@ -145,7 +145,7 @@ namespace ProjectNeo.Tests
             if (player.Health.Current >= player.Health.Maximum) player.ReceiveDamage(10f);
             Assert.AreEqual(ConsumableUseCheck.Ok, consumables.TryUse());
             Assert.AreEqual(0, consumables.Count);
-            Assert.AreEqual(string.Empty, consumables.Hint(true), "회복약이 없으면 안내를 숨긴다.");
+            Assert.AreEqual(string.Empty, consumables.Hint(), "회복약이 없으면 안내를 숨긴다.");
         }
     }
 }

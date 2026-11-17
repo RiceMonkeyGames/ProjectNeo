@@ -13,10 +13,12 @@ MonoBehaviour:
   m_Name: item_potion
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Economy.ItemDefinition
   id: item_potion
-  displayName: "\uD68C\uBCF5\uC57D"
+  displayName: Healing potion
   kind: 1
   price:
     gold: 10
     materials: []
   unlockedByDefault: 1
   equipModifiers: []
+  useHealRatio: 0.35
+  upgradeMaterials: []

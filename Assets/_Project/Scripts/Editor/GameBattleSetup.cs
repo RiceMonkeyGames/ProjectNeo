@@ -152,19 +152,14 @@ namespace ProjectNeo.Editor
                 backing.anchoredPosition = rect.anchoredPosition + new Vector2((rect.pivot.x - 0.5f) * 16f, (rect.pivot.y - 0.5f) * 16f);
                 EditorUtility.SetDirty(backing);
             }
-            data.FindProperty("helpText").stringValue = "F1~F3 부대 선택 · ` 전체 · 1 이동 · 2 공격 · 3 중지\nWASD 이동 · 마우스 시점 · 좌클릭 공격 · Esc 커서 해제";
+            help.text = "F1-F3: select squad - `: select all - 1: move - 2: attack - 3: hold\nWASD: move - Mouse: look - Click: attack - Esc: release cursor";
             data.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(squads); EditorUtility.SetDirty(help);
             var buildHud = Find<ConstructionHud>(scene);
-            var buildData = new SerializedObject(buildHud);
-            var buildCaptions = buildData.FindProperty("captions");
-            var buildLabels = buildData.FindProperty("captionLabels");
-            for (int i = 0; i < buildCaptions.arraySize; i++)
+            foreach (TMP_Text label in buildHud.GetComponentsInChildren<TMP_Text>(true))
             {
-                string caption = buildCaptions.GetArrayElementAtIndex(i).stringValue;
-                if (!caption.StartsWith("준비 단계") && !caption.StartsWith("건설 시점")) continue;
-                buildCaptions.GetArrayElementAtIndex(i).stringValue = "건설 시점\n중클릭 이동 · 휠 확대/축소\nQ/E 회전 · Home 초기화";
-                var label = (TMP_Text)buildLabels.GetArrayElementAtIndex(i).objectReferenceValue;
+                if (!label.text.StartsWith("Preparation") && !label.text.StartsWith("Construction view")) continue;
+                label.text = "Construction view\nMiddle mouse: pan - Wheel: zoom\nQ/E: rotate - Home: reset";
                 label.rectTransform.anchorMin = new Vector2(0.7f, 1f); label.rectTransform.anchorMax = Vector2.one;
                 label.rectTransform.pivot = Vector2.one; label.rectTransform.anchoredPosition = new Vector2(-16f, -16f);
                 label.rectTransform.sizeDelta = new Vector2(-24f, 100f);
@@ -172,7 +167,6 @@ namespace ProjectNeo.Editor
                 label.fontSize = 16f; label.enableAutoSizing = true; label.fontSizeMin = 12f; label.fontSizeMax = 16f;
                 EditorUtility.SetDirty(label);
             }
-            buildData.ApplyModifiedPropertiesWithoutUndo();
 
             Transform statusRoot = hud.transform.Find("BattleStatus");
             TMP_Text status;
@@ -219,7 +213,6 @@ namespace ProjectNeo.Editor
                 label.transform.localPosition = new Vector3(0f, 3.8f, 0f);
                 label.rectTransform.sizeDelta = new Vector2(9f, 2f);
                 label.fontSize = 14f; label.alignment = TextAlignmentOptions.Center; label.text = "Start Battle";
-                visual.gameObject.AddComponent<RuntimeSystemFont>().Configure(new TMP_Text[] { label }, new[] { "전투 시작" });
             }
             station.localPosition = new Vector3((gate.x + 3.5f) * world.Grid.CellSize, 0f, (gate.y - 2f) * world.Grid.CellSize);
             var target = station.GetComponent<BattleStartStation>();
