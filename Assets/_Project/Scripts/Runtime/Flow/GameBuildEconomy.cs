@@ -115,7 +115,7 @@ namespace ProjectNeo.Flow
             if (current == null || placement == null) return true;
             bool affordable = placement.SelectedWeapon != null ? current.CanAfford(placement.SelectedWeapon)
                 : placement.Selected == null || current.CanAfford(placement.Selected);
-            if (!affordable) Message = "골드가 모자랍니다.";
+            if (!affordable) Message = "Not enough gold.";
             return affordable;
         }
 
@@ -143,7 +143,7 @@ namespace ProjectNeo.Flow
             if (!Preparing || EnsureEconomy() == null) return;
             placement.Cancel();
             Dismantling = !Dismantling;
-            Message = Dismantling ? "철거할 조각이나 대포를 클릭하세요. 우클릭으로 끝냅니다." : string.Empty;
+            Message = Dismantling ? "Click a piece or cannon to dismantle. Right click to finish." : string.Empty;
         }
 
         /// <summary>
@@ -161,20 +161,20 @@ namespace ProjectNeo.Flow
                 int mountId = weapon.Mount.Id;
                 if (!world.RemoveWeapon(weapon)) return false;
                 int refund = current.RefundWeapon(definition, mountId);
-                Message = $"{definition.DisplayName} 철거 · {refund}골드 환불";
+                Message = $"{definition.DisplayName} dismantled - {refund} gold refunded";
                 return true;
             }
             BuildPlacement placed = structure.Placement;
-            if (placed.IsFixed) { Message = "성문은 철거할 수 없습니다."; return false; }
+            if (placed.IsFixed) { Message = "The gate cannot be dismantled."; return false; }
             BuildPieceDefinition piece = placed.Definition;
             int id = placed.Id;
             if (!world.TryDismantle(structure))
             {
-                Message = "위에 다른 조각이 있거나 유닛이 겹쳐 철거할 수 없습니다.";
+                Message = "Cannot dismantle: a piece or unit is on top.";
                 return false;
             }
             int gold = current.RefundPiece(piece, id);
-            Message = $"{piece.DisplayName} 철거 · {gold}골드 환불";
+            Message = $"{piece.DisplayName} dismantled - {gold} gold refunded";
             return true;
         }
 
@@ -214,11 +214,11 @@ namespace ProjectNeo.Flow
             if (!Preparing || current == null) return 0;
             var lookup = new Dictionary<int, Health>();
             List<RepairNeed> needs = RepairNeeds(lookup);
-            if (needs.Count == 0) { Message = "수리할 곳이 없습니다."; return 0; }
+            if (needs.Count == 0) { Message = "Nothing needs repair."; return 0; }
             List<RepairNeed> chosen = current.PlanRepair(needs, out int cost);
             if (chosen.Count == 0 || !current.Wallet.TrySpend(new Cost(cost)))
             {
-                Message = "골드가 모자라 수리하지 못했습니다.";
+                Message = "Not enough gold for repairs.";
                 return 0;
             }
             foreach (RepairNeed need in chosen)
@@ -227,7 +227,7 @@ namespace ProjectNeo.Flow
                 if (health.IsDead) health.ReviveFull();
                 else health.RestoreFull();
             }
-            Message = chosen.Count == needs.Count ? $"모두 수리 · {cost}골드" : $"{chosen.Count}/{needs.Count}곳 수리 · {cost}골드 (골드 부족)";
+            Message = chosen.Count == needs.Count ? $"Repair all · {cost} gold" : $"{chosen.Count}/{needs.Count} repairs · {cost}Gold (not enough gold)";
             return chosen.Count;
         }
 
@@ -255,7 +255,7 @@ namespace ProjectNeo.Flow
                 nearest = rayHits[i].distance;
                 picked = rayHits[i].collider.GetComponentInParent<PlacedStructure>();
             }
-            if (picked == null) Message = "철거할 조각을 클릭하세요.";
+            if (picked == null) Message = "Click a piece to dismantle.";
             else Dismantle(picked);
         }
 
@@ -271,14 +271,14 @@ namespace ProjectNeo.Flow
         {
             if (current == null) return string.Empty;
             var text = new StringBuilder();
-            text.Append($"골드 {current.Wallet.Gold}");
+            text.Append($"Gold {current.Wallet.Gold}");
             if (placement != null && placement.SelectedWeapon != null)
-                text.Append($" · {placement.SelectedWeapon.DisplayName} {table.CostOf(placement.SelectedWeapon)}골드");
+                text.Append($" · {placement.SelectedWeapon.DisplayName} {table.CostOf(placement.SelectedWeapon)} gold");
             else if (placement != null && placement.Selected != null)
-                text.Append($" · {placement.Selected.DisplayName} {table.CostOf(placement.Selected)}골드");
+                text.Append($" · {placement.Selected.DisplayName} {table.CostOf(placement.Selected)} gold");
             int repair = FullRepairCost;
-            if (repair > 0) text.Append($"\n모두 수리 {repair}골드");
-            if (Dismantling) text.Append("\n철거 중: 조각 클릭 · 우클릭 끝");
+            if (repair > 0) text.Append($"\nRepair all {repair} gold");
+            if (Dismantling) text.Append("\nDismantling: click a piece - right click to finish");
             if (!string.IsNullOrEmpty(Message)) text.Append('\n').Append(Message);
             return text.ToString();
         }

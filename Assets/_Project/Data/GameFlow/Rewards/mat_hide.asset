@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: mat_hide
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Economy.MaterialDefinition
   id: mat_hide
-  displayName: "\uC9C8\uAE34 \uAC00\uC8FD"
+  displayName: Tough hide

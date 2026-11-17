@@ -1,6 +1,6 @@
 # Prototype Scenes & Asset Details
 
-Last Updated: 2026-11-13 16:40:10 (KST)
+Last Updated: 2026-11-16 22:28:48 (KST)
 
 > Purpose: Detailed setup, assets, and controls for prototype scenes (B-2, B-3, B-4, B-5, B-5.4, Siege). | Parent: [codemap/README](README.md) | Related: [Scenes](Scenes.md)
 
@@ -10,6 +10,7 @@ Last Updated: 2026-11-13 16:40:10 (KST)
 - `Assets/_Project/Data/CombatPrototype/`: Player/dummy hero definitions, `CombatProfile`, `PlayerControls`. Adjust temporary values here.
 - `Assets/_Project/Prefabs/CombatPrototype/`: Player and dummy prefabs split into common root and `Visual` child. Player input references scene camera, instantiated per scene.
 - `Assets/_Project/Art/Placeholder/`: Placeholder materials using capsule and box meshes.
+- `Assets/_Project/Art/Characters/Materials/`: URP Lit copies of Synty character atlas materials (the submodule materials use the Built-in `Standard` shader). Created by `Editor/CharacterModelSetup` ([ART-03](../history/ART/ART-03.md)).
 - `Assets/_Project/Input/InputSystem_Actions.inputactions`: Clones `Player/Move`, `Player/Look`, `Player/Attack` actions per player instance. Does not modify shared asset active states.
 - Controls: WASD move, mouse look, Left-click attack. Esc toggles cursor lock; Left-click re-locks. Dummies have 100 HP, player deals 25 damage (dies in 4 hits). Restarting Play Mode restores clean state.
 - Melee attack damages closest single enemy passing frontal angle, range, and occlusion checks for `Attack - Defense` (min 1). Dummies possess 0 defense and do not retaliate.
@@ -18,7 +19,7 @@ Last Updated: 2026-11-13 16:40:10 (KST)
 
 - `Assets/_Project/Scenes/UnitBattlePrototype.unity`: Spectator automated battle scene (10 blue allies vs 10 red enemies: 7 melee, 3 ranged per side), central obstacle, baked NavMesh.
 - `Assets/_Project/Data/UnitBattlePrototype/`: 4 grunt definitions, melee/ranged `CombatProfile`, AI settings, baked NavMesh data (allies tuned stronger).
-- `Assets/_Project/Prefabs/UnitBattlePrototype/`: 4 grunt prefabs and linear projectile prefab (root = combat/colliders/NavMeshAgent/AI; `Visual` = placeholder geometry).
+- `Assets/_Project/Prefabs/UnitBattlePrototype/`: 4 grunt prefabs and linear projectile prefab (root = combat/colliders/NavMeshAgent/AI; `Visual` = placeholder geometry; since ART-03 also a Synty `Visual/Model` with the capsule `Body` renderer disabled). Menu `ProjectNeo/Setup/Apply Character Models` (re)applies the unit-to-model mapping to grunt and siege enemy prefabs; rerun it after any setup menu regenerates those prefabs. It also assigns the locomotion Animator controllers in `Assets/_Project/Art/Characters/Animation/` and the `CharacterModelAnimator` speed driver.
 - `CharacterActor.Configure(...)` must be invoked before activating disabled GameObjects. Activation initializes stats/health and registers unit; death/deactivation unregisters. AI targets closest enemy with complete NavMesh path. Ranged attacks fire non-homing linear projectiles on windup completion (cancel if target dies/escapes during windup; airborne projectiles finish path even if shooter dies).
 
 ## B-5 Squad Command (`SquadCommandPrototype.unity`)

@@ -25,6 +25,7 @@ MonoBehaviour:
     offerCount: 3
     itemPool: []
     heroPool: []
+    recipes: []
   - upgradeCost:
       gold: 60
       materials: []
@@ -42,6 +43,7 @@ MonoBehaviour:
     offerCount: 4
     itemPool: []
     heroPool: []
+    recipes: []
   - upgradeCost:
       gold: 120
       materials: []
@@ -59,4 +61,5 @@ MonoBehaviour:
     offerCount: 5
     itemPool: []
     heroPool: []
-  displayName: "\uD6C8\uB828\uC7A5"
+    recipes: []
+  displayName: Training ground

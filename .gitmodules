@@ -1,0 +1,4 @@
+[submodule "Assets/ThirdParty"]
+	path = Assets/ThirdParty
+	url = ../ProjectNeo-Assets.git
+	branch = main

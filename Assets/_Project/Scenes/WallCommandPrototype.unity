@@ -2082,7 +2082,6 @@ MonoBehaviour:
   input: {fileID: 1621472876}
   squads: {fileID: 163431205}
   help: {fileID: 932210738}
-  helpText: "F1~F4 \uBD80\uB300 \uC120\uD0DD \xB7 ` \uC804\uCCB4 \uC120\uD0DD\n1 \uC774\uB3D9(\uD654\uBA74 \uAC00\uC6B4\uB370\uAC00 \uAC00\uB9AC\uD0A4\uB294 \uACF3) \xB7 2 \uACF5\uACA9 \xB7 3 \uC911\uC9C0\nWASD \uC774\uB3D9 \xB7 \uB9C8\uC6B0\uC2A4 \uC2DC\uC810 \xB7 \uC88C\uD074\uB9AD \uACF5\uACA9 \xB7 Esc \uCEE4\uC11C \uD574\uC81C\nTab \uAC74\uC124 \uC2DC\uC810\uC73C\uB85C \uC804\uD658"
 --- !u!114 &648553700
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3306,7 +3305,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: F1-F4 select, ` all, 1 move, 2 attack, 3 hold
+  m_text: "F1~F4 select squad \xB7 ` select all\n1 move to aim point \xB7 2 attack \xB7 3 hold\nWASD move \xB7 Mouse: look \xB7 Click: attack \xB7 Esc release cursor\nTab: construction view"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -7630,34 +7629,6 @@ MonoBehaviour:
   selection: {fileID: 1165030794}
   status: {fileID: 743693642}
   unitHealth: {fileID: 1291452917}
-  captionLabels:
-  - {fileID: 1725623172}
-  - {fileID: 1241264590}
-  - {fileID: 1726038708}
-  - {fileID: 1892461040}
-  - {fileID: 345218132}
-  - {fileID: 1128053619}
-  - {fileID: 1854601933}
-  - {fileID: 1919129857}
-  - {fileID: 1921723233}
-  - {fileID: 579995752}
-  - {fileID: 927758953}
-  - {fileID: 620730710}
-  - {fileID: 1556863721}
-  captions:
-  - "\uC131\uBCBD \uBC30\uCE58"
-  - "Q/E \uC2DC\uC810 \uD68C\uC804 \xB7 R \uC870\uAC01 \uD68C\uC804"
-  - "\uC131\uBCBD"
-  - "\uACC4\uB2E8"
-  - "\uD68C\uC804  R"
-  - "\uBC30\uCE58 \uCDE8\uC18C"
-  - "\uC88C\uD074\uB9AD \uC124\uCE58 \xB7 \uC6B0\uD074\uB9AD \uCDE8\uC18C\n\uCD08\uB85D: \uC124\uCE58 \uAC00\uB2A5 / \uBE68\uAC15: \uC124\uCE58 \uBD88\uAC00"
-  - "\uC774\uB3D9\xB7\uBD95\uAD34 \uC2DC\uD5D8"
-  - "\uC131\uBCBD \uC704\uB85C \uC774\uB3D9"
-  - "\uBC1C\uBC11 \uC870\uAC01 \uD30C\uAD34"
-  - "\uB300\uD3EC"
-  - "\uBB34\uAE30 \uBC1B\uCE68 \uC131\uBCBD \uD30C\uAD34"
-  - "Tab 1\uC778\uCE6D \uC9C0\uD718 \uC2DC\uC810\n\uC804\uD658\uD574\uB3C4 \uC720\uB2DB\uC758 \uC9C0\uC2DC\uB294 \uC720\uC9C0\uB429\uB2C8\uB2E4"
   weapons:
   - {fileID: 11400000, guid: dcd5362db7ff6a84db2f93ac232125a8, type: 2}
 --- !u!114 &1927906513

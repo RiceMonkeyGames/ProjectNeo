@@ -14,9 +14,7 @@ namespace ProjectNeo.UI
         [SerializeField] SquadCommandInput input;
         [SerializeField] TMP_Text squads;
         [SerializeField] TMP_Text help;
-        [SerializeField, TextArea] string helpText;
         readonly StringBuilder builder = new StringBuilder();
-        TMP_FontAsset runtimeFont;
         GameSquadMorale morale;
         public string DisplayText => squads != null ? squads.text : "";
         /// <summary>키 안내 상자가 보이는지. 준비 단계에서는 준비 안내 줄이 부대 키를 대신 보여준다(PREP-05).</summary>
@@ -37,39 +35,31 @@ namespace ProjectNeo.UI
             if (settings == null) return "";
             string first = settings.SelectSquad.Length > 0 ? settings.SelectSquad[0].GetBindingDisplayString() : "";
             string last = settings.SelectSquad.Length > 0 ? settings.SelectSquad[settings.SelectSquad.Length - 1].GetBindingDisplayString() : "";
-            return $"{first}~{last}·{settings.SelectAll.GetBindingDisplayString()} 부대 선택 · {settings.Move.GetBindingDisplayString()} 이동 · "
-                + $"{settings.Attack.GetBindingDisplayString()} 공격 · {settings.Hold.GetBindingDisplayString()} 정지";
+            return $"{first}~{last}·{settings.SelectAll.GetBindingDisplayString()} select squads - {settings.Move.GetBindingDisplayString()} move - "
+                + $"{settings.Attack.GetBindingDisplayString()} attack - {settings.Hold.GetBindingDisplayString()} hold";
         }
 
         public void Configure(SquadCommandCenter commandCenter, SquadCommandInput commandInput,
             TMP_Text squadLabel, TMP_Text helpLabel, string helpCaption)
         {
-            center = commandCenter; input = commandInput; squads = squadLabel; help = helpLabel; helpText = helpCaption;
-        }
-
-        void Awake()
-        {
-            // 시스템 글꼴을 런타임에 사용한다. 운영체제 글꼴 파일을 프로젝트에 복사하지 않는다.
-            runtimeFont = TMP_FontAsset.CreateFontAsset("Malgun Gothic", "Regular");
-            if (runtimeFont == null) return;
-            foreach (TMP_Text text in GetComponentsInChildren<TMP_Text>(true)) text.font = runtimeFont;
-            help.text = helpText;
+            center = commandCenter; input = commandInput; squads = squadLabel; help = helpLabel;
+            if (help != null) help.text = helpCaption;
         }
 
         public static string OrderName(SquadOrderKind kind)
         {
             switch (kind)
             {
-                case SquadOrderKind.Move: return "이동";
-                case SquadOrderKind.Attack: return "공격";
-                default: return "중지";
+                case SquadOrderKind.Move: return "Move";
+                case SquadOrderKind.Attack: return "Attack";
+                default: return "Hold";
             }
         }
 
         /// <summary>"1번 부대 · 근접"처럼 번호와 종류를 붙인 이름. 종류는 부대원의 공격 방식에서 읽는다.</summary>
         public static string SquadName(SquadCommandCenter center, int squad)
         {
-            string name = (squad + 1) + "번 부대";
+            string name = "Squad " + (squad + 1);
             if (center == null || squad < 0 || squad >= center.Squads.Count) return name;
             bool melee = false, ranged = false;
             foreach (ProjectNeo.Combat.UnitCombatAI member in center.Squads[squad].Members)
@@ -78,8 +68,8 @@ namespace ProjectNeo.UI
                 if (member.Actor.Profile.AttackKind == ProjectNeo.Combat.AttackKind.Projectile) ranged = true;
                 else melee = true;
             }
-            if (melee && ranged) return name + " · 혼성";
-            return melee ? name + " · 근접" : ranged ? name + " · 궁수" : name;
+            if (melee && ranged) return name + " - Mixed";
+            return melee ? name + " - Melee" : ranged ? name + " - Archers" : name;
         }
 
         void Start()
@@ -90,16 +80,16 @@ namespace ProjectNeo.UI
 
         void Update()
         {
-            if (runtimeFont == null || center.Commander == null) return;
+            if (center.Commander == null) return;
             builder.Clear();
             for (int i = 0; i < center.Commander.SquadCount; i++)
             {
-                builder.Append(center.Commander.IsSelected(i) ? "▶ " : "    ");
+                builder.Append(center.Commander.IsSelected(i) ? "> " : "    ");
                 builder.Append(SquadName(center, i)).Append("  ").Append(OrderName(center.Commander.OrderOf(i).Kind));
-                builder.Append("  ").Append(center.AliveCount(i)).Append("명");
+                builder.Append("  ").Append(center.AliveCount(i)).Append(" units");
                 SquadMorale value = morale != null ? morale.MoraleOf(i) : null;
                 if (value != null)
-                    builder.Append("  사기 ").Append(Mathf.RoundToInt(value.Value)).Append(" · ").Append(morale.StateOf(i));
+                    builder.Append("  Morale ").Append(Mathf.RoundToInt(value.Value)).Append(" · ").Append(morale.StateOf(i));
                 builder.Append('\n');
             }
             builder.Append(input.Message);
@@ -108,12 +98,5 @@ namespace ProjectNeo.UI
             squads.text = builder.ToString();
         }
 
-        void OnDestroy()
-        {
-            if (runtimeFont == null) return;
-            foreach (Texture2D texture in runtimeFont.atlasTextures) if (texture != null) Destroy(texture);
-            if (runtimeFont.material != null) Destroy(runtimeFont.material);
-            Destroy(runtimeFont);
-        }
     }
 }

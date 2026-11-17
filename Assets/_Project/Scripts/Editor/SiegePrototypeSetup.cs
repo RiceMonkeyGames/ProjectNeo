@@ -54,7 +54,7 @@ namespace ProjectNeo.Editor
             CombatPrototypeSetup.EnsureFolder(Data);
             var grid = CombatPrototypeSetup.Save(BuildGridDefinition.Create(16, 20, 3f, 3), Data + "/Grid.asset");
             // 성문 파괴병이 바로 뚫지 못하도록 이 시험의 성문은 체력을 따로 둔다.
-            var gate = CombatPrototypeSetup.Save(BuildPieceDefinition.Create(BuildPieceKind.Gate, "메인 성문",
+            var gate = CombatPrototypeSetup.Save(BuildPieceDefinition.Create(BuildPieceKind.Gate, "Main gate",
                 new Vector2Int(2, 1), maxHealth: 600f, prefab: gatePrefab), Data + "/Gate.asset");
             var settings = CombatPrototypeSetup.Save(SiegeSettings.Create(40,
                 new[] { new PieceCost { piece = wall, cost = 2 }, new PieceCost { piece = stairs, cost = 3 } },
@@ -199,11 +199,11 @@ namespace ProjectNeo.Editor
                 AssetDatabase.CreateAsset(command, path);
             }
             SetReference(center, "settings", command);
-            var help = new SerializedObject(commandHud);
-            help.FindProperty("helpText").stringValue =
-                "F1~F10 부대 선택 · ` 전체 선택\n1 이동(화면 가운데가 가리키는 곳) · 2 공격 · 3 중지\n"
-                + "WASD 이동 · 마우스 시점 · 좌클릭 공격 · Esc 커서 해제\nF 누르고 있기: 가까운 사다리 밀기";
-            help.ApplyModifiedPropertiesWithoutUndo();
+            var help = (TMP_Text)new SerializedObject(commandHud).FindProperty("help").objectReferenceValue;
+            help.text =
+                "F1-F10: select squad - `: select all\n1: move to aim point - 2: attack - 3: hold\n"
+                + "WASD: move - Mouse: look - Click: attack - Esc: release cursor\nHold F: push nearby ladder";
+            EditorUtility.SetDirty(help);
             // 부대가 10개여도 목록이 배경 안에 들어오게 늘린다.
             var size = new Vector2(326f, 300f);
             var squads = commandHud.transform.Find("Squads").GetComponent<RectTransform>();
@@ -274,24 +274,23 @@ namespace ProjectNeo.Editor
             var layout = panel.GetComponent<UnityEngine.UI.VerticalLayoutGroup>();
             layout.padding = new RectOffset(14, 14, 12, 12); layout.spacing = 4f;
             layout.childControlWidth = true; layout.childControlHeight = true; layout.childForceExpandHeight = false;
-            var labels = new List<TMP_Text>(); var captions = new List<string>();
-            Label(panel.transform, "SIEGE PREP", 30f, 22f, "수성전 준비", labels, captions);
+
+            Label(panel.transform, "SIEGE PREP", 30f, 22f);
             TMP_Text budget = Label(panel.transform, "Cost", 24f, 18f);
-            Button(panel.transform, "Wall", "성벽  (코스트 " + settings.CostOf(wall) + ")", hud.SelectWall, labels, captions);
-            Button(panel.transform, "Stairs", "계단  (코스트 " + settings.CostOf(stairs) + ")", hud.SelectStairs, labels, captions);
-            GameObject weapon = Button(panel.transform, "Cannon", cannon.DisplayName + "  (코스트 " + settings.CostOf(cannon) + ")",
-                null, labels, captions);
+            Button(panel.transform, "Wall", hud.SelectWall);
+            Button(panel.transform, "Stairs", hud.SelectStairs);
+            GameObject weapon = Button(panel.transform, "Cannon", null);
             UnityEventTools.AddIntPersistentListener(weapon.GetComponent<UnityEngine.UI.Button>().onClick, hud.SelectWeapon, 0);
-            Button(panel.transform, "Rotate", "조각 회전  R", hud.Rotate, labels, captions);
-            Button(panel.transform, "Dismantle", "철거 (전액 환불)", hud.Dismantle, labels, captions);
-            Button(panel.transform, "Cancel", "취소", hud.Cancel, labels, captions);
-            Label(panel.transform, "PLACE SQUADS", 22f, 15f, "부대 바로 배치", labels, captions);
+            Button(panel.transform, "Rotate", hud.Rotate);
+            Button(panel.transform, "Dismantle", hud.Dismantle);
+            Button(panel.transform, "Cancel", hud.Cancel);
+            Label(panel.transform, "PLACE SQUADS", 22f, 15f);
             // 부대 수 상한만큼 버튼을 만들어 두고, 실행 중에 실제 편성된 부대만 보여준다.
             var squadButtons = new GameObject[center.Config.MaxSquads];
             var squadLabels = new TMP_Text[squadButtons.Length];
             for (int i = 0; i < squadButtons.Length; i++)
             {
-                squadButtons[i] = Button(panel.transform, "Squad" + (i + 1), (i + 1) + "번 부대", null, labels, captions);
+                squadButtons[i] = Button(panel.transform, "Squad" + (i + 1), null);
                 squadLabels[i] = squadButtons[i].GetComponentInChildren<TMP_Text>();
                 UnityEventTools.AddIntPersistentListener(squadButtons[i].GetComponent<UnityEngine.UI.Button>().onClick, hud.SelectSquad, i);
             }
@@ -299,15 +298,14 @@ namespace ProjectNeo.Editor
             TMP_Text selection = Label(panel.transform, "Selection", 52f, 14f);
             TMP_Text enemies = Label(panel.transform, "Enemies", 44f, 14f);
             TMP_Text status = Label(panel.transform, "Status", 44f, 14f);
-            GameObject start = Button(panel.transform, "Start", "전투 시작", hud.StartBattle, labels, captions);
+            GameObject start = Button(panel.transform, "Start", hud.StartBattle);
             start.GetComponent<UnityEngine.UI.Image>().color = new Color(0.62f, 0.2f, 0.16f);
             start.GetComponent<UnityEngine.UI.LayoutElement>().preferredHeight = 40f;
             TMP_Text hint = Floating(root.transform, "Hint", new Vector2(1f, 1f), new Vector2(-24f, -24f),
                 new Vector2(460f, 90f), 17f, TextAlignmentOptions.TopRight);
-            labels.Add(hint);
-            captions.Add("Q/E 시점 회전 · 좌클릭 설치·배치 · 우클릭 취소\n갈색 막대가 놓인 곳이 사다리 자리입니다\n그 칸에 성벽이 있으면 적이 사다리를 세웁니다");
+            hint.text = "Q/E: rotate view - Click: place - Right click: cancel\nBrown markers show ladder positions.";
             hud.Configure(director, prep, placement, settings, wall, stairs, new[] { cannon }, budget, selection, status,
-                enemies, labels.ToArray(), captions.ToArray());
+                enemies);
             return hud;
         }
 
@@ -347,8 +345,7 @@ namespace ProjectNeo.Editor
             return label;
         }
 
-        static TMP_Text Label(Transform parent, string text, float height, float size,
-            string caption = null, List<TMP_Text> labels = null, List<string> captions = null)
+        static TMP_Text Label(Transform parent, string text, float height, float size)
         {
             var root = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI), typeof(UnityEngine.UI.LayoutElement));
             root.transform.SetParent(parent, false);
@@ -356,14 +353,12 @@ namespace ProjectNeo.Editor
             var label = root.GetComponent<TextMeshProUGUI>(); label.text = text; label.fontSize = size;
             label.color = new Color(0.92f, 0.96f, 1f); label.raycastTarget = false;
             label.font = Required<TMP_FontAsset>(Font);
-            if (caption != null) { labels.Add(label); captions.Add(caption); }
             return label;
         }
 
-        static GameObject Button(Transform parent, string title, string caption, UnityEngine.Events.UnityAction action,
-            List<TMP_Text> labels, List<string> captions)
+        static GameObject Button(Transform parent, string title, UnityEngine.Events.UnityAction action)
         {
-            GameObject button = ConstructionPrototypeSetup.Button(parent, title, caption, action, labels, captions);
+            GameObject button = ConstructionPrototypeSetup.Button(parent, title, action);
             button.GetComponent<UnityEngine.UI.LayoutElement>().preferredHeight = 30f;
             return button;
         }

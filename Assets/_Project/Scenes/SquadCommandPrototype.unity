@@ -154,7 +154,6 @@ MonoBehaviour:
   input: {fileID: 1636192299}
   squads: {fileID: 1889098160}
   help: {fileID: 1425791066}
-  helpText: "F1~F4 \uBD80\uB300 \uC120\uD0DD \xB7 ` \uC804\uCCB4 \uC120\uD0DD\n1 \uC774\uB3D9(\uD654\uBA74 \uAC00\uC6B4\uB370\uAC00 \uAC00\uB9AC\uD0A4\uB294 \uACF3) \xB7 2 \uACF5\uACA9 \xB7 3 \uC911\uC9C0\nWASD \uC774\uB3D9 \xB7 \uB9C8\uC6B0\uC2A4 \uC2DC\uC810 \xB7 \uC88C\uD074\uB9AD \uACF5\uACA9 \xB7 Esc \uCEE4\uC11C \uD574\uC81C"
 --- !u!114 &99948119
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2004,7 +2003,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: F1-F4 select, ` all, 1 move, 2 attack, 3 hold
+  m_text: "F1~F4 select squad \xB7 ` select all\n1 move to aim point \xB7 2 attack \xB7 3 hold\nWASD move \xB7 Mouse: look \xB7 Click: attack \xB7 Esc release cursor"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}

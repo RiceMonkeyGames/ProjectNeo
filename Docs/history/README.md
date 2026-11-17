@@ -1,6 +1,6 @@
 # Past Verification History Index
 
-Last Updated: 2026-11-16 21:40:22 (KST)
+Last Updated: 2026-11-17 13:49:46 (KST)
 
 > Purpose: Route historical log lookups by Task ID prefix. | Parent: [INDEX](../INDEX.md) | Related: [Backlog-Done](../archive/Backlog-Done.md), [Status](../plan/Status.md)
 
@@ -24,8 +24,8 @@ Read this folder only when researching past design rationales, benchmarks, or ve
 - `COMBAT/` — [COMBAT-01](COMBAT/COMBAT-01.md), [COMBAT-02](COMBAT/COMBAT-02.md), [COMBAT-03](COMBAT/COMBAT-03.md), [COMBAT-05](COMBAT/COMBAT-05.md)
 - `META/` — [META-01](META/META-01.md)
 - `SIEGE/` — [SIEGE-01](SIEGE/SIEGE-01.md), [SIEGE-02](SIEGE/SIEGE-02.md), [SIEGE-03](SIEGE/SIEGE-03.md), [SIEGE-04](SIEGE/SIEGE-04.md), [SIEGE-05](SIEGE/SIEGE-05.md), [SIEGE-06](SIEGE/SIEGE-06.md), [SIEGE-07](SIEGE/SIEGE-07.md)
-- `ART/` — [ART-01](ART/ART-01.md), [ART-02](ART/ART-02.md)
+- `ART/` — [ART-01](ART/ART-01.md), [ART-02](ART/ART-02.md), [ART-03](ART/ART-03.md)
 - `DOC/` — [DOC-workflow-branches](DOC/DOC-workflow-branches.md), [DOC-doc-tree-and-id](DOC/DOC-doc-tree-and-id.md)
-- `TOOL/` — [TOOL-claude-read-deny](TOOL/TOOL-claude-read-deny.md), [TOOL-agent-workflows](TOOL/TOOL-agent-workflows.md), [TOOL-codex-workflows](TOOL/TOOL-codex-workflows.md)
-- `UI/` — [UI-01](UI/UI-01.md)
+- `TOOL/` — [TOOL-claude-read-deny](TOOL/TOOL-claude-read-deny.md), [TOOL-agent-workflows](TOOL/TOOL-agent-workflows.md), [TOOL-codex-workflows](TOOL/TOOL-codex-workflows.md), [TOOL-asset-submodule](TOOL/TOOL-asset-submodule.md), [TOOL-asset-packs-2](TOOL/TOOL-asset-packs-2.md)
+- `UI/` — [UI-01](UI/UI-01.md), [UI-02](UI/UI-02.md)
 - `LEGACY/` — Un-ID'd early records: [M0-early-setup](LEGACY/M0-early-setup.md), [M1-construction-camera](LEGACY/M1-construction-camera.md), [M1-combat-and-command](LEGACY/M1-combat-and-command.md), [M1-game-scene-integration](LEGACY/M1-game-scene-integration.md), [M1-siege-prototype](LEGACY/M1-siege-prototype.md), [DOC-early-workflow](LEGACY/DOC-early-workflow.md)

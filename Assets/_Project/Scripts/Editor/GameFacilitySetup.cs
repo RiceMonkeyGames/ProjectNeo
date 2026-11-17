@@ -30,11 +30,11 @@ namespace ProjectNeo.Editor
 
         static readonly (FacilityType type, string name, string building)[] Facilities =
         {
-            (FacilityType.Tavern, "주점", "Tavern"),
-            (FacilityType.Shop, "상점", "Shop"),
-            (FacilityType.TrainingGround, "훈련장", "Training"),
-            (FacilityType.Smithy, "대장간", "Smithy"),
-            (FacilityType.Defense, "수성", null),
+            (FacilityType.Tavern, "Tavern", "Tavern"),
+            (FacilityType.Shop, "Shop", "Shop"),
+            (FacilityType.TrainingGround, "Training ground", "Training"),
+            (FacilityType.Smithy, "Smithy", "Smithy"),
+            (FacilityType.Defense, "Defense", null),
         };
 
         [MenuItem("ProjectNeo/Setup/Connect Facilities To Game Scene")]
@@ -144,12 +144,12 @@ namespace ProjectNeo.Editor
             if (AssetDatabase.LoadAssetAtPath<EconomyConfig>(EconomyPath) == null)
                 AssetDatabase.CreateAsset(EconomyConfig.Create(0.5f), EconomyPath);
             // 프로토타입 임의 값(2026-11-12). 철검·회복약은 C-4 보상 아이템을 같이 쓴다.
-            ItemDefinition potion = GameRewardSetup.Item("item_potion", "회복약", ItemKind.Consumable, 10);
-            ItemDefinition sword = GameRewardSetup.Item("item_iron_sword", "철검", ItemKind.Equipment, 40);
-            ItemDefinition shield = GameRewardSetup.Item("item_wood_shield", "나무 방패", ItemKind.Equipment, 25);
-            ItemDefinition leather = GameRewardSetup.Item("item_leather_armor", "가죽 갑옷", ItemKind.Equipment, 30);
-            ItemDefinition chain = GameRewardSetup.Item("item_chain_armor", "사슬 갑옷", ItemKind.Equipment, 60);
-            ItemDefinition steel = GameRewardSetup.Item("item_steel_sword", "강철검", ItemKind.Equipment, 80);
+            ItemDefinition potion = GameRewardSetup.Item("item_potion", "Healing potion", ItemKind.Consumable, 10);
+            ItemDefinition sword = GameRewardSetup.Item("item_iron_sword", "Iron sword", ItemKind.Equipment, 40);
+            ItemDefinition shield = GameRewardSetup.Item("item_wood_shield", "Wooden shield", ItemKind.Equipment, 25);
+            ItemDefinition leather = GameRewardSetup.Item("item_leather_armor", "Leather armor", ItemKind.Equipment, 30);
+            ItemDefinition chain = GameRewardSetup.Item("item_chain_armor", "Chain armor", ItemKind.Equipment, 60);
+            ItemDefinition steel = GameRewardSetup.Item("item_steel_sword", "Steel sword", ItemKind.Equipment, 80);
             // D-7 장비 효과(프로토타입 임의 값). 이미 효과가 있으면 인스펙터에서 바꾼 값을 둔다.
             // 최대 체력은 준비 중 착용하면 현재 체력이 가득 차지 않아 이번에는 공격력·방어력만 쓴다.
             SetModifiers(sword, StatModifier.Flat(StatType.Attack, 4f));
@@ -219,11 +219,11 @@ namespace ProjectNeo.Editor
             var smithy = AssetDatabase.LoadAssetAtPath<FacilityDefinition>(PathOf(FacilityType.Smithy));
             if (smithy == null) return;
             // 프로토타입 임의 값(2026-11-13). 상점 아이템을 같이 쓰고, 상점보다 골드는 싸고 재료를 더 쓴다.
-            ItemDefinition sword = GameRewardSetup.Item("item_iron_sword", "철검", ItemKind.Equipment, 40);
-            ItemDefinition shield = GameRewardSetup.Item("item_wood_shield", "나무 방패", ItemKind.Equipment, 25);
-            ItemDefinition leather = GameRewardSetup.Item("item_leather_armor", "가죽 갑옷", ItemKind.Equipment, 30);
-            ItemDefinition chain = GameRewardSetup.Item("item_chain_armor", "사슬 갑옷", ItemKind.Equipment, 60);
-            ItemDefinition steel = GameRewardSetup.Item("item_steel_sword", "강철검", ItemKind.Equipment, 80);
+            ItemDefinition sword = GameRewardSetup.Item("item_iron_sword", "Iron sword", ItemKind.Equipment, 40);
+            ItemDefinition shield = GameRewardSetup.Item("item_wood_shield", "Wooden shield", ItemKind.Equipment, 25);
+            ItemDefinition leather = GameRewardSetup.Item("item_leather_armor", "Leather armor", ItemKind.Equipment, 30);
+            ItemDefinition chain = GameRewardSetup.Item("item_chain_armor", "Chain armor", ItemKind.Equipment, 60);
+            ItemDefinition steel = GameRewardSetup.Item("item_steel_sword", "Steel sword", ItemKind.Equipment, 80);
             MaterialDefinition hide = AssetDatabase.LoadAssetAtPath<MaterialDefinition>($"{MaterialFolder}/mat_hide.asset");
             MaterialDefinition bone = AssetDatabase.LoadAssetAtPath<MaterialDefinition>($"{MaterialFolder}/mat_bone.asset");
             MaterialDefinition feather = AssetDatabase.LoadAssetAtPath<MaterialDefinition>($"{MaterialFolder}/mat_feather.asset");
@@ -301,7 +301,7 @@ namespace ProjectNeo.Editor
         {
             Transform existing = panel.Find("Button_Reroll");
             if (existing != null) UnityEngine.Object.DestroyImmediate(existing.gameObject);
-            return ButtonAt(panel, "Button_Reroll", "리롤", new Vector2(0f, 0f), new Vector2(24f, 20f),
+            return ButtonAt(panel, "Button_Reroll", "Reroll", new Vector2(0f, 0f), new Vector2(24f, 20f),
                 new Vector2(230f, 48f), facilities.TryRerollFromButton, out label);
         }
 
@@ -325,8 +325,7 @@ namespace ProjectNeo.Editor
         /// <summary>D-7 장비 화면. 시설 팝업과 같은 모양으로 착용 중·보관함 장비 두 목록을 둔다.</summary>
         static Popup BuildEquipmentPopup(GameFlowHud hud, GameEquipment equipment)
         {
-            var font = (RuntimeSystemFont)new SerializedObject(hud).FindProperty("font").objectReferenceValue;
-            Transform parent = font != null && !hud.transform.IsChildOf(font.transform) ? font.transform : hud.transform;
+            Transform parent = hud.transform;
             Transform existing = parent.Find("EquipmentPanel");
             if (existing != null) UnityEngine.Object.DestroyImmediate(existing.gameObject);
 
@@ -337,7 +336,7 @@ namespace ProjectNeo.Editor
             rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
             rect.sizeDelta = new Vector2(780f, 540f);
             popup.panel.GetComponent<Image>().color = new Color(0.06f, 0.08f, 0.1f, 0.94f);
-            popup.title = Text(popup.panel.transform, "Title", "장비 · 플레이어", 32f, new Vector2(24f, -20f), new Vector2(-24f, -66f));
+            popup.title = Text(popup.panel.transform, "Title", "Equipment - Player", 32f, new Vector2(24f, -20f), new Vector2(-24f, -66f));
             popup.title.fontStyle = FontStyles.Bold;
             popup.status = Text(popup.panel.transform, "Status", "Slots", 18f, new Vector2(24f, -70f), new Vector2(-24f, -122f));
             popup.status.color = new Color(1f, 0.9f, 0.55f);
@@ -348,8 +347,8 @@ namespace ProjectNeo.Editor
             var listsRect = popup.trade.GetComponent<RectTransform>();
             listsRect.anchorMin = Vector2.zero; listsRect.anchorMax = Vector2.one;
             listsRect.offsetMin = new Vector2(24f, 84f); listsRect.offsetMax = new Vector2(-24f, -188f);
-            popup.offers = Column(popup.trade.transform, "Equipped", "착용 중 (클릭해서 벗기)", 0f, 0.5f);
-            popup.inventory = Column(popup.trade.transform, "Gear", "보관함 장비 (클릭해서 착용)", 0.5f, 1f);
+            popup.offers = Column(popup.trade.transform, "Equipped", "Equipped (click to unequip)", 0f, 0.5f);
+            popup.inventory = Column(popup.trade.transform, "Gear", "Stash equipment (click to equip)", 0.5f, 1f);
 
             popup.row = ButtonAt(popup.panel.transform, "RowTemplate", "Item", new Vector2(0.5f, 0.5f), Vector2.zero,
                 new Vector2(340f, 34f), null, out TMP_Text rowLabel);
@@ -358,7 +357,7 @@ namespace ProjectNeo.Editor
             popup.row.gameObject.AddComponent<LayoutElement>().preferredHeight = 34f;
             popup.row.gameObject.SetActive(false);
 
-            ButtonAt(popup.panel.transform, "Button_Close", "닫기 (Esc)", new Vector2(0.5f, 0f), new Vector2(0f, 20f),
+            ButtonAt(popup.panel.transform, "Button_Close", "Close (Esc)", new Vector2(0.5f, 0f), new Vector2(0f, 20f),
                 new Vector2(200f, 48f), equipment.Close, out _);
             popup.panel.SetActive(false);
             return popup;
@@ -366,9 +365,7 @@ namespace ProjectNeo.Editor
 
         static Popup BuildPopup(GameFlowHud hud, GameFacilities facilities)
         {
-            // 한글 글꼴(RuntimeSystemFont)이 실행 중에 바꿔 주는 범위 안에 둔다. 매물 줄은 실행 중 rowTemplate을 복제한다.
-            var font = (RuntimeSystemFont)new SerializedObject(hud).FindProperty("font").objectReferenceValue;
-            Transform parent = font != null && !hud.transform.IsChildOf(font.transform) ? font.transform : hud.transform;
+            Transform parent = hud.transform;
             Transform existing = parent.Find("FacilityPanel");
             if (existing != null) UnityEngine.Object.DestroyImmediate(existing.gameObject);
 
@@ -394,8 +391,8 @@ namespace ProjectNeo.Editor
             var tradeRect = popup.trade.GetComponent<RectTransform>();
             tradeRect.anchorMin = Vector2.zero; tradeRect.anchorMax = Vector2.one;
             tradeRect.offsetMin = new Vector2(24f, 84f); tradeRect.offsetMax = new Vector2(-24f, -204f);
-            popup.offers = Column(popup.trade.transform, "Offers", "매물 (클릭해서 구매)", 0f, 0.5f);
-            popup.inventory = Column(popup.trade.transform, "Inventory", "보관함 (클릭해서 판매)", 0.5f, 1f);
+            popup.offers = Column(popup.trade.transform, "Offers", "Offers (click to buy)", 0f, 0.5f);
+            popup.inventory = Column(popup.trade.transform, "Inventory", "Stash (click to sell)", 0.5f, 1f);
 
             popup.row = ButtonAt(popup.panel.transform, "RowTemplate", "Item", new Vector2(0.5f, 0.5f), Vector2.zero,
                 new Vector2(340f, 34f), null, out TMP_Text rowLabel);
@@ -404,7 +401,7 @@ namespace ProjectNeo.Editor
             popup.row.gameObject.AddComponent<LayoutElement>().preferredHeight = 34f;
             popup.row.gameObject.SetActive(false);
 
-            ButtonAt(popup.panel.transform, "Button_Close", "닫기 (Esc)", new Vector2(0.5f, 0f), new Vector2(0f, 20f),
+            ButtonAt(popup.panel.transform, "Button_Close", "Close (Esc)", new Vector2(0.5f, 0f), new Vector2(0f, 20f),
                 new Vector2(200f, 48f), facilities.Close, out _);
             popup.reroll = RerollButton(popup.panel.transform, facilities, out popup.rerollLabel);
             popup.panel.SetActive(false);

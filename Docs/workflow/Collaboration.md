@@ -1,6 +1,6 @@
 # Collaboration, Backlog & Task ID Rules
 
-Last Updated: 2026-11-13 19:47:38 (KST)
+Last Updated: 2026-11-16 21:40:06 (KST)
 
 > Purpose: Team workflow, Task ID rules, shared file locks, and `.claude` boundaries. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [Team](../plan/Team.md)
 
@@ -52,10 +52,21 @@ Avoid opening one project folder in multiple editor instances; use `--project-pa
 
 **Claude Code read/edit exclusions & allow rules (`.claude/settings.json`)**: Claude Code does not support `.claudeignore`; shared `.claude/settings.json` uses `permissions.deny` and `permissions.allow`.
 - Allow listed: PowerShell wrappers under `Tools/Agent/*.ps1` and read-only git inspection (`git status`, `git diff --name-only`, `git diff --stat`, `git log -n`). `git commit` and `git push` remain un-allowed for interactive confirmation.
-- Read blocked: `Library/` except `Library/PackageCache/` (explicit path only), `Temp/`, `Logs/` old/worker logs (`*-prev.log`, `AssetImportWorker*`, `*.jsonl`), `UserSettings/`, `obj/`, `Build(s)/`, `*.csproj`, `*.sln(x)`; third-party `Assets/TextMesh Pro/`, `Assets/Synty/`, `Assets/Polygon*/`, `Assets/Plugins/`, `Assets/Samples/`; `*.meta`, `*.unity`, `*.shadergraph`, `*.anim`, `*SDF.asset`, `LightingData.asset`, `NavMesh*.asset`; textures under `Assets/`, models, audio, fonts, video, `*.dll`, `*.pdb`, `*.unitypackage`.
+- Read blocked: `Library/` except `Library/PackageCache/` (explicit path only), `Temp/`, `Logs/` old/worker logs (`*-prev.log`, `AssetImportWorker*`, `*.jsonl`), `UserSettings/`, `obj/`, `Build(s)/`, `*.csproj`, `*.sln(x)`; third-party `Assets/TextMesh Pro/`, `Assets/ThirdParty/`, `Assets/Synty/`, `Assets/Polygon*/`, `Assets/Plugins/`, `Assets/Samples/`; `*.meta`, `*.unity`, `*.shadergraph`, `*.anim`, `*SDF.asset`, `LightingData.asset`, `NavMesh*.asset`; textures under `Assets/`, models, audio, fonts, video, `*.dll`, `*.pdb`, `*.unitypackage`.
 - Read allowed: `.cs`, `.asmdef`, `.prefab`, `.mat`, `.controller`, ScriptableObject `.asset`, `ProjectSettings/`, `Packages/`, `Docs/`, `Logs/Editor.log` (search `error CS` only; do not read whole file), images outside `Assets/` (save verification screenshots outside `Assets/`, `Temp/`, `Logs/`).
 - Edit/Write blocked: `*.unity`, `*.prefab`, `*.asset`, `*.meta`, `*.mat`, `*.controller`, `*.anim` (Editor API only).
 - Inspect scenes, GUIDs, and references via `script eval` (`EditorSceneManager`, `AssetDatabase.GUIDToAssetPath`). If a Synty pack imports under a new root folder, add it to `.claude/settings.json`.
+
+### Third-Party Asset Submodule (`Assets/ThirdParty`)
+
+Licensed third-party assets (Synty packs, paid Asset Store content) live in the **private** repository `RiceMonkeyGames/ProjectNeo-Assets`, mounted as a git submodule at `Assets/ThirdParty` (`.gitmodules` uses the relative URL `../ProjectNeo-Assets.git`, so it follows the main remote's SSH/HTTPS scheme). This keeps the main repository publishable without redistributing licensed files ([TOOL-asset-submodule](../history/TOOL/TOOL-asset-submodule.md)).
+- **Import location**: import every third-party package under `Assets/ThirdParty/` (e.g. `Assets/ThirdParty/Synty/...`). Never import licensed assets anywhere else in the main repository: once committed there they stay in its history even after moving.
+- **Clone**: `git clone --recurse-submodules <ProjectNeo URL>`; existing clones run `git submodule update --init --recursive`. Each member needs read access to the private repository. Optional: `git config submodule.recurse true` so checkout/pull update the submodule automatically. Agents check `git submodule status` at session start and after pull/merge/branch switch and run the update themselves when it shows `-` or `+` ([AGENTS.md](../../AGENTS.md) "Session Start: Third-Party Asset Submodule").
+- **No Git LFS in the asset repository**: third-party packs rarely change, so binaries are stored as regular git objects (`binary` attribute) to avoid LFS storage/bandwidth quotas (initial import ~1.36 GB, ~965 MB of it LFS-type files). Keep every file under GitHub's 100 MB per-file limit. The main repository keeps LFS for team-authored binaries.
+- **Bundled libraries**: packs sometimes ship code libraries next to their art (e.g. the HUD pack's `Unity UI Extensions`). Check they compile on the project's Unity version; if not, keep only what the pack references (`AssetDatabase.GetDependencies`) and record it in the task history ([TOOL-asset-submodule](../history/TOOL/TOOL-asset-submodule.md)).
+- **Commit order**: commit and push inside `Assets/ThirdParty` first (asset files **with** their `.meta` files), then commit the updated submodule pointer (`git add Assets/ThirdParty`) in the main repository. Pushing the main repository with a pointer to an unpushed submodule commit breaks teammates' checkouts.
+- **Ownership**: scenes, prefabs, and materials authored by the team stay in the main repository and reference submodule assets by GUID; without submodule access they open with missing references, which is expected for public clones.
+- **License**: confirm the asset license covers every member before granting repository access; never make the asset repository public.
 
 ## 4. High-Contention Shared Areas & Integration Pipeline
 

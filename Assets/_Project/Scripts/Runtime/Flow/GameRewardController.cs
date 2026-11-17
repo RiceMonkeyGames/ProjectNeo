@@ -71,21 +71,19 @@ namespace ProjectNeo.Flow
         }
 
         /// <summary>보상 화면에 보여줄 글.</summary>
-        public string Describe(bool korean)
+        public string Describe()
         {
             RunState state = battle != null ? battle.RunLink.State : null;
             if (LastReward == null || state == null) return string.Empty;
             var text = new StringBuilder();
-            text.Append(korean ? $"골드 +{LastReward.Gold} (보유 {state.Wallet.Gold})" : $"Gold +{LastReward.Gold} (total {state.Wallet.Gold})");
+            text.Append($"Gold +{LastReward.Gold} (total {state.Wallet.Gold})");
             foreach (KeyValuePair<MaterialDefinition, int> material in LastReward.Materials)
-                text.Append($"\n{material.Key.DisplayName} +{material.Value} ({(korean ? "보유" : "total")} {state.Wallet.GetMaterial(material.Key)})");
+                text.Append($"\n{material.Key.DisplayName} +{material.Value} (total {state.Wallet.GetMaterial(material.Key)})");
             foreach (ItemDefinition item in LastReward.Items)
-                text.Append(korean ? $"\n아이템: {item.DisplayName}" : $"\nItem: {item.DisplayName}");
+                text.Append($"\nItem: {item.DisplayName}");
             MetaProgress meta = GameSession.Meta;
-            text.Append(korean
-                ? $"\n지휘관 경험치 +{LastReward.CommanderXp} (Lv {meta.commanderLevel}) · 해금 포인트 +{LastReward.UnlockPoints}"
-                : $"\nCommander XP +{LastReward.CommanderXp} (Lv {meta.commanderLevel}) - Unlock points +{LastReward.UnlockPoints}");
-            if (LevelsGained > 0) text.Append(korean ? $" · 레벨 업! 퍽 포인트 {meta.perkPoints}" : $" - Level up! Perk points {meta.perkPoints}");
+            text.Append($"\nCommander XP +{LastReward.CommanderXp} (Lv {meta.commanderLevel}) - Unlock points +{LastReward.UnlockPoints}");
+            if (LevelsGained > 0) text.Append($" - Level up! Perk points {meta.perkPoints}");
             return text.ToString();
         }
     }

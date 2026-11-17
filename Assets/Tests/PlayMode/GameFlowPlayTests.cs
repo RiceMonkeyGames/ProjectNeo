@@ -90,13 +90,18 @@ namespace ProjectNeo.Tests
             yield return null;
             var title = Object.FindAnyObjectByType<TitleScreen>();
 
+            var deleteLabel = title.transform.Find("Panel/Button_Delete slot").GetComponentInChildren<TMPro.TMP_Text>();
+            string defaultCaption = deleteLabel.text;
+            Assert.AreEqual("Delete selected slot", defaultCaption);
             title.SelectSlot(2);
             title.DeleteSelectedSlot();
+            StringAssert.Contains("Click again to delete slot 3", deleteLabel.text);
             Assert.AreEqual(ProjectNeo.Meta.MetaLoadStatus.Loaded, GameSession.SaveStore.Inspect(2).Status);
             title.DeleteSelectedSlot();
 
             Assert.AreEqual(ProjectNeo.Meta.MetaLoadStatus.Empty, GameSession.SaveStore.Inspect(2).Status);
             Assert.IsFalse(title.IsDeleteArmed);
+            Assert.AreEqual(defaultCaption, deleteLabel.text);
         }
 
         static IEnumerator WaitForActiveScene(string name)
@@ -104,6 +109,38 @@ namespace ProjectNeo.Tests
             for (int frame = 0; frame < 300 && SceneManager.GetActiveScene().name != name; frame++) yield return null;
             Assert.AreEqual(name, SceneManager.GetActiveScene().name);
             yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator AuthoredTitleAndPreparationUi_UsesEnglishAndProjectFonts()
+        {
+            foreach (string sceneName in new[] { "Title", "Game" })
+            {
+                yield return SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
+                yield return null;
+                Scene scene = SceneManager.GetActiveScene();
+                foreach (GameObject root in scene.GetRootGameObjects())
+                {
+                    foreach (var label in root.GetComponentsInChildren<TMPro.TMP_Text>(true))
+                    {
+                        Assert.IsFalse(System.Text.RegularExpressions.Regex.IsMatch(label.text, "[\\uAC00-\\uD7A3]"),
+                            sceneName + "/" + label.name + ": " + label.text);
+                        Assert.IsNotNull(label.font, sceneName + "/" + label.name + " needs a project font.");
+                        Assert.IsFalse(label.font.name.Contains("Malgun"), "UI must not use an OS font.");
+                    }
+                    foreach (var component in root.GetComponentsInChildren<MonoBehaviour>(true))
+                    {
+                        Assert.IsNotNull(component, sceneName + " has a missing script.");
+                        Assert.AreNotEqual("RuntimeSystemFont", component.GetType().Name);
+                    }
+                }
+                if (sceneName == "Game")
+                {
+                    var hud = Object.FindAnyObjectByType<GameFlowHud>();
+                    StringAssert.Contains("Preparation - Stage 1", hud.PhaseText);
+                    StringAssert.Contains("select squads", hud.InteractionHint);
+                }
+            }
         }
 
         [UnityTest]
@@ -574,7 +611,7 @@ namespace ProjectNeo.Tests
                 Assert.IsFalse(player.enabled);
                 Assert.AreEqual(CursorLockMode.None, Cursor.lockState);
                 yield return null; // 안내 글자는 LateUpdate에서 갱신한다.
-                Assert.IsTrue(hud.InteractionHint.Contains("돌아가기"));
+                Assert.IsTrue(hud.InteractionHint.Contains("to return"));
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState());
                 yield return null;
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Escape));

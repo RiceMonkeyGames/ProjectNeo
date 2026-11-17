@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: hero_swordsman
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Characters.HeroDefinition
   id: hero_swordsman
-  displayName: "\uC6A9\uBCD1 \uAC80\uC0AC"
+  displayName: Mercenary swordsman
   unlockedByDefault: 1
   hireCost:
     gold: 60

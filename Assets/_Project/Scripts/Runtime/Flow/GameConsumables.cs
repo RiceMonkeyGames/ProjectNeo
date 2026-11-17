@@ -103,27 +103,27 @@ namespace ProjectNeo.Flow
         {
             switch (check)
             {
-                case ConsumableUseCheck.NoItem: return "쓸 수 있는 소모품이 없습니다.";
-                case ConsumableUseCheck.FullHealth: return "체력이 가득 차 있습니다.";
-                case ConsumableUseCheck.CoolingDown: return "아직 다시 쓸 수 없습니다.";
+                case ConsumableUseCheck.NoItem: return "No usable consumables.";
+                case ConsumableUseCheck.FullHealth: return "Health is full.";
+                case ConsumableUseCheck.CoolingDown: return "Not ready yet.";
                 default: return string.Empty;
             }
         }
 
         /// <summary>전투 화면 안내 한 줄. 소모품이 있으면 키·이름·개수와 남은 대기 시간, 방금 못 썼으면 이유를 보여준다.</summary>
-        public string Hint(bool korean)
+        public string Hint()
         {
             int count = Count;
             string text = string.Empty;
             if (count > 0)
             {
                 ItemInstance item = ConsumableUse.FindUsable(Stash);
-                string name = korean ? item.Definition.DisplayName : item.Definition.Id;
+                string name = item.Definition.DisplayName;
                 text = $"{UseKey} · {name} ×{count}";
                 if (CooldownRemaining > 0f)
-                    text += korean ? $" (재사용 {Mathf.CeilToInt(CooldownRemaining)}초)" : $" (ready in {Mathf.CeilToInt(CooldownRemaining)}s)";
+                    text += $" (ready in {Mathf.CeilToInt(CooldownRemaining)}s)";
             }
-            if (korean && Message.Length > 0) text += (text.Length > 0 ? " · " : string.Empty) + Message;
+            if (Message.Length > 0) text += (text.Length > 0 ? " · " : string.Empty) + Message;
             return text;
         }
     }

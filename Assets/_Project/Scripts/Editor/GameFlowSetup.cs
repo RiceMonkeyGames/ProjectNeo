@@ -53,16 +53,13 @@ namespace ProjectNeo.Editor
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(0.05f, 0.07f, 0.1f);
 
-            var labels = new List<TMP_Text>(); var captions = new List<string>();
             Transform panel = Panel("TitleScreen", out GameObject root);
             var screen = root.AddComponent<TitleScreen>();
             screen.Configure(catalog);
             Label(panel, "ProjectNeo", 80f, 44f).alignment = TextAlignmentOptions.Center;
-            ConstructionPrototypeSetup.Button(panel, "New Game", "새 게임", screen.StartGame, labels, captions);
-            ConstructionPrototypeSetup.Button(panel, "Quit", "종료", screen.Quit, labels, captions);
-            var font = root.AddComponent<RuntimeSystemFont>();
-            font.Configure(labels.ToArray(), captions.ToArray());
-            SaveSlots(panel, screen, font);
+            ConstructionPrototypeSetup.Button(panel, "New Game", screen.StartGame);
+            ConstructionPrototypeSetup.Button(panel, "Quit", screen.Quit);
+            SaveSlots(panel, screen);
             EventSystem();
             EditorSceneManager.SaveScene(scene, TitlePath);
         }
@@ -78,14 +75,14 @@ namespace ProjectNeo.Editor
                 screen = screen != null ? screen : root.GetComponentInChildren<TitleScreen>(true);
             if (screen == null) throw new InvalidOperationException("Title scene has no TitleScreen.");
             Transform panel = screen.transform.Find("Panel") ?? throw new InvalidOperationException("TitleScreen has no Panel.");
-            SaveSlots(panel, screen, screen.GetComponent<RuntimeSystemFont>());
+            SaveSlots(panel, screen);
             EditorUtility.SetDirty(screen);
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
         }
 
         // 제목 바로 아래에 슬롯 버튼 3개와 안내 글, 맨 아래 종료 버튼 위에 삭제 버튼을 둔다. 글자는 TitleScreen이 실행 중에 채운다.
-        static void SaveSlots(Transform panel, TitleScreen screen, RuntimeSystemFont font)
+        static void SaveSlots(Transform panel, TitleScreen screen)
         {
             for (int i = panel.childCount - 1; i >= 0; i--)
             {
@@ -98,7 +95,7 @@ namespace ProjectNeo.Editor
             var slotLabels = new TMP_Text[ProjectNeo.Meta.MetaSaveStore.SlotCount];
             for (int i = 0; i < slotLabels.Length; i++)
             {
-                GameObject slot = ConstructionPrototypeSetup.Button(panel, "Slot " + (i + 1), null, null, null, null);
+                GameObject slot = ConstructionPrototypeSetup.Button(panel, "Slot " + (i + 1), null);
                 UnityEditor.Events.UnityEventTools.AddIntPersistentListener(slot.GetComponent<Button>().onClick, screen.SelectSlot, i);
                 slot.transform.SetSiblingIndex(1 + i);
                 slotLabels[i] = slot.GetComponentInChildren<TMP_Text>();
@@ -108,15 +105,16 @@ namespace ProjectNeo.Editor
             status.alignment = TextAlignmentOptions.Center;
             status.transform.SetSiblingIndex(1 + slotLabels.Length);
 
-            GameObject delete = ConstructionPrototypeSetup.Button(panel, "Delete slot", null, screen.DeleteSelectedSlot, null, null);
+            GameObject delete = ConstructionPrototypeSetup.Button(panel, "Delete selected slot", screen.DeleteSelectedSlot);
+            delete.name = "Button_Delete slot";
             delete.GetComponent<Image>().color = new Color(0.32f, 0.16f, 0.16f);
             Transform quit = panel.Find("Button_Quit");
             if (quit != null) delete.transform.SetSiblingIndex(quit.GetSiblingIndex());
 
-            screen.ConfigureSlots(slotLabels, delete.GetComponentInChildren<TMP_Text>(), status, font);
+            screen.ConfigureSlots(slotLabels, delete.GetComponentInChildren<TMP_Text>(), status);
 
             // 이어 하기(FLOW-02)는 새 게임 바로 위에 둔다. 글자와 누를 수 있는지는 TitleScreen이 실행 중에 정한다.
-            GameObject resume = ConstructionPrototypeSetup.Button(panel, "Continue", null, screen.ContinueGame, null, null);
+            GameObject resume = ConstructionPrototypeSetup.Button(panel, "Continue", screen.ContinueGame);
             Transform newGame = panel.Find("Button_New Game");
             if (newGame != null) resume.transform.SetSiblingIndex(newGame.GetSiblingIndex());
             screen.ConfigureContinue(resume.GetComponent<Button>(), resume.GetComponentInChildren<TMP_Text>());
@@ -136,18 +134,15 @@ namespace ProjectNeo.Editor
 
             new GameObject("GameDirector").AddComponent<GameDirector>().Configure(catalog);
 
-            var labels = new List<TMP_Text>(); var captions = new List<string>();
             Transform panel = Panel("GameFlowHUD", out GameObject root);
             var hud = root.AddComponent<GameFlowHud>();
             TMP_Text phase = Label(panel, "Phase", 44f, 22f);
-            GameObject start = ConstructionPrototypeSetup.Button(panel, "Start battle", "전투 시작", hud.StartBattle, labels, captions);
-            GameObject win = ConstructionPrototypeSetup.Button(panel, "Win (placeholder)", "승리 (자리표시)", hud.Win, labels, captions);
-            GameObject lose = ConstructionPrototypeSetup.Button(panel, "Lose (placeholder)", "패배 (자리표시)", hud.Lose, labels, captions);
-            GameObject next = ConstructionPrototypeSetup.Button(panel, "Next stage", "보상 받고 다음 스테이지", hud.NextStage, labels, captions);
-            GameObject title = ConstructionPrototypeSetup.Button(panel, "Back to title", "타이틀로", hud.ReturnToTitle, labels, captions);
-            var font = root.AddComponent<RuntimeSystemFont>();
-            font.Configure(labels.ToArray(), captions.ToArray());
-            hud.Configure(font, phase, start, win, lose, next, title);
+            GameObject start = ConstructionPrototypeSetup.Button(panel, "Start battle", hud.StartBattle);
+            GameObject win = ConstructionPrototypeSetup.Button(panel, "Win (placeholder)", hud.Win);
+            GameObject lose = ConstructionPrototypeSetup.Button(panel, "Lose (placeholder)", hud.Lose);
+            GameObject next = ConstructionPrototypeSetup.Button(panel, "Next stage", hud.NextStage);
+            GameObject title = ConstructionPrototypeSetup.Button(panel, "Back to title", hud.ReturnToTitle);
+            hud.Configure(phase, start, win, lose, next, title);
             EventSystem();
             EditorSceneManager.SaveScene(scene, GamePath);
         }
@@ -193,12 +188,11 @@ namespace ProjectNeo.Editor
                 FindAll<SquadCommandInput>(game)[0], buildHud.gameObject, commandHud.gameObject, actors);
 
             HideTestControls(buildHud);
-            ReplaceCaption(buildHud, "Tab: first-person commands", "Preparation: build, then start the battle",
-                "준비 단계 · 성을 짓고 전투 시작을 누르세요");
+            ReplaceCaption(buildHud, "Tab: first-person commands", "Preparation: build, then start the battle");
             var commandData = new SerializedObject(commandHud);
-            SerializedProperty help = commandData.FindProperty("helpText");
-            help.stringValue = help.stringValue.Replace("\nTab 건설 시점으로 전환", "\nEsc로 커서를 풀면 위쪽 임시 승리·패배 버튼을 누를 수 있습니다");
-            commandData.ApplyModifiedPropertiesWithoutUndo();
+            var help = (TMP_Text)commandData.FindProperty("help").objectReferenceValue;
+            help.text = help.text.Replace("\nTab: construction view", "\nEsc: release the cursor to use the temporary victory/defeat buttons");
+            EditorUtility.SetDirty(help);
 
             // 단계 화면이 건설 화면 가운데를 가리지 않게 위쪽으로 옮긴다.
             var panel = (RectTransform)FindAll<GameFlowHud>(game)[0].transform.Find("Panel");
@@ -386,13 +380,12 @@ namespace ProjectNeo.Editor
             Decoration(layout.transform, "MainAvenue", new Vector3(120f, 0.035f, 132f), new Vector3(9f, 0.04f, 90f), road);
             Decoration(layout.transform, "CrossAvenue", new Vector3(120f, 0.035f, 132f), new Vector3(90f, 0.04f, 6f), road);
             Decoration(layout.transform, "MusterGround", new Vector3(120f, 0.03f, 157.5f), new Vector3(54f, 0.04f, 27f), plaza);
-            var labels = new List<TMP_Text>(); var captions = new List<string>();
-            Facility(layout.transform, "Tavern", "주점", new Vector3(91.5f, 0f, 112.5f), new Vector3(15f, 7f, 12f), plaster, roof, labels, captions);
-            Facility(layout.transform, "Shop", "상점", new Vector3(91.5f, 0f, 153f), new Vector3(12f, 6f, 12f), plaster, roof, labels, captions);
-            Facility(layout.transform, "Training", "훈련장", new Vector3(91.5f, 0f, 94.5f), new Vector3(15f, 5f, 9f), plaster, roof, labels, captions);
-            Facility(layout.transform, "Smithy", "대장간", new Vector3(148.5f, 0f, 112.5f), new Vector3(15f, 7f, 12f), plaster, roof, labels, captions);
-            Facility(layout.transform, "Construction", "건설소", new Vector3(148.5f, 0f, 153f), new Vector3(12f, 6f, 12f), plaster, roof, labels, captions);
-            layout.AddComponent<RuntimeSystemFont>().Configure(labels.ToArray(), captions.ToArray());
+
+            Facility(layout.transform, "Tavern", new Vector3(91.5f, 0f, 112.5f), new Vector3(15f, 7f, 12f), plaster, roof);
+            Facility(layout.transform, "Shop", new Vector3(91.5f, 0f, 153f), new Vector3(12f, 6f, 12f), plaster, roof);
+            Facility(layout.transform, "Training", new Vector3(91.5f, 0f, 94.5f), new Vector3(15f, 5f, 9f), plaster, roof);
+            Facility(layout.transform, "Smithy", new Vector3(148.5f, 0f, 112.5f), new Vector3(15f, 7f, 12f), plaster, roof);
+            Facility(layout.transform, "Construction", new Vector3(148.5f, 0f, 153f), new Vector3(12f, 6f, 12f), plaster, roof);
         }
 
         static void Decoration(Transform parent, string name, Vector3 position, Vector3 scale, Material material)
@@ -403,8 +396,7 @@ namespace ProjectNeo.Editor
             UnityEngine.Object.DestroyImmediate(box.GetComponent<Collider>());
         }
 
-        static void Facility(Transform parent, string name, string caption, Vector3 position, Vector3 size,
-            Material wallMaterial, Material roofMaterial, List<TMP_Text> labels, List<string> captions)
+        static void Facility(Transform parent, string name, Vector3 position, Vector3 size, Material wallMaterial, Material roofMaterial)
         {
             var root = new GameObject(name);
             root.transform.SetParent(parent, false);
@@ -425,21 +417,13 @@ namespace ProjectNeo.Editor
                 label.transform.localRotation = i == 0 ? Quaternion.identity : Quaternion.Euler(90f, 0f, 0f);
                 label.rectTransform.sizeDelta = new Vector2(size.x + 2f, 3f);
                 label.fontSize = 16f; label.alignment = TextAlignmentOptions.Center; label.text = name;
-                labels.Add(label); captions.Add(caption);
             }
         }
 
         static void AddNavigationHelp(ConstructionHud hud)
         {
-            var data = new SerializedObject(hud);
-            var captions = data.FindProperty("captions");
-            for (int i = 0; i < captions.arraySize; i++)
-            {
-                var caption = captions.GetArrayElementAtIndex(i);
-                if (!caption.stringValue.StartsWith("준비 단계")) continue;
-                caption.stringValue = "준비 단계 · 중클릭 이동 / 휠 확대·축소 / Home 초기화";
-            }
-            data.ApplyModifiedPropertiesWithoutUndo();
+            ReplaceCaption(hud, "Preparation: build, then start the battle",
+                "Preparation - Middle mouse: pan / Wheel: zoom / Home: reset");
         }
 
         static void Place(Transform target, Vector3 position, float yaw)
@@ -465,20 +449,14 @@ namespace ProjectNeo.Editor
             }
         }
 
-        static void ReplaceCaption(ConstructionHud hud, string oldText, string newText, string newCaption)
+        static void ReplaceCaption(ConstructionHud hud, string oldText, string newText)
         {
-            var data = new SerializedObject(hud);
-            SerializedProperty labels = data.FindProperty("captionLabels");
-            SerializedProperty captions = data.FindProperty("captions");
-            for (int i = 0; i < labels.arraySize; i++)
+            foreach (TMP_Text label in hud.GetComponentsInChildren<TMP_Text>(true))
             {
-                var label = labels.GetArrayElementAtIndex(i).objectReferenceValue as TMP_Text;
-                if (label == null || label.text != oldText) continue;
+                if (label.text != oldText) continue;
                 label.text = newText;
                 EditorUtility.SetDirty(label);
-                captions.GetArrayElementAtIndex(i).stringValue = newCaption;
             }
-            data.ApplyModifiedPropertiesWithoutUndo();
         }
 
         static List<T> FindAll<T>(Scene scene) where T : Component

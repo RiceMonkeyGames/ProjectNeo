@@ -1,6 +1,6 @@
 # ProjectNeo
 
-Last Updated: 2026-11-14 17:51:39 (KST)
+Last Updated: 2026-11-16 21:40:06 (KST)
 
 A 3D first-person siege defense roguelike built with Unity 6000.6.8f1 and URP. Scout the upcoming wave, prepare heroes, troops, equipment, and walls, and defend the castle through direct player combat and unit commanding. Low-poly art style; Synty assets planned, currently using placeholder graphics.
 
@@ -14,6 +14,14 @@ Do **not** bulk-read `Docs/`. Read only:
 3. Only the specific leaf documents under `Docs/design/`, `Docs/plan/`, `Docs/codemap/`, `Docs/workflow/`, or `Docs/history/` required for your task.
 
 Precedence on conflict: `Docs/design/` (game rules) > `Docs/plan/` (roadmap/status/decisions) > `Docs/workflow/` & `Docs/codemap/` (execution/code map) > `Docs/Backlog.md` (claims/live status).
+
+## Session Start: Third-Party Asset Submodule
+
+Licensed assets (Synty packs, etc.) live in the private submodule `Assets/ThirdParty` (repo `RiceMonkeyGames/ProjectNeo-Assets`). At the start of every session, and after any `git pull`, `git merge`, or branch switch:
+1. Run `git submodule status`. A leading `-` means not initialized; a leading `+` means the checked-out commit differs from the one recorded by the main repository; a missing `Assets/ThirdParty` entry means the current branch predates the submodule (no action).
+2. If `-` or `+`, run `git submodule update --init --recursive` without asking (it only downloads/checks out the recorded commit; no commits or pushes). If the Unity Editor is open, tell the user so the Editor reimports (or run `AssetDatabase.Refresh` per [Docs/workflow/UnityCLI.md](Docs/workflow/UnityCLI.md)).
+3. If it fails with an authentication or "repository not found" error, stop and tell the user they need read access to `ProjectNeo-Assets`; do not retry, change the submodule URL, or edit `.gitmodules`.
+4. Never commit inside `Assets/ThirdParty` or move its pointer unless the task is about third-party assets. Details: [Collaboration § Third-Party Asset Submodule](Docs/workflow/Collaboration.md).
 
 ## Backlog, Task IDs & Branch Workflow
 

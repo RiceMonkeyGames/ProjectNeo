@@ -155,7 +155,7 @@ namespace ProjectNeo.Siege
             if (interruptNoticeTimer > 0f) interruptNoticeTimer = Mathf.Max(0f, interruptNoticeTimer - Time.deltaTime);
             if (IsTraversing)
             {
-                PlayerHint = "W/S · 사다리 오르내리기";
+                PlayerHint = "W/S - Climb up / down";
                 MoveOnLadder(captured ? vertical : 0f); return true;
             }
             var falling = GetComponent<UnitFallController>();
@@ -202,12 +202,12 @@ namespace ProjectNeo.Siege
                 held = 0f;
             }
             PlayerHint = nearest.State.Phase == LadderPhase.Up
-                ? "F 짧게 · 탑승 / 위에서 F 유지 · 사다리 밀기"
-                : upper ? "사다리가 내려가 있습니다" : "F 유지 · 사다리 세우기";
-            if (nearest.State.IsSettling) PlayerHint = "사다리가 움직이는 중 · 잠시 기다리세요";
+                ? "Tap F - Climb / Hold F at top - Push ladder"
+                : upper ? "Ladder is down" : "Hold F - Raise ladder";
+            if (nearest.State.IsSettling) PlayerHint = "Ladder is moving - Please wait";
             if (queuedPlayer)
             {
-                PlayerHint = "사다리 이용 대기 중";
+                PlayerHint = "Waiting to use ladder";
                 if (ladder.TryEnter(actor)) { queuedPlayer = false; Begin(ascending); return true; }
             }
             return false;

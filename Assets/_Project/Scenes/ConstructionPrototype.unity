@@ -872,6 +872,7 @@ MonoBehaviour:
   body: {fileID: 1339186881}
   healthBar: {fileID: 1524138910}
   attackMarker: {fileID: 690842450}
+  model: {fileID: 0}
 --- !u!114 &408673817
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5743,32 +5744,6 @@ MonoBehaviour:
   selection: {fileID: 1165030794}
   status: {fileID: 743693642}
   unitHealth: {fileID: 1291452917}
-  captionLabels:
-  - {fileID: 1725623172}
-  - {fileID: 1241264590}
-  - {fileID: 1726038708}
-  - {fileID: 1892461040}
-  - {fileID: 345218132}
-  - {fileID: 1128053619}
-  - {fileID: 1854601933}
-  - {fileID: 1919129857}
-  - {fileID: 1921723233}
-  - {fileID: 579995752}
-  - {fileID: 927758953}
-  - {fileID: 620730710}
-  captions:
-  - "\uC131\uBCBD \uBC30\uCE58"
-  - "Q/E \uC2DC\uC810 \uD68C\uC804 \xB7 R \uC870\uAC01 \uD68C\uC804"
-  - "\uC131\uBCBD"
-  - "\uACC4\uB2E8"
-  - "\uD68C\uC804  R"
-  - "\uBC30\uCE58 \uCDE8\uC18C"
-  - "\uC88C\uD074\uB9AD \uC124\uCE58 \xB7 \uC6B0\uD074\uB9AD \uCDE8\uC18C\n\uCD08\uB85D: \uC124\uCE58 \uAC00\uB2A5 / \uBE68\uAC15: \uC124\uCE58 \uBD88\uAC00"
-  - "\uC774\uB3D9\xB7\uBD95\uAD34 \uC2DC\uD5D8"
-  - "\uC131\uBCBD \uC704\uB85C \uC774\uB3D9"
-  - "\uBC1C\uBC11 \uC870\uAC01 \uD30C\uAD34"
-  - "\uB300\uD3EC"
-  - "\uBB34\uAE30 \uBC1B\uCE68 \uC131\uBCBD \uD30C\uAD34"
   weapons:
   - {fileID: 11400000, guid: dcd5362db7ff6a84db2f93ac232125a8, type: 2}
 --- !u!114 &1927906513

@@ -1,6 +1,6 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-16 21:40:22 (KST)
+Last Updated: 2026-11-17 13:49:46 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
@@ -10,7 +10,7 @@ Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elev
 
 ## Implemented vs Pending Real Connections
 
-**FLOW-02 (Waiting for Verification, 2026-11-16; `feature/flow-02`)**: Each save slot now also keeps one run in progress. The run saves automatically at preparation start, battle start, reward (as the next stage) and quit during preparation; battles are not saved; defeat deletes the save. Title has `Continue (Stage N)`; the Game scene rebuilds castle, squads, hired heroes, equipment, facilities and shop state from the save. Save moments are switches in `RunSavePolicy`; content ids resolve through `RunContent.asset`. Choices were delegated to the agent by the user. Compile, EditMode **467/467** and PlayMode **222/222** passed; manual play, real application quit and standalone build unverified. [History/manual checks](../history/FLOW/FLOW-02.md).
+**FLOW-02 (Done on user confirmation, 2026-11-17; `feature/flow-02`, merged into develop after UI-02 and the asset submodule; combined EditMode 467/467, PlayMode 223/223)**: Each save slot now also keeps one run in progress. The run saves automatically at preparation start, battle start, reward (as the next stage) and quit during preparation; battles are not saved; defeat deletes the save. Title has `Continue (Stage N)`; the Game scene rebuilds castle, squads, hired heroes, equipment, facilities and shop state from the save. Save moments are switches in `RunSavePolicy`; content ids resolve through `RunContent.asset`. Choices were delegated to the agent by the user. Compile, EditMode **467/467** and PlayMode **222/222** passed on the task branch; the user confirmed manual play on 2026-11-17. Real application quit and standalone build unverified. [History/manual checks](../history/FLOW/FLOW-02.md).
 
 **Integration (2026-11-16)**: On user request `feature/b-7.1` (B-7.1 + SIEGE-01) was merged with develop after COMBAT-04 (doc-only conflicts in Backlog, Backlog-Done and Decisions-Resolved resolved by keeping both sides; `GameFlowHud` auto-merged). Combined compile, EditMode **438/438** and PlayMode **215/215** passed; combined manual play not re-run.
 
@@ -40,7 +40,7 @@ Q-41 and SIEGE-04 completion/commit/push were authorized by the user on 2026-11-
 | Squads, Morale, Walls | Squad structures, grid occupancy/rotation, stacking, async NavMesh rebuild, fall damage, weapon mounting/collapse, 1st-person commands | Formal wall-breaker encounters (B-7.1), construction delays (SIEGE-08, pending decision). Morale/rout wiring (B-8.1, B-8.2, COMBAT-03) and siege weapon firing (SIEGE-02, SIEGE-07) are Done; physical-input play is tracked in QA-physical-input |
 | Run Data Architecture | `RunState` container, castle persistence, combat I/O, single application rules (`C-1a`), Game scene unit binding, survivor healing (`C-1~2`), grunt spawning (`D-0b`), post-battle squad cleanup and casualty carry-over (`C-3`) | Saved run loading, meta file persistence |
 | Test Scenes | `CombatPrototype`, `UnitBattlePrototype`, `ConstructionPrototype`, `SquadCommandPrototype`, `WallCommandPrototype`, `SiegePrototype` | Mixed wall-breaker/aerial encounters, multi-wave sequences, morale routs, full loop integration |
-| Art & Performance | Capsule/box placeholder visuals, dual-tier NavMesh benchmark, AI query optimization (`PERF-nav-query`) | Production Synty packs, animations, VFX, full combat performance profiling |
+| Art & Performance | Synty character models with locomotion animation on prototype units (`ART-03`; environment/props still placeholder), dual-tier NavMesh benchmark, AI query optimization (`PERF-nav-query`) | Synty environment/prop packs, combat (attack/hit/death) animations, VFX, full combat performance profiling |
 
 ## Test Baselines & Status Conventions
 

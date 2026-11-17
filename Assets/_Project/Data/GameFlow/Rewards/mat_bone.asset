@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: mat_bone
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Economy.MaterialDefinition
   id: mat_bone
-  displayName: "\uBF08 \uC870\uAC01"
+  displayName: Bone shard

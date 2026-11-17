@@ -1,6 +1,6 @@
 # FLOW-02 | 2026-11-16 | Flow/Run - Run Save & Continue From Title
 
-Last Updated: 2026-11-16 21:40:22 (KST)
+Last Updated: 2026-11-17 13:49:46 (KST)
 
 Branch: `feature/flow-02`. Owner: Hwang Seong-min. Claim synchronized to develop (`docs: claim FLOW-02`). Design record: [PrepEconomyMeta](../../design/PrepEconomyMeta.md) (Run Save & Continue).
 
@@ -56,6 +56,10 @@ Defects found and fixed during verification:
 Not verified: physical mouse clicks and layout of the Title buttons, the save written on a real application quit, how restored units look where they stand, save files written by a standalone build, and behaviour when a save from an older build meets changed content beyond the "unknown id" case.
 
 Known limits (by design, see the design record): unit positions and remembered deployment spots are not saved; soldiers without a squad are kept in the run but have no scene unit; the same id used by two assets of one kind is reported by the setup menu and the catalog test rather than resolved.
+
+## Completion (2026-11-17)
+
+The user reported the manual check below as working and authorized Done and the develop merge. Develop (UI-02 single-language UI text, third-party asset submodule) was merged into the branch first: `TitleScreen` and `GameFlowSetup` were reconciled with the English-only captions, develop's `Title.unity` was taken and `Button_Continue` was recreated through `GameFlowSetup.ApplyTitleSaveSlots`, and the branch now records the same `Assets/ThirdParty` commit as develop. Combined compile, EditMode **467/467** and PlayMode **223/223** passed. Real application quit and standalone build remain unverified.
 
 ## Manual check
 

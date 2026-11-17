@@ -197,7 +197,7 @@ namespace ProjectNeo.Editor
             var image = dot.GetComponent<UnityEngine.UI.Image>();
             image.color = new Color(1f, 1f, 1f, 0.85f); image.raycastTarget = false;
             root.AddComponent<SquadCommandHud>().Configure(center, input, squads, help,
-                "F1~F4 부대 선택 · ` 전체 선택\n1 이동(화면 가운데가 가리키는 곳) · 2 공격 · 3 중지\nWASD 이동 · 마우스 시점 · 좌클릭 공격 · Esc 커서 해제" + extraHelp);
+                "F1-F4: select squad - `: select all\n1: move to aim point - 2: attack - 3: hold\nWASD: move - Mouse: look - Click: attack - Esc: release cursor" + extraHelp);
         }
 
         static TMP_Text Label(Transform parent, string name, Vector2 anchor, Vector2 position, Vector2 size, float fontSize)

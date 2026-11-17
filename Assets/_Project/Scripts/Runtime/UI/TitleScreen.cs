@@ -16,7 +16,6 @@ namespace ProjectNeo.UI
         [SerializeField] TMP_Text[] slotLabels = new TMP_Text[0];
         [SerializeField] TMP_Text deleteLabel;
         [SerializeField] TMP_Text statusLabel;
-        [SerializeField] RuntimeSystemFont font;
 
         [SerializeField] UnityEngine.UI.Button continueButton;
         [SerializeField] TMP_Text continueLabel;
@@ -25,6 +24,8 @@ namespace ProjectNeo.UI
         int deleteArmedSlot = NoSlot;
         int newGameArmedSlot = NoSlot;
         string notice = string.Empty;
+        string defaultDeleteCaption;
+        bool deleteCaptionWasArmed;
 
         /// <summary>고른 슬롯에 이어 할 런 저장이 있는지(FLOW-02).</summary>
         public bool CanContinue => GameSession.HasRunSave(selectedSlot);
@@ -49,12 +50,11 @@ namespace ProjectNeo.UI
 
         public void Configure(SceneCatalog sceneCatalog) => catalog = sceneCatalog;
 
-        public void ConfigureSlots(TMP_Text[] slots, TMP_Text delete, TMP_Text status, RuntimeSystemFont systemFont)
+        public void ConfigureSlots(TMP_Text[] slots, TMP_Text delete, TMP_Text status)
         {
             slotLabels = slots;
             deleteLabel = delete;
             statusLabel = status;
-            font = systemFont;
         }
 
         void Start()
@@ -62,6 +62,7 @@ namespace ProjectNeo.UI
             // 전투 중 잠근 커서가 남아 있지 않게 한다.
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
+            defaultDeleteCaption = deleteLabel != null ? deleteLabel.text : string.Empty;
             selectedSlot = GameSession.SaveStore.GetLastSlot();
             Refresh();
         }
@@ -94,14 +95,13 @@ namespace ProjectNeo.UI
         /// <summary>고른 슬롯을 지운다. 처음 누르면 확인을 기다리고, 같은 슬롯에서 다시 누르면 지운다.</summary>
         public void DeleteSelectedSlot()
         {
-            bool korean = Korean;
             MetaSaveStore store = GameSession.SaveStore;
             newGameArmedSlot = NoSlot;
             bool hasRunFile = GameSession.RunSaves.Inspect(selectedSlot).Status != ProjectNeo.Run.RunSaveStatus.Empty;
             if (store.Inspect(selectedSlot).Status == MetaLoadStatus.Empty && !hasRunFile)
             {
                 deleteArmedSlot = NoSlot;
-                notice = korean ? "빈 슬롯입니다." : "This slot is empty.";
+                notice = "This slot is empty.";
             }
             else if (deleteArmedSlot != selectedSlot)
             {
@@ -114,8 +114,8 @@ namespace ProjectNeo.UI
                 // 슬롯을 지우면 그 슬롯에서 진행 중이던 런 저장도 함께 지운다.
                 bool runDeleted = GameSession.RunSaves.Delete(selectedSlot);
                 notice = store.Delete(selectedSlot) && runDeleted
-                    ? (korean ? $"슬롯 {selectedSlot + 1}을 지웠습니다." : $"Slot {selectedSlot + 1} deleted.")
-                    : (korean ? "슬롯을 지우지 못했습니다." : "Could not delete the slot.");
+                    ? $"Slot {selectedSlot + 1} deleted."
+                    : "Could not delete the slot.";
             }
             Refresh();
         }
@@ -148,51 +148,49 @@ namespace ProjectNeo.UI
 #endif
         }
 
-        bool Korean => font != null && font.Available;
-
         void Refresh()
         {
-            bool korean = Korean;
             MetaSaveStore store = GameSession.SaveStore;
             for (int i = 0; i < slotLabels.Length; i++)
             {
                 if (slotLabels[i] == null) continue;
                 string mark = i == selectedSlot ? "> " : "  ";
-                slotLabels[i].text = mark + Describe(i, store.Inspect(i), korean) + DescribeRun(i);
+                slotLabels[i].text = mark + Describe(i, store.Inspect(i)) + DescribeRun(i);
             }
             ProjectNeo.Run.RunLoadResult run = GameSession.RunSaves.Inspect(selectedSlot);
             if (continueButton != null) continueButton.interactable = run.HasRun;
             if (continueLabel != null)
                 continueLabel.text = run.HasRun ? $"Continue (Stage {run.Snapshot.stageNumber})" : "Continue";
             if (deleteLabel != null)
-                deleteLabel.text = deleteArmedSlot == selectedSlot
-                    ? (korean ? $"한 번 더 누르면 슬롯 {selectedSlot + 1} 삭제" : $"Click again to delete slot {selectedSlot + 1}")
-                    : (korean ? "고른 슬롯 삭제" : "Delete selected slot");
+            {
+                bool armed = deleteArmedSlot == selectedSlot;
+                if (armed) deleteLabel.text = $"Click again to delete slot {selectedSlot + 1}";
+                else if (deleteCaptionWasArmed) deleteLabel.text = defaultDeleteCaption;
+                deleteCaptionWasArmed = armed;
+            }
             if (statusLabel != null) statusLabel.text = notice;
         }
 
-        // 슬롯 글 뒤에 붙이는 진행 중인 런 표시. 런 저장이 없으면 빈 문자열. 새 UI 글은 영어 하나로 쓴다(UI-02 결정).
+        // 슬롯 글 뒤에 붙이는 진행 중인 런 표시. 런 저장이 없으면 빈 문자열.
         static string DescribeRun(int slot)
         {
             ProjectNeo.Run.RunLoadResult run = GameSession.RunSaves.Inspect(slot);
             return run.HasRun ? $" - Stage {run.Snapshot.stageNumber} in progress" : string.Empty;
         }
 
-        static string Describe(int slot, MetaLoadResult result, bool korean)
+        static string Describe(int slot, MetaLoadResult result)
         {
-            string name = korean ? $"슬롯 {slot + 1}" : $"Slot {slot + 1}";
+            string name = $"Slot {slot + 1}";
             MetaProgress progress = result.Progress;
-            string summary = korean
-                ? $"지휘관 Lv {progress.commanderLevel} · 해금 {progress.unlockedIds.Count}"
-                : $"Commander Lv {progress.commanderLevel} - Unlocks {progress.unlockedIds.Count}";
+            string summary = $"Commander Lv {progress.commanderLevel} - Unlocks {progress.unlockedIds.Count}";
             switch (result.Status)
             {
                 case MetaLoadStatus.Loaded: return $"{name}: {summary}";
                 case MetaLoadStatus.RestoredFromBackup:
-                    return korean ? $"{name}: {summary} (백업에서 복구)" : $"{name}: {summary} (from backup)";
+                    return $"{name}: {summary} (from backup)";
                 case MetaLoadStatus.Unreadable:
-                    return korean ? $"{name}: 손상됨 - 새로 시작" : $"{name}: Damaged - starts fresh";
-                default: return korean ? $"{name}: 비어 있음" : $"{name}: Empty";
+                    return $"{name}: Damaged - starts fresh";
+                default: return $"{name}: Empty";
             }
         }
     }

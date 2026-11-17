@@ -57,7 +57,7 @@ namespace ProjectNeo.Tests
             Assert.IsTrue(Station(FacilityType.Tavern).Interact());
             Assert.AreEqual(2, state.TavernOffers.Count, "주점 1레벨 영웅 풀(검사·궁수)");
             Assert.AreEqual(2, facilities.OfferRows);
-            StringAssert.Contains("고용", facilities.OfferHeaderText);
+            StringAssert.Contains("hire", facilities.OfferHeaderText);
 
             int gold = state.Wallet.Gold;
             var captainHero = state.TavernOffers[0];
@@ -69,7 +69,7 @@ namespace ProjectNeo.Tests
             UnitCombatAI captainUnit = center.Squads[0].Leader;
             Assert.IsNotNull(captainUnit, "씬 부대장도 바뀐다.");
             Assert.AreSame(captain.Character, captainUnit.GetComponent<CharacterActor>().Character, "런과 씬이 같은 캐릭터를 쓴다.");
-            StringAssert.Contains("대장", facilities.BodyText);
+            StringAssert.Contains("captain", facilities.BodyText);
 
             var reserveHero = state.TavernOffers[0];
             Assert.IsTrue(facilities.ChooseCaptainSquad(-1));

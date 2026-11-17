@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: mat_feather
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Economy.MaterialDefinition
   id: mat_feather
-  displayName: "\uAE43\uD138"
+  displayName: Feather
