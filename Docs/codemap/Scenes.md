@@ -1,6 +1,6 @@
 # Playable Scenes & Manual Controls
 
-Last Updated: 2026-11-17 13:49:46 (KST)
+Last Updated: 2026-11-17 14:13:12 (KST)
 
 > Purpose: Executable scene table and `Title`/`Game` scene verification controls. | Parent: [codemap/README](README.md) | Related: [PrototypeScenes](PrototypeScenes.md), [Status](../plan/Status.md)
 
@@ -24,3 +24,5 @@ Player movement (COMBAT-01 / COMBAT-02): hold left/right Ctrl to crouch (50% Mov
 
 - **Game battle consumables (PREP-04 / UI-02)**: In `Game.unity` battles, `Q` uses one potion from the run stash (35% maximum HP, 10s cooldown, not at full HP); the battle status panel shows `Q · Healing potion ×N`. UI text is authored in English and uses project TMP fonts. See [UI-02](../history/UI/UI-02.md) for the language verification walkthrough.
 - **User-approved crouch view refinement (2026-11-13)**: First-person eye height transitions with SmoothStep over 0.18 seconds (PlayerControlSettings.CrouchViewTransitionSeconds); capsule changes remain immediate. Reversing Ctrl mid-transition continues from the currently displayed height. Root movement/falls follow immediately; camera re-enable resets the transition.
+
+- **Player HP (UI-03)**: In Game first-person preparation/battle, the bottom-right panel above the prep prompt shows a red health bar and current/maximum HP. Damage, Q potion healing and max-HP changes update immediately. Hidden in facility/equipment, construction/placement and outcome views; restored on return to gameplay. Stop Play to reset.

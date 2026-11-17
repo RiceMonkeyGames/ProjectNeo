@@ -1,6 +1,6 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-17 13:57:15 (KST)
+Last Updated: 2026-11-17 14:18:12 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
@@ -11,6 +11,10 @@ Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elev
 ## Latest Manual Verification
 
 **QA-physical-input (2026-11-17)**: The user confirmed all six Editor physical-input checklists passed (PREP-01, PREP-04, SIEGE-07, COMBAT-03, SIEGE-04, FLOW-01). This supersedes the physical-input-unverified notes below for those six checklist scopes only. No automated reruns or standalone build were performed. Cursor restoration/start capture and player HP HUD feedback are registered separately as `BUG-popup-cursor` and `UI-03`. [Evidence](../history/QA/QA-physical-input.md).
+
+## Player HP HUD (UI-03)
+
+Done on user authorization (2026-11-17), feature/ui-03: bottom-right health bar and current/maximum HP, as selected by the user. Real Game scene integration, damage/healing/max-HP/death/stage-transition tests and API-driven layout inspection completed; full compile/EditMode 467/467/PlayMode 226/226 passed. User authorized develop merge and branch cleanup; physical-input and standalone verification remain unclaimed. [History](../history/UI/UI-03.md).
 
 ## Implemented vs Pending Real Connections
 

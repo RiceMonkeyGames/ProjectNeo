@@ -1,10 +1,12 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-16 21:40:22 (KST)
+Last Updated: 2026-11-17 14:07:39 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
 ## Resolved `Q-*` Table
+
+Player HP HUD (UI-03, user decision, 2026-11-17): bottom-right health bar plus current/maximum HP numbers, visible during preparation and battle gameplay. [Rule](../design/Combat.md).
 
 Run save and continue (FLOW-02, 2026-11-16): The user delegated the open Q-13 choices to the agent's recommendation and conventional practice, asking for a design that is easy to change. Chosen: one run per save slot; automatic saves only (preparation start, battle start, reward granted, quit during preparation), each switchable in `RunSavePolicy`; battles are never saved, so a mid-battle quit returns to that battle's preparation; quitting on the reward screen continues at the next stage and cannot repeat the reward; defeat deletes the run save; Title `Continue` only when a run save exists; `New Game` over a saved run needs a second click; an unrestorable run save is set aside and a new run starts. New UI text is English only (UI-02 decision). [Rule](../design/PrepEconomyMeta.md), [history](../history/FLOW/FLOW-02.md).
 
