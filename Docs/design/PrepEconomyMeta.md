@@ -1,6 +1,6 @@
 # Game Design: Preparation, Economy, Rewards & Meta
 
-Last Updated: 2026-11-16 21:40:22 (KST)
+Last Updated: 2026-11-18 02:52:45 (KST)
 
 > Purpose: Rules for courtyard facilities, unit deployment, currencies, rewards, and meta progression. | Parent: [design/README](README.md) | Related: [WallsAndSiege](WallsAndSiege.md), [OpenQuestions](OpenQuestions.md)
 
@@ -33,6 +33,22 @@ Last Updated: 2026-11-16 21:40:22 (KST)
 - **Player as Captain** (Q-32 interim, 2026-11-13): Not allowed for now (player stays an independent unit). Keep the captain-assignment code open so player captaincy can be enabled later.
 - **Tavern Heroes** (Q-48, 2026-11-13): Hire cost is gold per hero tier in hero data (prototype 60 / 120 / 200g). Reserve heroes are excluded from battle for now; keep deployment extensible so a reserve hero can later be placed into a captain-less squad. Hero equipment is equipped through the `I` window with a player/hero selector (part of D-3).
 - **Pre-Battle Squad Placement** (PREP-05, user approved 2026-11-15): In preparation exploration the battle squad keys work (F1–F4 / ` select, 1 move, 2 attack, 3 hold). `P` opens a separate top-down **squad placement view** (construction camera, no build tools; `P` or Esc returns): select with F1–F4 / ` or by clicking a unit, left-click ground or a wall top to move, right-click clears the selection. Units walk. During preparation, destinations must lie inside the rectangle covered by wall and gate pieces (wall tops and courtyard included; outer field rejected with a message); battle orders are unrestricted. Each squad remembers its last placement made during preparation (battle orders do not overwrite it) and walks back there when the next preparation phase starts; positions now outside the castle or off the NavMesh are forgotten. In preparation the battle key-help box is hidden and the squad keys appear as one line in the bottom preparation hint (single source in `GameFlowHud.PreparationSquadHint`, to be refined later).
+
+### Preparation Time (Q-53, user decision 2026-11-18)
+
+Each preparation phase gets a **time budget** shown as a clock. Physical work costs time; trading and organizing do not. All numbers below are starting values held in data and tuned after playtests.
+
+- **Budget**: `12` hours per preparation phase. Unused hours are lost; every preparation starts with the full budget.
+- **What advances the clock** (thinking time is unlimited; the clock never runs on its own):
+  - Crafting or upgrading one item at the blacksmith: `1` hour.
+  - Scouting (see [Wave Preview](MoraleAndWave.md#wave-preview)): `3` hours.
+  - **Wait**: `1` hour per use, so ordered work can progress.
+- **Free actions** (no clock cost, still allowed after the clock runs out): shop buy/sell/re-roll/lock, tavern hiring, barracks recruiting, facility upgrades, equipment, squad organization, squad placement, placing work orders. Battle still starts only when the player holds `B` (FLOW-01).
+- **Work orders (construction and repair)**: Placing a piece or ordering a repair costs gold as today but no clock time; it becomes a work order. A **work crew** builds it while the clock advances. `2` crews work at once on orders in placement order; each wall, stair or weapon piece needs `1` hour of work; repairing a piece needs its missing-HP fraction of `1` hour (a destroyed piece = `1` hour). Increasing the crew count through upgrades is a later idea, not part of this rule.
+- **Demolishing**: still free; demolishing a piece still under construction refunds its full cost.
+- **Clock exhausted** (`12` hours used): clock actions and work progress stop; free actions continue.
+- **Unfinished work at battle start**: a piece under construction stands with HP equal to its progress (50% built = 50% HP) and blocks paths like a finished piece. It continues as a normal damaged piece and can be repaired in later preparations. Unfinished repairs keep the HP reached so far.
+- This replaces the open "construction delays" question (SIEGE-08); there is no separate construction delay during battle.
 
 ## Currencies, Items & Rewards
 

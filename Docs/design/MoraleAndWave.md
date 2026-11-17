@@ -1,6 +1,6 @@
 # Game Design: Morale, Rout & Wave Preview
 
-Last Updated: 2026-11-17 05:43:55 (KST)
+Last Updated: 2026-11-18 02:52:45 (KST)
 
 > Purpose: Ally Breaking Point morale, enemy morale, rout/exit accounting, and wave preview rules. | Parent: [design/README](README.md) | Related: [Combat](Combat.md), [OpenQuestions](OpenQuestions.md)
 
@@ -95,5 +95,10 @@ The three stage compositions created with B-7.1 were accepted by the user after 
 
 ## Wave Preview
 
-- Displays upcoming enemy types and headcounts by default.
-- Certain enemies obscured as hidden (`?`), revealed upon appearing or scouting via high reconnaissance traits or scouting perks.
+Rules decided by the user on 2026-11-18 (Q-53). Numbers are data and open to tuning.
+
+- **Default view** (preparation): the next battle's enemy **types and counts** for the whole stage (no per-wave split). Spawn direction and wave timing are not shown.
+- **Hidden enemies**: a stage group can be marked hidden in stage data. Hidden groups appear as `? × N` (count shown, type hidden).
+- **Scouting action**: the player can scout for `3` hours of preparation time ([Preparation Time](PrepEconomyMeta.md#preparation-time-q-53-user-decision-2026-11-18)). One scout reveals **every** hidden group of the coming stage, so it is offered only while something is hidden. It cannot be done if fewer than `3` hours remain.
+- **Automatic reveal** (kept from the original design): a hero with a scouting trait or a scouting perk reveals hidden groups without spending time. This needs hero traits and perk injection (META-02) and follows later.
+- Hidden enemies are also revealed once they appear on the battlefield.
