@@ -1,6 +1,6 @@
 # Past Verification History Index
 
-Last Updated: 2026-11-17 07:31:13 (KST)
+Last Updated: 2026-11-18 01:53:58 (KST)
 
 > Purpose: Route historical log lookups by Task ID prefix. | Parent: [INDEX](../INDEX.md) | Related: [Backlog-Done](../archive/Backlog-Done.md), [Status](../plan/Status.md)
 
@@ -8,12 +8,12 @@ Read this folder only when researching past design rationales, benchmarks, or ve
 
 - **Recording rule**: Create or append to `Docs/history/<PREFIX>/<TASK-ID>.md` using header `# <TASK-ID> | <YYYY-MM-DD> | <Area> - <Title>`, and update [Status.md](../plan/Status.md) / `codemap/` if needed.
 
-Latest manual verification: [QA-physical-input](QA/QA-physical-input.md).
+Latest manual verification: [B-9.3](B/B-9.3.md) (3-stage loop, 2026-11-18).
 
 ## Folders
 
 - [A/](A/Stage-A.md) — `Stage-A.md` (A-1~A-7)
-- `B/` — [B-1](B/B-1.md), [B-2](B/B-2.md), [B-3](B/B-3.md), [B-4](B/B-4.md), [B-4.6](B/B-4.6.md), [B-5](B/B-5.md), [B-6.2](B/B-6.2.md), [B-6.3](B/B-6.3.md), [B-6.4](B/B-6.4.md), [B-7.1](B/B-7.1.md), [B-8.1](B/B-8.1.md), [B-8.2](B/B-8.2.md)
+- `B/` — [B-1](B/B-1.md), [B-2](B/B-2.md), [B-3](B/B-3.md), [B-4](B/B-4.md), [B-4.6](B/B-4.6.md), [B-5](B/B-5.md), [B-6.2](B/B-6.2.md), [B-6.3](B/B-6.3.md), [B-6.4](B/B-6.4.md), [B-7.1](B/B-7.1.md), [B-8.1](B/B-8.1.md), [B-8.2](B/B-8.2.md), [B-9.3](B/B-9.3.md)
 - `C/` — [C-1a](C/C-1a.md), [C-1a-confirm](C/C-1a-confirm.md), [C-3](C/C-3.md), [C-1-2](C/C-1-2.md), [C-4](C/C-4.md)
 - `D/` — [D-0](D/D-0.md), [D-0b](D/D-0b.md), [D-1-5](D/D-1-5.md), [D-2](D/D-2.md), [D-3-8-plan](D/D-3-8-plan.md), [D-4](D/D-4.md), [D-6](D/D-6.md), [D-3](D/D-3.md), [D-8](D/D-8.md), [D-7](D/D-7.md)
 - `G/` — [G-0](G/G-0.md), [G-1](G/G-1.md)

@@ -1,6 +1,6 @@
 # Editor Setup & Test Scripts
 
-Last Updated: 2026-11-17 07:31:13 (KST)
+Last Updated: 2026-11-18 01:34:45 (KST)
 
 > Purpose: Map of Editor setup menus, build scripts, and EditMode/PlayMode test suites. | Parent: [codemap/README](README.md) | Related: [UnityCLI](../workflow/UnityCLI.md), [Status](../plan/Status.md)
 
@@ -63,6 +63,8 @@ Last Updated: 2026-11-17 07:31:13 (KST)
 - `BarracksRecruitTests.cs`: D-4/Q-37 barracks recruit rules and non-stacking level training bonus.
 
 ## PlayMode Tests (`Assets/Tests/PlayMode/`)
+
+- `GameStageLoopPlayTests.cs` (`B-9.3`): Game scene with the real stage assets (overrides the single-wave fixture). Plays stages 1→2→3 back to back, killing each wave as it is released. At every preparation start it checks that only this stage's enemies exist (hidden), the wave timetable restarts, retreat records are empty, no arrows/cannon shells remain, ladders are off and empty, and morale battle state is closed. Each victory pays once (gold unchanged while on the reward screen and after moving on; `ContinueToNextStage` works once).
 
 - `CombatPrototypePlayTests.cs`: Movement, collisions, windup, range, LoS, death, camera collision avoidance.
 - `UnitCombatPlayTests.cs`: Targeting, projectile ally penetration, agent death, 10v10 combat, DecisionInterval/offset collider regressions.
