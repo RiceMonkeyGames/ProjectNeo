@@ -1,6 +1,6 @@
 # Editor Setup & Test Scripts
 
-Last Updated: 2026-11-16 21:40:22 (KST)
+Last Updated: 2026-11-17 07:31:13 (KST)
 
 > Purpose: Map of Editor setup menus, build scripts, and EditMode/PlayMode test suites. | Parent: [codemap/README](README.md) | Related: [UnityCLI](../workflow/UnityCLI.md), [Status](../plan/Status.md)
 
@@ -49,6 +49,7 @@ Last Updated: 2026-11-16 21:40:22 (KST)
 - `RunUnitBindingTests.cs` (B-8.2 additions): `Fled` fate with death precedence, per-type enemy retreats separate from kills, run squad `Morale` survives result apply.
 - `GameMoralePlayTests.cs` (PlayMode, Game scene, B-8.2): member death/nearby wall/gate morale loss; routed squad ignores orders, exits at the retreat point (south of castle), drops from `AlliesAlive`, records `Fled` (exited and still running), recovers to 80, reappears next prep and rejoins, next battle starts shaken at 80; all squads exited with gate intact keeps battle running.
 - `GameMoralePlayTests.cs` COMBAT-03 additions (PlayMode): real Attack bands and Last Stand, independent equipment-preserving cleanup across battles, one-roll Fear veto, Panic point/waiting vs Fled and escalation to rout, frame-driven nearby Contagion, HUD state/notice, captain/weak-Collapse behavior, Rally and Steadfast. [History/manual repeat](../history/COMBAT/COMBAT-03.md).
+- COMBAT-07 additions: `MoraleRulesTests` `Gain_*` (cap/return value, no check across 100, routed and disposed ignored); `GameMoralePlayTests` battle-start perk raises every squad once, skips a routed squad, does nothing after battle end, and fires exactly once again next battle; captain awaken bonus only for squads with a living captain. [History](../history/COMBAT/COMBAT-07.md).
 - `GameFlowTests.cs`: Phase transitions, invalid rejections, single battle result handling, run reset, phase change events.
 - `RunStateTests.cs`: Start config, unit IDs, squad caps, captains, battle inputs, death/rout/permadeath, single result processing, castle persistence.
 - `CastleStateTests.cs`: Gate, stacking, rotation, HP, mounted weapons persistence, empty grid restoration.

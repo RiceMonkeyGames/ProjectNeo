@@ -1,6 +1,6 @@
 # Game Design: Morale, Rout & Wave Preview
 
-Last Updated: 2026-11-16 13:49:52 (KST)
+Last Updated: 2026-11-17 05:43:55 (KST)
 
 > Purpose: Ally Breaking Point morale, enemy morale, rout/exit accounting, and wave preview rules. | Parent: [design/README](README.md) | Related: [Combat](Combat.md), [OpenQuestions](OpenQuestions.md)
 
@@ -29,6 +29,7 @@ Combines Bannerlord-style squad morale with a Darkest Dungeon-style resolve chec
 - **Stat Modifier Bands**: `>= 150`: attack `+10%`. `< 100`: attack `-10%`.
 - **Morale Loss Causes (Allies)**: Squad member death (proportional to the squad's member count at the start of this battle; tuned so a squad starting at `150` reaches `0` when `90%` of its members die, i.e. full-squad loss ≈ `166.7`, Q-44), Main gate destroyed (all squads, fixed), Nearby wall collapse (fixed), Nearby squad routing (fixed), Squad captain death (fixed, largest single loss). ("Nearby" starts at `15m`). Excluded: enemy hero/boss approach, explosions, ladder climbing, being surrounded.
 - **In-Battle Gain**: Perks/skills and Awaken only (no passive recovery).
+- **Gain Rules (COMBAT-07, 2026-11-17, user)**: A gain never triggers the Breaking Point Check, even when it moves morale across `100`. Gains (perk, skill, Rally) do not apply to a routed squad (morale `0`); a rout is never cancelled by a gain. Gains are capped at `200`. Battle-start perk effects (`PerkTrigger.BattleStart`) fire once per battle, right after each squad's battle morale is created.
 - **Awaken Effects (random 1, Q-38 2026-11-13)**:
   - *Rally*: Raises morale of self and nearby squads.
   - *Last Stand*: Attack rises with the share of starting members lost (example start: up to `+50%`).

@@ -5,6 +5,7 @@ using NUnit.Framework;
 using ProjectNeo.Combat;
 using ProjectNeo.Core;
 using ProjectNeo.Flow;
+using ProjectNeo.Meta;
 using ProjectNeo.Morale;
 using ProjectNeo.Run;
 using ProjectNeo.Squads;
@@ -453,6 +454,96 @@ namespace ProjectNeo.Tests
             Assert.IsFalse(battle.GateDestroyed);
             yield return null;
             Assert.AreEqual(GamePhase.Battle, GameSession.Flow.Phase, "플레이어 혼자 싸운다.");
+        }
+
+        // --- COMBAT-07: 퍽·스킬·부대장 사기 연결 ---
+
+        [UnityTest]
+        public IEnumerator BattleStartPerk_RaisesEverySquadOnce_SkipsRouted_AndStopsAfterBattle()
+        {
+            MoraleBoostPerkEffect effect = MoraleBoostPerkEffect.Create(PerkTrigger.BattleStart, 10f);
+            PerkDefinition perk = PerkDefinition.Create("combat07_morale_boost", PerkCategory.UnitBoost, null,
+                new PerkSpecialEffect[] { effect });
+            try
+            {
+                var loadout = new PerkLoadout(new MetaProgress { perkPoints = 1 });
+                Assert.IsTrue(loadout.TryAllocate(perk));
+                morale.UsePerks(loadout);
+                Assert.GreaterOrEqual(center.Squads.Count, 2);
+                float[] before = Enumerable.Range(0, center.Squads.Count).Select(i => morale.MoraleOf(i).Value).ToArray();
+
+                Assert.IsTrue(battle.TryStartBattle());
+                for (int i = 0; i < center.Squads.Count; i++)
+                    if (morale.BattleOf(i) != null)
+                        Assert.AreEqual(Mathf.Min(before[i] + 10f, 200f), morale.BattleOf(i).Morale.Value, 0.01f, $"{i}번 부대");
+                float[] started = Values();
+                yield return null; yield return null;
+                CollectionAssert.AreEqual(started, Values(), "전투 시작 퍽은 한 번만 발동한다.");
+
+                // 도망 중인 부대는 오르지 않고, 나머지는 오른다.
+                BattleSquadMorale routed = morale.BattleOf(0);
+                routed.Morale.Add(-1000f);
+                Assert.IsTrue(routed.IsRouted);
+                float[] beforeSkill = Values();
+                morale.AddMoraleToAllySquads(5f);
+                Assert.AreEqual(0f, routed.Morale.Value);
+                Assert.IsTrue(routed.IsRouted);
+                for (int i = 1; i < center.Squads.Count; i++)
+                    if (morale.BattleOf(i) != null)
+                        Assert.AreEqual(Mathf.Min(beforeSkill[i] + 5f, 200f), Values()[i], 0.01f, $"{i}번 부대");
+                Assert.AreEqual(0f, morale.AddMorale(0, 5f));
+
+                yield return WinBattle();
+                float[] recovered = Enumerable.Range(0, center.Squads.Count).Select(i => morale.MoraleOf(i).Value).ToArray();
+                morale.AddMoraleToAllySquads(50f);
+                loadout.RaiseTrigger(PerkTrigger.BattleStart, morale);
+                CollectionAssert.AreEqual(recovered,
+                    Enumerable.Range(0, center.Squads.Count).Select(i => morale.MoraleOf(i).Value).ToArray(),
+                    "전투가 끝나면 퍽·스킬 창구는 아무것도 바꾸지 않는다.");
+
+                Assert.IsTrue(GameSession.Flow.ContinueToNextStage());
+                yield return null;
+                Assert.IsTrue(battle.TryStartBattle());
+                for (int i = 0; i < center.Squads.Count; i++)
+                    if (morale.BattleOf(i) != null)
+                        Assert.AreEqual(Mathf.Min(recovered[i] + 10f, 200f), morale.BattleOf(i).Morale.Value, 0.01f,
+                            $"{i}번 부대: 다음 전투에서도 정확히 한 번(중복 구독 없음)");
+            }
+            finally
+            {
+                morale.UsePerks(null);
+                Object.DestroyImmediate(perk);
+                Object.DestroyImmediate(effect);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator CaptainAwakenBonus_AppliesOnlyToSquadsWithLivingCaptain()
+        {
+            var facilities = Object.FindAnyObjectByType<GameFacilities>();
+            GameSession.Flow.Run.State.Wallet.AddGold(200);
+            Assert.IsTrue(Object.FindObjectsByType<FacilityStation>().Single(station => station.Type == FacilityType.Tavern).Interact());
+            Assert.IsTrue(facilities.ChooseCaptainSquad(0));
+            Assert.IsTrue(facilities.TryHire(0));
+            facilities.Close();
+            yield return null;
+            UnitCombatAI captain = center.Squads[0].Leader;
+            Assert.IsNotNull(captain);
+            UnitCombatAI asked = null;
+            morale.UseCaptainAwakenBonus(leader => { asked = leader; return 0.5f; });
+            try
+            {
+                Assert.IsTrue(battle.TryStartBattle());
+                Assert.AreEqual(captain, asked);
+                Assert.AreEqual(0.5f, morale.BattleOf(0).AwakenChanceBonus, 0.001f);
+                for (int i = 1; i < center.Squads.Count; i++)
+                    if (morale.BattleOf(i) != null && center.Squads[i].Leader == null)
+                        Assert.AreEqual(0f, morale.BattleOf(i).AwakenChanceBonus);
+            }
+            finally
+            {
+                morale.UseCaptainAwakenBonus(null);
+            }
         }
     }
 }

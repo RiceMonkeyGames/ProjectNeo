@@ -1,10 +1,12 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-17 14:07:39 (KST)
+Last Updated: 2026-11-17 07:31:13 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
 ## Resolved `Q-*` Table
+
+Morale gain hooks (COMBAT-07, 2026-11-17, user): (1) a morale gain never triggers the Breaking Point Check, even across `100`; (2) a routed squad (morale `0`) receives no gain and its rout is not cancelled; (3) the sample hook is a battle-start perk effect (`PerkTrigger.BattleStart`), firing once per battle. Full skills stay in COMBAT-06, perk injection in META-02. [Rule](../design/MoraleAndWave.md).
 
 Player HP HUD (UI-03, user decision, 2026-11-17): bottom-right health bar plus current/maximum HP numbers, visible during preparation and battle gameplay. [Rule](../design/Combat.md).
 

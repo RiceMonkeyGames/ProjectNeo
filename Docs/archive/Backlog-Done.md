@@ -1,11 +1,12 @@
 # Completed Backlog Archive (Done)
 
-Last Updated: 2026-11-17 16:07:46 (KST)
+Last Updated: 2026-11-17 07:31:13 (KST)
 
 > Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
 | Task ID | Description | Assignee | Outcome & History Link |
 |---|---|---|---|
+| COMBAT-07 | Hooks for Morale Skills, Captains, and Perk Effects | youngho | Done 2026-11-17 on user confirmation after manual check; branch `feature/combat-07` (from M1 `B-8.3`). User decisions: gains never trigger the breaking point check, routed squads get no gain, sample hook is a battle-start perk. `BattleSquadMorale.ApplyGain`; `GameSquadMorale` implements `IPerkEffectContext` (active only during battle), `UsePerks` raises `PerkTrigger.BattleStart` once per battle, `AddMorale` for targeted skills, `UseCaptainAwakenBonus` for captain traits. Compile, EditMode 457/457, PlayMode 219/219 passed. Run perk feed (META-02) and skills (COMBAT-06) not wired; standalone build unverified. [History](../history/COMBAT/COMBAT-07.md) |
 | BUG-popup-cursor | Restore Gameplay Cursor Capture | 신용준 | Done 2026-11-17 on user authorization; branch `fix/bug-popup-cursor`. Ignore Escape on the cursor capture frame and recapture on gameplay focus return. C# pre-check/Unity compile passed; Game PlayMode 83/83 passed. User confirmed popup close-button capture in Editor; Editor Escape releases Game-view cursor focus. Standalone Escape and startup/focus-return physical checks unverified. User authorized commit/push, develop merge and local/remote branch cleanup. [History](../history/BUG/BUG-popup-cursor.md). |
 | UI-03 | Player HP HUD | 신용준 | Done 2026-11-17 on user authorization; branch `feature/ui-03`. Bottom-right health bar and current/maximum HP in Game first-person preparation/battle. Damage, healing, max-HP changes and next-stage refresh; non-gameplay views hide it. Compile, full EditMode 467/467 and PlayMode 226/226 passed; API-driven layout check passed. User authorized commit/push, develop merge and branch cleanup. Physical-input play and standalone not separately verified. [History](../history/UI/UI-03.md). |
 | QA-physical-input | Physical-Input Manual Play Sweep | 신용준 | Done 2026-11-17 on user confirmation. All six Editor physical-input checklists passed: PREP-01, PREP-04, SIEGE-07, COMBAT-03, SIEGE-04, FLOW-01. No code changes or automated reruns; standalone outside scope. [History](../history/QA/QA-physical-input.md). |
