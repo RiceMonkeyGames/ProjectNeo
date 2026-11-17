@@ -1,12 +1,14 @@
 # Past Verification History Index
 
-Last Updated: 2026-11-17 13:49:46 (KST)
+Last Updated: 2026-11-17 13:57:15 (KST)
 
 > Purpose: Route historical log lookups by Task ID prefix. | Parent: [INDEX](../INDEX.md) | Related: [Backlog-Done](../archive/Backlog-Done.md), [Status](../plan/Status.md)
 
 Read this folder only when researching past design rationales, benchmarks, or verification evidence. Past test counts and temporary numbers do not represent current baselines.
 
 - **Recording rule**: Create or append to `Docs/history/<PREFIX>/<TASK-ID>.md` using header `# <TASK-ID> | <YYYY-MM-DD> | <Area> - <Title>`, and update [Status.md](../plan/Status.md) / `codemap/` if needed.
+
+Latest manual verification: [QA-physical-input](QA/QA-physical-input.md).
 
 ## Folders
 
