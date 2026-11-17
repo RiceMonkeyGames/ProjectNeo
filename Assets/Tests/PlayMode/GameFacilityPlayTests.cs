@@ -49,6 +49,59 @@ namespace ProjectNeo.Tests
             Object.FindObjectsByType<FacilityStation>().Single(station => station.Type == type);
 
         [UnityTest]
+        public IEnumerator CursorCapture_RestoresAfterFocusOnlyWhileGameplayIsEnabled()
+        {
+            Assert.AreEqual(CursorLockMode.Locked, Cursor.lockState, "Game starts captured.");
+            Assert.IsFalse(Cursor.visible);
+            player.SendMessage("OnApplicationFocus", false);
+            Assert.AreEqual(CursorLockMode.None, Cursor.lockState);
+            Assert.IsTrue(Cursor.visible);
+            player.SendMessage("OnApplicationFocus", true);
+            Assert.AreEqual(CursorLockMode.Locked, Cursor.lockState, "Returning to gameplay recaptures automatically.");
+            Assert.IsFalse(Cursor.visible);
+            Assert.IsTrue(Station(FacilityType.Shop).Interact());
+            player.SendMessage("OnApplicationFocus", true);
+            Assert.AreEqual(CursorLockMode.None, Cursor.lockState, "A disabled player must leave UI cursor access intact.");
+            Assert.IsTrue(Cursor.visible);
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator CursorCapture_IgnoresTheEscapeThatClosedAPanel()
+        {
+            using var inputScope = new FocusIndependentInputScope();
+            Keyboard originalKeyboard = Keyboard.current;
+            var keyboard = InputSystem.AddDevice<Keyboard>();
+            try
+            {
+                for (int cycle = 0; cycle < 3; cycle++)
+                {
+                    Assert.IsTrue(Station(FacilityType.Shop).Interact());
+                    Assert.AreEqual(CursorLockMode.None, Cursor.lockState);
+                    Assert.IsTrue(Cursor.visible);
+                    player.SendMessage("OnApplicationFocus", true);
+                    Assert.AreEqual(CursorLockMode.None, Cursor.lockState, "A disabled player must leave UI cursor access intact.");
+                    InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Escape));
+                    InputSystem.Update();
+                    // Exercise both callback orders: close first, then player Update with the same Esc.
+                    facilities.Close();
+                    player.SendMessage("Update");
+                    Assert.AreEqual(CursorLockMode.Locked, Cursor.lockState, "The closing key must not release the newly captured cursor.");
+                    Assert.IsFalse(Cursor.visible);
+                    InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+                    yield return null; yield return null;
+                    Assert.AreEqual(CursorLockMode.Locked, Cursor.lockState);
+                    Assert.IsFalse(Cursor.visible);
+                }
+            }
+            finally
+            {
+                InputSystem.RemoveDevice(keyboard);
+                if (originalKeyboard != null && originalKeyboard.added) originalKeyboard.MakeCurrent();
+            }
+        }
+
+        [UnityTest]
         public IEnumerator 런_데이터에_시설_다섯_곳이_시작_레벨로_붙는다()
         {
             Assert.IsNotNull(facilities, "Game 씬 전투 오브젝트에 시설 컴포넌트가 있어야 한다.");

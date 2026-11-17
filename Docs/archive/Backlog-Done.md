@@ -1,11 +1,12 @@
 # Completed Backlog Archive (Done)
 
-Last Updated: 2026-11-17 14:18:12 (KST)
+Last Updated: 2026-11-17 16:07:46 (KST)
 
 > Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
 | Task ID | Description | Assignee | Outcome & History Link |
 |---|---|---|---|
+| BUG-popup-cursor | Restore Gameplay Cursor Capture | 신용준 | Done 2026-11-17 on user authorization; branch `fix/bug-popup-cursor`. Ignore Escape on the cursor capture frame and recapture on gameplay focus return. C# pre-check/Unity compile passed; Game PlayMode 83/83 passed. User confirmed popup close-button capture in Editor; Editor Escape releases Game-view cursor focus. Standalone Escape and startup/focus-return physical checks unverified. User authorized commit/push, develop merge and local/remote branch cleanup. [History](../history/BUG/BUG-popup-cursor.md). |
 | UI-03 | Player HP HUD | 신용준 | Done 2026-11-17 on user authorization; branch `feature/ui-03`. Bottom-right health bar and current/maximum HP in Game first-person preparation/battle. Damage, healing, max-HP changes and next-stage refresh; non-gameplay views hide it. Compile, full EditMode 467/467 and PlayMode 226/226 passed; API-driven layout check passed. User authorized commit/push, develop merge and branch cleanup. Physical-input play and standalone not separately verified. [History](../history/UI/UI-03.md). |
 | QA-physical-input | Physical-Input Manual Play Sweep | 신용준 | Done 2026-11-17 on user confirmation. All six Editor physical-input checklists passed: PREP-01, PREP-04, SIEGE-07, COMBAT-03, SIEGE-04, FLOW-01. No code changes or automated reruns; standalone outside scope. [History](../history/QA/QA-physical-input.md). |
 | FLOW-02 | Run Save & Continue From Title | Hwang Seong-min | Done 2026-11-17; branch `feature/flow-02`. One run per save slot, saved automatically at preparation start, battle start, reward (as next stage) and quit during preparation; battles are not saved; defeat deletes the save. Title `Continue (Stage N)`, second-click `New Game` over a saved run, slot delete removes the run save. `RunSnapshot` + pure capture/validate/restore on `RunState`, `RunContentCatalog` id lookup, `RunSaveStore`, `RunSavePolicy` switches, `GameRunRestorer` scene rebuild. Choices delegated to the agent. EditMode 467/467, PlayMode 222/222 on the branch and 467/467, 223/223 after merging develop (UI-02, asset submodule); user confirmed manual play on 2026-11-17. Real application quit and standalone build unverified. [History](../history/FLOW/FLOW-02.md). |

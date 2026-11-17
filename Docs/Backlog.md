@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-17 15:49:43 (KST)
+Last Updated: 2026-11-17 16:07:46 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -21,7 +21,6 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 | COMBAT-07 | Hooks for Morale Skills, Captains, and Perk Effects | In Progress | youngho | Branch `feature/combat-07`. Normalized from M1 roadmap `B-8.3` (prerequisites B-8.1, B-8.2, COMBAT-03 Done). Verify that a sample morale boost applies once to a real squad and unsubscribes cleanly (full skills in `COMBAT-06` / `META-02`). |
 | C-5 | Wave Preview & Hidden Enemy Intel | Waiting for Prerequisite | Unassigned | B-7.1 Done 2026-11-16 (stage data readable without a running battle). Following run contracts, display upcoming enemy types, counts, and hidden indicators in prep UI. Scouting rules clarified first. |
 | B-9.3 | M1 Full Integration, Iteration & Build Verification | Waiting for Prerequisite | Unassigned | Following B-4~8 integration, test repeated cycles of destruction, enemy variants, waves, morale, and outcomes; verify regressions and standalone build startup flow. |
-| BUG-popup-cursor | Restore Gameplay Cursor Capture | In Progress | 신용준 | Branch `fix/bug-popup-cursor`. Reported 2026-11-17. Repro: open a building interaction popup in Game, then close it. Actual: mouse cursor remains visible. Expected: hide and lock the cursor when returning to first-person gameplay, and capture it automatically when gameplay begins. Preserve cursor access in Title, popups, construction and outcome screens. Verify repeated open/close cycles and transitions. User report; agent reproduction pending. |
 | META-02 | Runtime Perk Injection & Reward Routing | Pending Decision | Unassigned | Registered 2026-11-16: apply perk payloads to real run/battle stats and route victory unlock points. Blocked by Q-06 (perk allocation timing/pause) and Q-07 (unlock point distribution timing). |
 | COMBAT-06 | Minimal Hero/Active Skill Execution | Pending Decision | Unassigned | Registered 2026-11-16: skills exist as identifiers only. Blocked by Q-12 (skill rules, cooldowns, targeting, perk effects). Shared combat core edits need teammate coordination. |
 | SIEGE-08 | Construction Delays | Pending Decision | Unassigned | Registered 2026-11-16 (formerly roadmap bundle `C-6` construction pacing). No delay rule is recorded in `Docs/design/`; the user must decide whether builds take time, how long, and whether it applies in prep only. |
