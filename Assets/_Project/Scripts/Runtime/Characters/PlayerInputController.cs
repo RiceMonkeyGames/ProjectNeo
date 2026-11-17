@@ -26,6 +26,7 @@ namespace ProjectNeo.Characters
         Vector3 lastHorizontalVelocity;
         CursorLockMode previousLock;
         bool previousVisible;
+        int capturedFrame;
         bool movementSuspended;
         float standingHeight;
         Vector3 standingCenter;
@@ -100,15 +101,18 @@ namespace ProjectNeo.Characters
             SetCaptured(true);
         }
 
-        static void SetCaptured(bool captured)
+        void SetCaptured(bool captured)
         {
+            if (captured) capturedFrame = Time.frameCount;
             Cursor.lockState = captured ? CursorLockMode.Locked : CursorLockMode.None;
             Cursor.visible = !captured;
         }
 
         void Update()
         {
-            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame) SetCaptured(false);
+            // A modal can re-enable us before Update consumes the same Escape that closed it.
+            if (Time.frameCount != capturedFrame && Keyboard.current != null
+                && Keyboard.current.escapeKey.wasPressedThisFrame) SetCaptured(false);
             if (actor.Health == null || actor.Health.IsDead) { IsSprinting = false; return; }
             bool captured = Cursor.lockState == CursorLockMode.Locked;
             if (!captured && Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
@@ -178,7 +182,9 @@ namespace ProjectNeo.Characters
 
         void OnApplicationFocus(bool focused)
         {
-            if (!focused) SetCaptured(false);
+            // Focus callbacks also reach disabled behaviours; leave modal/result cursors alone.
+            if (!isActiveAndEnabled) return;
+            SetCaptured(focused);
             if (!focused) IsSprinting = false;
         }
 
