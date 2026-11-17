@@ -1,6 +1,6 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-18 01:34:45 (KST)
+Last Updated: 2026-11-18 01:53:58 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
@@ -18,7 +18,7 @@ Done on user authorization (2026-11-17), feature/ui-03: bottom-right health bar 
 
 ## Implemented vs Pending Real Connections
 
-**B-9.3 (Waiting for Verification, 2026-11-18; `feature/b-9.3`)**: B-7.2 closed by user decision (cleanup absorbed here; enemy squad linking and corpse explosion dropped). New `GameStageLoopPlayTests` plays the real stages 1→2→3 back to back and found no state leaking into the next preparation and one payout per victory; no runtime changes. Compile, EditMode **471/471** and PlayMode **231/231** passed; Windows build boots with 0 errors. Manual 3-stage Editor play and standalone gameplay pending the user. [History/manual checks](../history/B/B-9.3.md).
+**B-9.3 (Done on user confirmation, 2026-11-18; `feature/b-9.3`, merged into develop)**: B-7.2 closed by user decision (cleanup absorbed here; enemy squad linking and corpse explosion dropped). New `GameStageLoopPlayTests` plays the real stages 1→2→3 back to back and found no state leaking into the next preparation and one payout per victory; no runtime changes. Compile, EditMode **471/471** and PlayMode **231/231** passed; Windows build boots with 0 errors. The user confirmed manual 3-stage Editor play; standalone gameplay not played by the agent. [History/manual checks](../history/B/B-9.3.md).
 
 **FLOW-02 (Done on user confirmation, 2026-11-17; `feature/flow-02`, merged into develop after UI-02 and the asset submodule; combined EditMode 467/467, PlayMode 223/223)**: Each save slot now also keeps one run in progress. The run saves automatically at preparation start, battle start, reward (as the next stage) and quit during preparation; battles are not saved; defeat deletes the save. Title has `Continue (Stage N)`; the Game scene rebuilds castle, squads, hired heroes, equipment, facilities and shop state from the save. Save moments are switches in `RunSavePolicy`; content ids resolve through `RunContent.asset`. Choices were delegated to the agent by the user. Compile, EditMode **467/467** and PlayMode **222/222** passed on the task branch; the user confirmed manual play on 2026-11-17. Real application quit and standalone build unverified. [History/manual checks](../history/FLOW/FLOW-02.md).
 
