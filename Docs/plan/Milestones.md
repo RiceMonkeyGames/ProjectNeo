@@ -1,6 +1,6 @@
 # Project Milestones & M2 Breakdown
 
-Last Updated: 2026-11-16 13:41:43 (KST)
+Last Updated: 2026-11-18 01:55:15 (KST)
 
 > Purpose: M0–M7 roadmap, M1→M2 criteria, M2 sub-batches, and M3+ detailing rules. | Parent: [INDEX](../INDEX.md) | Related: [Status](Status.md), [M1](M1.md), [Backlog](../Backlog.md)
 
@@ -9,7 +9,7 @@ Last Updated: 2026-11-16 13:41:43 (KST)
 | Milestone | Scope & Major Deliverables | Prerequisites | Completion Criteria | Status |
 |---|---|---|---|---|
 | M0 Foundation & Combat Core | Data structures, player controls, baseline combat, initial profiling | Project setup | Verified A, B-1~3 deliverables | Done |
-| M1 Single Siege Battle | Walls, placement, dual-tier nav, squad commands, enemy siege AI, ladders, win/loss | M0, core contracts | Defend castle via direct combat + commands; collapse and outcomes verified | In Progress |
+| M1 Single Siege Battle | Walls, placement, dual-tier nav, squad commands, enemy siege AI, ladders, win/loss | M0, core contracts | Defend castle via direct combat + commands; collapse and outcomes verified | Done (2026-11-18, closed by B-9.3) |
 | M2 Repeatable Run Loop | Run state, prep facilities, squad setup, wave preview, rewards, casualty carry-over, minimal skills/perks | M1 integration | 3-stage loop: Prep → Combat → Rewards → Next Stage / Defeat Results | In Progress |
 | M3 Meta Progression & Saves | Disk persistence, unlocks, perk loadouts, run score, reincarnation bonuses | M2 contracts | Persistent meta across sessions; perk re-allocation; dynamic unlock pools | Core rules drafted |
 | M4 Content & Strategic Depth | Finalize content scale, hero/enemy/item/stage rosters, bosses, economy tuning | M2 feedback, M3 | Viable multi-build strategies across full run lengths | High-level planning |
@@ -19,7 +19,7 @@ Last Updated: 2026-11-16 13:41:43 (KST)
 
 ```mermaid
 flowchart LR
-    M0["M0 (Done)"] --> M1["M1 Single Siege Battle"] --> M2["M2 Repeatable Run Loop"]
+    M0["M0 (Done)"] --> M1["M1 Single Siege Battle (Done)"] --> M2["M2 Repeatable Run Loop"]
     M2 --> M3["M3 Meta & Saves"]
     M2 --> M4["M4 Content & Balance"]
     M2 --> M5["M5 Art, Audio & UX"]
