@@ -27,5 +27,13 @@ namespace ProjectNeo.Economy
             UpgradeLevel++;
             UpgradeGoldSpent += goldSpent;
         }
+
+        /// <summary>저장된 강화 상태를 그대로 되살린다(FLOW-02). 비용을 내거나 조건을 보지 않는다.</summary>
+        internal void RestoreUpgrade(int level, long goldSpent, EquipmentUpgradeSettings settings)
+        {
+            UpgradeLevel = Math.Max(0, level);
+            UpgradeGoldSpent = Math.Max(0L, goldSpent);
+            if (UpgradeLevel > 0) upgradeSettings = settings;
+        }
     }
 }

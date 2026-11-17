@@ -16,7 +16,11 @@ namespace ProjectNeo.Flow
         /// </summary>
         public RunState State { get; private set; }
 
-        internal RunProgress(RunState state = null) => State = state;
+        internal RunProgress(RunState state = null, int stageNumber = 1)
+        {
+            State = state;
+            StageNumber = stageNumber < 1 ? 1 : stageNumber;
+        }
 
         internal void Attach(RunState state) => State = state;
 

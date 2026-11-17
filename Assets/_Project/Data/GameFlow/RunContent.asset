@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 46abbb97e074d7643b9a390820adcf5e, type: 3}
+  m_Name: RunContent
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Run.RunContentCatalog
+  items:
+  - {fileID: 11400000, guid: 67d0133c1953fa84c81f67a15984ec45, type: 2}
+  - {fileID: 11400000, guid: f199196ca1dd9d8458335b9110821698, type: 2}
+  - {fileID: 11400000, guid: 460dfb0830ad07e44b81096701286eeb, type: 2}
+  - {fileID: 11400000, guid: 933d722ec8cf9574fa5b174621ec4fa5, type: 2}
+  - {fileID: 11400000, guid: b916f3e660b272b4791179bd0f5b8dc5, type: 2}
+  - {fileID: 11400000, guid: 82f91b232b8d1fc4fb04fbebf5e77a88, type: 2}
+  materials:
+  - {fileID: 11400000, guid: d8a422bc2c200bc4098f7e97952c696e, type: 2}
+  - {fileID: 11400000, guid: 983096480f690a248a516a89f583ca4f, type: 2}
+  - {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+  heroes:
+  - {fileID: 11400000, guid: d0f91576355d5a44983cfdd082f3a2c3, type: 2}
+  - {fileID: 11400000, guid: f6d1d7205e1b649428da2bc5f18d2b8b, type: 2}
+  - {fileID: 11400000, guid: 65436603c180b634a96f960237fad7dc, type: 2}
+  - {fileID: 11400000, guid: 6b44272629dfe43448af015dfafd3976, type: 2}
+  - {fileID: 11400000, guid: 762c4e94b65ae944ca69707a085a1dc6, type: 2}
+  - {fileID: 11400000, guid: 1b1a67a7924861849808913352a1d76b, type: 2}
+  - {fileID: 11400000, guid: 9a7127772c8055441ae6ecb5018d46db, type: 2}
+  soldiers:
+  - {fileID: 11400000, guid: a0ed209df7c113348b2d08b2620b9793, type: 2}
+  - {fileID: 11400000, guid: f3e38ec2effb8c3408320027d8874f67, type: 2}
+  - {fileID: 11400000, guid: cb1803d5ba53ebc4abe76e1706edf2fe, type: 2}
+  - {fileID: 11400000, guid: 25d226ec5da5dba42a2398116de921ce, type: 2}
+  facilities:
+  - {fileID: 11400000, guid: 25cfea06566930b4fbb224a7f99c2268, type: 2}
+  - {fileID: 11400000, guid: 9a6e6b167c154b74884a5db34daa1681, type: 2}
+  - {fileID: 11400000, guid: cd6e5e680e227f340a15247d70650475, type: 2}
+  - {fileID: 11400000, guid: 10546d1e498a7934e9af2b30d644886e, type: 2}
+  - {fileID: 11400000, guid: 34bc9f3a4931a764a826204aa679a5be, type: 2}
+  pieces:
+  - {fileID: 11400000, guid: 808c026c839abdb4aa59f6e639e1c812, type: 2}
+  - {fileID: 11400000, guid: 9bec35695a6f5a848b88ce14e4da5884, type: 2}
+  - {fileID: 11400000, guid: c1c038f7a168fe347bc9a0582b3d05bf, type: 2}
+  - {fileID: 11400000, guid: aac3647309965694ebd130dc919fcbf7, type: 2}
+  pieceIds:
+  - 808c026c839abdb4aa59f6e639e1c812
+  - 9bec35695a6f5a848b88ce14e4da5884
+  - c1c038f7a168fe347bc9a0582b3d05bf
+  - aac3647309965694ebd130dc919fcbf7
+  weapons:
+  - {fileID: 11400000, guid: dcd5362db7ff6a84db2f93ac232125a8, type: 2}

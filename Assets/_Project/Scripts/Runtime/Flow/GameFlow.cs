@@ -31,6 +31,30 @@ namespace ProjectNeo.Flow
         }
 
         /// <summary>
+        /// 타이틀에서 저장된 런을 이어 한다(FLOW-02). 저장된 스테이지의 준비 단계로 들어간다.
+        /// 런 데이터는 게임 씬이 저장 기록으로 되살려 붙인다.
+        /// </summary>
+        public bool ResumeRun(int stageNumber)
+        {
+            if (Phase != GamePhase.Title) return false;
+            Run = new RunProgress(null, stageNumber);
+            LastOutcome = null;
+            Enter(GamePhase.Preparation);
+            return true;
+        }
+
+        /// <summary>
+        /// 이어 하려던 저장을 되살리지 못했을 때, 아직 런 데이터가 붙지 않은 런을 1스테이지의 새 런으로 바꾼다.
+        /// 단계는 그대로(준비)이고 단계 알림은 보내지 않는다. 런 데이터가 이미 있으면 false.
+        /// </summary>
+        public bool RestartRunAtFirstStage()
+        {
+            if (Run == null || Run.State != null) return false;
+            Run = new RunProgress();
+            return true;
+        }
+
+        /// <summary>
         /// 런 데이터 없이 시작한 런에 데이터를 붙인다. 런이 없거나 이미 데이터가 있으면 false이고 바꾸지 않는다.
         /// 타이틀 씬은 게임 씬의 편성을 모르므로 게임 씬이 첫 준비 때 붙인다.
         /// </summary>

@@ -72,6 +72,16 @@ namespace ProjectNeo.Run
             this.weapons = weapons;
         }
 
+        /// <summary>
+        /// 이미 있는 기록으로 성 상태를 만든다(FLOW-02 저장 파일). 조각은 아래층부터 놓을 순서여야 한다.
+        /// </summary>
+        public static CastleState FromRecords(IEnumerable<CastlePieceState> pieceRecords, IEnumerable<CastleWeaponState> weaponRecords)
+        {
+            return new CastleState(
+                pieceRecords != null ? new List<CastlePieceState>(pieceRecords) : new List<CastlePieceState>(),
+                weaponRecords != null ? new List<CastleWeaponState>(weaponRecords) : new List<CastleWeaponState>());
+        }
+
         public bool HasGate
         {
             get

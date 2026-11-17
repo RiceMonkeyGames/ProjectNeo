@@ -31,6 +31,37 @@ namespace ProjectNeo.Flow
 
         public RunState State => binding?.State;
         public BattleInput CurrentInput => input;
+
+        /// <summary>저장된 런을 씬에 되살리는 도구(FLOW-02). 없으면 이어 하기를 골라도 새 런으로 시작한다.</summary>
+        public GameRunRestorer Restorer { get; set; }
+        /// <summary>런 저장에 쓰는 ID 창구(FLOW-02). 없으면 <see cref="CaptureSnapshot"/>이 null이다.</summary>
+        public IRunContentLookup Content { get; set; }
+        /// <summary>이 씬의 런이 저장 기록에서 되살린 것인지.</summary>
+        public bool WasRestored { get; private set; }
+
+        RunUnitBinding<CharacterActor> RestoreFrom(RunSnapshot saved)
+        {
+            RunUnitBinding<CharacterActor> restored = Restorer != null ? Restorer.Restore(saved) : null;
+            if (restored != null) return restored;
+            Debug.LogWarning("저장된 런을 되살리지 못해 새 런으로 시작한다: "
+                + (Restorer != null ? Restorer.LastError : "되살리는 도구가 없다"));
+            // 되살릴 수 없는 저장은 지우지 않고 따로 치워, 타이틀에서 다시 이어 하기를 누르지 않게 한다.
+            GameSession.DiscardRunSave();
+            if (flow.Run != null && flow.Run.StageNumber != 1) flow.RestartRunAtFirstStage();
+            return null;
+        }
+
+        /// <summary>
+        /// 지금 런을 저장 기록으로 옮긴다(FLOW-02). 전투 대기 중이 아니면 씬의 성을 먼저 기록한다.
+        /// <paramref name="stageOffset"/>은 보상 뒤처럼 다음 스테이지 준비로 이어지게 저장할 때 1이다.
+        /// 런이 연결되지 않았거나 ID 창구가 없으면 null.
+        /// </summary>
+        public RunSnapshot CaptureSnapshot(int stageOffset = 0)
+        {
+            if (binding == null || Content == null || flow.Run == null || flow.Run.State != binding.State) return null;
+            if (!binding.State.HasPendingBattle) binding.State.SetCastle(CaptureCastle());
+            return binding.State.Capture(flow.Run.StageNumber + stageOffset, Content);
+        }
         public int IdOf(CharacterActor actor) => binding?.IdOf(actor) ?? 0;
 
         /// <summary>준비 단계에 들어올 때 부른다. 첫 준비면 런 데이터를 만들어 붙이고, 이후에는 생존 유닛을 회복한다.</summary>
@@ -45,7 +76,11 @@ namespace ProjectNeo.Flow
                     Debug.LogWarning("이 런은 이미 다른 씬에서 만든 런 데이터를 가지고 있어 Game 씬과 잇지 않는다.");
                     return;
                 }
-                binding = CreateBinding();
+                // 타이틀에서 이어 하기를 골랐으면 저장 기록으로 씬과 런을 되살린다(FLOW-02). 못 하면 새 런으로 시작한다.
+                RunSnapshot saved = GameSession.TakePendingRun();
+                if (saved != null) binding = RestoreFrom(saved);
+                WasRestored = binding != null;
+                if (binding == null) binding = CreateBinding();
                 if (binding == null) return;
                 binding.State.SetCastle(CaptureCastle());
                 flow.AttachRunState(binding.State);

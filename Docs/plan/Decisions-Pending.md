@@ -1,6 +1,6 @@
 # Pending Decisions & Active Operational Policies
 
-Last Updated: 2026-11-16 17:51:39 (KST)
+Last Updated: 2026-11-16 21:40:22 (KST)
 
 > Purpose: Undecided or partial design/implementation decisions (`Q-*`) and active operational rules. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Resolved](Decisions-Resolved.md), [OpenQuestions](../design/OpenQuestions.md)
 
@@ -23,7 +23,7 @@ Last Updated: 2026-11-16 17:51:39 (KST)
 | Q-10 | Final troop headcount, baseline gear, performance budget | Art integration, M6 | Undecided. B-1 500-unit test is not a production guarantee. |
 | Q-11 | Command keys, combat HUD, prep UI layout | B-5.3, M2 UI | Partial: F1–F10 in Siege prototype; default F1–F4, `, 1, 2, 3. Final HUD layout undecided. |
 | Q-12 | Initial skill/consumable rules, cooldowns, targeting, perk effects | M2 minimal skill/item execution | Partial (2026-11-15): consumable use has interim rules from PREP-04 (`Q`, 35% heal, 10s cooldown). Skills exist as identifiers only; skill rules, targeting and perk effects undecided. |
-| Q-13 | Mid-run saves, resume capability, save slots | M2 lifecycle, M3 persistence | Partial (2026-11-16, META-01): meta save implemented with three slots, save on every meta change and on quit, backup recovery. Mid-run save and resume unconfirmed; user asked for a Title "Continue" on 2026-11-16, required work listed in FLOW-02. |
+| Q-13 | Mid-run saves, resume capability, save slots | M2 lifecycle, M3 persistence | Partial (2026-11-16, META-01): meta save implemented with three slots, save on every meta change and on quit, backup recovery. Run save and Title "Continue" implemented in FLOW-02 (2026-11-16) with choices delegated to the agent: one run per slot, automatic saves at preparation start / battle start / reward / quit during preparation, no mid-battle save, defeat deletes the run save. Still open: saving inside a battle, manual saves, and save migration when content ids change. |
 | Q-14 | Release platforms, distribution channels, launch dates, scale | M4 scope, M7 delivery | Undecided. Focus on core completion criteria first. |
 | Q-15 | Supported input devices, settings, languages, accessibility | M2 framework, M5 UI | Undecided. Avoid arbitrary additions. |
 | Q-31 | Equipment retention upon hero permadeath | `C-3` casualty carry-over | Undecided. `C-1a` preserves fallen hero gear in `RunState.FallenHeroes`. |

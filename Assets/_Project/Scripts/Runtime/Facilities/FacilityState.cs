@@ -20,6 +20,9 @@ namespace ProjectNeo.Facilities
             Definition = definition;
         }
 
+        /// <summary>저장된 레벨을 그대로 되살린다(FLOW-02). 비용을 내지 않고 알림도 보내지 않으며, 범위를 넘으면 맞춘다.</summary>
+        internal void RestoreLevel(int level) => Level = Math.Min(Math.Max(0, level), Definition.Levels.Count - 1);
+
         public FacilityLevel Current => Definition.Levels[Level];
 
         public bool IsMaxLevel => Level >= Definition.Levels.Count - 1;

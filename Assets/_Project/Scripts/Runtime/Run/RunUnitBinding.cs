@@ -57,6 +57,12 @@ namespace ProjectNeo.Run
         }
 
         /// <summary>
+        /// 이미 있는 런 데이터(저장에서 되살린 런, FLOW-02)에 빈 짝 목록을 만든다. 씬 유닛은 <see cref="BindNew"/>로 하나씩 짝짓는다.
+        /// </summary>
+        public static RunUnitBinding<T> ForState(RunState state) =>
+            new RunUnitBinding<T>(state ?? throw new ArgumentNullException(nameof(state)));
+
+        /// <summary>
         /// 준비 중에 런에 새로 들어온 유닛(모집·고용, D-0b)을 씬 유닛과 짝짓는다. 이 런의 유닛이어야 하고,
         /// 씬 유닛·런 유닛 모두 아직 짝이 없어야 한다.
         /// </summary>

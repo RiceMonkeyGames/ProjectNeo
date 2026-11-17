@@ -87,7 +87,8 @@ namespace ProjectNeo.Editor
             for (int i = panel.childCount - 1; i >= 0; i--)
             {
                 Transform child = panel.GetChild(i);
-                if (child.name.StartsWith("Button_Slot ") || child.name == "Button_Delete slot" || child.name == "Label_SaveStatus")
+                if (child.name.StartsWith("Button_Slot ") || child.name == "Button_Delete slot" || child.name == "Label_SaveStatus"
+                    || child.name == "Button_Continue")
                     UnityEngine.Object.DestroyImmediate(child.gameObject);
             }
 
@@ -111,6 +112,12 @@ namespace ProjectNeo.Editor
             if (quit != null) delete.transform.SetSiblingIndex(quit.GetSiblingIndex());
 
             screen.ConfigureSlots(slotLabels, delete.GetComponentInChildren<TMP_Text>(), status);
+
+            // 이어 하기(FLOW-02)는 새 게임 바로 위에 둔다. 글자와 누를 수 있는지는 TitleScreen이 실행 중에 정한다.
+            GameObject resume = ConstructionPrototypeSetup.Button(panel, "Continue", screen.ContinueGame);
+            Transform newGame = panel.Find("Button_New Game");
+            if (newGame != null) resume.transform.SetSiblingIndex(newGame.GetSiblingIndex());
+            screen.ConfigureContinue(resume.GetComponent<Button>(), resume.GetComponentInChildren<TMP_Text>());
         }
 
         static void CreateGame(SceneCatalog catalog)

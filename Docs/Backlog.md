@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-17 12:01:57 (KST)
+Last Updated: 2026-11-17 13:49:46 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -25,7 +25,6 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 | META-02 | Runtime Perk Injection & Reward Routing | Pending Decision | Unassigned | Registered 2026-11-16: apply perk payloads to real run/battle stats and route victory unlock points. Blocked by Q-06 (perk allocation timing/pause) and Q-07 (unlock point distribution timing). |
 | COMBAT-06 | Minimal Hero/Active Skill Execution | Pending Decision | Unassigned | Registered 2026-11-16: skills exist as identifiers only. Blocked by Q-12 (skill rules, cooldowns, targeting, perk effects). Shared combat core edits need teammate coordination. |
 | SIEGE-08 | Construction Delays | Pending Decision | Unassigned | Registered 2026-11-16 (formerly roadmap bundle `C-6` construction pacing). No delay rule is recorded in `Docs/design/`; the user must decide whether builds take time, how long, and whether it applies in prep only. |
-| FLOW-02 | Run Save & Continue From Title | In Progress | Hwang Seong-min | Branch `feature/flow-02`. On 2026-11-16 the user delegated the open Q-13 choices to the agent's recommendation and conventional practice. Registered 2026-11-16 from the QA-standalone-build playtest: the Title screen has no "Continue" although the slot file remains, because META-01 saves meta progression only and the run is discarded. Blocked by Q-13 (mid-run save/resume). Decisions needed: save timing (suggested: start of each preparation), what a defeat or return to Title does to the run save, one run per slot or separate. Needed implementation: (1) serializable run snapshot of `RunState` (stage number, seed, wallet, inventory and item instances, heroes/grunts/squads, facilities, shop/tavern offers and locks, castle record, fallen heroes) using definition ids instead of asset references; (2) id → asset lookup for items, heroes, soldiers, facilities, pieces; (3) versioned run file per slot in `MetaSaveStore`'s directory with the same backup/quarantine rules; (4) `GameFlow` entry that resumes at preparation of the saved stage and `GameRunLink` rebuild of scene units/castle from the snapshot; (5) Title `Continue` (enabled only when a run save exists) next to `New Game`, which must confirm before discarding a saved run; (6) delete the run save on defeat/run end; (7) EditMode round-trip tests and PlayMode Title → Continue test. |
 
 ---
 

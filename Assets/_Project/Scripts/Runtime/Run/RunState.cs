@@ -24,7 +24,7 @@ namespace ProjectNeo.Run
     /// 전투 오브젝트가 사라져도 이 데이터는 남고, 다음 전투는 이것으로 다시 만든다.
     /// 살아남은 유닛은 다음 전투 전에 체력이 모두 회복되므로 체력은 담지 않는다(2026-11-12 사용자 결정).
     /// </summary>
-    public sealed class RunState
+    public sealed partial class RunState
     {
         readonly Dictionary<int, RunUnit> units = new Dictionary<int, RunUnit>();
         readonly List<RunHero> heroes = new List<RunHero>();

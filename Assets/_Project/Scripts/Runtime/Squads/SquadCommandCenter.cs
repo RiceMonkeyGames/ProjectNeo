@@ -82,6 +82,23 @@ namespace ProjectNeo.Squads
         }
 
         /// <summary>
+        /// 부대원 하나를 부대에서 뺀다(FLOW-02 저장된 편성 되살리기). 대장이었으면 대장 자리도 비운다.
+        /// 씬 오브젝트는 건드리지 않으므로 부르는 쪽이 없앤다. 부대에 없었으면 false.
+        /// </summary>
+        public bool RemoveMember(UnitCombatAI member)
+        {
+            if (member == null) return false;
+            bool removed = false;
+            foreach (Squad<UnitCombatAI> squad in army.Squads)
+            {
+                if (squad.Leader == member) { squad.Leader = null; removed = true; }
+                if (squad.Remove(member)) removed = true;
+            }
+            detached.Remove(member);
+            return removed;
+        }
+
+        /// <summary>
         /// 부대원을 다른 부대로 옮긴다(D-8 편성). 받을 부대가 꽉 찼으면 그 부대의 죽은 부대원(남아 있는 몸)을 먼저 빼서 자리를 만든다.
         /// 그래도 자리가 없거나 부대원이 아니면 false이고 바뀌지 않는다. 지시는 바꾸지 않으므로 부르는 쪽이 유닛을 부대 쪽으로 보낸다.
         /// </summary>

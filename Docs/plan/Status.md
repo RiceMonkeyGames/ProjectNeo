@@ -1,6 +1,6 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-16 23:05:36 (KST)
+Last Updated: 2026-11-17 13:49:46 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
@@ -9,6 +9,8 @@ Last Updated: 2026-11-16 23:05:36 (KST)
 Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elevation, and `feature/siege-prototype` test scene into `develop`. `Game` scene links 1st-person prep / construction F interaction → hold B for 1 second at current position (FLOW-01) → enemy assault, ladders, actual win/loss → rewards/results. On the M2 side, run data (`C-1~2`), victory rewards (`C-4`), build/repair costs (`D-2`), facility pop-ups (`D-0`), upgrades (`D-1`), shop (`D-5`), player equipment (`D-7`), grunt spawning (`D-0b`), barracks recruitment/training (`D-4`), casualty carry-over (`C-3`), tavern (`D-3`), squad org (`D-8`), and blacksmith (`D-6`, `PREP-01`) are implemented; formal stage/wave layouts (`B-7.1`) and the pending-spawn victory guard (`SIEGE-01`) are Done and on develop; the follow-ups registered in [Backlog](../Backlog.md) on 2026-11-16 (`META-02`, `COMBAT-06`, `SIEGE-08`, `QA-physical-input`, `FLOW-02`, `UI-02`) remain; `META-01` and `QA-standalone-build` (Windows build boots to `Title`, now the first build scene) are Done. Wall breaker (`B-6.2`), flyers (`B-6.3`), mixed composition (`B-6.4`), morale rout wiring (`B-8.2`, `COMBAT-03`), and siege weapon firing (`SIEGE-02`, `SIEGE-07`) are on develop; the Game scene now plays the three formal stages from `B-7.1`.
 
 ## Implemented vs Pending Real Connections
+
+**FLOW-02 (Done on user confirmation, 2026-11-17; `feature/flow-02`, merged into develop after UI-02 and the asset submodule; combined EditMode 467/467, PlayMode 223/223)**: Each save slot now also keeps one run in progress. The run saves automatically at preparation start, battle start, reward (as the next stage) and quit during preparation; battles are not saved; defeat deletes the save. Title has `Continue (Stage N)`; the Game scene rebuilds castle, squads, hired heroes, equipment, facilities and shop state from the save. Save moments are switches in `RunSavePolicy`; content ids resolve through `RunContent.asset`. Choices were delegated to the agent by the user. Compile, EditMode **467/467** and PlayMode **222/222** passed on the task branch; the user confirmed manual play on 2026-11-17. Real application quit and standalone build unverified. [History/manual checks](../history/FLOW/FLOW-02.md).
 
 **Integration (2026-11-16)**: On user request `feature/b-7.1` (B-7.1 + SIEGE-01) was merged with develop after COMBAT-04 (doc-only conflicts in Backlog, Backlog-Done and Decisions-Resolved resolved by keeping both sides; `GameFlowHud` auto-merged). Combined compile, EditMode **438/438** and PlayMode **215/215** passed; combined manual play not re-run.
 
