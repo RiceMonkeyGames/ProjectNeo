@@ -1,6 +1,6 @@
 # Game Design: Combat, Units & Win/Loss
 
-Last Updated: 2026-11-16 11:47:49 (KST)
+Last Updated: 2026-11-17 14:07:39 (KST)
 
 > Purpose: Rules for perspective, squad commands, damage, unit lifecycles, and battle outcomes. | Parent: [design/README](README.md) | Related: [WallsAndSiege](WallsAndSiege.md), [MoraleAndWave](MoraleAndWave.md)
 
@@ -22,6 +22,10 @@ Last Updated: 2026-11-16 11:47:49 (KST)
   - Unreachable destinations or broken paths halt at closest reachable point; clustered stalls near destination count as arrived.
   - Squads without orders at battle start begin in Hold state. Squad count/caps are data-driven (default 10+ members).
   - Captain hero death drops squad morale by the largest fixed amount (2026-11-12).
+
+## Player Health HUD
+
+- UI-03 (user decision, 2026-11-17): display a health bar and current/maximum HP numbers in the bottom-right corner during preparation and battle gameplay. Reflect damage, potion healing and maximum-HP changes immediately. Use existing health rules; do not change combat balance.
 
 ## Basic Combat Rules
 
