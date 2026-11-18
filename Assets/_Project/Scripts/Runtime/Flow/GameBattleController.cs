@@ -34,6 +34,10 @@ namespace ProjectNeo.Flow
         readonly List<List<SiegeAttacker>> waveUnits = new List<List<SiegeAttacker>>();
         readonly HashSet<SiegeAttacker> unreleased = new HashSet<SiegeAttacker>();
         readonly List<int> dueWaves = new List<int>();
+        // 적 정보(C-5). 무리 번호는 편성의 웨이브 순서, 그 안의 무리 순서다.
+        readonly List<List<SiegeAttacker>> groupUnits = new List<List<SiegeAttacker>>();
+        readonly List<int> waveFirstGroup = new List<int>();
+        EnemyIntel intel = new EnemyIntel(null);
         EncounterPlan plan;
         WaveSchedule schedule;
         BattleEnemySpawner spawner;
@@ -43,6 +47,11 @@ namespace ProjectNeo.Flow
         bool battleRunning;
         /// <summary>이번 전투의 적 편성. 스테이지 에셋 또는 단일 적 목록에서 만든다.</summary>
         public EncounterPlan Plan => plan;
+        /// <summary>
+        /// 이번 전투의 적 목록(C-5): 종류별 남은 수, 숨긴 무리는 "? × 수". 준비 단계에는 전체 수, 전투 중에는 매 프레임
+        /// 남은 수(나오지 않았거나 전장에 살아 있는 적. 죽거나 떠난 적은 빠진다)로 바뀌고, 웨이브가 나오면 그 무리가 공개된다.
+        /// </summary>
+        public EnemyIntel Intel => intel;
         public int WaveCount => schedule != null ? schedule.WaveCount : 0;
         public int WavesReleased => schedule != null ? schedule.ReleasedWaves : 0;
         /// <summary>다음 웨이브까지 남은 초. 남은 웨이브가 없으면 -1.</summary>
@@ -229,6 +238,7 @@ namespace ProjectNeo.Flow
             if (!battleRunning || flow.Phase != GamePhase.Battle) return;
             // 전투가 실제로 진행된 시간만큼만 시간표를 넘긴다(멈춘 동안은 0).
             ReleaseDueWaves(Time.deltaTime);
+            RefreshIntel();
             // 이 프레임의 공격·투사체 처리가 끝난 뒤 동시 성립은 패배를 우선한다.
             SiegeOutcome outcome = Evaluate();
             if (outcome == SiegeOutcome.Ongoing)
@@ -257,6 +267,9 @@ namespace ProjectNeo.Flow
                     unreleased.Remove(enemy);
                     enemy.gameObject.SetActive(true);
                 }
+                // 전장에 나온 무리는 숨김이 풀린다(Q-53).
+                int last = index + 1 < waveFirstGroup.Count ? waveFirstGroup[index + 1] : groupUnits.Count;
+                for (int group = waveFirstGroup[index]; group < last; group++) intel.Reveal(group);
                 WaveReleased?.Invoke(index);
             }
             // 새 적이 합류했으므로 후퇴 여부를 다시 판단한다. 이미 떠나던 적은 그대로 떠난다.
@@ -324,17 +337,36 @@ namespace ProjectNeo.Flow
             schedule = new WaveSchedule(plan.Timings());
             spawner ??= new BattleEnemySpawner(world, settings, fallSettings, ladders, enemyRoot, this);
             spawner.ResetNumbering();
+            intel = EnemyIntel.FromPlan(plan);
             foreach (EncounterWave wave in plan.Waves)
             {
                 var units = new List<SiegeAttacker>();
+                int first = groupUnits.Count;
+                waveFirstGroup.Add(first);
+                for (int i = 0; i < wave.Groups.Count; i++) groupUnits.Add(new List<SiegeAttacker>());
                 foreach (BattleEnemySpawner.Spawned spawned in spawner.SpawnWave(wave))
                 {
+                    groupUnits[first + spawned.GroupIndex].Add(spawned.Attacker);
                     units.Add(spawned.Attacker);
                     enemies.Add(spawned.Attacker);
                     unreleased.Add(spawned.Attacker);
                     enemyIds[spawned.Attacker] = spawned.EnemyId;
                 }
                 waveUnits.Add(units);
+            }
+            RefreshIntel();
+        }
+
+        // 무리마다 남은 적(죽지 않았고 떠나지 않은 적)을 센다. 만들지 못한 적은 처음부터 남은 수에 들지 않는다.
+        void RefreshIntel()
+        {
+            for (int group = 0; group < groupUnits.Count && group < intel.GroupCount; group++)
+            {
+                int alive = 0;
+                foreach (SiegeAttacker enemy in groupUnits[group])
+                    if (enemy != null && !retreated.Contains(enemy)
+                        && (enemy.Actor == null || enemy.Actor.Health == null || !enemy.Actor.Health.IsDead)) alive++;
+                intel.SetRemaining(group, alive);
             }
         }
 
@@ -383,6 +415,7 @@ namespace ProjectNeo.Flow
             enemies.Clear();
             enemyIds.Clear();
             waveUnits.Clear(); unreleased.Clear();
+            groupUnits.Clear(); waveFirstGroup.Clear();
             retreated.Clear(); retreatTargets.Clear(); IsRetreating = false;
         }
 

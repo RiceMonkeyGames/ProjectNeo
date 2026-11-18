@@ -12,6 +12,8 @@ namespace ProjectNeo.Stages
         [Min(0)] public int count;
         [Tooltip("비우면 전투 설정의 기본 스폰 칸을 쓴다.")]
         public SpawnPointDefinition spawnPoint;
+        [Tooltip("켜면 준비 단계 미리보기에서 종류를 숨기고 '? × 수'로만 보인다(C-5, Q-53). 전장에 나오면 공개된다.")]
+        public bool hidden;
     }
 
     /// <summary>웨이브 하나: 전투 시작 뒤 몇 초에 시작하고 어떤 무리가 나오는지.</summary>

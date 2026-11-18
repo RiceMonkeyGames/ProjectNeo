@@ -17,7 +17,10 @@ namespace ProjectNeo.Flow
             public SiegeAttacker Attacker { get; }
             /// <summary>적 종류 ID. 지금은 적 프리팹 이름을 쓴다.</summary>
             public string EnemyId { get; }
-            public Spawned(SiegeAttacker attacker, string enemyId) { Attacker = attacker; EnemyId = enemyId; }
+            /// <summary>웨이브 안에서 이 적이 속한 무리 번호(EncounterWave.Groups 순서).</summary>
+            public int GroupIndex { get; }
+            public Spawned(SiegeAttacker attacker, string enemyId, int groupIndex = 0)
+            { Attacker = attacker; EnemyId = enemyId; GroupIndex = groupIndex; }
         }
 
         readonly ConstructionWorld world;
@@ -47,8 +50,9 @@ namespace ProjectNeo.Flow
             Vector3 outward = world.transform.TransformDirection(new Vector3(settings.Outward.x, 0f, settings.Outward.y)).normalized;
             Vector3 right = Vector3.Cross(Vector3.up, outward);
             var rows = new Dictionary<Vector2, int>();
-            foreach (EncounterGroup group in wave.Groups)
+            for (int groupIndex = 0; groupIndex < wave.Groups.Count; groupIndex++)
             {
+                EncounterGroup group = wave.Groups[groupIndex];
                 if (group.Prefab == null || group.Count <= 0) continue;
                 if (group.Prefab.activeSelf)
                 { Debug.LogError("Battle enemy prefab must be inactive: " + group.Prefab.name, logContext); continue; }
@@ -73,7 +77,7 @@ namespace ProjectNeo.Flow
                         fall.Configure(world, fallSettings);
                     }
                     brain.Bind(world, ladders, settings.Outward, settings.Siege);
-                    result.Add(new Spawned(brain, group.Prefab.name));
+                    result.Add(new Spawned(brain, group.Prefab.name, groupIndex));
                 }
                 rows[group.Cell] = row + (group.Count + settings.Columns - 1) / settings.Columns;
             }

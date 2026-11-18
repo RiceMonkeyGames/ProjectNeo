@@ -1,6 +1,6 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-18 11:01:32 (KST)
+Last Updated: 2026-11-18 11:39:03 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
@@ -17,6 +17,8 @@ Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elev
 Done on user authorization (2026-11-17), feature/ui-03: bottom-right health bar and current/maximum HP, as selected by the user. Real Game scene integration, damage/healing/max-HP/death/stage-transition tests and API-driven layout inspection completed; full compile/EditMode 467/467/PlayMode 226/226 passed. User authorized develop merge and branch cleanup; physical-input and standalone verification remain unclaimed. [History](../history/UI/UI-03.md).
 
 ## Implemented vs Pending Real Connections
+
+**C-5 (Done on user confirmation, 2026-11-18; `feature/c-5`, merged into develop)**: Q-53 wave preview. `V` toggles a non-blocking enemy list (left, below the squad list) in preparation; always shown in battle with live remaining counts (dead/retreated excluded); stage groups flagged `hidden` show as `? × N` until their wave is released. Stage02 Gate Breaker × 2 is hidden. Scouting (3h reveal) is not playable yet: PREP-07.
 
 **SIEGE-08 (Done on user confirmation, 2026-11-18; `feature/siege-08`, develop merge pending)**: Q-53 work orders on the PREP-06 clock: placed pieces/cannons and `Repair All` repairs are built by 2 crews in order (1h per piece; repair = missing-HP fraction of 1h), shown translucent with progress; stacking/mounting only on finished pieces; at battle start 0% builds are removed and refunded, others stand at HP = progress, unfinished cannons stay unarmed until fully repaired, unfinished repairs refund the rest and a broken gate closes only on completion or at battle start; orders are saved during preparation. Compile, EditMode **480/480** and PlayMode **237/237** passed; the user confirmed manual play; standalone build unverified. [History/manual checks](../history/SIEGE/SIEGE-08.md).
 

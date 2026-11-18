@@ -1,6 +1,6 @@
 # Runtime Codemap: Flow, Run, Economy, Facilities & Meta
 
-Last Updated: 2026-11-18 03:16:06 (KST)
+Last Updated: 2026-11-18 11:24:46 (KST)
 
 > Purpose: Class map for game flow, run state, economy, facilities, rewards, meta progression, and flow UI. | Parent: [codemap/README](README.md) | Related: [CombatAndSquads](CombatAndSquads.md), [design/PrepEconomyMeta](../design/PrepEconomyMeta.md)
 
@@ -15,6 +15,7 @@ Base path: `Assets/_Project/Scripts/Runtime/`. Assembly: `ProjectNeo.Runtime`. N
 | Stages | `WaveSchedule`, `WaveTiming`, `IWaveStartRule`, `TimedWaveStartRule` (`B-7.1`) | Pure wave timetable: releases each wave once in order as passed-in time advances, reports pending waves/units and seconds to the next wave; start condition is a replaceable rule; `RetreatAllowed` gates Q-30 retreat while waves remain (Q-52). |
 | Stages | `StageCatalog`, `StageDefinition`, `StageWave`, `StageWaveGroup`, `SpawnPointDefinition` (`B-7.1`) | Stage data assets in `Data/GameFlow/Stages/`: catalog → stage → waves (start seconds) → groups (enemy prefab, count, spawn point asset = build-grid cell). `StageFor(n)` repeats the last stage past the end. |
 | Stages | `EncounterPlan`, `EncounterWave`, `EncounterGroup` (`B-7.1`) | Neutral per-battle enemy plan; built `FromStage` or `FromGroups` (old single list as one wave at 0s). The only shape the battle and spawner read. |
+| Stages / Flow / UI | `EnemyIntel`, `EnemyIntelGroup`, `EnemyIntelRow`, `StageWaveGroup.hidden`, `EncounterGroup.Hidden`, `GameBattleController.Intel`, `EnemyIntelHud`, `PreparationInteraction.EnemyPreviewToggled` (`C-5`) | Enemy list: pure `EnemyIntel` merges groups per type (prefab name → display name), hides flagged groups as `? × N`, `Reveal`/`RevealAll`, `SetRemaining`, `Version`. The battle controller builds it per preparation, reveals a wave's groups on release and refreshes remaining counts (dead/retreated excluded) every battle frame. `EnemyIntelHud` (left, below the squad list) shows it in preparation exploration when toggled with `V` (`PreparationInteractionSettings.EnemyPreview`) and always in battle. |
 | Flow | `BattleEnemySpawner` (`B-7.1`) | Plain class that instantiates one `EncounterWave` inactive, in formation per spawn cell, binding each `SiegeAttacker`. Knows nothing about timing or outcomes. |
 | Flow | `GameBattleController` waves (`B-7.1`) | Builds the plan per preparation (`EncounterSourceOverride` → `DefaultEncounter`: catalog stage, else old list), pre-creates all waves inactive, releases due waves from `LateUpdate` battle time; `WaveCount`, `WavesReleased`, `SecondsUntilNextWave`, `EnemiesOnField`, `EnemiesPending`, `WaveReleased`, `RebuildEncounter()`. Victory counts pending enemies. `GameBattleSettings.Stages` / `RetreatWhileWavesPending`. [History](../history/B/B-7.1.md). |
 | Economy | `Cost`, `Wallet`, `MaterialDefinition` | Costs and wallet storage for gold and various monster material types. |
