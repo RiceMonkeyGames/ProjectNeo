@@ -1,6 +1,6 @@
 # Pending Decisions & Active Operational Policies
 
-Last Updated: 2026-11-18 13:20:57 (KST)
+Last Updated: 2026-11-18 16:04:38 (KST)
 
 > Purpose: Undecided or partial design/implementation decisions (`Q-*`) and active operational rules. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Resolved](Decisions-Resolved.md), [OpenQuestions](../design/OpenQuestions.md)
 
@@ -26,8 +26,6 @@ Last Updated: 2026-11-18 13:20:57 (KST)
 | Q-13 | Mid-run saves, resume capability, save slots | M2 lifecycle, M3 persistence | Partial (2026-11-16, META-01): meta save implemented with three slots, save on every meta change and on quit, backup recovery. Run save and Title "Continue" implemented in FLOW-02 (2026-11-16) with choices delegated to the agent: one run per slot, automatic saves at preparation start / battle start / reward / quit during preparation, no mid-battle save, defeat deletes the run save. Still open: saving inside a battle, manual saves, and save migration when content ids change. |
 | Q-14 | Release platforms, distribution channels, launch dates, scale | M4 scope, M7 delivery | Undecided. Focus on core completion criteria first. |
 | Q-15 | Supported input devices, settings, languages, accessibility | M2 framework, M5 UI | Undecided. Avoid arbitrary additions. |
-| Q-31 | Equipment retention upon hero permadeath | `C-3` casualty carry-over | Undecided. `C-1a` preserves fallen hero gear in `RunState.FallenHeroes`. |
-| Q-32 | Can player character serve as squad captain | `D-8` squad setup UI, later player-captain task | Interim (2026-11-13): Not allowed for now; player captaincy planned later, so keep captain assignment extensible. `C-1a` `TrySetLeader` currently permits the player and D-8 UI must block it. |
 | Q-54 | M2 scope cut (which of skills, perks, unlock points, scouting stay in M2) | M2 close | Undecided. Registered 2026-11-18 for the team meeting. |
 | Q-55 | In-game current-time concept (time of day / calendar beyond the PREP-06 12h budget) | PREP-07 | Undecided. Registered 2026-11-18 for the team meeting. |
 | Q-56 | Team ownership after B-6~B-9 | M2 remainder, M3+ | Undecided. Registered 2026-11-18 for the team meeting. |

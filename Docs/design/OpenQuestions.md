@@ -1,6 +1,6 @@
 # Open Design Questions
 
-Last Updated: 2026-11-15 22:00:57 (KST)
+Last Updated: 2026-11-18 16:04:38 (KST)
 
 > Purpose: Undecided game design topics tracked alongside `plan/Decisions-Pending.md`. | Parent: [design/README](README.md) | Related: [Decisions-Pending](../plan/Decisions-Pending.md)
 
@@ -12,7 +12,6 @@ Last Updated: 2026-11-15 22:00:57 (KST)
 - Metrics determining run score.
 - Actual values for squad counts and squad member caps.
 - Layered building edge cases (stairs constraints, partial foundation collapse) and max vertical tiers.
-- Equipment handling on hero permadeath (Q-31); player character as squad captain later (Q-32 interim: not now).
 - Tavern gold re-roll costs and locking slots (Shop rules decided as Q-46, 2026-11-13).
 - Skill rules with Q-12. Combat consumable use has interim rules (PREP-04, 2026-11-15); open follow-ups: final key with the Q-11 layout, quick slots once more consumables exist, hero/AI use.
 - **UI improvement pass** (user request 2026-11-15): Current HUDs are test displays (`SquadCommandHud`, `GameFlowHud` hint lines, construction panel). Scope, priorities and layout are undecided; collect concrete issues from playtests first. Known items: final combat HUD / command keys / prep UI layout (Q-11), the temporary merged squad-key line in the preparation hint (PREP-05, `GameFlowHud.PreparationSquadHint`), and any follow-up to the cannon fire-ready feedback implemented by SIEGE-07 (sound/on-cannon effects).

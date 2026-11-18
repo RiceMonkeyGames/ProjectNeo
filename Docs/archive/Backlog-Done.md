@@ -1,11 +1,13 @@
 # Completed Backlog Archive (Done)
 
-Last Updated: 2026-11-18 11:39:03 (KST)
+Last Updated: 2026-11-18 16:04:38 (KST)
 
 > Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
 | Task ID | Description | Assignee | Outcome & History Link |
 |---|---|---|---|
+| Q-31 | Team Decision: Hero Gear on Permadeath | 신용준 | Done 2026-11-18 on user decision: fallen hero gear returns to the run stash (upgrade levels kept) for reuse by the player or another hero. Implementation registered as PREP-08. Doc-only. [History](../history/Q/Q-31.md) |
+| Q-32 | Team Decision: Player as Squad Captain | 신용준 | Done 2026-11-18 on user decision: the player cannot be a squad captain (finalizes the 2026-11-13 interim); no code change. Doc-only. [History](../history/Q/Q-32.md) |
 | C-5 | Wave Preview & Hidden Enemy Intel | 신용준 | Done 2026-11-18 on user confirmation after manual check; branch `feature/c-5`. Enemy list: `V` window in preparation, always shown in battle with live remaining counts, hidden groups `? × N` revealed when their wave is released; Stage02 Gate Breaker × 2 hidden; scouting action deferred to PREP-07. EditMode 487, PlayMode 233. [History](../history/C/C-5.md) |
 | SIEGE-08 | Construction Delays (Work Orders) | Hwang Seong-min | Done 2026-11-18 on user confirmation after manual check; branch `feature/siege-08`. Q-53 work orders on the PREP-06 clock: 2 crews in order, 1h per piece/cannon, repair = missing-HP fraction of 1h; translucent progress view and queue summary; stacking/mounting only on finished pieces; battle start removes and refunds 0% builds, sets HP = progress, keeps unfinished cannons unarmed until fully repaired, refunds unfinished repair share; broken gate closes only on completion or at battle start; orders saved during preparation. Compile, EditMode 480/480, PlayMode 237/237 passed; standalone build unverified. Shared construction code (`ConstructionWorld`, `PlacementController`, `GameBuildEconomy`) changed: teammate notice owed. [History](../history/SIEGE/SIEGE-08.md) |
 | PREP-06 | Preparation Time Clock | Hwang Seong-min | Done 2026-11-18 on user confirmation after manual check; branch `feature/prep-06`. Q-53 clock: 12h budget per preparation (`Data/GameFlow/PrepTime.asset`), refilled once per preparation and saved with the run; blacksmith craft/upgrade 1h with `NotEnoughTime`; hold `T` 1s to wait 1h; top-center clock line (hidden in battle and over the organization window). Compile, EditMode 476/476, PlayMode 232/232 passed; standalone build unverified. SIEGE-08 and C-5 scouting build on this clock. [History](../history/PREP/PREP-06.md) |

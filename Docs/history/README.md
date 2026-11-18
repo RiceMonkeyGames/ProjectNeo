@@ -1,6 +1,6 @@
 # Past Verification History Index
 
-Last Updated: 2026-11-18 11:39:03 (KST)
+Last Updated: 2026-11-18 16:04:38 (KST)
 
 > Purpose: Route historical log lookups by Task ID prefix. | Parent: [INDEX](../INDEX.md) | Related: [Backlog-Done](../archive/Backlog-Done.md), [Status](../plan/Status.md)
 
@@ -17,7 +17,7 @@ Latest manual verification: [SIEGE-08](SIEGE/SIEGE-08.md) (work orders, 2026-11-
 - `C/` — [C-1a](C/C-1a.md), [C-1a-confirm](C/C-1a-confirm.md), [C-3](C/C-3.md), [C-1-2](C/C-1-2.md), [C-4](C/C-4.md), [C-5](C/C-5.md)
 - `D/` — [D-0](D/D-0.md), [D-0b](D/D-0b.md), [D-1-5](D/D-1-5.md), [D-2](D/D-2.md), [D-3-8-plan](D/D-3-8-plan.md), [D-4](D/D-4.md), [D-6](D/D-6.md), [D-3](D/D-3.md), [D-8](D/D-8.md), [D-7](D/D-7.md)
 - `G/` — [G-0](G/G-0.md), [G-1](G/G-1.md)
-- `Q/` — [Q-04-05](Q/Q-04-05.md), [Q-27](Q/Q-27.md), [Q-30](Q/Q-30.md), [Q-38](Q/Q-38.md), [Q-39](Q/Q-39.md), [Q-41](Q/Q-41.md), [Q-44](Q/Q-44.md)
+- `Q/` — [Q-04-05](Q/Q-04-05.md), [Q-27](Q/Q-27.md), [Q-30](Q/Q-30.md), [Q-31](Q/Q-31.md), [Q-32](Q/Q-32.md), [Q-38](Q/Q-38.md), [Q-39](Q/Q-39.md), [Q-41](Q/Q-41.md), [Q-44](Q/Q-44.md)
 - `BUG/` — [BUG-popup-cursor](BUG/BUG-popup-cursor.md), [BUG-wall-archer-los](BUG/BUG-wall-archer-los.md), [BUG-ladder-push-visual](BUG/BUG-ladder-push-visual.md), [BUG-ladder-fall-clipping](BUG/BUG-ladder-fall-clipping.md), [BUG-ladder-fall-test-after-gate-arch](BUG/BUG-ladder-fall-test-after-gate-arch.md), [BUG-wall-hold](BUG/BUG-wall-hold.md), [BUG-playmode-input-focus](BUG/BUG-playmode-input-focus.md), [BUG-wall-destination-replan](BUG/BUG-wall-destination-replan.md), [BUG-ally-no-retaliation](BUG/BUG-ally-no-retaliation.md), [BUG-stage2-enemies-idle](BUG/BUG-stage2-enemies-idle.md)
 - `PERF/` — [PERF-nav-query](PERF/PERF-nav-query.md)
 - `QA/` — [QA-standalone-build](QA/QA-standalone-build.md), [QA-ladder-controls](QA/QA-ladder-controls.md), [QA-game-loop](QA/QA-game-loop.md), [QA-opening-battle-balance](QA/QA-opening-battle-balance.md), [QA-victory-flow](QA/QA-victory-flow.md), [QA-smithy-popup](QA/QA-smithy-popup.md), [QA-build-zoom-ui-hover](QA/QA-build-zoom-ui-hover.md)

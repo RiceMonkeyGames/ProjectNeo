@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-18 13:20:57 (KST)
+Last Updated: 2026-11-18 16:04:38 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -28,8 +28,6 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 | Q-07 | Team Decision: Unlock Point Timing & Gacha UI | Waiting | Unassigned | Registered 2026-11-18 as a meeting item for the existing pending decision. Decide distribution timing, gacha UI location and guaranteed policy. Blocks META-02. |
 | Q-12 | Team Decision: Skill Rules | Waiting | Unassigned | Registered 2026-11-18 as a meeting item for the existing pending decision. Decide skill rules, cooldowns, targeting and perk effects. Blocks COMBAT-06. |
 | Q-08 | Team Decision: Run Length, Bosses & Score | Waiting | Unassigned | Registered 2026-11-18 as a meeting item for the existing partial decision (interim: 3 stages, no bosses). Decide final stage count, boss roles and run score formula. |
-| Q-31 | Team Decision: Hero Gear on Permadeath | Waiting | Unassigned | Registered 2026-11-18 as a meeting item for the existing pending decision. Fallen hero gear is currently kept in `RunState.FallenHeroes`. |
-| Q-32 | Team Decision: Player as Squad Captain | Waiting | Unassigned | Registered 2026-11-18 as a meeting item for the existing interim decision (not allowed for now). Decide whether and when player captaincy is added. |
 | Q-57 | Team Decision: Squad Counts & Member Caps | Waiting | Unassigned | Registered 2026-11-18 from [OpenQuestions](design/OpenQuestions.md). Decide final squad count and member cap values (temporary G-1 default: 3 × 4). |
 | Q-58 | Team Decision: Morale Tuning & Recovery Facility | Waiting | Unassigned | Registered 2026-11-18 from OpenQuestions. Decide morale values beyond the starting values in [MoraleAndWave](design/MoraleAndWave.md) and whether a prep-phase morale recovery facility exists. |
 | Q-59 | Team Decision: Building Tier Limits & Edge Cases | Waiting | Unassigned | Registered 2026-11-18 from OpenQuestions. Decide max vertical tiers, stair constraints and partial foundation collapse handling. |
@@ -38,6 +36,7 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 | Q-13 | Team Decision: Remaining Save Scope for M3 | Waiting | Unassigned | Registered 2026-11-18 as a meeting item for the existing partial decision. Decide in-battle saves, manual saves and save migration when content ids change, then break M3 save/unlock/perk UI work into tasks. |
 | Q-61 | Team Decision: M4 Content Scale | Waiting | Unassigned | Registered 2026-11-18 from [Milestones](plan/Milestones.md). Agree hero/enemy/item/stage counts and target play time before creating M4 production tasks. |
 | Q-01 | Team Decision: Synty Packs & Piece Specs | Waiting | Unassigned | Registered 2026-11-18 as a meeting item for the existing pending decision. Decide which Synty packs to use and finalized piece specifications for art integration. |
+| PREP-08 | Return Fallen Hero Gear to Stash | Waiting | Unassigned | Registered 2026-11-18 from Q-31. When `RunState.Apply` moves a dead hero to `FallenHeroes`, move that hero's equipped items (with upgrade levels) into the run stash so the player or another hero can equip them. Check the run save/continue keeps the result, and decide whether the battle result screen should mention the returned items. Rule: [Combat](design/Combat.md#units). |
 | QA-teammate-code-review | Teammate Review of Pending Shared Changes | Waiting | Unassigned | Registered 2026-11-18. Teammate reviews the shared combat core call sites changed by BUG-wall-archer-los and the B-7.1 stage data format; record the outcome in their history files. |
 
 ---

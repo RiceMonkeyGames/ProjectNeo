@@ -1,6 +1,6 @@
 # Game Design: Combat, Units & Win/Loss
 
-Last Updated: 2026-11-17 14:07:39 (KST)
+Last Updated: 2026-11-18 16:04:38 (KST)
 
 > Purpose: Rules for perspective, squad commands, damage, unit lifecycles, and battle outcomes. | Parent: [design/README](README.md) | Related: [WallsAndSiege](WallsAndSiege.md), [MoraleAndWave](MoraleAndWave.md)
 
@@ -57,7 +57,7 @@ Last Updated: 2026-11-17 14:07:39 (KST)
 
 - Surviving heroes and minions fully recover HP before the next battle (2026-11-12). Only wall HP damage carries over.
 - Fallen ally corpses remain on the ground during the next preparation phase (2026-11-12), excluded from squads and run. At the next prep start fallen units leave their scene squads (bodies stay), so they no longer take squad slots (Q-50, 2026-11-13).
-- Fallen hero equipment retention/loss remains undecided (Q-31).
+- **Fallen hero equipment** (Q-31, user 2026-11-18): Equipment is never lost on hero permadeath. When the battle result is applied, the fallen hero's equipped items return to the run stash with their upgrade levels and can be equipped again by the player or another hero (implementation: PREP-08).
 
 ## Win/Loss Conditions
 
