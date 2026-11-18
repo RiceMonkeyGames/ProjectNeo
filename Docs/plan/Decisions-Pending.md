@@ -1,6 +1,6 @@
 # Pending Decisions & Active Operational Policies
 
-Last Updated: 2026-11-18 16:04:38 (KST)
+Last Updated: 2026-11-19 01:06:00 (KST)
 
 > Purpose: Undecided or partial design/implementation decisions (`Q-*`) and active operational rules. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Resolved](Decisions-Resolved.md), [OpenQuestions](../design/OpenQuestions.md)
 

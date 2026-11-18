@@ -1,6 +1,6 @@
 # Open Design Questions
 
-Last Updated: 2026-11-18 16:04:38 (KST)
+Last Updated: 2026-11-19 01:06:00 (KST)
 
 > Purpose: Undecided game design topics tracked alongside `plan/Decisions-Pending.md`. | Parent: [design/README](README.md) | Related: [Decisions-Pending](../plan/Decisions-Pending.md)
 
