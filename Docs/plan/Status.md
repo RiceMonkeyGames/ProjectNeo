@@ -1,6 +1,6 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-19 01:11:10 (KST)
+Last Updated: 2026-11-19 01:12:46 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
@@ -18,7 +18,7 @@ Done on user authorization (2026-11-17), feature/ui-03: bottom-right health bar 
 
 ## Implemented vs Pending Real Connections
 
-**PREP-08 (Done on user confirmation, 2026-11-19; `feature/prep-08`, develop merge pending)**: Q-31 fallen hero gear: when a hero dies, `RunState.Apply` returns their equipped items to the run stash with upgrade levels so the player or another hero can equip them; `Restore` moves gear left on fallen heroes in older saves the same way. Compile, EditMode **492/492** and PlayMode **238/238** passed; the user confirmed manual play; standalone build unverified. [History](../history/PREP/PREP-08.md).
+**PREP-08 (Done on user confirmation, 2026-11-19; `feature/prep-08`, merged into develop)**: Q-31 fallen hero gear: when a hero dies, `RunState.Apply` returns their equipped items to the run stash with upgrade levels so the player or another hero can equip them; `Restore` moves gear left on fallen heroes in older saves the same way. Compile, EditMode **492/492** and PlayMode **238/238** passed; the user confirmed manual play; standalone build unverified. [History](../history/PREP/PREP-08.md).
 
 **C-5 (Done on user confirmation, 2026-11-18; `feature/c-5`, merged into develop)**: Q-53 wave preview. `V` toggles a non-blocking enemy list (left, below the squad list) in preparation; always shown in battle with live remaining counts (dead/retreated excluded); stage groups flagged `hidden` show as `? × N` until their wave is released. Stage02 Gate Breaker × 2 is hidden. Scouting (3h reveal) is not playable yet: PREP-07.
 
