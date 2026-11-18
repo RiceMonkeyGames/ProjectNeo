@@ -5,6 +5,8 @@ namespace ProjectNeo.Walls
     public enum MountIssue
     {
         None = 0, NoWeapon = 1, NoSupport = 2, NoMountPoint = 3, Occupied = 4,
+        /// <summary>받치는 조각이 아직 짓는 중이다(SIEGE-08).</summary>
+        UnfinishedSupport = 5,
     }
 
     public sealed class MountedWeapon

@@ -31,6 +31,7 @@ namespace ProjectNeo.Flow
         GameBattleController battle;
         GameFlow flow;
         BuildEconomy economy;
+        GameConstructionWork work;
         bool startFundsGranted;
 
         public bool Dismantling { get; private set; }
@@ -38,18 +39,24 @@ namespace ProjectNeo.Flow
         public BuildEconomy Economy => EnsureEconomy();
         public BuildCostTable Table => table;
         public RunConfig StartConfig => startConfig;
+        /// <summary>건설·수리 작업 주문(SIEGE-08). 준비 시간이 꺼져 있으면 주문 없이 예전처럼 바로 완성된다.</summary>
+        public GameConstructionWork Work => work;
 
         public void Configure(BuildCostTable costs, RunConfig start, ConstructionWorld castle, PlacementController controller,
             GamePhaseView view, Camera buildCamera, TMP_Text economyLabel)
         {
             table = costs; startConfig = start; world = castle; placement = controller;
             phaseView = view; constructionCamera = buildCamera; label = economyLabel;
+            if (work != null) work.Configure(world, placement, battle, this, label != null ? label.font : null);
         }
 
         void Awake()
         {
             battle = GetComponent<GameBattleController>();
             flow = GameSession.Flow;
+            work = GetComponent<GameConstructionWork>();
+            if (work == null) work = gameObject.AddComponent<GameConstructionWork>();
+            work.Configure(world, placement, battle, this, label != null ? label.font : null);
         }
 
         void OnEnable()
@@ -126,6 +133,8 @@ namespace ProjectNeo.Flow
             if (current == null || body == null) return;
             if (!current.PayForPiece(body.Placement.Definition, body.Placement.Id))
                 Debug.LogWarning("설치 확인 뒤 골드가 모자라 비용을 내지 못했다: " + body.Placement.Definition.DisplayName);
+            // 준비 시간이 켜져 있으면 바로 완성하지 않고 작업 주문으로 짓는다(SIEGE-08).
+            if (Preparing) work?.OrderPiece(body);
         }
 
         void OnWeaponMounted(PlacedSiegeWeapon weapon)
@@ -134,6 +143,7 @@ namespace ProjectNeo.Flow
             if (current == null || weapon == null) return;
             if (!current.PayForWeapon(weapon.Definition, weapon.Mount.Id))
                 Debug.LogWarning("설치 확인 뒤 골드가 모자라 비용을 내지 못했다: " + weapon.Definition.DisplayName);
+            if (Preparing) work?.OrderWeapon(weapon);
         }
 
         bool Preparing => flow.Phase == GamePhase.Preparation;
@@ -160,8 +170,10 @@ namespace ProjectNeo.Flow
                 if (weapon.Support != structure) continue;
                 SiegeWeaponDefinition definition = weapon.Definition;
                 int mountId = weapon.Mount.Id;
+                // 걸린 작업 주문을 지운다. 수리 주문이었으면 다 못 한 만큼 돌려준다(SIEGE-08).
+                int repairRefund = work != null ? work.Cancel(weapon) : 0;
                 if (!world.RemoveWeapon(weapon)) return false;
-                int refund = current.RefundWeapon(definition, mountId);
+                int refund = current.RefundWeapon(definition, mountId) + repairRefund;
                 Message = $"{definition.DisplayName} dismantled - {refund} gold refunded";
                 return true;
             }
@@ -174,33 +186,38 @@ namespace ProjectNeo.Flow
                 Message = "Cannot dismantle: a piece or unit is on top.";
                 return false;
             }
-            int gold = current.RefundPiece(piece, id);
+            // 짓는 중인 조각은 이번 준비에 지은 것이라 환불이 전액이다. 수리 주문이었으면 남은 몫을 더 돌려준다.
+            int gold = current.RefundPiece(piece, id) + (work != null ? work.Cancel(structure) : 0);
             Message = $"{piece.DisplayName} dismantled - {gold} gold refunded";
             return true;
         }
 
         // 성벽 조각과 수성 무기(SIEGE-02)를 함께 모은다. 둘의 번호 체계가 달라 수리 목록 안에서만 쓰는 순번을 붙인다.
-        List<RepairNeed> RepairNeeds(Dictionary<int, Health> lookup)
+        List<RepairNeed> RepairNeeds(Dictionary<int, Component> lookup)
         {
             var needs = new List<RepairNeed>();
             if (world == null) return needs;
             foreach (PlacedStructure piece in world.Structures)
-                if (piece != null)
-                    AddNeed(needs, lookup, piece.Health, piece.Placement != null && piece.Placement.Definition.Kind == BuildPieceKind.Gate);
+                if (piece != null && !piece.IsUnderConstruction && (work == null || !work.HasOrder(piece)))
+                    AddNeed(needs, lookup, piece, piece.Health, piece.Placement != null && piece.Placement.Definition.Kind == BuildPieceKind.Gate);
             foreach (PlacedSiegeWeapon weapon in world.Weapons)
-                if (weapon != null && !weapon.IsRemoved) AddNeed(needs, lookup, weapon.Health, false);
+                if (weapon != null && !weapon.IsRemoved && (work == null || !work.HasOrder(weapon)))
+                    AddNeed(needs, lookup, weapon, weapon.Health, false);
             return needs;
         }
 
-        static void AddNeed(List<RepairNeed> needs, Dictionary<int, Health> lookup, Health health, bool allowDead)
+        static void AddNeed(List<RepairNeed> needs, Dictionary<int, Component> lookup, Component target, Health health, bool allowDead)
         {
             if (health == null || (health.IsDead && !allowDead)) return;
             float missing = health.Maximum - health.Current;
             if (missing <= 0f) return;
             int key = needs.Count;
             needs.Add(new RepairNeed(key, missing));
-            lookup?.Add(key, health);
+            lookup?.Add(key, target);
         }
+
+        static Health HealthOf(Component target) =>
+            target is PlacedStructure piece ? piece.Health : target is PlacedSiegeWeapon weapon ? weapon.Health : null;
 
         /// <summary>모두 수리하는 데 드는 골드.</summary>
         public int FullRepairCost => EnsureEconomy()?.FullRepairCost(RepairNeeds(null)) ?? 0;
@@ -213,7 +230,7 @@ namespace ProjectNeo.Flow
         {
             BuildEconomy current = EnsureEconomy();
             if (!Preparing || current == null) return 0;
-            var lookup = new Dictionary<int, Health>();
+            var lookup = new Dictionary<int, Component>();
             List<RepairNeed> needs = RepairNeeds(lookup);
             if (needs.Count == 0) { Message = "Nothing needs repair."; return 0; }
             List<RepairNeed> chosen = current.PlanRepair(needs, out int cost);
@@ -222,13 +239,19 @@ namespace ProjectNeo.Flow
                 Message = "Not enough gold for repairs.";
                 return 0;
             }
+            bool ordered = work != null && work.IsActive;
             foreach (RepairNeed need in chosen)
             {
-                Health health = lookup[need.Id];
+                Component target = lookup[need.Id];
+                // 준비 시간이 켜져 있으면 수리도 작업 주문이다. 골드는 지금 다 내고 전투 때 못 한 만큼 돌려받는다(SIEGE-08).
+                if (ordered && work.OrderRepair(target, current.RepairCost(need.Missing))) continue;
+                Health health = HealthOf(target);
                 if (health.IsDead) health.ReviveFull();
                 else health.RestoreFull();
             }
-            Message = chosen.Count == needs.Count ? $"Repair all · {cost} gold" : $"{chosen.Count}/{needs.Count} repairs · {cost}Gold (not enough gold)";
+            string verb = ordered ? "ordered" : "done";
+            Message = chosen.Count == needs.Count ? $"Repair all {verb} · {cost} gold"
+                : $"{chosen.Count}/{needs.Count} repairs {verb} · {cost} gold (not enough gold)";
             return chosen.Count;
         }
 
@@ -280,6 +303,8 @@ namespace ProjectNeo.Flow
             int repair = FullRepairCost;
             if (repair > 0) text.Append($"\nRepair all {repair} gold");
             if (Dismantling) text.Append("\nDismantling: click a piece - right click to finish");
+            string queued = work != null ? work.Summary() : string.Empty;
+            if (queued.Length > 0) text.Append('\n').Append(queued);
             if (!string.IsNullOrEmpty(Message)) text.Append('\n').Append(Message);
             return text.ToString();
         }

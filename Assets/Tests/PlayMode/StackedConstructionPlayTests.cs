@@ -169,6 +169,8 @@ namespace ProjectNeo.Tests
             controller.UpdatePreview(center);
             Assert.AreEqual(PlacementIssue.None, controller.Issue);
             Assert.IsTrue(controller.Confirm());
+            // 건설 화면에서 놓은 조각은 작업 주문이다(SIEGE-08). 위에 쌓으려면 한 시간 기다려 완성한다.
+            Assert.IsTrue(GameSession.Flow.Run.State.TryWait());
             Assert.AreEqual(center.y + wall.Height, player.transform.position.y, 0.01f);
             foreach (var member in members) Assert.AreEqual(center.y + wall.Height, member.transform.position.y, 0.01f);
             yield return WaitForNavigation();
@@ -247,6 +249,7 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(1, controller.PreviewLevel);
             Assert.AreEqual(wall.Height, controller.PreviewElevation, 0.001f);
             Assert.IsTrue(controller.Confirm());
+            Assert.IsTrue(GameSession.Flow.Run.State.TryWait(), "놓은 조각을 완성해 위에 쌓을 수 있게 한다(SIEGE-08).");
             PlacedStructure upperWall = world.Structures.Single(piece => piece.Placement.Cell == corner && piece.Placement.Level == 1);
             Assert.AreEqual(Lower(corner).transform.position.y + wall.Height, upperWall.transform.position.y, 0.001f);
 

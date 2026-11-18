@@ -98,6 +98,11 @@ namespace ProjectNeo.Walls
                 for (int x = 0; x < size.x; x++)
                     for (int z = 0; z < size.y; z++)
                         if (Mounts.HasWeaponOn(Layout.At(cell + new Vector2Int(x, z), level - 1).Id)) return PlacementIssue.Occupied;
+                // 짓는 중인 조각 위에는 쌓지 않는다(SIEGE-08).
+                for (int x = 0; x < size.x; x++)
+                    for (int z = 0; z < size.y; z++)
+                        if (structures.TryGetValue(Layout.At(cell + new Vector2Int(x, z), level - 1).Id, out PlacedStructure below)
+                            && below != null && below.IsUnderConstruction) return PlacementIssue.UnfinishedSupport;
             }
             return PlacementIssue.None;
         }
@@ -213,8 +218,13 @@ namespace ProjectNeo.Walls
         bool IsLive(PlacedStructure structure) => structure != null
             && structures.TryGetValue(structure.Placement.Id, out var known) && known == structure;
 
-        public MountIssue CheckMount(SiegeWeaponDefinition definition, PlacedStructure support, string mountId) =>
-            Mounts.Check(definition, IsLive(support) ? support.Placement.Id : 0, mountId);
+        public MountIssue CheckMount(SiegeWeaponDefinition definition, PlacedStructure support, string mountId)
+        {
+            MountIssue issue = Mounts.Check(definition, IsLive(support) ? support.Placement.Id : 0, mountId);
+            // 짓는 중인 조각에는 무기를 올리지 않는다(SIEGE-08).
+            if (issue == MountIssue.None && support.IsUnderConstruction) return MountIssue.UnfinishedSupport;
+            return issue;
+        }
 
         public void SetMountPose(Transform body, SiegeWeaponDefinition definition, Pose pose)
         {
@@ -230,7 +240,8 @@ namespace ProjectNeo.Walls
             out PlacedSiegeWeapon weapon, int rotation = 0)
         {
             weapon = null;
-            if (!IsLive(support) || !Mounts.TryMount(definition, support.Placement.Id, mountId, out var mount, rotation))
+            if (!IsLive(support) || support.IsUnderConstruction
+                || !Mounts.TryMount(definition, support.Placement.Id, mountId, out var mount, rotation))
                 return false;
             support.TryGetMountPose(mountId, out Pose pose);
             GameObject body = Instantiate(definition.Prefab, mountRoot);
@@ -360,6 +371,23 @@ namespace ProjectNeo.Walls
                     && actor.Health != null && !actor.Health.IsDead) return false;
             }
             Layout.Remove(placement.Id);
+            RemoveBody(structure);
+            rebuildPending = true;
+            Changed?.Invoke();
+            return true;
+        }
+
+        /// <summary>
+        /// 작업이 전혀 되지 않은 채 전투를 맞은 조각을 없앤다(SIEGE-08). 무너짐 알림 없이 배치에서 빼며 유닛 겹침은 보지 않는다.
+        /// 짓는 중인 조각 위에는 아무것도 올릴 수 없으므로 위 조각·무기를 따로 다루지 않는다.
+        /// </summary>
+        public bool RemoveUnbuilt(PlacedStructure structure)
+        {
+            if (!IsLive(structure) || structure.Placement.IsFixed || !structure.IsUnderConstruction) return false;
+            if (Layout.IsCovered(structure.Placement)) return false;
+            foreach (MountedWeapon mount in Mounts.Mounted)
+                if (mount.SupportId == structure.Placement.Id) return false;
+            Layout.Remove(structure.Placement.Id);
             RemoveBody(structure);
             rebuildPending = true;
             Changed?.Invoke();

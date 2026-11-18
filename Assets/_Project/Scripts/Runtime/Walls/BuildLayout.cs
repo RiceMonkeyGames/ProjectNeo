@@ -7,6 +7,8 @@ namespace ProjectNeo.Walls
     {
         None = 0, OutsideGrid = 1, Occupied = 2, ReservedGate = 3,
         MissingLanding = 4, UnitInTheWay = 5, NoPiece = 6, UnevenSupport = 7,
+        /// <summary>받치는 조각이 아직 짓는 중이다(SIEGE-08).</summary>
+        UnfinishedSupport = 8,
     }
 
     public sealed class BuildPlacement

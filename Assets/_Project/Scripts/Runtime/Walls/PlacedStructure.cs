@@ -18,6 +18,9 @@ namespace ProjectNeo.Walls
         /// <summary>문짝이 지금 열려 있다(부서졌거나 열어 두었다). 문짝이 없는 조각은 false.</summary>
         public bool IsDoorOpen => doorCollider != null && !doorCollider.enabled;
         public Collider DoorCollider => doorCollider;
+        /// <summary>준비 중 짓고 있는 조각(SIEGE-08). 이 위에는 조각을 쌓거나 무기를 올릴 수 없다.</summary>
+        public bool IsUnderConstruction { get; private set; }
+        public void SetUnderConstruction(bool value) => IsUnderConstruction = value;
 
         public void SetDoorParts(Collider collider, GameObject visual)
         {

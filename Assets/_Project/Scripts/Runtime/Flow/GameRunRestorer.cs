@@ -118,9 +118,14 @@ namespace ProjectNeo.Flow
             return string.Empty;
         }
 
+        /// <summary>되살린 성에 걸려 있던 작업 주문(SIEGE-08). 저장한 순서대로다. 씬의 작업 목록이 가져간다.</summary>
+        public List<RestoredWork> RestoredWork { get; } = new List<RestoredWork>();
+
         void RestoreCastle(CastleRecord castle)
         {
             world.ClearForRestore();
+            RestoredWork.Clear();
+            var work = new List<(int order, RestoredWork entry)>();
             var placed = new List<PlacedStructure>();
             foreach (CastlePieceRecord piece in castle.pieces)
             {
@@ -135,6 +140,13 @@ namespace ProjectNeo.Flow
                 placed.Add(body);
                 float lost = definition.MaxHealth - piece.health;
                 if (lost > 0f) body.ReceiveDamage(lost);
+                CastleWorkState pieceWork = RunState.WorkOf(piece.workKind, piece.workOrder, piece.workHours, piece.workDone,
+                    piece.workGold, piece.workStartHealth);
+                if (pieceWork.HasWork)
+                {
+                    if (pieceWork.Kind == WorkKind.Build) body.SetUnderConstruction(true);
+                    work.Add((pieceWork.Order, new RestoredWork(pieceWork.ToOrder(WorkTarget.Piece, body.Placement.Id), body, null)));
+                }
             }
             foreach (CastleWeaponRecord weapon in castle.weapons)
             {
@@ -147,7 +159,14 @@ namespace ProjectNeo.Flow
                 }
                 float lost = definition.MaxHealth - weapon.health;
                 if (lost > 0f && weapon.health > 0f) body.ReceiveDamage(lost);
+                CastleWorkState weaponWork = RunState.WorkOf(weapon.workKind, weapon.workOrder, weapon.workHours, weapon.workDone,
+                    weapon.workGold, weapon.workStartHealth);
+                body.SetUnfinished(weapon.unfinished || weaponWork.Kind == WorkKind.Build);
+                if (weaponWork.HasWork)
+                    work.Add((weaponWork.Order, new RestoredWork(weaponWork.ToOrder(WorkTarget.Weapon, body.Mount.Id), null, body)));
             }
+            work.Sort((a, b) => a.order.CompareTo(b.order));
+            foreach (var (_, entry) in work) RestoredWork.Add(entry);
         }
 
         // 부대마다: 같은 종류의 기존 씬 유닛은 그대로 쓰고, 남는 유닛은 없애고, 모자란 유닛은 새로 만든다.

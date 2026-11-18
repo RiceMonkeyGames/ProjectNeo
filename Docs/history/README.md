@@ -1,6 +1,6 @@
 # Past Verification History Index
 
-Last Updated: 2026-11-18 10:31:28 (KST)
+Last Updated: 2026-11-18 11:01:32 (KST)
 
 > Purpose: Route historical log lookups by Task ID prefix. | Parent: [INDEX](../INDEX.md) | Related: [Backlog-Done](../archive/Backlog-Done.md), [Status](../plan/Status.md)
 
@@ -8,7 +8,7 @@ Read this folder only when researching past design rationales, benchmarks, or ve
 
 - **Recording rule**: Create or append to `Docs/history/<PREFIX>/<TASK-ID>.md` using header `# <TASK-ID> | <YYYY-MM-DD> | <Area> - <Title>`, and update [Status.md](../plan/Status.md) / `codemap/` if needed.
 
-Latest manual verification: [PREP-06](PREP/PREP-06.md) (preparation clock, 2026-11-18).
+Latest manual verification: [SIEGE-08](SIEGE/SIEGE-08.md) (work orders, 2026-11-18).
 
 ## Folders
 
@@ -25,7 +25,7 @@ Latest manual verification: [PREP-06](PREP/PREP-06.md) (preparation clock, 2026-
 - `FLOW/` — [FLOW-01](FLOW/FLOW-01.md), [FLOW-02](FLOW/FLOW-02.md)
 - `COMBAT/` — [COMBAT-01](COMBAT/COMBAT-01.md), [COMBAT-02](COMBAT/COMBAT-02.md), [COMBAT-03](COMBAT/COMBAT-03.md), [COMBAT-05](COMBAT/COMBAT-05.md), [COMBAT-07](COMBAT/COMBAT-07.md)
 - `META/` — [META-01](META/META-01.md)
-- `SIEGE/` — [SIEGE-01](SIEGE/SIEGE-01.md), [SIEGE-02](SIEGE/SIEGE-02.md), [SIEGE-03](SIEGE/SIEGE-03.md), [SIEGE-04](SIEGE/SIEGE-04.md), [SIEGE-05](SIEGE/SIEGE-05.md), [SIEGE-06](SIEGE/SIEGE-06.md), [SIEGE-07](SIEGE/SIEGE-07.md)
+- `SIEGE/` — [SIEGE-01](SIEGE/SIEGE-01.md), [SIEGE-02](SIEGE/SIEGE-02.md), [SIEGE-03](SIEGE/SIEGE-03.md), [SIEGE-04](SIEGE/SIEGE-04.md), [SIEGE-05](SIEGE/SIEGE-05.md), [SIEGE-06](SIEGE/SIEGE-06.md), [SIEGE-07](SIEGE/SIEGE-07.md), [SIEGE-08](SIEGE/SIEGE-08.md)
 - `ART/` — [ART-01](ART/ART-01.md), [ART-02](ART/ART-02.md), [ART-03](ART/ART-03.md)
 - `DOC/` — [DOC-workflow-branches](DOC/DOC-workflow-branches.md), [DOC-doc-tree-and-id](DOC/DOC-doc-tree-and-id.md)
 - `TOOL/` — [TOOL-claude-read-deny](TOOL/TOOL-claude-read-deny.md), [TOOL-agent-workflows](TOOL/TOOL-agent-workflows.md), [TOOL-codex-workflows](TOOL/TOOL-codex-workflows.md), [TOOL-asset-submodule](TOOL/TOOL-asset-submodule.md), [TOOL-asset-packs-2](TOOL/TOOL-asset-packs-2.md)

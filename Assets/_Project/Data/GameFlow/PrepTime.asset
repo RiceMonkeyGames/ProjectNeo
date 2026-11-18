@@ -17,3 +17,7 @@ MonoBehaviour:
   upgradeHours: 1
   waitHours: 1
   scoutHours: 3
+  workCrews: 2
+  pieceWorkHours: 1
+  weaponWorkHours: 1
+  fullRepairHours: 1
