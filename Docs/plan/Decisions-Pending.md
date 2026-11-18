@@ -1,6 +1,6 @@
 # Pending Decisions & Active Operational Policies
 
-Last Updated: 2026-11-16 21:40:22 (KST)
+Last Updated: 2026-11-18 13:20:57 (KST)
 
 > Purpose: Undecided or partial design/implementation decisions (`Q-*`) and active operational rules. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Resolved](Decisions-Resolved.md), [OpenQuestions](../design/OpenQuestions.md)
 
@@ -28,5 +28,13 @@ Last Updated: 2026-11-16 21:40:22 (KST)
 | Q-15 | Supported input devices, settings, languages, accessibility | M2 framework, M5 UI | Undecided. Avoid arbitrary additions. |
 | Q-31 | Equipment retention upon hero permadeath | `C-3` casualty carry-over | Undecided. `C-1a` preserves fallen hero gear in `RunState.FallenHeroes`. |
 | Q-32 | Can player character serve as squad captain | `D-8` squad setup UI, later player-captain task | Interim (2026-11-13): Not allowed for now; player captaincy planned later, so keep captain assignment extensible. `C-1a` `TrySetLeader` currently permits the player and D-8 UI must block it. |
+| Q-54 | M2 scope cut (which of skills, perks, unlock points, scouting stay in M2) | M2 close | Undecided. Registered 2026-11-18 for the team meeting. |
+| Q-55 | In-game current-time concept (time of day / calendar beyond the PREP-06 12h budget) | PREP-07 | Undecided. Registered 2026-11-18 for the team meeting. |
+| Q-56 | Team ownership after B-6~B-9 | M2 remainder, M3+ | Undecided. Registered 2026-11-18 for the team meeting. |
+| Q-57 | Final squad count and member caps | Squad balance, M4 | Undecided. Registered 2026-11-18 from OpenQuestions. |
+| Q-58 | Morale tuning values and prep-phase morale recovery facility | Morale balance | Undecided. Registered 2026-11-18 from OpenQuestions. |
+| Q-59 | Max building tiers, stair constraints, partial foundation collapse | Construction rules | Undecided. Registered 2026-11-18 from OpenQuestions. |
+| Q-60 | AI improvement pass scope and priorities (enemy side owned by teammate) | AI quality tasks | Undecided. Registered 2026-11-18 from OpenQuestions. |
+| Q-61 | M4 content scale (hero/enemy/item/stage counts, target play time) | M4 production tasks | Undecided. Registered 2026-11-18 from Milestones. |
 
 Q-41 shared ladder interaction rules were approved on 2026-11-13 and moved to [Decisions-Resolved](Decisions-Resolved.md). The user subsequently confirmed shared-code edits and tap F boarding / hold F toppling. Runtime implementation is tracked as SIEGE-04.
