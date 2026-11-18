@@ -1,6 +1,6 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-18 10:33:48 (KST)
+Last Updated: 2026-11-18 11:36:38 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
@@ -17,6 +17,8 @@ Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elev
 Done on user authorization (2026-11-17), feature/ui-03: bottom-right health bar and current/maximum HP, as selected by the user. Real Game scene integration, damage/healing/max-HP/death/stage-transition tests and API-driven layout inspection completed; full compile/EditMode 467/467/PlayMode 226/226 passed. User authorized develop merge and branch cleanup; physical-input and standalone verification remain unclaimed. [History](../history/UI/UI-03.md).
 
 ## Implemented vs Pending Real Connections
+
+**C-5 (Done on user confirmation, 2026-11-18; `feature/c-5`, not yet merged)**: Q-53 wave preview. `V` toggles a non-blocking enemy list (left, below the squad list) in preparation; always shown in battle with live remaining counts (dead/retreated excluded); stage groups flagged `hidden` show as `? × N` until their wave is released. Stage02 Gate Breaker × 2 is hidden. Scouting (3h reveal) is not playable yet: PREP-07.
 
 **PREP-06 (Done on user confirmation, 2026-11-18; `feature/prep-06`, merged into develop)**: Q-53 preparation clock: 12h budget per preparation from `Data/GameFlow/PrepTime.asset`, refilled once per preparation and saved with the run; blacksmith craft/upgrade cost 1h and refuse with `Not enough time.`; hold `T` 1s to wait 1h; top-center clock line (hidden in battle and over the organization window). Compile, EditMode **476/476** and PlayMode **232/232** passed; the user confirmed manual play; standalone build unverified. SIEGE-08 work orders and the C-5 scouting cost build on this clock. [History/manual checks](../history/PREP/PREP-06.md).
 

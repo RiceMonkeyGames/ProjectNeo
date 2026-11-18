@@ -1,11 +1,12 @@
 # Editor Setup & Test Scripts
 
-Last Updated: 2026-11-18 03:16:06 (KST)
+Last Updated: 2026-11-18 11:24:46 (KST)
 
 > Purpose: Map of Editor setup menus, build scripts, and EditMode/PlayMode test suites. | Parent: [codemap/README](README.md) | Related: [UnityCLI](../workflow/UnityCLI.md), [Status](../plan/Status.md)
 
 ## Editor Scripts (`Assets/_Project/Scripts/Editor/`)
 
+- `EnemyIntelHudSetup.cs` (`C-5`): Menu `ProjectNeo/Setup/Add Enemy Intel HUD (C-5)`. Adds/updates the left `EnemyIntel` panel (just below `SquadCommandHUD/SquadsBacking`, `(16, -176)` at 1280×720) (title + rows, height fits content) and `EnemyIntelHud` on `GameFlowHUD` in `Game.unity`. Re-runnable.
 - `PrepTimeSetup.cs` (`PREP-06`): Menu `ProjectNeo/Setup/Configure Preparation Time (PREP-06)`. Creates `Data/GameFlow/PrepTime.asset` if missing, links it to `RunStart.asset` when empty, and adds/updates the top-center `PrepClock` line and `PrepClockHud` on `GameFlowHUD` in `Game.unity` (keeps the phase box at its original position). Re-runnable.
 - `EquipmentUpgradeSetup.cs`: `ProjectNeo/Setup/Configure Equipment Upgrades` creates the shared settings, binds RunStart and fills only empty item upgrade-material lists from crafting materials × target level; keeps existing data and does not edit the scene. Also called by the facility generator.
 
@@ -34,6 +35,7 @@ Last Updated: 2026-11-18 03:16:06 (KST)
 
 ## EditMode Tests (`Assets/Tests/EditMode/`)
 
+- `EnemyIntelTests.cs` (`C-5`): per-type merge across waves, hidden groups as `? × N` without type names, single reveal, reveal-all, remaining clamp and unchanged-version, prefab display names, plan/stage hidden flag carry-over.
 - `PrepTimeTests.cs` (`PREP-06`): clock spend/overspend/refill/restore; blacksmith craft/upgrade time cost and no payment when short; no spending while a battle is pending and a full budget at the next preparation; no limit without settings; save/restore keeps used hours, old saves refill.
 - General Stage A: Stat sheets, wallets, facilities, squads, perks, items, shops, characters, meta progression, health rules.
 - `EquipmentUpgradeTests.cs`: PREP-01 independent upgrade rules (16 cases): per-item state, target-level gold/material cost, duplicate material totals, affordability/caps/data guards, scaled flat/percent modifiers, equip/unequip state preservation, actual-spend refund and settings overrides. RunUpgradeTests.cs adds 6 run integration cases (config, stash ownership, actual stats, caps, next-prep retention, sales, battle guard); GameFacilityPlayTests adds 2 Game scene upgrade/equip/refund/material cases.
@@ -66,6 +68,7 @@ Last Updated: 2026-11-18 03:16:06 (KST)
 
 ## PlayMode Tests (`Assets/Tests/PlayMode/`)
 
+- `GameEnemyIntelPlayTests.cs` (`C-5`): Game scene preview closed until toggled, `? × N` for a hidden group, always shown in battle with live remaining counts after kills, hidden group revealed when its wave is released, no overlap with `SquadsBacking` and `BattleStatus`, hidden on reward, hidden again next preparation.
 - `GamePrepTimePlayTests.cs` (`PREP-06`): Game scene clock from the real asset, top-center line clear of facility/equipment windows and hidden over the organization window, hold-`T` wait (progress, exactly one hour, fresh press), out-of-time hint/label, battle still startable, hidden in battle, refilled next preparation.
 - `GameStageLoopPlayTests.cs` (`B-9.3`): Game scene with the real stage assets (overrides the single-wave fixture). Plays stages 1→2→3 back to back, killing each wave as it is released. At every preparation start it checks that only this stage's enemies exist (hidden), the wave timetable restarts, retreat records are empty, no arrows/cannon shells remain, ladders are off and empty, and morale battle state is closed. Each victory pays once (gold unchanged while on the reward screen and after moving on; `ContinueToNextStage` works once).
 

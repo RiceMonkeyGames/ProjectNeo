@@ -1,6 +1,6 @@
 # Game Design: Morale, Rout & Wave Preview
 
-Last Updated: 2026-11-18 02:52:45 (KST)
+Last Updated: 2026-11-18 11:24:46 (KST)
 
 > Purpose: Ally Breaking Point morale, enemy morale, rout/exit accounting, and wave preview rules. | Parent: [design/README](README.md) | Related: [Combat](Combat.md), [OpenQuestions](OpenQuestions.md)
 
@@ -102,3 +102,12 @@ Rules decided by the user on 2026-11-18 (Q-53). Numbers are data and open to tun
 - **Scouting action**: the player can scout for `3` hours of preparation time ([Preparation Time](PrepEconomyMeta.md#preparation-time-q-53-user-decision-2026-11-18)). One scout reveals **every** hidden group of the coming stage, so it is offered only while something is hidden. It cannot be done if fewer than `3` hours remain.
 - **Automatic reveal** (kept from the original design): a hero with a scouting trait or a scouting perk reveals hidden groups without spending time. This needs hero traits and perk injection (META-02) and follows later.
 - Hidden enemies are also revealed once they appear on the battlefield.
+
+### Display & Scouting Timing (C-5, user decision 2026-11-18)
+
+- **Preview window**: in first-person preparation, `V` opens and closes a small enemy list window on the left, just below the squad list (moved there on 2026-11-18 after the user found it covered by the squad list at the top left). It does not block movement or other input and is hidden in construction, facility, placement and organization views. Lines are merged per enemy type for the whole stage (`Ladder × 7`); hidden groups follow as `? × N`.
+- **Battle display**: the same list is always shown during battle as `Enemies left N`. Counts drop in real time: an enemy stops counting once it dies or has retreated off the field; enemies not yet released still count. A type whose count reaches `0` stays listed as `× 0`.
+- **Reveal in battle**: a hidden group is revealed (its type replaces `?`) when its wave is released onto the field. Every new preparation hides the groups again.
+- **Scouting action deferred**: the 3-hour scouting action is **not** part of C-5; it will be added later as PREP-07 (the rule `EnemyIntel.RevealAll` already exists for it). Until then hidden groups stay `?` for the whole preparation.
+- Current data: only `Stage02` has a hidden group (wave 2, Gate Breaker × 2). Stage 1 and 3 have none.
+- Enemy type names come from the enemy prefab name (`enemy_gate_breaker` → `Gate Breaker`) until enemy definition assets exist.

@@ -10,7 +10,10 @@ namespace ProjectNeo.Stages
         public GameObject Prefab { get; }
         public int Count { get; }
         public Vector2 Cell { get; }
-        public EncounterGroup(GameObject prefab, int count, Vector2 cell) { Prefab = prefab; Count = count; Cell = cell; }
+        /// <summary>미리보기에서 종류를 숨기는 무리(C-5). 전투에는 영향이 없다.</summary>
+        public bool Hidden { get; }
+        public EncounterGroup(GameObject prefab, int count, Vector2 cell, bool hidden = false)
+        { Prefab = prefab; Count = count; Cell = cell; Hidden = hidden; }
     }
 
     public sealed class EncounterWave
@@ -65,7 +68,7 @@ namespace ProjectNeo.Stages
                         foreach (StageWaveGroup group in wave.groups)
                             if (group.enemyPrefab != null && group.count > 0)
                                 groups.Add(new EncounterGroup(group.enemyPrefab, group.count,
-                                    group.spawnPoint != null ? group.spawnPoint.Cell : defaultCell));
+                                    group.spawnPoint != null ? group.spawnPoint.Cell : defaultCell, group.hidden));
                     if (groups.Count > 0) waves.Add(new EncounterWave(wave.startSeconds, groups));
                 }
             return new EncounterPlan(waves);

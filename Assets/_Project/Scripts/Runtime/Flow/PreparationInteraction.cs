@@ -13,7 +13,10 @@ namespace ProjectNeo.Flow
         [SerializeField] CharacterActor player;
         [SerializeField] PreparationInteractionSettings settings;
         [SerializeField] GameBattleController battle;
-        InputAction interact, close, equipment, organization, startBattle, squadPlacement, wait;
+        InputAction interact, close, equipment, organization, startBattle, squadPlacement, wait, enemyPreview;
+        public string EnemyPreviewKey => enemyPreview != null ? enemyPreview.GetBindingDisplayString() : string.Empty;
+        /// <summary>1인칭 탐색 중 적 목록 키를 눌렀다(C-5). 적 목록 창이 듣고 열거나 닫는다.</summary>
+        public event System.Action EnemyPreviewToggled;
         float waitElapsed;
         bool holdingWait;
         /// <summary>기다리기 키를 누르고 있는 진행률(0~1, PREP-06).</summary>
@@ -59,16 +62,20 @@ namespace ProjectNeo.Flow
             wait = settings.Wait != null && settings.Wait.bindings.Count > 0
                 ? settings.Wait.Clone()
                 : new InputAction("WaitPrepTime", InputActionType.Button, "<Keyboard>/t");
+            // 예전 설정 에셋에 키가 비어 있어도 V로 적 목록을 연다.
+            enemyPreview = settings.EnemyPreview != null && settings.EnemyPreview.bindings.Count > 0
+                ? settings.EnemyPreview.Clone()
+                : new InputAction("ToggleEnemyPreview", InputActionType.Button, "<Keyboard>/v");
         }
         void OnEnable()
         {
             interact.Enable(); close.Enable(); equipment?.Enable(); organization?.Enable(); startBattle.Enable(); squadPlacement?.Enable();
-            wait?.Enable();
+            wait?.Enable(); enemyPreview?.Enable();
         }
         void OnDisable()
         {
             interact?.Disable(); close?.Disable(); equipment?.Disable(); organization?.Disable(); startBattle?.Disable();
-            squadPlacement?.Disable(); wait?.Disable();
+            squadPlacement?.Disable(); wait?.Disable(); enemyPreview?.Disable();
             Target = null; CancelBattleStart(); CancelWait();
         }
         void OnDestroy()
@@ -166,7 +173,13 @@ namespace ProjectNeo.Flow
             { CancelBattleStart(); CancelWait(); EquipmentRequested?.Invoke(); }
             else if (phaseView.IsExplorationView && organization != null && organization.WasPressedThisFrame())
             { CancelBattleStart(); CancelWait(); OrganizationRequested?.Invoke(); }
-            else { UpdateBattleStart(); UpdateWait(); }
+            else
+            {
+                // 적 목록 창은 화면을 막지 않으므로 전투 시작·기다리기 누르기를 끊지 않는다.
+                if (phaseView.IsExplorationView && enemyPreview != null && enemyPreview.WasPressedThisFrame())
+                    EnemyPreviewToggled?.Invoke();
+                UpdateBattleStart(); UpdateWait();
+            }
         }
     }
 }
