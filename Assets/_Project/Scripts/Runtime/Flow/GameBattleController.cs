@@ -187,6 +187,12 @@ namespace ProjectNeo.Flow
                     RunLink.State.SetupPrepTime(build.StartConfig.PrepTime);
                     RunLink.State.BeginPreparationClockIfNeeded();
                 }
+                // 되살린 런의 작업 주문을 다시 넣고 미완성 무기 표시를 맞춘다(SIEGE-08). 되살린 주문은 한 번만 쓴다.
+                if (build != null && build.Work != null)
+                {
+                    build.Work.OnPreparation(RunLink.Restorer != null ? RunLink.Restorer.RestoredWork : null);
+                    RunLink.Restorer?.RestoredWork.Clear();
+                }
                 foreach (SiegeLadder ladder in ladders) { ladder.ResetBattle(); ladder.enabled = false; }
                 SetCannonsArmed(false);
                 StartCoroutine(RestoreWhenReady());
@@ -199,6 +205,8 @@ namespace ProjectNeo.Flow
                 BattleNumber++;
                 // 전투 입력을 만들기 전에 저장한다. 전투 중에 끄면 이 준비 상태로 돌아온다.
                 SaveRun(RunSaveTrigger.BattleStart);
+                // 남은 작업 주문을 정리한다: 0%는 없애고 환불, 나머지는 진행률만큼 체력(SIEGE-08). 성 기록 전에 한다.
+                GetComponent<GameBuildEconomy>()?.Work?.FinishForBattle();
                 RunLink.OnBattleStart();
                 foreach (SiegeLadder ladder in ladders) ladder.enabled = true;
                 schedule?.Reset();
@@ -426,7 +434,8 @@ namespace ProjectNeo.Flow
             foreach (PlacedSiegeWeapon weapon in world.Weapons)
                 if (weapon != null)
                     foreach (CannonModule cannon in weapon.GetComponentsInChildren<CannonModule>())
-                        cannon.SetArmed(armed);
+                        // 다 짓지 못한 무기는 쏘지 않는다(SIEGE-08).
+                        cannon.SetArmed(armed && !weapon.IsUnfinished);
         }
         IEnumerator RestoreWhenReady()
         {

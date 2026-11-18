@@ -126,6 +126,13 @@ namespace ProjectNeo.Run
         public int level;
         public bool isFixed;
         public float health;
+        // 걸린 작업 주문(SIEGE-08). workKind 0이면 없다. 예전 저장에는 없어 0으로 읽힌다.
+        public int workKind;
+        public int workOrder;
+        public float workHours;
+        public float workDone;
+        public int workGold;
+        public float workStartHealth;
     }
 
     [Serializable]
@@ -137,5 +144,13 @@ namespace ProjectNeo.Run
         public string mountId;
         public int rotation;
         public float health;
+        /// <summary>다 짓지 못한 무기(SIEGE-08). 쏘지 않는다.</summary>
+        public bool unfinished;
+        public int workKind;
+        public int workOrder;
+        public float workHours;
+        public float workDone;
+        public int workGold;
+        public float workStartHealth;
     }
 }

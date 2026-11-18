@@ -48,6 +48,7 @@ namespace ProjectNeo.UI
                     case MountIssue.NoSupport: issue = "Point at a wall top"; break;
                     case MountIssue.NoMountPoint: issue = "This piece has no mount point"; break;
                     case MountIssue.Occupied: issue = "A weapon already occupies this mount"; break;
+                    case MountIssue.UnfinishedSupport: issue = "This piece is still under construction"; break;
                     default: issue = "Choose a location"; break;
                 }
                 selection.text = placement.SelectedWeapon.DisplayName + "\n" + issue;
@@ -64,6 +65,7 @@ namespace ProjectNeo.UI
                     case PlacementIssue.ReservedGate: issue = "Reserved gate location"; break;
                     case PlacementIssue.UnitInTheWay: issue = "Overlaps a unit"; break;
                     case PlacementIssue.UnevenSupport: issue = "Support heights differ"; break;
+                    case PlacementIssue.UnfinishedSupport: issue = "The piece below is still under construction"; break;
                     default: issue = "Choose a location"; break;
                 }
                 string floor = placement.PreviewLevel > 0 ? " · " + (placement.PreviewLevel + 1) + " floor" : "";

@@ -14,10 +14,13 @@ namespace ProjectNeo.Run
         public int Level { get; }
         public bool IsFixed { get; }
         public float Health { get; }
+        /// <summary>걸린 작업 주문(SIEGE-08). 없으면 기본값.</summary>
+        public CastleWorkState Work { get; }
 
         public CastlePieceState(BuildPieceDefinition definition, Vector2Int cell, int rotation, int level,
-            bool isFixed, float health)
+            bool isFixed, float health, CastleWorkState work = default)
         {
+            Work = work;
             Definition = definition != null ? definition : throw new ArgumentNullException(nameof(definition));
             Cell = cell;
             Rotation = ((rotation % 4) + 4) % 4;
@@ -39,10 +42,15 @@ namespace ProjectNeo.Run
         /// <summary>설치 지점 방향에서 더 돌린 90도 단위 횟수(0~3).</summary>
         public int Rotation { get; }
         public float Health { get; }
+        /// <summary>다 짓지 못한 무기(SIEGE-08). 전투를 넘겨도 남는다.</summary>
+        public bool Unfinished { get; }
+        public CastleWorkState Work { get; }
 
         public CastleWeaponState(SiegeWeaponDefinition definition, int supportIndex, string mountId,
-            int rotation = 0, float? health = null)
+            int rotation = 0, float? health = null, bool unfinished = false, CastleWorkState work = default)
         {
+            Unfinished = unfinished;
+            Work = work;
             Definition = definition != null ? definition : throw new ArgumentNullException(nameof(definition));
             SupportIndex = supportIndex;
             MountId = mountId;
@@ -100,7 +108,8 @@ namespace ProjectNeo.Run
         /// 현재 체력이며 null이면 최대 체력으로 기록한다.
         /// </summary>
         public static CastleState Capture(BuildLayout layout, MountLayout mounts, Func<BuildPlacement, float> healthOf = null,
-            Func<MountedWeapon, float> weaponHealthOf = null)
+            Func<MountedWeapon, float> weaponHealthOf = null, Func<BuildPlacement, CastleWorkState> workOf = null,
+            Func<MountedWeapon, CastleWorkState> weaponWorkOf = null, Func<MountedWeapon, bool> unfinishedOf = null)
         {
             if (layout == null) throw new ArgumentNullException(nameof(layout));
             var ordered = new List<BuildPlacement>(layout.Placements);
@@ -113,7 +122,7 @@ namespace ProjectNeo.Run
                 float health = healthOf != null ? healthOf(placement) : placement.Definition.MaxHealth;
                 indexById[placement.Id] = pieceList.Count;
                 pieceList.Add(new CastlePieceState(placement.Definition, placement.Cell, placement.Rotation,
-                    placement.Level, placement.IsFixed, health));
+                    placement.Level, placement.IsFixed, health, workOf != null ? workOf(placement) : default));
             }
 
             var weaponList = new List<CastleWeaponState>();
@@ -124,7 +133,8 @@ namespace ProjectNeo.Run
                 foreach (MountedWeapon weapon in mounted)
                     if (indexById.TryGetValue(weapon.SupportId, out int index))
                         weaponList.Add(new CastleWeaponState(weapon.Definition, index, weapon.MountId, weapon.Rotation,
-                            weaponHealthOf != null ? weaponHealthOf(weapon) : (float?)null));
+                            weaponHealthOf != null ? weaponHealthOf(weapon) : (float?)null,
+                            unfinishedOf != null && unfinishedOf(weapon), weaponWorkOf != null ? weaponWorkOf(weapon) : default));
             }
             return new CastleState(pieceList, weaponList);
         }

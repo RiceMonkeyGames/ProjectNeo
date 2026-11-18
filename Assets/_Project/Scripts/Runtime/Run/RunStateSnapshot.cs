@@ -90,12 +90,16 @@ namespace ProjectNeo.Run
                     id = content != null ? content.PieceId(piece.Definition) : piece.Definition.name,
                     cellX = piece.Cell.x, cellY = piece.Cell.y, rotation = piece.Rotation, level = piece.Level,
                     isFixed = piece.IsFixed, health = piece.Health,
+                    workKind = (int)piece.Work.Kind, workOrder = piece.Work.Order, workHours = piece.Work.Hours,
+                    workDone = piece.Work.Done, workGold = piece.Work.GoldPaid, workStartHealth = piece.Work.StartHealth,
                 });
             foreach (CastleWeaponState weapon in Castle.Weapons)
                 snapshot.castle.weapons.Add(new CastleWeaponRecord
                 {
                     id = weapon.Definition.Id, supportIndex = weapon.SupportIndex, mountId = weapon.MountId,
-                    rotation = weapon.Rotation, health = weapon.Health,
+                    rotation = weapon.Rotation, health = weapon.Health, unfinished = weapon.Unfinished,
+                    workKind = (int)weapon.Work.Kind, workOrder = weapon.Work.Order, workHours = weapon.Work.Hours,
+                    workDone = weapon.Work.Done, workGold = weapon.Work.GoldPaid, workStartHealth = weapon.Work.StartHealth,
                 });
             return snapshot;
         }
@@ -284,11 +288,13 @@ namespace ProjectNeo.Run
             var pieces = new List<CastlePieceState>();
             foreach (CastlePieceRecord piece in snapshot.castle.pieces ?? new List<CastlePieceRecord>())
                 pieces.Add(new CastlePieceState(content.Piece(piece.id), new Vector2Int(piece.cellX, piece.cellY),
-                    piece.rotation, piece.level, piece.isFixed, piece.health));
+                    piece.rotation, piece.level, piece.isFixed, piece.health, WorkOf(piece.workKind, piece.workOrder,
+                        piece.workHours, piece.workDone, piece.workGold, piece.workStartHealth)));
             var weapons = new List<CastleWeaponState>();
             foreach (CastleWeaponRecord weapon in snapshot.castle.weapons ?? new List<CastleWeaponRecord>())
                 weapons.Add(new CastleWeaponState(content.Weapon(weapon.id), weapon.supportIndex, weapon.mountId,
-                    weapon.rotation, weapon.health));
+                    weapon.rotation, weapon.health, weapon.unfinished, WorkOf(weapon.workKind, weapon.workOrder,
+                        weapon.workHours, weapon.workDone, weapon.workGold, weapon.workStartHealth)));
             state.Castle = CastleState.FromRecords(pieces, weapons);
 
             state.nextUnitId = Math.Max(snapshot.nextUnitId, highestId + 1);
@@ -296,6 +302,12 @@ namespace ProjectNeo.Run
             state.LastRewardedBattle = Math.Max(0, snapshot.lastRewardedBattle);
             return state;
         }
+
+        /// <summary>저장 기록의 작업 주문 칸을 읽는다(SIEGE-08). 모르는 종류는 주문 없음이다.</summary>
+        public static CastleWorkState WorkOf(int kind, int order, float hours, float done, int gold, float startHealth) =>
+            kind == (int)WorkKind.Build || kind == (int)WorkKind.Repair
+                ? new CastleWorkState((WorkKind)kind, order, hours, done, gold, startHealth)
+                : default;
 
         RunSoldier RestoreSoldier(SoldierRecord record, IRunContentLookup content)
         {

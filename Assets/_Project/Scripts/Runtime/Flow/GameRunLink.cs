@@ -36,6 +36,10 @@ namespace ProjectNeo.Flow
         public GameRunRestorer Restorer { get; set; }
         /// <summary>런 저장에 쓰는 ID 창구(FLOW-02). 없으면 <see cref="CaptureSnapshot"/>이 null이다.</summary>
         public IRunContentLookup Content { get; set; }
+        /// <summary>성을 기록할 때 조각·무기에 걸린 작업 주문과 미완성 무기를 알려 준다(SIEGE-08). 없으면 주문 없이 기록한다.</summary>
+        public System.Func<BuildPlacement, CastleWorkState> PieceWork { get; set; }
+        public System.Func<MountedWeapon, CastleWorkState> WeaponWork { get; set; }
+        public System.Func<MountedWeapon, bool> WeaponUnfinished { get; set; }
         /// <summary>이 씬의 런이 저장 기록에서 되살린 것인지.</summary>
         public bool WasRestored { get; private set; }
 
@@ -343,7 +347,8 @@ namespace ProjectNeo.Flow
                     weaponHealth[weapon.Mount.Id] = weapon.Health.Current;
             return CastleState.Capture(world.Layout, world.Mounts,
                 placement => health.TryGetValue(placement.Id, out float value) ? value : placement.Definition.MaxHealth,
-                mount => weaponHealth.TryGetValue(mount.Id, out float value) ? value : mount.Definition.MaxHealth);
+                mount => weaponHealth.TryGetValue(mount.Id, out float value) ? value : mount.Definition.MaxHealth,
+                PieceWork, WeaponWork, WeaponUnfinished);
         }
     }
 }

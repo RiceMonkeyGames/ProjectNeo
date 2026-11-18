@@ -15,6 +15,12 @@ namespace ProjectNeo.Walls
         /// <summary>무기 자체 체력. 설치할 때 정의의 최대 체력으로 채운다.</summary>
         public Health Health { get; private set; }
         public bool IsRemoved { get; private set; }
+        /// <summary>
+        /// 다 짓지 못한 무기(SIEGE-08). 전투에서 쏘지 않는다(무장하지 않는다). 전투를 넘겨도 남고, 이후 준비에서 체력을 끝까지
+        /// 수리하면 완성된다.
+        /// </summary>
+        public bool IsUnfinished { get; private set; }
+        public void SetUnfinished(bool value) => IsUnfinished = value;
         public event Action<PlacedSiegeWeapon, SiegeWeaponRemoval> Removed;
         /// <summary>체력이 0이 된 순간 한 번 알린다. 실제 제거는 ConstructionWorld가 한다.</summary>
         public event Action<PlacedSiegeWeapon> HealthDepleted;

@@ -45,6 +45,13 @@ namespace ProjectNeo.Tests
 
         Wallet Wallet => GameSession.Flow.Run.State.Wallet;
 
+        // 준비 시간이 켜진 Game 씬에서 수리는 작업 주문이다(SIEGE-08). 한 시간 기다려 주문을 끝낸다.
+        static void FinishWork()
+        {
+            var state = GameSession.Flow.Run.State;
+            Assert.IsTrue(state.TryWait(), "주문을 끝낼 준비 시간이 남아 있어야 한다.");
+        }
+
         Vector2Int FreeCell()
         {
             for (int x = 30; x < 50; x++)
@@ -114,6 +121,8 @@ namespace ProjectNeo.Tests
 
             Wallet.AddGold(repair + 3);
             Assert.AreEqual(1, economy.RepairAll());
+            Assert.Less(damaged.Health.Current, damaged.Health.Maximum, "수리는 주문이라 시간이 가야 채워진다.");
+            FinishWork();
             Assert.AreEqual(damaged.Health.Maximum, damaged.Health.Current);
             Assert.AreEqual(3, Wallet.Gold);
             Assert.AreEqual(0, economy.FullRepairCost);
@@ -140,11 +149,13 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(economy.Economy.RepairCost(60f) + economy.Economy.RepairCost(20f), repair);
             Wallet.AddGold(economy.Economy.RepairCost(60f));
             Assert.AreEqual(1, economy.RepairAll(), "골드가 모자라면 더 많이 깎인 대포부터 고친다.");
+            FinishWork();
             Assert.AreEqual(150f, weapon.Health.Current);
             Assert.Less(wallPiece.Health.Current, wallPiece.Health.Maximum);
 
             Wallet.AddGold(economy.Economy.RepairCost(20f));
             Assert.AreEqual(1, economy.RepairAll());
+            FinishWork();
             Assert.AreEqual(wallPiece.Health.Maximum, wallPiece.Health.Current);
             Assert.AreEqual(0, economy.FullRepairCost);
         }
@@ -176,6 +187,8 @@ namespace ProjectNeo.Tests
             Assert.Greater(repairCost, 0);
             Wallet.AddGold(repairCost);
             Assert.AreEqual(1, economy.RepairAll());
+            Assert.IsTrue(gate.Health.IsDead, "성문은 수리가 끝날 때 닫힌다(SIEGE-08).");
+            FinishWork();
             Assert.IsFalse(gate.Health.IsDead);
             Assert.AreEqual(gate.Health.Maximum, gate.Health.Current);
             Assert.IsTrue(gate.transform.Find("Visual/Door").gameObject.activeSelf);

@@ -1,6 +1,6 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-18 10:33:48 (KST)
+Last Updated: 2026-11-18 11:01:32 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
@@ -17,6 +17,8 @@ Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elev
 Done on user authorization (2026-11-17), feature/ui-03: bottom-right health bar and current/maximum HP, as selected by the user. Real Game scene integration, damage/healing/max-HP/death/stage-transition tests and API-driven layout inspection completed; full compile/EditMode 467/467/PlayMode 226/226 passed. User authorized develop merge and branch cleanup; physical-input and standalone verification remain unclaimed. [History](../history/UI/UI-03.md).
 
 ## Implemented vs Pending Real Connections
+
+**SIEGE-08 (Done on user confirmation, 2026-11-18; `feature/siege-08`, develop merge pending)**: Q-53 work orders on the PREP-06 clock: placed pieces/cannons and `Repair All` repairs are built by 2 crews in order (1h per piece; repair = missing-HP fraction of 1h), shown translucent with progress; stacking/mounting only on finished pieces; at battle start 0% builds are removed and refunded, others stand at HP = progress, unfinished cannons stay unarmed until fully repaired, unfinished repairs refund the rest and a broken gate closes only on completion or at battle start; orders are saved during preparation. Compile, EditMode **480/480** and PlayMode **237/237** passed; the user confirmed manual play; standalone build unverified. [History/manual checks](../history/SIEGE/SIEGE-08.md).
 
 **PREP-06 (Done on user confirmation, 2026-11-18; `feature/prep-06`, merged into develop)**: Q-53 preparation clock: 12h budget per preparation from `Data/GameFlow/PrepTime.asset`, refilled once per preparation and saved with the run; blacksmith craft/upgrade cost 1h and refuse with `Not enough time.`; hold `T` 1s to wait 1h; top-center clock line (hidden in battle and over the organization window). Compile, EditMode **476/476** and PlayMode **232/232** passed; the user confirmed manual play; standalone build unverified. SIEGE-08 work orders and the C-5 scouting cost build on this clock. [History/manual checks](../history/PREP/PREP-06.md).
 

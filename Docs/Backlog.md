@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-18 10:52:58 (KST)
+Last Updated: 2026-11-18 11:01:32 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -21,7 +21,6 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 | C-5 | Wave Preview & Hidden Enemy Intel | In Progress | 신용준 | Branch `feature/c-5`. Rules decided 2026-11-18 (Q-53): whole-stage enemy types and counts in preparation; per-group hidden flag in stage data shown as `? × N`; 3h scouting action reveals every hidden group; revealed on appearing in battle. Preview can start now; the scouting time cost uses the PREP-06 clock (`PrepTimeSettings.ScoutHours`, `RunState.TrySpendPrepTime`). Hero trait/perk reveal follows META-02. Rules: [MoraleAndWave](design/MoraleAndWave.md). |
 | META-02 | Runtime Perk Injection & Reward Routing | Pending Decision | Unassigned | Registered 2026-11-16: apply perk payloads to real run/battle stats and route victory unlock points. Blocked by Q-06 (perk allocation timing/pause) and Q-07 (unlock point distribution timing). |
 | COMBAT-06 | Minimal Hero/Active Skill Execution | Pending Decision | Unassigned | Registered 2026-11-16: skills exist as identifiers only. Blocked by Q-12 (skill rules, cooldowns, targeting, perk effects). Shared combat core edits need teammate coordination. |
-| SIEGE-08 | Construction Delays (Work Orders) | In Progress | Hwang Seong-min | Branch `feature/siege-08`. Registered 2026-11-16 (formerly roadmap bundle `C-6` construction pacing); rules decided 2026-11-18 (Q-53). Placing pieces and ordering repairs become work orders built by 2 crews in order as the PREP-06 clock advances (1h per piece; repair = missing-HP fraction of 1h); unfinished pieces enter battle with HP equal to progress and block paths; demolishing unfinished work refunds fully. PREP-06 Done 2026-11-18 (`PrepClock.Advanced` drives work progress; start from develop after its merge). Rules: [PrepEconomyMeta](design/PrepEconomyMeta.md). |
 
 ---
 

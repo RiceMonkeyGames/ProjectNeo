@@ -1,6 +1,6 @@
 # Game Design: Preparation, Economy, Rewards & Meta
 
-Last Updated: 2026-11-18 03:16:06 (KST)
+Last Updated: 2026-11-18 10:59:40 (KST)
 
 > Purpose: Rules for courtyard facilities, unit deployment, currencies, rewards, and meta progression. | Parent: [design/README](README.md) | Related: [WallsAndSiege](WallsAndSiege.md), [OpenQuestions](OpenQuestions.md)
 
@@ -50,6 +50,13 @@ Each preparation phase gets a **time budget** shown as a clock. Physical work co
 - **Clock exhausted** (`12` hours used): clock actions and work progress stop; free actions continue.
 - **Unfinished work at battle start**: a piece under construction stands with HP equal to its progress (50% built = 50% HP) and blocks paths like a finished piece. It continues as a normal damaged piece and can be repaired in later preparations. Unfinished repairs keep the HP reached so far.
 - This replaces the open "construction delays" question (SIEGE-08); there is no separate construction delay during battle.
+- **Work order details** (user, 2026-11-18, SIEGE-08):
+  - *Not started at battle start*: a build order with `0%` progress disappears at battle start and its gold is refunded in full.
+  - *Stacking*: pieces can be stacked and cannons mounted **only on finished pieces**; an unfinished piece rejects anything on top.
+  - *Repair gold*: paid in full when the repair is ordered (`Repair All`, as before); at battle start the unfinished share is refunded (gold × remaining fraction, rounded down) and the HP reached so far is kept.
+  - *Unfinished cannon*: enters battle with HP equal to its progress but **cannot fire** (auto-fire and manning are off) until it is complete. It stays unfinished across battles; repairing it to full HP in a later preparation completes it.
+  - *Broken gate*: a repair order closes the gate only when the repair is finished; if it is still unfinished at battle start, the gate closes then with the HP reached so far.
+  - *Display*: a piece or cannon under construction is shown translucent with its progress (`40%`) above it, and the construction screen lists the work queue summary.
 
 ## Currencies, Items & Rewards
 

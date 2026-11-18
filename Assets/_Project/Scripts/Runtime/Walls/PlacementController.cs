@@ -35,6 +35,7 @@ namespace ProjectNeo.Walls
         public event System.Action<PlacedSiegeWeapon> WeaponMounted;
         public bool HasSelection => Selected != null || SelectedWeapon != null;
         public ConstructionWorld World => world;
+        public PlacementViewSettings ViewSettings => settings;
         public bool IsPreviewVisible => ghost != null && ghost.activeSelf;
         public bool StairNeedsConnection => Selected != null && Selected.Kind == BuildPieceKind.Stairs
             && !world.Layout.HasLanding(new BuildPlacement(0, Selected, PreviewCell, Rotation, false, PreviewLevel, PreviewElevation));
