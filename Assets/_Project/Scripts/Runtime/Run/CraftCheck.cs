@@ -10,5 +10,7 @@ namespace ProjectNeo.Run
         NotCraftable = 2,
         /// <summary>제작 비용이 모자란다.</summary>
         NotEnoughFunds = 3,
+        /// <summary>이번 준비에 남은 시간이 제작 시간보다 적다(PREP-06).</summary>
+        NotEnoughTime = 4,
     }
 }

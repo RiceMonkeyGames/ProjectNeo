@@ -103,6 +103,7 @@ namespace ProjectNeo.Run
             state.AddFacilities(config.Facilities);
             state.SetupShop(config.Economy);
             state.SetupEquipmentUpgrades(config.EquipmentUpgrades);
+            state.SetupPrepTime(config.PrepTime);
 
             foreach (RunSquadSetup setup in config.StartingSquads)
             {
@@ -527,6 +528,7 @@ namespace ProjectNeo.Run
             if (HasPendingBattle) return CraftCheck.BattlePending;
             if (!TryFindRecipe(item, isAvailable, out CraftingRecipe recipe)) return CraftCheck.NotCraftable;
             if (!Wallet.CanAfford(recipe.cost)) return CraftCheck.NotEnoughFunds;
+            if (!HasPrepTime(CraftHours)) return CraftCheck.NotEnoughTime;
             return CraftCheck.Ok;
         }
 
@@ -539,6 +541,7 @@ namespace ProjectNeo.Run
             if (CheckCraft(item, isAvailable) != CraftCheck.Ok) return null;
             TryFindRecipe(item, isAvailable, out CraftingRecipe recipe);
             if (!Wallet.TrySpend(recipe.cost)) return null;
+            TrySpendPrepTime(CraftHours);
             ItemInstance crafted = Inventory.Add(item);
             Changed?.Invoke();
             return crafted;
@@ -558,13 +561,16 @@ namespace ProjectNeo.Run
             if (HasPendingBattle) return EquipmentUpgradeCheck.BattlePending;
             if (EquipmentUpgrades == null) return EquipmentUpgradeCheck.NotConfigured;
             if (Smithy == null) return EquipmentUpgradeCheck.NoSmithy;
-            return EquipmentUpgrades.Check(item, Inventory, Wallet, Smithy.Level);
+            EquipmentUpgradeCheck check = EquipmentUpgrades.Check(item, Inventory, Wallet, Smithy.Level);
+            if (check == EquipmentUpgradeCheck.Allowed && !HasPrepTime(UpgradeHours)) return EquipmentUpgradeCheck.NotEnoughTime;
+            return check;
         }
 
         public bool TryUpgradeEquipment(ItemInstance item)
         {
             if (CheckUpgradeEquipment(item) != EquipmentUpgradeCheck.Allowed) return false;
             if (!EquipmentUpgrades.TryUpgrade(item, Inventory, Wallet, Smithy.Level)) return false;
+            TrySpendPrepTime(UpgradeHours);
             Changed?.Invoke();
             return true;
         }

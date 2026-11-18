@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d80df16d5e455b6448a26d7a4ca4ff03, type: 3}
+  m_Name: PrepTime
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Run.PrepTimeSettings
+  budgetHours: 12
+  craftHours: 1
+  upgradeHours: 1
+  waitHours: 1
+  scoutHours: 3

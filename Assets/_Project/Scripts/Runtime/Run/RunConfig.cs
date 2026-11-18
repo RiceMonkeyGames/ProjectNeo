@@ -21,8 +21,11 @@ namespace ProjectNeo.Run
         [Tooltip("상점 판매 비율 등 거래 수치. 비어 있으면 상점 거래를 쓰지 않는다.")]
         [SerializeField] EconomyConfig economy;
         [SerializeField] EquipmentUpgradeSettings equipmentUpgrades;
+        [Tooltip("준비 시간 수치(PREP-06, Q-53). 비어 있으면 준비 시간 제약을 쓰지 않는다.")]
+        [SerializeField] PrepTimeSettings prepTime;
 
         public SquadConfig SquadConfig => squadConfig;
+        public PrepTimeSettings PrepTime => prepTime;
         public IReadOnlyList<FacilityDefinition> Facilities => facilities;
         public EconomyConfig Economy => economy;
         public EquipmentUpgradeSettings EquipmentUpgrades => equipmentUpgrades;
@@ -63,6 +66,13 @@ namespace ProjectNeo.Run
         public RunConfig WithEquipmentUpgrades(EquipmentUpgradeSettings settings)
         {
             equipmentUpgrades = settings;
+            return this;
+        }
+
+        /// <summary>준비 시간 수치를 정한다(테스트용). 같은 설정을 돌려준다.</summary>
+        public RunConfig WithPrepTime(PrepTimeSettings settings)
+        {
+            prepTime = settings;
             return this;
         }
     }

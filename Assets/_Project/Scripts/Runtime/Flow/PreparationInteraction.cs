@@ -13,7 +13,16 @@ namespace ProjectNeo.Flow
         [SerializeField] CharacterActor player;
         [SerializeField] PreparationInteractionSettings settings;
         [SerializeField] GameBattleController battle;
-        InputAction interact, close, equipment, organization, startBattle, squadPlacement;
+        InputAction interact, close, equipment, organization, startBattle, squadPlacement, wait;
+        float waitElapsed;
+        bool holdingWait;
+        /// <summary>기다리기 키를 누르고 있는 진행률(0~1, PREP-06).</summary>
+        public float WaitProgress => Mathf.Clamp01(waitElapsed / settings.WaitHoldSeconds);
+        public string WaitKey => wait != null ? wait.GetBindingDisplayString() : string.Empty;
+        /// <summary>지금 1인칭 탐색에서 기다리기를 할 수 있는가. 준비 시간이 한 번 기다릴 만큼 남아 있어야 한다.</summary>
+        public bool CanWait => CanStartBattle && battle.RunLink.State != null && battle.RunLink.State.CanWait;
+        /// <summary>기다리기로 시계가 갔다(PREP-06).</summary>
+        public event System.Action Waited;
         public string PlacementKey => squadPlacement != null ? squadPlacement.GetBindingDisplayString() : string.Empty;
         float battleStartElapsed;
         bool holdingBattleStart;
@@ -46,21 +55,50 @@ namespace ProjectNeo.Flow
             squadPlacement = settings.SquadPlacement != null && settings.SquadPlacement.bindings.Count > 0
                 ? settings.SquadPlacement.Clone()
                 : new InputAction("OpenSquadPlacement", InputActionType.Button, "<Keyboard>/p");
+            // 예전 설정 에셋에 키가 비어 있어도 T로 기다린다.
+            wait = settings.Wait != null && settings.Wait.bindings.Count > 0
+                ? settings.Wait.Clone()
+                : new InputAction("WaitPrepTime", InputActionType.Button, "<Keyboard>/t");
         }
-        void OnEnable() { interact.Enable(); close.Enable(); equipment?.Enable(); organization?.Enable(); startBattle.Enable(); squadPlacement?.Enable(); }
+        void OnEnable()
+        {
+            interact.Enable(); close.Enable(); equipment?.Enable(); organization?.Enable(); startBattle.Enable(); squadPlacement?.Enable();
+            wait?.Enable();
+        }
         void OnDisable()
         {
             interact?.Disable(); close?.Disable(); equipment?.Disable(); organization?.Disable(); startBattle?.Disable();
-            squadPlacement?.Disable();
-            Target = null; CancelBattleStart();
+            squadPlacement?.Disable(); wait?.Disable();
+            Target = null; CancelBattleStart(); CancelWait();
         }
         void OnDestroy()
         {
             interact?.Dispose(); close?.Dispose(); equipment?.Dispose(); organization?.Dispose(); startBattle?.Dispose();
-            squadPlacement?.Dispose();
+            squadPlacement?.Dispose(); wait?.Dispose();
         }
 
         void CancelBattleStart() { holdingBattleStart = false; battleStartElapsed = 0f; }
+        void CancelWait() { holdingWait = false; waitElapsed = 0f; }
+
+        void UpdateWait()
+        {
+            if (wait == null || !CanWait || !wait.IsPressed()) { CancelWait(); return; }
+            // 모달·포커스 잃음·한 번 기다린 뒤에도 누르고 있던 키는 떼었다 다시 눌러야 한다.
+            if (wait.WasPressedThisFrame()) holdingWait = true;
+            if (!holdingWait) return;
+            waitElapsed += Time.unscaledDeltaTime;
+            if (waitElapsed < settings.WaitHoldSeconds) return;
+            CancelWait();
+            if (battle.RunLink.State.TryWait()) Waited?.Invoke();
+        }
+
+        /// <summary>테스트·자동 조작용: 키 없이 기다리기 한 번. 할 수 없으면 false.</summary>
+        public bool TryWait()
+        {
+            if (!CanWait || !battle.RunLink.State.TryWait()) return false;
+            Waited?.Invoke();
+            return true;
+        }
 
         void UpdateBattleStart()
         {
@@ -74,7 +112,7 @@ namespace ProjectNeo.Flow
             battle.TryStartBattle();
         }
 
-        void OnApplicationFocus(bool focused) { if (!focused) CancelBattleStart(); }
+        void OnApplicationFocus(bool focused) { if (!focused) { CancelBattleStart(); CancelWait(); } }
 
         public void RefreshTarget()
         {
@@ -101,34 +139,34 @@ namespace ProjectNeo.Flow
         {
             if (phaseView.IsBuildView)
             {
-                CancelBattleStart();
+                CancelBattleStart(); CancelWait();
                 Target = null;
                 if (close.WasPressedThisFrame()) phaseView.ExitConstruction();
                 return;
             }
             if (phaseView.IsPanelView)
             {
-                CancelBattleStart();
+                CancelBattleStart(); CancelWait();
                 Target = null;
                 if (close.WasPressedThisFrame()) phaseView.ExitPanel();
                 return;
             }
             if (phaseView.IsPlacementView)
             {
-                CancelBattleStart();
+                CancelBattleStart(); CancelWait();
                 Target = null;
                 if (close.WasPressedThisFrame() || squadPlacement.WasPressedThisFrame()) phaseView.ExitPlacement();
                 return;
             }
             RefreshTarget();
-            if (interact.WasPressedThisFrame()) { CancelBattleStart(); TryInteract(); }
+            if (interact.WasPressedThisFrame()) { CancelBattleStart(); CancelWait(); TryInteract(); }
             else if (phaseView.IsExplorationView && squadPlacement.WasPressedThisFrame())
-            { CancelBattleStart(); phaseView.EnterPlacement(); }
+            { CancelBattleStart(); CancelWait(); phaseView.EnterPlacement(); }
             else if (phaseView.IsExplorationView && equipment != null && equipment.WasPressedThisFrame())
-            { CancelBattleStart(); EquipmentRequested?.Invoke(); }
+            { CancelBattleStart(); CancelWait(); EquipmentRequested?.Invoke(); }
             else if (phaseView.IsExplorationView && organization != null && organization.WasPressedThisFrame())
-            { CancelBattleStart(); OrganizationRequested?.Invoke(); }
-            else UpdateBattleStart();
+            { CancelBattleStart(); CancelWait(); OrganizationRequested?.Invoke(); }
+            else { UpdateBattleStart(); UpdateWait(); }
         }
     }
 }
