@@ -181,6 +181,12 @@ namespace ProjectNeo.Flow
                 // 시작 재화는 첫 저장 전에 정해져야 한다. 되살린 런에는 다시 주지 않는다(FLOW-02).
                 var build = GetComponent<GameBuildEconomy>();
                 if (build != null && RunLink.State != null) build.OnRunReady(RunLink.WasRestored);
+                // 준비 시계는 저장 전에 이번 준비 예산으로 채운다. 되살린 런은 저장된 시계를 그대로 쓴다(PREP-06).
+                if (build != null && build.StartConfig != null && RunLink.State != null)
+                {
+                    RunLink.State.SetupPrepTime(build.StartConfig.PrepTime);
+                    RunLink.State.BeginPreparationClockIfNeeded();
+                }
                 foreach (SiegeLadder ladder in ladders) { ladder.ResetBattle(); ladder.enabled = false; }
                 SetCannonsArmed(false);
                 StartCoroutine(RestoreWhenReady());

@@ -1,6 +1,6 @@
 # Game Design: Preparation, Economy, Rewards & Meta
 
-Last Updated: 2026-11-18 02:52:45 (KST)
+Last Updated: 2026-11-18 03:16:06 (KST)
 
 > Purpose: Rules for courtyard facilities, unit deployment, currencies, rewards, and meta progression. | Parent: [design/README](README.md) | Related: [WallsAndSiege](WallsAndSiege.md), [OpenQuestions](OpenQuestions.md)
 
@@ -42,7 +42,8 @@ Each preparation phase gets a **time budget** shown as a clock. Physical work co
 - **What advances the clock** (thinking time is unlimited; the clock never runs on its own):
   - Crafting or upgrading one item at the blacksmith: `1` hour.
   - Scouting (see [Wave Preview](MoraleAndWave.md#wave-preview)): `3` hours.
-  - **Wait**: `1` hour per use, so ordered work can progress.
+  - **Wait**: `1` hour per use, so ordered work can progress. Input (user, 2026-11-18, PREP-06): in first-person exploration hold `T` for `1` second (progress shown like the `B` battle hold); each wait needs a fresh press.
+- **Clock display** (user, 2026-11-18, PREP-06): one line at the top center (`Prep time 11h left / 12h`, `- out of time` when exhausted), visible in every preparation view and above facility/equipment windows; hidden in battle, reward and result screens, and while the nearly full-screen squad organization window is open. Actions that cost time show their hours (`· 1h`) and refuse with `Not enough time.` without spending anything.
 - **Free actions** (no clock cost, still allowed after the clock runs out): shop buy/sell/re-roll/lock, tavern hiring, barracks recruiting, facility upgrades, equipment, squad organization, squad placement, placing work orders. Battle still starts only when the player holds `B` (FLOW-01).
 - **Work orders (construction and repair)**: Placing a piece or ordering a repair costs gold as today but no clock time; it becomes a work order. A **work crew** builds it while the clock advances. `2` crews work at once on orders in placement order; each wall, stair or weapon piece needs `1` hour of work; repairing a piece needs its missing-HP fraction of `1` hour (a destroyed piece = `1` hour). Increasing the crew count through upgrades is a later idea, not part of this rule.
 - **Demolishing**: still free; demolishing a piece still under construction refunds its full cost.

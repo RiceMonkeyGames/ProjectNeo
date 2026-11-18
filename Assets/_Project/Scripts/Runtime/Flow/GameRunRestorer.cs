@@ -68,6 +68,7 @@ namespace ProjectNeo.Flow
                 SquadConfig = squads.Config,
                 Economy = startConfig != null ? startConfig.Economy : null,
                 EquipmentUpgrades = startConfig != null ? startConfig.EquipmentUpgrades : null,
+                PrepTime = startConfig != null ? startConfig.PrepTime : null,
                 // 씬 유닛의 캐릭터를 런 영웅과 공유해야 런에서 바꾼 장비가 씬 스탯에 바로 반영된다(D-7).
                 CharacterFor = (record, definition) =>
                     actors.TryGetValue(record.unitId, out CharacterActor actor) && actor != null ? actor.Character : null,

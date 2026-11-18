@@ -16,6 +16,8 @@ namespace ProjectNeo.Run
         /// <summary>상점 거래 수치. 없으면 상점 매물을 되살리지 않는다.</summary>
         public EconomyConfig Economy;
         public EquipmentUpgradeSettings EquipmentUpgrades;
+        /// <summary>준비 시간 수치(PREP-06). 없으면 저장된 시계를 되살리지 않고 시간 제약도 쓰지 않는다.</summary>
+        public PrepTimeSettings PrepTime;
         /// <summary>
         /// 살아 있는 영웅이 쓸 캐릭터. 씬 유닛의 캐릭터를 넘기면 런에서 바꾼 장비가 씬 스탯에 바로 반영된다(D-7).
         /// 비우거나 null을 돌려주면 새 캐릭터를 만든다.
@@ -63,6 +65,10 @@ namespace ProjectNeo.Run
 
             foreach (FacilityState facility in facilities)
                 snapshot.facilities.Add(new FacilityRecord { type = (int)facility.Definition.Type, level = facility.Level });
+
+            snapshot.prepTime.preparation = ClockPreparation;
+            snapshot.prepTime.budget = Clock.Budget;
+            snapshot.prepTime.used = Clock.Used;
 
             snapshot.shop.stockedFor = ShopStockedFor;
             snapshot.shop.stockedLevel = ShopStockedLevel;
@@ -205,6 +211,8 @@ namespace ProjectNeo.Run
 
             var state = new RunState(options.SquadConfig, snapshot.seed);
             state.SetupEquipmentUpgrades(options.EquipmentUpgrades);
+            state.SetupPrepTime(options.PrepTime);
+            state.RestorePrepClock(snapshot.prepTime);
             if (snapshot.gold > 0) state.Wallet.AddGold(snapshot.gold);
             foreach (MaterialRecord material in snapshot.materials ?? new List<MaterialRecord>())
                 if (material.amount > 0) state.Wallet.AddMaterial(content.Material(material.id), material.amount);

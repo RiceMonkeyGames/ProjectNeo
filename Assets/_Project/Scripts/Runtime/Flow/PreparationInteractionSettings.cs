@@ -18,6 +18,11 @@ namespace ProjectNeo.Flow
         [SerializeField] InputAction squadPlacement = new InputAction("OpenSquadPlacement", InputActionType.Button, "<Keyboard>/p");
         public InputAction SquadPlacement => squadPlacement;
         [SerializeField, Min(0.1f)] float battleStartHoldSeconds = 1f;
+        [Tooltip("준비 중 1인칭 탐색에서 누르고 있으면 준비 시간을 한 번 기다리는 키(PREP-06).")]
+        [SerializeField] InputAction wait = new InputAction("WaitPrepTime", InputActionType.Button, "<Keyboard>/t");
+        [SerializeField, Min(0.1f)] float waitHoldSeconds = 1f;
+        public InputAction Wait => wait;
+        public float WaitHoldSeconds => Mathf.Max(0.1f, waitHoldSeconds);
         public float Distance => distance;
         public InputAction Interact => interact;
         public InputAction Close => close;

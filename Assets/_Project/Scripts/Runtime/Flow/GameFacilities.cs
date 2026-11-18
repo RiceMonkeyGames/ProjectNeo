@@ -134,6 +134,7 @@ namespace ProjectNeo.Flow
             state.AddFacilities(startConfig.Facilities);
             state.SetupShop(startConfig.Economy);
             state.SetupEquipmentUpgrades(startConfig.EquipmentUpgrades);
+            state.SetupPrepTime(startConfig.PrepTime);
             return state;
         }
 
@@ -398,6 +399,7 @@ namespace ProjectNeo.Flow
             EquipmentUpgradeCheck.MissingCostData => "Upgrade material data is missing for this level.",
             EquipmentUpgradeCheck.NotConfigured => "Upgrade settings are missing.",
             EquipmentUpgradeCheck.BattlePending => "Cannot upgrade during battle.",
+            EquipmentUpgradeCheck.NotEnoughTime => "Not enough time.",
             _ => "This equipment cannot be upgraded.",
         };
 
@@ -414,6 +416,7 @@ namespace ProjectNeo.Flow
             CraftCheck.BattlePending => "Cannot craft during battle.",
             CraftCheck.NotCraftable => "Cannot craft at this smithy level.",
             CraftCheck.NotEnoughFunds => "Not enough funds.",
+            CraftCheck.NotEnoughTime => "Not enough time.",
             _ => "Could not craft.",
         };
 
@@ -559,7 +562,8 @@ namespace ProjectNeo.Flow
             for (int i = 0; i < recipes.Count; i++)
             {
                 int index = i;
-                AddRow(offerList, $"{recipes[i].item.DisplayName} · {Describe(recipes[i].cost)}", () => TryCraft(index));
+                AddRow(offerList, $"{recipes[i].item.DisplayName} · {Describe(recipes[i].cost)}{TimeTag(state, state.PrepTime?.CraftHours ?? 0f)}",
+                    () => TryCraft(index));
             }
             List<ItemInstance> equipment = EquipmentIn(state.Inventory);
             if (equipment.Count == 0) AddRow(inventoryList, "No equipment to sell.", null);
@@ -570,9 +574,11 @@ namespace ProjectNeo.Flow
                 EquipmentUpgradeCheck check = state.CheckUpgradeEquipment(item);
                 string detail = check == EquipmentUpgradeCheck.MaximumLevel ? $"Max +{state.MaxEquipmentUpgrade}"
                     : state.EquipmentUpgrades != null && state.EquipmentUpgrades.TryGetNextCost(item, out Cost cost)
-                        ? $"+{item.UpgradeLevel + 1} upgrade - {Describe(cost)}" : UpgradeReason(check);
+                        ? $"+{item.UpgradeLevel + 1} upgrade - {Describe(cost)}{TimeTag(state, state.PrepTime?.UpgradeHours ?? 0f)}"
+                        : UpgradeReason(check);
                 Button row = AddRow(inventoryList, $"{item.DisplayName}\n{detail}",
                     check == EquipmentUpgradeCheck.Allowed || check == EquipmentUpgradeCheck.NotEnoughFunds
+                        || check == EquipmentUpgradeCheck.NotEnoughTime
                         ? () => TryUpgradeEquipment(index) : null);
                 if (row == null) continue;
                 row.name = "Button_UpgradeEquipment";
@@ -583,6 +589,10 @@ namespace ProjectNeo.Flow
             }
             if (equipment.Count > MaxInventoryRows) AddRow(inventoryList, $"{equipment.Count - MaxInventoryRows} more", null);
         }
+
+        /// <summary>준비 시간을 쓰는 행동의 시간 표시(PREP-06). 시간 설정이 없거나 0시간이면 비운다.</summary>
+        static string TimeTag(RunState state, float hours) =>
+            state?.PrepTime != null && hours > 0f ? $" · {hours:0.#}h" : string.Empty;
 
         string DescribeSmithy(FacilityState facility)
         {

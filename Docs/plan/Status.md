@@ -1,6 +1,6 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-18 01:55:15 (KST)
+Last Updated: 2026-11-18 10:31:28 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
@@ -17,6 +17,8 @@ Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elev
 Done on user authorization (2026-11-17), feature/ui-03: bottom-right health bar and current/maximum HP, as selected by the user. Real Game scene integration, damage/healing/max-HP/death/stage-transition tests and API-driven layout inspection completed; full compile/EditMode 467/467/PlayMode 226/226 passed. User authorized develop merge and branch cleanup; physical-input and standalone verification remain unclaimed. [History](../history/UI/UI-03.md).
 
 ## Implemented vs Pending Real Connections
+
+**PREP-06 (Done on user confirmation, 2026-11-18; `feature/prep-06`, develop merge pending)**: Q-53 preparation clock: 12h budget per preparation from `Data/GameFlow/PrepTime.asset`, refilled once per preparation and saved with the run; blacksmith craft/upgrade cost 1h and refuse with `Not enough time.`; hold `T` 1s to wait 1h; top-center clock line (hidden in battle and over the organization window). Compile, EditMode **476/476** and PlayMode **232/232** passed; the user confirmed manual play; standalone build unverified. SIEGE-08 work orders and the C-5 scouting cost build on this clock. [History/manual checks](../history/PREP/PREP-06.md).
 
 **B-9.3 (Done on user confirmation, 2026-11-18; `feature/b-9.3`, merged into develop)**: B-7.2 closed by user decision (cleanup absorbed here; enemy squad linking and corpse explosion dropped). New `GameStageLoopPlayTests` plays the real stages 1→2→3 back to back and found no state leaking into the next preparation and one payout per victory; no runtime changes. Compile, EditMode **471/471** and PlayMode **231/231** passed; Windows build boots with 0 errors. The user confirmed manual 3-stage Editor play; standalone gameplay not played by the agent. [History/manual checks](../history/B/B-9.3.md).
 

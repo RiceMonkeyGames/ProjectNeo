@@ -150,6 +150,12 @@ namespace ProjectNeo.UI
                     ? $"Hold {interaction.BattleStartKey} - Start battle"
                     : "Preparing battlefield";
                 if (interaction.BattleStartProgress > 0f) startHint += $" · {Mathf.FloorToInt(interaction.BattleStartProgress * 100f)}%";
+                // 준비 시간(PREP-06): 기다릴 시간이 남아 있으면 같은 줄에 기다리기 키를 붙인다.
+                if (interaction.CanWait)
+                {
+                    startHint += $" - Hold {interaction.WaitKey} - Wait {battle.RunLink.State.PrepTime.WaitHours:0.#}h";
+                    if (interaction.WaitProgress > 0f) startHint += $" · {Mathf.FloorToInt(interaction.WaitProgress * 100f)}%";
+                }
                 interactionHint.text += "\n" + startHint;
                 string squadHint = PreparationSquadHint();
                 if (squadHint.Length > 0) interactionHint.text += "\n" + squadHint;

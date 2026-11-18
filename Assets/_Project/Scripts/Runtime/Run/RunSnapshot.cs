@@ -30,6 +30,17 @@ namespace ProjectNeo.Run
         public ShopRecord shop = new ShopRecord();
         public TavernRecord tavern = new TavernRecord();
         public CastleRecord castle = new CastleRecord();
+        /// <summary>준비 시계(PREP-06). 예전 저장에는 없어서 기본값(-1)이면 다음 준비에서 예산을 새로 채운다.</summary>
+        public PrepTimeRecord prepTime = new PrepTimeRecord();
+    }
+
+    [Serializable]
+    public sealed class PrepTimeRecord
+    {
+        /// <summary>시계를 시작한 준비 번호. -1이면 아직 시작하지 않았다.</summary>
+        public int preparation = -1;
+        public float budget;
+        public float used;
     }
 
     [Serializable]

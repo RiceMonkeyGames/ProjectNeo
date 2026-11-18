@@ -37,6 +37,7 @@ namespace ProjectNeo.Flow
         public string Message { get; private set; } = string.Empty;
         public BuildEconomy Economy => EnsureEconomy();
         public BuildCostTable Table => table;
+        public RunConfig StartConfig => startConfig;
 
         public void Configure(BuildCostTable costs, RunConfig start, ConstructionWorld castle, PlacementController controller,
             GamePhaseView view, Camera buildCamera, TMP_Text economyLabel)
