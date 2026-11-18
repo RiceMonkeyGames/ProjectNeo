@@ -244,6 +244,8 @@ namespace ProjectNeo.Run
             {
                 var character = new Character(content.Hero(record.id));
                 state.Equip(character, record, content, options);
+                // PREP-08 이전 저장에는 죽은 영웅이 장비를 낀 채 남아 있다. Q-31에 따라 보관함으로 돌려놓는다.
+                state.ReturnEquipment(character);
                 // 영구 사망한 영웅은 런 유닛 목록에 없다. 번호는 0만 아니면 된다.
                 state.fallenHeroes.Add(new RunHero(Math.Max(1, record.unitId), character, false));
                 highestId = Math.Max(highestId, record.unitId);

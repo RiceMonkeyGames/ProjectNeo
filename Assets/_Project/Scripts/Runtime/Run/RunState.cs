@@ -745,6 +745,7 @@ namespace ProjectNeo.Run
         /// <summary>
         /// 전투 결과를 반영한다. 반영할 수 없으면 아무것도 바꾸지 않고 이유를 돌려준다. 같은 결과는 한 번만 반영된다.
         /// 죽은 잡졸은 런에서 사라지고, 죽은 영웅은 영구 사망 목록으로 옮겨 부대장에서 빠진다. 도망친 유닛은 남는다.
+        /// 죽은 영웅이 끼고 있던 장비는 강화 단계 그대로 보관함으로 돌아온다(Q-31, PREP-08).
         /// </summary>
         public BattleResultIssue Apply(BattleResult result)
         {
@@ -766,6 +767,7 @@ namespace ProjectNeo.Run
                     foreach (Squad<RunUnit> squad in Army.Squads)
                         if (squad.Leader == hero) squad.Leader = null;
                     heroes.Remove(hero);
+                    ReturnEquipment(hero.Character);
                     fallenHeroes.Add(hero);
                 }
             }
@@ -795,6 +797,13 @@ namespace ProjectNeo.Run
             }
             if (removed.Count > 0) Changed?.Invoke();
             return removed;
+        }
+
+        /// <summary>캐릭터가 끼고 있는 장비를 모두 벗겨 런 보관함에 넣는다(Q-31). 강화 단계는 아이템에 남는다.</summary>
+        void ReturnEquipment(Character character)
+        {
+            for (int i = character.Equipment.Count - 1; i >= 0; i--)
+                character.TryUnequip(character.Equipment[i], Inventory);
         }
 
         bool Owns(Squad<RunUnit> squad)
