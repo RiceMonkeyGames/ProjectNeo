@@ -1,11 +1,12 @@
 # Completed Backlog Archive (Done)
 
-Last Updated: 2026-11-19 01:06:00 (KST)
+Last Updated: 2026-11-19 01:11:10 (KST)
 
 > Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
 | Task ID | Description | Assignee | Outcome & History Link |
 |---|---|---|---|
+| PREP-08 | Return Fallen Hero Gear to Stash | 신용준 | Done 2026-11-19 on user confirmation after manual check; branch `feature/prep-08`. Q-31: a dead hero's equipped gear returns to the run stash with its upgrade level (`RunState.Apply`), and older saves with gear on fallen heroes are moved the same way on `Restore`; no save format or UI change. Compile, EditMode 492/492, PlayMode 238/238 passed; standalone build unverified. [History](../history/PREP/PREP-08.md) |
 | Q-31 | Team Decision: Hero Gear on Permadeath | 신용준 | Done 2026-11-19 on user decision: fallen hero gear returns to the run stash (upgrade levels kept) for reuse by the player or another hero. Implementation registered as PREP-08. Doc-only. [History](../history/Q/Q-31.md) |
 | Q-32 | Team Decision: Player as Squad Captain | 신용준 | Done 2026-11-19 on user decision: the player cannot be a squad captain (finalizes the 2026-11-13 interim); no code change. Doc-only. [History](../history/Q/Q-32.md) |
 | C-5 | Wave Preview & Hidden Enemy Intel | 신용준 | Done 2026-11-18 on user confirmation after manual check; branch `feature/c-5`. Enemy list: `V` window in preparation, always shown in battle with live remaining counts, hidden groups `? × N` revealed when their wave is released; Stage02 Gate Breaker × 2 hidden; scouting action deferred to PREP-07. EditMode 487, PlayMode 233. [History](../history/C/C-5.md) |

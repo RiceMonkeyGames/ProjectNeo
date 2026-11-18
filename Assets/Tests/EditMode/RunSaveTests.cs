@@ -174,6 +174,29 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
+        public void OldSaveWithEquippedFallenHero_RestoresTheGearToTheStash()
+        {
+            // PREP-08 이전 저장: 죽은 영웅이 강화한 장비를 낀 채 기록돼 있다(Q-31 이전 동작).
+            RunState run = RichRun();
+            RunSnapshot saved = run.Capture(1, content);
+            HeroRecord player = saved.heroes.First(hero => hero.isPlayer);
+            saved.fallenHeroes.Add(new HeroRecord
+            {
+                unitId = 999, id = player.id, isPlayer = false, equipment = new List<ItemRecord>(player.equipment),
+            });
+
+            RunState restored = RunState.Restore(saved, content, options, out string error);
+            Assert.IsNotNull(restored, error);
+            Assert.AreEqual(1, restored.FallenHeroes.Count);
+            CollectionAssert.IsEmpty(restored.FallenHeroes[0].Character.Equipment, "the fallen hero no longer holds gear");
+            Assert.AreEqual(3, restored.Inventory.Items.Count, "the fallen hero's gear joins the two stash items");
+            Assert.IsTrue(restored.Inventory.Items.Any(item => item.Definition == sword && item.UpgradeLevel == 1),
+                "returned gear keeps its upgrade level");
+            Assert.AreEqual(1, restored.Player.Character.Equipment.Count, "living heroes keep their gear");
+            CollectionAssert.IsEmpty(restored.Capture(1, content).fallenHeroes[0].equipment, "the next save records the move");
+        }
+
+        [Test]
         public void RestoredRun_ContinuesUnitNumbers_AndKeepsThisPreparationsShop()
         {
             RunState run = RichRun();

@@ -181,7 +181,7 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
-        public void 죽은_영웅은_장비를_가진_채_영구_사망_목록으로_가고_부대장에서_빠진다()
+        public void 죽은_영웅은_영구_사망_목록으로_가고_부대장에서_빠지며_장비는_보관함으로_돌아온다()
         {
             RunState run = NewRun();
             RunHero hero = run.AddHero(HeroDefinition.Create("knight"));
@@ -198,7 +198,11 @@ namespace ProjectNeo.Tests
             CollectionAssert.DoesNotContain(run.Heroes, hero);
             CollectionAssert.Contains(run.FallenHeroes, hero);
             Assert.IsNull(run.Army.Squads[0].Leader);
-            CollectionAssert.Contains(hero.Character.Equipment, sword);
+            CollectionAssert.IsEmpty(hero.Character.Equipment, "Q-31: 죽은 영웅은 장비를 들고 가지 않는다.");
+            CollectionAssert.Contains(run.Inventory.Items, sword, "Q-31: 장비는 보관함으로 돌아와 다시 낄 수 있다.");
+
+            RunHero other = run.AddHero(HeroDefinition.Create("archer"));
+            Assert.IsTrue(run.TryEquip(other, sword), "돌아온 장비는 다른 영웅이 낄 수 있다.");
         }
 
         [Test]
