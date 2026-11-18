@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-18 11:39:03 (KST)
+Last Updated: 2026-11-18 13:18:25 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -18,7 +18,7 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 
 | Task ID | Description | Status | Assignee | Completion Criteria & Prerequisites |
 |---|---|---|---|---|
-| PREP-07 | Scouting Action (Reveal Hidden Enemies) | Waiting | Unassigned | Registered 2026-11-18 as the C-5 follow-up (user deferred scouting from C-5). One scout spends `PrepTimeSettings.ScoutHours` (3h) via `RunState.TrySpendPrepTime` and calls `EnemyIntel.RevealAll` on `GameBattleController.Intel`; offered only while `EnemyIntel.AnyHidden`, refused with `Not enough time.` when short. Open before start: input/location of the action (user decision) and whether the revealed state must survive a run save/continue. Rules: [MoraleAndWave](design/MoraleAndWave.md#wave-preview). |
+| PREP-07 | Scouting Action (Reveal Hidden Enemies) | Pending Decision | Unassigned | Registered 2026-11-18 as the C-5 follow-up (user deferred scouting from C-5). Deferred 2026-11-18: blocked until an in-game current-time (clock) concept is decided; only the prep-hour budget exists today. One scout spends `PrepTimeSettings.ScoutHours` (3h) via `RunState.TrySpendPrepTime` and calls `EnemyIntel.RevealAll` on `GameBattleController.Intel`; offered only while `EnemyIntel.AnyHidden`, refused with `Not enough time.` when short. Open before start: input/location of the action (user decision) and whether the revealed state must survive a run save/continue. Rules: [MoraleAndWave](design/MoraleAndWave.md#wave-preview). |
 | META-02 | Runtime Perk Injection & Reward Routing | Pending Decision | Unassigned | Registered 2026-11-16: apply perk payloads to real run/battle stats and route victory unlock points. Blocked by Q-06 (perk allocation timing/pause) and Q-07 (unlock point distribution timing). |
 | COMBAT-06 | Minimal Hero/Active Skill Execution | Pending Decision | Unassigned | Registered 2026-11-16: skills exist as identifiers only. Blocked by Q-12 (skill rules, cooldowns, targeting, perk effects). Shared combat core edits need teammate coordination. |
 
