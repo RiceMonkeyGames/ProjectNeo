@@ -1,6 +1,6 @@
 # Game Design: Morale, Rout & Wave Preview
 
-Last Updated: 2026-11-19 20:47:14 (KST)
+Last Updated: 2026-11-19 21:09:01 (KST)
 
 > Purpose: Ally Breaking Point morale, enemy morale, rout/exit accounting, and wave preview rules. | Parent: [design/README](README.md) | Related: [Combat](Combat.md), [OpenQuestions](OpenQuestions.md)
 
@@ -58,7 +58,7 @@ Stages stay fixed per run (the same stage number always brings the same waves), 
 | Run length | **7 stages** in a fixed order, target 40-50 minutes per run (Q-67, 2026-11-19); the count stays data-driven. Interim data still holds 3 stages until CONTENT-01. |
 | Waves per battle | Each battle has **2–3 waves**; each wave starts at a **fixed time** after the battle starts (timetable in data), not on kill count. |
 | Spawn locations | **Several fixed points inside the northern field** (e.g. left / center / right); each wave entry names its point. No east/west approaches for now. |
-| Bosses | **One boss per stage**, appearing in the stage's last wave (Q-68, 2026-11-19); roles, stats and rewards in Q-74 (SIEGE-09). Interim data has no bosses. |
+| Bosses | **One boss per stage**, appearing in the stage's last wave (Q-68). Design (Q-74, 2026-11-19): Seven different bosses, one per stage. Roles to cover: siege (walls/gate), duelist (hunts the player and heroes), commander (buffs nearby enemies; killing it weakens the wave) and artillery (long-range fire at wall tops). Special rule: a dedicated boss health bar only (no extra stagger resistance or morale effects). Reward: extra gold and materials. M2 ships placeholder bosses built from scaled-up existing enemies; real bosses come in M4. Interim data has no bosses until SIEGE-09. |
 | Victory | Victory only after **every wave has spawned** and every enemy is dead or retreated (Q-30). No survive-timer victory. |
 | Difficulty | **Hand-authored composition per stage**; no automatic stage multiplier. |
 | Data format | One stage data asset per stage holding a wave list; each entry gives enemy prefab, count, start time, and spawn point. Enemy types reference the **existing enemy prefabs** (no separate enemy definition asset yet). Teammate (enemy domain owner) review is pending before B-7.1 implementation. |
@@ -74,7 +74,7 @@ The user asked for a format that stays decoupled and easy to change, and started
 | Wave start | **Fixed timetable kept** (Q-51). An empty field does not pull the next wave forward. The start condition is a replaceable rule so this can change later without touching the spawner. |
 | Retreat while waves remain | **Settings switch**, default **off**: enemies that lost their siege means (Q-30) do not retreat while a wave is still to come and fight on with the next wave. With the switch on, each wave is judged on its own as before. |
 | Victory | Unchanged from Q-51: every wave released and every enemy dead or retreated. Enemies not yet released count as pending and block victory. |
-| Stage beyond the catalog | After the last stage the run continues into a **harder loop** (Q-69, 2026-11-19; rules Q-75, FLOW-03). Interim: the last stage repeats until FLOW-03. |
+| Stage beyond the catalog | After the last stage the run continues into a **harder loop** (Q-69). Rules (Q-75, 2026-11-19): After the last stage an ending screen offers Continue (harder) or End run. Loops replay the same 7 stages, without a loop limit. Each loop raises enemy HP/attack by a data percentage and adds loop modifiers (e.g. faster enemies); rewards grow each loop. Values and the modifier list are proposed with FLOW-03. Interim: the last stage repeats until FLOW-03. |
 | Pause / restart | Battle time advances only while the battle is running; each wave is released exactly once per battle and the timetable resets with every battle. |
 
 Data shape (assets under `Data/GameFlow/Stages/`):

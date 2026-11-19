@@ -1,6 +1,6 @@
 # Game Design: Combat, Units & Win/Loss
 
-Last Updated: 2026-11-19 20:43:38 (KST)
+Last Updated: 2026-11-19 21:09:01 (KST)
 
 > Purpose: Rules for perspective, squad commands, damage, unit lifecycles, and battle outcomes. | Parent: [design/README](README.md) | Related: [WallsAndSiege](WallsAndSiege.md), [MoraleAndWave](MoraleAndWave.md)
 
@@ -68,7 +68,7 @@ Team decisions 2026-11-19 (Q-62~Q-65); implementation COMBAT-06.
 - **Targeting** (Q-63): a data-driven target mode per skill, built to be extended (initial modes: self, aimed point/area, target unit, squad).
 - **Cost** (Q-64): cooldown only, no mana, stamina or charges. Every skill is ready when a battle starts.
 - **Effects** (Q-65): an extensible effect design supporting area damage, buff/debuff, heal, morale gain (COMBAT-07 gain rules) and stagger (COMBAT-04 poise) at a basic level; sample skills are proposed with COMBAT-06.
-- **Acquisition** (Q-66 partial): new player skills come from perk points earned on Commander level-up; heroes have no perks. Perk direction: Q-72.
+- **Acquisition** (Q-66, Q-72, Q-73, 2026-11-19): player skills are learned through skill entries in the Combat perk tree; they reset with the perk allocation when a run ends, and when the player knows more than 3, three are equipped during preparation. Each hero has 3 fixed skills in its data; each grade opens the next one.
 
 ## Win/Loss Conditions
 

@@ -1,6 +1,6 @@
 # Game Design Overview
 
-Last Updated: 2026-11-19 20:47:14 (KST)
+Last Updated: 2026-11-19 21:09:01 (KST)
 
 > Purpose: Ground-truth game design index, core loop, run structure, and art direction. | Parent: [INDEX](../INDEX.md) | Related: [Combat](Combat.md), [PrepEconomyMeta](PrepEconomyMeta.md), [Backlog](../Backlog.md)
 
@@ -20,7 +20,7 @@ A siege defense roguelike where players prepare heroes, minions, weapons, and ca
 
 - **Run loop**: Preparation → Wave Preview → Battle → Random Rewards → Next Stage Preparation. Castle wall HP carries over to the next battle.
 - **Defeat**: Ends the run. Active perks reset and a new run begins (no reincarnation bonus, Q-71, 2026-11-19).
-- **Clear**: Clearing all stages triggers the ending (confirmed 2026-11-11). Team decisions 2026-11-19: 7 stages in a fixed order (Q-67), one boss per stage in the last wave (Q-68), and after the last stage the run continues into a harder loop (Q-69; rules Q-75). The interim 3 stages without bosses (Q-51) stay until CONTENT-01 and SIEGE-09 land; see [MoraleAndWave](MoraleAndWave.md).
+- **Clear**: Clearing all stages triggers the ending (confirmed 2026-11-11). Team decisions 2026-11-19: 7 stages in a fixed order (Q-67), one boss per stage in the last wave (Q-68), and after the last stage the run continues into a harder loop (Q-69; Q-75: an ending screen offers Continue or End run, unlimited loops of the same 7 stages with stat increases and loop modifiers). The interim 3 stages without bosses (Q-51) stay until CONTENT-01 and SIEGE-09 land; see [MoraleAndWave](MoraleAndWave.md).
 - **Scene layout** (confirmed 2026-11-11): `Title` scene and `Game` scene. All phases transition inside the single castle `Game` scene without reloading; facilities open as pop-up windows.
 
 ## Run Structure
