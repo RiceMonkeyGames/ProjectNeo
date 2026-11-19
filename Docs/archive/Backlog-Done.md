@@ -1,12 +1,12 @@
 # Completed Backlog Archive (Done)
 
-Last Updated: 2026-11-19 20:47:14 (KST)
+Last Updated: 2026-11-19 20:52:33 (KST)
 
 > Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
 | Task ID | Description | Assignee | Outcome & History Link |
 |---|---|---|---|
-| Q-07 | Team Decision: Unlock Point Timing & Gacha UI | Hwang Seong-min | Done 2026-11-19 in the team meeting: Unlock points are spent between runs on the Title/meta screen, where the gacha UI lives; duplicate protection plus a guaranteed higher-grade unlock every N pulls (N is a data value set with META-02). Doc-only. [History](../history/Q/Q-07.md) |
+| Q-07 | Team Decision: Unlock Point Timing & Gacha UI | Hwang Seong-min | Done 2026-11-19 in the team meeting: Unlock points are spent between runs on the Title/meta screen, where the gacha UI lives; duplicate protection plus a guaranteed higher-grade unlock every N pulls (N is a data value set with META-02). Superseded the same day by Q-76 (Darkest Dungeon 2-style unlock tracks, no gacha). Doc-only. [History](../history/Q/Q-07.md) |
 | Q-62 | Team Decision: Skill owners & slots | Hwang Seong-min | Done 2026-11-19 in the team meeting: The player and heroes have active skills (squads use their captain's). At most 3 slots. The player has 3 slots from the start; a hero gains a slot as its grade rises (1 -> 2 -> 3). How a hero's grade rises and where hero skills come from: Q-73. Doc-only. [History](../history/Q/Q-62.md) |
 | Q-63 | Team Decision: Skill activation & targeting | Hwang Seong-min | Done 2026-11-19 in the team meeting: The player casts skills directly. Hero skills are cast by their AI while Auto is on; the player can switch Auto off and cast them manually. Targeting is built as an extensible, data-driven target mode (self, point/area, unit, squad and later additions). Manual hero cast input: with Q-11. Doc-only. [History](../history/Q/Q-63.md) |
 | Q-64 | Team Decision: Skill cost & cooldown | Hwang Seong-min | Done 2026-11-19 in the team meeting: Cooldown only, no resource or charges. Every skill is ready (cooldown reset) when a battle starts. Doc-only. [History](../history/Q/Q-64.md) |
