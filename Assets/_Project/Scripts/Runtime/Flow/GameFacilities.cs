@@ -2,8 +2,10 @@ using System.Collections.Generic;
 using System.Text;
 using ProjectNeo.Characters;
 using ProjectNeo.Combat;
+using ProjectNeo.Core;
 using ProjectNeo.Economy;
 using ProjectNeo.Facilities;
+using ProjectNeo.Meta;
 using ProjectNeo.Run;
 using ProjectNeo.Squads;
 using ProjectNeo.Stats;
@@ -159,8 +161,8 @@ namespace ProjectNeo.Flow
                 return false;
             }
             if (!phaseView.EnterPanel()) return false;
-            if (type == FacilityType.Shop) State.RestockShopIfNeeded(item => GameSession.Meta.IsUnlocked(item));
-            if (type == FacilityType.Tavern) State.RestockTavernIfNeeded(hero => GameSession.Meta.IsUnlocked(hero));
+            if (type == FacilityType.Shop) State.RestockShopIfNeeded(IsShopItemAvailable);
+            if (type == FacilityType.Tavern) State.RestockTavernIfNeeded(IsHeroAvailable);
             OpenFacility = type;
             Message = string.Empty;
             chosenSquad = null;
@@ -294,7 +296,7 @@ namespace ProjectNeo.Flow
             if (OpenFacility != FacilityType.Shop || state?.Shop == null || flow.Phase != GamePhase.Preparation) return false;
             int cost = state.ShopRerollCost;
             ShopRerollCheck check = state.CheckShopReroll();
-            bool rerolled = check == ShopRerollCheck.Ok && state.TryRerollShop(IsUnlocked);
+            bool rerolled = check == ShopRerollCheck.Ok && state.TryRerollShop(IsShopItemAvailable);
             Message = rerolled ? $"Offers rerolled · {cost} gold" : "Reroll: " + Reason(check, cost);
             Rebuild();
             return rerolled;
@@ -333,18 +335,77 @@ namespace ProjectNeo.Flow
             _ => "Cannot change locks now.",
         };
 
-        static bool IsUnlocked(ItemDefinition item) => GameSession.Meta.IsUnlocked(item);
+        UnlockCatalog Unlocks => startConfig != null ? startConfig.UnlockCatalog : null;
+
+        // 해금 트랙(META-07)이 있으면 트랙을 보고, 없으면 예전 해금 플래그를 본다. 시설 레벨 조건은 풀이 따로 맡는다.
+        bool IsAvailable(IUnlockable content, UnlockPayloadKind kind)
+        {
+            if (content == null) return false;
+            UnlockCatalog catalog = Unlocks;
+            return catalog != null
+                ? UnlockTracks.IsContentAvailable(GameSession.Meta, catalog, kind, content.Id)
+                : GameSession.Meta.IsUnlocked(content);
+        }
+
+        bool IsShopItemAvailable(ItemDefinition item) => IsAvailable(item, UnlockPayloadKind.ShopItem);
+        bool IsRecipeAvailable(ItemDefinition item) => IsAvailable(item, UnlockPayloadKind.EquipmentRecipe);
+        bool IsHeroAvailable(HeroDefinition hero) => IsAvailable(hero, UnlockPayloadKind.Hero);
+
+        bool runReadyHandled;
+
+        /// <summary>
+        /// 런 데이터가 씬에 붙은 직후 한 번 부른다(META-07). 예전 해금 목록을 해금 트랙으로 옮기고,
+        /// 새 런이면 열린 시작 보너스(골드·아이템·일반병)를 준다. 되살린 런에는 다시 주지 않는다.
+        /// </summary>
+        public void OnRunReady(bool restored)
+        {
+            if (runReadyHandled) return;
+            runReadyHandled = true;
+            UnlockCatalog catalog = Unlocks;
+            RunState state = PreparedState();
+            if (catalog == null || state == null) return;
+
+            if (UnlockTracks.ImportLegacyUnlocks(GameSession.Meta, catalog) > 0) GameSession.SaveMeta();
+            if (restored) return;
+
+            UnlockStartingBonus bonus = UnlockTracks.StartingBonus(GameSession.Meta, catalog);
+            if (bonus.IsEmpty) return;
+            if (bonus.Gold > 0) state.Wallet.AddGold(bonus.Gold);
+            IRunContentLookup content = battle.RunLink.Content;
+            foreach (KeyValuePair<string, int> entry in bonus.Items)
+            {
+                ItemDefinition item = content != null ? content.Item(entry.Key) : null;
+                if (item == null) { Debug.LogWarning("Starting bonus item not found: " + entry.Key); continue; }
+                for (int i = 0; i < entry.Value; i++) state.Inventory.Add(item);
+            }
+            SoldierDefinition grunt = StartingGrunt(state);
+            for (int i = 0; i < bonus.Grunts; i++)
+            {
+                if (grunt == null || spawner == null || spawner.Recruit(grunt, FacilityType.TrainingGround) == null)
+                {
+                    Debug.LogWarning($"Starting bonus grunts: {bonus.Grunts - i} could not be added.");
+                    break;
+                }
+            }
+        }
+
+        // 시작 보너스 일반병은 병영 시작 레벨에서 모집할 수 있는 첫 종류다.
+        static SoldierDefinition StartingGrunt(RunState state)
+        {
+            IReadOnlyList<SoldierDefinition> soldiers = state.RecruitableSoldiers;
+            return soldiers != null && soldiers.Count > 0 ? soldiers[0] : null;
+        }
 
         /// <summary>대장간 레시피의 index번째 장비를 만든다(D-6). 비용을 내고 보관함에 넣는다.</summary>
         public bool TryCraft(int index)
         {
             RunState state = State;
             if (OpenFacility != FacilityType.Smithy || state == null || flow.Phase != GamePhase.Preparation) return false;
-            IReadOnlyList<CraftingRecipe> recipes = state.CraftableRecipes(IsUnlocked);
+            IReadOnlyList<CraftingRecipe> recipes = state.CraftableRecipes(IsRecipeAvailable);
             if (index < 0 || index >= recipes.Count) return false;
             CraftingRecipe recipe = recipes[index];
-            CraftCheck check = state.CheckCraft(recipe.item, IsUnlocked);
-            bool crafted = check == CraftCheck.Ok && state.TryCraft(recipe.item, IsUnlocked) != null;
+            CraftCheck check = state.CheckCraft(recipe.item, IsRecipeAvailable);
+            bool crafted = check == CraftCheck.Ok && state.TryCraft(recipe.item, IsRecipeAvailable) != null;
             Message = crafted ? $"{recipe.item.DisplayName} crafted · {Describe(recipe.cost)}" : $"{recipe.item.DisplayName}: " + Reason(check);
             Rebuild();
             return crafted;
@@ -557,7 +618,7 @@ namespace ProjectNeo.Flow
 
         void BuildSmithyRows(RunState state)
         {
-            IReadOnlyList<CraftingRecipe> recipes = state.CraftableRecipes(IsUnlocked);
+            IReadOnlyList<CraftingRecipe> recipes = state.CraftableRecipes(IsRecipeAvailable);
             if (recipes.Count == 0) AddRow(offerList, "No equipment available to craft.", null);
             for (int i = 0; i < recipes.Count; i++)
             {

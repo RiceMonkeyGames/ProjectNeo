@@ -44,6 +44,38 @@ namespace ProjectNeo.Meta
         }
 
         /// <summary>
+        /// 이 영웅·레시피·상점 아이템을 이번 런에서 쓸 수 있는지(META-07). 그 대상을 여는 항목이 하나도 없으면 쓸 수 있고
+        /// (트랙 밖 콘텐츠, 사용자 결정 2026-11-19), 있으면 그중 하나라도 열려 있어야 한다.
+        /// 시설 레벨에 따른 등장 조건은 따로다.
+        /// </summary>
+        public static bool IsContentAvailable(MetaProgress progress, UnlockCatalog catalog, UnlockPayloadKind kind, string targetId)
+        {
+            if (progress == null) throw new ArgumentNullException(nameof(progress));
+            if (catalog == null) throw new ArgumentNullException(nameof(catalog));
+
+            bool onTrack = false;
+            foreach (UnlockEntry entry in catalog.AllEntries())
+            {
+                if (entry.Payload.Kind != kind || entry.Payload.TargetId != targetId) continue;
+                if (IsOpened(progress, entry)) return true;
+                onTrack = true;
+            }
+            return !onTrack;
+        }
+
+        /// <summary>열린 시작 보너스 항목(골드·일반병·아이템)을 모두 더한다.</summary>
+        public static UnlockStartingBonus StartingBonus(MetaProgress progress, UnlockCatalog catalog)
+        {
+            if (progress == null) throw new ArgumentNullException(nameof(progress));
+            if (catalog == null) throw new ArgumentNullException(nameof(catalog));
+
+            var bonus = new UnlockStartingBonus();
+            foreach (UnlockEntry entry in catalog.AllEntries())
+                if (IsOpened(progress, entry)) bonus.Add(entry.Payload);
+            return bonus;
+        }
+
+        /// <summary>
         /// 예전(가챠 시절) 해금 목록 <see cref="MetaProgress.unlockedIds"/>에 든 영웅·아이템을 가리키는 항목을
         /// 비용과 선행 조건 없이 연다. 이미 해금했던 것을 잃지 않게 하려는 것이다. 새로 연 항목 수를 돌려준다.
         /// </summary>

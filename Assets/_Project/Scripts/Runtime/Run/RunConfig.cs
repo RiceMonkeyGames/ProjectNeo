@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using ProjectNeo.Characters;
 using ProjectNeo.Economy;
 using ProjectNeo.Facilities;
+using ProjectNeo.Meta;
 using ProjectNeo.Squads;
 using UnityEngine;
 
@@ -23,8 +24,11 @@ namespace ProjectNeo.Run
         [SerializeField] EquipmentUpgradeSettings equipmentUpgrades;
         [Tooltip("준비 시간 수치(PREP-06, Q-53). 비어 있으면 준비 시간 제약을 쓰지 않는다.")]
         [SerializeField] PrepTimeSettings prepTime;
+        [Tooltip("런 사이 해금 트랙(META-07). 비어 있으면 예전 해금 플래그(처음부터 해금)만 본다.")]
+        [SerializeField] UnlockCatalog unlockCatalog;
 
         public SquadConfig SquadConfig => squadConfig;
+        public UnlockCatalog UnlockCatalog => unlockCatalog;
         public PrepTimeSettings PrepTime => prepTime;
         public IReadOnlyList<FacilityDefinition> Facilities => facilities;
         public EconomyConfig Economy => economy;
@@ -73,6 +77,13 @@ namespace ProjectNeo.Run
         public RunConfig WithPrepTime(PrepTimeSettings settings)
         {
             prepTime = settings;
+            return this;
+        }
+
+        /// <summary>해금 트랙을 정한다(테스트용). 같은 설정을 돌려준다.</summary>
+        public RunConfig WithUnlockCatalog(UnlockCatalog catalog)
+        {
+            unlockCatalog = catalog;
             return this;
         }
     }

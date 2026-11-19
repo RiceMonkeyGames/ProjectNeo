@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 10c9d0c7ab37e6c42ad967d3efe5052a, type: 3}
+  m_Name: Track_Heroes
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Meta.UnlockTrackDefinition
+  category: 0
+  displayName: Heroes
+  entries:
+  - id: hero_swordsman
+    displayName: Mercenary swordsman
+    cost: 0
+    prerequisiteIds: []
+    openedByDefault: 1
+    payload:
+      kind: 0
+      targetId: hero_swordsman
+      amount: 1
+  - id: hero_archer
+    displayName: Mercenary archer
+    cost: 0
+    prerequisiteIds:
+    - hero_swordsman
+    openedByDefault: 1
+    payload:
+      kind: 0
+      targetId: hero_archer
+      amount: 1
+  - id: hero_knight
+    displayName: Knight
+    cost: 2
+    prerequisiteIds:
+    - hero_archer
+    openedByDefault: 0
+    payload:
+      kind: 0
+      targetId: hero_knight
+      amount: 1
+  - id: hero_paladin
+    displayName: Paladin
+    cost: 3
+    prerequisiteIds:
+    - hero_knight
+    openedByDefault: 0
+    payload:
+      kind: 0
+      targetId: hero_paladin
+      amount: 1

@@ -19,8 +19,9 @@ namespace ProjectNeo.Meta
         /// <summary>해금 트랙에 쓰는 재화. 런에서 져도 남는다.</summary>
         public int unlockPoints;
         /// <summary>
-        /// 영웅·아이템·퍽 id 기준의 예전 해금 목록(가챠 시절). 런 콘텐츠가 해금 트랙을 읽게 되기 전까지(META-07)
-        /// <see cref="IsUnlocked"/>가 계속 쓴다. 트랙으로 옮길 때는 <see cref="UnlockTracks.ImportLegacyUnlocks"/>.
+        /// 영웅·아이템·퍽 id 기준의 예전 해금 목록(가챠 시절). 영웅·아이템은 해금 트랙이 연결되면 트랙을 보고(META-07)
+        /// 이 목록은 <see cref="UnlockTracks.ImportLegacyUnlocks"/>로 트랙 항목에 옮긴다. 퍽과 트랙 없는 설정은
+        /// 계속 <see cref="IsUnlocked"/>로 이 목록을 본다.
         /// </summary>
         public List<string> unlockedIds = new List<string>();
         /// <summary>해금 트랙에서 연 항목 id(META-05). 처음부터 열린 항목은 넣지 않는다.</summary>
