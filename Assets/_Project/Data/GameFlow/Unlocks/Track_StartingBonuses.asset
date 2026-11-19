@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 10c9d0c7ab37e6c42ad967d3efe5052a, type: 3}
+  m_Name: Track_StartingBonuses
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Meta.UnlockTrackDefinition
+  category: 3
+  displayName: Starting bonuses
+  entries:
+  - id: bonus_gold_50
+    displayName: Starting gold +50
+    cost: 1
+    prerequisiteIds: []
+    openedByDefault: 0
+    payload:
+      kind: 3
+      targetId: 
+      amount: 50
+  - id: bonus_potions_2
+    displayName: Starting potions x2
+    cost: 2
+    prerequisiteIds:
+    - bonus_gold_50
+    openedByDefault: 0
+    payload:
+      kind: 5
+      targetId: item_potion
+      amount: 2
+  - id: bonus_grunts_2
+    displayName: Starting grunts +2
+    cost: 3
+    prerequisiteIds:
+    - bonus_potions_2
+    openedByDefault: 0
+    payload:
+      kind: 4
+      targetId: 
+      amount: 2
+  - id: bonus_gold_100
+    displayName: Starting gold +100
+    cost: 5
+    prerequisiteIds:
+    - bonus_grunts_2
+    openedByDefault: 0
+    payload:
+      kind: 3
+      targetId: 
+      amount: 100

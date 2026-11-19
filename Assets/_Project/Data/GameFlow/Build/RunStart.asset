@@ -26,3 +26,4 @@ MonoBehaviour:
   economy: {fileID: 11400000, guid: 033697c2864399c498b9005bfe336816, type: 2}
   equipmentUpgrades: {fileID: 11400000, guid: 2c70004a8c9ec4a49bb52aaa352df2df, type: 2}
   prepTime: {fileID: 11400000, guid: aa489f94a865cde439c0509a302217a1, type: 2}
+  unlockCatalog: {fileID: 11400000, guid: 0588e092f49e38d4d91fe9d70e809ff4, type: 2}
