@@ -1,6 +1,6 @@
 # Project Milestones & M2 Breakdown
 
-Last Updated: 2026-11-18 01:55:15 (KST)
+Last Updated: 2026-11-19 20:21:53 (KST)
 
 > Purpose: M0–M7 roadmap, M1→M2 criteria, M2 sub-batches, and M3+ detailing rules. | Parent: [INDEX](../INDEX.md) | Related: [Status](Status.md), [M1](M1.md), [Backlog](../Backlog.md)
 
@@ -29,6 +29,7 @@ flowchart LR
     M6 --> M7["M7 Release"]
 ```
 
+- **M2 scope (Q-54, team decision 2026-11-19)**: Nothing is cut. Minimal skills (COMBAT-06, rules Q-62~Q-66), perk injection and unlock point routing (META-02, Q-07) and scouting (PREP-07) all stay in M2; M2 closes after they are Done.
 - **M1 → M2 Transition**: Requires full cohesion: player, squads, walls, enemies, morale, and win/loss operating in the same combat session and resetting cleanly between runs.
 
 ## M2 Sub-Batches
@@ -57,7 +58,7 @@ flowchart LR
 | D-6 | Blacksmith (craft, upgrade, sell equipment) | D-0, D-1, D-7 / Q-35 | **Done** (upgrades via PREP-01): Craft via materials/gold; upgrades boost item stats. | `ItemInstance` |
 | D-2 | Build Economy (build/demolish/repair gold) | C-1~2 / Costs | **Done**: Gold spent/refunded in prep; locked in battle. | `ConstructionWorld`, `PlacementController` |
 
-All D batch tasks are Done (2026-11-16 check against [Backlog-Done](../archive/Backlog-Done.md)). Consumable use shipped as PREP-04; skills (`Q-12`, COMBAT-06) and unlock point spending (`Q-07`, META-02) are tracked in [Backlog](../Backlog.md).
+All D batch tasks are Done (2026-11-16 check against [Backlog-Done](../archive/Backlog-Done.md)). Consumable use shipped as PREP-04; skills (`Q-62`~`Q-66`, COMBAT-06) and unlock point spending (`Q-07`, META-02) are tracked in [Backlog](../Backlog.md).
 
 ## When to Detail M3 and Later
 

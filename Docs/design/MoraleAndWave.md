@@ -1,6 +1,6 @@
 # Game Design: Morale, Rout & Wave Preview
 
-Last Updated: 2026-11-18 11:24:46 (KST)
+Last Updated: 2026-11-19 20:21:53 (KST)
 
 > Purpose: Ally Breaking Point morale, enemy morale, rout/exit accounting, and wave preview rules. | Parent: [design/README](README.md) | Related: [Combat](Combat.md), [OpenQuestions](OpenQuestions.md)
 
@@ -55,10 +55,10 @@ Stages stay fixed per run (the same stage number always brings the same waves), 
 
 | Item | Decision |
 |---|---|
-| Run length | Build **3 stages** first for the M2 loop; the final stage count is decided in M4 (Q-08). |
+| Run length | Build **3 stages** first for the M2 loop; the final stage count is decided in M4 (Q-67). |
 | Waves per battle | Each battle has **2–3 waves**; each wave starts at a **fixed time** after the battle starts (timetable in data), not on kill count. |
 | Spawn locations | **Several fixed points inside the northern field** (e.g. left / center / right); each wave entry names its point. No east/west approaches for now. |
-| Bosses | **None in M2**; the last stage is simply the hardest hand-made composition. Boss roles stay in Q-08 / M4. |
+| Bosses | **None in M2**; the last stage is simply the hardest hand-made composition. Boss roles stay in Q-68 / M4. |
 | Victory | Victory only after **every wave has spawned** and every enemy is dead or retreated (Q-30). No survive-timer victory. |
 | Difficulty | **Hand-authored composition per stage**; no automatic stage multiplier. |
 | Data format | One stage data asset per stage holding a wave list; each entry gives enemy prefab, count, start time, and spawn point. Enemy types reference the **existing enemy prefabs** (no separate enemy definition asset yet). Teammate (enemy domain owner) review is pending before B-7.1 implementation. |
@@ -74,7 +74,7 @@ The user asked for a format that stays decoupled and easy to change, and started
 | Wave start | **Fixed timetable kept** (Q-51). An empty field does not pull the next wave forward. The start condition is a replaceable rule so this can change later without touching the spawner. |
 | Retreat while waves remain | **Settings switch**, default **off**: enemies that lost their siege means (Q-30) do not retreat while a wave is still to come and fight on with the next wave. With the switch on, each wave is judged on its own as before. |
 | Victory | Unchanged from Q-51: every wave released and every enemy dead or retreated. Enemies not yet released count as pending and block victory. |
-| Stage beyond the catalog | Interim: the **last stage repeats** until the run ending (Q-08) is wired. The catalog length is the run length. |
+| Stage beyond the catalog | Interim: the **last stage repeats** until the run ending (Q-69) is wired. The catalog length is the run length. |
 | Pause / restart | Battle time advances only while the battle is running; each wave is released exactly once per battle and the timetable resets with every battle. |
 
 Data shape (assets under `Data/GameFlow/Stages/`):
@@ -108,6 +108,6 @@ Rules decided by the user on 2026-11-18 (Q-53). Numbers are data and open to tun
 - **Preview window**: in first-person preparation, `V` opens and closes a small enemy list window on the left, just below the squad list (moved there on 2026-11-18 after the user found it covered by the squad list at the top left). It does not block movement or other input and is hidden in construction, facility, placement and organization views. Lines are merged per enemy type for the whole stage (`Ladder × 7`); hidden groups follow as `? × N`.
 - **Battle display**: the same list is always shown during battle as `Enemies left N`. Counts drop in real time: an enemy stops counting once it dies or has retreated off the field; enemies not yet released still count. A type whose count reaches `0` stays listed as `× 0`.
 - **Reveal in battle**: a hidden group is revealed (its type replaces `?`) when its wave is released onto the field. Every new preparation hides the groups again.
-- **Scouting action deferred**: the 3-hour scouting action is **not** part of C-5; it will be added later as PREP-07 (the rule `EnemyIntel.RevealAll` already exists for it). Until then hidden groups stay `?` for the whole preparation.
+- **Scouting action deferred**: the 3-hour scouting action is **not** part of C-5; it will be added later as PREP-07 (the rule `EnemyIntel.RevealAll` already exists for it). Until then hidden groups stay `?` for the whole preparation. Q-55 (2026-11-19) removed the block (no in-game clock beyond prep hours); PREP-07 stays in M2 (Q-54).
 - Current data: only `Stage02` has a hidden group (wave 2, Gate Breaker × 2). Stage 1 and 3 have none.
 - Enemy type names come from the enemy prefab name (`enemy_gate_breaker` → `Gate Breaker`) until enemy definition assets exist.

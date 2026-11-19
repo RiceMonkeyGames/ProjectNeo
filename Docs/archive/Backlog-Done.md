@@ -1,11 +1,18 @@
 # Completed Backlog Archive (Done)
 
-Last Updated: 2026-11-19 01:11:10 (KST)
+Last Updated: 2026-11-19 20:21:53 (KST)
 
 > Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
 | Task ID | Description | Assignee | Outcome & History Link |
 |---|---|---|---|
+| Q-54 | Team Decision: M2 Scope Cut | Hwang Seong-min | Done 2026-11-19 in the team meeting: all four remaining features stay in M2: minimal skills (COMBAT-06), perk injection and unlock point routing (META-02), scouting (PREP-07). M2 closes after they are Done. Doc-only. [History](../history/Q/Q-54.md) |
+| Q-56 | Team Decision: Ownership After B-6~B-9 | Hwang Seong-min | Done 2026-11-19 in the team meeting: no fixed domain owners; each member claims any Waiting backlog task and the assignee owns its files while it is In Progress. Shared-file and single-editor rules stay. Doc-only. [History](../history/Q/Q-56.md) |
+| Q-55 | Team Decision: In-Game Current-Time Concept | Hwang Seong-min | Done 2026-11-19 in the team meeting: no time of day or calendar; the only in-game time is the 12h preparation budget. PREP-07 unblocked. Doc-only. [History](../history/Q/Q-55.md) |
+| Q-06 | Team Decision: Perk Allocation Timing & Pause | Hwang Seong-min | Done 2026-11-19 in the team meeting: perks are allocated only during preparation and on the reward screen; no allocation in battle, so no pause is needed. META-02 still waits on Q-07. Doc-only. [History](../history/Q/Q-06.md) |
+| Q-12 | Team Decision: Skill Rules | Hwang Seong-min | Done 2026-11-19 in the team meeting: the team asked for the skill rules to be developed further; split into Q-62~Q-66, which now block COMBAT-06. Consumable interim rules (PREP-04) unchanged. Doc-only. [History](../history/Q/Q-12.md) |
+| Q-08 | Team Decision: Run Length, Bosses & Score | Hwang Seong-min | Done 2026-11-19 in the team meeting: the team asked for the run structure to be developed further; split into Q-67~Q-71. Interim 3 stages / no bosses (Q-51) and "clearing all stages ends the run" stay. Doc-only. [History](../history/Q/Q-08.md) |
+| Q-57 | Team Decision: Squad Counts & Member Caps | Hwang Seong-min | Done 2026-11-19 in the team meeting: at most 10 squads, 20 soldiers per squad. Implementation registered as PREP-09. Doc-only. [History](../history/Q/Q-57.md) |
 | PREP-08 | Return Fallen Hero Gear to Stash | 신용준 | Done 2026-11-19 on user confirmation after manual check; branch `feature/prep-08`. Q-31: a dead hero's equipped gear returns to the run stash with its upgrade level (`RunState.Apply`), and older saves with gear on fallen heroes are moved the same way on `Restore`; no save format or UI change. Compile, EditMode 492/492, PlayMode 238/238 passed; standalone build unverified. [History](../history/PREP/PREP-08.md) |
 | Q-31 | Team Decision: Hero Gear on Permadeath | 신용준 | Done 2026-11-19 on user decision: fallen hero gear returns to the run stash (upgrade levels kept) for reuse by the player or another hero. Implementation registered as PREP-08. Doc-only. [History](../history/Q/Q-31.md) |
 | Q-32 | Team Decision: Player as Squad Captain | 신용준 | Done 2026-11-19 on user decision: the player cannot be a squad captain (finalizes the 2026-11-13 interim); no code change. Doc-only. [History](../history/Q/Q-32.md) |

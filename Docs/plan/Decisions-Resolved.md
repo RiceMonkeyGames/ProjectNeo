@@ -1,6 +1,6 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-19 01:06:00 (KST)
+Last Updated: 2026-11-19 20:21:53 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
@@ -73,6 +73,13 @@ Construction return-hint input (QA-build-zoom-ui-hover, 2026-11-14): User reques
 | Q-31 | Equipment on hero permadeath | C-3, PREP-08 | Resolved (2026-11-19, user): Kept, not lost. A fallen hero's equipped gear returns to the run stash (with its upgrade level) and can be equipped again by the player or another hero. Implementation: PREP-08. [History](../history/Q/Q-31.md). |
 | Q-32 | Player as squad captain | D-8, UI-01 | Resolved (2026-11-19, user): Not allowed. The player stays an independent unit; no player-captain task is planned. The existing block (`AllowPlayerCaptain` off, player not selectable in the organization window) stays. [History](../history/Q/Q-32.md). |
 | Q-53 | Preparation time, construction pacing & scouting | PREP-06, SIEGE-08, C-5 | Resolved (2026-11-18, user): 12-hour budget per preparation, unused hours lost; the clock advances only through clock actions (craft/upgrade 1h, scout 3h, Wait 1h); trading, hiring, recruiting, facility upgrades, equipment, organization and placement are free and stay allowed after the clock runs out; battle still starts by holding B. Construction and repair are work orders built by 2 crews in order as the clock advances (1h per piece; repair = missing-HP fraction of 1h); unfinished pieces enter battle with HP equal to progress; demolishing unfinished work refunds fully. Wave preview shows whole-stage enemy types and counts; hidden groups show `? × N`; one 3h scout reveals every hidden group; hero trait/perk reveal follows META-02. Numbers are data, open to tuning. See [PrepEconomyMeta](../design/PrepEconomyMeta.md), [MoraleAndWave](../design/MoraleAndWave.md). | C-5 display (user, 2026-11-18): `V` toggles a non-blocking enemy list window in preparation; the list is always shown in battle with live remaining counts and reveals a hidden group when its wave is released; the 3h scouting action is deferred to a later task.
+| Q-06 | Perk allocation timing & pause | META-02 | Resolved (2026-11-19, team meeting): Perks are allocated only during preparation and on the reward screen; never in battle, so no pause is needed. [History](../history/Q/Q-06.md). |
+| Q-08 | Run length, bosses & score | Q-67~Q-71 | Resolved (2026-11-19, team meeting): Split for further development into Q-67 run length, Q-68 bosses, Q-69 ending, Q-70 score formula, Q-71 reincarnation bonus. Kept: clearing all stages ends the run; interim 3 stages and no M2 bosses (Q-51). [History](../history/Q/Q-08.md). |
+| Q-12 | Skill rules | COMBAT-06 | Resolved (2026-11-19, team meeting): Split for further development into Q-62 owners/slots, Q-63 activation/targeting, Q-64 cost/cooldown, Q-65 first skill set, Q-66 perk/progression links. PREP-04 consumable rules unchanged. [History](../history/Q/Q-12.md). |
+| Q-54 | M2 scope cut | M2 close | Resolved (2026-11-19, team meeting): Nothing is cut: minimal skills (COMBAT-06), perk injection and unlock point routing (META-02) and scouting (PREP-07) all stay in M2. [History](../history/Q/Q-54.md). |
+| Q-55 | In-game current time | PREP-07 | Resolved (2026-11-19, team meeting): No time of day or calendar; the only in-game time is the 12h preparation budget (Q-53). [History](../history/Q/Q-55.md). |
+| Q-56 | Team ownership after B-6~B-9 | M2 remainder, M3+ | Resolved (2026-11-19, team meeting): No fixed domain owners; anyone claims any Waiting backlog task and the assignee owns its files while In Progress. Shared-file and single-editor rules stay. [History](../history/Q/Q-56.md). |
+| Q-57 | Squad counts & member caps | PREP-09 | Resolved (2026-11-19, team meeting): At most 10 squads, 20 soldiers per squad. Captain counting, keys for squads 5-10 and the 200-ally performance check are open items of PREP-09. [History](../history/Q/Q-57.md). |
 
 ## Detailed Decision Records
 
