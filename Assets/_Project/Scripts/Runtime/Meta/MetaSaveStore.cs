@@ -13,7 +13,8 @@ namespace ProjectNeo.Meta
     public sealed class MetaSaveStore
     {
         public const int SlotCount = 3;
-        public const int CurrentVersion = 1;
+        /// <summary>2: 해금 트랙의 연 항목 id 추가(META-05). 1짜리 파일도 그대로 읽는다.</summary>
+        public const int CurrentVersion = 2;
 
         const string LastSlotFile = "last_slot.txt";
 
@@ -166,7 +167,7 @@ namespace ProjectNeo.Meta
                 if (progress == null || progress.commanderLevel < 1) return null;
                 if (progress.commanderXp < 0 || progress.perkPoints < 0 || progress.unlockPoints < 0) return null;
                 progress.unlockedIds ??= new List<string>();
-                progress.guaranteedNextRunIds ??= new List<string>();
+                progress.openedEntryIds ??= new List<string>();
                 return progress;
             }
             catch (Exception exception) when (exception is ArgumentException || IsFileError(exception))
