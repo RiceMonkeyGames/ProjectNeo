@@ -1,6 +1,6 @@
 # Project Goal: Definition of Done
 
-Last Updated: 2026-11-13 13:17:37 (KST)
+Last Updated: 2026-11-19 21:36:37 (KST)
 
 > Purpose: Final objective, completion criteria, horizon granularity, and established architectural decisions. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [design/README](../design/README.md)
 
@@ -43,7 +43,7 @@ First-time players must intuitively grasp the game flow via in-game guidance, pl
 | Facility Trading | Tiered inventory pools at shop/blacksmith; unified buy/sell logic (fixed sale ratio across all items). |
 | Run Persistence | Perk point pool and unlocks persist across runs; allocated perks reset on death. |
 | Perk & EXP Curves | Commander EXP per stage + Reincarnation Bonus (% of run score on run end); mid-run level-ups grant instant perk points allocatable anytime. |
-| Unlocks | Randomized gacha-style unlocks using Unlock Points; duplicate protection and guaranteed initial appearance supported. |
+| Unlocks | Darkest Dungeon 2-style unlock tracks bought with Unlock Points between runs (Q-76): fixed entries opened in order, no randomness or duplicates; former initial-appearance flags become default-opened entries. |
 | Wall Breached & Combat | Main gate destruction counts as breach (defeat requires gate destroyed + all defenders dead/routed, OR player dies). Defenders fight atop walls via multi-tier NavMesh. |
 | Enemy & Grunt Rules | Ground enemies breach or climb ladders; flying enemies assault walls directly. Slain grunts lost permanently; only routed grunts return. |
 | Player Character | Shares `Character` architecture with NPC heroes (differs only in Input vs AI driver). |

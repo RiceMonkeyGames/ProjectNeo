@@ -35,7 +35,7 @@ namespace ProjectNeo.Tests
         {
             var progress = new MetaProgress { commanderLevel = level, commanderXp = 30, perkPoints = 3, unlockPoints = 20 };
             progress.unlockedIds.Add("archer");
-            progress.guaranteedNextRunIds.Add("archer");
+            progress.openedEntryIds.Add("hero_archer");
             return progress;
         }
 
@@ -62,8 +62,31 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(3, result.Progress.perkPoints);
             Assert.AreEqual(20, result.Progress.unlockPoints);
             CollectionAssert.AreEqual(new[] { "archer" }, result.Progress.unlockedIds);
-            CollectionAssert.AreEqual(new[] { "archer" }, result.Progress.guaranteedNextRunIds);
+            CollectionAssert.AreEqual(new[] { "hero_archer" }, result.Progress.openedEntryIds);
             Assert.IsFalse(File.Exists(store.MainPath(1) + ".tmp"), "임시 파일이 남으면 안 된다.");
+        }
+
+        [Test]
+        public void Version1File_LoadsWithExistingUnlocksAndNoOpenedEntries()
+        {
+            // META-05 이전 파일: 버전 1, 가챠 시절 필드(guaranteedNextRunIds)가 있고 openedEntryIds는 없다.
+            Directory.CreateDirectory(directory);
+            File.WriteAllText(store.MainPath(0),
+                "{\"version\":1,\"progress\":{\"commanderLevel\":3,\"commanderXp\":5,\"perkPoints\":2,\"unlockPoints\":40," +
+                "\"unlockedIds\":[\"archer\"],\"guaranteedNextRunIds\":[\"archer\"]}}");
+
+            MetaLoadResult result = store.Load(0);
+
+            Assert.AreEqual(MetaLoadStatus.Loaded, result.Status);
+            Assert.AreEqual(3, result.Progress.commanderLevel);
+            Assert.AreEqual(40, result.Progress.unlockPoints);
+            CollectionAssert.AreEqual(new[] { "archer" }, result.Progress.unlockedIds);
+            Assert.IsNotNull(result.Progress.openedEntryIds);
+            Assert.AreEqual(0, result.Progress.openedEntryIds.Count);
+
+            Assert.IsTrue(store.Save(0, result.Progress));
+            StringAssert.Contains($"\"version\": {MetaSaveStore.CurrentVersion}", File.ReadAllText(store.MainPath(0)));
+            StringAssert.DoesNotContain("guaranteedNextRunIds", File.ReadAllText(store.MainPath(0)));
         }
 
         [Test]

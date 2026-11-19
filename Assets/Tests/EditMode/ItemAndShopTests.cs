@@ -96,7 +96,7 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
-        public void Roll_HidesLockedHero_AndGuaranteesNewlyUnlockedOne()
+        public void Roll_HidesLockedHero_AndPutsGuaranteedOneFirst()
         {
             HeroDefinition starter = Track(HeroDefinition.Create("starter"));
             HeroDefinition archer = Track(HeroDefinition.Create("archer", unlockedByDefault: false));
@@ -111,9 +111,7 @@ namespace ProjectNeo.Tests
             CollectionAssert.AreEqual(new[] { starter }, before);
 
             progress.unlockedIds.Add("archer");
-            progress.guaranteedNextRunIds.Add("archer");
-            List<HeroDefinition> guaranteed = pool.ConvertAll(e => e.item).FindAll(h => progress.guaranteedNextRunIds.Contains(h.Id));
-            List<HeroDefinition> after = WeightedPool.Roll(pool, 1, new SeededRandom(1), progress.IsUnlocked, guaranteed);
+            List<HeroDefinition> after = WeightedPool.Roll(pool, 1, new SeededRandom(1), progress.IsUnlocked, new[] { archer });
 
             CollectionAssert.AreEqual(new[] { archer }, after);
         }

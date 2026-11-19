@@ -1,6 +1,6 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-19 01:12:46 (KST)
+Last Updated: 2026-11-19 21:36:37 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
@@ -54,7 +54,7 @@ Q-41 and SIEGE-04 completion/commit/push were authorized by the user on 2026-11-
 | Project Foundation | Unity 6000.6.8f1, URP, 4 assemblies, test runners, Windows build script | Distribution packaging, release verification |
 | Stats, Economy, Facilities | Stat modifiers, multi-material wallet, inventory, trade logic, facility pop-ups/upgrades, shop, barracks recruitment/training, blacksmith recipe crafting/sales (D-6) and equipment upgrades (PREP-01, on task branch), squad organization window (D-8), tavern hero hiring and hero equipment (D-3), shop gold re-roll/offer locks (PREP-02/03) | Hero skills; PREP-01 physical-input upgrade play and standalone build |
 | Characters & Combat | 1st-person movement, melee attacks, health, grunt stats, projectiles, auto-combat, Game scene siege assault/ladders/outcomes | Wall-breaker encounter integration, aerial enemies, active skills, consumables, production HUD |
-| Meta & Perks | Progression curves, reincarnation conversion, gacha unlocks, perk payloads | Run reward routing, runtime perk injection (META-02). Disk persistence Done on `feature/meta-01` (META-01: three slots, Title selection, backup recovery; user manual check confirmed 2026-11-16; develop merge pending) |
+| Meta & Perks | Progression curves, reincarnation conversion, perk payloads; unlock track rules, data and save on `feature/meta-05` (META-05, gacha removed) | Unlock screen (META-06), run content reading unlocks (META-07), unlock point earning (META-08), run reward routing, runtime perk injection (META-02). Disk persistence Done on `feature/meta-01` (META-01: three slots, Title selection, backup recovery; user manual check confirmed 2026-11-16; develop merge pending) |
 | Squads, Morale, Walls | Squad structures, grid occupancy/rotation, stacking, async NavMesh rebuild, fall damage, weapon mounting/collapse, 1st-person commands | Formal wall-breaker encounters (B-7.1), construction delays (SIEGE-08, pending decision). Morale/rout wiring (B-8.1, B-8.2, COMBAT-03) and siege weapon firing (SIEGE-02, SIEGE-07) are Done; physical-input play is tracked in QA-physical-input |
 | Run Data Architecture | `RunState` container, castle persistence, combat I/O, single application rules (`C-1a`), Game scene unit binding, survivor healing (`C-1~2`), grunt spawning (`D-0b`), post-battle squad cleanup and casualty carry-over (`C-3`) | Saved run loading, meta file persistence |
 | Test Scenes | `CombatPrototype`, `UnitBattlePrototype`, `ConstructionPrototype`, `SquadCommandPrototype`, `WallCommandPrototype`, `SiegePrototype` | Mixed wall-breaker/aerial encounters, multi-wave sequences, morale routs, full loop integration |
