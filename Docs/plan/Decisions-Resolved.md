@@ -1,6 +1,6 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-19 20:52:33 (KST)
+Last Updated: 2026-11-19 21:00:08 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
@@ -90,6 +90,7 @@ Construction return-hint input (QA-build-zoom-ui-hover, 2026-11-14): User reques
 | Q-70 | Run score formula | META-04 | Resolved (2026-11-19, team meeting): The team delegated the formula to the agent's common-practice proposal. Run score (Q-70, chosen by the agent on team request, data values open to tuning): stage cleared 1,000 each; boss killed 500 each; enemy killed 10 each; main gate intact at a victory 200 per stage; at run end 100 per living hero, 10 per living grunt and 1 per 10 gold held; +5,000 for reaching the ending; points earned in post-ending loop k are multiplied by (1 + 0.5 x k). A defeat keeps the points earned so far. Shown on the ending and defeat result screens; it no longer feeds Commander EXP (Q-71). [History](../history/Q/Q-70.md). |
 | Q-71 | Reincarnation bonus | META-03 | Resolved (2026-11-19, team meeting): Dropped. The run score is not converted to Commander EXP; Commander EXP comes from stage clears only. Code removal: META-03. [History](../history/Q/Q-71.md). |
 | Q-07 | Unlock point timing, gacha UI & guarantee | META-02 | Resolved (2026-11-19, team meeting): Unlock points are spent between runs on the Title/meta screen, where the gacha UI lives; duplicate protection plus a guaranteed higher-grade unlock every N pulls (N is a data value set with META-02). [History](../history/Q/Q-07.md). Superseded the same day (2026-11-19): the gacha and its pity rule are replaced by Darkest Dungeon 2-style unlock tracks (Q-76); spending between runs on the Title/meta screen stays. |
+| Q-76 | Between-run unlock system | META-05~META-08 | Resolved (2026-11-19, team meeting): Darkest Dungeon 2-style unlock tracks replace the gacha: one straight track per category, opened in order between runs on the Title/meta screen, rising costs, no refunds, default-unlocked entries from the old guaranteed flags. Unlock points are granted once at run end from progress (per-victory grant removed). Tracks: Heroes, Equipment recipes, Shop items, Starting bonuses; first entries and costs are data proposed with META-07. [History](../history/Q/Q-76.md). |
 
 ## Detailed Decision Records
 
