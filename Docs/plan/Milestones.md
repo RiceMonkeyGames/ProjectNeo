@@ -1,6 +1,6 @@
 # Project Milestones & M2 Breakdown
 
-Last Updated: 2026-11-19 20:21:53 (KST)
+Last Updated: 2026-11-19 20:47:14 (KST)
 
 > Purpose: M0–M7 roadmap, M1→M2 criteria, M2 sub-batches, and M3+ detailing rules. | Parent: [INDEX](../INDEX.md) | Related: [Status](Status.md), [M1](M1.md), [Backlog](../Backlog.md)
 
@@ -29,7 +29,7 @@ flowchart LR
     M6 --> M7["M7 Release"]
 ```
 
-- **M2 scope (Q-54, team decision 2026-11-19)**: Nothing is cut. Minimal skills (COMBAT-06, rules Q-62~Q-66), perk injection and unlock point routing (META-02, Q-07) and scouting (PREP-07) all stay in M2; M2 closes after they are Done.
+- **M2 scope (Q-54, team decision 2026-11-19)**: Nothing is cut. Minimal skills (COMBAT-06, rules Q-62~Q-65 decided; acquisition Q-72/Q-73), perk injection and unlock point routing (META-02, Q-07) and scouting (PREP-07) all stay in M2; M2 closes after they are Done. Second meeting round (2026-11-19): run structure set to 7 fixed stages with one boss each and a post-ending harder loop (CONTENT-01, SIEGE-09, FLOW-03); which of these must land before M2 closes is not decided.
 - **M1 → M2 Transition**: Requires full cohesion: player, squads, walls, enemies, morale, and win/loss operating in the same combat session and resetting cleanly between runs.
 
 ## M2 Sub-Batches

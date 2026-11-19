@@ -1,6 +1,6 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-19 20:21:53 (KST)
+Last Updated: 2026-11-19 20:47:14 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
@@ -80,6 +80,16 @@ Construction return-hint input (QA-build-zoom-ui-hover, 2026-11-14): User reques
 | Q-55 | In-game current time | PREP-07 | Resolved (2026-11-19, team meeting): No time of day or calendar; the only in-game time is the 12h preparation budget (Q-53). [History](../history/Q/Q-55.md). |
 | Q-56 | Team ownership after B-6~B-9 | M2 remainder, M3+ | Resolved (2026-11-19, team meeting): No fixed domain owners; anyone claims any Waiting backlog task and the assignee owns its files while In Progress. Shared-file and single-editor rules stay. [History](../history/Q/Q-56.md). |
 | Q-57 | Squad counts & member caps | PREP-09 | Resolved (2026-11-19, team meeting): At most 10 squads, 20 soldiers per squad. Captain counting, keys for squads 5-10 and the 200-ally performance check are open items of PREP-09. [History](../history/Q/Q-57.md). |
+| Q-62 | Skill owners & slots | COMBAT-06 | Resolved (2026-11-19, team meeting): The player and heroes have active skills (squads use their captain's). At most 3 slots. The player has 3 slots from the start; a hero gains a slot as its grade rises (1 -> 2 -> 3). How a hero's grade rises and where hero skills come from: Q-73. [History](../history/Q/Q-62.md). |
+| Q-63 | Skill activation & targeting | COMBAT-06 | Resolved (2026-11-19, team meeting): The player casts skills directly. Hero skills are cast by their AI while Auto is on; the player can switch Auto off and cast them manually. Targeting is built as an extensible, data-driven target mode (self, point/area, unit, squad and later additions). Manual hero cast input: with Q-11. [History](../history/Q/Q-63.md). |
+| Q-64 | Skill cost & cooldown | COMBAT-06 | Resolved (2026-11-19, team meeting): Cooldown only, no resource or charges. Every skill is ready (cooldown reset) when a battle starts. [History](../history/Q/Q-64.md). |
+| Q-65 | First skill set | COMBAT-06 | Resolved (2026-11-19, team meeting): Support every listed effect family at a basic level (area damage, buff/debuff, heal, morale gain, stagger) through an extensible effect design; the concrete sample list is proposed with COMBAT-06. [History](../history/Q/Q-65.md). |
+| Q-67 | Run length & pacing | CONTENT-01 | Resolved (2026-11-19, team meeting): 7 stages in a fixed order (stage count stays data-driven and can change later). Target play time 40-50 minutes per run (revised from 10 stages / 20-30 minutes the same day). [History](../history/Q/Q-67.md). |
+| Q-68 | Boss stages | SIEGE-09 | Resolved (2026-11-19, team meeting): Every stage has exactly one boss, which appears in the stage's last wave. Boss roles, stats and rewards: Q-74. [History](../history/Q/Q-68.md). |
+| Q-69 | Run ending & after the ending | FLOW-03 | Resolved (2026-11-19, team meeting): After the last stage the run continues into a harder loop. Loop rules (difficulty, rewards, save, ending screen): Q-75. [History](../history/Q/Q-69.md). |
+| Q-70 | Run score formula | META-04 | Resolved (2026-11-19, team meeting): The team delegated the formula to the agent's common-practice proposal. Run score (Q-70, chosen by the agent on team request, data values open to tuning): stage cleared 1,000 each; boss killed 500 each; enemy killed 10 each; main gate intact at a victory 200 per stage; at run end 100 per living hero, 10 per living grunt and 1 per 10 gold held; +5,000 for reaching the ending; points earned in post-ending loop k are multiplied by (1 + 0.5 x k). A defeat keeps the points earned so far. Shown on the ending and defeat result screens; it no longer feeds Commander EXP (Q-71). [History](../history/Q/Q-70.md). |
+| Q-71 | Reincarnation bonus | META-03 | Resolved (2026-11-19, team meeting): Dropped. The run score is not converted to Commander EXP; Commander EXP comes from stage clears only. Code removal: META-03. [History](../history/Q/Q-71.md). |
+| Q-07 | Unlock point timing, gacha UI & guarantee | META-02 | Resolved (2026-11-19, team meeting): Unlock points are spent between runs on the Title/meta screen, where the gacha UI lives; duplicate protection plus a guaranteed higher-grade unlock every N pulls (N is a data value set with META-02). [History](../history/Q/Q-07.md). |
 
 ## Detailed Decision Records
 

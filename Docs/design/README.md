@@ -1,6 +1,6 @@
 # Game Design Overview
 
-Last Updated: 2026-11-14 22:59:29 (KST)
+Last Updated: 2026-11-19 20:47:14 (KST)
 
 > Purpose: Ground-truth game design index, core loop, run structure, and art direction. | Parent: [INDEX](../INDEX.md) | Related: [Combat](Combat.md), [PrepEconomyMeta](PrepEconomyMeta.md), [Backlog](../Backlog.md)
 
@@ -19,8 +19,8 @@ The `Docs/design/` folder is the ground truth for game rules. The Google Doc mir
 A siege defense roguelike where players prepare heroes, minions, weapons, and castle walls during Preparation, and defend against enemy waves in Battle. Stages are fixed; heroes, rewards, and shop inventories randomize per run. Gameplay centers on "counter-building" by scouting upcoming waves and crafting solutions with gold and monster materials.
 
 - **Run loop**: Preparation → Wave Preview → Battle → Random Rewards → Next Stage Preparation. Castle wall HP carries over to the next battle.
-- **Defeat**: Ends the run. Active perks reset, reincarnation bonuses are awarded, and a new run begins.
-- **Clear**: Clearing all stages triggers the ending (confirmed 2026-11-11). M2 builds 3 fixed stages with 2–3 timed waves each and no bosses (Q-51, 2026-11-14, see [MoraleAndWave](MoraleAndWave.md)); final stage count, boss timing, and ending content are decided in M4.
+- **Defeat**: Ends the run. Active perks reset and a new run begins (no reincarnation bonus, Q-71, 2026-11-19).
+- **Clear**: Clearing all stages triggers the ending (confirmed 2026-11-11). Team decisions 2026-11-19: 7 stages in a fixed order (Q-67), one boss per stage in the last wave (Q-68), and after the last stage the run continues into a harder loop (Q-69; rules Q-75). The interim 3 stages without bosses (Q-51) stay until CONTENT-01 and SIEGE-09 land; see [MoraleAndWave](MoraleAndWave.md).
 - **Scene layout** (confirmed 2026-11-11): `Title` scene and `Game` scene. All phases transition inside the single castle `Game` scene without reloading; facilities open as pop-up windows.
 
 ## Run Structure

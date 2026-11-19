@@ -1,6 +1,6 @@
 # Game Design: Combat, Units & Win/Loss
 
-Last Updated: 2026-11-19 20:21:53 (KST)
+Last Updated: 2026-11-19 20:43:38 (KST)
 
 > Purpose: Rules for perspective, squad commands, damage, unit lifecycles, and battle outcomes. | Parent: [design/README](README.md) | Related: [WallsAndSiege](WallsAndSiege.md), [MoraleAndWave](MoraleAndWave.md)
 
@@ -58,6 +58,17 @@ Last Updated: 2026-11-19 20:21:53 (KST)
 - Surviving heroes and minions fully recover HP before the next battle (2026-11-12). Only wall HP damage carries over.
 - Fallen ally corpses remain on the ground during the next preparation phase (2026-11-12), excluded from squads and run. At the next prep start fallen units leave their scene squads (bodies stay), so they no longer take squad slots (Q-50, 2026-11-13).
 - **Fallen hero equipment** (Q-31, user 2026-11-19): Equipment is never lost on hero permadeath. When the battle result is applied, the fallen hero's equipped items return to the run stash with their upgrade levels and can be equipped again by the player or another hero (implementation: PREP-08).
+
+## Active Skills
+
+Team decisions 2026-11-19 (Q-62~Q-65); implementation COMBAT-06.
+
+- **Owners & slots** (Q-62): the player and heroes have active skills; a squad uses its captain's. At most `3` slots. The player has `3` slots from the start; a hero has `1` slot and gains one each time its grade rises (`1 -> 2 -> 3`). Grade progression and hero skill sources: Q-73.
+- **Activation** (Q-63): the player casts skills directly. Hero skills are cast by the hero's AI while **Auto** is on; the player can switch Auto off per hero and cast manually (manual input decided with Q-11).
+- **Targeting** (Q-63): a data-driven target mode per skill, built to be extended (initial modes: self, aimed point/area, target unit, squad).
+- **Cost** (Q-64): cooldown only, no mana, stamina or charges. Every skill is ready when a battle starts.
+- **Effects** (Q-65): an extensible effect design supporting area damage, buff/debuff, heal, morale gain (COMBAT-07 gain rules) and stagger (COMBAT-04 poise) at a basic level; sample skills are proposed with COMBAT-06.
+- **Acquisition** (Q-66 partial): new player skills come from perk points earned on Commander level-up; heroes have no perks. Perk direction: Q-72.
 
 ## Win/Loss Conditions
 
