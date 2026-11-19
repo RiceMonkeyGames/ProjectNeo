@@ -19,6 +19,7 @@ namespace ProjectNeo.UI
 
         [SerializeField] UnityEngine.UI.Button continueButton;
         [SerializeField] TMP_Text continueLabel;
+        [SerializeField] UnlockScreen unlockScreen;
 
         int selectedSlot;
         int deleteArmedSlot = NoSlot;
@@ -38,6 +39,19 @@ namespace ProjectNeo.UI
         {
             continueButton = button;
             continueLabel = label;
+        }
+
+        public void ConfigureUnlocks(UnlockScreen screen) => unlockScreen = screen;
+        public UnlockScreen Unlocks => unlockScreen;
+
+        /// <summary>고른 슬롯의 런 사이 해금 창을 연다(META-06).</summary>
+        public void OpenUnlocks()
+        {
+            if (SceneSwitcher.IsLoading || unlockScreen == null) return;
+            deleteArmedSlot = NoSlot;
+            newGameArmedSlot = NoSlot;
+            notice = unlockScreen.Open(selectedSlot) ? string.Empty : "Unlocks are not available.";
+            Refresh();
         }
 
         public int SelectedSlot => selectedSlot;
@@ -64,7 +78,13 @@ namespace ProjectNeo.UI
             Cursor.visible = true;
             defaultDeleteCaption = deleteLabel != null ? deleteLabel.text : string.Empty;
             selectedSlot = GameSession.SaveStore.GetLastSlot();
+            if (unlockScreen != null) unlockScreen.Closed += Refresh;
             Refresh();
+        }
+
+        void OnDestroy()
+        {
+            if (unlockScreen != null) unlockScreen.Closed -= Refresh;
         }
 
         public void SelectSlot(int slot)
@@ -182,7 +202,7 @@ namespace ProjectNeo.UI
         {
             string name = $"Slot {slot + 1}";
             MetaProgress progress = result.Progress;
-            string summary = $"Commander Lv {progress.commanderLevel} - Unlocks {progress.unlockedIds.Count}";
+            string summary = $"Commander Lv {progress.commanderLevel} - Unlock points {progress.unlockPoints}";
             switch (result.Status)
             {
                 case MetaLoadStatus.Loaded: return $"{name}: {summary}";
