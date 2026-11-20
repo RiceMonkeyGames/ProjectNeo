@@ -94,7 +94,8 @@ namespace ProjectNeo.Combat
             healthBar.gameObject.SetActive(false);
             if (model != null)
             {
-                // 사망 애니메이션 전까지 뒤로 눕혀 쓰러진 것을 표시한다.
+                // 사망 동작을 재생하는 모델(ART-04)은 그대로 둔다. 없으면 뒤로 눕혀 쓰러진 것을 표시한다.
+                if (TryGetComponent(out CharacterModelAnimator animated) && animated.PlaysDeath) return;
                 model.localRotation = Quaternion.Euler(-90f, 0f, 0f) * model.localRotation;
                 model.localPosition += Vector3.up * (actor.Profile.Radius * 0.5f);
                 return;

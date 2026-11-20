@@ -1,6 +1,6 @@
 # Past Verification History Index
 
-Last Updated: 2026-11-20 17:09:28 (KST)
+Last Updated: 2026-11-20 21:00:00 (KST)
 
 > Purpose: Route historical log lookups by Task ID prefix. | Parent: [INDEX](../INDEX.md) | Related: [Backlog-Done](../archive/Backlog-Done.md), [Status](../plan/Status.md)
 
@@ -27,7 +27,7 @@ Latest manual verification: [PREP-10](PREP/PREP-10.md) (hero promotion at the He
 - `META/` — [META-01](META/META-01.md), [META-02](META/META-02.md), [META-03](META/META-03.md), [META-04](META/META-04.md), [META-05](META/META-05.md), [META-06](META/META-06.md), [META-07](META/META-07.md), [META-08](META/META-08.md), [META-09](META/META-09.md)
 - `CONTENT/` — [CONTENT-01](CONTENT/CONTENT-01.md)
 - `SIEGE/` — [SIEGE-01](SIEGE/SIEGE-01.md), [SIEGE-02](SIEGE/SIEGE-02.md), [SIEGE-03](SIEGE/SIEGE-03.md), [SIEGE-04](SIEGE/SIEGE-04.md), [SIEGE-05](SIEGE/SIEGE-05.md), [SIEGE-06](SIEGE/SIEGE-06.md), [SIEGE-07](SIEGE/SIEGE-07.md), [SIEGE-08](SIEGE/SIEGE-08.md), [SIEGE-09](SIEGE/SIEGE-09.md)
-- `ART/` — [ART-01](ART/ART-01.md), [ART-02](ART/ART-02.md), [ART-03](ART/ART-03.md)
+- `ART/` — [ART-01](ART/ART-01.md), [ART-02](ART/ART-02.md), [ART-03](ART/ART-03.md), [ART-04](ART/ART-04.md)
 - `DOC/` — [DOC-workflow-branches](DOC/DOC-workflow-branches.md), [DOC-doc-tree-and-id](DOC/DOC-doc-tree-and-id.md)
 - `TOOL/` — [TOOL-claude-read-deny](TOOL/TOOL-claude-read-deny.md), [TOOL-agent-workflows](TOOL/TOOL-agent-workflows.md), [TOOL-codex-workflows](TOOL/TOOL-codex-workflows.md), [TOOL-asset-submodule](TOOL/TOOL-asset-submodule.md), [TOOL-asset-packs-2](TOOL/TOOL-asset-packs-2.md)
 - `UI/` — [UI-03](UI/UI-03.md), [UI-01](UI/UI-01.md), [UI-02](UI/UI-02.md)

@@ -1,6 +1,6 @@
 # Editor Setup & Test Scripts
 
-Last Updated: 2026-11-20 17:09:28 (KST)
+Last Updated: 2026-11-21 01:49:40 (KST)
 
 > Purpose: Map of Editor setup menus, build scripts, and EditMode/PlayMode test suites. | Parent: [codemap/README](README.md) | Related: [UnityCLI](../workflow/UnityCLI.md), [Status](../plan/Status.md)
 
@@ -32,10 +32,12 @@ Last Updated: 2026-11-20 17:09:28 (KST)
 - `GameUnitSpawnSetup.cs`: Menu `ProjectNeo/Setup/Connect Unit Spawning To Game Scene`. Wires `GameUnitSpawner` and fills soldier prefab slots.
 - `BarracksSetup.cs`: Menu `ProjectNeo/Setup/Configure Barracks Data`. Configures `Facility_TrainingGround.asset` and `allied_melee`/`allied_ranged` recruit costs/names.
 - `SiegePrototypeSetup.cs`: Menu `ProjectNeo/Setup/Create Siege Prototype`. Clones siege prototype scene.
+- `CharacterModelSetup.cs` (`ART-03`, `ART-04`): Menu `ProjectNeo/Setup/Apply Character Models`. Puts Synty models and hand weapons under unit prefab `Visual`, converts materials to URP copies, regenerates the four `AC_Unit_*` controllers, `AM_UpperBody` mask and `CAP_Unit_*` animation profiles (measures melee weapon contact from the right-hand speed peak), and configures `CharacterModelAnimator`. Re-runnable; rerun after any menu that regenerates unit prefabs. Details: [PrototypeScenes](PrototypeScenes.md).
 - `BuildScript.cs`: Windows standalone build script (`Builds/Windows/ProjectNeo.exe`).
 
 ## EditMode Tests (`Assets/Tests/EditMode/`)
 
+- `CharacterAnimationRulesTests.cs` (`ART-04`): bow draw cycle (fast draw to meet the impact, release at impact, reload and hold while engaged, lower when not, fire during hold/release/mid-draw), melee start offset, aim pitch mapping, engaged window, lowering the bow while running, flat weapon direction, random attack pick without repeat, sheath draw-at-once and sheathe-after-calm (`WeaponSheathRule`), arrow-line aim offset and model yaw, stable variant, profile clamping.
 - `WorkQueueTests.cs` (`SIEGE-08`): two crews with leftover carry-over and finish estimate, single crew and duplicate/remove, repair HP and rounded-down refund, castle capture of work/unfinished weapons and record read-back.
 - `EnemyIntelTests.cs` (`C-5`): per-type merge across waves, hidden groups as `? × N` without type names, single reveal, reveal-all, remaining clamp and unchanged-version, prefab display names, plan/stage hidden flag carry-over.
 - `BossRulesTests.cs` (`SIEGE-09`): boss target stats (zero keeps the base value, move-speed percent), Ascension percent on top, commander aura/penalty values and radius edge, no aura for other roles, duelist distance scale, structure damage, flyer priority targeting with fallback, boss as last plan group (count 1, kept by `WithCounts`, skipped without prefab), `Boss: <name>` in a hidden wave, boss-only reward, boss kills counted on defeat. `StageCatalogDataTests` also checks that every real stage has one distinct boss in its last wave and that the four Q-74 roles are covered.

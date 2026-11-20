@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d829d339a868a3744931d58645cf8e53, type: 3}
+  m_Name: CAP_Unit_Ground_Masc_Bow
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Combat.CharacterAnimationProfile
+  groundLocomotion: 1
+  combatIdle: 1
+  crouch: 1
+  meleeContactSeconds: []
+  meleeClipSeconds: []
+  deathCount: 6
+  hitSeconds: 0.6333334
+  bowLoadSeconds: 0.8333334
+  bowReleaseSeconds: 0.8000001
+  engagedSeconds: 2.5
+  aimPitchRange: 40
+  crossFadeSeconds: 0.25
+  bowLowerSpeed: 1.5
+  drawDistance: 8
+  sheatheDelay: 3
+  unsheatheGrabSeconds: 0
+  unsheatheSeconds: 0
+  sheatheReleaseSeconds: 0
+  sheatheSeconds: 0

@@ -13,7 +13,7 @@ namespace ProjectNeo.Siege
     /// 공격은 몸통(CharacterActor)의 기존 공격 속도·선딜레이·근접/원거리 처리를 그대로 쓴다.
     /// </summary>
     [RequireComponent(typeof(CharacterActor), typeof(AirborneBody))]
-    public sealed class FlyerBrain : SiegeAttacker
+    public sealed class FlyerBrain : SiegeAttacker, IAnimationCueSource
     {
         enum Mode { Deciding, Pursuing, Holding, Retreating, Exiting }
 
@@ -40,6 +40,9 @@ namespace ProjectNeo.Siege
 
         /// <summary>지금 노리는 아군. 없으면 null.</summary>
         public CharacterActor Target { get; private set; }
+        // 애니메이션 신호(ART-04): 쫓는 대상을 겨눈다. 활을 당긴 채 기다리는 자세는 쓰지 않는다.
+        CharacterActor IAnimationCueSource.AimTarget => Target;
+        bool IAnimationCueSource.HoldsDrawnBow => false;
         public FlyerSettings Settings => flyer;
         /// <summary>먼저 노릴 아군인지(SIEGE-09 결투형 보스). 비워 두면(기본) 설정의 대상 전략만 쓴다.</summary>
         public System.Func<CharacterActor, bool> PriorityTarget { get; set; }

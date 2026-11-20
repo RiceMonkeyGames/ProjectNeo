@@ -22,7 +22,7 @@ namespace ProjectNeo.Siege
     /// 이동과 공격 자체는 UnitCombatAI의 지시(Engage·Hold·Move)로 실행한다.
     /// </summary>
     [RequireComponent(typeof(UnitCombatAI), typeof(CharacterActor), typeof(NavMeshAgent))]
-    public sealed class SiegeAttackerBrain : SiegeAttacker
+    public sealed class SiegeAttackerBrain : SiegeAttacker, IAnimationCueSource
     {
         enum Mode { Deciding, Assault, ToLadder, Raising, Climbing, Falling, ToGate, Shooting, Retreating, ToWall, ToCannon }
 
@@ -63,6 +63,9 @@ namespace ProjectNeo.Siege
         /// 궁수가 쏠 곳도 옮길 곳도 없어 제자리에서 겨눈 채 기다리는지(SIEGE-10). 애니메이션에서 활을 당긴 채 기다리는 자세(Hold)를 붙인다.
         /// </summary>
         public bool IsArcherWaiting => Shooting && cover != null && cover.IsWaiting;
+        // 애니메이션 신호(ART-04): 겨누는 대상은 UnitCombatAI의 대상을 그대로 쓰고, 사격 중이거나 기다리는 궁수는 활을 당긴 채 둔다.
+        CharacterActor IAnimationCueSource.AimTarget => null;
+        bool IAnimationCueSource.HoldsDrawnBow => IsArcherFiring || IsArcherWaiting;
         public bool IsClimbing => mode == Mode.Climbing;
         public override bool IsAssaulting => mode == Mode.Assault;
         /// <summary>지금 부수러 가는 수성 무기. 없으면 null.</summary>
