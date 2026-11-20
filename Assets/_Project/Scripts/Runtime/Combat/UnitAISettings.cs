@@ -35,6 +35,10 @@ namespace ProjectNeo.Combat
         // 중지 중 사거리/추격 반경 밖에서 피격 시 반격 추격할 최대 경로/거리 한계. 0이면 자리 밖 반격 추격을 하지 않는다.
         [SerializeField, Min(0f)] float holdRetaliationRadius = 15f;
         public float HoldRetaliationRadius => holdRetaliationRadius;
+        // 중지 중에는 자리보다 이 높이 이상 아래로 내려가는 길로 적을 쫓거나 반격하지 않는다(성벽 위 부대가 성벽에 남는다).
+        // 0이면 제한하지 않는다.
+        [SerializeField, Min(0f)] float holdMaxDescent = 1.5f;
+        public float HoldMaxDescent => holdMaxDescent;
         // 타겟 전환 후 최소 유지 시간. 여러 적에게 동시에 맞을 때 핑퐁 현상을 막는다.
         [SerializeField, Min(0f)] float targetSwitchCooldown = 1.5f;
         public float TargetSwitchCooldown => targetSwitchCooldown;
@@ -47,7 +51,8 @@ namespace ProjectNeo.Combat
         public float DestinationRecoveryDistance => destinationRecoveryDistance;
 
         public static UnitAISettings Create(float detectionRange = 60f, float holdEngageRadius = 6f,
-            float holdRangedChaseExtra = 6f, float holdRetaliationRadius = 15f, float targetSwitchCooldown = 1.5f)
+            float holdRangedChaseExtra = 6f, float holdRetaliationRadius = 15f, float targetSwitchCooldown = 1.5f,
+            float holdMaxDescent = 1.5f)
         {
             var value = CreateInstance<UnitAISettings>();
             value.detectionRange = Mathf.Max(0f, detectionRange);
@@ -55,6 +60,7 @@ namespace ProjectNeo.Combat
             value.holdRangedChaseExtra = Mathf.Max(0f, holdRangedChaseExtra);
             value.holdRetaliationRadius = Mathf.Max(0f, holdRetaliationRadius);
             value.targetSwitchCooldown = Mathf.Max(0f, targetSwitchCooldown);
+            value.holdMaxDescent = Mathf.Max(0f, holdMaxDescent);
             return value;
         }
     }
