@@ -24,6 +24,7 @@ MonoBehaviour:
     itemPool: []
     heroPool: []
     recipes: []
+    battlementStyle: 1
   - upgradeCost:
       gold: 60
       materials: []
@@ -34,14 +35,5 @@ MonoBehaviour:
     itemPool: []
     heroPool: []
     recipes: []
-  - upgradeCost:
-      gold: 120
-      materials: []
-    qualityTier: 2
-    soldierModifiers: []
-    recruitableSoldiers: []
-    offerCount: 5
-    itemPool: []
-    heroPool: []
-    recipes: []
+    battlementStyle: 2
   displayName: Defense

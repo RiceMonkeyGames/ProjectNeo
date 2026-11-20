@@ -85,6 +85,7 @@ namespace ProjectNeo.Siege
         bool ShouldPass(Collider collider)
         {
             if (collider.gameObject.scene != gameObject.scene || collider == footing) return true;
+            if (ShotCover.Passes(collider, team)) return true;
             if (collider.transform.IsChildOf(transform)) return true;
             if (source != null && collider.transform.IsChildOf(source.transform)) return true;
             var actor = collider.GetComponentInParent<CharacterActor>();

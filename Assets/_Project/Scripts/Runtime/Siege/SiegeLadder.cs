@@ -26,6 +26,7 @@ namespace ProjectNeo.Siege
         readonly List<CharacterActor> removedRequests = new List<CharacterActor>();
         readonly Dictionary<CharacterActor, LadderPushInterruptHandle> aiPushHandles = new Dictionary<CharacterActor, LadderPushInterruptHandle>();
         CharacterActor sharedRaiser;
+        CastleBattlements battlements;
         static readonly List<SiegeLadder> active = new List<SiegeLadder>();
         public static IReadOnlyList<SiegeLadder> Active => active;
         public SiegeSettings Settings => settings;
@@ -119,8 +120,20 @@ namespace ProjectNeo.Siege
 
         /// <summary>적이 사다리를 세우고 오르기 시작하는 땅 위의 자리.</summary>
         public Vector3 BasePoint => Point(world.Grid.CellSize * 0.5f + settings.LadderBaseOffset, 0f);
-        /// <summary>사다리 위쪽 끝. 성벽 바깥면 바로 앞이다.</summary>
-        public Vector3 EdgePoint => Point(world.Grid.CellSize * 0.5f + 0.35f, wallHeight);
+        /// <summary>
+        /// 사다리 위쪽 끝. 성벽 바깥면 바로 앞이며, 성가퀴가 있으면 면 가운데 빈틈의 받침 높이에 걸린다(SIEGE-10).
+        /// 다 오른 유닛은 받침을 넘어 <see cref="TopPoint"/>로 내려선다.
+        /// </summary>
+        public Vector3 EdgePoint => Point(world.Grid.CellSize * 0.5f + 0.35f, wallHeight + SillHeight);
+
+        float SillHeight
+        {
+            get
+            {
+                if (battlements == null && world != null) battlements = world.GetComponent<CastleBattlements>();
+                return battlements != null ? battlements.SillHeightAt(cell, outward) : 0f;
+            }
+        }
         /// <summary>다 오른 유닛이 올라서는 성벽 위의 자리.</summary>
         public Vector3 TopPoint => Point(world.Grid.CellSize * 0.5f - settings.LadderTopInset, wallHeight);
 

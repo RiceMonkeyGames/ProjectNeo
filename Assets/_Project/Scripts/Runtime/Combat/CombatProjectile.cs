@@ -63,7 +63,7 @@ namespace ProjectNeo.Combat
 
         bool ShouldIgnore(Collider collider)
         {
-            if (collider.gameObject.scene != gameObject.scene || collider == footing) return true;
+            if (collider.gameObject.scene != gameObject.scene || collider == footing || ShotCover.Passes(collider, team)) return true;
             var actor = collider.GetComponentInParent<CharacterActor>();
             return actor != null && (actor == owner || actor.Team == team
                 || actor.Health == null || actor.Health.IsDead);

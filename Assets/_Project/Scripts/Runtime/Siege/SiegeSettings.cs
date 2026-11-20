@@ -87,6 +87,20 @@ namespace ProjectNeo.Siege
         [SerializeField] float gateStandOffset = -0.3f;
         [SerializeField, Min(0f)] float gateSpread = 3f;
         [SerializeField, Range(0.1f, 1f)] float archerApproachRatio = 0.7f;
+        // 사거리 안에서 가려진 채 이 시간이 지나면 정면 자리에서 성벽을 따라 옆으로 비켜선 자리를 한 번 찾는다(SIEGE-10 성가퀴 막힘 방지).
+        // 찾은 자리는 최소 commit초 지키고, 다음 찾기는 cooldown초 뒤에만 한다. 그 사이에는 제자리에서 겨눈 채 기다린다.
+        [SerializeField, Min(0f)] float archerRepositionDelay = 3f;
+        [SerializeField, Min(0.5f)] float archerSideStep = 3f;
+        [SerializeField, Range(1, 8)] int archerSideStepCount = 3;
+        [SerializeField, Min(0f)] float archerSearchCooldown = 10f;
+        [SerializeField, Min(0f)] float archerSpotCommitSeconds = 5f;
+        public float ArcherSearchCooldown => archerSearchCooldown;
+        public float ArcherSpotCommitSeconds => archerSpotCommitSeconds;
+        public ArcherCoverPlan CreateArcherCoverPlan() =>
+            new ArcherCoverPlan(archerRepositionDelay, archerSearchCooldown, archerSpotCommitSeconds);
+        public float ArcherRepositionDelay => archerRepositionDelay;
+        public float ArcherSideStep => archerSideStep;
+        public int ArcherSideStepCount => archerSideStepCount;
         // 후퇴하는 적이 판 바깥 끝에서 멈출 거리와, 길이 막혀도 이 시간이 지나면 이탈로 보는 시간.
         [SerializeField, Min(0f)] float retreatEdgeMargin = 1.5f;
         [SerializeField, Min(0.1f)] float retreatTimeout = 20f;
