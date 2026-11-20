@@ -1,8 +1,8 @@
 # COMBAT-06 | 2026-11-20 | Combat - Minimal Hero/Active Skill Execution
 
-Last Updated: 2026-11-21 00:49:56 (KST)
+Last Updated: 2026-11-21 01:07:42 (KST)
 
-> Purpose: Task history. | Parent: [history/README](../README.md) | Related: [Combat](../../design/Combat.md#active-skills), [CombatAndSquads codemap](../../codemap/CombatAndSquads.md), [FlowRunEconomy codemap](../../codemap/FlowRunEconomy.md), [QA-combat-06-skills](../../Backlog.md)
+> Purpose: Task history. | Parent: [history/README](../README.md) | Related: [Combat](../../design/Combat.md#active-skills), [CombatAndSquads codemap](../../codemap/CombatAndSquads.md), [FlowRunEconomy codemap](../../codemap/FlowRunEconomy.md), [Backlog-Done](../../archive/Backlog-Done.md)
 
 Branch: `feature/combat-06`. Owner: SeongminHwang. Claim synchronized to develop (`docs: claim COMBAT-06`).
 
@@ -37,8 +37,9 @@ Q-62~Q-65 and Q-72/Q-73 (2026-11-19) fixed the skill rules: up to 3 slots (playe
 
 - `Tools/Agent/unity-verify-local.ps1 -Mode all` after the step 5 data run: compile passed, EditMode 602/602, PlayMode 281/281 (dotnet pre-check skipped on the last run because the Unity-generated csproj lagged behind new files; it passed on the earlier full runs).
 - Step 6 (2026-11-21): `unity-verify-local.ps1 -Mode all -SkipDotnet` then `-Mode play -SkipDotnet` after the row-count fix: compile passed, EditMode 604/604, PlayMode 282/282.
-- Manual play: not done yet (`QA-combat-06-skills`).
+- Manual play (2026-11-21, user, `Title.unity` -> new run -> `Game.unity`): passed the full `QA-combat-06-skills` checklist (Combat perk column and skill perk, `Z` cast with red disc and cooldown, empty-slot message, captain auto-cast and `F1` + `Alt`+`Z`, equipment window skill view equip/unequip, Auto off, save and continue, Korean text).
+- Standalone build: not verified.
 
-## Remaining
+## Outcome
 
-- Manual check (`QA-combat-06-skills`).
+Done 2026-11-21 on user confirmation; `QA-combat-06-skills` closed with it. Archived in [Backlog-Done](../../archive/Backlog-Done.md).
