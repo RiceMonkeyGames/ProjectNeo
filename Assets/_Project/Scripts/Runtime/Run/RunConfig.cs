@@ -30,11 +30,14 @@ namespace ProjectNeo.Run
         [SerializeField] AscensionTable ascension;
         [Tooltip("퍽 트리(META-09). 퍽 창이 보여 준다. 비어 있으면 퍽 창을 쓰지 않는다.")]
         [SerializeField] PerkTreeCatalog perkTrees;
+        [Tooltip("영웅 등급·승급 수치(PREP-10). 비우면 승급을 쓰지 않는다.")]
+        [SerializeField] HeroPromotionSettings heroPromotion;
 
         public SquadConfig SquadConfig => squadConfig;
         public UnlockCatalog UnlockCatalog => unlockCatalog;
         public AscensionTable Ascension => ascension;
         public PerkTreeCatalog PerkTrees => perkTrees;
+        public HeroPromotionSettings HeroPromotion => heroPromotion;
         public PrepTimeSettings PrepTime => prepTime;
         public IReadOnlyList<FacilityDefinition> Facilities => facilities;
         public EconomyConfig Economy => economy;
@@ -91,6 +94,21 @@ namespace ProjectNeo.Run
         {
             unlockCatalog = catalog;
             return this;
+        }
+
+        /// <summary>영웅 승급 수치를 정한다(테스트용·에디터 설치용). 같은 설정을 돌려준다.</summary>
+        public RunConfig WithHeroPromotion(HeroPromotionSettings settings)
+        {
+            heroPromotion = settings;
+            return this;
+        }
+
+        /// <summary>시설을 하나 더한다(에디터 설치용). 같은 종류가 이미 있으면 바꾸지 않고 false다.</summary>
+        public bool AddFacility(FacilityDefinition facility)
+        {
+            if (facility == null || facilities.Exists(known => known != null && known.Type == facility.Type)) return false;
+            facilities.Add(facility);
+            return true;
         }
 
         /// <summary>퍽 트리를 정한다(테스트용). 같은 설정을 돌려준다.</summary>

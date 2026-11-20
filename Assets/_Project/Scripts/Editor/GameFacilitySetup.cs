@@ -35,6 +35,7 @@ namespace ProjectNeo.Editor
             (FacilityType.TrainingGround, "Training ground", "Training"),
             (FacilityType.Smithy, "Smithy", "Smithy"),
             (FacilityType.Defense, "Defense", null),
+            (FacilityType.HeroHall, HeroHallSetup.DisplayName, HeroHallSetup.BuildingName),
         };
 
         [MenuItem("ProjectNeo/Setup/Connect Facilities To Game Scene")]
@@ -91,7 +92,7 @@ namespace ProjectNeo.Editor
             AssetDatabase.SaveAssets();
         }
 
-        static string PathOf(FacilityType type) => $"{Folder}/Facility_{type}.asset";
+        internal static string PathOf(FacilityType type) => $"{Folder}/Facility_{type}.asset";
 
         /// <summary>프로토타입 시설 데이터를 만들거나 기존 것을 둔다.</summary>
         public static void CreateData()
@@ -101,13 +102,19 @@ namespace ProjectNeo.Editor
             {
                 string path = PathOf(entry.type);
                 if (AssetDatabase.LoadAssetAtPath<FacilityDefinition>(path) != null) continue;
+                // 영웅의 전당(PREP-10)은 업그레이드가 없는 한 단계 시설이다.
+                if (entry.type == FacilityType.HeroHall)
+                {
+                    AssetDatabase.CreateAsset(FacilityDefinition.Create(entry.type, entry.name, Level(0, 0, 0)), path);
+                    continue;
+                }
                 // 프로토타입 임의 값(2026-11-12). 레벨 3단계, 업그레이드 골드 60·120. 매물·풀·스탯은 각 시설 작업에서 채운다.
                 AssetDatabase.CreateAsset(FacilityDefinition.Create(entry.type, entry.name,
                     Level(0, 0, 3), Level(60, 1, 4), Level(120, 2, 5)), path);
             }
         }
 
-        static FacilityLevel Level(int gold, int tier, int offers) => new FacilityLevel
+        internal static FacilityLevel Level(int gold, int tier, int offers) => new FacilityLevel
         {
             upgradeCost = new Cost(gold),
             qualityTier = tier,

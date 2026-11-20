@@ -477,6 +477,7 @@ namespace ProjectNeo.Editor
             Facility(layout.transform, "Training", new Vector3(91.5f, 0f, 94.5f), new Vector3(15f, 5f, 9f), plaster, roof);
             Facility(layout.transform, "Smithy", new Vector3(148.5f, 0f, 112.5f), new Vector3(15f, 7f, 12f), plaster, roof);
             Facility(layout.transform, "Construction", new Vector3(148.5f, 0f, 153f), new Vector3(12f, 6f, 12f), plaster, roof);
+            Facility(layout.transform, HeroHallSetup.BuildingName, HeroHallSetup.BuildingPosition, HeroHallSetup.BuildingSize, plaster, roof);
         }
 
         static void Decoration(Transform parent, string name, Vector3 position, Vector3 scale, Material material)
@@ -487,7 +488,7 @@ namespace ProjectNeo.Editor
             UnityEngine.Object.DestroyImmediate(box.GetComponent<Collider>());
         }
 
-        static void Facility(Transform parent, string name, Vector3 position, Vector3 size, Material wallMaterial, Material roofMaterial)
+        internal static void Facility(Transform parent, string name, Vector3 position, Vector3 size, Material wallMaterial, Material roofMaterial)
         {
             var root = new GameObject(name);
             root.transform.SetParent(parent, false);

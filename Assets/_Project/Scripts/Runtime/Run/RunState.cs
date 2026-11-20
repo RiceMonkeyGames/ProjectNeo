@@ -104,6 +104,7 @@ namespace ProjectNeo.Run
             state.SetupShop(config.Economy);
             state.SetupEquipmentUpgrades(config.EquipmentUpgrades);
             state.SetupPrepTime(config.PrepTime);
+            state.SetupHeroPromotion(config.HeroPromotion);
 
             foreach (RunSquadSetup setup in config.StartingSquads)
             {
@@ -378,6 +379,8 @@ namespace ProjectNeo.Run
             units.Add(hero.Id, hero);
             heroes.Add(hero);
             if (isPlayer) Player = hero;
+            // 새로 들어온 영웅은 고용 등급에서 시작한다(PREP-10, Q-73).
+            InitGrade(hero, StartingGrade(character.Definition), 0);
             Changed?.Invoke();
             return hero;
         }
@@ -773,6 +776,8 @@ namespace ProjectNeo.Run
                 }
             }
             if (result.CastleAfter != null) Castle = result.CastleAfter.Clone();
+            // 승리했으면 살아남은 대장 영웅이 경험치를 받는다(PREP-10).
+            GrantVictoryExp(result);
             // 런 점수(META-04)에 이번 전투의 처치 수·승리·성문 상태를 센다.
             ScoreTally.Record(result);
 

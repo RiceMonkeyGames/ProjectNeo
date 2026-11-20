@@ -48,9 +48,10 @@ namespace ProjectNeo.Characters
         }
 
         /// <summary>코드에서 고용할 수 있는 영웅을 만든다(테스트용, D-3).</summary>
-        public static HeroDefinition Create(string id, int tier, Cost hireCost, bool unlockedByDefault = true)
+        public static HeroDefinition Create(string id, int tier, Cost hireCost, bool unlockedByDefault = true,
+            params StatValue[] baseStats)
         {
-            HeroDefinition hero = Create(id, unlockedByDefault);
+            HeroDefinition hero = Create(id, unlockedByDefault, 3, baseStats);
             hero.tier = Mathf.Max(1, tier);
             hero.hireCost = hireCost;
             return hero;

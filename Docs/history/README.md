@@ -8,7 +8,7 @@ Read this folder only when researching past design rationales, benchmarks, or ve
 
 - **Recording rule**: Create or append to `Docs/history/<PREFIX>/<TASK-ID>.md` using header `# <TASK-ID> | <YYYY-MM-DD> | <Area> - <Title>`, and update [Status.md](../plan/Status.md) / `codemap/` if needed.
 
-Latest manual verification: [PREP-08](PREP/PREP-08.md) (fallen hero gear to stash, 2026-11-19).
+Latest manual verification: [PREP-10](PREP/PREP-10.md) (hero promotion at the Hero Hall, 2026-11-20).
 
 ## Folders
 
@@ -21,7 +21,7 @@ Latest manual verification: [PREP-08](PREP/PREP-08.md) (fallen hero gear to stas
 - `BUG/` — [BUG-popup-cursor](BUG/BUG-popup-cursor.md), [BUG-wall-archer-los](BUG/BUG-wall-archer-los.md), [BUG-ladder-push-visual](BUG/BUG-ladder-push-visual.md), [BUG-ladder-fall-clipping](BUG/BUG-ladder-fall-clipping.md), [BUG-ladder-fall-test-after-gate-arch](BUG/BUG-ladder-fall-test-after-gate-arch.md), [BUG-wall-hold](BUG/BUG-wall-hold.md), [BUG-playmode-input-focus](BUG/BUG-playmode-input-focus.md), [BUG-wall-destination-replan](BUG/BUG-wall-destination-replan.md), [BUG-ally-no-retaliation](BUG/BUG-ally-no-retaliation.md), [BUG-stage2-enemies-idle](BUG/BUG-stage2-enemies-idle.md), [BUG-hired-unit-not-joining-squad](BUG/BUG-hired-unit-not-joining-squad.md), [BUG-hero-move-stops-early](BUG/BUG-hero-move-stops-early.md), [BUG-wall-archer-leaves-wall](BUG/BUG-wall-archer-leaves-wall.md)
 - `PERF/` — [PERF-nav-query](PERF/PERF-nav-query.md)
 - `QA/` — [QA-standalone-build](QA/QA-standalone-build.md), [QA-ladder-controls](QA/QA-ladder-controls.md), [QA-game-loop](QA/QA-game-loop.md), [QA-opening-battle-balance](QA/QA-opening-battle-balance.md), [QA-victory-flow](QA/QA-victory-flow.md), [QA-smithy-popup](QA/QA-smithy-popup.md), [QA-build-zoom-ui-hover](QA/QA-build-zoom-ui-hover.md)
-- `PREP/` — [PREP-04](PREP/PREP-04.md), [PREP-01](PREP/PREP-01.md), [PREP-02](PREP/PREP-02.md), [PREP-03](PREP/PREP-03.md), [PREP-05](PREP/PREP-05.md), [PREP-06](PREP/PREP-06.md), [PREP-08](PREP/PREP-08.md)
+- `PREP/` — [PREP-04](PREP/PREP-04.md), [PREP-01](PREP/PREP-01.md), [PREP-02](PREP/PREP-02.md), [PREP-03](PREP/PREP-03.md), [PREP-05](PREP/PREP-05.md), [PREP-06](PREP/PREP-06.md), [PREP-08](PREP/PREP-08.md), [PREP-10](PREP/PREP-10.md)
 - `FLOW/` — [FLOW-01](FLOW/FLOW-01.md), [FLOW-02](FLOW/FLOW-02.md), [FLOW-03](FLOW/FLOW-03.md)
 - `COMBAT/` — [COMBAT-01](COMBAT/COMBAT-01.md), [COMBAT-02](COMBAT/COMBAT-02.md), [COMBAT-03](COMBAT/COMBAT-03.md), [COMBAT-05](COMBAT/COMBAT-05.md), [COMBAT-07](COMBAT/COMBAT-07.md)
 - `META/` — [META-01](META/META-01.md), [META-02](META/META-02.md), [META-03](META/META-03.md), [META-04](META/META-04.md), [META-05](META/META-05.md), [META-06](META/META-06.md), [META-07](META/META-07.md), [META-08](META/META-08.md), [META-09](META/META-09.md)
