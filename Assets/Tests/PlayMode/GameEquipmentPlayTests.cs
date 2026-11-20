@@ -74,7 +74,7 @@ namespace ProjectNeo.Tests
                 yield return null;
                 Assert.IsTrue(equipment.IsOpen && view.IsPanelView, "I로 장비 화면을 연다.");
                 Assert.IsFalse(Object.FindAnyObjectByType<PlayerInputController>().enabled);
-                Assert.AreEqual(1, equipment.InventoryRows);
+                Assert.AreEqual(2, equipment.InventoryRows, "보기 바꾸기 줄(COMBAT-06) + 장비 1개");
                 StringAssert.Contains("장비 칸 0 / 3", equipment.StatusText);
 
                 Assert.IsTrue(equipment.TryEquip(0));

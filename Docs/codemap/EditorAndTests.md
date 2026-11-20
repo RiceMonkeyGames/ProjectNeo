@@ -1,6 +1,6 @@
 # Editor Setup & Test Scripts
 
-Last Updated: 2026-11-20 20:54:00 (KST)
+Last Updated: 2026-11-21 00:49:56 (KST)
 
 > Purpose: Map of Editor setup menus, build scripts, and EditMode/PlayMode test suites. | Parent: [codemap/README](README.md) | Related: [UnityCLI](../workflow/UnityCLI.md), [Status](../plan/Status.md)
 
@@ -92,7 +92,7 @@ Last Updated: 2026-11-20 20:54:00 (KST)
 - `GameBattlePlayTests.cs`: Enemy assault, win/loss, defeat priority, retreat, 3-tier ladders, gate collapse assault, next prep carry-over, run link, rewards.
 - `GameBuildEconomyPlayTests.cs`: Starting gold, build deductions, refunds, gate protection, repair execution.
 - `GameFacilityPlayTests.cs`: Facility pop-ups, movement freezing, cursor release, battle lock, shop buy/sell stock persistence, tavern upgrades.
-- `GameEquipmentPlayTests.cs`: Shared Character, `I`/`Esc` input toggles, immediate stat reflection, battle lock.
+- `GameEquipmentPlayTests.cs`: Shared Character, `I`/`Esc` input toggles, immediate stat reflection, battle lock. COMBAT-06 skill view is covered in `GameSkillPlayTests`.
 - `GameUnitSpawnPlayTests.cs`: D-0b Game scene recruit spawn in front of barracks, walk to squad, battle input/commands/result, new squad creation.
 - `GameBarracksPlayTests.cs`: D-4 Game scene barracks popup recruit with cost/squad choice, insufficient funds, battle input, upgrade bonus on existing/new grunts.
 - `GameOrganizationPlayTests.cs`: D-8 Game scene organization window moves a grunt to a new squad and back via cards (UI-01), hired hero to captain, to another squad and back to reserve, (run + scene squads + commander stay aligned, emptied squad removed); closed during battle.

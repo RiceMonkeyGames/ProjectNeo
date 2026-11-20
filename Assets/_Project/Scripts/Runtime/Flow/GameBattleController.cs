@@ -203,6 +203,7 @@ namespace ProjectNeo.Flow
                 Skills.Configure(flow, settings, player, commander, morale, () => RunLink, SkillCamera);
                 // 플레이어 스킬은 찍은 전투 트리 퍽으로 배운 것 중 장착한 것(COMBAT-06, Q-72).
                 Skills.PlayerSkills = () => RunLink.State?.EquippedPlayerSkills();
+                Skills.HeroAuto = hero => hero.SkillAuto;
                 SkillHud = gameObject.AddComponent<ProjectNeo.UI.SkillHud>();
                 SkillHud.Configure(Skills);
             }

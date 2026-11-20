@@ -38,6 +38,8 @@ namespace ProjectNeo.Run
         public ScoreRecord score = new ScoreRecord();
         /// <summary>이 런의 승천 단계(FLOW-03). 예전 저장에는 없어 0(기본 게임)으로 읽힌다.</summary>
         public int ascensionLevel;
+        /// <summary>플레이어가 장착한 스킬 id(칸 순서, 빈 칸은 빈 문자열, COMBAT-06). 예전 저장에는 없어 배운 순서로 채운다.</summary>
+        public List<string> playerSkills = new List<string>();
     }
 
     /// <summary>런 점수에 쓰는 누적 수(META-04). 예전 저장에는 없어서 0으로 읽힌다.</summary>
@@ -84,6 +86,8 @@ namespace ProjectNeo.Run
         public int grade;
         /// <summary>다음 등급까지 모은 경험치(PREP-10).</summary>
         public int exp;
+        /// <summary>스킬 자동 사용을 끈 영웅(COMBAT-06). 예전 저장에는 없어 false(자동 켜짐)로 읽힌다.</summary>
+        public bool skillManual;
         public List<ItemRecord> equipment = new List<ItemRecord>();
     }
 

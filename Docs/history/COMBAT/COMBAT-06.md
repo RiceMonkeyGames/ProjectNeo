@@ -1,6 +1,6 @@
 # COMBAT-06 | 2026-11-20 | Combat - Minimal Hero/Active Skill Execution
 
-Last Updated: 2026-11-20 23:00:54 (KST)
+Last Updated: 2026-11-21 00:49:56 (KST)
 
 > Purpose: Task history. | Parent: [history/README](../README.md) | Related: [Combat](../../design/Combat.md#active-skills), [CombatAndSquads codemap](../../codemap/CombatAndSquads.md), [FlowRunEconomy codemap](../../codemap/FlowRunEconomy.md), [QA-combat-06-skills](../../Backlog.md)
 
@@ -15,6 +15,7 @@ Q-62~Q-65 and Q-72/Q-73 (2026-11-19) fixed the skill rules: up to 3 slots (playe
 - User, 2026-11-20: player skill keys `Z` / `X` / `C`; manual hero cast = selected squad (`F1`-`F4`) + `Alt` + slot key; equip and per-hero Auto in the preparation equipment window (`I`); about 6 shared sample skills, one per effect family. Recorded in [Combat](../../design/Combat.md#active-skills) and [Decisions-Resolved](../../plan/Decisions-Resolved.md).
 - Agent defaults (open to change): `Alt` + key is obeyed even while Auto is on; player `OwnSquad` skills fall back to allies within the skill radius (the player has no squad); a failed cast keeps the cooldown; AimPoint aims are pulled back to range; a recast buff refreshes its time instead of stacking; skill perk prerequisites (Whirlwind none, Shield Bash after Sharpened Blade, War Cry after Toughness, Healing Light after Iron Skin); skill UI text is Korean (UI-04).
 - 2026-11-20, user: steps 1-5 merged to develop before the manual check and the step 6 work; the manual check is tracked as `QA-combat-06-skills`.
+- Step 6 agent defaults (open to change): the equipment window switches between a gear view and a skill view with a top row on the right list (the window has room for about 6 rows per list); a learned skill goes into the first empty slot; an emptied slot is refilled from the remaining learned skills at battle start; old saves keep Auto on and fill the slots in learned order.
 
 ## Changes (steps 1-5, merged to develop 2026-11-20)
 
@@ -26,12 +27,18 @@ Q-62~Q-65 and Q-72/Q-73 (2026-11-19) fixed the skill rules: up to 3 slots (playe
 - Fix: `PerkTreeSetup.SaveOver` blanked every overwritten asset's `m_Name`; both setups now keep the file name.
 - Tests: EditMode `SkillRulesTests` (15), `SkillDataTests` (5); PlayMode `SkillCasterPlayTests` (10), `HeroSkillAIPlayTests` (5), `GameSkillPlayTests` (4); `GamePerkWindowPlayTests` row count 15 -> 19.
 
+## Changes (step 6, merged to develop 2026-11-21)
+
+- Run: `RunHero.SkillAuto` (default on), `RunState.TryEquipPlayerSkill` / `UnequipPlayerSkill`; save fields `RunSnapshot.playerSkills` (slot order) and `HeroRecord.skillManual`; restore sets the slot ids only (perks are set up later by the scene; unlearned ids drop on the next refresh).
+- Flow: `GameEquipment` skill view (`ToggleView`, `TryEquipSkill`, `TryUnequipSkill`, `ToggleHeroAuto`, `EquippedRowTexts` / `InventoryRowTexts`); slot keys from `GameSkills.KeyOf` / `ModifierKey`; `GameBattleController` sets `GameSkills.HeroAuto = hero => hero.SkillAuto`.
+- Tests: EditMode `RunPerkTests.SkillLoadout_EquipsLearnedSkills_AndSurvivesTheRunSave`, `RunSaveTests.CaptureThenRestore_KeepsEachHerosSkillAuto_AndOldSavesStayAuto`; PlayMode `GameSkillPlayTests` equipment skill view test; `GameEquipmentPlayTests` inventory row count 1 -> 2 (view row).
+
 ## Verification
 
 - `Tools/Agent/unity-verify-local.ps1 -Mode all` after the step 5 data run: compile passed, EditMode 602/602, PlayMode 281/281 (dotnet pre-check skipped on the last run because the Unity-generated csproj lagged behind new files; it passed on the earlier full runs).
+- Step 6 (2026-11-21): `unity-verify-local.ps1 -Mode all -SkipDotnet` then `-Mode play -SkipDotnet` after the row-count fix: compile passed, EditMode 604/604, PlayMode 282/282.
 - Manual play: not done yet (`QA-combat-06-skills`).
 
 ## Remaining
 
-- Step 6: equipment window (`I`) skill rows (equip 3 of the learned player skills, show hero open skills and Auto toggle), save/restore of the player loadout and per-hero Auto in the run save.
 - Manual check (`QA-combat-06-skills`).
