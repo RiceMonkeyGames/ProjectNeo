@@ -210,7 +210,7 @@ namespace ProjectNeo.Siege
             {
                 Collider collider = hits[i].collider;
                 if (hits[i].distance >= nearest || collider.gameObject.scene != gameObject.scene
-                    || collider.transform.IsChildOf(transform)) continue;
+                    || collider.transform.IsChildOf(transform) || ShotCover.Passes(collider, CombatTeam.Allied)) continue;
                 nearest = hits[i].distance;
                 point = hits[i].point;
             }

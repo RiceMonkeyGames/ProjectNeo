@@ -9,6 +9,7 @@ using ProjectNeo.Meta;
 using ProjectNeo.Run;
 using ProjectNeo.Squads;
 using ProjectNeo.Stats;
+using ProjectNeo.Walls;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -283,6 +284,27 @@ namespace ProjectNeo.Flow
                 AddRow(inventoryList, $"{mark}Captain of squad {i + 1} (current: {leader})", () => ChooseCaptainSquad(index));
             }
         }
+
+        /// <summary>방어 시설: 지금 성벽 위 성가퀴와 다음 레벨에서 바뀌는 모양(SIEGE-10).</summary>
+        static string DescribeDefense(FacilityState facility)
+        {
+            var text = new StringBuilder("Wall tops: " + DescribeBattlement(facility.Current.battlementStyle));
+            if (!facility.IsMaxLevel)
+            {
+                BattlementStyle next = facility.Definition.Levels[facility.Level + 1].battlementStyle;
+                if (next != facility.Current.battlementStyle)
+                    text.Append("\nNext level: " + DescribeBattlement(next) + ". Applies to every wall at once.");
+            }
+            text.Append("\nBattlements stand on the outer edges of the top tier. Defenders shoot through their own cover.");
+            return text.ToString();
+        }
+
+        static string DescribeBattlement(BattlementStyle style) => style switch
+        {
+            BattlementStyle.Parapet => "low parapet (covers legs)",
+            BattlementStyle.Crenellated => "crenellated battlements (merlons block arrows and sight)",
+            _ => "none",
+        };
 
         static string DescribeTavern(FacilityState facility)
         {
@@ -616,6 +638,7 @@ namespace ProjectNeo.Flow
                     : smithy ? DescribeSmithy(facility)
                     : tavern ? DescribeTavern(facility)
                     : heroHall ? DescribeHeroHall(state)
+                    : type == FacilityType.Defense ? DescribeDefense(facility)
                     : Purpose(type) + "\nFacility functions and upgrade effects will be added later.";
                 body.text = string.IsNullOrEmpty(Message) ? text : Message + "\n" + text;
             }

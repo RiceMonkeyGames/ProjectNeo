@@ -1,10 +1,12 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-20 16:18:18 (KST)
+Last Updated: 2026-11-20 20:17:09 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
 ## Resolved `Q-*` Table
+
+Battlement rules (SIEGE-10, 2026-11-20, user): (1) both styles are built — Defense facility Lv1 low parapet, Lv2 crenellated battlements — applied castle-wide; (2) not separately destructible, tied to the top wall piece; (3) ladders hang in a crenel and rest on its sill (pattern unbroken; first a gap, revised after playtest the same day); (4) outer edges only (joined walls, stair tops and inner edges stay open); (5) the upgrade is a "Battlements" button in the build-mode panel; (7) shooters aim at the upper body when the body centre is hidden; (8) enemy archers side-step along the wall after 3s blocked in range, search once per 10s, keep a found spot at least 5s, otherwise wait in place aiming; (6) cannon cells become sill-only gun ports, and Bannerlord-style bastions are registered as SIEGE-11. [Rule](../design/WallsAndSiege.md).
 
 B-7.2 scope (2026-11-18, user): B-7.2 is closed without new code. Post-battle cleanup is already in place and its no-leak check across repeated stages moves into B-9.3; enemy squad linking is dropped because enemies have no morale (Q-44); corpse explosion is dropped with no follow-up task. [Plan](M1.md).
 

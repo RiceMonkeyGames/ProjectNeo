@@ -40,6 +40,10 @@ namespace ProjectNeo.Walls
         public bool IsRebuilding { get; private set; }
         public bool RebuildPending => rebuildPending;
         public int NavigationRevision { get; private set; }
+        /// <summary>
+        /// 준비 중 직접 바꾼 배치(놓기·철거·되살리기)마다 오른다. 전투 중 무너짐·성문 파괴로는 오르지 않는다(SIEGE-10 성 바깥 판정 기준).
+        /// </summary>
+        public int LayoutRevision { get; private set; }
         public event Action<PlacedStructure> PieceCollapsing;
         /// <summary>받침을 잃은 조각이 한 층 내려앉기 직전에 알린다. 아직 원래 자리에 있다.</summary>
         public event Action<PlacedStructure> PieceDropping;
@@ -65,6 +69,9 @@ namespace ProjectNeo.Walls
                         CreateBody(placement);
                     else Debug.LogError("Invalid initial construction layout.", this);
                 }
+            // 성가퀴는 첫 길찾기 메시에 함께 담는다. 따로 만들면 시작하자마자 메시를 한 번 더 만들게 된다(SIEGE-10).
+            var battlements = GetComponent<CastleBattlements>();
+            if (battlements != null) battlements.BuildBeforeNavigation(this);
             Physics.SyncTransforms();
             surface.BuildNavMesh();
             NavigationRevision = 1;
@@ -114,6 +121,7 @@ namespace ProjectNeo.Walls
             if (!Layout.TryPlace(definition, cell, rotation, out var placement)) return false;
             body = CreateBody(placement);
             rebuildPending = true;
+            LayoutRevision++;
             LiftOverlappingUnits(body);
             Changed?.Invoke();
             return true;
@@ -135,6 +143,7 @@ namespace ProjectNeo.Walls
             Layout = new BuildLayout(grid);
             Mounts = new MountLayout(Layout);
             rebuildPending = true;
+            LayoutRevision++;
             Changed?.Invoke();
         }
 
@@ -148,6 +157,7 @@ namespace ProjectNeo.Walls
             if (definition == null || !Layout.TryPlace(definition, cell, rotation, out var placement, fixedGate)) return false;
             body = CreateBody(placement);
             rebuildPending = true;
+            LayoutRevision++;
             Changed?.Invoke();
             return true;
         }
@@ -373,6 +383,7 @@ namespace ProjectNeo.Walls
             Layout.Remove(placement.Id);
             RemoveBody(structure);
             rebuildPending = true;
+            LayoutRevision++;
             Changed?.Invoke();
             return true;
         }
@@ -390,9 +401,13 @@ namespace ProjectNeo.Walls
             Layout.Remove(structure.Placement.Id);
             RemoveBody(structure);
             rebuildPending = true;
+            LayoutRevision++;
             Changed?.Invoke();
             return true;
         }
+
+        /// <summary>조각 배치 밖의 이유(성가퀴 모양 바뀜 등)로 길찾기 메시를 다시 만들게 한다.</summary>
+        public void RequestNavigationRebuild() => rebuildPending = true;
 
         void RemoveBody(PlacedStructure structure)
         {

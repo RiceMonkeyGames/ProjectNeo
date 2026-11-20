@@ -22,7 +22,10 @@ namespace ProjectNeo.Combat
         [SerializeField, Min(0f)] float highGroundMinimumDrop = 1.5f;
         [SerializeField, Min(0f)] float highGroundRangeBonus = 0.25f;
         [SerializeField, Min(0f)] float staggerPower = 10f;
+        // 몸 가운데가 가려졌을 때 대신 노리는 위쪽 몸통 높이(키 대비, SIEGE-10). 낮은 난간 뒤에서도 상체는 맞는다.
+        [SerializeField, Range(0.5f, 1f)] float upperAimRatio = 0.85f;
         public float HighGroundMinimumDrop => highGroundMinimumDrop;
+        public float UpperAimRatio => upperAimRatio;
         public float HighGroundRangeBonus => highGroundRangeBonus;
         public float UpwardShotMinimumRise => upwardShotMinimumRise;
         public float UpwardShotDamageRatio => upwardShotDamageRatio;

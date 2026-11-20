@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ab879065a6be8940a73444e15730723, type: 3}
+  m_Name: Battlements
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Walls.BattlementSettings
+  thickness: 0.4
+  parapetHeight: 0.8
+  merlonHeight: 2.2
+  merlonWidth: 0.75
+  crenelWidth: 0.75
+  material: {fileID: 2100000, guid: a4e7e850213ab7c4bb3d78475e723bf3, type: 2}

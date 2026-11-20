@@ -4,6 +4,7 @@ using ProjectNeo.Characters;
 using ProjectNeo.Core;
 using ProjectNeo.Economy;
 using ProjectNeo.Stats;
+using ProjectNeo.Walls;
 using UnityEngine;
 
 namespace ProjectNeo.Facilities
@@ -42,6 +43,8 @@ namespace ProjectNeo.Facilities
         public List<WeightedEntry<HeroDefinition>> heroPool;
         /// <summary>이 레벨에서 항상 만들 수 있는 장비와 제작 비용(대장간, Q-35). 레벨마다 전체 목록을 적는다.</summary>
         public List<CraftingRecipe> recipes;
+        /// <summary>성벽 맨 위에 자동으로 세우는 성가퀴 모양(방어 시설, SIEGE-10). 성 전체에 한 번에 적용한다.</summary>
+        public BattlementStyle battlementStyle;
     }
 
     /// <summary>시설 하나의 데이터. 레벨 목록의 첫 칸이 시작 레벨이다.</summary>

@@ -47,7 +47,22 @@ namespace ProjectNeo.Siege
         Vector3 climbStart;
         float climbProgress;
         float think;
+        // 성가퀴에 가려진 궁수의 자리 판단과 고른 옆 사격 자리(SIEGE-10).
+        ArcherCoverPlan cover;
+        Vector3 coverSpot;
+        bool archerHasShot;
         public override SiegeAttackerRole Role => role;
+        bool Shooting => role == SiegeAttackerRole.Archer && mode == Mode.Shooting;
+        /// <summary>
+        /// 궁수가 지금 서 있는 자리에서 쏠 대상이 있어 멈춰 쏘는 중인지. 애니메이션(조준·발사 자세)을 붙일 때 읽는다.
+        /// </summary>
+        public bool IsArcherFiring => Shooting && archerHasShot;
+        /// <summary>궁수가 성가퀴에 가려 옆으로 비켜선 사격 자리로 가거나 그 자리에 있는지(SIEGE-10). 검증과 애니메이션용.</summary>
+        public bool IsArcherRepositioning => Shooting && cover != null && cover.HasSpot;
+        /// <summary>
+        /// 궁수가 쏠 곳도 옮길 곳도 없어 제자리에서 겨눈 채 기다리는지(SIEGE-10). 애니메이션에서 활을 당긴 채 기다리는 자세(Hold)를 붙인다.
+        /// </summary>
+        public bool IsArcherWaiting => Shooting && cover != null && cover.IsWaiting;
         public bool IsClimbing => mode == Mode.Climbing;
         public override bool IsAssaulting => mode == Mode.Assault;
         /// <summary>지금 부수러 가는 수성 무기. 없으면 null.</summary>
@@ -550,7 +565,11 @@ namespace ProjectNeo.Siege
 
         void DecideArcher()
         {
+            cover ??= settings.CreateArcherCoverPlan();
+            // 돌격·후퇴 등 다른 일을 하다 돌아왔으면 자리 판단을 처음부터 한다.
+            if (mode != Mode.Shooting) cover.Clear();
             mode = Mode.Shooting;
+            archerHasShot = false;
             CharacterActor nearest = null;
             float nearestDistance = float.PositiveInfinity;
             foreach (CharacterActor candidate in CharacterActor.ActiveActors)
@@ -559,6 +578,8 @@ namespace ProjectNeo.Siege
                 // 지금 자리에서 쏠 수 있는 적이 있으면 그대로 서서 쏜다.
                 if (CombatPhysics.IsInRange(Actor, candidate) && CombatPhysics.HasClearShot(Actor, candidate))
                 {
+                    cover.Shooting();
+                    archerHasShot = true;
                     if (ai.Directive != UnitDirective.Hold) ai.SetDirective(UnitDirective.Hold);
                     return;
                 }
@@ -568,13 +589,81 @@ namespace ProjectNeo.Siege
                 nearest = candidate;
             }
             if (nearest == null) return;
-            // 가장 가까운 적을 사거리 안에 두는 성 바깥쪽 자리로 다가간다.
+            // 가장 가까운 적을 사거리 안에 두는 성 바깥쪽 정면 자리.
             float range = Actor.Stats.GetValue(StatType.AttackRange) * settings.ArcherApproachRatio;
             Vector3 point = nearest.transform.position + OutwardWorld * range;
             point.y = world.transform.position.y;
             if (!NavMesh.SamplePosition(point, out NavMeshHit hit, 4f, NavMesh.AllAreas)) return;
-            if (ai.Directive != UnitDirective.Move || (ai.MoveDestination - hit.position).sqrMagnitude > 4f)
-                ai.SetDirective(UnitDirective.Move, hit.position);
+            float now = Time.time;
+
+            // 아직 사거리 밖이면 다가간다. 가려진 시간은 사거리 안에서만 잰다.
+            if (!cover.HasSpot && !CombatPhysics.IsInRange(Actor, nearest))
+            {
+                cover.Approaching();
+                MoveArcher(hit.position);
+                return;
+            }
+            // 고른 옆 자리는 지키는 시간 동안, 그 뒤에는 아직 쓸모 있을 때만 지킨다.
+            if (cover.HasSpot && cover.KeepSpot(now, cover.IsCommitted(now) || CanShootFrom(coverSpot)))
+            {
+                MoveArcher(coverSpot);
+                return;
+            }
+            // 사거리 안에서 가려진 채 충분히 기다렸으면 옆 자리를 한 번 찾는다(성가퀴 솟은 부분 뒤의 수비병 등).
+            if (cover.ShouldSearch(now))
+            {
+                bool found = TryFindFiringPosition(hit.position, out Vector3 spot);
+                cover.SearchResult(now, found);
+                if (found)
+                {
+                    coverSpot = spot;
+                    MoveArcher(spot);
+                    return;
+                }
+            }
+            // 쏠 곳도 옮길 곳도 없으면 좌우로 다니지 않고 제자리에서 겨눈 채 기다린다.
+            cover.Wait();
+            if (ai.Directive != UnitDirective.Hold) ai.SetDirective(UnitDirective.Hold);
+        }
+
+        void MoveArcher(Vector3 destination)
+        {
+            if (ai.Directive != UnitDirective.Move || (ai.MoveDestination - destination).sqrMagnitude > 4f)
+                ai.SetDirective(UnitDirective.Move, destination);
+        }
+
+        /// <summary>
+        /// 정면 자리에서 성벽과 나란히 가까운 쪽부터 비켜선 후보 자리를 시험해, 사거리 안의 적이 하나라도 보이는 첫 자리를 고른다.
+        /// </summary>
+        bool TryFindFiringPosition(Vector3 front, out Vector3 position)
+        {
+            position = front;
+            Vector3 along = Vector3.Cross(Vector3.up, OutwardWorld).normalized;
+            for (int step = 1; step <= settings.ArcherSideStepCount; step++)
+                for (int side = -1; side <= 1; side += 2)
+                {
+                    Vector3 candidate = front + along * (side * step * settings.ArcherSideStep);
+                    if (!NavMesh.SamplePosition(candidate, out NavMeshHit hit, 2f, NavMesh.AllAreas)) continue;
+                    // 성벽 위나 성 안쪽으로 비켜서지 않는다. 땅 높이의 바깥 자리만 쓴다.
+                    if (Mathf.Abs(hit.position.y - world.transform.position.y) > WallTopMinimumHeight) continue;
+                    if (!CanShootFrom(hit.position)) continue;
+                    position = hit.position;
+                    return true;
+                }
+            return false;
+        }
+
+        bool CanShootFrom(Vector3 standPoint)
+        {
+            Vector3 aim = standPoint + Vector3.up * (Actor.Profile.Height * 0.5f);
+            foreach (CharacterActor candidate in CharacterActor.ActiveActors)
+            {
+                if (!Actor.IsEnemy(candidate) || candidate.Body == null) continue;
+                float reach = CombatPhysics.AttackRange(Actor, candidate);
+                if ((candidate.Body.ClosestPoint(aim) - aim).sqrMagnitude > reach * reach) continue;
+                if (CombatPhysics.HasClearShotFrom(standPoint, Actor, candidate)) return true;
+            }
+            return false;
         }
 
         void Face(Vector3 direction)

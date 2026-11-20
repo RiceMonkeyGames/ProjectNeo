@@ -163,11 +163,13 @@ namespace ProjectNeo.Combat
                 nearest.ReceiveDamage(DamageRules.Calculate(attack, nearest.Stats.GetValue(StatType.Defense), profile.MinimumDamage), this);
             else
             {
+                // 몸 가운데가 가려졌으면 보이는 위쪽 몸통을 겨눈다(SIEGE-10, 낮은 난간 뒤 수비병).
+                CombatPhysics.TryGetShotPoint(this, nearest, out Vector3 aimAt);
                 GameObject shot = Instantiate(profile.ProjectilePrefab, AimPoint,
-                    Quaternion.LookRotation(nearest.AimPoint - AimPoint));
+                    Quaternion.LookRotation(aimAt - AimPoint));
                 UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(shot, gameObject.scene);
                 // 사거리 판정을 통과한 대상에게는 화살이 닿도록, 겨눈 지점까지의 거리만큼은 날아가게 한다.
-                Vector3 aim = nearest.AimPoint - AimPoint;
+                Vector3 aim = aimAt - AimPoint;
                 shot.GetComponent<CombatProjectile>().Launch(this, attack, aim.normalized,
                     RangeRules.FlightDistance(CombatPhysics.AttackRange(this, nearest), aim.magnitude));
             }

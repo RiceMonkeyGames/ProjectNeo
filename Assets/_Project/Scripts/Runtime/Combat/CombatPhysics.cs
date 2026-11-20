@@ -23,15 +23,46 @@ namespace ProjectNeo.Combat
             return ground;
         }
 
-        public static bool HasClearShot(CharacterActor attacker, CharacterActor target)
+        public static bool HasClearShot(CharacterActor attacker, CharacterActor target) =>
+            TryGetShotPoint(attacker, target, out _);
+
+        /// <summary>
+        /// 대상에서 쏠 수 있는 지점을 찾는다(SIEGE-10). 몸 가운데(<see cref="CharacterActor.AimPoint"/>)를 먼저 보고,
+        /// 가려졌으면 위쪽 몸통(<see cref="CombatProfile.UpperAimRatio"/>)을 본다. 둘 다 가려지면 false이고 지점은 몸 가운데다.
+        /// 낮은 난간 뒤 수비병의 상체를 노리게 해 준다. 솟은 부분(머론) 뒤처럼 온몸이 가려지면 여전히 쏘지 못한다.
+        /// </summary>
+        public static bool TryGetShotPoint(CharacterActor attacker, CharacterActor target, out Vector3 point)
         {
-            Vector3 origin = attacker.AimPoint;
-            Vector3 offset = target.AimPoint - origin;
             Collider footing = attacker.Profile.AttackKind == AttackKind.Projectile ? GroundUnder(attacker) : null;
+            return TryGetShotPoint(attacker.AimPoint, footing, attacker, target, out point);
+        }
+
+        /// <summary>
+        /// 공격자가 <paramref name="standPoint"/>(발 위치)에 섰다면 대상을 쏠 수 있는지. 사격 자리를 미리 고를 때 쓴다(SIEGE-10 궁수 자리 찾기).
+        /// 사거리는 보지 않는다.
+        /// </summary>
+        public static bool HasClearShotFrom(Vector3 standPoint, CharacterActor attacker, CharacterActor target) =>
+            TryGetShotPoint(standPoint + Vector3.up * (attacker.Profile.Height * 0.5f), null, attacker, target, out _);
+
+        static bool TryGetShotPoint(Vector3 origin, Collider footing, CharacterActor attacker, CharacterActor target, out Vector3 point)
+        {
+            point = target.AimPoint;
+            if (IsClear(origin, footing, attacker, target, point)) return true;
+            Vector3 upper = target.transform.position + Vector3.up * (target.Profile.Height * target.Profile.UpperAimRatio);
+            if (!IsClear(origin, footing, attacker, target, upper)) return false;
+            point = upper;
+            return true;
+        }
+
+        static bool IsClear(Vector3 origin, Collider footing, CharacterActor attacker, CharacterActor target, Vector3 point)
+        {
+            Vector3 offset = point - origin;
+            if (offset.sqrMagnitude < 1e-6f) return true;
             foreach (RaycastHit hit in Physics.RaycastAll(origin, offset.normalized, offset.magnitude,
                 ~0, QueryTriggerInteraction.Ignore))
             {
-                if (hit.collider.gameObject.scene != attacker.gameObject.scene || hit.collider == footing) continue;
+                if (hit.collider.gameObject.scene != attacker.gameObject.scene || hit.collider == footing
+                    || ShotCover.Passes(hit.collider, attacker.Team)) continue;
                 var actor = hit.collider.GetComponentInParent<CharacterActor>();
                 if (actor == target || actor == attacker) continue;
                 if (actor != null && (actor.Team == attacker.Team || actor.Health == null || actor.Health.IsDead)) continue;
