@@ -244,7 +244,7 @@ namespace ProjectNeo.Combat
                 // 움직이는 적을 따라가도록 판단 주기마다 경로를 다시 구한다. 길이 끊겼으면 놓아준다.
                 if (refreshed)
                 {
-                    if (CanReach(Target)) agent.SetPath(path);
+                    if (CanReachInHold(Target)) agent.SetPath(path);
                     else
                     {
                         Target = null;
@@ -324,7 +324,7 @@ namespace ProjectNeo.Combat
                 if (candidate.Team == actor.Team || !IsNearPost(candidate) || !actor.IsEnemy(candidate)
                     || !CombatPhysics.CanTarget(actor, candidate)) continue;
                 float distance = (candidate.transform.position - transform.position).sqrMagnitude;
-                if (distance >= nearestDistance || !CanReach(candidate)) continue;
+                if (distance >= nearestDistance || !CanReachInHold(candidate)) continue;
                 nearestDistance = distance;
                 nearest = candidate;
             }
@@ -387,8 +387,8 @@ namespace ProjectNeo.Combat
 
             bool holdMode = Directive == UnitDirective.Hold;
             bool chases = holdMode && HoldChaseRadius > 0f;
-            bool holdDefault = holdMode && (CanStrikeFromHere(attacker) || (chases && IsNearPost(attacker) && CanReach(attacker)));
-            bool holdRetaliation = holdMode && !holdDefault && IsWithinRetaliationLeash(attacker) && CanReach(attacker);
+            bool holdDefault = holdMode && (CanStrikeFromHere(attacker) || (chases && IsNearPost(attacker) && CanReachInHold(attacker)));
+            bool holdRetaliation = holdMode && !holdDefault && IsWithinRetaliationLeash(attacker) && CanReachInHold(attacker);
             if (holdMode && !holdDefault && !holdRetaliation) return;
             if (!holdMode && !CanStrikeFromHere(attacker) && !CanReach(attacker)) return;
 
@@ -435,6 +435,11 @@ namespace ProjectNeo.Combat
         {
             return agent.CalculatePath(CombatPhysics.ReachPoint(target), path) && path.status == NavMeshPathStatus.PathComplete;
         }
+
+        // 중지 중 걸어서 닿는지. 자리보다 HoldMaxDescent 이상 아래로 내려가는 길은 닿지 않는 것으로 본다.
+        // 성벽 위에서 중지한 부대가 계단과 무너진 틈으로 성 밖까지 쫓아 나가지 않게 한다(BUG-wall-archer-leaves-wall).
+        bool CanReachInHold(CharacterActor target) => CanReach(target)
+            && (settings.HoldMaxDescent <= 0f || HoldDescentRule.StaysAbove(path.corners, HoldPost.y - settings.HoldMaxDescent));
 
         // 움직이지 않고 지금 자리에서 닿는 적인지. 방향은 돌려서 맞추므로 따지지 않는다.
         bool CanStrikeFromHere(CharacterActor target) => actor.IsEnemy(target)
