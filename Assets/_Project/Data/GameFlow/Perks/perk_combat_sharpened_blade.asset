@@ -27,3 +27,4 @@ MonoBehaviour:
   runEffects: []
   prerequisites: []
   description: 
+  grantedSkill: {fileID: 0}

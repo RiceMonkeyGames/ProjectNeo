@@ -77,6 +77,15 @@ namespace ProjectNeo.Meta
             return missing;
         }
 
+        /// <summary>찍은 퍽으로 배운 플레이어 스킬(COMBAT-06). 찍은 순서이고 같은 스킬은 한 번만 들어간다.</summary>
+        public List<ProjectNeo.Skills.SkillDefinition> LearnedSkills()
+        {
+            var skills = new List<ProjectNeo.Skills.SkillDefinition>();
+            foreach (PerkDefinition perk in allocated)
+                if (perk != null && perk.GrantedSkill != null && !skills.Contains(perk.GrantedSkill)) skills.Add(perk.GrantedSkill);
+            return skills;
+        }
+
         public bool TryAllocate(PerkDefinition perk)
         {
             if (!CanAllocate(perk)) return false;

@@ -1,6 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
+using ProjectNeo.Meta;
+using ProjectNeo.Run;
 using ProjectNeo.Characters;
 using ProjectNeo.Combat;
 using ProjectNeo.Flow;
@@ -177,6 +180,44 @@ namespace ProjectNeo.Tests
                 Assert.AreEqual(1, captainCasts);
             }
             finally { InputSystem.RemoveDevice(keyboard); }
+        }
+
+        [UnityTest]
+        public IEnumerator 스킬_퍽을_찍으면_플레이어_칸에_들어가고_고용_영웅은_고정_스킬과_자동_시전을_받는다()
+        {
+            RunState state = GameSession.Flow.Run.State;
+            Assert.IsNotNull(state.Perks, "준비 단계에서 퍽 묶음이 만들어진다.");
+            PerkTreeCatalog trees = Object.FindAnyObjectByType<GameFacilities>().StartConfig.PerkTrees;
+            PerkDefinition whirlPerk = trees.AllPerks().Single(perk => perk.Id == "perk_combat_skill_whirlwind");
+            Assert.AreEqual("skill_whirlwind", whirlPerk.GrantedSkill.Id);
+            state.Perks.BonusPoints = 5;
+            Assert.IsTrue(state.TryAllocatePerk(whirlPerk));
+            CollectionAssert.AreEqual(new[] { whirlPerk.GrantedSkill }, state.LearnedPlayerSkills());
+
+            // 주점 1레벨 영웅(검사·궁수) 중 하나를 1분대 대장으로 고용한다. 1등급이라 고정 스킬 첫 칸만 열린다.
+            var facilities = Object.FindAnyObjectByType<GameFacilities>();
+            state.Wallet.AddGold(200);
+            Assert.IsTrue(Object.FindObjectsByType<FacilityStation>().Single(s => s.Type == ProjectNeo.Facilities.FacilityType.Tavern).Interact());
+            HeroDefinition offered = state.TavernOffers[0];
+            Assert.IsTrue(facilities.ChooseCaptainSquad(0));
+            Assert.IsTrue(facilities.TryHire(0));
+            facilities.Close();
+            yield return null;
+
+            yield return StartBattle();
+            Assert.AreEqual(1, skills.PlayerCaster.Slots.Count);
+            Assert.AreEqual("skill_whirlwind", skills.PlayerCaster.Slots.Get(0).Id, "찍은 스킬 퍽의 스킬이 첫 칸에 들어간다.");
+            Assert.AreEqual("회오리 베기", battle.SkillHud.NameText(0));
+
+            SquadCommandCenter center = Object.FindAnyObjectByType<SquadCommandCenter>();
+            SkillCaster captainCaster = center.Squads[0].Leader.GetComponent<SkillCaster>();
+            Assert.IsNotNull(captainCaster, "고용 영웅에게도 스킬 칸이 붙는다.");
+            Assert.AreEqual(1, captainCaster.Slots.Count, "1등급 영웅은 1칸");
+            Assert.AreSame(offered.Skills[0], captainCaster.Slots.Get(0));
+            HeroSkillAI brain = captainCaster.GetComponent<HeroSkillAI>();
+            Assert.IsNotNull(brain);
+            Assert.IsTrue(brain.Auto, "기본은 자동 시전");
+            Assert.IsNull(player.GetComponent<HeroSkillAI>(), "플레이어는 자동 시전하지 않는다.");
         }
     }
 }

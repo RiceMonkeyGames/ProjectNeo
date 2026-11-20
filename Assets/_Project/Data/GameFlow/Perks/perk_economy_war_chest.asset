@@ -26,3 +26,4 @@ MonoBehaviour:
   - {fileID: 11400000, guid: c5936bf28ab238a4cadbb240232544cd, type: 2}
   - {fileID: 11400000, guid: 12e0c8526e41f9e4e883c32559a47226, type: 2}
   description: 
+  grantedSkill: {fileID: 0}
