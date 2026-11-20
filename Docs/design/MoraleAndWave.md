@@ -1,6 +1,6 @@
 # Game Design: Morale, Rout & Wave Preview
 
-Last Updated: 2026-11-19 21:09:01 (KST)
+Last Updated: 2026-11-19 22:43:24 (KST)
 
 > Purpose: Ally Breaking Point morale, enemy morale, rout/exit accounting, and wave preview rules. | Parent: [design/README](README.md) | Related: [Combat](Combat.md), [OpenQuestions](OpenQuestions.md)
 
@@ -55,7 +55,7 @@ Stages stay fixed per run (the same stage number always brings the same waves), 
 
 | Item | Decision |
 |---|---|
-| Run length | **7 stages** in a fixed order, target 40-50 minutes per run (Q-67, 2026-11-19); the count stays data-driven. Interim data still holds 3 stages until CONTENT-01. |
+| Run length | **7 stages** in a fixed order, target 40-50 minutes per run (Q-67, 2026-11-19); the count stays data-driven. Data holds 7 stages since CONTENT-01 (2026-11-19): enemy totals 12, 18, 27, 32, 38, 44, 50; wave gaps shrink from 40s to 30s; stages 4-7 each add one hidden group. Play time per run is checked by manual play. |
 | Waves per battle | Each battle has **2–3 waves**; each wave starts at a **fixed time** after the battle starts (timetable in data), not on kill count. |
 | Spawn locations | **Several fixed points inside the northern field** (e.g. left / center / right); each wave entry names its point. No east/west approaches for now. |
 | Bosses | **One boss per stage**, appearing in the stage's last wave (Q-68). Design (Q-74, 2026-11-19): Seven different bosses, one per stage. Roles to cover: siege (walls/gate), duelist (hunts the player and heroes), commander (buffs nearby enemies; killing it weakens the wave) and artillery (long-range fire at wall tops). Special rule: a dedicated boss health bar only (no extra stagger resistance or morale effects). Reward: extra gold and materials. M2 ships placeholder bosses built from scaled-up existing enemies; real bosses come in M4. Interim data has no bosses until SIEGE-09. |
@@ -109,5 +109,5 @@ Rules decided by the user on 2026-11-18 (Q-53). Numbers are data and open to tun
 - **Battle display**: the same list is always shown during battle as `Enemies left N`. Counts drop in real time: an enemy stops counting once it dies or has retreated off the field; enemies not yet released still count. A type whose count reaches `0` stays listed as `× 0`.
 - **Reveal in battle**: a hidden group is revealed (its type replaces `?`) when its wave is released onto the field. Every new preparation hides the groups again.
 - **Scouting action deferred**: the 3-hour scouting action is **not** part of C-5; it will be added later as PREP-07 (the rule `EnemyIntel.RevealAll` already exists for it). Until then hidden groups stay `?` for the whole preparation. Q-55 (2026-11-19) removed the block (no in-game clock beyond prep hours); PREP-07 stays in M2 (Q-54).
-- Current data: only `Stage02` has a hidden group (wave 2, Gate Breaker × 2). Stage 1 and 3 have none.
+- Current data: `Stage02` hides wave 2 Gate Breaker × 2; `Stage04` wave 3 Ladder × 4; `Stage05` wave 3 Gate Breaker × 3; `Stage06` wave 2 High Flyer Archer × 3; `Stage07` wave 2 Archer × 4. Stage 1 and 3 have none.
 - Enemy type names come from the enemy prefab name (`enemy_gate_breaker` → `Gate Breaker`) until enemy definition assets exist.

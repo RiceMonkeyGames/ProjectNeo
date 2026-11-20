@@ -1,11 +1,12 @@
 # Completed Backlog Archive (Done)
 
-Last Updated: 2026-11-19 22:26:46 (KST)
+Last Updated: 2026-11-20 11:27:49 (KST)
 
 > Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
 | Task ID | Description | Assignee | Outcome & History Link |
 |---|---|---|---|
+| CONTENT-01 | Expand Stage Catalog to 7 Stages | youngho | Done 2026-11-20 on user confirmation after manual play; branch `feature/content-01`, merged into develop 2026-11-20. Stages 4-7 added as proposed (enemy totals 32/38/44/50, wave gaps 35s/30s, one hidden group each, last wave reserved for SIEGE-09 bosses); stages 1-3 unchanged; `StageSetup` appends missing catalog rows; new EditMode `StageCatalogDataTests`; PlayMode stage loop now plays all 7 stages. [History](../history/CONTENT/CONTENT-01.md) |
 | META-03 | Remove Reincarnation Bonus | 신용준 | Done 2026-11-20 on user confirmation after manual check (Meta.asset Inspector shows no reincarnation field, existing meta slot loads unchanged); branch `feature/meta-03`, merged into develop. Q-71: removed `CommanderProgression.AddRunScoreBonus`, `MetaConfig.RunScoreToXpRate` and its test; meta save format unchanged. [History](../history/META/META-03.md) |
 | META-06 | Between-Run Unlock Screen | SeongminHwang | Done 2026-11-19 on user confirmation after manual check (Title Unlocks window, click-twice purchase, saved across restarts); branch `feature/meta-06`. Title `Unlocks` button opens the selected slot's window with the unlock point balance and the four tracks side by side (user decisions: one window, click twice to buy); each purchase is saved right away; slot buttons show the point balance. Pure rules in `UnlockScreenModel`, screen in `UI/UnlockScreen`, scene built by `GameFlowSetup.ApplyTitleUnlockScreen`. EditMode 509/509, PlayMode 243/243. Standalone build unverified. [History](../history/META/META-06.md) |
 | META-07 | Apply Unlocks to Run Content | SeongminHwang | Done 2026-11-19 on user confirmation after manual check (starting bonuses on New Game, none re-granted on Continue); branch `feature/meta-07`. First unlock tracks approved by the user (Heroes: Knight 2 -> Paladin 3; recipes and shop items: Chain Armor 1 -> Steel Sword 2; starting bonuses gold +50 / potions x2 / grunts +2 / gold +100 at 1/2/3/5; the rest open by default) as `Data/GameFlow/Unlocks/` assets linked from RunStart; shop, tavern and smithy read the tracks (content on no track stays available); new runs get opened starting bonuses once; legacy unlocks imported. EditMode 503/503, PlayMode 241/241. Standalone build unverified. [History](../history/META/META-07.md) |

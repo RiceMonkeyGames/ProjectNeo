@@ -177,7 +177,7 @@ namespace ProjectNeo.Tests
             Assert.IsTrue(battle.RebuildEncounter());
             StageCatalog catalog = battle.Settings.Stages;
             Assert.IsNotNull(catalog, "Battle.asset에 스테이지 목록이 연결되어 있어야 한다(ProjectNeo/Setup/Create Stage Data).");
-            Assert.AreEqual(3, catalog.Count);
+            Assert.AreEqual(7, catalog.Count);
             EncounterPlan expected = EncounterPlan.FromStage(catalog.StageFor(1), battle.Settings.SpawnCell);
             Assert.Greater(expected.Waves.Count, 1);
             Assert.AreEqual(expected.Waves.Count, battle.WaveCount);

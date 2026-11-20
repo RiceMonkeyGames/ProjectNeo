@@ -110,13 +110,13 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
-        public IEnumerator 실제_세_스테이지를_이어서_치러도_지난_전투의_상태가_남지_않고_보상은_한_번씩만_받는다()
+        public IEnumerator 실제_모든_스테이지를_이어서_치러도_지난_전투의_상태가_남지_않고_보상은_한_번씩만_받는다()
         {
             Assert.IsTrue(battle.RebuildEncounter());
             yield return null; // 이전 편성 오브젝트의 Destroy는 프레임 끝에 끝난다.
             StageCatalog catalog = battle.Settings.Stages;
             Assert.IsNotNull(catalog, "Battle.asset에 스테이지 목록이 연결되어 있어야 한다.");
-            Assert.AreEqual(3, catalog.Count);
+            Assert.AreEqual(7, catalog.Count);
             var wallet = battle.RunLink.State.Wallet;
 
             for (int stage = 1; stage <= catalog.Count; stage++)
