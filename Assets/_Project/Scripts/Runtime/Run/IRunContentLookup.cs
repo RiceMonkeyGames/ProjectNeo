@@ -18,6 +18,8 @@ namespace ProjectNeo.Run
         FacilityDefinition Facility(FacilityType type);
         BuildPieceDefinition Piece(string id);
         SiegeWeaponDefinition Weapon(string id);
+        /// <summary>찍은 퍽(META-02). 없으면 null.</summary>
+        ProjectNeo.Meta.PerkDefinition Perk(string id);
 
         /// <summary>성 조각의 저장용 ID. 조각 정의에는 ID 필드가 없어 창구가 정한다.</summary>
         string PieceId(BuildPieceDefinition piece);

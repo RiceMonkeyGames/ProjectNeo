@@ -131,6 +131,7 @@ namespace ProjectNeo.Run
             if (Shop != null || config == null) return;
             Shop = new ItemShop(config);
             Shop.Changed += () => Changed?.Invoke();
+            ApplyShopPerks();
         }
 
         /// <summary>준비 번호별 상점 시드. 보상 시드와 겹치지 않게 섞는다.</summary>

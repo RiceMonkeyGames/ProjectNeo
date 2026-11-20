@@ -202,8 +202,9 @@ namespace ProjectNeo.Flow
             RunState state = State;
             if (OpenFacility != FacilityType.Shop || state?.Shop == null || index < 0 || index >= state.Shop.Stock.Count) return false;
             ItemDefinition item = state.Shop.Stock[index];
+            Cost price = state.Shop.GetBuyPrice(item);
             bool bought = state.TryBuyAt(index);
-            Message = bought ? $"{item.DisplayName} purchased · {Describe(item.Price)}" : $"{item.DisplayName}: Not enough funds.";
+            Message = bought ? $"{item.DisplayName} purchased · {Describe(price)}" : $"{item.DisplayName}: Not enough funds.";
             Rebuild();
             return bought;
         }
@@ -580,7 +581,7 @@ namespace ProjectNeo.Flow
                 int index = i;
                 bool isLocked = state.Shop.IsLocked(index);
                 string prefix = isLocked ? "[Locked] " : string.Empty;
-                AddShopOfferRow(offerList, $"{prefix}{stock[i].DisplayName} · {Describe(stock[i].Price)}", isLocked,
+                AddShopOfferRow(offerList, $"{prefix}{stock[i].DisplayName} · {Describe(state.Shop.GetBuyPrice(stock[i]))}", isLocked,
                     () => TryBuy(index), () => TryToggleLock(index));
             }
             IReadOnlyList<ItemInstance> items = state.Inventory.Items;

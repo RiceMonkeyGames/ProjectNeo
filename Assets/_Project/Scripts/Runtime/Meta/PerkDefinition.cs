@@ -52,6 +52,8 @@ namespace ProjectNeo.Meta
         [SerializeField] bool unlockedByDefault = true;
         [SerializeField] List<PerkStatEffect> statEffects = new List<PerkStatEffect>();
         [SerializeField] List<PerkSpecialEffect> specialEffects = new List<PerkSpecialEffect>();
+        [Tooltip("런 전체 효과(보상 골드·상점 가격·준비 시간, META-02).")]
+        [SerializeField] List<PerkRunEffect> runEffects = new List<PerkRunEffect>();
 
         public string Id => id;
         public string DisplayName => displayName;
@@ -61,19 +63,32 @@ namespace ProjectNeo.Meta
         public UnlockCategory UnlockCategory => UnlockCategory.Perk;
         public IReadOnlyList<PerkStatEffect> StatEffects => statEffects;
         public IReadOnlyList<PerkSpecialEffect> SpecialEffects => specialEffects;
+        public IReadOnlyList<PerkRunEffect> RunEffects => runEffects ??= new List<PerkRunEffect>();
 
-        /// <summary>코드에서 퍽을 만든다(테스트용).</summary>
+        /// <summary>이 퍽의 런 효과 중 한 종류의 합.</summary>
+        public float RunEffectTotal(PerkRunEffectKind kind)
+        {
+            float total = 0f;
+            foreach (PerkRunEffect effect in RunEffects)
+                if (effect.kind == kind) total += effect.value;
+            return total;
+        }
+
+        /// <summary>코드에서 퍽을 만든다(테스트·샘플용).</summary>
         public static PerkDefinition Create(
             string id,
             PerkCategory category,
             IEnumerable<PerkStatEffect> statEffects = null,
             IEnumerable<PerkSpecialEffect> specialEffects = null,
             int pointCost = 1,
-            bool unlockedByDefault = true)
+            bool unlockedByDefault = true,
+            IEnumerable<PerkRunEffect> runEffects = null,
+            string displayName = null)
         {
             var perk = CreateInstance<PerkDefinition>();
             perk.id = id;
-            perk.displayName = id;
+            perk.displayName = string.IsNullOrEmpty(displayName) ? id : displayName;
+            if (runEffects != null) perk.runEffects = new List<PerkRunEffect>(runEffects);
             perk.category = category;
             perk.pointCost = pointCost;
             perk.unlockedByDefault = unlockedByDefault;

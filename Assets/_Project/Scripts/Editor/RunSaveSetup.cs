@@ -53,6 +53,8 @@ namespace ProjectNeo.Editor
             foreach (BuildPieceDefinition piece in catalog.Pieces)
                 pieceIds.Add(AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(piece)));
             catalog.SetPieceIds(pieceIds);
+            // 런에서 찍은 퍽도 저장에 id로 남는다(META-02).
+            catalog.SetPerks(All<ProjectNeo.Meta.PerkDefinition>());
         }
 
         // 같은 종류의 시설 정의가 테스트용으로 여럿 있을 수 있어, 실제 새 런 설정이 쓰는 것만 넣는다.

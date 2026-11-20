@@ -5,8 +5,8 @@ using ProjectNeo.Stats;
 namespace ProjectNeo.Meta
 {
     /// <summary>
-    /// 이번 런에서 찍은 퍽. 남은 퍽 포인트가 있으면 언제든 찍을 수 있고,
-    /// 런이 끝나면 Reset으로 찍은 내역만 지운다. 퍽 포인트 개수(MetaProgress)는 그대로 남는다.
+    /// 이번 런에서 찍은 퍽. 남은 퍽 포인트가 있으면 찍을 수 있고(언제 찍을지는 런이 정한다, Q-06),
+    /// 런이 끝나면 찍은 내역만 사라진다(런마다 새로 만든다, META-02). 퍽 포인트 개수(MetaProgress)는 그대로 남는다.
     /// </summary>
     public sealed class PerkLoadout
     {
@@ -35,7 +35,21 @@ namespace ProjectNeo.Meta
             }
         }
 
-        public int AvailablePoints => progress.perkPoints - SpentPoints;
+        /// <summary>
+        /// 저장되지 않는 덤 포인트. 에디터 전용 개발 단축키와 테스트가 쓴다(META-02). 이어 하기 뒤에는 0이므로
+        /// 덤으로 찍은 퍽은 포인트가 모자라면 되살리지 않는다.
+        /// </summary>
+        public int BonusPoints { get; set; }
+
+        public int AvailablePoints => progress.perkPoints + BonusPoints - SpentPoints;
+
+        /// <summary>찍은 퍽들의 런 효과 중 한 종류의 합(META-02).</summary>
+        public float RunEffectTotal(PerkRunEffectKind kind)
+        {
+            float total = 0f;
+            foreach (PerkDefinition perk in allocated) total += perk.RunEffectTotal(kind);
+            return total;
+        }
 
         public bool CanAllocate(PerkDefinition perk)
         {
