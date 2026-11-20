@@ -24,6 +24,8 @@ namespace ProjectNeo.Run
         [Tooltip("성 조각의 저장용 ID. pieces와 같은 순서다. 에디터 메뉴가 에셋 GUID로 채운다(이름이 같은 조각이 있어도 겹치지 않고, 이름을 바꿔도 유지된다).")]
         [SerializeField] List<string> pieceIds = new List<string>();
         [SerializeField] List<SiegeWeaponDefinition> weapons = new List<SiegeWeaponDefinition>();
+        [Tooltip("런에서 찍을 수 있는 퍽(META-02). 에디터 메뉴가 프로젝트의 퍽 에셋으로 채운다.")]
+        [SerializeField] List<ProjectNeo.Meta.PerkDefinition> perks = new List<ProjectNeo.Meta.PerkDefinition>();
 
         public IReadOnlyList<ItemDefinition> Items => items;
         public IReadOnlyList<MaterialDefinition> Materials => materials;
@@ -32,6 +34,7 @@ namespace ProjectNeo.Run
         public IReadOnlyList<FacilityDefinition> Facilities => facilities;
         public IReadOnlyList<BuildPieceDefinition> Pieces => pieces;
         public IReadOnlyList<SiegeWeaponDefinition> Weapons => weapons;
+        public IReadOnlyList<ProjectNeo.Meta.PerkDefinition> Perks => perks;
 
         public ItemDefinition Item(string id) => Find(items, id, item => item.Id);
         public MaterialDefinition Material(string id) => Find(materials, id, material => material.Id);
@@ -39,6 +42,10 @@ namespace ProjectNeo.Run
         public SoldierDefinition Soldier(string id) => Find(soldiers, id, soldier => soldier.Id);
         public BuildPieceDefinition Piece(string id) => Find(pieces, id, PieceId);
         public SiegeWeaponDefinition Weapon(string id) => Find(weapons, id, weapon => weapon.Id);
+        public ProjectNeo.Meta.PerkDefinition Perk(string id) => Find(perks, id, perk => perk.Id);
+
+        /// <summary>퍽 목록을 바꾼다(META-02). 에디터 설정 스크립트와 테스트가 쓴다. <see cref="Set"/>은 퍽을 건드리지 않는다.</summary>
+        public void SetPerks(IEnumerable<ProjectNeo.Meta.PerkDefinition> newPerks) => Fill(perks, newPerks);
         /// <summary>조각의 저장용 ID. 목록에 적힌 ID가 있으면 그것을, 없으면 에셋 이름을 쓴다.</summary>
         public string PieceId(BuildPieceDefinition piece)
         {
@@ -81,6 +88,7 @@ namespace ProjectNeo.Run
             Check(soldiers, soldier => soldier.Id, "Soldier", problems);
             Check(pieces, PieceId, "Piece", problems);
             Check(weapons, weapon => weapon.Id, "Weapon", problems);
+            Check(perks, perk => perk.Id, "Perk", problems);
             var types = new HashSet<FacilityType>();
             foreach (FacilityDefinition facility in facilities)
                 if (facility != null && !types.Add(facility.Type)) problems.Add("Facility type appears twice: " + facility.Type);

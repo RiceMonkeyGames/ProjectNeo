@@ -86,6 +86,7 @@ namespace ProjectNeo.Flow
             unit.name = definition.Id + "_Recruit" + (++spawned) + "_Squad" + (squad + 1);
             unit.gameObject.SetActive(true);
             battle.RunLink.ApplyTraining();
+            battle.RunLink.ApplyPerks();
             var agent = unit.GetComponent<NavMeshAgent>();
             if (agent != null && agent.enabled) agent.Warp(spawnPoint);
             if (hasGather) unit.SetDirective(UnitDirective.Move, SlotNear(gather));
@@ -114,6 +115,7 @@ namespace ProjectNeo.Flow
                 out UnitCombatAI unit, out Vector3 gather, out bool hasGather);
             if (unit == null) return null;
             unit.name = hero.Id + "_Hero" + (++spawned) + (captainOf >= 0 ? "_Captain" + (captainOf + 1) : "_Reserve");
+            battle.RunLink.ApplyPerks();
             if (hasGather) unit.SetDirective(UnitDirective.Move, SlotNear(gather));
             else unit.SetDirective(UnitDirective.Hold);
             return unit;

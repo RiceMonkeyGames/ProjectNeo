@@ -171,6 +171,10 @@ namespace ProjectNeo.Flow
                 Consumables = gameObject.AddComponent<GameConsumables>();
                 Consumables.Configure(flow, settings, player, () => RunLink.State);
             }
+#if UNITY_EDITOR
+            // 퍽 찍기 화면(META-09) 전까지 에디터에서만 쓰는 개발 단축키(F11, META-02).
+            gameObject.AddComponent<GameDevPerkShortcut>();
+#endif
         }
         /// <summary>준비 단계 성문 열기(PREP-05).</summary>
         public GamePrepGate PrepGate { get; private set; }
@@ -193,6 +197,9 @@ namespace ProjectNeo.Flow
                 // 열린 해금 트랙의 시작 보너스도 첫 저장 전에 준다. 되살린 런에는 다시 주지 않는다(META-07).
                 var facilities = GetComponent<GameFacilities>();
                 if (facilities != null && RunLink.State != null) facilities.OnRunReady(RunLink.WasRestored);
+                // 퍽 특수 효과(전투 시작·부대원 사망)는 이 런의 퍽을 쓴다(META-02).
+                var squadMorale = GetComponent<ProjectNeo.Morale.GameSquadMorale>();
+                if (squadMorale != null && RunLink.State != null) squadMorale.UsePerks(RunLink.State.Perks);
                 // 준비 시계는 저장 전에 이번 준비 예산으로 채운다. 되살린 런은 저장된 시계를 그대로 쓴다(PREP-06).
                 if (build != null && build.StartConfig != null && RunLink.State != null)
                 {

@@ -24,6 +24,8 @@ namespace ProjectNeo.Flow
 
         /// <summary>이번 런에서 마지막으로 지급한 보상. 보상 화면이 읽는다.</summary>
         public StageReward LastReward { get; private set; }
+        /// <summary>마지막 보상 골드 중 퍽(보상 골드 효과)으로 더해진 몫(META-02).</summary>
+        public int PerkGoldBonus { get; private set; }
         /// <summary>마지막 보상으로 오른 지휘관 레벨 수.</summary>
         public int LevelsGained { get; private set; }
         public StageRewardTable Table => table;
@@ -84,6 +86,9 @@ namespace ProjectNeo.Flow
 
             var random = new SeededRandom(state.SeedFor(result.BattleNumber));
             StageReward reward = StageReward.Roll(table, flow.Run.StageNumber, result, random);
+            // 내실 퍽의 보상 골드 효과(META-02)는 굴린 골드 전체에 붙는다.
+            PerkGoldBonus = state.PerkRewardGoldBonus(reward.Gold);
+            reward.AddGold(PerkGoldBonus);
             if (!state.ApplyReward(reward)) return false;
 
             MetaProgress meta = GameSession.Meta;
@@ -104,6 +109,7 @@ namespace ProjectNeo.Flow
             if (LastReward == null || state == null) return string.Empty;
             var text = new StringBuilder();
             text.Append($"Gold +{LastReward.Gold} (total {state.Wallet.Gold})");
+            if (PerkGoldBonus > 0) text.Append($" - perk bonus +{PerkGoldBonus}");
             foreach (KeyValuePair<MaterialDefinition, int> material in LastReward.Materials)
                 text.Append($"\n{material.Key.DisplayName} +{material.Value} (total {state.Wallet.GetMaterial(material.Key)})");
             foreach (ItemDefinition item in LastReward.Items)

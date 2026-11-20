@@ -88,7 +88,11 @@ namespace ProjectNeo.Flow
                 if (binding == null) return;
                 binding.State.SetCastle(CaptureCastle());
                 flow.AttachRunState(binding.State);
+                // 이번 런의 퍽(META-02). 되살린 런이면 저장된 퍽을 다시 찍는다. 찍을 때마다 능력치를 다시 붙인다.
+                binding.State.SetupPerks(GameSession.Meta);
+                binding.State.PerkAllocated += _ => ApplyPerks();
                 ApplyTraining();
+                ApplyPerks();
                 return;
             }
             foreach (CharacterActor actor in binding.ObjectsInRun())
@@ -96,6 +100,37 @@ namespace ProjectNeo.Flow
             CleanUpSquadsAfterBattle();
             SetReserveHeroesActive(true);
             ApplyTraining();
+            ApplyPerks();
+        }
+
+        readonly HashSet<ProjectNeo.Meta.PerkDefinition> appliedPerks = new HashSet<ProjectNeo.Meta.PerkDefinition>();
+
+        /// <summary>
+        /// 찍은 퍽의 능력치 효과를 런의 모든 씬 유닛에 붙인다(META-02): 플레이어는 Player, 다른 영웅은 Heroes, 잡졸은 Soldiers 대상.
+        /// 붙였던 퍽 효과를 먼저 떼고 다시 붙이므로 여러 번 불러도 겹치지 않는다. 체력이 가득 찼던 유닛은 늘어난 최대 체력까지 채운다.
+        /// 준비 시작, 퍽을 찍었을 때, 모집·고용 뒤에 부른다.
+        /// </summary>
+        public void ApplyPerks()
+        {
+            if (binding == null) return;
+            ProjectNeo.Meta.PerkLoadout perks = binding.State.Perks;
+            foreach (CharacterActor actor in binding.ObjectsInRun())
+            {
+                if (actor == null || actor.Stats == null) continue;
+                RunUnit unit = binding.State.Find(binding.IdOf(actor));
+                if (unit == null) continue;
+                bool wasFull = actor.Health != null && !actor.Health.IsDead && actor.Health.Current >= actor.Health.Maximum;
+                foreach (ProjectNeo.Meta.PerkDefinition old in appliedPerks) actor.Stats.RemoveModifiersFrom(old);
+                if (perks != null)
+                {
+                    ProjectNeo.Meta.PerkTarget target = unit is RunSoldier ? ProjectNeo.Meta.PerkTarget.Soldiers
+                        : unit is RunHero hero && hero.IsPlayer ? ProjectNeo.Meta.PerkTarget.Player : ProjectNeo.Meta.PerkTarget.Heroes;
+                    perks.ApplyAllStatEffects(actor.Stats, target);
+                }
+                if (wasFull) actor.Health.RestoreFull();
+            }
+            appliedPerks.Clear();
+            if (perks != null) foreach (ProjectNeo.Meta.PerkDefinition perk in perks.Allocated) appliedPerks.Add(perk);
         }
 
         /// <summary>
