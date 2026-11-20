@@ -1,6 +1,6 @@
 # Game Design: Combat, Units & Win/Loss
 
-Last Updated: 2026-11-19 21:09:01 (KST)
+Last Updated: 2026-11-20 11:52:10 (KST)
 
 > Purpose: Rules for perspective, squad commands, damage, unit lifecycles, and battle outcomes. | Parent: [design/README](README.md) | Related: [WallsAndSiege](WallsAndSiege.md), [MoraleAndWave](MoraleAndWave.md)
 
@@ -13,7 +13,7 @@ Last Updated: 2026-11-19 21:09:01 (KST)
 - **Command Behaviors**:
   - **Move**: Disregards enemies and marches to screen-center target; transitions to Hold upon arrival.
   - **Hold** (revised 2026-11-12, Bannerlord style): Defends guard post (where Hold was issued or Move finished).
-    - *Melee*: Advances to engage walkable enemies within 6m (`HoldEngageRadius`, data-configurable); does not pursue beyond range or broken paths; can descend stairs to engage breaches.
+    - *Melee*: Advances to engage walkable enemies within 6m (`HoldEngageRadius`, data-configurable); does not pursue beyond range or broken paths; does not descend more than `HoldMaxDescent` below its post (see the Hold level rule below).
     - *Ranged*: Fires within range; advances toward reachable enemies within `range + 6m` (`HoldRangedChaseExtra`, data-configurable) until in firing range; shoots downward at enemies beneath walls; does not chase unreachable enemies.
     - *Return*: Returns to post when targets clear; minor displacement within 1m does not trigger return; halts nearby if post is blocked.
     - Unreachable enemies (no walkable path) are ignored so defenders push ladders instead of stalling.
@@ -44,6 +44,7 @@ Last Updated: 2026-11-19 21:09:01 (KST)
   - **Arrow flight**: An arrow flies at least as far as the aimed point of a target that passed the range check. Range is measured to the nearest point of the target's body but arrows aim at its center, so steep shots near maximum range used to vanish just short of the target.
   - **Line of sight**: Unchanged. The shooter's own footing piece never blocks its shots; other wall pieces still block both ways, so a wall edge that hides a defender also protects it. No walking to the wall edge.
   - **Hold with no shot and no path**: The unit stays on its post and re-checks every decision interval; it does not leave the wall to chase.
+- **Hold stays on the post's level (BUG-wall-archer-leaves-wall, decided by the user 2026-11-20)**: In `Hold` (including the Hold that follows a finished `Move`), a unit does not chase or retaliate along a walking path that drops more than `HoldMaxDescent` (1.5m, `UnitAISettings`, data-configurable, 0 disables) below its post. This applies to **both melee and ranged** units, so a squad holding a wall top stays on the wall even when a breach and stairs give a path to enemies below; it still fights enemies that reach the wall top and shoots anything in range. This replaces the earlier melee note that Hold units "can descend stairs to engage breaches". `Engage` (Attack) orders keep the old behavior and may leave the wall to chase; `Move` still ignores enemies. The rule lives in the shared `Hold` logic, so enemies parked in `Hold` by the siege brain follow it too.
 - No friendly fire.
 - Ranged attacks fire linear projectiles upon release: dodgeable post-launch, blocked by walls, pass through allies.
 

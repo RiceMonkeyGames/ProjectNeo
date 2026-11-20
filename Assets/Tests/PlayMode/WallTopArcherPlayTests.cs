@@ -28,6 +28,7 @@ namespace ProjectNeo.Tests
         float previousCaptureDelta;
         GameObject projectilePrefab;
         UnitAISettings aiSettings;
+        NavMeshSurface surface;
 
         [UnitySetUp]
         public IEnumerator SetUp()
@@ -41,7 +42,7 @@ namespace ProjectNeo.Tests
             Box("Ground", new Vector3(0f, -0.5f, 0f), new Vector3(60f, 1f, 60f), geometry.transform);
             // 바깥면이 z = +1.5인 성벽. 궁수는 윗면 한가운데(바깥 모서리에서 1.5m 안쪽)에 선다.
             Box("Wall", new Vector3(0f, WallHeight * 0.5f, 0f), new Vector3(8f, WallHeight, 3f), geometry.transform);
-            var surface = geometry.AddComponent<NavMeshSurface>();
+            surface = geometry.AddComponent<NavMeshSurface>();
             surface.collectObjects = CollectObjects.Children;
             surface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
             surface.BuildNavMesh();
@@ -72,6 +73,34 @@ namespace ProjectNeo.Tests
             box.transform.position = origin + position;
             box.transform.localScale = scale;
             box.transform.SetParent(parent, true);
+        }
+
+        // 성벽 오른쪽 끝(x = +4)에서 땅(x = +22)까지 내려가는 경사로(약 27도). 무너진 틈과 계단으로 성 밖에 닿는 길을 흉내 낸다.
+        void AddRampAndRebuild()
+        {
+            const float run = 18f;
+            const float thickness = 1f;
+            float angle = Mathf.Atan2(WallHeight, run);
+            var up = new Vector3(Mathf.Sin(angle), Mathf.Cos(angle), 0f);
+            Vector3 topMiddle = new Vector3(4f + run * 0.5f, WallHeight * 0.5f, 0f);
+            var ramp = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            ramp.name = "Ramp";
+            ramp.transform.SetPositionAndRotation(origin + topMiddle - up * (thickness * 0.5f),
+                Quaternion.Euler(0f, 0f, -angle * Mathf.Rad2Deg));
+            ramp.transform.localScale = new Vector3(Mathf.Sqrt(run * run + WallHeight * WallHeight), thickness, 3f);
+            ramp.transform.SetParent(surface.transform, true);
+            Physics.SyncTransforms();
+            surface.BuildNavMesh();
+            assets.Add(surface.navMeshData);
+        }
+
+        static bool HasWalkablePath(Vector3 from, Vector3 to)
+        {
+            var path = new NavMeshPath();
+            return NavMesh.SamplePosition(from, out NavMeshHit start, 1f, NavMesh.AllAreas)
+                && NavMesh.SamplePosition(to, out NavMeshHit end, 1f, NavMesh.AllAreas)
+                && NavMesh.CalculatePath(start.position, end.position, NavMesh.AllAreas, path)
+                && path.status == NavMeshPathStatus.PathComplete;
         }
 
         CharacterActor Archer(string name, CombatTeam team, Vector3 position, float highGroundBonus, bool ai = false,
@@ -182,6 +211,40 @@ namespace ProjectNeo.Tests
             Assert.IsNull(ai.Target);
             Assert.AreEqual(enemy.Health.Maximum, enemy.Health.Current);
             Assert.Less(Vector3.Distance(post, archer.transform.position), 0.3f);
+        }
+
+        [UnityTest]
+        public IEnumerator HoldArcherOnWallTop_DoesNotLeaveTheWall_WhenAPathDownExists()
+        {
+            // BUG-wall-archer-leaves-wall: 성 밖으로 내려가는 길이 있어도, 중지 중에는 성벽을 내려가 쫓지 않는다.
+            AddRampAndRebuild();
+            yield return null;
+            CharacterActor archer = Archer("WallArcher", CombatTeam.Allied, new Vector3(0f, WallHeight, 0f), 0.25f, ai: true);
+            var ai = archer.GetComponent<UnitCombatAI>();
+            Vector3 post = archer.transform.position;
+            ai.SetDirective(UnitDirective.Hold, post);
+            CharacterActor enemy = Archer("GroundEnemy", CombatTeam.Hostile, GroundAtReach(15f), 0.25f, facingYaw: 180f);
+            Assert.IsTrue(HasWalkablePath(post, enemy.transform.position), "시험 지형에 성벽에서 적까지 내려가는 길이 있어야 한다.");
+            Assert.Less(Vector3.Distance(enemy.transform.position, post), ai.HoldChaseRadius, "적은 중지 추격 반경 안에 있다.");
+            for (int i = 0; i < 180; i++) yield return null;
+            Assert.IsNull(ai.Target, "성벽 아래로 내려가야 닿는 적은 중지 중의 대상이 아니다.");
+            Assert.Less(Vector3.Distance(post, archer.transform.position), 0.3f, "성벽 위 자리를 떠나지 않는다.");
+        }
+
+        [UnityTest]
+        public IEnumerator EngageArcherOnWallTop_StillLeavesTheWall_ToChaseAnEnemyBelow()
+        {
+            // 공격(Engage) 지시는 지금처럼 성벽을 내려가 쫓아도 된다. 위 시험의 지형이 실제로 내려가는 길을 주는지도 확인한다.
+            AddRampAndRebuild();
+            yield return null;
+            CharacterActor archer = Archer("WallArcher", CombatTeam.Allied, new Vector3(0f, WallHeight, 0f), 0.25f, ai: true);
+            var ai = archer.GetComponent<UnitCombatAI>();
+            Vector3 post = archer.transform.position;
+            Assert.AreEqual(UnitDirective.Engage, ai.Directive);
+            CharacterActor enemy = Archer("GroundEnemy", CombatTeam.Hostile, GroundAtReach(15f), 0.25f, facingYaw: 180f);
+            Assert.IsTrue(HasWalkablePath(post, enemy.transform.position), "시험 지형에 성벽에서 적까지 내려가는 길이 있어야 한다.");
+            for (int i = 0; i < 180; i++) yield return null;
+            Assert.Greater(Vector3.Distance(post, archer.transform.position), 2f, "공격 지시에서는 성벽을 내려가 쫓는다.");
         }
     }
 }
