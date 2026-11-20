@@ -1,6 +1,6 @@
 # ProjectNeo
 
-Last Updated: 2026-11-20 21:20:25 (KST)
+Last Updated: 2026-11-21 01:35:59 (KST)
 
 A 3D first-person siege defense roguelike built with Unity 6000.6.8f1 and URP. Scout the upcoming wave, prepare heroes, troops, equipment, and walls, and defend the castle through direct player combat and unit commanding. Low-poly art style; Synty assets planned, currently using placeholder graphics.
 
@@ -36,6 +36,7 @@ Licensed assets (Synty packs, etc.) live in the private submodule `Assets/ThirdP
 - Claude Code: `.claude/skills/` (`/brief`, `/claim`, `/verify`, `/finish`, `/sync-summary`). Codex: `.agents/skills/` (`$brief`, `$claim`, `$verify`, `$finish`, `$sync-summary`).
 - Codex entrypoints read the matching `.claude/skills/<name>/SKILL.md`; both reuse `Tools/Agent/` PowerShell wrappers (`session-brief.ps1`, `claim-check.ps1`, `code-rules-check.ps1`, `unity-verify.ps1`, `doc-finish-check.ps1`, `sync-summary.ps1`). Keep workflow logic in those shared sources, not duplicated copies. Skills and subagents do not expand Git authorization.
 - Claude Code subagents (`.claude/agents/`): `docs-git` (`haiku`, Docs/Git workflow only), `qa-verifier` (`sonnet`, read-only static/Unity verification & defect audit), and `repo-scout` (`haiku`, read-only symbol/doc lookup). Main session coordinates implementation, sequential Unity runs, and user approval gates ([Collaboration](Docs/workflow/Collaboration.md)).
+- **Default delegation (Claude Code)**: This file is the user's standing request to use these subagents; do not wait to be asked. Delegate (1) Backlog claim/archive, history/codemap/`Last Updated` doc updates, and user-approved commits/pushes to `docs-git`; (2) post-implementation verification (code rules, Unity tests, diff audit against design, manual-check draft) to `qa-verifier`; (3) lookups spanning many files or docs to `repo-scout`. Keep in the main session: code edits, design questions to the user, approval gates, and one-command checks. Delegation never widens Git authorization; review each subagent report before acting on it or relaying it. Codex has no subagents and keeps working inline. Details: [Collaboration § Role Subagents](Docs/workflow/Collaboration.md).
 
 ## Working Rules
 
