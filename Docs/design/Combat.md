@@ -1,6 +1,6 @@
 # Game Design: Combat, Units & Win/Loss
 
-Last Updated: 2026-11-21 00:49:56 (KST)
+Last Updated: 2026-11-21 01:13:43 (KST)
 
 > Purpose: Rules for perspective, squad commands, damage, unit lifecycles, and battle outcomes. | Parent: [design/README](README.md) | Related: [WallsAndSiege](WallsAndSiege.md), [MoraleAndWave](MoraleAndWave.md)
 
@@ -20,7 +20,7 @@ Last Updated: 2026-11-21 00:49:56 (KST)
   - **Attack**: Marches toward target point while engaging enemies spotted in visual range; resumes march after clearing; waits in Attack posture if arrived/empty.
   - **Vision**: Configurable detection radius; wall LoS occlusion and FoV angles omitted currently.
   - Unreachable destinations or broken paths halt at closest reachable point; clustered stalls near destination count as arrived.
-  - Squads without orders at battle start begin in Hold state. Squad count/caps are data-driven. Final values (Q-57, team decision 2026-11-19): at most **10 squads** with **20 soldiers** each; the data still holds the temporary G-1 3 x 4 until PREP-09.
+  - Squads without orders at battle start begin in Hold state. Squad count/caps are data-driven. Final values (Q-57, team decision 2026-11-19): at most **10 squads** with **20 soldiers** each. The hero captain is not counted (a full squad is 20 soldiers + 1 captain; user, 2026-11-21). Squads 1-10 are selected with `F1`-`F10` (temporary until Q-11). Applied to the Game scene data by PREP-09.
   - Captain hero death drops squad morale by the largest fixed amount (2026-11-12).
 
 ## Player Health HUD

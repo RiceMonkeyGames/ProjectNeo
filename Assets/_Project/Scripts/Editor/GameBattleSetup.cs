@@ -18,6 +18,8 @@ namespace ProjectNeo.Editor
     public static class GameBattleSetup
     {
         const string Data = "Assets/_Project/Data/GameFlow";
+        // 왼쪽 위 부대 목록 높이(기준 1280×720). PREP-09: 부대 10줄 + 지휘 알림·사기 알림 2줄이 최소 글자(14)로 들어가는 높이.
+        internal const float SquadListHeight = 236f;
         [MenuItem("ProjectNeo/Setup/Connect Battle To Game Scene")]
         public static void Apply()
         {
@@ -134,7 +136,7 @@ namespace ProjectNeo.Editor
             RectTransform troopRect = squads.rectTransform;
             troopRect.anchorMin = new Vector2(0f, 1f); troopRect.anchorMax = new Vector2(0.3f, 1f);
             troopRect.pivot = new Vector2(0f, 1f); troopRect.anchoredPosition = new Vector2(16f, -16f);
-            troopRect.sizeDelta = new Vector2(-24f, 140f);
+            troopRect.sizeDelta = new Vector2(-24f, SquadListHeight);
             squads.fontSize = 18f; squads.enableAutoSizing = true; squads.fontSizeMin = 14f; squads.fontSizeMax = 18f;
             RectTransform helpRect = help.rectTransform;
             helpRect.anchorMin = Vector2.zero; helpRect.anchorMax = new Vector2(1f, 0f);
@@ -152,7 +154,7 @@ namespace ProjectNeo.Editor
                 backing.anchoredPosition = rect.anchoredPosition + new Vector2((rect.pivot.x - 0.5f) * 16f, (rect.pivot.y - 0.5f) * 16f);
                 EditorUtility.SetDirty(backing);
             }
-            help.text = "F1-F3: 부대 선택 - `: 전체 선택 - 1: 이동 - 2: 공격 - 3: 정지\nWASD: 이동 - 마우스: 시점 - 클릭: 공격 - Esc: 커서 해제";
+            help.text = "F1-F10: 부대 선택 - `: 전체 선택 - 1: 이동 - 2: 공격 - 3: 정지\nWASD: 이동 - 마우스: 시점 - 클릭: 공격 - Esc: 커서 해제";
             data.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(squads); EditorUtility.SetDirty(help);
             var buildHud = Find<ConstructionHud>(scene);
