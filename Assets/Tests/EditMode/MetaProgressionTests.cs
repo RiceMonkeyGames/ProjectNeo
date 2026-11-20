@@ -15,8 +15,8 @@ namespace ProjectNeo.Tests
         [SetUp]
         public void SetUp()
         {
-            // 레벨 1→2에 100, 2→3에 150. 레벨당 퍽 포인트 1. 런 점수의 10%가 경험치.
-            config = MetaConfig.Create(100, 50, 1, 0.1f);
+            // 레벨 1→2에 100, 2→3에 150. 레벨당 퍽 포인트 1.
+            config = MetaConfig.Create(100, 50, 1);
             created.Add(config);
             progress = new MetaProgress();
         }
@@ -64,16 +64,6 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(3, progress.commanderLevel);
             Assert.AreEqual(2, progress.perkPoints);
             Assert.AreEqual(10, progress.commanderXp);
-        }
-
-        [Test]
-        public void AddRunScoreBonus_ConvertsPartOfScoreToXp()
-        {
-            int xp = CommanderProgression.AddRunScoreBonus(progress, config, 1234);
-
-            Assert.AreEqual(123, xp);
-            Assert.AreEqual(2, progress.commanderLevel);
-            Assert.AreEqual(23, progress.commanderXp);
         }
 
         [Test]

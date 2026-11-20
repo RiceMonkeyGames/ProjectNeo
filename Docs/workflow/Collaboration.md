@@ -1,6 +1,6 @@
 # Collaboration, Backlog & Task ID Rules
 
-Last Updated: 2026-11-16 21:40:06 (KST)
+Last Updated: 2026-11-20 11:03:04 (KST)
 
 > Purpose: Team workflow, Task ID rules, shared file locks, and `.claude` boundaries. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [Team](../plan/Team.md)
 
@@ -33,7 +33,7 @@ Last Updated: 2026-11-16 21:40:06 (KST)
   - `SIEGE-NN`: Walls, placement, siege weapons, waves, enemy siege AI, morale/rout.
   - `FLOW-NN`: Scene transitions, run loop, outcome/reward flow.
   - `PREP-NN`: Courtyard facilities, shop, squad org, equipment, crafting, build economy.
-  - `META-NN`: Persistent saves, unlocks, perks, reincarnation/run score (M3).
+  - `META-NN`: Persistent saves, unlocks, perks, run score (M3).
   - `CONTENT-NN`: Stage/hero/enemy/item rosters, bosses, balance (M4).
   - `ART-NN` / `UI-NN` / `AUDIO-NN`: Synty swaps, VFX/animations, production HUD/UX, audio (M5).
 - **Cross-Cutting IDs (`<TYPE>-<slug>` / `Q-<NN>`)**:

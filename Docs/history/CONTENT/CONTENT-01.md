@@ -1,6 +1,6 @@
 # CONTENT-01 | 2026-11-19 | Content - Expand Stage Catalog to 7 Stages
 
-Last Updated: 2026-11-20 11:23:48 (KST)
+Last Updated: 2026-11-20 11:27:49 (KST)
 
 > Purpose: Task history. | Parent: [history/README](../README.md) | Related: [MoraleAndWave](../../design/MoraleAndWave.md#stage--wave-structure-q-51-user-approved-2026-11-14), [Q-67](../Q/Q-67.md), [B-7.1](../B/B-7.1.md), [EditorAndTests codemap](../../codemap/EditorAndTests.md)
 
@@ -53,4 +53,5 @@ About 1,075 gold over a full 7-stage run, before boss rewards (SIEGE-09). Not re
 - 2026-11-19, `Tools/Agent/unity-verify.ps1`: `COMPILE=PASSED`; `-Mode edit` `EDITMODE=PASSED (Total=505 Passed=505 Failed=0 Skipped=0)`; `-Mode play` `PLAYMODE=PASSED (Total=241 Passed=241 Failed=0 Skipped=0)`.
 - Editor check after the setup menu: `count=7`, enemies per stage 12/18/27/32/38/44/50, hidden counts 0/2/0/4/3/3/4.
 - Manual check (user, 2026-11-20): played the Game scene with the 7-stage catalog and confirmed the result; no issue found in CONTENT-01 scope. Bugs and requests raised in the same playtest went to separate backlog items (BUG-hired-unit-not-joining-squad, BUG-wall-archer-leaves-wall, Q-77, COMBAT-08, COMBAT-09, SIEGE-10).
+- 2026-11-20, after merging develop (META-03, META-06) into the branch: `COMPILE=PASSED`, `EDITMODE=PASSED (Total=510 Passed=510 Failed=0 Skipped=0)`, `PLAYMODE=PASSED (Total=243 Passed=243 Failed=0 Skipped=0)`. Merged into develop the same day.
 - Verified scope: data rules (EditMode), Game scene integration for 7 back-to-back stages (PlayMode) and the user's manual play. Standalone build not run.
