@@ -73,6 +73,19 @@ namespace ProjectNeo.Run
             enemiesKilled[enemyId] = current + count;
         }
 
+        readonly List<Stages.BossDefinition> bossesKilled = new List<Stages.BossDefinition>();
+        /// <summary>
+        /// 이 전투에서 처치한 보스(SIEGE-09). 처치 수(<see cref="EnemiesKilled"/>)에도 보스 ID로 함께 들어간다.
+        /// 승리 보상은 보스 보상을, 런 점수·해금 포인트는 보스 수를 읽는다.
+        /// </summary>
+        public IReadOnlyList<Stages.BossDefinition> BossesKilled => bossesKilled;
+
+        public void AddBossKill(Stages.BossDefinition boss)
+        {
+            if (boss == null) throw new ArgumentNullException(nameof(boss));
+            bossesKilled.Add(boss);
+        }
+
         public void AddRetreat(string enemyId, int count = 1)
         {
             if (string.IsNullOrEmpty(enemyId)) throw new ArgumentException("적 ID가 비어 있다.", nameof(enemyId));

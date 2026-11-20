@@ -41,6 +41,8 @@ namespace ProjectNeo.Siege
         /// <summary>지금 노리는 아군. 없으면 null.</summary>
         public CharacterActor Target { get; private set; }
         public FlyerSettings Settings => flyer;
+        /// <summary>먼저 노릴 아군인지(SIEGE-09 결투형 보스). 비워 두면(기본) 설정의 대상 전략만 쓴다.</summary>
+        public System.Func<CharacterActor, bool> PriorityTarget { get; set; }
         /// <summary>노릴 아군이 없어 성 안마당 위에서 기다리는 중인지.</summary>
         public bool IsHolding => mode == Mode.Holding;
         public Vector3 Destination => destination;
@@ -137,10 +139,14 @@ namespace ProjectNeo.Siege
                 // 같은 거리일 때는 활성 목록에 먼저 들어온 아군을 고른다.
                 candidates.Add(new FlyerTargetCandidate(targets.Count,
                     (candidate.transform.position - transform.position).sqrMagnitude,
-                    candidate.transform.position.y - ground >= flyer.WallTopMinimumHeight));
+                    candidate.transform.position.y - ground >= flyer.WallTopMinimumHeight,
+                    PriorityTarget != null && PriorityTarget(candidate)));
                 targets.Add(candidate);
             }
-            int index = flyer.TargetStrategy != null ? flyer.TargetStrategy.Select(candidates) : -1;
+            // 먼저 노릴 대상 규칙이 있으면(SIEGE-09 결투형 보스) 그 대상을 먼저 고르고, 없으면 원래 전략을 쓴다.
+            int index = PriorityTarget != null
+                ? FlyerPriorityTargeting.Select(candidates, flyer.TargetStrategy)
+                : flyer.TargetStrategy != null ? flyer.TargetStrategy.Select(candidates) : -1;
             if (index < 0 || index >= targets.Count)
             {
                 // 노릴 아군이 없으면 성 안마당 위 높은 곳에서 기다린다.

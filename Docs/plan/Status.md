@@ -1,6 +1,6 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-20 15:00:01 (KST)
+Last Updated: 2026-11-20 17:10:38 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
@@ -17,6 +17,8 @@ Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elev
 Done on user authorization (2026-11-17), feature/ui-03: bottom-right health bar and current/maximum HP, as selected by the user. Real Game scene integration, damage/healing/max-HP/death/stage-transition tests and API-driven layout inspection completed; full compile/EditMode 467/467/PlayMode 226/226 passed. User authorized develop merge and branch cleanup; physical-input and standalone verification remain unclaimed. [History](../history/UI/UI-03.md).
 
 ## Implemented vs Pending Real Connections
+
+**SIEGE-09 (Done on user confirmation, 2026-11-20; `feature/siege-09`, develop merge pending)**: Q-68/Q-74 placeholder stage bosses. Seven `BossDefinition` assets (Gate Crusher, Duelist, Marksman, War Captain, Siege Giant, Sky Hunter, Warlord) sit in the last wave of `Stage01-07.asset`; a boss is a base enemy with a scaled `Visual`, target stats and a role (siege structure damage, duelist player/hero preference, commander aura and wave penalty on death, artillery range). Bosses never retreat, show as `Boss: <name>` in the preview and on a top-center boss health bar, pay boss gold/materials only, and feed `ScoreTally.BossesKilled` into the run score and run-end unlock points. Automated tests cover rules and Game scene integration; manual play confirmed by the user. [History](../history/SIEGE/SIEGE-09.md).
 
 **CONTENT-01 (Done on user confirmation, 2026-11-20; `feature/content-01`, merged into develop)**: Q-67 stage catalog extended from 3 to 7 stages (`Stage04-07.asset`, enemy totals 32/38/44/50, one hidden group each, last wave kept as the SIEGE-09 boss slot); `StageSetup` appends missing stages to an existing catalog. The last stage still repeats until FLOW-03. EditMode 505/505, PlayMode 241/241, manual play confirmed by the user. [History](../history/CONTENT/CONTENT-01.md).
 

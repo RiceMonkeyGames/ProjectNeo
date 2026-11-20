@@ -38,6 +38,8 @@ namespace ProjectNeo.Flow
         readonly List<List<SiegeAttacker>> groupUnits = new List<List<SiegeAttacker>>();
         readonly List<int> waveFirstGroup = new List<int>();
         EnemyIntel intel = new EnemyIntel(null);
+        // 이번 전투의 보스(SIEGE-09). 스테이지마다 마지막 웨이브에 하나다.
+        readonly List<BossUnit> bosses = new List<BossUnit>();
         EncounterPlan plan;
         WaveSchedule schedule;
         BattleEnemySpawner spawner;
@@ -71,6 +73,18 @@ namespace ProjectNeo.Flow
         public event System.Action<int> WaveReleased;
         public GameBattleSettings Settings => settings;
         public IReadOnlyList<SiegeAttacker> Enemies => enemies;
+        /// <summary>이번 전투의 보스(SIEGE-09). 아직 나오지 않은 보스도 들어 있다.</summary>
+        public IReadOnlyList<BossUnit> Bosses => bosses;
+        /// <summary>전장에 나와 살아 있는 첫 보스. 보스 체력바가 읽는다. 없으면 null.</summary>
+        public BossUnit ActiveBoss
+        {
+            get
+            {
+                foreach (BossUnit boss in bosses)
+                    if (boss != null && !boss.IsDead && !unreleased.Contains(boss.GetComponent<SiegeAttacker>())) return boss;
+                return null;
+            }
+        }
         public IReadOnlyList<SiegeLadder> Ladders => ladders;
         /// <summary>런 데이터 연결(C-1~2). 씬 유닛의 런 번호와 이번 전투 입력을 읽을 때 쓴다.</summary>
         public GameRunLink RunLink => runLink ??= CreateRunLink();
@@ -179,7 +193,12 @@ namespace ProjectNeo.Flow
                 PerkWindow = gameObject.AddComponent<GamePerkWindow>();
                 PerkWindow.Configure(FindAnyObjectByType<GamePhaseView>(), perkTrees);
             }
+            // 보스 체력바(SIEGE-09). Game.unity를 고치지 않고 실행 중에 붙인다.
+            BossHud = gameObject.AddComponent<ProjectNeo.UI.BossHealthHud>();
+            BossHud.Configure(this);
         }
+        /// <summary>보스 체력바(SIEGE-09).</summary>
+        public ProjectNeo.UI.BossHealthHud BossHud { get; private set; }
         /// <summary>준비 단계 성문 열기(PREP-05).</summary>
         public GamePrepGate PrepGate { get; private set; }
         /// <summary>전투 중 소모품 사용(PREP-04).</summary>
@@ -318,7 +337,10 @@ namespace ProjectNeo.Flow
                     if (enemy == null) continue;
                     unreleased.Remove(enemy);
                     enemy.gameObject.SetActive(true);
-                    ApplyAscension(enemy);
+                    // 보스 능력치를 먼저 붙이고 그 위에 승천 비율을 곱한다(SIEGE-09, FLOW-03).
+                    var boss = enemy.GetComponent<BossUnit>();
+                    if (boss != null) boss.ApplyStats();
+                    ApplyAscension(enemy, boss != null);
                 }
                 // 전장에 나온 무리는 숨김이 풀린다(Q-53).
                 int last = index + 1 < waveFirstGroup.Count ? waveFirstGroup[index + 1] : groupUnits.Count;
@@ -329,8 +351,9 @@ namespace ProjectNeo.Flow
             IsRetreating = false;
         }
 
-        // 후퇴 판단 대상: 전장에 나와 살아 있고, 떠났거나 떠나는 중이 아닌 적.
+        // 후퇴 판단 대상: 전장에 나와 살아 있고, 떠났거나 떠나는 중이 아닌 적. 보스는 물러나지 않고 끝까지 싸운다(SIEGE-09).
         bool CanJudgeRetreat(SiegeAttacker enemy) => enemy != null && !unreleased.Contains(enemy)
+            && enemy.GetComponent<BossUnit>() == null
             && !retreated.Contains(enemy) && !retreatTargets.ContainsKey(enemy)
             && enemy.Actor != null && !enemy.Actor.Health.IsDead;
 
@@ -404,6 +427,17 @@ namespace ProjectNeo.Flow
                     enemies.Add(spawned.Attacker);
                     unreleased.Add(spawned.Attacker);
                     enemyIds[spawned.Attacker] = spawned.EnemyId;
+                    if (spawned.Boss != null) bosses.Add(spawned.Boss);
+                }
+                // 보스는 같은 웨이브 적 목록을 받아 지휘형 약화에 쓴다(SIEGE-09).
+                for (int i = 0; i < wave.Groups.Count; i++)
+                {
+                    if (!wave.Groups[i].IsBoss) continue;
+                    foreach (SiegeAttacker unit in groupUnits[first + i])
+                    {
+                        var boss = unit != null ? unit.GetComponent<BossUnit>() : null;
+                        if (boss != null) boss.Setup(wave.Groups[i].Boss, () => enemies, units);
+                    }
                 }
                 waveUnits.Add(units);
             }
@@ -438,14 +472,14 @@ namespace ProjectNeo.Flow
         }
 
         // 전장에 나온 적에게 승천의 체력·공격력·속도 규칙을 한 번 붙이고 늘어난 체력까지 채운다(FLOW-03).
-        // 보스 구분은 SIEGE-09가 생기면 붙인다. 그 전에는 모든 적이 일반 적 규칙만 받는다.
-        void ApplyAscension(SiegeAttacker enemy)
+        // 보스(SIEGE-09)는 보스 체력·공격력 규칙을 더 받는다.
+        void ApplyAscension(SiegeAttacker enemy, bool isBoss)
         {
             AscensionEffects ascension = RunLink.State != null ? RunLink.State.Ascension : AscensionEffects.None;
             CharacterActor actor = enemy.Actor;
             if (ascension.Level == 0 || actor == null || actor.Stats == null || actor.Health == null) return;
             actor.Stats.RemoveModifiersFrom(ascension);
-            List<ProjectNeo.Stats.StatModifier> modifiers = ascension.EnemyModifiers();
+            List<ProjectNeo.Stats.StatModifier> modifiers = ascension.EnemyModifiers(isBoss);
             if (modifiers.Count == 0) return;
             actor.Stats.AddModifiers(modifiers, ascension);
             actor.Health.RestoreFull();
@@ -484,6 +518,7 @@ namespace ProjectNeo.Flow
                 if (enemy != null) { enemy.gameObject.SetActive(false); Destroy(enemy.gameObject); }
             enemies.Clear();
             enemyIds.Clear();
+            bosses.Clear();
             waveUnits.Clear(); unreleased.Clear();
             groupUnits.Clear(); waveFirstGroup.Clear();
             retreated.Clear(); retreatTargets.Clear(); IsRetreating = false;
@@ -561,8 +596,18 @@ namespace ProjectNeo.Flow
             // 런 데이터에 결과를 반영하고 단계를 넘긴다. 연결이 없으면 기존처럼 승패만 넘긴다.
             // 사기로 도망친 아군은 Fled로 적는다(B-8.2).
             if (!RunLink.TryFinish(result, EndReason(result), CountKills(),
-                morale != null ? morale.HasFled : (System.Func<CharacterActor, bool>)null, CountRetreats(), !GateDestroyed))
+                morale != null ? morale.HasFled : (System.Func<CharacterActor, bool>)null, CountRetreats(), !GateDestroyed,
+                KilledBosses()))
                 flow.FinishBattle(result);
+        }
+
+        // 이번 전투에서 죽은 보스의 정의(SIEGE-09).
+        List<BossDefinition> KilledBosses()
+        {
+            var killed = new List<BossDefinition>();
+            foreach (BossUnit boss in bosses)
+                if (boss != null && boss.Definition != null && boss.IsDead) killed.Add(boss.Definition);
+            return killed;
         }
 
         BattleEndReason EndReason(BattleOutcome outcome)

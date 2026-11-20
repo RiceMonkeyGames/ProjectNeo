@@ -37,6 +37,12 @@ namespace ProjectNeo.Stages
                 foreach (EncounterWave wave in plan.Waves)
                     foreach (EncounterGroup group in wave.Groups)
                     {
+                        // 보스는 숨긴 웨이브에서도 언제나 "Boss: 이름"으로 보인다(SIEGE-09).
+                        if (group.IsBoss)
+                        {
+                            list.Add(new EnemyIntelGroup(group.Boss.Id, BossLabel(group.Boss), group.Count, false));
+                            continue;
+                        }
                         string id = group.Prefab != null ? group.Prefab.name : string.Empty;
                         list.Add(new EnemyIntelGroup(id, DisplayName(id), group.Count, group.Hidden));
                     }
@@ -145,6 +151,9 @@ namespace ProjectNeo.Stages
             }
             return text.ToString();
         }
+
+        /// <summary>적 목록에 보일 보스 이름. 예: "Boss: Gate Crusher".</summary>
+        public static string BossLabel(BossDefinition boss) => "Boss: " + (boss != null ? boss.DisplayName : "Unknown");
 
         /// <summary>프리팹 이름을 보여 줄 이름으로 바꾼다. 예: "enemy_gate_breaker" → "Gate Breaker".</summary>
         public static string DisplayName(string prefabName)

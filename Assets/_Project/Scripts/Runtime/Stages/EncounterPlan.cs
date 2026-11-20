@@ -12,8 +12,17 @@ namespace ProjectNeo.Stages
         public Vector2 Cell { get; }
         /// <summary>미리보기에서 종류를 숨기는 무리(C-5). 전투에는 영향이 없다.</summary>
         public bool Hidden { get; }
+        /// <summary>보스 무리면 그 보스(SIEGE-09). 보스 무리는 언제나 1마리이고 숨기지 않는다.</summary>
+        public BossDefinition Boss { get; }
+        public bool IsBoss => Boss != null;
         public EncounterGroup(GameObject prefab, int count, Vector2 cell, bool hidden = false)
-        { Prefab = prefab; Count = count; Cell = cell; Hidden = hidden; }
+        { Prefab = prefab; Count = count; Cell = cell; Hidden = hidden; Boss = null; }
+
+        /// <summary>보스 한 마리 무리. 바탕 프리팹은 보스 정의에서 읽는다.</summary>
+        public static EncounterGroup ForBoss(BossDefinition boss, Vector2 cell) => new EncounterGroup(boss, cell);
+
+        EncounterGroup(BossDefinition boss, Vector2 cell)
+        { Prefab = boss != null ? boss.BasePrefab : null; Count = 1; Cell = cell; Hidden = false; Boss = boss; }
     }
 
     public sealed class EncounterWave
@@ -61,6 +70,8 @@ namespace ProjectNeo.Stages
                 var groups = new List<EncounterGroup>();
                 foreach (EncounterGroup group in wave.Groups)
                 {
+                    // 보스는 승천 적 수 증가에도 한 마리다.
+                    if (group.IsBoss) { groups.Add(group); continue; }
                     int scaled = count(group.Count);
                     if (scaled > 0) groups.Add(new EncounterGroup(group.Prefab, scaled, group.Cell, group.Hidden));
                 }
@@ -90,6 +101,10 @@ namespace ProjectNeo.Stages
                             if (group.enemyPrefab != null && group.count > 0)
                                 groups.Add(new EncounterGroup(group.enemyPrefab, group.count,
                                     group.spawnPoint != null ? group.spawnPoint.Cell : defaultCell, group.hidden));
+                    // 보스는 그 웨이브의 마지막 무리로 둔다(SIEGE-09). 바탕 프리팹이 없으면 뺀다.
+                    if (wave.boss != null && wave.boss.BasePrefab != null)
+                        groups.Add(EncounterGroup.ForBoss(wave.boss,
+                            wave.bossSpawnPoint != null ? wave.bossSpawnPoint.Cell : defaultCell));
                     if (groups.Count > 0) waves.Add(new EncounterWave(wave.startSeconds, groups));
                 }
             return new EncounterPlan(waves);

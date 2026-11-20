@@ -438,7 +438,7 @@ namespace ProjectNeo.Siege
             Face(toward);
             // 유닛 공격과 같은 공격 속도·선딜레이 신호를 쓴다. 성문에는 방어력이 없다.
             if (!Actor.TryAttack()) return;
-            gate.ReceiveDamage(DamageRules.Calculate(Actor.Stats.GetValue(StatType.Attack), 0f, Actor.Profile.MinimumDamage));
+            gate.ReceiveDamage(BossUnit.StructureDamage(Actor, DamageRules.Calculate(Actor.Stats.GetValue(StatType.Attack), 0f, Actor.Profile.MinimumDamage)));
         }
 
         // ── 대포(SIEGE-02) ──────────────────────────────────────
@@ -497,7 +497,7 @@ namespace ProjectNeo.Siege
             Face(cannon.transform.position - transform.position);
             // 성문과 같은 공격 속도·선딜레이 신호를 쓴다. 대포에는 방어력이 없다.
             if (!Actor.TryAttack()) return;
-            cannon.ReceiveDamage(DamageRules.Calculate(Actor.Stats.GetValue(StatType.Attack), 0f, Actor.Profile.MinimumDamage));
+            cannon.ReceiveDamage(BossUnit.StructureDamage(Actor, DamageRules.Calculate(Actor.Stats.GetValue(StatType.Attack), 0f, Actor.Profile.MinimumDamage)));
         }
 
         // ── 후퇴 ────────────────────────────────────────────────

@@ -125,7 +125,7 @@ namespace ProjectNeo.Siege
             direction.y = 0f;
             if (direction.sqrMagnitude > 0.001f) transform.rotation = Quaternion.LookRotation(direction);
             // 기존 성문 공격과 동일한 공격 속도·공격 시작 신호·최소 피해를 사용한다.
-            if (actor.TryAttack()) Target.ReceiveDamage(DamageRules.Calculate(actor.Stats.GetValue(StatType.Attack), 0f, actor.Profile.MinimumDamage));
+            if (actor.TryAttack()) Target.ReceiveDamage(BossUnit.StructureDamage(actor, DamageRules.Calculate(actor.Stats.GetValue(StatType.Attack), 0f, actor.Profile.MinimumDamage)));
         }
 
         void Hold() { if (ai.Directive != UnitDirective.Hold) ai.SetDirective(UnitDirective.Hold); }

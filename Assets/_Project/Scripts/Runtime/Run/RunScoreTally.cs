@@ -10,7 +10,7 @@ namespace ProjectNeo.Run
     {
         /// <summary>이긴 전투(= 클리어한 스테이지) 수.</summary>
         public int StagesCleared { get; private set; }
-        /// <summary>처치한 보스 수. 보스는 SIEGE-09가 <see cref="AddBossKills"/>로 넘긴다.</summary>
+        /// <summary>처치한 보스 수. 전투 결과의 <see cref="BattleResult.BossesKilled"/>에서 센다(SIEGE-09).</summary>
         public int BossesKilled { get; private set; }
         /// <summary>모든 전투에서 처치한 적 수(퇴각한 적은 빠진다).</summary>
         public int EnemiesKilled { get; private set; }
@@ -22,6 +22,8 @@ namespace ProjectNeo.Run
         {
             if (result == null) throw new ArgumentNullException(nameof(result));
             foreach (int count in result.EnemiesKilled.Values) EnemiesKilled += Math.Max(0, count);
+            // 보스는 진 전투에서 잡았어도 센다(SIEGE-09).
+            AddBossKills(result.BossesKilled.Count);
             if (result.Outcome != Flow.BattleOutcome.Victory) return;
             StagesCleared++;
             if (result.GateIntact) GateIntactVictories++;

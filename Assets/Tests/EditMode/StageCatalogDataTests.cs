@@ -56,5 +56,33 @@ namespace ProjectNeo.Tests
                 }
             }
         }
+
+        [Test]
+        public void ProjectStages_HaveOneDistinctBossInTheLastWave()
+        {
+            // SIEGE-09 (Q-68/Q-74): one boss per stage, in the last wave, seven different bosses covering the four roles.
+            StageCatalog catalog = LoadCatalog();
+            var ids = new System.Collections.Generic.HashSet<string>();
+            var roles = new System.Collections.Generic.HashSet<BossRole>();
+            foreach (StageDefinition stage in catalog.Stages)
+            {
+                string at = stage.DisplayName + ": ";
+                for (int w = 0; w < stage.Waves.Count - 1; w++)
+                    Assert.IsNull(stage.Waves[w].boss, at + "only the last wave holds the boss");
+                BossDefinition boss = stage.Waves[stage.Waves.Count - 1].boss;
+                Assert.IsNotNull(boss, at + "the last wave needs a boss (run ProjectNeo/Setup/Create Stage Bosses)");
+                Assert.IsNotNull(boss.BasePrefab, at + "boss without a base prefab");
+                Assert.IsFalse(boss.BasePrefab.activeSelf, at + "boss base prefab must be inactive");
+                Assert.IsTrue(boss.Id.StartsWith("boss_"), at + "boss ids must not clash with enemy prefab names");
+                Assert.Greater(boss.MaxHealth, 0f, at + "boss health");
+                Assert.Greater(boss.RewardGold, 0, at + "boss reward gold");
+                Assert.IsTrue(ids.Add(boss.Id), at + "bosses must differ between stages");
+                roles.Add(boss.Role);
+                EncounterPlan plan = EncounterPlan.FromStage(stage, UnityEngine.Vector2.zero);
+                EncounterWave last = plan.Waves[plan.Waves.Count - 1];
+                Assert.IsTrue(last.Groups[last.Groups.Count - 1].IsBoss, at + "the plan spawns the boss");
+            }
+            Assert.AreEqual(4, roles.Count, "siege, duelist, commander and artillery are all covered (Q-74)");
+        }
     }
 }

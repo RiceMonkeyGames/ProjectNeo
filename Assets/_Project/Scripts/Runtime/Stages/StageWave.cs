@@ -23,5 +23,9 @@ namespace ProjectNeo.Stages
         [Tooltip("전투 시작 뒤 이 웨이브가 나오는 시간(초). 첫 웨이브는 0.")]
         [Min(0f)] public float startSeconds;
         public StageWaveGroup[] groups;
+        [Tooltip("이 웨이브와 함께 나오는 보스(SIEGE-09). 스테이지마다 마지막 웨이브에 하나만 둔다. 비우면 보스가 없다.")]
+        public BossDefinition boss;
+        [Tooltip("보스가 나오는 지점. 비우면 전투 설정의 기본 스폰 칸을 쓴다.")]
+        public SpawnPointDefinition bossSpawnPoint;
     }
 }

@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 413722587309a484b8fd020c8a638655, type: 3}
+  m_Name: boss_marksman
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Stages.BossDefinition
+  id: boss_marksman
+  displayName: Marksman
+  role: 3
+  basePrefab: {fileID: 1594135828907872887, guid: 74ac65c8d1c47724d836fe77800d4b3a, type: 3}
+  visualScale: 1.4
+  maxHealth: 350
+  attack: 26
+  defense: 2
+  attackRange: 22
+  moveSpeedMultiplier: 1
+  structureDamageMultiplier: 1
+  heroPreference: 3
+  auraRadius: 0
+  auraAttackPercent: 0
+  auraDefenseFlat: 0
+  deathAttackPenalty: 0
+  rewardGold: 50
+  rewardMaterials:
+  - material: {fileID: 11400000, guid: d8a422bc2c200bc4098f7e97952c696e, type: 2}
+    amount: 2
+  - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+    amount: 1

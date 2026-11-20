@@ -42,6 +42,12 @@ namespace ProjectNeo.Combat
         /// <summary>공성 임무 등 특정 목표를 수행하는 동안 피격 반격·타겟 전환을 막는다.</summary>
         public void SetRetaliationSuppressed(bool suppressed) => suppressRetaliation = suppressed;
 
+        /// <summary>
+        /// 대상을 고르고 바꿀 때 제곱 거리에 곱하는 배율(SIEGE-09 결투형 보스). 1보다 작으면 그 대상을 더 가깝게 본다.
+        /// 비워 두면(기본) 예전처럼 거리만으로 고른다. 탐지 거리와 닿는지 검사는 실제 거리로 한다.
+        /// </summary>
+        public System.Func<CharacterActor, float> TargetDistanceScale { get; set; }
+
         // Engage에 목적지가 있으면 그 지점으로 가면서 시야에 들어온 적과 싸운다.
         public bool HasAdvancePoint { get; private set; }
 
@@ -348,7 +354,7 @@ namespace ProjectNeo.Combat
                     {
                         CharacterActor closer = FindTarget();
                         if (closer != null && !ReferenceEquals(closer, Target)
-                            && (CanStrikeFromHere(closer) || SqrDistanceTo(closer) < SqrDistanceTo(Target)))
+                            && (CanStrikeFromHere(closer) || PriorityOf(closer) < PriorityOf(Target)))
                             SwitchTarget(closer, false);
                     }
                     if (CanReach(Target)) agent.SetPath(path);
@@ -406,9 +412,16 @@ namespace ProjectNeo.Combat
             if (CanStrikeFromHere(current))
             {
                 if (candidate.Profile.AttackKind != AttackKind.Melee) return false;
-                return CanStrikeFromHere(candidate) || SqrDistanceTo(candidate) < SqrDistanceTo(current);
+                return CanStrikeFromHere(candidate) || PriorityOf(candidate) < PriorityOf(current);
             }
-            return CanStrikeFromHere(candidate) || SqrDistanceTo(candidate) < SqrDistanceTo(current);
+            return CanStrikeFromHere(candidate) || PriorityOf(candidate) < PriorityOf(current);
+        }
+
+        // 대상 비교 값: 제곱 거리에 선호 배율을 곱한다. 배율이 없으면 제곱 거리 그대로다.
+        float PriorityOf(CharacterActor other)
+        {
+            float distance = SqrDistanceTo(other);
+            return TargetDistanceScale != null ? distance * TargetDistanceScale(other) : distance;
         }
 
         void SwitchTarget(CharacterActor next, bool isHoldRetaliation)
@@ -471,14 +484,17 @@ namespace ProjectNeo.Combat
         CharacterActor FindTarget()
         {
             CharacterActor nearest = null;
-            float nearestDistance = settings.DetectionRange * settings.DetectionRange;
+            float detection = settings.DetectionRange * settings.DetectionRange;
+            float best = float.PositiveInfinity;
             foreach (CharacterActor candidate in CharacterActor.ActiveActors)
             {
                 if (candidate.Team == actor.Team) continue;
                 float distance = (candidate.transform.position - transform.position).sqrMagnitude;
-                if (distance >= nearestDistance || !actor.IsEnemy(candidate)
+                // 선호 배율이 없으면 score는 거리 그대로라 예전과 같은 대상을 고른다.
+                float score = TargetDistanceScale != null ? distance * TargetDistanceScale(candidate) : distance;
+                if (distance >= detection || score >= best || !actor.IsEnemy(candidate)
                     || !CombatPhysics.CanTarget(actor, candidate) || !CanReach(candidate)) continue;
-                nearestDistance = distance;
+                best = score;
                 nearest = candidate;
             }
             return nearest;

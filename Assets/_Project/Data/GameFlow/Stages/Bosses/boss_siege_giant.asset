@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 413722587309a484b8fd020c8a638655, type: 3}
+  m_Name: boss_siege_giant
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Stages.BossDefinition
+  id: boss_siege_giant
+  displayName: Siege Giant
+  role: 0
+  basePrefab: {fileID: 3276109497482159700, guid: def97a7de831ff349a9a555089d5b0ef, type: 3}
+  visualScale: 1.9
+  maxHealth: 900
+  attack: 28
+  defense: 6
+  attackRange: 0
+  moveSpeedMultiplier: 0.8
+  structureDamageMultiplier: 3
+  heroPreference: 3
+  auraRadius: 0
+  auraAttackPercent: 0
+  auraDefenseFlat: 0
+  deathAttackPenalty: 0
+  rewardGold: 70
+  rewardMaterials:
+  - material: {fileID: 11400000, guid: d8a422bc2c200bc4098f7e97952c696e, type: 2}
+    amount: 3
+  - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+    amount: 2

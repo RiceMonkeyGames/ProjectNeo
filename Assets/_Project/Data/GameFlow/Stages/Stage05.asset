@@ -28,6 +28,8 @@ MonoBehaviour:
       count: 4
       spawnPoint: {fileID: 11400000, guid: c2aeb97d7dde3624ab98da0ea541ed38, type: 2}
       hidden: 0
+    boss: {fileID: 0}
+    bossSpawnPoint: {fileID: 0}
   - startSeconds: 30
     groups:
     - enemyPrefab: {fileID: 3276109497482159700, guid: def97a7de831ff349a9a555089d5b0ef, type: 3}
@@ -42,6 +44,8 @@ MonoBehaviour:
       count: 4
       spawnPoint: {fileID: 11400000, guid: d13308c69f3255f49b5893f11abed6f2, type: 2}
       hidden: 0
+    boss: {fileID: 0}
+    bossSpawnPoint: {fileID: 0}
   - startSeconds: 65
     groups:
     - enemyPrefab: {fileID: 3311207010470909413, guid: 6336293aee1c1264089c9649769650a6, type: 3}
@@ -60,3 +64,5 @@ MonoBehaviour:
       count: 3
       spawnPoint: {fileID: 11400000, guid: c2aeb97d7dde3624ab98da0ea541ed38, type: 2}
       hidden: 0
+    boss: {fileID: 11400000, guid: 225d201f2ff10f04faf88e8ed99eb925, type: 2}
+    bossSpawnPoint: {fileID: 11400000, guid: d13308c69f3255f49b5893f11abed6f2, type: 2}

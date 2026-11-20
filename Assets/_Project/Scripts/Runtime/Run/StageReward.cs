@@ -67,6 +67,15 @@ namespace ProjectNeo.Run
                     reward.AddMaterial(rule.material, rule.materialPerKill * kill.Value);
                 }
 
+            // 보스 처치 보상(SIEGE-09). 보스 ID는 처치 보상 표에 없어 일반 처치 골드는 받지 않는다.
+            foreach (Stages.BossDefinition boss in result.BossesKilled)
+            {
+                if (boss == null) continue;
+                reward.AddGold(boss.RewardGold);
+                foreach (Stages.BossMaterialReward material in boss.RewardMaterials)
+                    reward.AddMaterial(material.material, material.amount);
+            }
+
             for (int i = 0; i < table.ItemRolls; i++)
             {
                 if (random.NextFloat() >= table.ItemChance) continue;

@@ -19,8 +19,10 @@ namespace ProjectNeo.Flow
             public string EnemyId { get; }
             /// <summary>웨이브 안에서 이 적이 속한 무리 번호(EncounterWave.Groups 순서).</summary>
             public int GroupIndex { get; }
-            public Spawned(SiegeAttacker attacker, string enemyId, int groupIndex = 0)
-            { Attacker = attacker; EnemyId = enemyId; GroupIndex = groupIndex; }
+            /// <summary>보스면 붙인 보스 부품(SIEGE-09). 아니면 null.</summary>
+            public BossUnit Boss { get; }
+            public Spawned(SiegeAttacker attacker, string enemyId, int groupIndex = 0, BossUnit boss = null)
+            { Attacker = attacker; EnemyId = enemyId; GroupIndex = groupIndex; Boss = boss; }
         }
 
         readonly ConstructionWorld world;
@@ -77,7 +79,13 @@ namespace ProjectNeo.Flow
                         fall.Configure(world, fallSettings);
                     }
                     brain.Bind(world, ladders, settings.Outward, settings.Siege);
-                    result.Add(new Spawned(brain, group.Prefab.name, groupIndex));
+                    // 보스(SIEGE-09)는 보스 부품을 붙이고 보스 ID로 센다. 정의 연결은 전투가 웨이브를 다 만든 뒤 한다.
+                    if (group.IsBoss)
+                    {
+                        unit.name = group.Boss.Id + "_" + (spawnedCount - 1);
+                        result.Add(new Spawned(brain, group.Boss.Id, groupIndex, unit.AddComponent<BossUnit>()));
+                    }
+                    else result.Add(new Spawned(brain, group.Prefab.name, groupIndex));
                 }
                 rows[group.Cell] = row + (group.Count + settings.Columns - 1) / settings.Columns;
             }

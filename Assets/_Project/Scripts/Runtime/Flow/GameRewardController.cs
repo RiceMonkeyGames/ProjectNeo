@@ -46,7 +46,17 @@ namespace ProjectNeo.Flow
         {
             if (phase == GamePhase.Reward) TryGrant();
             // 런은 패배(런 결과) 또는 마지막 스테이지 뒤 엔딩(FLOW-03)으로 끝난다.
-            if (phase == GamePhase.RunResult || phase == GamePhase.Ending) TryGrantRunEnd();
+            if (phase == GamePhase.RunResult || phase == GamePhase.Ending) TryGrantRunEnd(RunBossesKilled);
+        }
+
+        // 이 런에서 처치한 보스 수(SIEGE-09). 전투 결과를 반영할 때 런 점수 기록에 쌓인다.
+        int RunBossesKilled
+        {
+            get
+            {
+                RunState state = battle != null ? battle.RunLink.State : null;
+                return state != null ? state.ScoreTally.BossesKilled : 0;
+            }
         }
 
         /// <summary>이 런이 끝날 때 받은 해금 포인트. 아직 받지 않았으면 -1.</summary>
@@ -58,7 +68,7 @@ namespace ProjectNeo.Flow
         /// 런이 끝날 때 해금 포인트를 한 번 준다(META-08, Q-76): 클리어한 스테이지와 처치한 보스 수에 따라
         /// <see cref="StageRewardTable"/>의 값만큼 메타 진행에 넣고 바로 저장한다. 런은 패배 또는 마지막 스테이지 뒤
         /// 엔딩(FLOW-03)으로 끝나며, 엔딩이면 지금 스테이지까지 깬 것으로 센다. 승천 단계의 배율(Q-78)을 곱하고 올림한다.
-        /// 보스 처치 수는 SIEGE-09가 넘긴다. 이미 줬거나 연결이 없으면 false.
+        /// 단계가 바뀔 때는 런 점수 기록의 보스 처치 수(SIEGE-09)를 넘긴다. 이미 줬거나 연결이 없으면 false.
         /// </summary>
         public bool TryGrantRunEnd(int bossesKilled = 0)
         {
