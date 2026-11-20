@@ -126,12 +126,20 @@ namespace ProjectNeo.Morale
             if (state != null && state.Army.Squads.Count == center.Squads.Count)
             {
                 Squad<RunUnit> owner = state.Army.Squads[squad];
-                if (owner.Morale == null) owner.Morale = scene.Morale ?? settings.CreateSquadMorale();
+                if (owner.Morale == null) owner.Morale = scene.Morale ?? NewSquadMorale(state);
                 scene.Morale = owner.Morale;
                 return owner.Morale;
             }
-            if (scene.Morale == null) scene.Morale = settings.CreateSquadMorale();
+            if (scene.Morale == null) scene.Morale = NewSquadMorale(state);
             return scene.Morale;
+        }
+
+        // 새 부대의 사기. 승천의 시작 사기 감소(FLOW-03)를 런에서 읽는다. 런이 없거나 단계 0이면 설정의 시작값이다.
+        SquadMorale NewSquadMorale(RunState state)
+        {
+            SquadMorale morale = settings.CreateSquadMorale();
+            if (state == null || state.Ascension.Level == 0) return morale;
+            return new SquadMorale(morale.Max, state.Ascension.StartingMorale(morale.Value, morale.Max));
         }
 
         /// <summary>이번 전투의 부대 사기 규칙. 전투 중이 아니거나 살아 있는 부대원 없이 시작한 부대면 null.</summary>

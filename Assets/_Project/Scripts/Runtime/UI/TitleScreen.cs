@@ -20,6 +20,7 @@ namespace ProjectNeo.UI
         [SerializeField] UnityEngine.UI.Button continueButton;
         [SerializeField] TMP_Text continueLabel;
         [SerializeField] UnlockScreen unlockScreen;
+        [SerializeField] AscensionPicker ascensionPicker;
 
         int selectedSlot;
         int deleteArmedSlot = NoSlot;
@@ -91,6 +92,7 @@ namespace ProjectNeo.UI
         {
             if (!MetaSaveStore.IsValidSlot(slot)) return;
             selectedSlot = slot;
+            if (ascensionPicker != null) ascensionPicker.Close();
             deleteArmedSlot = NoSlot;
             newGameArmedSlot = NoSlot;
             notice = string.Empty;
@@ -153,11 +155,33 @@ namespace ProjectNeo.UI
                 return;
             }
             if (GameSession.Flow.Phase != GamePhase.Title) return;
+            // 열린 승천 단계가 있으면 단계를 고르는 창을 먼저 연다(FLOW-03). 기본 게임만 있으면 바로 시작한다.
+            int highest = ascensionPicker != null && ascensionPicker.Table != null
+                ? AscensionProgress.HighestUnlocked(GameSession.SaveStore.Inspect(selectedSlot).Progress, ascensionPicker.Table.MaxLevel)
+                : 0;
+            if (highest > 0 && ascensionPicker.Open(highest, BeginRun))
+            {
+                newGameArmedSlot = NoSlot;
+                deleteArmedSlot = NoSlot;
+                notice = string.Empty;
+                Refresh();
+                return;
+            }
+            BeginRun(0);
+        }
+
+        /// <summary>고른 슬롯에서 이 승천 단계로 새 런을 시작해 게임 씬으로 간다. 슬롯의 저장된 런은 버린다.</summary>
+        public void BeginRun(int ascensionLevel)
+        {
+            if (SceneSwitcher.IsLoading || GameSession.Flow.Phase != GamePhase.Title) return;
             GameSession.RunSaves.Delete(selectedSlot);
-            if (!GameSession.Flow.StartRun()) return;
+            if (!GameSession.Flow.StartRun(null, ascensionLevel)) return;
             GameSession.SelectSlot(selectedSlot);
             SceneSwitcher.Load(catalog.GameScene);
         }
+
+        public void ConfigureAscension(AscensionPicker picker) => ascensionPicker = picker;
+        public AscensionPicker Ascension => ascensionPicker;
 
         public void Quit()
         {
@@ -180,7 +204,9 @@ namespace ProjectNeo.UI
             ProjectNeo.Run.RunLoadResult run = GameSession.RunSaves.Inspect(selectedSlot);
             if (continueButton != null) continueButton.interactable = run.HasRun;
             if (continueLabel != null)
-                continueLabel.text = run.HasRun ? $"Continue (Stage {run.Snapshot.stageNumber})" : "Continue";
+                continueLabel.text = run.HasRun
+                    ? $"Continue (Stage {run.Snapshot.stageNumber}" + (run.Snapshot.ascensionLevel > 0 ? $", Ascension {run.Snapshot.ascensionLevel})" : ")")
+                    : "Continue";
             if (deleteLabel != null)
             {
                 bool armed = deleteArmedSlot == selectedSlot;
@@ -203,6 +229,7 @@ namespace ProjectNeo.UI
             string name = $"Slot {slot + 1}";
             MetaProgress progress = result.Progress;
             string summary = $"Commander Lv {progress.commanderLevel} - Unlock points {progress.unlockPoints}";
+            if (progress.ascensionUnlocked > 0) summary += $" - Ascension {progress.ascensionUnlocked}";
             switch (result.Status)
             {
                 case MetaLoadStatus.Loaded: return $"{name}: {summary}";

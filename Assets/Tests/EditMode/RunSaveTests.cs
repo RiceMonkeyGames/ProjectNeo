@@ -138,6 +138,31 @@ namespace ProjectNeo.Tests
         static string Json(RunSnapshot snapshot) => JsonUtility.ToJson(snapshot, true);
 
         [Test]
+        public void CaptureThenRestore_KeepsTheAscensionLevel()
+        {
+            // FLOW-03: 고른 승천 단계는 런 저장에 남고, 이어 하면 같은 규칙이 다시 붙는다.
+            AscensionTable table = Track(AscensionTable.Create(0.1f,
+                new AscensionLevel("hp", new AscensionRule(AscensionRuleKind.EnemyHealthPercent, 0.15f)),
+                new AscensionLevel("gold", new AscensionRule(AscensionRuleKind.StartingGoldPercent, -0.25f))));
+            RunState run = RichRun();
+            run.SetupAscension(table, 2);
+            RunSnapshot saved = run.Capture(3, content);
+            Assert.AreEqual(2, saved.ascensionLevel);
+
+            options.Ascension = table;
+            RunState restored = RunState.Restore(saved, content, options, out string error);
+            Assert.IsNotNull(restored, error);
+            Assert.AreEqual(2, restored.AscensionLevel);
+            Assert.AreEqual(0.15f, restored.Ascension.Total(AscensionRuleKind.EnemyHealthPercent), 0.0001f);
+
+            // 예전 저장(필드 없음)은 기본 게임으로 읽힌다.
+            string withoutLevel = System.Text.RegularExpressions.Regex.Replace(Json(saved), @",\s*""ascensionLevel"":\s*2", string.Empty);
+            StringAssert.DoesNotContain("ascensionLevel", withoutLevel);
+            RunSnapshot old = JsonUtility.FromJson<RunSnapshot>(withoutLevel);
+            Assert.AreEqual(0, old.ascensionLevel);
+        }
+
+        [Test]
         public void CaptureThenRestore_ReproducesTheWholeRun()
         {
             RunState run = RichRun();

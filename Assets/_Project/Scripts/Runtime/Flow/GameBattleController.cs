@@ -187,8 +187,14 @@ namespace ProjectNeo.Flow
                 battleRunning = false;
                 ClearEnemies();
                 RunLink.OnPreparation();
-                // 시작 재화는 첫 저장 전에 정해져야 한다. 되살린 런에는 다시 주지 않는다(FLOW-02).
                 var build = GetComponent<GameBuildEconomy>();
+                // 승천 규칙과 런 길이는 시작 골드·준비 시계·적 편성보다 먼저 정한다(FLOW-03).
+                if (RunLink.State != null && flow.Run != null)
+                {
+                    flow.SetStageCount(settings.Stages != null ? settings.Stages.Count : 0);
+                    RunLink.State.SetupAscension(AscensionTable, flow.Run.AscensionLevel);
+                }
+                // 시작 재화는 첫 저장 전에 정해져야 한다. 되살린 런에는 다시 주지 않는다(FLOW-02).
                 if (build != null && RunLink.State != null) build.OnRunReady(RunLink.WasRestored);
                 // 열린 해금 트랙의 시작 보너스도 첫 저장 전에 준다. 되살린 런에는 다시 주지 않는다(META-07).
                 var facilities = GetComponent<GameFacilities>();
@@ -232,6 +238,36 @@ namespace ProjectNeo.Flow
                 // 패배로 런이 끝나면 이어 할 런이 없다.
                 if (phase == GamePhase.RunResult && GameSession.RunSavePolicy.deleteOnDefeat) GameSession.DeleteRunSave();
             }
+            else if (phase == GamePhase.Ending) FinishRunAsVictory();
+        }
+
+        /// <summary>이 씬의 승천 단계 표(RunStart.asset의 RunConfig.Ascension). 없으면 승천을 쓰지 않는다.</summary>
+        public AscensionTable AscensionTable
+        {
+            get
+            {
+                var build = GetComponent<GameBuildEconomy>();
+                return build != null && build.StartConfig != null ? build.StartConfig.Ascension : null;
+            }
+        }
+
+        /// <summary>엔딩에서 새로 열린 승천 단계. 열린 것이 없으면 0(FLOW-03).</summary>
+        public int AscensionUnlockedAtEnding { get; private set; }
+
+        // 마지막 스테이지까지 깨서 런이 끝났다(FLOW-03): 이어 할 런은 지우고, 열린 가장 높은 단계를 깼으면 다음 단계를 연다.
+        void FinishRunAsVictory()
+        {
+            battleRunning = false;
+            GameSession.DeleteRunSave();
+            AscensionUnlockedAtEnding = 0;
+            AscensionTable table = AscensionTable;
+            if (table == null || flow.Run == null) return;
+            var meta = GameSession.Meta;
+            if (ProjectNeo.Meta.AscensionProgress.RecordClear(meta, flow.Run.AscensionLevel, table.MaxLevel))
+            {
+                AscensionUnlockedAtEnding = meta.ascensionUnlocked;
+                GameSession.SaveMeta();
+            }
         }
 
         public bool TryStartBattle() => CanStart && flow.StartBattle();
@@ -269,6 +305,7 @@ namespace ProjectNeo.Flow
                     if (enemy == null) continue;
                     unreleased.Remove(enemy);
                     enemy.gameObject.SetActive(true);
+                    ApplyAscension(enemy);
                 }
                 // 전장에 나온 무리는 숨김이 풀린다(Q-53).
                 int last = index + 1 < waveFirstGroup.Count ? waveFirstGroup[index + 1] : groupUnits.Count;
@@ -381,7 +418,24 @@ namespace ProjectNeo.Flow
         {
             int stageNumber = flow != null && flow.Run != null ? flow.Run.StageNumber : 1;
             EncounterPlan custom = EncounterSourceOverride?.Invoke(settings, stageNumber);
-            return custom ?? DefaultEncounter(settings, stageNumber);
+            EncounterPlan plan = custom ?? DefaultEncounter(settings, stageNumber);
+            // 승천의 적 수 증가(FLOW-03). 단계 0이면 수가 그대로라 같은 편성이 나온다.
+            AscensionEffects ascension = RunLink.State != null ? RunLink.State.Ascension : AscensionEffects.None;
+            return ascension.Level > 0 ? plan.WithCounts(ascension.EnemyCount) : plan;
+        }
+
+        // 전장에 나온 적에게 승천의 체력·공격력·속도 규칙을 한 번 붙이고 늘어난 체력까지 채운다(FLOW-03).
+        // 보스 구분은 SIEGE-09가 생기면 붙인다. 그 전에는 모든 적이 일반 적 규칙만 받는다.
+        void ApplyAscension(SiegeAttacker enemy)
+        {
+            AscensionEffects ascension = RunLink.State != null ? RunLink.State.Ascension : AscensionEffects.None;
+            CharacterActor actor = enemy.Actor;
+            if (ascension.Level == 0 || actor == null || actor.Stats == null || actor.Health == null) return;
+            actor.Stats.RemoveModifiersFrom(ascension);
+            List<ProjectNeo.Stats.StatModifier> modifiers = ascension.EnemyModifiers();
+            if (modifiers.Count == 0) return;
+            actor.Stats.AddModifiers(modifiers, ascension);
+            actor.Health.RestoreFull();
         }
 
         /// <summary>

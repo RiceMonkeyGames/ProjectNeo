@@ -127,8 +127,18 @@ namespace ProjectNeo.Tests
                 int paid = wallet.Gold;
                 for (int i = 0; i < 10; i++) yield return null;
                 Assert.AreEqual(paid, wallet.Gold, "스테이지 " + stage + ": 보상 화면에 머무는 동안 골드가 다시 지급되면 안 된다.");
-                Assert.IsTrue(GameSession.Flow.ContinueToNextStage());
-                Assert.IsFalse(GameSession.Flow.ContinueToNextStage(), "보상은 한 번만 넘길 수 있다.");
+                if (stage < catalog.Count)
+                {
+                    Assert.IsTrue(GameSession.Flow.ContinueToNextStage());
+                    Assert.IsFalse(GameSession.Flow.ContinueToNextStage(), "보상은 한 번만 넘길 수 있다.");
+                }
+                else
+                {
+                    // 마지막 스테이지의 보상 뒤에는 다음 스테이지가 없고 엔딩으로 간다(FLOW-03).
+                    Assert.IsFalse(GameSession.Flow.ContinueToNextStage(), "마지막 스테이지 뒤에는 다음 스테이지가 없다.");
+                    Assert.IsTrue(GameSession.Flow.FinishRun());
+                    Assert.AreEqual(GamePhase.Ending, GameSession.Flow.Phase);
+                }
                 yield return null;
                 if (stage < catalog.Count) Assert.AreEqual(paid, wallet.Gold, "스테이지 " + stage + ": 다음 준비로 넘어가며 골드가 바뀌면 안 된다.");
             }

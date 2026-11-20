@@ -90,7 +90,8 @@ namespace ProjectNeo.Flow
                 startFundsGranted = true;
                 if (startConfig != null)
                 {
-                    state.Wallet.AddGold(startConfig.StartingGold);
+                    // 승천의 시작 골드 감소(FLOW-03). 해금 트랙의 시작 보너스 골드(META-07)는 따로 주므로 줄지 않는다.
+                    state.Wallet.AddGold(state.Ascension.StartingGold(startConfig.StartingGold));
                     foreach (MaterialAmount entry in startConfig.StartingMaterials)
                         if (entry.material != null && entry.amount > 0) state.Wallet.AddMaterial(entry.material, entry.amount);
                 }

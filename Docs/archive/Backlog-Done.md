@@ -1,11 +1,12 @@
 # Completed Backlog Archive (Done)
 
-Last Updated: 2026-11-20 11:50:38 (KST)
+Last Updated: 2026-11-20 14:11:28 (KST)
 
 > Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
 | Task ID | Description | Assignee | Outcome & History Link |
 |---|---|---|---|
+| FLOW-03 | Run Ending & Ascension Levels | 신용준 | Done 2026-11-20 on user confirmation after manual check (Title Ascension window with slot 1 at Ascension 3: level arrows, stacked rule list, Start run, Ascension shown in the prep line). Q-78 replaced the post-ending loop: clearing Stage 7 ends the run (`Finish run` -> ending, run save deleted) and unlocks the next of 10 stacking Ascension levels; rules applied to enemy HP/attack/speed/count, starting gold, prep budget, victory gold, squad starting morale and repair time; boss rules wait for SIEGE-09; score/unlock multiplier ready for META-04/META-08. EditMode 521/521, PlayMode 245/245. Branch `feature/flow-03`, merged into develop. [History](../history/FLOW/FLOW-03.md) |
 | BUG-hired-unit-not-joining-squad | Hired Unit Stays at the Tavern Instead of Joining Its Squad | 신용준 | Done 2026-11-20 on user confirmation after manual check (reserve hero assigned in the `O` window walks to Squad 1, then to Squad 2); branch `fix/bug-hired-unit-not-joining-squad`, merged into develop. `GameRunLink.TrySetCaptain` now sends the new captain to the squad gather point; tavern hire with a picked squad and barracks recruits already walked. PlayMode `GameOrganizationPlayTests` 3/3, `GameTavernPlayTests` 1/1; full suites and standalone build not run. [History](../history/BUG/BUG-hired-unit-not-joining-squad.md) |
 | CONTENT-01 | Expand Stage Catalog to 7 Stages | youngho | Done 2026-11-20 on user confirmation after manual play; branch `feature/content-01`, merged into develop 2026-11-20. Stages 4-7 added as proposed (enemy totals 32/38/44/50, wave gaps 35s/30s, one hidden group each, last wave reserved for SIEGE-09 bosses); stages 1-3 unchanged; `StageSetup` appends missing catalog rows; new EditMode `StageCatalogDataTests`; PlayMode stage loop now plays all 7 stages. [History](../history/CONTENT/CONTENT-01.md) |
 | META-03 | Remove Reincarnation Bonus | 신용준 | Done 2026-11-20 on user confirmation after manual check (Meta.asset Inspector shows no reincarnation field, existing meta slot loads unchanged); branch `feature/meta-03`, merged into develop. Q-71: removed `CommanderProgression.AddRunScoreBonus`, `MetaConfig.RunScoreToXpRate` and its test; meta save format unchanged. [History](../history/META/META-03.md) |

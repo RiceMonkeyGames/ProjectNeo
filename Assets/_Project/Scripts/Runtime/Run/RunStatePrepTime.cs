@@ -23,7 +23,7 @@ namespace ProjectNeo.Run
         {
             if (PrepTime == null || HasPendingBattle || ClockPreparation == BattlesFought) return false;
             ClockPreparation = BattlesFought;
-            Clock.Begin(PrepTime.BudgetHours);
+            Clock.Begin(Ascension.PrepBudgetHours(PrepTime.BudgetHours));
             Changed?.Invoke();
             return true;
         }

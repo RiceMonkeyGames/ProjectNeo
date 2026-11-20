@@ -32,6 +32,9 @@ namespace ProjectNeo.Run
 
         public void AddGold(int amount) { if (amount > 0) Gold += amount; }
 
+        /// <summary>정해진 골드 전체에 규칙을 적용한다(승천의 승리 골드 감소, FLOW-03). 0 아래로 내려가지 않는다.</summary>
+        public void ScaleGold(Func<int, int> rule) { if (rule != null) Gold = Math.Max(0, rule(Gold)); }
+
         public void AddMaterial(MaterialDefinition material, int amount)
         {
             if (material == null || amount <= 0) return;

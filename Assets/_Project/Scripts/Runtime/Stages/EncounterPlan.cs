@@ -48,6 +48,27 @@ namespace ProjectNeo.Stages
             TotalUnits = total;
         }
 
+        /// <summary>
+        /// 무리마다 적 수를 바꾼 새 편성(승천의 적 수 증가, FLOW-03). 웨이브 시작 시간·스폰 칸·숨김은 그대로다.
+        /// 0 이하가 된 무리는 뺀다. <paramref name="count"/>가 null이면 이 편성을 그대로 돌려준다.
+        /// </summary>
+        public EncounterPlan WithCounts(System.Func<int, int> count)
+        {
+            if (count == null) return this;
+            var waves = new List<EncounterWave>();
+            foreach (EncounterWave wave in Waves)
+            {
+                var groups = new List<EncounterGroup>();
+                foreach (EncounterGroup group in wave.Groups)
+                {
+                    int scaled = count(group.Count);
+                    if (scaled > 0) groups.Add(new EncounterGroup(group.Prefab, scaled, group.Cell, group.Hidden));
+                }
+                if (groups.Count > 0) waves.Add(new EncounterWave(wave.StartSeconds, groups));
+            }
+            return new EncounterPlan(waves);
+        }
+
         /// <summary>시간표 규칙(WaveSchedule)에 넘길 값.</summary>
         public WaveTiming[] Timings()
         {

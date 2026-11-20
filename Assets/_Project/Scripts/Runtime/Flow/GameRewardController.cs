@@ -56,6 +56,8 @@ namespace ProjectNeo.Flow
 
             var random = new SeededRandom(state.SeedFor(result.BattleNumber));
             StageReward reward = StageReward.Roll(table, flow.Run.StageNumber, result, random);
+            // 승천의 승리 골드 감소(FLOW-03). 단계 0이면 그대로다.
+            reward.ScaleGold(state.Ascension.VictoryGold);
             if (!state.ApplyReward(reward)) return false;
 
             MetaProgress meta = GameSession.Meta;

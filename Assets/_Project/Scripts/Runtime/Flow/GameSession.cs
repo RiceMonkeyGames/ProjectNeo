@@ -63,7 +63,7 @@ namespace ProjectNeo.Flow
                 Debug.LogWarning($"Run save slot {slot + 1} was unreadable; restored from backup.");
             SelectSlot(slot);
             pendingRun = result.Snapshot;
-            return Flow.ResumeRun(result.Snapshot.stageNumber);
+            return Flow.ResumeRun(result.Snapshot.stageNumber, result.Snapshot.ascensionLevel);
         }
 
         /// <summary>이어 하기로 넘겨받은 런 기록을 한 번 꺼낸다. 없으면 null. 게임 씬이 첫 준비 때 부른다.</summary>

@@ -32,6 +32,8 @@ namespace ProjectNeo.Run
         public CastleRecord castle = new CastleRecord();
         /// <summary>준비 시계(PREP-06). 예전 저장에는 없어서 기본값(-1)이면 다음 준비에서 예산을 새로 채운다.</summary>
         public PrepTimeRecord prepTime = new PrepTimeRecord();
+        /// <summary>이 런의 승천 단계(FLOW-03). 예전 저장에는 없어 0(기본 게임)으로 읽힌다.</summary>
+        public int ascensionLevel;
     }
 
     [Serializable]

@@ -18,6 +18,8 @@ namespace ProjectNeo.Run
         public EquipmentUpgradeSettings EquipmentUpgrades;
         /// <summary>준비 시간 수치(PREP-06). 없으면 저장된 시계를 되살리지 않고 시간 제약도 쓰지 않는다.</summary>
         public PrepTimeSettings PrepTime;
+        /// <summary>승천 단계 표(FLOW-03). 없으면 저장된 단계를 되살려도 규칙이 붙지 않는다(단계 0).</summary>
+        public AscensionTable Ascension;
         /// <summary>
         /// 살아 있는 영웅이 쓸 캐릭터. 씬 유닛의 캐릭터를 넘기면 런에서 바꾼 장비가 씬 스탯에 바로 반영된다(D-7).
         /// 비우거나 null을 돌려주면 새 캐릭터를 만든다.
@@ -38,6 +40,7 @@ namespace ProjectNeo.Run
             {
                 stageNumber = Math.Max(1, stageNumber), seed = Seed, battlesFought = BattlesFought,
                 lastRewardedBattle = LastRewardedBattle, nextUnitId = nextUnitId, gold = Wallet.Gold,
+                ascensionLevel = AscensionLevel,
             };
             foreach (KeyValuePair<MaterialDefinition, int> material in Wallet.Materials)
                 if (material.Key != null && material.Value > 0)
@@ -217,6 +220,7 @@ namespace ProjectNeo.Run
             state.SetupEquipmentUpgrades(options.EquipmentUpgrades);
             state.SetupPrepTime(options.PrepTime);
             state.RestorePrepClock(snapshot.prepTime);
+            state.SetupAscension(options.Ascension, snapshot.ascensionLevel);
             if (snapshot.gold > 0) state.Wallet.AddGold(snapshot.gold);
             foreach (MaterialRecord material in snapshot.materials ?? new List<MaterialRecord>())
                 if (material.amount > 0) state.Wallet.AddMaterial(content.Material(material.id), material.amount);
