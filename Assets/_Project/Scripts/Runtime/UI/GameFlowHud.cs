@@ -78,8 +78,9 @@ namespace ProjectNeo.UI
             bool fighting = flow.Phase == GamePhase.Battle && battle != null;
             GameRewardController rewards = battle != null ? battle.GetComponent<GameRewardController>() : null;
             bool rewarding = flow.Phase == GamePhase.Reward && rewards != null && rewards.LastReward != null;
+            bool runEnded = flow.Phase == GamePhase.RunResult && rewards != null && rewards.RunEndUnlockPoints >= 0;
             interactionHint.transform.parent.gameObject.SetActive(preparation);
-            if (battleStatus != null) battleStatus.transform.parent.gameObject.SetActive(fighting || rewarding);
+            if (battleStatus != null) battleStatus.transform.parent.gameObject.SetActive(fighting || rewarding || runEnded);
             explorationReticle.SetActive(preparation && phaseView.IsExplorationView);
 
             // 대포에 탄 동안에만 조준선에 발사 가능·재장전 상태를 보여준다.
@@ -93,6 +94,12 @@ namespace ProjectNeo.UI
             {
                 // 전투 상태 자리에 이번 승리의 보상 내역을 보여준다.
                 if (battleStatus != null) battleStatus.text = rewards.Describe();
+                return;
+            }
+            if (runEnded)
+            {
+                // 패배로 런이 끝나면 같은 자리에 런 종료 해금 포인트를 보여준다(META-08).
+                if (battleStatus != null) battleStatus.text = rewards.DescribeRunEnd();
                 return;
             }
             if (fighting)

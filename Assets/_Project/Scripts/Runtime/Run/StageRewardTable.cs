@@ -27,7 +27,12 @@ namespace ProjectNeo.Run
         [Header("메타")]
         [SerializeField, Min(0)] int commanderXp = 40;
         [SerializeField, Min(0)] int commanderXpPerStage = 10;
-        [SerializeField, Min(0)] int unlockPoints = 5;
+
+        [Header("런 종료 해금 포인트 (META-08)")]
+        [Tooltip("런이 끝날 때 클리어한 스테이지마다 주는 해금 포인트(사용자 결정 2026-11-19).")]
+        [SerializeField, Min(0)] int unlockPointsPerStageCleared = 1;
+        [Tooltip("런이 끝날 때 처치한 보스마다 주는 해금 포인트(사용자 결정 2026-11-19). 보스는 SIEGE-09.")]
+        [SerializeField, Min(0)] int unlockPointsPerBossKilled = 1;
 
         public int BaseGold => baseGold;
         public int GoldPerStage => goldPerStage;
@@ -39,12 +44,17 @@ namespace ProjectNeo.Run
         public IReadOnlyList<WeightedEntry<ItemDefinition>> ItemPool => itemPool;
         public int CommanderXp => commanderXp;
         public int CommanderXpPerStage => commanderXpPerStage;
-        public int UnlockPoints => unlockPoints;
+        public int UnlockPointsPerStageCleared => unlockPointsPerStageCleared;
+        public int UnlockPointsPerBossKilled => unlockPointsPerBossKilled;
+
+        /// <summary>런이 끝날 때 줄 해금 포인트(META-08). 클리어한 스테이지 수와 처치한 보스 수에 비례한다.</summary>
+        public int RunEndUnlockPoints(int stagesCleared, int bossesKilled) =>
+            unlockPointsPerStageCleared * Mathf.Max(0, stagesCleared) + unlockPointsPerBossKilled * Mathf.Max(0, bossesKilled);
 
         /// <summary>코드에서 표를 만든다(테스트용).</summary>
         public static StageRewardTable Create(int baseGold, int goldPerStage, KillReward[] killRewards = null,
             float itemChance = 0f, int itemRolls = 1, WeightedEntry<ItemDefinition>[] itemPool = null,
-            int commanderXp = 0, int commanderXpPerStage = 0, int unlockPoints = 0)
+            int commanderXp = 0, int commanderXpPerStage = 0, int unlockPointsPerStageCleared = 1, int unlockPointsPerBossKilled = 1)
         {
             var table = CreateInstance<StageRewardTable>();
             table.baseGold = Mathf.Max(0, baseGold);
@@ -55,7 +65,8 @@ namespace ProjectNeo.Run
             table.itemPool = new List<WeightedEntry<ItemDefinition>>(itemPool ?? new WeightedEntry<ItemDefinition>[0]);
             table.commanderXp = Mathf.Max(0, commanderXp);
             table.commanderXpPerStage = Mathf.Max(0, commanderXpPerStage);
-            table.unlockPoints = Mathf.Max(0, unlockPoints);
+            table.unlockPointsPerStageCleared = Mathf.Max(0, unlockPointsPerStageCleared);
+            table.unlockPointsPerBossKilled = Mathf.Max(0, unlockPointsPerBossKilled);
             return table;
         }
     }

@@ -504,7 +504,7 @@ namespace ProjectNeo.Tests
             Assert.Greater(reward.Gold, rewards.Table.BaseGold, "처치 골드가 더해진다.");
             KillReward ladderRule = rewards.Table.KillRewards.First(rule => rule.enemyId == "enemy_ladder");
             Assert.AreEqual(ladders * ladderRule.materialPerKill, state.Wallet.GetMaterial(ladderRule.material));
-            Assert.AreEqual(rewards.Table.UnlockPoints, GameSession.Meta.unlockPoints);
+            Assert.AreEqual(0, GameSession.Meta.unlockPoints, "해금 포인트는 승리마다 주지 않고 런이 끝날 때 준다(META-08).");
             Assert.IsFalse(rewards.TryGrant(), "같은 승리의 보상은 다시 주지 않는다.");
             Assert.AreEqual(goldBefore + reward.Gold, state.Wallet.Gold);
 
