@@ -15,6 +15,3 @@ MonoBehaviour:
   baseXpPerLevel: 100
   xpGrowthPerLevel: 50
   perkPointsPerLevel: 1
-  runScoreToXpRate: 0.1
-  defaultUnlockCost: 100
-  unlockCosts: []

@@ -1,11 +1,10 @@
 using System;
-using UnityEngine;
 
 namespace ProjectNeo.Meta
 {
     /// <summary>
-    /// 지휘관 경험치와 퍽 포인트를 주는 규칙. 경험치 출처(스테이지 클리어, 환생 보너스 등)는
-    /// 모두 AddXp로 들어오고, 레벨이 오르면 바로 퍽 포인트가 생긴다.
+    /// 지휘관 경험치와 퍽 포인트를 주는 규칙. 경험치는 스테이지 클리어로만 얻고(Q-71: 환생 보너스 없음)
+    /// AddXp로 들어오며, 레벨이 오르면 바로 퍽 포인트가 생긴다.
     /// </summary>
     public static class CommanderProgression
     {
@@ -26,15 +25,6 @@ namespace ProjectNeo.Meta
             }
             progress.perkPoints += levelsGained * config.PerkPointsPerLevel;
             return levelsGained;
-        }
-
-        /// <summary>환생 보너스: 런 점수의 일정 비율을 경험치로 준다. 준 경험치를 돌려준다.</summary>
-        public static int AddRunScoreBonus(MetaProgress progress, MetaConfig config, int runScore)
-        {
-            if (config == null) throw new ArgumentNullException(nameof(config));
-            int xp = Mathf.FloorToInt(Mathf.Max(runScore, 0) * config.RunScoreToXpRate);
-            AddXp(progress, config, xp);
-            return xp;
         }
 
         /// <summary>레벨업 외의 출처로 퍽 포인트를 직접 준다.</summary>
