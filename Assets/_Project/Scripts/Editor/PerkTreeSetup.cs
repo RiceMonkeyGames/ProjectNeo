@@ -67,7 +67,15 @@ namespace ProjectNeo.Editor
             PerkDefinition u4 = Perk("perk_units_rally", "재집결", PerkCategory.UnitBoost, new[] { u2 }, special: rally);
             PerkDefinition u5 = Perk("perk_units_avenge_them", "복수", PerkCategory.UnitBoost, new[] { u3 }, special: avenge);
 
-            PerkTreeDefinition combat = SaveOver(PerkTreeDefinition.Create(PerkCategory.Combat, "전투", new[] { c1, c2, c3, c4, c5 }),
+            // 전투 트리 스킬 퍽(COMBAT-06, Q-72): 찍으면 플레이어가 그 스킬을 배운다.
+            Dictionary<string, ProjectNeo.Skills.SkillDefinition> skills = SkillSetup.CreateSkills();
+            PerkDefinition s1 = SkillPerk("perk_combat_skill_whirlwind", skills[SkillSetup.Whirlwind], null);
+            PerkDefinition s2 = SkillPerk("perk_combat_skill_shield_bash", skills[SkillSetup.ShieldBash], new[] { c1 });
+            PerkDefinition s3 = SkillPerk("perk_combat_skill_war_cry", skills[SkillSetup.WarCry], new[] { c2 });
+            PerkDefinition s4 = SkillPerk("perk_combat_skill_healing_light", skills[SkillSetup.HealingLight], new[] { c4 });
+
+            PerkTreeDefinition combat = SaveOver(PerkTreeDefinition.Create(PerkCategory.Combat, "전투",
+                    new[] { c1, c2, c3, c4, c5, s1, s2, s3, s4 }),
                 Folder + "/PerkTree_Combat.asset");
             PerkTreeDefinition economy = SaveOver(PerkTreeDefinition.Create(PerkCategory.Economy, "경제", new[] { e1, e2, e3, e4, e5 }),
                 Folder + "/PerkTree_Economy.asset");
@@ -102,12 +110,19 @@ namespace ProjectNeo.Editor
                 Folder + "/" + id + ".asset");
         }
 
+        static PerkDefinition SkillPerk(string id, ProjectNeo.Skills.SkillDefinition skill, PerkDefinition[] prerequisites) =>
+            SaveOver(PerkDefinition.Create(id, PerkCategory.Combat, null, null, 1, true, null, "스킬: " + skill.DisplayName,
+                prerequisites, "스킬 습득: " + skill.Description, skill), Folder + "/" + id + ".asset");
+
         // 이미 있으면 내용을 덮어써서 다른 에셋의 참조(GUID)를 유지한다.
         static T SaveOver<T>(T value, string path) where T : ScriptableObject
         {
             var existing = AssetDatabase.LoadAssetAtPath<T>(path);
             if (existing == null) { AssetDatabase.CreateAsset(value, path); return value; }
+            // CopySerialized는 이름(m_Name)도 덮어써 비우므로 파일 이름으로 되돌린다(COMBAT-06에서 발견).
+            string keepName = System.IO.Path.GetFileNameWithoutExtension(path);
             EditorUtility.CopySerialized(value, existing);
+            existing.name = keepName;
             Object.DestroyImmediate(value);
             EditorUtility.SetDirty(existing);
             return existing;

@@ -68,6 +68,12 @@ namespace ProjectNeo.Flow
         }
         public int IdOf(CharacterActor actor) => binding?.IdOf(actor) ?? 0;
 
+        /// <summary>씬 유닛에 연결된 런 유닛(COMBAT-06 스킬 칸·등급). 연결이 없으면 null.</summary>
+        public RunUnit UnitOf(CharacterActor actor) => binding != null && actor != null ? binding.State.Find(binding.IdOf(actor)) : null;
+
+        /// <summary>런에 연결된 씬 유닛 전부(플레이어 포함).</summary>
+        public List<CharacterActor> ActorsInRun() => binding != null ? binding.ObjectsInRun() : new List<CharacterActor>();
+
         /// <summary>준비 단계에 들어올 때 부른다. 첫 준비면 런 데이터를 만들어 붙이고, 이후에는 생존 유닛을 회복한다.</summary>
         public void OnPreparation()
         {

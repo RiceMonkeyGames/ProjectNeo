@@ -24,3 +24,4 @@ MonoBehaviour:
     value: 15
   prerequisites: []
   description: 
+  grantedSkill: {fileID: 0}

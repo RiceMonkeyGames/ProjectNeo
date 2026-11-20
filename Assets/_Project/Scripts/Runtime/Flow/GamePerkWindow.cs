@@ -143,6 +143,10 @@ namespace ProjectNeo.Flow
         {
             foreach (KeyValuePair<PerkDefinition, Button> row in rows) if (row.Value != null) Destroy(row.Value.gameObject);
             rows.Clear();
+            // 트리 하나에 퍽이 많으면(COMBAT-06 스킬 퍽으로 전투 트리 9개) 720 기준 화면에 들어가게 줄 높이를 낮춘다.
+            int longest = 0;
+            foreach (PerkTreeDefinition tree in trees.Trees) if (tree != null) longest = Mathf.Max(longest, tree.Perks.Count);
+            float rowHeight = longest > 6 ? 48f : 74f;
             for (int i = 0; i < columns.Count; i++)
             {
                 PerkTreeDefinition tree = i < trees.Trees.Count ? trees.Trees[i] : null;
@@ -153,7 +157,7 @@ namespace ProjectNeo.Flow
                 {
                     if (perk == null) continue;
                     PerkDefinition target = perk;
-                    Button button = MakeButton(columns[i], "Row_" + perk.Id, string.Empty, 15f, 74f, () => Click(target));
+                    Button button = MakeButton(columns[i], "Row_" + perk.Id, string.Empty, longest > 6 ? 13f : 15f, rowHeight, () => Click(target));
                     rows.Add(new KeyValuePair<PerkDefinition, Button>(perk, button));
                 }
             }

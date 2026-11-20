@@ -54,7 +54,7 @@ namespace ProjectNeo.Tests
 
             Assert.IsTrue(window.Open());
             Assert.IsTrue(window.IsOpen);
-            Assert.AreEqual(15, window.RowCount, "트리 3개 x 퍽 5개");
+            Assert.AreEqual(19, window.RowCount, "전투 9개(스킬 퍽 4개 포함, COMBAT-06) + 경제 5개 + 유닛 강화 5개");
             Assert.AreEqual(UnlockClickResult.Armed, window.Click(first));
             Assert.AreEqual(UnlockClickResult.Opened, window.Click(first));
             StringAssert.Contains("획득함", window.RowText(first));

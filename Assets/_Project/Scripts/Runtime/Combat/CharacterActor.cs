@@ -186,6 +186,13 @@ namespace ProjectNeo.Combat
             }
         }
 
+        /// <summary>피해 없이 경직만 건다(COMBAT-06 스킬). 강인도보다 강하면 진행 중인 행동이 끊긴다.</summary>
+        public void ApplyStagger(float power)
+        {
+            if (Health == null || Health.IsDead || power <= 0f) return;
+            EvaluateInterrupts(power);
+        }
+
         void EvaluateInterrupts(float incomingStagger)
         {
             for (int i = interruptibleActions.Count - 1; i >= 0; i--)

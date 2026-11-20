@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: accc760f6fb086e4bb3944484809b973, type: 3}
+  m_Name: skill_war_cry
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Skills.SkillDefinition
+  id: skill_war_cry
+  displayName: "\uC804\uD22C \uD568\uC131"
+  description: "\uC790\uAE30 \uBD84\uB300(\uBD84\uB300\uAC00 \uC5C6\uC73C\uBA74 \uC8FC\uBCC0 8m \uC544\uAD70)\uC758 \uACF5\uACA9\uB825\uC744 8\uCD08 \uB3D9\uC548 25% \uC62C\uB9B0\uB2E4."
+  cooldown: 25
+  targetMode: 3
+  range: 0
+  radius: 8
+  effects:
+  - kind: 1
+    amount: 0
+    attackScale: 0
+    modifier:
+      stat: 1
+      kind: 1
+      value: 0.25
+    duration: 8

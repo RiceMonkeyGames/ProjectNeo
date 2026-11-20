@@ -49,4 +49,77 @@ MonoBehaviour:
     m_Flags: 0
     m_Priority: 0
   consumableCooldown: 10
+  castSkill:
+  - m_Name: CastSkill1
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: f91e7b07-adb8-40b1-86d3-4e57d3edda8e
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 9217330f-274b-4894-802a-17274669ae4f
+      m_Path: <Keyboard>/z
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: CastSkill1
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  - m_Name: CastSkill2
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: a55d92a9-9393-49df-8e5d-5183e65181fc
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: b292c348-b4fa-4483-87ae-ef15394d194d
+      m_Path: <Keyboard>/x
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: CastSkill2
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  - m_Name: CastSkill3
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: ae10edaf-2249-4306-9b30-d7bff78c8466
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: b52705a2-6f89-464a-9af4-5bf05368ce37
+      m_Path: <Keyboard>/c
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: CastSkill3
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  captainCastModifier:
+    m_Name: CaptainCastModifier
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 4403ef09-e80c-4589-b0bd-af5d6b222ac5
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: fda19953-9937-4458-9bea-932012f6aced
+      m_Path: <Keyboard>/alt
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: CaptainCastModifier
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  skillAimDistance: 80
+  skillUnitAimRadius: 0.75
+  skillAuto: {fileID: 11400000, guid: f59863349a2d15d4ea5433ad975db109, type: 2}
   runContent: {fileID: 11400000, guid: 767a092b4d6561640ba8b7333e002ee2, type: 2}

@@ -1,10 +1,12 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-20 21:09:37 (KST)
+Last Updated: 2026-11-20 22:16:49 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
 ## Resolved `Q-*` Table
+
+COMBAT-06 skill inputs and scope (2026-11-20, user): (1) player skill keys `Z` / `X` / `C` (data bindings, final layout with Q-11); (2) manual hero cast while Auto is off: selected squad (`F1`-`F4`) + `Alt` + slot key, the captain casts toward the screen aim point; (3) player skill equip (3 of the learned) and per-hero Auto toggle in the preparation equipment window (`I`); (4) about 6 shared sample skills, one per effect family, reused by skill perks and hero fixed slots; final roster with Q-61. [Rule](../design/Combat.md#active-skills)
 
 Battlement rules (SIEGE-10, 2026-11-20, user): (1) both styles are built — Defense facility Lv1 low parapet, Lv2 crenellated battlements — applied castle-wide; (2) not separately destructible, tied to the top wall piece; (3) ladders hang in a crenel and rest on its sill (pattern unbroken; first a gap, revised after playtest the same day); (4) outer edges only (joined walls, stair tops and inner edges stay open); (5) the upgrade is a "Battlements" button in the build-mode panel; (7) shooters aim at the upper body when the body centre is hidden; (8) enemy archers side-step along the wall after 3s blocked in range, search once per 10s, keep a found spot at least 5s, otherwise wait in place aiming; (6) cannon cells become sill-only gun ports, and Bannerlord-style bastions are registered as SIEGE-11. [Rule](../design/WallsAndSiege.md).
 

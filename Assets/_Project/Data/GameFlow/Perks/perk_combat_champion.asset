@@ -29,3 +29,4 @@ MonoBehaviour:
   - {fileID: 11400000, guid: bd49144c647cf814a859c1c67e364318, type: 2}
   - {fileID: 11400000, guid: a8dfb57e99df6874f896de1a4784cd42, type: 2}
   description: 
+  grantedSkill: {fileID: 0}
