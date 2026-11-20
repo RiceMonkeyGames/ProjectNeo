@@ -1,6 +1,6 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-19 22:14:16 (KST)
+Last Updated: 2026-11-20 11:23:48 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
@@ -17,6 +17,8 @@ Merged `syj`'s Title/Game flow (G-0, G-1), wall stacking / overlapping unit elev
 Done on user authorization (2026-11-17), feature/ui-03: bottom-right health bar and current/maximum HP, as selected by the user. Real Game scene integration, damage/healing/max-HP/death/stage-transition tests and API-driven layout inspection completed; full compile/EditMode 467/467/PlayMode 226/226 passed. User authorized develop merge and branch cleanup; physical-input and standalone verification remain unclaimed. [History](../history/UI/UI-03.md).
 
 ## Implemented vs Pending Real Connections
+
+**CONTENT-01 (Done on user confirmation, 2026-11-20; `feature/content-01`, develop merge pending)**: Q-67 stage catalog extended from 3 to 7 stages (`Stage04-07.asset`, enemy totals 32/38/44/50, one hidden group each, last wave kept as the SIEGE-09 boss slot); `StageSetup` appends missing stages to an existing catalog. The last stage still repeats until FLOW-03. EditMode 505/505, PlayMode 241/241, manual play confirmed by the user. [History](../history/CONTENT/CONTENT-01.md).
 
 **PREP-08 (Done on user confirmation, 2026-11-19; `feature/prep-08`, merged into develop)**: Q-31 fallen hero gear: when a hero dies, `RunState.Apply` returns their equipped items to the run stash with upgrade levels so the player or another hero can equip them; `Restore` moves gear left on fallen heroes in older saves the same way. Compile, EditMode **492/492** and PlayMode **238/238** passed; the user confirmed manual play; standalone build unverified. [History](../history/PREP/PREP-08.md).
 

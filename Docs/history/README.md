@@ -1,6 +1,6 @@
 # Past Verification History Index
 
-Last Updated: 2026-11-19 22:11:04 (KST)
+Last Updated: 2026-11-19 22:43:24 (KST)
 
 > Purpose: Route historical log lookups by Task ID prefix. | Parent: [INDEX](../INDEX.md) | Related: [Backlog-Done](../archive/Backlog-Done.md), [Status](../plan/Status.md)
 
@@ -25,6 +25,7 @@ Latest manual verification: [PREP-08](PREP/PREP-08.md) (fallen hero gear to stas
 - `FLOW/` — [FLOW-01](FLOW/FLOW-01.md), [FLOW-02](FLOW/FLOW-02.md)
 - `COMBAT/` — [COMBAT-01](COMBAT/COMBAT-01.md), [COMBAT-02](COMBAT/COMBAT-02.md), [COMBAT-03](COMBAT/COMBAT-03.md), [COMBAT-05](COMBAT/COMBAT-05.md), [COMBAT-07](COMBAT/COMBAT-07.md)
 - `META/` — [META-01](META/META-01.md), [META-05](META/META-05.md), [META-07](META/META-07.md)
+- `CONTENT/` — [CONTENT-01](CONTENT/CONTENT-01.md)
 - `SIEGE/` — [SIEGE-01](SIEGE/SIEGE-01.md), [SIEGE-02](SIEGE/SIEGE-02.md), [SIEGE-03](SIEGE/SIEGE-03.md), [SIEGE-04](SIEGE/SIEGE-04.md), [SIEGE-05](SIEGE/SIEGE-05.md), [SIEGE-06](SIEGE/SIEGE-06.md), [SIEGE-07](SIEGE/SIEGE-07.md), [SIEGE-08](SIEGE/SIEGE-08.md)
 - `ART/` — [ART-01](ART/ART-01.md), [ART-02](ART/ART-02.md), [ART-03](ART/ART-03.md)
 - `DOC/` — [DOC-workflow-branches](DOC/DOC-workflow-branches.md), [DOC-doc-tree-and-id](DOC/DOC-doc-tree-and-id.md)
