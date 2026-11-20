@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: PerkTree_Combat
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Meta.PerkTreeDefinition
   category: 0
-  displayName: Combat
+  displayName: "\uC804\uD22C"
   perks:
   - {fileID: 11400000, guid: b4e71a4ee1716c24f902745775ff4a62, type: 2}
   - {fileID: 11400000, guid: bc97a200433b91445a3853d56c027afb, type: 2}

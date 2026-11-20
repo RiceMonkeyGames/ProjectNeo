@@ -91,7 +91,7 @@ namespace ProjectNeo.Tests
 
             Assert.AreEqual(ConsumableUseCheck.CoolingDown, consumables.TryUse(), "재사용 대기 중에는 쓰지 못한다.");
             Assert.AreEqual(1, consumables.Count);
-            StringAssert.Contains("Not ready", consumables.Message);
+            StringAssert.Contains("아직 준비되지", consumables.Message);
         }
 
         [UnityTest]
@@ -132,7 +132,7 @@ namespace ProjectNeo.Tests
                 Assert.Greater(player.Health.Current, hurt, "Q로 회복약을 쓴다.");
                 Assert.AreEqual(1, consumables.Count);
                 StringAssert.Contains("×1", consumables.Hint());
-                StringAssert.Contains("ready in", consumables.Hint());
+                StringAssert.Contains("후 사용 가능", consumables.Hint());
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState());
                 yield return null;
             }

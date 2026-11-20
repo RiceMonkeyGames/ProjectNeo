@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: perk_economy_master_trader
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Meta.PerkDefinition
   id: perk_economy_master_trader
-  displayName: Master Trader
+  displayName: "\uAC70\uC0C1"
   category: 1
   pointCost: 1
   unlockedByDefault: 1

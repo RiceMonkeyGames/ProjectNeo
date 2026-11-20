@@ -28,9 +28,9 @@ namespace ProjectNeo.Editor
             CombatPrototypeSetup.EnsureFolder(Folder);
 
             Vector2 center = battle.SpawnCell;
-            SpawnPointDefinition left = Point("Left", "SpawnLeft", center + Vector2.left * SideOffsetCells);
-            SpawnPointDefinition mid = Point("Center", "SpawnCenter", center);
-            SpawnPointDefinition right = Point("Right", "SpawnRight", center + Vector2.right * SideOffsetCells);
+            SpawnPointDefinition left = Point("왼쪽", "SpawnLeft", center + Vector2.left * SideOffsetCells);
+            SpawnPointDefinition mid = Point("가운데", "SpawnCenter", center);
+            SpawnPointDefinition right = Point("오른쪽", "SpawnRight", center + Vector2.right * SideOffsetCells);
 
             GameObject ladder = Enemy("enemy_ladder"), gate = Enemy("enemy_gate_breaker"), archer = Enemy("enemy_archer");
             GameObject wall = Enemy("enemy_wall_breaker"), flyer = Enemy("enemy_flyer"), highFlyer = Enemy("enemy_flyer_high_archer");
@@ -103,7 +103,7 @@ namespace ProjectNeo.Editor
         }
 
         static StageDefinition Stage(int number, params StageWave[] waves) =>
-            CombatPrototypeSetup.Save(StageDefinition.Create("Stage " + number, waves), Folder + "/Stage" + number.ToString("00") + ".asset");
+            CombatPrototypeSetup.Save(StageDefinition.Create("스테이지 " + number, waves), Folder + "/Stage" + number.ToString("00") + ".asset");
 
         static SpawnPointDefinition Point(string displayName, string file, Vector2 cell) =>
             CombatPrototypeSetup.Save(SpawnPointDefinition.Create(displayName, cell), Folder + "/" + file + ".asset");

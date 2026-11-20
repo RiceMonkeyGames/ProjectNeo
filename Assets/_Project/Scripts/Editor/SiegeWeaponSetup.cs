@@ -52,7 +52,7 @@ namespace ProjectNeo.Editor
             if (hud.Weapons.Count > 0) throw new InvalidOperationException("Siege weapons are already added.");
             CombatPrototypeSetup.EnsureFolder(Data); CombatPrototypeSetup.EnsureFolder(Prefabs);
             Material metal = CombatPrototypeSetup.MaterialAsset("ConstructionSiegeWeapon", new Color(0.2f, 0.22f, 0.26f));
-            var weapons = new[] { Weapon("cannon", "Cannon", "Cannon", new Vector3(1.2f, 1.1f, 1.8f), metal, CannonMaxHealth) };
+            var weapons = new[] { Weapon("cannon", "Cannon", "대포", new Vector3(1.2f, 1.1f, 1.8f), metal, CannonMaxHealth) };
 
             Transform panel = hud.transform.Find("BuildPanel");
             panel.GetComponent<RectTransform>().sizeDelta = new Vector2(248f, 690f);
@@ -65,7 +65,7 @@ namespace ProjectNeo.Editor
                 UnityEventTools.AddIntPersistentListener(choice.GetComponent<UnityEngine.UI.Button>().onClick, hud.SelectWeapon, i);
                 choice.transform.SetSiblingIndex(index + i);
             }
-            GameObject collapse = ConstructionPrototypeSetup.Button(panel, "Break weapon support", hud.CollapseUnderWeapon);
+            GameObject collapse = ConstructionPrototypeSetup.Button(panel, "Break weapon support", hud.CollapseUnderWeapon, "무기 받침 부수기");
             collapse.transform.SetSiblingIndex(panel.Find("Button_Break support").GetSiblingIndex() + 1);
             foreach (Transform child in panel)
                 if (child.name.StartsWith("Button_"))

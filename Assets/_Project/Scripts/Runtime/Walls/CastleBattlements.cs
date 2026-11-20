@@ -170,7 +170,7 @@ namespace ProjectNeo.Walls
             if (entry.Root == null) return false;
             // 파괴는 프레임 끝이라, 그 전에 길찾기 수집과 충돌에서 바로 빠지도록 끈다.
             entry.Root.SetActive(false);
-            entry.Root.name = RootName + " (removed)";
+            entry.Root.name = RootName + " (제거됨)";
             Destroy(entry.Root);
             entry.Root = null;
             return true;

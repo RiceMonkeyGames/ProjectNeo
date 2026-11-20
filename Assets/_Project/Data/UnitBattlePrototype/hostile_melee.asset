@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: hostile_melee
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Characters.SoldierDefinition
   id: hostile_melee
-  displayName: hostile_melee
+  displayName: "\uC801 \uADFC\uC811\uBCD1"
   recruitCost:
     gold: 0
     materials: []
@@ -30,3 +30,4 @@ MonoBehaviour:
     value: 1
   - stat: 4
     value: 3.5
+  unitPrefab: {fileID: 0}

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Gate
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Walls.BuildPieceDefinition
   kind: 2
-  displayName: Main gate
+  displayName: "\uBA54\uC778 \uC131\uBB38"
   footprint: {x: 2, y: 1}
   height: 3
   maxHealth: 600

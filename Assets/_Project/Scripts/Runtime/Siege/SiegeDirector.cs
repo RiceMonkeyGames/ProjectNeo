@@ -132,7 +132,7 @@ namespace ProjectNeo.Siege
                     int inRow = Mathf.Min(allyColumns, count - i / allyColumns * allyColumns);
                     Vector3 offset = right * ((i % allyColumns - (inRow - 1) * 0.5f) * allySpacing)
                         - OutwardWorld * (i / allyColumns * allySpacing);
-                    GameObject unit = Spawn(group.unitPrefab, origin + offset, facing, "Squad" + (squad + 1) + "_" + (i + 1));
+                    GameObject unit = Spawn(group.unitPrefab, origin + offset, facing, "부대" + (squad + 1) + "_" + (i + 1));
                     var ai = unit != null ? unit.GetComponent<UnitCombatAI>() : null;
                     if (ai == null) continue;
                     if (allyAI != null) ai.Configure(allyAI);

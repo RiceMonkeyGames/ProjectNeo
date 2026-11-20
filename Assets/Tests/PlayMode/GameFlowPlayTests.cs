@@ -92,10 +92,10 @@ namespace ProjectNeo.Tests
 
             var deleteLabel = title.transform.Find("Panel/Button_Delete slot").GetComponentInChildren<TMPro.TMP_Text>();
             string defaultCaption = deleteLabel.text;
-            Assert.AreEqual("Delete selected slot", defaultCaption);
+            Assert.AreEqual("고른 슬롯 삭제", defaultCaption);
             title.SelectSlot(2);
             title.DeleteSelectedSlot();
-            StringAssert.Contains("Click again to delete slot 3", deleteLabel.text);
+            StringAssert.Contains("한 번 더 누르면 슬롯 3 삭제", deleteLabel.text);
             Assert.AreEqual(ProjectNeo.Meta.MetaLoadStatus.Loaded, GameSession.SaveStore.Inspect(2).Status);
             title.DeleteSelectedSlot();
 
@@ -112,8 +112,11 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
-        public IEnumerator AuthoredTitleAndPreparationUi_UsesEnglishAndProjectFonts()
+        public IEnumerator AuthoredTitleAndPreparationUi_UsesKoreanAndHangulFont()
         {
+            Assert.IsTrue(TMPro.TMP_Settings.fallbackFontAssets.Exists(f => f != null && f.name == "NotoSansKR SDF"),
+                "UI-04: the Noto Sans KR font must be a global TMP fallback.");
+            int koreanLabels = 0;
             foreach (string sceneName in new[] { "Title", "Game" })
             {
                 yield return SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
@@ -123,10 +126,12 @@ namespace ProjectNeo.Tests
                 {
                     foreach (var label in root.GetComponentsInChildren<TMPro.TMP_Text>(true))
                     {
-                        Assert.IsFalse(System.Text.RegularExpressions.Regex.IsMatch(label.text, "[\\uAC00-\\uD7A3]"),
-                            sceneName + "/" + label.name + ": " + label.text);
                         Assert.IsNotNull(label.font, sceneName + "/" + label.name + " needs a project font.");
                         Assert.IsFalse(label.font.name.Contains("Malgun"), "UI must not use an OS font.");
+                        if (!System.Text.RegularExpressions.Regex.IsMatch(label.text, "[\\uAC00-\\uD7A3]")) continue;
+                        koreanLabels++;
+                        Assert.IsTrue(label.font.HasCharacters(label.text, out uint[] missing, true, true),
+                            sceneName + "/" + label.name + " cannot draw " + (missing == null ? 0 : missing.Length) + " characters: " + label.text);
                     }
                     foreach (var component in root.GetComponentsInChildren<MonoBehaviour>(true))
                     {
@@ -137,10 +142,11 @@ namespace ProjectNeo.Tests
                 if (sceneName == "Game")
                 {
                     var hud = Object.FindAnyObjectByType<GameFlowHud>();
-                    StringAssert.Contains("Preparation - Stage 1", hud.PhaseText);
-                    StringAssert.Contains("select squads", hud.InteractionHint);
+                    StringAssert.Contains("준비 - 스테이지 1", hud.PhaseText);
+                    StringAssert.Contains("부대 선택", hud.InteractionHint);
                 }
             }
+            Assert.Greater(koreanLabels, 10, "Title and Game captions are authored in Korean (UI-04).");
         }
 
         [UnityTest]
@@ -611,7 +617,7 @@ namespace ProjectNeo.Tests
                 Assert.IsFalse(player.enabled);
                 Assert.AreEqual(CursorLockMode.None, Cursor.lockState);
                 yield return null; // 안내 글자는 LateUpdate에서 갱신한다.
-                Assert.IsTrue(hud.InteractionHint.Contains("to return"));
+                Assert.IsTrue(hud.InteractionHint.Contains("돌아가기"));
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState());
                 yield return null;
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Escape));

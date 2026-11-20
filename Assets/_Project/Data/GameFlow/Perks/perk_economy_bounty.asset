@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: perk_economy_bounty
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Meta.PerkDefinition
   id: perk_economy_bounty
-  displayName: Bounty
+  displayName: "\uD604\uC0C1\uAE08"
   category: 1
   pointCost: 1
   unlockedByDefault: 1

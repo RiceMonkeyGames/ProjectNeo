@@ -12,7 +12,7 @@ namespace ProjectNeo.Flow
 
         public FacilityType Type => type;
         public override GamePhaseView PhaseView => phaseView;
-        public override string Prompt => facilities != null ? facilities.NameOf(type) + " - Use" : type + " - Use";
+        public override string Prompt => facilities != null ? facilities.NameOf(type) + " - 사용" : type + " - 사용";
 
         public void Configure(GamePhaseView view, GameFacilities controller, FacilityType facility)
         { phaseView = view; facilities = controller; type = facility; }

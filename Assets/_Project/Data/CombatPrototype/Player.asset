@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Player
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Characters.HeroDefinition
   id: prototype_player
-  displayName: prototype_player
+  displayName: "\uC2DC\uD5D8\uC6A9 \uD50C\uB808\uC774\uC5B4"
   unlockedByDefault: 1
   hireCost:
     gold: 0
@@ -31,3 +31,5 @@ MonoBehaviour:
   - stat: 5
     value: 2.5
   skills: []
+  tier: 1
+  unitPrefab: {fileID: 0}

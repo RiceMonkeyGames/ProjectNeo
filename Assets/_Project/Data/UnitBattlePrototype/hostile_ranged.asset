@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: hostile_ranged
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Characters.SoldierDefinition
   id: hostile_ranged
-  displayName: hostile_ranged
+  displayName: "\uC801 \uC6D0\uAC70\uB9AC\uBCD1"
   recruitCost:
     gold: 0
     materials: []
@@ -30,3 +30,4 @@ MonoBehaviour:
     value: 1
   - stat: 4
     value: 3.5
+  unitPrefab: {fileID: 0}

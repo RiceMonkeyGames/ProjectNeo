@@ -45,14 +45,14 @@ namespace ProjectNeo.Tests
         {
             Assert.AreEqual(UnlockClickResult.Armed, model.Click("hero_knight"));
             Assert.AreEqual(4, progress.unlockPoints, "첫 클릭은 아무것도 사지 않는다");
-            Assert.AreEqual("Click again: Knight (2)", model.EntryText(Entry("hero_knight")));
+            Assert.AreEqual("한 번 더 클릭: Knight (2)", model.EntryText(Entry("hero_knight")));
 
             Assert.AreEqual(UnlockClickResult.Opened, model.Click("hero_knight"));
 
             Assert.AreEqual(2, progress.unlockPoints);
-            Assert.AreEqual("Knight - Opened", model.EntryText(Entry("hero_knight")));
-            Assert.AreEqual("Unlocked Knight.", model.Notice);
-            Assert.AreEqual("Unlock points: 2", model.PointsText);
+            Assert.AreEqual("Knight - 해금됨", model.EntryText(Entry("hero_knight")));
+            Assert.AreEqual("Knight 해금.", model.Notice);
+            Assert.AreEqual("해금 포인트: 2", model.PointsText);
             Assert.IsEmpty(model.ArmedEntryId);
         }
 
@@ -71,11 +71,11 @@ namespace ProjectNeo.Tests
         [Test]
         public void MissingPrerequisite_IsRefusedWithItsName()
         {
-            Assert.AreEqual("Paladin - 3 (needs Knight)", model.EntryText(Entry("hero_paladin")));
+            Assert.AreEqual("Paladin - 3 (필요: Knight)", model.EntryText(Entry("hero_paladin")));
 
             Assert.AreEqual(UnlockClickResult.Refused, model.Click("hero_paladin"));
 
-            Assert.AreEqual("Unlock Knight first.", model.Notice);
+            Assert.AreEqual("먼저 Knight을(를) 해금하세요.", model.Notice);
             Assert.AreEqual(4, progress.unlockPoints);
             Assert.IsFalse(model.CanOpen(Entry("hero_paladin")));
         }
@@ -88,7 +88,7 @@ namespace ProjectNeo.Tests
 
             Assert.AreEqual(UnlockClickResult.Refused, model.Click("hero_knight"));
 
-            Assert.AreEqual("Not enough unlock points: 2 needed, 1 held.", model.Notice);
+            Assert.AreEqual("해금 포인트가 부족합니다: 2 필요, 1 보유.", model.Notice);
             Assert.IsEmpty(model.ArmedEntryId);
             Assert.AreEqual(1, progress.unlockPoints);
         }
@@ -96,9 +96,9 @@ namespace ProjectNeo.Tests
         [Test]
         public void OpenedEntry_IsRefusedAsAlreadyUnlocked()
         {
-            Assert.AreEqual("Swordsman - Opened", model.EntryText(Entry("hero_swordsman")));
+            Assert.AreEqual("Swordsman - 해금됨", model.EntryText(Entry("hero_swordsman")));
             Assert.AreEqual(UnlockClickResult.Refused, model.Click("hero_swordsman"));
-            Assert.AreEqual("Swordsman is already unlocked.", model.Notice);
+            Assert.AreEqual("Swordsman은(는) 이미 해금했습니다.", model.Notice);
         }
 
         [Test]

@@ -70,14 +70,15 @@ namespace ProjectNeo.Tests
         [Test]
         public void Empty_DescribesNoEnemies()
         {
-            Assert.AreEqual("No enemies", new EnemyIntel(null).Describe());
+            Assert.AreEqual("적 없음", new EnemyIntel(null).Describe());
             Assert.IsFalse(new EnemyIntel(null).AnyHidden);
         }
 
-        [TestCase("enemy_gate_breaker", "Gate Breaker")]
-        [TestCase("enemy_archer", "Archer")]
-        [TestCase("Flyer", "Flyer")]
-        [TestCase("", "Unknown")]
+        [TestCase("enemy_gate_breaker", "성문 파괴병")]
+        [TestCase("enemy_archer", "궁수")]
+        [TestCase("Flyer", "비행병")]
+        [TestCase("enemy_mystery_unit", "Mystery Unit")]
+        [TestCase("", "알 수 없음")]
         public void DisplayName_FromPrefabName(string prefab, string expected) =>
             Assert.AreEqual(expected, EnemyIntel.DisplayName(prefab));
 
@@ -100,7 +101,7 @@ namespace ProjectNeo.Tests
                 EnemyIntel intel = EnemyIntel.FromPlan(plan);
                 Assert.AreEqual(3, intel.GroupCount);
                 Assert.IsTrue(intel.Group(1).Hidden);
-                Assert.AreEqual("Ladder × 5\n? × 1", intel.Describe());
+                Assert.AreEqual("사다리병 × 5\n? × 1", intel.Describe());
             }
             finally
             {

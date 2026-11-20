@@ -190,14 +190,14 @@ namespace ProjectNeo.Editor
             squads.alignment = TextAlignmentOptions.TopLeft;
             TMP_Text help = Label(root.transform, "Help", new Vector2(0f, 0f), new Vector2(24f, 24f), new Vector2(520f, 110f), 16f);
             help.alignment = TextAlignmentOptions.BottomLeft;
-            help.text = "F1-F4 select, ` all, 1 move, 2 attack, 3 hold";
+            help.text = "F1-F4 선택, ` 전체, 1 이동, 2 공격, 3 정지";
             var dot = new GameObject("Crosshair", typeof(RectTransform), typeof(UnityEngine.UI.Image));
             dot.transform.SetParent(root.transform, false);
             dot.GetComponent<RectTransform>().sizeDelta = new Vector2(6f, 6f);
             var image = dot.GetComponent<UnityEngine.UI.Image>();
             image.color = new Color(1f, 1f, 1f, 0.85f); image.raycastTarget = false;
             root.AddComponent<SquadCommandHud>().Configure(center, input, squads, help,
-                "F1-F4: select squad - `: select all\n1: move to aim point - 2: attack - 3: hold\nWASD: move - Mouse: look - Click: attack - Esc: release cursor" + extraHelp);
+                "F1-F4: 부대 선택 - `: 전체 선택\n1: 조준점으로 이동 - 2: 공격 - 3: 정지\nWASD: 이동 - 마우스: 시점 - 클릭: 공격 - Esc: 커서 해제" + extraHelp);
         }
 
         static TMP_Text Label(Transform parent, string name, Vector2 anchor, Vector2 position, Vector2 size, float fontSize)

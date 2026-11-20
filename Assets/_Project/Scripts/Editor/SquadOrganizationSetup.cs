@@ -55,7 +55,7 @@ namespace ProjectNeo.Editor
             rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
             rect.sizeDelta = new Vector2(1120f, 660f);
             panel.GetComponent<Image>().color = new Color(0.06f, 0.08f, 0.1f, 0.94f);
-            TMP_Text title = GameFacilitySetup.Text(panel.transform, "Title", "Squad organization", 32f, new Vector2(24f, -20f), new Vector2(-24f, -66f));
+            TMP_Text title = GameFacilitySetup.Text(panel.transform, "Title", "부대 편성", 32f, new Vector2(24f, -20f), new Vector2(-24f, -66f));
             title.fontStyle = FontStyles.Bold;
             status = GameFacilitySetup.Text(panel.transform, "Status", "Squads", 18f, new Vector2(24f, -70f), new Vector2(-24f, -100f));
             status.color = new Color(1f, 0.9f, 0.55f);
@@ -95,7 +95,7 @@ namespace ProjectNeo.Editor
             cardObject.GetComponent<Image>().color = new Color(0.11f, 0.15f, 0.19f, 1f);
             var cardSize = cardObject.GetComponent<LayoutElement>();
             cardSize.preferredWidth = cardSize.minWidth = 210f;
-            Button header = GameFacilitySetup.ButtonAt(cardObject.transform, "Header", "Squad", new Vector2(0.5f, 1f), new Vector2(0f, -6f),
+            Button header = GameFacilitySetup.ButtonAt(cardObject.transform, "Header", "부대", new Vector2(0.5f, 1f), new Vector2(0f, -6f),
                 new Vector2(198f, 52f), null, out TMP_Text headerLabel);
             headerLabel.fontSize = 15f;
             header.GetComponent<RectTransform>().pivot = new Vector2(0.5f, 1f);
@@ -110,14 +110,14 @@ namespace ProjectNeo.Editor
             listLayout.childForceExpandHeight = false; listLayout.childForceExpandWidth = true;
             cardObject.SetActive(false);
 
-            row = GameFacilitySetup.ButtonAt(panel.transform, "RowTemplate", "Row", new Vector2(0.5f, 0.5f), Vector2.zero,
+            row = GameFacilitySetup.ButtonAt(panel.transform, "RowTemplate", "항목", new Vector2(0.5f, 0.5f), Vector2.zero,
                 new Vector2(198f, 26f), null, out TMP_Text rowLabel);
             rowLabel.fontSize = 14f; rowLabel.alignment = TextAlignmentOptions.MidlineLeft;
             rowLabel.rectTransform.offsetMin = new Vector2(8f, 0f);
             row.gameObject.AddComponent<LayoutElement>().preferredHeight = 26f;
             row.gameObject.SetActive(false);
 
-            GameFacilitySetup.ButtonAt(panel.transform, "Button_Close", "Close (Esc)", new Vector2(0.5f, 0f), new Vector2(0f, 20f),
+            GameFacilitySetup.ButtonAt(panel.transform, "Button_Close", "닫기 (Esc)", new Vector2(0.5f, 0f), new Vector2(0f, 20f),
                 new Vector2(200f, 48f), organization.Close, out _);
             panel.SetActive(false);
         }

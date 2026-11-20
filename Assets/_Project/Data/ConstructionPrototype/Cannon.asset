@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Cannon
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Walls.SiegeWeaponDefinition
   id: cannon
-  displayName: Cannon
+  displayName: "\uB300\uD3EC"
   size: {x: 1.2, y: 1.1, z: 1.8}
   prefab: {fileID: 7127349363672436470, guid: 1d16a0d9239fdc7408e26573df03d5a2, type: 3}
   maxHealth: 150

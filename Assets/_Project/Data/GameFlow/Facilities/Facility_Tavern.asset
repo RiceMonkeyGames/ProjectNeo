@@ -28,6 +28,7 @@ MonoBehaviour:
     - item: {fileID: 11400000, guid: 6b44272629dfe43448af015dfafd3976, type: 2}
       weight: 1
     recipes: []
+    battlementStyle: 0
   - upgradeCost:
       gold: 60
       materials: []
@@ -44,6 +45,7 @@ MonoBehaviour:
     - item: {fileID: 11400000, guid: 762c4e94b65ae944ca69707a085a1dc6, type: 2}
       weight: 1
     recipes: []
+    battlementStyle: 0
   - upgradeCost:
       gold: 120
       materials: []
@@ -62,4 +64,5 @@ MonoBehaviour:
     - item: {fileID: 11400000, guid: 1b1a67a7924861849808913352a1d76b, type: 2}
       weight: 1
     recipes: []
-  displayName: Tavern
+    battlementStyle: 0
+  displayName: "\uC8FC\uC810"

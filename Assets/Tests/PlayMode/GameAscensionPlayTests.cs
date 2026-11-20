@@ -103,14 +103,14 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(1, GameSession.Meta.ascensionUnlocked, "기본 게임을 깨면 승천 1이 열린다.");
             Assert.AreEqual(1, battle.AscensionUnlockedAtEnding);
             Assert.IsFalse(finish.activeSelf);
-            StringAssert.Contains("Ascension 1 unlocked", hud.StatusText);
+            StringAssert.Contains("승천 1 해금", hud.StatusText);
             // 엔딩도 런의 끝이라 런 종료 해금 포인트(META-08)를 준다: 마지막 스테이지까지 7개를 깬 것으로 센다.
             var rewards = battle.GetComponent<GameRewardController>();
             Assert.AreEqual(7, rewards.RunEndStagesCleared);
             Assert.AreEqual(rewards.Table.RunEndUnlockPoints(7, 0), rewards.RunEndUnlockPoints, "기본 게임은 배율 x1");
             Assert.AreEqual(rewards.RunEndUnlockPoints, GameSession.Meta.unlockPoints);
-            StringAssert.Contains("Unlock points +", hud.StatusText);
-            StringAssert.Contains("Run complete", hud.PhaseText);
+            StringAssert.Contains("해금 포인트 +", hud.StatusText);
+            StringAssert.Contains("런 완료", hud.PhaseText);
         }
     }
 }

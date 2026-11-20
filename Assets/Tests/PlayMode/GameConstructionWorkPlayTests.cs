@@ -111,7 +111,7 @@ namespace ProjectNeo.Tests
             Assert.IsNotNull(view);
             Assert.IsTrue(view.IsShowing);
             Assert.AreEqual("0%", view.LabelText);
-            StringAssert.Contains("Work orders 1", Work.Summary());
+            StringAssert.Contains("작업 주문 1", Work.Summary());
 
             controller.Select(wall);
             controller.UpdatePreview(world.WorldCenter(wall, cell, 0));

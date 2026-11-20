@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: Track_EquipmentRecipes
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Meta.UnlockTrackDefinition
   category: 1
-  displayName: Equipment recipes
+  displayName: "\uC7A5\uBE44 \uC81C\uC791\uBC95"
   entries:
   - id: recipe_wood_shield
-    displayName: Wooden shield
+    displayName: "\uB098\uBB34 \uBC29\uD328"
     cost: 0
     prerequisiteIds: []
     openedByDefault: 1
@@ -25,7 +25,7 @@ MonoBehaviour:
       targetId: item_wood_shield
       amount: 1
   - id: recipe_iron_sword
-    displayName: Iron sword
+    displayName: "\uCCA0\uAC80"
     cost: 0
     prerequisiteIds:
     - recipe_wood_shield
@@ -35,7 +35,7 @@ MonoBehaviour:
       targetId: item_iron_sword
       amount: 1
   - id: recipe_leather_armor
-    displayName: Leather armor
+    displayName: "\uAC00\uC8FD \uAC11\uC637"
     cost: 0
     prerequisiteIds:
     - recipe_iron_sword
@@ -45,7 +45,7 @@ MonoBehaviour:
       targetId: item_leather_armor
       amount: 1
   - id: recipe_chain_armor
-    displayName: Chain armor
+    displayName: "\uC0AC\uC2AC \uAC11\uC637"
     cost: 1
     prerequisiteIds:
     - recipe_leather_armor
@@ -55,7 +55,7 @@ MonoBehaviour:
       targetId: item_chain_armor
       amount: 1
   - id: recipe_steel_sword
-    displayName: Steel sword
+    displayName: "\uAC15\uCCA0\uAC80"
     cost: 2
     prerequisiteIds:
     - recipe_chain_armor

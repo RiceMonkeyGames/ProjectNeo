@@ -22,7 +22,7 @@ namespace ProjectNeo.Meta
             Catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
         }
 
-        public string PointsText => $"Unlock points: {Progress.unlockPoints}";
+        public string PointsText => $"해금 포인트: {Progress.unlockPoints}";
 
         public UnlockClickResult Click(string entryId)
         {
@@ -42,7 +42,7 @@ namespace ProjectNeo.Meta
             }
             ArmedEntryId = string.Empty;
             UnlockTracks.TryOpen(Progress, Catalog, entry.Id);
-            Notice = $"Unlocked {entry.DisplayName}.";
+            Notice = $"{entry.DisplayName} 해금.";
             return UnlockClickResult.Opened;
         }
 
@@ -56,11 +56,11 @@ namespace ProjectNeo.Meta
         public string EntryText(UnlockEntry entry)
         {
             if (entry == null) return string.Empty;
-            if (UnlockTracks.IsOpened(Progress, entry)) return $"{entry.DisplayName} - Opened";
-            if (entry.Id == ArmedEntryId) return $"Click again: {entry.DisplayName} ({entry.Cost})";
+            if (UnlockTracks.IsOpened(Progress, entry)) return $"{entry.DisplayName} - 해금됨";
+            if (entry.Id == ArmedEntryId) return $"한 번 더 클릭: {entry.DisplayName} ({entry.Cost})";
             List<string> missing = MissingPrerequisites(entry);
             return missing.Count > 0
-                ? $"{entry.DisplayName} - {entry.Cost} (needs {string.Join(", ", missing)})"
+                ? $"{entry.DisplayName} - {entry.Cost} (필요: {string.Join(", ", missing)})"
                 : $"{entry.DisplayName} - {entry.Cost}";
         }
 
@@ -80,10 +80,10 @@ namespace ProjectNeo.Meta
 
         string Reason(UnlockOpenCheck check, UnlockEntry entry) => check switch
         {
-            UnlockOpenCheck.AlreadyOpened => $"{entry.DisplayName} is already unlocked.",
-            UnlockOpenCheck.MissingPrerequisite => $"Unlock {string.Join(", ", MissingPrerequisites(entry))} first.",
-            UnlockOpenCheck.NotEnoughPoints => $"Not enough unlock points: {entry.Cost} needed, {Progress.unlockPoints} held.",
-            _ => "This entry does not exist.",
+            UnlockOpenCheck.AlreadyOpened => $"{entry.DisplayName}은(는) 이미 해금했습니다.",
+            UnlockOpenCheck.MissingPrerequisite => $"먼저 {string.Join(", ", MissingPrerequisites(entry))}을(를) 해금하세요.",
+            UnlockOpenCheck.NotEnoughPoints => $"해금 포인트가 부족합니다: {entry.Cost} 필요, {Progress.unlockPoints} 보유.",
+            _ => "없는 항목입니다.",
         };
     }
 }

@@ -56,10 +56,10 @@ namespace ProjectNeo.Flow
         public bool Toggle(PlacedStructure gate)
         {
             if (gate == null || flow.Phase != GamePhase.Preparation) return false;
-            if (gate.Health == null || gate.Health.IsDead) { Message = "Repair the destroyed gate before closing it."; return false; }
+            if (gate.Health == null || gate.Health.IsDead) { Message = "부서진 성문을 먼저 수리해야 닫을 수 있습니다."; return false; }
             bool open = !gate.IsHeldOpen;
             if (!world.SetGateHeldOpen(gate, open)) return false;
-            Message = open ? "Gate opened. It will close when battle starts." : "Gate closed.";
+            Message = open ? "성문을 열었습니다. 전투가 시작되면 닫힙니다." : "성문을 닫았습니다.";
             return true;
         }
 

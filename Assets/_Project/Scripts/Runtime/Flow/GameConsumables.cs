@@ -103,9 +103,9 @@ namespace ProjectNeo.Flow
         {
             switch (check)
             {
-                case ConsumableUseCheck.NoItem: return "No usable consumables.";
-                case ConsumableUseCheck.FullHealth: return "Health is full.";
-                case ConsumableUseCheck.CoolingDown: return "Not ready yet.";
+                case ConsumableUseCheck.NoItem: return "사용할 소모품이 없습니다.";
+                case ConsumableUseCheck.FullHealth: return "체력이 가득 찼습니다.";
+                case ConsumableUseCheck.CoolingDown: return "아직 준비되지 않았습니다.";
                 default: return string.Empty;
             }
         }
@@ -121,7 +121,7 @@ namespace ProjectNeo.Flow
                 string name = item.Definition.DisplayName;
                 text = $"{UseKey} · {name} ×{count}";
                 if (CooldownRemaining > 0f)
-                    text += $" (ready in {Mathf.CeilToInt(CooldownRemaining)}s)";
+                    text += $" ({Mathf.CeilToInt(CooldownRemaining)}초 후 사용 가능)";
             }
             if (Message.Length > 0) text += (text.Length > 0 ? " · " : string.Empty) + Message;
             return text;

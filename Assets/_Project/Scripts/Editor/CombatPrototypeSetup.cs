@@ -28,11 +28,11 @@ namespace ProjectNeo.Editor
             EnsureFolder(Data);
             EnsureFolder(Art);
             EnsureFolder(Prefabs);
-            var hero = Save(HeroDefinition.Create("prototype_player", true, 3,
+            var hero = Save(HeroDefinition.Create("시험용 플레이어", true, 3,
                 new StatValue(StatType.MaxHealth, 100f), new StatValue(StatType.Attack, 25f),
                 new StatValue(StatType.AttackSpeed, 1.5f), new StatValue(StatType.MoveSpeed, 6f),
                 new StatValue(StatType.AttackRange, 2.5f)), Data + "/Player.asset");
-            var dummy = Save(HeroDefinition.Create("prototype_dummy", true, 0,
+            var dummy = Save(HeroDefinition.Create("시험용 허수아비", true, 0,
                 new StatValue(StatType.MaxHealth, 100f)), Data + "/Dummy.asset");
             var profile = Save(CombatProfile.Create(), Data + "/CombatProfile.asset");
             var settings = Save(PlayerControlSettings.Create(), Data + "/PlayerControls.asset");

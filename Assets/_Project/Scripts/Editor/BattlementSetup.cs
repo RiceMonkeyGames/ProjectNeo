@@ -66,7 +66,7 @@ namespace ProjectNeo.Editor
             Transform panel = hud.transform.Find("BuildPanel")
                 ?? throw new InvalidOperationException("ConstructionHud has no BuildPanel.");
             Transform root = panel.Find("Button_Battlements");
-            if (root == null) root = ConstructionPrototypeSetup.Button(panel, "Battlements", link.TryUpgradeFromButton).transform;
+            if (root == null) root = ConstructionPrototypeSetup.Button(panel, "Battlements", link.TryUpgradeFromButton, "흉벽").transform;
             else
             {
                 var existing = root.GetComponent<Button>();

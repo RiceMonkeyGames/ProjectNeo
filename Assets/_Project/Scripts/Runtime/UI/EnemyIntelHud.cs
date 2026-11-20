@@ -12,8 +12,8 @@ namespace ProjectNeo.UI
     /// </summary>
     public sealed class EnemyIntelHud : MonoBehaviour
     {
-        public const string PreviewTitle = "Next battle - enemies";
-        public const string BattleTitle = "Enemies left";
+        public const string PreviewTitle = "다음 전투 - 적";
+        public const string BattleTitle = "남은 적";
 
         [SerializeField] GameBattleController battle;
         [SerializeField] GamePhaseView phaseView;

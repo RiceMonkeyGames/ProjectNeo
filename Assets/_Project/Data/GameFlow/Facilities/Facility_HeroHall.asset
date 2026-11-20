@@ -24,4 +24,5 @@ MonoBehaviour:
     itemPool: []
     heroPool: []
     recipes: []
-  displayName: Hero Hall
+    battlementStyle: 0
+  displayName: "\uC601\uC6C5\uAD00"

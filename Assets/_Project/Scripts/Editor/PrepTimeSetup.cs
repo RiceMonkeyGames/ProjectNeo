@@ -90,7 +90,7 @@ namespace ProjectNeo.Editor
             label.color = new Color(1f, 0.86f, 0.55f, 1f);
             label.alignment = TextAlignmentOptions.Center;
             label.raycastTarget = false;
-            label.text = "Prep time -- / --";
+            label.text = "준비 시간 -- / --";
             line.gameObject.SetActive(false);
 
             // 단계 상자는 원래 자리. 이 메뉴의 예전 실행이 내렸으면 되돌린다.

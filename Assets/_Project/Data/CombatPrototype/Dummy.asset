@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Dummy
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Characters.HeroDefinition
   id: prototype_dummy
-  displayName: prototype_dummy
+  displayName: "\uC2DC\uD5D8\uC6A9 \uD5C8\uC218\uC544\uBE44"
   unlockedByDefault: 1
   hireCost:
     gold: 0
@@ -23,3 +23,5 @@ MonoBehaviour:
   - stat: 0
     value: 100
   skills: []
+  tier: 1
+  unitPrefab: {fileID: 0}

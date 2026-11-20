@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: item_wood_shield
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Economy.ItemDefinition
   id: item_wood_shield
-  displayName: Wooden shield
+  displayName: "\uB098\uBB34 \uBC29\uD328"
   kind: 0
   price:
     gold: 25
