@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-21 01:48:13 (KST)
+Last Updated: 2026-11-21 01:53:12 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -40,7 +40,6 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 | UI-06 | UI Overhaul 2: Title & Preparation HUD | Waiting for Prerequisite | Unassigned | Registered 2026-11-20. Needs UI-05. Rebuild Title (slots as cards, Ascension/unlock entry) and the first-person preparation HUD with the shared style: resource bar (gold, materials, prep time), squad cards with morale/health gauges instead of text lines, compact key hints (context prompt near the crosshair, full list on a toggle), enemy preview panel. |
 | UI-07 | UI Overhaul 3: Facility, Equipment, Squad & Perk Windows | Waiting for Prerequisite | Unassigned | Registered 2026-11-20. Needs UI-05. Common window layout for Shop, Tavern, Training ground, Smithy, Hero Hall, Construction, Equipment (`I`), Squad organization (`O`) and Perks (`K`): item cards with icon slots, cost and stat lines, tooltips with stat comparison, clear disabled/refusal states. Keep facility rules unchanged. |
 | UI-08 | UI Overhaul 4: Battle HUD | Waiting for Prerequisite | Unassigned | Registered 2026-11-20. Needs UI-05 and the Q-11 team decision (command keys and battle HUD layout; teammate area). Battle status, wave/enemy counts, squad command bar, cannon and ladder prompts, boss bar in the shared style. Coordinate with COMBAT-08 (formations) and COMBAT-06 (skills) UI. |
-| TOOL-subagent-tuning | Subagent Delegation Refinements (Claude Code) | In Progress | SeongminHwang | Branch `feature/tool-subagent-tuning`. Registered 2026-11-21 from user request after the first TOOL-subagent-default session: keep merges and conflict resolution in the main session; allow the main session to do small Git/doc steps directly; no main-session file edits while a subagent switches branches; commit trailer always names the main-session model. Rule in AGENTS.md and Docs/workflow/Collaboration.md. Doc-only. |
 
 ---
 

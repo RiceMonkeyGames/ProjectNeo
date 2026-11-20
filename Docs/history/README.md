@@ -1,6 +1,6 @@
 # Past Verification History Index
 
-Last Updated: 2026-11-21 01:40:55 (KST)
+Last Updated: 2026-11-21 01:51:46 (KST)
 
 > Purpose: Route historical log lookups by Task ID prefix. | Parent: [INDEX](../INDEX.md) | Related: [Backlog-Done](../archive/Backlog-Done.md), [Status](../plan/Status.md)
 
@@ -29,6 +29,6 @@ Latest manual verification: [PREP-09](PREP/PREP-09.md) (final squad caps 10 x 20
 - `SIEGE/` — [SIEGE-01](SIEGE/SIEGE-01.md), [SIEGE-02](SIEGE/SIEGE-02.md), [SIEGE-03](SIEGE/SIEGE-03.md), [SIEGE-04](SIEGE/SIEGE-04.md), [SIEGE-05](SIEGE/SIEGE-05.md), [SIEGE-06](SIEGE/SIEGE-06.md), [SIEGE-07](SIEGE/SIEGE-07.md), [SIEGE-08](SIEGE/SIEGE-08.md), [SIEGE-09](SIEGE/SIEGE-09.md)
 - `ART/` — [ART-01](ART/ART-01.md), [ART-02](ART/ART-02.md), [ART-03](ART/ART-03.md)
 - `DOC/` — [DOC-workflow-branches](DOC/DOC-workflow-branches.md), [DOC-doc-tree-and-id](DOC/DOC-doc-tree-and-id.md)
-- `TOOL/` — [TOOL-claude-read-deny](TOOL/TOOL-claude-read-deny.md), [TOOL-agent-workflows](TOOL/TOOL-agent-workflows.md), [TOOL-codex-workflows](TOOL/TOOL-codex-workflows.md), [TOOL-asset-submodule](TOOL/TOOL-asset-submodule.md), [TOOL-asset-packs-2](TOOL/TOOL-asset-packs-2.md), [TOOL-subagent-default](TOOL/TOOL-subagent-default.md)
+- `TOOL/` — [TOOL-claude-read-deny](TOOL/TOOL-claude-read-deny.md), [TOOL-agent-workflows](TOOL/TOOL-agent-workflows.md), [TOOL-codex-workflows](TOOL/TOOL-codex-workflows.md), [TOOL-asset-submodule](TOOL/TOOL-asset-submodule.md), [TOOL-asset-packs-2](TOOL/TOOL-asset-packs-2.md), [TOOL-subagent-default](TOOL/TOOL-subagent-default.md), [TOOL-subagent-tuning](TOOL/TOOL-subagent-tuning.md)
 - `UI/` — [UI-04](UI/UI-04.md), [UI-03](UI/UI-03.md), [UI-01](UI/UI-01.md), [UI-02](UI/UI-02.md)
 - `LEGACY/` — Un-ID'd early records: [M0-early-setup](LEGACY/M0-early-setup.md), [M1-construction-camera](LEGACY/M1-construction-camera.md), [M1-combat-and-command](LEGACY/M1-combat-and-command.md), [M1-game-scene-integration](LEGACY/M1-game-scene-integration.md), [M1-siege-prototype](LEGACY/M1-siege-prototype.md), [DOC-early-workflow](LEGACY/DOC-early-workflow.md)
