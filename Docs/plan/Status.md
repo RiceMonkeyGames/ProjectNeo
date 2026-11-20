@@ -1,6 +1,6 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-20 17:10:38 (KST)
+Last Updated: 2026-11-20 21:00:00 (KST)
 
 > Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
 
@@ -66,7 +66,7 @@ Q-41 and SIEGE-04 completion/commit/push were authorized by the user on 2026-11-
 | Squads, Morale, Walls | Squad structures, grid occupancy/rotation, stacking, async NavMesh rebuild, fall damage, weapon mounting/collapse, 1st-person commands | Formal wall-breaker encounters (B-7.1), construction delays (SIEGE-08, pending decision). Morale/rout wiring (B-8.1, B-8.2, COMBAT-03) and siege weapon firing (SIEGE-02, SIEGE-07) are Done; physical-input play is tracked in QA-physical-input |
 | Run Data Architecture | `RunState` container, castle persistence, combat I/O, single application rules (`C-1a`), Game scene unit binding, survivor healing (`C-1~2`), grunt spawning (`D-0b`), post-battle squad cleanup and casualty carry-over (`C-3`) | Saved run loading, meta file persistence |
 | Test Scenes | `CombatPrototype`, `UnitBattlePrototype`, `ConstructionPrototype`, `SquadCommandPrototype`, `WallCommandPrototype`, `SiegePrototype` | Mixed wall-breaker/aerial encounters, multi-wave sequences, morale routs, full loop integration |
-| Art & Performance | Synty character models with locomotion animation on prototype units (`ART-03`; environment/props still placeholder), dual-tier NavMesh benchmark, AI query optimization (`PERF-nav-query`) | Synty environment/prop packs, combat (attack/hit/death) animations, VFX, full combat performance profiling |
+| Art & Performance | Synty character models with locomotion, combat (attack, bow draw/release, hit, death, crouch) animation and hand weapons on prototype units (`ART-03`, `ART-04`; environment/props still placeholder), dual-tier NavMesh benchmark, AI query optimization (`PERF-nav-query`) | Synty environment/prop packs, ladder-climb animation, VFX, full combat performance profiling |
 
 ## Test Baselines & Status Conventions
 
