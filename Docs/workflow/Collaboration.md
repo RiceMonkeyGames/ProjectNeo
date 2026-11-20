@@ -1,6 +1,6 @@
 # Collaboration, Backlog & Task ID Rules
 
-Last Updated: 2026-11-20 11:03:04 (KST)
+Last Updated: 2026-11-20 21:20:25 (KST)
 
 > Purpose: Team workflow, Task ID rules, shared file locks, and `.claude` boundaries. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [Team](../plan/Team.md)
 
@@ -13,8 +13,12 @@ Last Updated: 2026-11-20 11:03:04 (KST)
 5. Never take over or edit another assignee's `In Progress` task. Coordinate order before touching shared files.
 6. Upon completion: update affected `Docs/` leaves and `Docs/history/<PREFIX>/<TASK-ID>.md`, present verification/manual checks, and obtain explicit user confirmation before marking `Done`, moving the row to [Backlog-Done.md](../archive/Backlog-Done.md), and committing/pushing the task branch.
 7. The user handles `develop` merges and remote task-branch deletion after confirmed integration. Retain unmerged branches. General code commits/pushes require explicit user confirmation; immediate backlog claim commit/push in step 3 remains authorized.
-8. **Shared Skill / Wrapper Shortcuts**: Claude Code users and agents may use `.claude/skills/` (`/claim`, `/verify`, `/finish`, `/sync-summary`) backed by Windows PowerShell 5.1 scripts under `Tools/Agent/` (`claim-check.ps1`, `unity-verify.ps1`, `doc-finish-check.ps1`, `sync-summary.ps1`) to run preflight, bounded verification, link/history checks, and remote diffs in one call. `/finish` runs doc checks and presents manual verification steps first, asking user confirmation before marking `Done`, archiving, and committing/pushing.
-   Codex uses the corresponding `$claim`, `$verify`, `$finish`, `$sync-summary` entrypoints under `.agents/skills/`. These load the same `.claude/skills/<name>/SKILL.md` and use the same wrappers from the repository root; do not maintain separate workflow implementations. If a new skill does not appear in Codex, restart Codex and check its skill selector.
+8. **Shared Skill / Wrapper Shortcuts**: Claude Code users and agents may use `.claude/skills/` (`/brief`, `/claim`, `/verify`, `/finish`, `/sync-summary`) backed by Windows PowerShell 5.1 scripts under `Tools/Agent/` (`session-brief.ps1`, `claim-check.ps1`, `code-rules-check.ps1`, `unity-verify.ps1`, `doc-finish-check.ps1`, `sync-summary.ps1`) to run session warmup, preflight, static coding rule checks, bounded Unity verification, doc/link/timestamp/codemap checks, and remote diffs in one call. `/finish` runs doc checks and presents manual verification steps first, asking user confirmation before marking `Done`, archiving, and committing/pushing.
+   Codex uses the corresponding `$brief`, `$claim`, `$verify`, `$finish`, `$sync-summary` entrypoints under `.agents/skills/`. These load the same `.claude/skills/<name>/SKILL.md` and use the same wrappers from the repository root; do not maintain separate workflow implementations. If a new skill does not appear in Codex, restart Codex and check its skill selector.
+9. **Claude Code Role Subagents (`.claude/agents/`)**: Keep the main session as the feature implementer, coordinator, and user-approval gate; delegate context-heavy or routine work to three focused subagents:
+   - `docs-git` (`model: haiku`, preloads `claim`/`finish`/`sync-summary`): `Docs/` updates, Backlog claim/archive, history drafts, and git operations. Write scope limited to `Docs/`; general commits/pushes require explicit user confirmation from the main session.
+   - `qa-verifier` (`model: sonnet`, preloads `verify`, `Edit`/`Write` disallowed): runs `code-rules-check.ps1` + `unity-verify.ps1` sequentially (respecting the single Unity Editor constraint), audits diffs against `Docs/design/` and `Principles.md`, and returns defect findings plus a manual verification checklist.
+   - `repo-scout` (`model: haiku`, `Read`/`Grep`/`Glob` only): fast symbol, call-site, and `Docs/codemap/` lookups to prevent search noise from bloating the main context.
 
 ### Status Conventions
 
@@ -51,7 +55,7 @@ Active collaboration since 2026-11-11 across separate PCs/branches (Q-26). See [
 Avoid opening one project folder in multiple editor instances; use `--project-path` if multiple editors run on one machine.
 
 **Claude Code read/edit exclusions & allow rules (`.claude/settings.json`)**: Claude Code does not support `.claudeignore`; shared `.claude/settings.json` uses `permissions.deny` and `permissions.allow`.
-- Allow listed: PowerShell wrappers under `Tools/Agent/*.ps1` and read-only git inspection (`git status`, `git diff --name-only`, `git diff --stat`, `git log -n`). `git commit` and `git push` remain un-allowed for interactive confirmation.
+- Allow listed: PowerShell wrappers under `Tools/Agent/*.ps1` and read-only git inspection (`git status`, `git branch --show-current`, `git submodule status`, `git diff --name-only`, `git diff --stat`, `git log -n`). `git commit` and `git push` remain un-allowed for interactive confirmation.
 - Read blocked: `Library/` except `Library/PackageCache/` (explicit path only), `Temp/`, `Logs/` old/worker logs (`*-prev.log`, `AssetImportWorker*`, `*.jsonl`), `UserSettings/`, `obj/`, `Build(s)/`, `*.csproj`, `*.sln(x)`; third-party `Assets/TextMesh Pro/`, `Assets/ThirdParty/`, `Assets/Synty/`, `Assets/Polygon*/`, `Assets/Plugins/`, `Assets/Samples/`; `*.meta`, `*.unity`, `*.shadergraph`, `*.anim`, `*SDF.asset`, `LightingData.asset`, `NavMesh*.asset`; textures under `Assets/`, models, audio, fonts, video, `*.dll`, `*.pdb`, `*.unitypackage`.
 - Read allowed: `.cs`, `.asmdef`, `.prefab`, `.mat`, `.controller`, ScriptableObject `.asset`, `ProjectSettings/`, `Packages/`, `Docs/`, `Logs/Editor.log` (search `error CS` only; do not read whole file), images outside `Assets/` (save verification screenshots outside `Assets/`, `Temp/`, `Logs/`).
 - Edit/Write blocked: `*.unity`, `*.prefab`, `*.asset`, `*.meta`, `*.mat`, `*.controller`, `*.anim` (Editor API only).
