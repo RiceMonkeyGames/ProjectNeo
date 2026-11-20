@@ -26,9 +26,12 @@ namespace ProjectNeo.Run
         [SerializeField] PrepTimeSettings prepTime;
         [Tooltip("런 사이 해금 트랙(META-07). 비어 있으면 예전 해금 플래그(처음부터 해금)만 본다.")]
         [SerializeField] UnlockCatalog unlockCatalog;
+        [Tooltip("퍽 트리(META-09). 퍽 창이 보여 준다. 비어 있으면 퍽 창을 쓰지 않는다.")]
+        [SerializeField] PerkTreeCatalog perkTrees;
 
         public SquadConfig SquadConfig => squadConfig;
         public UnlockCatalog UnlockCatalog => unlockCatalog;
+        public PerkTreeCatalog PerkTrees => perkTrees;
         public PrepTimeSettings PrepTime => prepTime;
         public IReadOnlyList<FacilityDefinition> Facilities => facilities;
         public EconomyConfig Economy => economy;
@@ -84,6 +87,13 @@ namespace ProjectNeo.Run
         public RunConfig WithUnlockCatalog(UnlockCatalog catalog)
         {
             unlockCatalog = catalog;
+            return this;
+        }
+
+        /// <summary>퍽 트리를 정한다(테스트용). 같은 설정을 돌려준다.</summary>
+        public RunConfig WithPerkTrees(PerkTreeCatalog catalog)
+        {
+            perkTrees = catalog;
             return this;
         }
     }

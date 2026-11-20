@@ -36,7 +36,15 @@ namespace ProjectNeo.Run
         }
 
         /// <summary>지금 이 퍽을 찍을 수 있는지. 전투 중이거나 퍽 묶음이 없으면 false.</summary>
-        public bool CanAllocatePerk(PerkDefinition perk) => Perks != null && !HasPendingBattle && Perks.CanAllocate(perk);
+        public bool CanAllocatePerk(PerkDefinition perk) => CheckPerk(perk) == PerkAllocateCheck.Ok;
+
+        /// <summary>퍽을 지금 찍을 수 있는지와 안 되는 이유(META-09). 퍽 묶음 → 전투 중 → 퍽 규칙 순이다.</summary>
+        public PerkAllocateCheck CheckPerk(PerkDefinition perk)
+        {
+            if (Perks == null) return PerkAllocateCheck.NoLoadout;
+            if (HasPendingBattle) return PerkAllocateCheck.BattlePending;
+            return Perks.Check(perk);
+        }
 
         /// <summary>퍽을 찍는다. <see cref="CanAllocatePerk"/>가 false면 아무것도 바꾸지 않는다.</summary>
         public bool TryAllocatePerk(PerkDefinition perk) => CanAllocatePerk(perk) && Perks.TryAllocate(perk);

@@ -27,3 +27,4 @@ MonoBehaviour:
   equipmentUpgrades: {fileID: 11400000, guid: 2c70004a8c9ec4a49bb52aaa352df2df, type: 2}
   prepTime: {fileID: 11400000, guid: aa489f94a865cde439c0509a302217a1, type: 2}
   unlockCatalog: {fileID: 11400000, guid: 0588e092f49e38d4d91fe9d70e809ff4, type: 2}
+  perkTrees: {fileID: 11400000, guid: faed0efabeb1a394e81af3425fc8a8d9, type: 2}

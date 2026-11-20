@@ -51,11 +51,30 @@ namespace ProjectNeo.Meta
             return total;
         }
 
-        public bool CanAllocate(PerkDefinition perk)
+        public bool CanAllocate(PerkDefinition perk) => Check(perk) == PerkAllocateCheck.Ok;
+
+        /// <summary>
+        /// 이 퍽을 찍을 수 있는지와 안 되는 이유(META-09). 이미 찍음 → 잠김 → 선행 퍽 → 포인트 순으로 처음 걸린 것을 돌려준다.
+        /// 아무것도 바꾸지 않는다.
+        /// </summary>
+        public PerkAllocateCheck Check(PerkDefinition perk)
         {
-            if (perk == null || allocated.Contains(perk)) return false;
-            if (!progress.IsUnlocked(perk)) return false;
-            return perk.PointCost <= AvailablePoints;
+            if (perk == null) return PerkAllocateCheck.UnknownPerk;
+            if (allocated.Contains(perk)) return PerkAllocateCheck.AlreadyAllocated;
+            if (!progress.IsUnlocked(perk)) return PerkAllocateCheck.Locked;
+            foreach (PerkDefinition required in perk.Prerequisites)
+                if (required != null && !allocated.Contains(required)) return PerkAllocateCheck.MissingPrerequisite;
+            return perk.PointCost <= AvailablePoints ? PerkAllocateCheck.Ok : PerkAllocateCheck.NotEnoughPoints;
+        }
+
+        /// <summary>아직 찍지 않은 선행 퍽.</summary>
+        public List<PerkDefinition> MissingPrerequisites(PerkDefinition perk)
+        {
+            var missing = new List<PerkDefinition>();
+            if (perk == null) return missing;
+            foreach (PerkDefinition required in perk.Prerequisites)
+                if (required != null && !allocated.Contains(required)) missing.Add(required);
+            return missing;
         }
 
         public bool TryAllocate(PerkDefinition perk)

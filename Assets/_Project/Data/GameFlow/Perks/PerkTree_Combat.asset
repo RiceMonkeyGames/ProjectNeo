@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b5b85aa0d2c9a034cad85e0bd3482d00, type: 3}
+  m_Name: PerkTree_Combat
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Meta.PerkTreeDefinition
+  category: 0
+  displayName: Combat
+  perks:
+  - {fileID: 11400000, guid: b4e71a4ee1716c24f902745775ff4a62, type: 2}
+  - {fileID: 11400000, guid: bc97a200433b91445a3853d56c027afb, type: 2}
+  - {fileID: 11400000, guid: bd49144c647cf814a859c1c67e364318, type: 2}
+  - {fileID: 11400000, guid: a8dfb57e99df6874f896de1a4784cd42, type: 2}
+  - {fileID: 11400000, guid: bb104755b9bba71428db659e015aa369, type: 2}

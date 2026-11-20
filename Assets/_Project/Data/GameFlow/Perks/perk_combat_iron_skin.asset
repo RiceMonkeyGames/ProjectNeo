@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 245f67fb49f0e7f418de26ef3bd6270c, type: 3}
+  m_Name: perk_combat_iron_skin
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Meta.PerkDefinition
+  id: perk_combat_iron_skin
+  displayName: Iron Skin
+  category: 0
+  pointCost: 1
+  unlockedByDefault: 1
+  statEffects:
+  - target: 0
+    modifier:
+      stat: 2
+      kind: 0
+      value: 5
+  specialEffects: []
+  runEffects: []
+  prerequisites:
+  - {fileID: 11400000, guid: bc97a200433b91445a3853d56c027afb, type: 2}
+  description: 

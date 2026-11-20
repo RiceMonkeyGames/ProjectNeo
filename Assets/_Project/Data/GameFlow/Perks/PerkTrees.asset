@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aef607e81c1c54a48b3e8a0ecf44c409, type: 3}
+  m_Name: PerkTrees
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Meta.PerkTreeCatalog
+  trees:
+  - {fileID: 11400000, guid: 55d0dae76d2fb1a45821b615e66f2fd1, type: 2}
+  - {fileID: 11400000, guid: 2dc6b889d49871941a914ab1a282b148, type: 2}
+  - {fileID: 11400000, guid: 951feb7b62c74c84a9e3bf9c2983f791, type: 2}
