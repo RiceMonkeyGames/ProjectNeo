@@ -37,7 +37,7 @@ namespace ProjectNeo.Tests
                 new[] { new KillReward("enemy_ladder", 3, bone, 1), new KillReward("enemy_gate_breaker", 5, hide, 2) },
                 0.6f, 1,
                 new[] { new WeightedEntry<ItemDefinition>(sword, 1f), new WeightedEntry<ItemDefinition>(potion, 3f) },
-                40, 10, 5);
+                40, 10, 1, 2);
         }
 
         static BattleResult Victory(int battle = 1)
@@ -50,6 +50,16 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
+        public void RunEndUnlockPoints_CountStagesClearedAndBossesKilled()
+        {
+            // 표: 스테이지당 1, 보스당 2.
+            Assert.AreEqual(0, table.RunEndUnlockPoints(0, 0), "1스테이지에서 지면 0");
+            Assert.AreEqual(3, table.RunEndUnlockPoints(3, 0));
+            Assert.AreEqual(3 + 2 * 2, table.RunEndUnlockPoints(3, 2));
+            Assert.AreEqual(0, table.RunEndUnlockPoints(-1, -1), "음수는 0으로 본다");
+        }
+
+        [Test]
         public void 골드는_기본과_스테이지_가산과_처치_골드의_합이고_재료는_종류별로_쌓인다()
         {
             StageReward reward = StageReward.Roll(table, 3, Victory(), new FixedRandom(0.99f));
@@ -58,7 +68,6 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(4, reward.Materials[hide]);
             Assert.AreEqual(2, reward.Materials.Count);
             Assert.AreEqual(40 + 10 * 2, reward.CommanderXp);
-            Assert.AreEqual(5, reward.UnlockPoints);
             Assert.AreEqual(0, reward.Items.Count, "0.99는 확률 0.6을 넘어 아이템이 없다.");
             Assert.AreEqual(3, reward.StageNumber);
             Assert.AreEqual(1, reward.BattleNumber);

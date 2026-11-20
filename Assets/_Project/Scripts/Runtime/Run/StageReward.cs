@@ -8,7 +8,7 @@ namespace ProjectNeo.Run
 {
     /// <summary>
     /// 한 번의 승리로 받는 보상 내역. 같은 전투 번호에 한 번만 런에 지급한다(<see cref="RunState.ApplyReward"/>).
-    /// 지휘관 경험치·해금 포인트는 런이 끝나도 남는 메타 진행으로 간다.
+    /// 지휘관 경험치는 런이 끝나도 남는 메타 진행으로 간다. 해금 포인트는 승리마다 주지 않고 런이 끝날 때 한 번 준다(META-08).
     /// </summary>
     public sealed class StageReward
     {
@@ -21,7 +21,6 @@ namespace ProjectNeo.Run
         public IReadOnlyDictionary<MaterialDefinition, int> Materials => materials;
         public IReadOnlyList<ItemDefinition> Items => items;
         public int CommanderXp { get; private set; }
-        public int UnlockPoints { get; private set; }
 
         public StageReward(int battleNumber, int stageNumber)
         {
@@ -41,7 +40,6 @@ namespace ProjectNeo.Run
 
         public void AddItem(ItemDefinition item) { if (item != null) items.Add(item); }
         public void AddCommanderXp(int amount) { if (amount > 0) CommanderXp += amount; }
-        public void AddUnlockPoints(int amount) { if (amount > 0) UnlockPoints += amount; }
 
         /// <summary>
         /// 표와 전투 결과로 보상을 정한다. 승리한 결과만 받는다. 같은 표·결과·랜덤 시드면 같은 보상이 나온다.
@@ -74,7 +72,6 @@ namespace ProjectNeo.Run
             }
 
             reward.AddCommanderXp(table.CommanderXp + table.CommanderXpPerStage * stageBonus);
-            reward.AddUnlockPoints(table.UnlockPoints);
             return reward;
         }
     }

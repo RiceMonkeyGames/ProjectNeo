@@ -70,7 +70,7 @@ namespace ProjectNeo.Editor
                 },
                 0.6f, 1,
                 new[] { new WeightedEntry<ItemDefinition>(sword, 1f), new WeightedEntry<ItemDefinition>(potion, 2f) },
-                40, 10, 5));
+                40, 10, 1, 1));
         }
 
         static MaterialDefinition Material(string id, string name)

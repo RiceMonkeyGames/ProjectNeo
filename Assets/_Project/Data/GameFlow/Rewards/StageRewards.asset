@@ -36,4 +36,5 @@ MonoBehaviour:
     weight: 2
   commanderXp: 40
   commanderXpPerStage: 10
-  unlockPoints: 5
+  unlockPointsPerStageCleared: 1
+  unlockPointsPerBossKilled: 1
