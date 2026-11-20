@@ -1,6 +1,6 @@
 # Project Milestones & M2 Breakdown
 
-Last Updated: 2026-11-19 20:47:14 (KST)
+Last Updated: 2026-11-20 11:03:04 (KST)
 
 > Purpose: M0–M7 roadmap, M1→M2 criteria, M2 sub-batches, and M3+ detailing rules. | Parent: [INDEX](../INDEX.md) | Related: [Status](Status.md), [M1](M1.md), [Backlog](../Backlog.md)
 
@@ -11,7 +11,7 @@ Last Updated: 2026-11-19 20:47:14 (KST)
 | M0 Foundation & Combat Core | Data structures, player controls, baseline combat, initial profiling | Project setup | Verified A, B-1~3 deliverables | Done |
 | M1 Single Siege Battle | Walls, placement, dual-tier nav, squad commands, enemy siege AI, ladders, win/loss | M0, core contracts | Defend castle via direct combat + commands; collapse and outcomes verified | Done (2026-11-18, closed by B-9.3) |
 | M2 Repeatable Run Loop | Run state, prep facilities, squad setup, wave preview, rewards, casualty carry-over, minimal skills/perks | M1 integration | 3-stage loop: Prep → Combat → Rewards → Next Stage / Defeat Results | In Progress |
-| M3 Meta Progression & Saves | Disk persistence, unlocks, perk loadouts, run score, reincarnation bonuses | M2 contracts | Persistent meta across sessions; perk re-allocation; dynamic unlock pools | Core rules drafted |
+| M3 Meta Progression & Saves | Disk persistence, unlocks, perk loadouts, run score | M2 contracts | Persistent meta across sessions; perk re-allocation; dynamic unlock pools | Core rules drafted |
 | M4 Content & Strategic Depth | Finalize content scale, hero/enemy/item/stage rosters, bosses, economy tuning | M2 feedback, M3 | Viable multi-build strategies across full run lengths | High-level planning |
 | M5 Art, Audio & UX Polish | Synty swap, animations, VFX, audio, production UI, tutorialization | M2 stable loop, Q-15 | Intuitive onboarding and polished sensory feedback | High-level planning |
 | M6 Stabilization & Benchmarking | Production profiling, memory/load testing, balance pass, bug fixing | M3~5 integration | Sustained target frame rates, zero blocking defects | High-level planning |
