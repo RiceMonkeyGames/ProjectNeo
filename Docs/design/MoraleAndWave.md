@@ -1,6 +1,6 @@
 # Game Design: Morale, Rout & Wave Preview
 
-Last Updated: 2026-11-20 13:53:48 (KST)
+Last Updated: 2026-11-20 16:05:31 (KST)
 
 > Purpose: Ally Breaking Point morale, enemy morale, rout/exit accounting, and wave preview rules. | Parent: [design/README](README.md) | Related: [Combat](Combat.md), [OpenQuestions](OpenQuestions.md)
 
@@ -108,6 +108,6 @@ Rules decided by the user on 2026-11-18 (Q-53). Numbers are data and open to tun
 - **Preview window**: in first-person preparation, `V` opens and closes a small enemy list window on the left, just below the squad list (moved there on 2026-11-18 after the user found it covered by the squad list at the top left). It does not block movement or other input and is hidden in construction, facility, placement and organization views. Lines are merged per enemy type for the whole stage (`Ladder × 7`); hidden groups follow as `? × N`.
 - **Battle display**: the same list is always shown during battle as `Enemies left N`. Counts drop in real time: an enemy stops counting once it dies or has retreated off the field; enemies not yet released still count. A type whose count reaches `0` stays listed as `× 0`.
 - **Reveal in battle**: a hidden group is revealed (its type replaces `?`) when its wave is released onto the field. Every new preparation hides the groups again.
-- **Scouting action deferred**: the 3-hour scouting action is **not** part of C-5; it will be added later as PREP-07 (the rule `EnemyIntel.RevealAll` already exists for it). Until then hidden groups stay `?` for the whole preparation. Q-55 (2026-11-19) removed the block (no in-game clock beyond prep hours); PREP-07 stays in M2 (Q-54).
+- **Scouting action deferred**: the 3-hour scouting action is **not** part of C-5; it will be added later as PREP-07 (the rule `EnemyIntel.RevealAll` already exists for it). Until then hidden groups stay `?` for the whole preparation. Q-55 (2026-11-19) removed the block (no in-game clock beyond prep hours). **Deferred again (user, 2026-11-20)**: how scouting works will be decided together with the outside-walls attack/foraging (farming) concept ([Future Additions](README.md)); the 3-hour rule above is a placeholder until then.
 - Current data: `Stage02` hides wave 2 Gate Breaker × 2; `Stage04` wave 3 Ladder × 4; `Stage05` wave 3 Gate Breaker × 3; `Stage06` wave 2 High Flyer Archer × 3; `Stage07` wave 2 Archer × 4. Stage 1 and 3 have none.
 - Enemy type names come from the enemy prefab name (`enemy_gate_breaker` → `Gate Breaker`) until enemy definition assets exist.

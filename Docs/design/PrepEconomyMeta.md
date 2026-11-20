@@ -1,6 +1,6 @@
 # Game Design: Preparation, Economy, Rewards & Meta
 
-Last Updated: 2026-11-20 14:58:18 (KST)
+Last Updated: 2026-11-20 16:05:31 (KST)
 
 > Purpose: Rules for courtyard facilities, unit deployment, currencies, rewards, and meta progression. | Parent: [design/README](README.md) | Related: [WallsAndSiege](WallsAndSiege.md), [OpenQuestions](OpenQuestions.md)
 
@@ -43,7 +43,7 @@ Each preparation phase gets a **time budget** shown as a clock. Physical work co
 - **No time of day or calendar** (Q-55, team decision 2026-11-19): this budget is the only in-game time. Battles have no clock, and there is no day/night cycle or day count.
 - **What advances the clock** (thinking time is unlimited; the clock never runs on its own):
   - Crafting or upgrading one item at the blacksmith: `1` hour.
-  - Scouting (see [Wave Preview](MoraleAndWave.md#wave-preview)): `3` hours. The scouting action itself is deferred (user, 2026-11-18, C-5) and not yet playable; it is tracked as PREP-07, unblocked by Q-55 (2026-11-19).
+  - Scouting (see [Wave Preview](MoraleAndWave.md#wave-preview)): `3` hours. The scouting action itself is deferred (user, 2026-11-18, C-5) and not yet playable; it is tracked as PREP-07, unblocked by Q-55 (2026-11-19) and deferred again by the user on 2026-11-20 until the outside-walls attack/foraging (farming) concept is designed.
   - **Wait**: `1` hour per use, so ordered work can progress. Input (user, 2026-11-18, PREP-06): in first-person exploration hold `T` for `1` second (progress shown like the `B` battle hold); each wait needs a fresh press.
 - **Clock display** (user, 2026-11-18, PREP-06): one line at the top center (`Prep time 11h left / 12h`, `- out of time` when exhausted), visible in every preparation view and above facility/equipment windows; hidden in battle, reward and result screens, and while the nearly full-screen squad organization window is open. Actions that cost time show their hours (`· 1h`) and refuse with `Not enough time.` without spending anything.
 - **Free actions** (no clock cost, still allowed after the clock runs out): shop buy/sell/re-roll/lock, tavern hiring, barracks recruiting, facility upgrades, equipment, squad organization, squad placement, placing work orders. Battle still starts only when the player holds `B` (FLOW-01).
