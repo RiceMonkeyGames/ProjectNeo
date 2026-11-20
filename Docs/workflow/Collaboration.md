@@ -1,6 +1,6 @@
 # Collaboration, Backlog & Task ID Rules
 
-Last Updated: 2026-11-21 01:35:59 (KST)
+Last Updated: 2026-11-21 01:51:46 (KST)
 
 > Purpose: Team workflow, Task ID rules, shared file locks, and `.claude` boundaries. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [Team](../plan/Team.md)
 
@@ -26,6 +26,12 @@ Last Updated: 2026-11-21 01:35:59 (KST)
    - Main session keeps: code and asset edits (via Editor APIs), ambiguous design/architecture questions, approval gates, final reporting, and quick one-command checks where a subagent would cost more than it saves.
    - Brief each subagent with the task ID, branch, approved scope and constraints (human assignee name, `Assets/ThirdParty` untouched, no `develop` merges). Treat its report as input to check, not as user approval.
    - Codex has no subagents: it keeps doing the same steps inline with the shared skills.
+11. **Delegation Refinements (TOOL-subagent-tuning, user decision 2026-11-21)**: lessons from the first session under item 10.
+   - **Main session only**: `develop` merges and conflict resolution (a subagent stopped at its turn limit halfway through a three-branch merge), and any push to `develop`, claim pushes included (the auto-mode permission check denied a subagent's claim push). `docs-git` may still prepare the Backlog row and the files; the main session stages, commits and pushes them.
+   - **Small steps inline**: Git or doc steps of a few commands (for example a single commit and push of already-edited files) stay in the main session; delegation pays off for multi-file doc work and long checks.
+   - **Shared working tree**: a subagent that switches branches changes the files the main session sees. The main session makes no file edits until that subagent reports back.
+   - **Commit trailer**: every commit uses the main-session model in `Co-Authored-By`, also when a subagent runs the commit. If a subagent will not write that trailer, the main session makes the commit.
+   - **Check every report**: confirm the result with `git log` / `git status` / file reads before relaying it (an archive row order and a line-ending change were caught this way).
 
 ### Status Conventions
 
