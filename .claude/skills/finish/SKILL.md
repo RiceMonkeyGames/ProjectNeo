@@ -21,6 +21,9 @@ Enforces `AGENTS.md` completion rules and asks for user confirmation before mark
    - `KST_NOW`: use this exact timestamp for `Last Updated: YYYY-MM-DD HH:MM:SS (KST)` in edited docs.
    - `HISTORY_EXISTS`: if `False`, create `Docs/history/<PREFIX>/<TASK-ID>.md` and register it in `Docs/history/README.md` (refer to `Docs/history/README.md` for folder mapping: `TOOL/`, `BUG/`, `COMBAT/`, etc.).
    - `BROKEN_LINKS`: if `> 0`, fix all broken markdown links shown.
+   - `STALE_LAST_UPDATED`: if `> 0`, update `Last Updated: <KST_NOW> (KST)` on listed modified docs.
+   - `KOREAN_IN_DOCS`: if `> 0`, rewrite non-name prose in `Docs/` to English.
+   - `CODEMAP_UNLISTED_SCRIPTS`: if `> 0`, register newly added runtime scripts in the matching `Docs/codemap/*.md` leaf.
    - `GIT_DIFF_CHECK_OK`: if `False`, fix whitespace/conflict markers.
    - Update any affected leaf docs (`Docs/INDEX.md`, `Docs/codemap/*`, `Docs/design/*`, `Docs/workflow/*`, `Docs/plan/*`). Do not bulk-read unrelated `Docs/`.
 

@@ -1,6 +1,6 @@
 # ProjectNeo
 
-Last Updated: 2026-11-16 21:40:06 (KST)
+Last Updated: 2026-11-20 21:20:25 (KST)
 
 A 3D first-person siege defense roguelike built with Unity 6000.6.8f1 and URP. Scout the upcoming wave, prepare heroes, troops, equipment, and walls, and defend the castle through direct player combat and unit commanding. Low-poly art style; Synty assets planned, currently using placeholder graphics.
 
@@ -31,10 +31,11 @@ Licensed assets (Synty packs, etc.) live in the private submodule `Assets/ThirdP
 - **Task ID Rules**: Allowed characters `A-Z`, `0-9`, `a-z`, `-` only; 1 task = 1 ID (no `~`, `·`, `.`, or ad-hoc suffixes). Legacy `A~D`, `G`, and reserved `E-1~4` (until M3) remain as-is. New M3+ features use `<DOMAIN>-<NN>` (`COMBAT`, `SIEGE`, `FLOW`, `PREP`, `META`, `CONTENT`, `ART`, `UI`, `AUDIO`); cross-cutting tasks use `Q-NN`, `BUG-<slug>`, `PERF-<slug>`, `QA-<slug>`, `DOC-<slug>`, `TOOL-<slug>`. Full rules in [Docs/workflow/Collaboration.md](Docs/workflow/Collaboration.md).
 - **Completion**: Update affected `Docs/` leaves and `Docs/history/<PREFIX>/<TASK-ID>.md`, present verification results and manual checks, then obtain user confirmation before marking `Done`, archiving, and committing/pushing the task branch. Follow the shared finish skill; leave `develop` merge to the user.
 
-## Shared Workflow Skills
+## Shared Workflow Skills & Subagents
 
-- Claude Code: `.claude/skills/` (`/claim`, `/verify`, `/finish`, `/sync-summary`). Codex: `.agents/skills/` (`$claim`, `$verify`, `$finish`, `$sync-summary`).
-- Codex entrypoints read the matching `.claude/skills/<name>/SKILL.md`; both reuse `Tools/Agent/` PowerShell wrappers. Keep workflow logic in those shared sources, not duplicated copies. Skills do not expand Git authorization.
+- Claude Code: `.claude/skills/` (`/brief`, `/claim`, `/verify`, `/finish`, `/sync-summary`). Codex: `.agents/skills/` (`$brief`, `$claim`, `$verify`, `$finish`, `$sync-summary`).
+- Codex entrypoints read the matching `.claude/skills/<name>/SKILL.md`; both reuse `Tools/Agent/` PowerShell wrappers (`session-brief.ps1`, `claim-check.ps1`, `code-rules-check.ps1`, `unity-verify.ps1`, `doc-finish-check.ps1`, `sync-summary.ps1`). Keep workflow logic in those shared sources, not duplicated copies. Skills and subagents do not expand Git authorization.
+- Claude Code subagents (`.claude/agents/`): `docs-git` (`haiku`, Docs/Git workflow only), `qa-verifier` (`sonnet`, read-only static/Unity verification & defect audit), and `repo-scout` (`haiku`, read-only symbol/doc lookup). Main session coordinates implementation, sequential Unity runs, and user approval gates ([Collaboration](Docs/workflow/Collaboration.md)).
 
 ## Working Rules
 
