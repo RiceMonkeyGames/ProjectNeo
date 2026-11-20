@@ -181,11 +181,25 @@ namespace ProjectNeo.UI
                     if (interaction.WaitProgress > 0f) startHint += $" · {Mathf.FloorToInt(interaction.WaitProgress * 100f)}%";
                 }
                 interactionHint.text += "\n" + startHint;
+                // 미완료 작업 경고(Q-77): 전투 시작 줄 바로 아래에 둔다.
+                string workWarning = WorkWarning();
+                if (workWarning.Length > 0)
+                {
+                    interactionHint.text += "\n" + workWarning;
+                    prompt.sizeDelta = new Vector2(prompt.sizeDelta.x, prompt.sizeDelta.y + 24f);
+                }
                 string squadHint = PreparationSquadHint();
                 if (squadHint.Length > 0) interactionHint.text += "\n" + squadHint;
                 string gateMessage = battle.PrepGate != null ? battle.PrepGate.Message : "";
                 if (gateMessage.Length > 0) interactionHint.text += "\n" + gateMessage;
             }
+        }
+
+        string WorkWarning()
+        {
+            var build = battle.GetComponent<GameBuildEconomy>();
+            GameConstructionWork work = build != null ? build.Work : null;
+            return work != null ? work.BattleStartWarning() : string.Empty;
         }
 
         /// <summary>

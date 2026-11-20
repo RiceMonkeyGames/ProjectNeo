@@ -1,6 +1,6 @@
 # Editor Setup & Test Scripts
 
-Last Updated: 2026-11-19 22:43:24 (KST)
+Last Updated: 2026-11-20 14:56:35 (KST)
 
 > Purpose: Map of Editor setup menus, build scripts, and EditMode/PlayMode test suites. | Parent: [codemap/README](README.md) | Related: [UnityCLI](../workflow/UnityCLI.md), [Status](../plan/Status.md)
 
@@ -35,7 +35,7 @@ Last Updated: 2026-11-19 22:43:24 (KST)
 
 ## EditMode Tests (`Assets/Tests/EditMode/`)
 
-- `WorkQueueTests.cs` (`SIEGE-08`): two crews with leftover carry-over and finish estimate, single crew and duplicate/remove, repair HP and rounded-down refund, castle capture of work/unfinished weapons and record read-back.
+- `WorkQueueTests.cs` (`SIEGE-08`, `Q-77`): 0% build-order count (repairs excluded), two crews with leftover carry-over and finish estimate, single crew and duplicate/remove, repair HP and rounded-down refund, castle capture of work/unfinished weapons and record read-back.
 - `EnemyIntelTests.cs` (`C-5`): per-type merge across waves, hidden groups as `? × N` without type names, single reveal, reveal-all, remaining clamp and unchanged-version, prefab display names, plan/stage hidden flag carry-over.
 - `PrepTimeTests.cs` (`PREP-06`): clock spend/overspend/refill/restore; blacksmith craft/upgrade time cost and no payment when short; no spending while a battle is pending and a full budget at the next preparation; no limit without settings; save/restore keeps used hours, old saves refill.
 - General Stage A: Stat sheets, wallets, facilities, squads, perks, items, shops, characters, meta progression, health rules.
@@ -69,7 +69,7 @@ Last Updated: 2026-11-19 22:43:24 (KST)
 
 ## PlayMode Tests (`Assets/Tests/PlayMode/`)
 
-- `GameConstructionWorkPlayTests.cs` (`SIEGE-08`): Game scene work orders: under-construction view and stacking/mount refusal, two crews, battle-start cleanup (0% removed and refunded, HP = progress), unfinished cannon not armed until fully repaired, repair refunds and gate closing on completion, preparation save records.
+- `GameConstructionWorkPlayTests.cs` (`SIEGE-08`, `Q-77`): Game scene work orders: battle-start warning text (in progress / not started / empty after battle start), under-construction view and stacking/mount refusal, two crews, battle-start cleanup (0% removed and refunded, HP = progress), unfinished cannon not armed until fully repaired, repair refunds and gate closing on completion, preparation save records.
 - `GameEnemyIntelPlayTests.cs` (`C-5`): Game scene preview closed until toggled, `? × N` for a hidden group, always shown in battle with live remaining counts after kills, hidden group revealed when its wave is released, no overlap with `SquadsBacking` and `BattleStatus`, hidden on reward, hidden again next preparation.
 - `GamePrepTimePlayTests.cs` (`PREP-06`): Game scene clock from the real asset, top-center line clear of facility/equipment windows and hidden over the organization window, hold-`T` wait (progress, exactly one hour, fresh press), out-of-time hint/label, battle still startable, hidden in battle, refilled next preparation.
 - `GameStageLoopPlayTests.cs` (`B-9.3`): Game scene with the real stage assets (overrides the single-wave fixture). Plays every catalog stage (1→7 since CONTENT-01) back to back, killing each wave as it is released. At every preparation start it checks that only this stage's enemies exist (hidden), the wave timetable restarts, retreat records are empty, no arrows/cannon shells remain, ladders are off and empty, and morale battle state is closed. Each victory pays once (gold unchanged while on the reward screen and after moving on; `ContinueToNextStage` works once).

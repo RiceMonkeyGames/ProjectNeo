@@ -1,10 +1,12 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-20 14:34:33 (KST)
+Last Updated: 2026-11-20 14:56:35 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
 ## Resolved `Q-*` Table
+
+Unstarted build orders at battle start (Q-77, 2026-11-20, user): keep the SIEGE-08 rule (a `0%` build order disappears at battle start with a full refund) and warn instead: a yellow line under the start-battle hint lists unfinished work orders and how many are still at `0%`. No confirmation dialog. [Rule](../design/PrepEconomyMeta.md), [history](../history/Q/Q-77.md).
 
 B-7.2 scope (2026-11-18, user): B-7.2 is closed without new code. Post-battle cleanup is already in place and its no-leak check across repeated stages moves into B-9.3; enemy squad linking is dropped because enemies have no morale (Q-44); corpse explosion is dropped with no follow-up task. [Plan](M1.md).
 

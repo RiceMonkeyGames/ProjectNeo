@@ -304,6 +304,21 @@ namespace ProjectNeo.Flow
             return $"Work orders {pending} · {queue.Crews} crews · {queue.HoursToFinishAll():0.#}h to finish";
         }
 
+        /// <summary>
+        /// 전투 시작 전 미완료 작업 경고 한 줄(Q-77). 끝나지 않은 주문이 없으면 비어 있다.
+        /// 0% 건설 주문은 전투 시작 때 사라지고 환불된다는 것을, 진행된 작업은 지금 진행률로 전투에 들어간다는 것을 알린다.
+        /// </summary>
+        public string BattleStartWarning()
+        {
+            int pending = queue.PendingCount;
+            if (!IsActive || pending == 0) return string.Empty;
+            int notStarted = queue.NotStartedBuildCount;
+            string detail = notStarted > 0
+                ? $"{notStarted} not started will be removed and refunded at battle start"
+                : "enters battle at current progress";
+            return $"<color=#FFC857>! Unfinished work {pending} - {detail}</color>";
+        }
+
         void ShowView(Component target, float progress)
         {
             if (target == null) return;

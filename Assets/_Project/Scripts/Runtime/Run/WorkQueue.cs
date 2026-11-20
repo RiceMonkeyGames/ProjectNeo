@@ -16,6 +16,20 @@ namespace ProjectNeo.Run
         /// <summary>주문 순서대로. 끝난 주문도 <see cref="RemoveCompleted"/> 전까지 남는다.</summary>
         public IReadOnlyList<WorkOrder> Orders => orders;
         public int PendingCount { get { int n = 0; foreach (WorkOrder order in orders) if (!order.IsComplete) n++; return n; } }
+        /// <summary>
+        /// 아직 손대지 않은(0%) 건설 주문 수(Q-77). 전투 시작 때 이 주문들은 사라지고 전액 환불된다.
+        /// 수리 주문은 0%여도 대상이 남으므로 세지 않는다.
+        /// </summary>
+        public int NotStartedBuildCount
+        {
+            get
+            {
+                int n = 0;
+                foreach (WorkOrder order in orders)
+                    if (order.Kind == WorkKind.Build && !order.IsComplete && order.Done <= PrepClock.Epsilon) n++;
+                return n;
+            }
+        }
 
         /// <summary>주문이 진행되었다(진행률이 바뀌었다).</summary>
         public event Action<WorkOrder> Progressed;

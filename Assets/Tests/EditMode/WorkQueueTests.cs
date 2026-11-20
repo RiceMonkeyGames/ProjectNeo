@@ -56,6 +56,22 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
+        public void 시작하지_않은_건설_주문만_0퍼센트로_센다()
+        {
+            var queue = new WorkQueue(1);
+            WorkOrder a = Build(1), b = Build(2);
+            var repair = new WorkOrder(WorkKind.Repair, WorkTarget.Piece, 3, 0.5f, goldPaid: 10);
+            queue.Add(a); queue.Add(b); queue.Add(repair);
+            Assert.AreEqual(3, queue.PendingCount);
+            Assert.AreEqual(2, queue.NotStartedBuildCount, "0% 수리는 대상이 남으므로 세지 않는다.");
+            queue.Advance(0.5f);
+            Assert.AreEqual(1, queue.NotStartedBuildCount, "조금이라도 지은 주문은 시작한 것이다.");
+            queue.Advance(2f);
+            Assert.AreEqual(0, queue.NotStartedBuildCount);
+            Assert.AreEqual(0, queue.PendingCount);
+        }
+
+        [Test]
         public void 수리는_시작_체력에서_진행률만큼_오르고_못_한_만큼_골드를_내림해_돌려준다()
         {
             var repair = new WorkOrder(WorkKind.Repair, WorkTarget.Piece, 1, 0.5f, goldPaid: 25, startHealth: 40f);

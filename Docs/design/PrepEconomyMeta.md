@@ -1,6 +1,6 @@
 # Game Design: Preparation, Economy, Rewards & Meta
 
-Last Updated: 2026-11-20 14:34:33 (KST)
+Last Updated: 2026-11-20 14:56:35 (KST)
 
 > Purpose: Rules for courtyard facilities, unit deployment, currencies, rewards, and meta progression. | Parent: [design/README](README.md) | Related: [WallsAndSiege](WallsAndSiege.md), [OpenQuestions](OpenQuestions.md)
 
@@ -59,6 +59,7 @@ Each preparation phase gets a **time budget** shown as a clock. Physical work co
   - *Unfinished cannon*: enters battle with HP equal to its progress but **cannot fire** (auto-fire and manning are off) until it is complete. It stays unfinished across battles; repairing it to full HP in a later preparation completes it.
   - *Broken gate*: a repair order closes the gate only when the repair is finished; if it is still unfinished at battle start, the gate closes then with the HP reached so far.
   - *Display*: a piece or cannon under construction is shown translucent with its progress (`40%`) above it, and the construction screen lists the work queue summary.
+  - *Battle-start warning* (Q-77, user, 2026-11-20): the 0% rule above stays. While any work order is unfinished, the first-person preparation hint shows a yellow line right under the start-battle line: the unfinished order count, and either how many build orders are still at `0%` (removed and refunded at battle start) or that the work enters battle at its current progress. It is a passive warning; starting the battle needs no extra confirmation.
 
 ## Currencies, Items & Rewards
 
