@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-20 12:28:00 (KST)
+Last Updated: 2026-11-20 12:50:17 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -41,7 +41,6 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 | COMBAT-09 | Arcing Arrows, Longer Archer Range & Hit Spread | Waiting | Unassigned | Registered 2026-11-20 from user request. Arrows fly a ballistic arc (fall over time, like cannon shells) instead of straight lines; archer range goes up; accuracy becomes a random spread around the aim point with a data value that items and skills can change later. Proposed range, spread and arc values presented at task start. Revisit wall/LoS blocking and the high-ground rules ([Combat](design/Combat.md)). Shared combat core (projectiles, `CombatPhysics`): coordinate with the teammate. |
 | SIEGE-10 | Auto Battlements on Top Wall Tier | Waiting | Unassigned | Registered 2026-11-20 from user request; planned wall-top cover in [WallsAndSiege](design/WallsAndSiege.md). The top tier of every wall shows battlements automatically (rebuilt when pieces are stacked, removed or collapse). Open before start: how much they block shots and sight (crenel gaps), whether they can be destroyed separately, ladder hook points and stair tops. Interacts with COMBAT-08 (wall-top width) and COMBAT-09 (arrow cover). |
 | QA-teammate-code-review | Teammate Review of Pending Shared Changes | Waiting | Unassigned | Registered 2026-11-18. Teammate reviews the shared combat core call sites changed by BUG-wall-archer-los and the B-7.1 stage data format; record the outcome in their history files. |
-| BUG-hero-move-stops-early | Hero Captain Stops Before Reaching a Move Destination | In Progress | SeongminHwang | Branch `fix/bug-hero-move-stops-early`. Registered 2026-11-20 from a user play report. Repro: hire a hero as a squad captain, place the squad, give that squad a move order. Expected: the hero walks to its front-row slot. Actual: the hero stops partway once the soldiers have arrived. Cause (code reading): `SquadCommandCenter.Update` completes the move when no `Members` are still moving but never checks the `Leader`, so the Hold order from `CompleteMove` stops the hero in place. Fix: include the leader in the moving check; add a PlayMode regression test. |
 
 ---
 

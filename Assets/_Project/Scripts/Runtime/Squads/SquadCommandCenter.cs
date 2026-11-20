@@ -231,6 +231,9 @@ namespace ProjectNeo.Squads
             return count;
         }
 
+        bool IsMoving(UnitCombatAI member) =>
+            IsAlive(member) && !detached.Contains(member) && member.Directive == UnitDirective.Move;
+
         static bool IsAlive(UnitCombatAI member) => member != null && member.isActiveAndEnabled
             && member.Actor.Health != null && !member.Actor.Health.IsDead;
 
@@ -268,10 +271,12 @@ namespace ProjectNeo.Squads
             for (int i = 0; i < army.Squads.Count; i++)
             {
                 if (Commander.OrderOf(i).Kind != SquadOrderKind.Move) continue;
-                bool moving = false;
-                foreach (UnitCombatAI member in army.Squads[i].Members)
-                    if (IsAlive(member) && !detached.Contains(member) && member.Directive == UnitDirective.Move)
-                    { moving = true; break; }
+                // 대장(고용 영웅)도 이동 지시를 받으므로 함께 센다. 빼면 잡졸만 도착해도 부대가 중지로 바뀌어
+                // 아직 걷던 대장이 그 자리에 멈춘다(BUG-hero-move-stops-early).
+                bool moving = IsMoving(army.Squads[i].Leader);
+                if (!moving)
+                    foreach (UnitCombatAI member in army.Squads[i].Members)
+                        if (IsMoving(member)) { moving = true; break; }
                 if (!moving) Commander.CompleteMove(i);
             }
         }
