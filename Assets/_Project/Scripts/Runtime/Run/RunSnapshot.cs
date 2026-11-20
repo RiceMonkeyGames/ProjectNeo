@@ -34,8 +34,20 @@ namespace ProjectNeo.Run
         public PrepTimeRecord prepTime = new PrepTimeRecord();
         /// <summary>이번 런에서 찍은 퍽 id(META-02). 예전 저장에는 없어서 비어 있다.</summary>
         public List<string> perks = new List<string>();
+        /// <summary>런 점수 누적 수(META-04).</summary>
+        public ScoreRecord score = new ScoreRecord();
         /// <summary>이 런의 승천 단계(FLOW-03). 예전 저장에는 없어 0(기본 게임)으로 읽힌다.</summary>
         public int ascensionLevel;
+    }
+
+    /// <summary>런 점수에 쓰는 누적 수(META-04). 예전 저장에는 없어서 0으로 읽힌다.</summary>
+    [Serializable]
+    public sealed class ScoreRecord
+    {
+        public int stagesCleared;
+        public int bossesKilled;
+        public int enemiesKilled;
+        public int gateIntactVictories;
     }
 
     [Serializable]

@@ -73,6 +73,7 @@ namespace ProjectNeo.Run
             snapshot.prepTime.budget = Clock.Budget;
             snapshot.prepTime.used = Clock.Used;
             snapshot.perks.AddRange(PerkIds());
+            snapshot.score = CaptureScore();
 
             snapshot.shop.stockedFor = ShopStockedFor;
             snapshot.shop.stockedLevel = ShopStockedLevel;
@@ -305,6 +306,7 @@ namespace ProjectNeo.Run
             state.Castle = CastleState.FromRecords(pieces, weapons);
 
             state.RestorePerks(snapshot.perks, content);
+            state.RestoreScore(snapshot.score);
             state.nextUnitId = Math.Max(snapshot.nextUnitId, highestId + 1);
             state.BattlesFought = snapshot.battlesFought;
             state.LastRewardedBattle = Math.Max(0, snapshot.lastRewardedBattle);

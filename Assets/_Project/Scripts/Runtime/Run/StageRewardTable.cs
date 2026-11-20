@@ -34,6 +34,30 @@ namespace ProjectNeo.Run
         [Tooltip("런이 끝날 때 처치한 보스마다 주는 해금 포인트(사용자 결정 2026-11-19). 보스는 SIEGE-09.")]
         [SerializeField, Min(0)] int unlockPointsPerBossKilled = 1;
 
+        [Header("런 점수 (META-04, Q-70)")]
+        [SerializeField, Min(0)] int scorePerStageCleared = 1000;
+        [SerializeField, Min(0)] int scorePerBossKilled = 500;
+        [SerializeField, Min(0)] int scorePerEnemyKilled = 10;
+        [Tooltip("성문이 멀쩡한 채로 이긴 스테이지마다.")]
+        [SerializeField, Min(0)] int scorePerGateIntactVictory = 200;
+        [Tooltip("런이 끝날 때 살아 있는 영웅(플레이어 제외)마다.")]
+        [SerializeField, Min(0)] int scorePerLivingHero = 100;
+        [Tooltip("런이 끝날 때 살아 있는 잡졸마다.")]
+        [SerializeField, Min(0)] int scorePerLivingGrunt = 10;
+        [Tooltip("런이 끝날 때 가진 골드를 이 값으로 나눈 몫(내림)이 점수다.")]
+        [SerializeField, Min(1)] int goldPerScorePoint = 10;
+        [Tooltip("마지막 스테이지를 깨고 엔딩에 닿으면.")]
+        [SerializeField, Min(0)] int scoreForEnding = 5000;
+
+        public int ScorePerStageCleared => scorePerStageCleared;
+        public int ScorePerBossKilled => scorePerBossKilled;
+        public int ScorePerEnemyKilled => scorePerEnemyKilled;
+        public int ScorePerGateIntactVictory => scorePerGateIntactVictory;
+        public int ScorePerLivingHero => scorePerLivingHero;
+        public int ScorePerLivingGrunt => scorePerLivingGrunt;
+        public int GoldPerScorePoint => Mathf.Max(1, goldPerScorePoint);
+        public int ScoreForEnding => scoreForEnding;
+
         public int BaseGold => baseGold;
         public int GoldPerStage => goldPerStage;
         public IReadOnlyList<KillReward> KillRewards => killRewards;

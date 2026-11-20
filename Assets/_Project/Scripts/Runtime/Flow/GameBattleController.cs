@@ -561,7 +561,7 @@ namespace ProjectNeo.Flow
             // 런 데이터에 결과를 반영하고 단계를 넘긴다. 연결이 없으면 기존처럼 승패만 넘긴다.
             // 사기로 도망친 아군은 Fled로 적는다(B-8.2).
             if (!RunLink.TryFinish(result, EndReason(result), CountKills(),
-                morale != null ? morale.HasFled : (System.Func<CharacterActor, bool>)null, CountRetreats()))
+                morale != null ? morale.HasFled : (System.Func<CharacterActor, bool>)null, CountRetreats(), !GateDestroyed))
                 flow.FinishBattle(result);
         }
 

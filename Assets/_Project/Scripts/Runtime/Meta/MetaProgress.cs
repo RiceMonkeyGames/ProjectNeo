@@ -31,6 +31,8 @@ namespace ProjectNeo.Meta
         /// 규칙은 <see cref="AscensionProgress"/>.
         /// </summary>
         public int ascensionUnlocked;
+        /// <summary>이 슬롯의 최고 런 점수(META-04, 사용자 결정 2026-11-20). 예전 저장에는 없어 0으로 읽힌다.</summary>
+        public int bestRunScore;
 
         public bool IsUnlocked(IUnlockable unlockable)
         {

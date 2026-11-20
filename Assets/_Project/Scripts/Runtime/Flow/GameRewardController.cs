@@ -70,8 +70,25 @@ namespace ProjectNeo.Flow
             RunEndUnlockPoints = state != null ? state.Ascension.ScaleReward(basePoints) : basePoints;
             RunEndMultiplier = state != null ? state.Ascension.RewardMultiplier : 1f;
             GameSession.Meta.unlockPoints += RunEndUnlockPoints;
+            SettleScore(state);
             GameSession.SaveMeta();
             return true;
+        }
+
+        /// <summary>이 런의 점수(META-04). 런이 끝나기 전이거나 런 데이터가 없으면 null.</summary>
+        public RunScore LastScore { get; private set; }
+        /// <summary>이번 런 점수가 슬롯의 최고 점수를 넘었는지.</summary>
+        public bool IsNewBest { get; private set; }
+
+        // 런 점수를 한 번 계산하고, 슬롯 최고 점수보다 높으면 바꾼다(저장은 부르는 쪽이 한다).
+        void SettleScore(RunState state)
+        {
+            if (state == null || table == null) return;
+            LastScore = RunScore.Calculate(table, state.ScoreTally, state.LivingHeroCount, state.LivingGruntCount,
+                state.Wallet.Gold, flow.Phase == GamePhase.Ending, state.Ascension.RewardMultiplier);
+            MetaProgress meta = GameSession.Meta;
+            IsNewBest = LastScore.Total > meta.bestRunScore;
+            if (IsNewBest) meta.bestRunScore = LastScore.Total;
         }
 
         /// <summary>런 종료 해금 포인트에 곱한 승천 배율(FLOW-03). 기본 게임이면 1.</summary>
@@ -82,7 +99,11 @@ namespace ProjectNeo.Flow
         {
             if (RunEndUnlockPoints < 0) return string.Empty;
             string multiplier = RunEndMultiplier > 1f ? $" (Ascension x{RunEndMultiplier:0.0#})" : string.Empty;
-            return $"Stages cleared {RunEndStagesCleared}\nUnlock points +{RunEndUnlockPoints}{multiplier} (total {GameSession.Meta.unlockPoints})";
+            string text = $"Stages cleared {RunEndStagesCleared}\nUnlock points +{RunEndUnlockPoints}{multiplier} (total {GameSession.Meta.unlockPoints})";
+            if (LastScore != null)
+                text += $"\nRun score {RunScore.Number(LastScore.Total)}" + (IsNewBest ? " - New best!" : $" (best {RunScore.Number(GameSession.Meta.bestRunScore)})")
+                    + $"\n{LastScore.Breakdown()}";
+            return text;
         }
 
         /// <summary>지급할 보상이 있으면 한 번 지급하고 true. 이미 받았거나 연결·표가 없으면 false.</summary>

@@ -38,3 +38,11 @@ MonoBehaviour:
   commanderXpPerStage: 10
   unlockPointsPerStageCleared: 1
   unlockPointsPerBossKilled: 1
+  scorePerStageCleared: 1000
+  scorePerBossKilled: 500
+  scorePerEnemyKilled: 10
+  scorePerGateIntactVictory: 200
+  scorePerLivingHero: 100
+  scorePerLivingGrunt: 10
+  goldPerScorePoint: 10
+  scoreForEnding: 5000

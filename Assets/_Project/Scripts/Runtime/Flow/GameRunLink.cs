@@ -337,12 +337,14 @@ namespace ProjectNeo.Flow
         /// <paramref name="isFled"/>는 사기로 도망친 아군을, <paramref name="retreats"/>는 퇴각한 적 종류별 수를 적는다(B-8.2).
         /// </summary>
         public bool TryFinish(BattleOutcome outcome, BattleEndReason reason, IReadOnlyDictionary<string, int> kills,
-            System.Func<CharacterActor, bool> isFled = null, IReadOnlyDictionary<string, int> retreats = null)
+            System.Func<CharacterActor, bool> isFled = null, IReadOnlyDictionary<string, int> retreats = null, bool gateIntact = true)
         {
             if (binding == null || input == null) return false;
             BattleResult result = binding.CreateResult(input.BattleNumber, outcome, reason,
                 actor => actor == null || actor.Health == null || actor.Health.IsDead, CaptureCastle(), kills,
                 isFled, retreats);
+            // 런 점수의 성문 유지 점수(META-04)에 쓴다.
+            result.GateIntact = gateIntact;
             input = null;
             if (flow.FinishBattle(result)) return true;
             Debug.LogWarning("런 데이터가 전투 결과를 받지 않았다: " + binding.State.CheckResult(result));
