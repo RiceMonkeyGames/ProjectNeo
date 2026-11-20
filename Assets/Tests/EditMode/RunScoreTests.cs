@@ -41,7 +41,7 @@ namespace ProjectNeo.Tests
                 reachedEnding: false, multiplier: 1f);
 
             Assert.AreEqual(3000 + 500 + 250 + 400 + 200 + 70 + 13, score.Total);
-            Assert.AreEqual("Stages 3,000 + Bosses 500 + Enemies 250 + Gate held 400 + Heroes 200 + Grunts 70 + Gold 13", score.Breakdown());
+            Assert.AreEqual("스테이지 3,000 + 보스 500 + 적 250 + 성문 사수 400 + 영웅 200 + 잡졸 70 + 골드 13", score.Breakdown());
         }
 
         [Test]
@@ -51,7 +51,7 @@ namespace ProjectNeo.Tests
 
             Assert.AreEqual(7000 + 5000, score.Subtotal);
             Assert.AreEqual(15600, score.Total);
-            StringAssert.EndsWith("Ending 5,000 x1.3", score.Breakdown());
+            StringAssert.EndsWith("엔딩 5,000 x1.3", score.Breakdown());
         }
 
         [Test]
@@ -59,7 +59,7 @@ namespace ProjectNeo.Tests
         {
             RunScore score = RunScore.Calculate(table, new RunScoreTally(), 0, 0, 9, false, 1f);
             Assert.AreEqual(0, score.Total, "골드 9는 10골드당 1점에 못 미친다");
-            Assert.AreEqual("No points", score.Breakdown());
+            Assert.AreEqual("점수 없음", score.Breakdown());
         }
 
         [Test]

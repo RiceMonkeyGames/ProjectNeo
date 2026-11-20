@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: perk_units_shield_wall
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Meta.PerkDefinition
   id: perk_units_shield_wall
-  displayName: Shield Wall
+  displayName: "\uBC29\uD328\uBCBD"
   category: 2
   pointCost: 1
   unlockedByDefault: 1

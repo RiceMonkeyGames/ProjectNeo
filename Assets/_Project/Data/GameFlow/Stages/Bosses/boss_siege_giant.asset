@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: boss_siege_giant
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Stages.BossDefinition
   id: boss_siege_giant
-  displayName: Siege Giant
+  displayName: "\uACF5\uC131 \uAC70\uC778"
   role: 0
   basePrefab: {fileID: 3276109497482159700, guid: def97a7de831ff349a9a555089d5b0ef, type: 3}
   visualScale: 1.9

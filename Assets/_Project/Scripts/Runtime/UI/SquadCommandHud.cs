@@ -35,8 +35,8 @@ namespace ProjectNeo.UI
             if (settings == null) return "";
             string first = settings.SelectSquad.Length > 0 ? settings.SelectSquad[0].GetBindingDisplayString() : "";
             string last = settings.SelectSquad.Length > 0 ? settings.SelectSquad[settings.SelectSquad.Length - 1].GetBindingDisplayString() : "";
-            return $"{first}~{last}·{settings.SelectAll.GetBindingDisplayString()} select squads - {settings.Move.GetBindingDisplayString()} move - "
-                + $"{settings.Attack.GetBindingDisplayString()} attack - {settings.Hold.GetBindingDisplayString()} hold";
+            return $"{first}~{last}·{settings.SelectAll.GetBindingDisplayString()} 부대 선택 - {settings.Move.GetBindingDisplayString()} 이동 - "
+                + $"{settings.Attack.GetBindingDisplayString()} 공격 - {settings.Hold.GetBindingDisplayString()} 정지";
         }
 
         public void Configure(SquadCommandCenter commandCenter, SquadCommandInput commandInput,
@@ -50,16 +50,16 @@ namespace ProjectNeo.UI
         {
             switch (kind)
             {
-                case SquadOrderKind.Move: return "Move";
-                case SquadOrderKind.Attack: return "Attack";
-                default: return "Hold";
+                case SquadOrderKind.Move: return "이동";
+                case SquadOrderKind.Attack: return "공격";
+                default: return "정지";
             }
         }
 
         /// <summary>"1번 부대 · 근접"처럼 번호와 종류를 붙인 이름. 종류는 부대원의 공격 방식에서 읽는다.</summary>
         public static string SquadName(SquadCommandCenter center, int squad)
         {
-            string name = "Squad " + (squad + 1);
+            string name = "부대 " + (squad + 1);
             if (center == null || squad < 0 || squad >= center.Squads.Count) return name;
             bool melee = false, ranged = false;
             foreach (ProjectNeo.Combat.UnitCombatAI member in center.Squads[squad].Members)
@@ -68,8 +68,8 @@ namespace ProjectNeo.UI
                 if (member.Actor.Profile.AttackKind == ProjectNeo.Combat.AttackKind.Projectile) ranged = true;
                 else melee = true;
             }
-            if (melee && ranged) return name + " - Mixed";
-            return melee ? name + " - Melee" : ranged ? name + " - Archers" : name;
+            if (melee && ranged) return name + " - 혼성";
+            return melee ? name + " - 근접" : ranged ? name + " - 궁수" : name;
         }
 
         void Start()
@@ -86,10 +86,10 @@ namespace ProjectNeo.UI
             {
                 builder.Append(center.Commander.IsSelected(i) ? "> " : "    ");
                 builder.Append(SquadName(center, i)).Append("  ").Append(OrderName(center.Commander.OrderOf(i).Kind));
-                builder.Append("  ").Append(center.AliveCount(i)).Append(" units");
+                builder.Append("  ").Append(center.AliveCount(i)).Append("명");
                 SquadMorale value = morale != null ? morale.MoraleOf(i) : null;
                 if (value != null)
-                    builder.Append("  Morale ").Append(Mathf.RoundToInt(value.Value)).Append(" · ").Append(morale.StateOf(i));
+                    builder.Append("  사기 ").Append(Mathf.RoundToInt(value.Value)).Append(" · ").Append(morale.StateOf(i));
                 builder.Append('\n');
             }
             builder.Append(input.Message);

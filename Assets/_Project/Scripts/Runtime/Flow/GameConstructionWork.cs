@@ -301,7 +301,7 @@ namespace ProjectNeo.Flow
         {
             int pending = queue.PendingCount;
             if (!IsActive || pending == 0) return string.Empty;
-            return $"Work orders {pending} · {queue.Crews} crews · {queue.HoursToFinishAll():0.#}h to finish";
+            return $"작업 주문 {pending}개 · 작업반 {queue.Crews}개 · 완료까지 {queue.HoursToFinishAll():0.#}시간";
         }
 
         void ShowView(Component target, float progress)

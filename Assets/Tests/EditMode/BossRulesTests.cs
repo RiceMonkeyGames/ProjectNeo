@@ -184,7 +184,7 @@ namespace ProjectNeo.Tests
         public void EnemyIntel_ShowsBossEvenInHiddenWave()
         {
             EnemyIntel intel = EnemyIntel.FromPlan(EncounterPlan.FromStage(StageWithBoss(Boss(), hiddenWave: true), Vector2.zero));
-            StringAssert.Contains("Boss: Test Boss × 1", intel.Describe());
+            StringAssert.Contains("보스: Test Boss × 1", intel.Describe());
             StringAssert.Contains("? × 8", intel.Describe());
         }
 

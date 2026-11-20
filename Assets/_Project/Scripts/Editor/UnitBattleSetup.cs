@@ -42,8 +42,8 @@ namespace ProjectNeo.Editor
                 AttackKind.Projectile, projectile), Data + "/Ranged.asset");
             var alliedMelee = Soldier("allied_melee", 100f, 22f, 4f, 1.5f);
             var alliedRanged = Soldier("allied_ranged", 80f, 18f, 2f, 11f);
-            var hostileMelee = Soldier("hostile_melee", 80f, 14f, 2f, 1.5f);
-            var hostileRanged = Soldier("hostile_ranged", 65f, 13f, 1f, 11f);
+            var hostileMelee = Soldier("적 근접병", 80f, 14f, 2f, 1.5f);
+            var hostileRanged = Soldier("적 원거리병", 65f, 13f, 1f, 11f);
 
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             RenderSettings.ambientLight = new Color(0.65f, 0.7f, 0.8f);

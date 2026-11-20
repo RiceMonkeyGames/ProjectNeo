@@ -152,14 +152,14 @@ namespace ProjectNeo.Editor
                 backing.anchoredPosition = rect.anchoredPosition + new Vector2((rect.pivot.x - 0.5f) * 16f, (rect.pivot.y - 0.5f) * 16f);
                 EditorUtility.SetDirty(backing);
             }
-            help.text = "F1-F3: select squad - `: select all - 1: move - 2: attack - 3: hold\nWASD: move - Mouse: look - Click: attack - Esc: release cursor";
+            help.text = "F1-F3: 부대 선택 - `: 전체 선택 - 1: 이동 - 2: 공격 - 3: 정지\nWASD: 이동 - 마우스: 시점 - 클릭: 공격 - Esc: 커서 해제";
             data.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(squads); EditorUtility.SetDirty(help);
             var buildHud = Find<ConstructionHud>(scene);
             foreach (TMP_Text label in buildHud.GetComponentsInChildren<TMP_Text>(true))
             {
-                if (!label.text.StartsWith("Preparation") && !label.text.StartsWith("Construction view")) continue;
-                label.text = "Construction view\nMiddle mouse: pan - Wheel: zoom\nQ/E: rotate - Home: reset";
+                if (!label.text.StartsWith("Preparation") && !label.text.StartsWith("건설 화면")) continue;
+                label.text = "건설 화면\n가운데 버튼: 이동 - 휠: 확대/축소\nQ/E: 회전 - Home: 초기화";
                 label.rectTransform.anchorMin = new Vector2(0.7f, 1f); label.rectTransform.anchorMax = Vector2.one;
                 label.rectTransform.pivot = Vector2.one; label.rectTransform.anchoredPosition = new Vector2(-16f, -16f);
                 label.rectTransform.sizeDelta = new Vector2(-24f, 100f);
@@ -190,7 +190,7 @@ namespace ProjectNeo.Editor
             var background = statusRoot.GetComponent<UnityEngine.UI.Image>();
             background.color = new Color(0.05f, 0.08f, 0.1f, 0.8f); background.raycastTarget = false;
             status.fontSize = 18f; status.enableAutoSizing = true; status.fontSizeMin = 12f; status.fontSizeMax = 18f;
-            status.alignment = TextAlignmentOptions.TopLeft; status.text = "Battle status";
+            status.alignment = TextAlignmentOptions.TopLeft; status.text = "전투 상황";
             hud.ConfigureBattle(Find<GameBattleController>(scene), status);
             EditorUtility.SetDirty(hud); EditorUtility.SetDirty(status);
         }
@@ -212,7 +212,7 @@ namespace ProjectNeo.Editor
                 label.transform.SetParent(visual, false);
                 label.transform.localPosition = new Vector3(0f, 3.8f, 0f);
                 label.rectTransform.sizeDelta = new Vector2(9f, 2f);
-                label.fontSize = 14f; label.alignment = TextAlignmentOptions.Center; label.text = "Start Battle";
+                label.fontSize = 14f; label.alignment = TextAlignmentOptions.Center; label.text = "전투 시작";
             }
             station.localPosition = new Vector3((gate.x + 3.5f) * world.Grid.CellSize, 0f, (gate.y - 2f) * world.Grid.CellSize);
             var target = station.GetComponent<BattleStartStation>();

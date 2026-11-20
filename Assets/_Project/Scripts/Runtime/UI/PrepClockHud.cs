@@ -49,8 +49,8 @@ namespace ProjectNeo.UI
         /// <summary>시계 한 줄. 예: "Prep time 7h left / 12h". 다 쓰면 끝에 안내를 붙인다.</summary>
         public static string Describe(PrepClock clock)
         {
-            string text = $"Prep time {clock.Remaining:0.#}h left / {clock.Budget:0.#}h";
-            return clock.IsExhausted ? text + " - out of time" : text;
+            string text = $"준비 시간 {clock.Remaining:0.#}시간 남음 / {clock.Budget:0.#}시간";
+            return clock.IsExhausted ? text + " - 시간 없음" : text;
         }
 
         void OnDisable()

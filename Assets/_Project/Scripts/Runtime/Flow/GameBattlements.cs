@@ -86,13 +86,13 @@ namespace ProjectNeo.Flow
             FacilityState defense = state != null ? Defense : null;
             string text;
             bool interactable = false;
-            if (defense == null) text = "Battlements";
-            else if (defense.IsMaxLevel) text = $"Battlements Lv{defense.Level + 1}: {Name(defense.Current.battlementStyle)} (max)";
+            if (defense == null) text = "흉벽";
+            else if (defense.IsMaxLevel) text = $"흉벽 Lv{defense.Level + 1}: {Name(defense.Current.battlementStyle)} (최대)";
             else
             {
                 Cost cost = defense.NextUpgradeCost;
                 BattlementStyle next = defense.Definition.Levels[defense.Level + 1].battlementStyle;
-                text = $"Battlements Lv{defense.Level + 1} > {Name(next)} - {cost.gold}g";
+                text = $"흉벽 Lv{defense.Level + 1} > {Name(next)} - {cost.gold}골드";
                 interactable = InPreparation && state.Wallet.CanAfford(cost);
             }
             if (upgradeLabel != null && upgradeLabel.text != text) upgradeLabel.text = text;

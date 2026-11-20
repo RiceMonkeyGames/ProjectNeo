@@ -1,11 +1,13 @@
 # Editor Setup & Test Scripts
 
-Last Updated: 2026-11-20 17:09:28 (KST)
+Last Updated: 2026-11-20 20:54:00 (KST)
 
 > Purpose: Map of Editor setup menus, build scripts, and EditMode/PlayMode test suites. | Parent: [codemap/README](README.md) | Related: [UnityCLI](../workflow/UnityCLI.md), [Status](../plan/Status.md)
 
 ## Editor Scripts (`Assets/_Project/Scripts/Editor/`)
 
+- `KoreanFontSetup.cs` (`UI-04`): Menu `ProjectNeo/Setup/Korean Font`. Creates `Art/Fonts/NotoSansKR SDF.asset` from `NotoSansKR-Regular.otf`, pre-fills the glyphs in `KoreanCharset.txt` and registers it in the global TMP fallback list. Re-runnable.
+- `KoreanUiMigration.cs` / `KoreanUiMigration.Texts.cs` (`UI-04`): Menu `ProjectNeo/Setup/Migrate UI To Korean`. Rewrites English scene/prefab TMP captions and definition display strings to Korean through Editor APIs from the `Texts` table; `Audit()` lists unmapped English text, `Dump(path)` writes all of it. Use after merging work that adds English captions. `EnglishUiMigration.cs` (UI-02) is obsolete.
 - `EnemyIntelHudSetup.cs` (`C-5`): Menu `ProjectNeo/Setup/Add Enemy Intel HUD (C-5)`. Adds/updates the left `EnemyIntel` panel (just below `SquadCommandHUD/SquadsBacking`, `(16, -176)` at 1280×720) (title + rows, height fits content) and `EnemyIntelHud` on `GameFlowHUD` in `Game.unity`. Re-runnable.
 - `PrepTimeSetup.cs` (`PREP-06`): Menu `ProjectNeo/Setup/Configure Preparation Time (PREP-06)`. Creates `Data/GameFlow/PrepTime.asset` if missing, links it to `RunStart.asset` when empty, and adds/updates the top-center `PrepClock` line and `PrepClockHud` on `GameFlowHUD` in `Game.unity` (keeps the phase box at its original position). Re-runnable.
 - `EquipmentUpgradeSetup.cs`: `ProjectNeo/Setup/Configure Equipment Upgrades` creates the shared settings, binds RunStart and fills only empty item upgrade-material lists from crafting materials × target level; keeps existing data and does not edit the scene. Also called by the facility generator.

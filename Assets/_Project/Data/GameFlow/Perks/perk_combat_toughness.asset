@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: perk_combat_toughness
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Meta.PerkDefinition
   id: perk_combat_toughness
-  displayName: Toughness
+  displayName: "\uAC15\uC778\uD568"
   category: 0
   pointCost: 1
   unlockedByDefault: 1

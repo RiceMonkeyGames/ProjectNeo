@@ -267,13 +267,13 @@ namespace ProjectNeo.Tests
             Assert.IsTrue(op.TryMan(cannon));
 
             Assert.IsFalse(op.FireAt(Ground(cannon, -15f)), "회전 범위 밖은 쏘지 않는다.");
-            StringAssert.Contains("range", op.Message);
+            StringAssert.Contains("사거리", op.Message);
             Assert.IsFalse(op.FireAt(Ground(cannon, 3f)), "최소 사거리 안은 쏘지 않는다.");
             Assert.IsTrue(cannon.Reload.IsReady);
 
             Assert.IsTrue(op.FireAt(enemy.transform.position + Vector3.up));
             Assert.IsFalse(op.FireAt(enemy.transform.position), "재장전 중에는 다시 쏠 수 없다.");
-            StringAssert.Contains("Reloading", op.Message);
+            StringAssert.Contains("재장전", op.Message);
             float expected = DamageRules.Calculate(40f, enemy.Stats.GetValue(StatType.Defense), 1f);
             for (int i = 0; i < 300 && enemy.Health.Current >= enemy.Health.Maximum; i++) yield return null;
             Assert.AreEqual(enemy.Health.Maximum - expected, enemy.Health.Current, 0.01f, "겨눈 곳에 정확히 떨어진다.");

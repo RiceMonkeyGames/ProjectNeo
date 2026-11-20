@@ -26,7 +26,7 @@ namespace ProjectNeo.Tests
             {
                 StageDefinition stage = catalog.StageFor(number);
                 Assert.IsNotNull(stage, "stage " + number);
-                Assert.AreEqual("Stage " + number, stage.DisplayName, "stage " + number + " must sit at row " + number);
+                Assert.AreEqual("스테이지 " + number, stage.DisplayName, "stage " + number + " must sit at row " + number);
             }
             var battle = UnityEditor.AssetDatabase.LoadAssetAtPath<GameBattleSettings>("Assets/_Project/Data/GameFlow/Battle.asset");
             Assert.AreSame(catalog, battle.Stages, "the Game scene battle settings must point at the catalog");

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fbefd8aedbd54164a99ae2d06ddd7fac, type: 3}
   m_Name: Stage02
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Stages.StageDefinition
-  displayName: Stage 2
+  displayName: "\uC2A4\uD14C\uC774\uC9C0 2"
   waves:
   - startSeconds: 0
     groups:

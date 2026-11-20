@@ -106,11 +106,11 @@ namespace ProjectNeo.Tests
             Physics.SyncTransforms();
             yield return null; yield return null;
             Assert.AreSame(cannon, op.Nearby);
-            StringAssert.Contains("cannon", hud.CannonHint().ToLowerInvariant());
+            StringAssert.Contains("대포", hud.CannonHint());
 
             Assert.IsTrue(op.TryMan(cannon));
             yield return null;
-            StringAssert.Contains("Click", hud.CannonHint());
+            StringAssert.Contains("클릭", hud.CannonHint());
 
             // 조준선에 발사 가능·재장전 상태가 보인다(SIEGE-07).
             yield return null;
@@ -136,7 +136,7 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(CannonAimState.Reloading, op.AimState);
             Assert.Less(reticle.BarFill, 0.5f, "쏜 직후에는 막대가 비어 있다가 찬다.");
             Assert.AreEqual(op.Settings.ReloadingColor, reticle.ReticleColor);
-            StringAssert.Contains("Reloading", reticle.LabelText);
+            StringAssert.Contains("재장전", reticle.LabelText);
 
             op.Leave();
             yield return null;

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: perk_combat_sharpened_blade
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Meta.PerkDefinition
   id: perk_combat_sharpened_blade
-  displayName: Sharpened Blade
+  displayName: "\uBCBC\uB9B0 \uCE7C\uB0A0"
   category: 0
   pointCost: 1
   unlockedByDefault: 1

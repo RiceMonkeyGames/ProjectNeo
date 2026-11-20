@@ -59,9 +59,9 @@ namespace ProjectNeo.Tests
 
             Assert.IsTrue(unlocks.IsOpen);
             Assert.AreEqual(1, GameSession.ActiveSlot);
-            Assert.AreEqual("Unlock points: 4", unlocks.PointsText);
+            Assert.AreEqual("해금 포인트: 4", unlocks.PointsText);
             Assert.AreEqual(19, unlocks.RowCount, "트랙 4개의 항목이 모두 보인다");
-            Assert.AreEqual("Paladin - 3 (needs Knight)", unlocks.RowText("hero_paladin"));
+            Assert.AreEqual("성기사 - 3 (필요: 기사)", unlocks.RowText("hero_paladin"));
 
             Assert.AreEqual(UnlockClickResult.Armed, unlocks.Click("hero_knight"));
             Assert.AreEqual(4, store.Load(1).Progress.unlockPoints, "확인 전에는 저장이 그대로다");
@@ -70,12 +70,12 @@ namespace ProjectNeo.Tests
             MetaProgress saved = store.Load(1).Progress;
             Assert.AreEqual(2, saved.unlockPoints);
             CollectionAssert.Contains(saved.openedEntryIds, "hero_knight");
-            Assert.AreEqual("Knight - Opened", unlocks.RowText("hero_knight"));
-            Assert.AreEqual("Unlock points: 2", unlocks.PointsText);
+            Assert.AreEqual("기사 - 해금됨", unlocks.RowText("hero_knight"));
+            Assert.AreEqual("해금 포인트: 2", unlocks.PointsText);
 
             unlocks.Close();
             Assert.IsFalse(unlocks.IsOpen);
-            StringAssert.Contains("Unlock points 2", title.SlotText(1), "닫으면 슬롯 글이 새 포인트를 보여 준다");
+            StringAssert.Contains("해금 포인트 2", title.SlotText(1), "닫으면 슬롯 글이 새 포인트를 보여 준다");
         }
 
         [UnityTest]
@@ -88,9 +88,9 @@ namespace ProjectNeo.Tests
             button.onClick.Invoke();
 
             Assert.IsTrue(title.Unlocks.IsOpen);
-            Assert.AreEqual("Unlock points: 0", title.Unlocks.PointsText);
+            Assert.AreEqual("해금 포인트: 0", title.Unlocks.PointsText);
             Assert.AreEqual(UnlockClickResult.Refused, title.Unlocks.Click("bonus_gold_50"));
-            StringAssert.StartsWith("Not enough unlock points", title.Unlocks.StatusText);
+            StringAssert.StartsWith("해금 포인트가 부족", title.Unlocks.StatusText);
         }
     }
 }

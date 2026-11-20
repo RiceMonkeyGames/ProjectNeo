@@ -24,20 +24,20 @@ namespace ProjectNeo.Editor
         {
             CombatPrototypeSetup.EnsureFolder(Folder);
 
-            UnlockTrackDefinition heroes = SaveOver(UnlockTrackDefinition.CreateStraight(UnlockTrackCategory.Heroes, "Heroes",
+            UnlockTrackDefinition heroes = SaveOver(UnlockTrackDefinition.CreateStraight(UnlockTrackCategory.Heroes, "영웅",
                 HeroEntry("hero_swordsman", 0, true),
                 HeroEntry("hero_archer", 0, true),
                 HeroEntry("hero_knight", 2, false),
                 HeroEntry("hero_paladin", 3, false)), Folder + "/Track_Heroes.asset");
 
-            UnlockTrackDefinition recipes = SaveOver(UnlockTrackDefinition.CreateStraight(UnlockTrackCategory.EquipmentRecipes, "Equipment recipes",
+            UnlockTrackDefinition recipes = SaveOver(UnlockTrackDefinition.CreateStraight(UnlockTrackCategory.EquipmentRecipes, "장비 제작법",
                 ItemEntry("recipe_", UnlockPayloadKind.EquipmentRecipe, "item_wood_shield", 0, true),
                 ItemEntry("recipe_", UnlockPayloadKind.EquipmentRecipe, "item_iron_sword", 0, true),
                 ItemEntry("recipe_", UnlockPayloadKind.EquipmentRecipe, "item_leather_armor", 0, true),
                 ItemEntry("recipe_", UnlockPayloadKind.EquipmentRecipe, "item_chain_armor", 1, false),
                 ItemEntry("recipe_", UnlockPayloadKind.EquipmentRecipe, "item_steel_sword", 2, false)), Folder + "/Track_EquipmentRecipes.asset");
 
-            UnlockTrackDefinition shop = SaveOver(UnlockTrackDefinition.CreateStraight(UnlockTrackCategory.ShopItems, "Shop items",
+            UnlockTrackDefinition shop = SaveOver(UnlockTrackDefinition.CreateStraight(UnlockTrackCategory.ShopItems, "상점 물품",
                 ItemEntry("shop_", UnlockPayloadKind.ShopItem, "item_potion", 0, true),
                 ItemEntry("shop_", UnlockPayloadKind.ShopItem, "item_wood_shield", 0, true),
                 ItemEntry("shop_", UnlockPayloadKind.ShopItem, "item_iron_sword", 0, true),
@@ -45,11 +45,11 @@ namespace ProjectNeo.Editor
                 ItemEntry("shop_", UnlockPayloadKind.ShopItem, "item_chain_armor", 1, false),
                 ItemEntry("shop_", UnlockPayloadKind.ShopItem, "item_steel_sword", 2, false)), Folder + "/Track_ShopItems.asset");
 
-            UnlockTrackDefinition bonuses = SaveOver(UnlockTrackDefinition.CreateStraight(UnlockTrackCategory.StartingBonuses, "Starting bonuses",
-                UnlockEntry.Create("bonus_gold_50", 1, UnlockPayload.StartingGold(50), displayName: "Starting gold +50"),
-                UnlockEntry.Create("bonus_potions_2", 2, UnlockPayload.StartingItem("item_potion", 2), displayName: "Starting potions x2"),
-                UnlockEntry.Create("bonus_grunts_2", 3, UnlockPayload.StartingGrunts(2), displayName: "Starting grunts +2"),
-                UnlockEntry.Create("bonus_gold_100", 5, UnlockPayload.StartingGold(100), displayName: "Starting gold +100")), Folder + "/Track_StartingBonuses.asset");
+            UnlockTrackDefinition bonuses = SaveOver(UnlockTrackDefinition.CreateStraight(UnlockTrackCategory.StartingBonuses, "시작 보너스",
+                UnlockEntry.Create("bonus_gold_50", 1, UnlockPayload.StartingGold(50), displayName: "시작 골드 +50"),
+                UnlockEntry.Create("bonus_potions_2", 2, UnlockPayload.StartingItem("item_potion", 2), displayName: "시작 회복약 x2"),
+                UnlockEntry.Create("bonus_grunts_2", 3, UnlockPayload.StartingGrunts(2), displayName: "시작 잡졸 +2"),
+                UnlockEntry.Create("bonus_gold_100", 5, UnlockPayload.StartingGold(100), displayName: "시작 골드 +100")), Folder + "/Track_StartingBonuses.asset");
 
             UnlockCatalog catalog = SaveOver(UnlockCatalog.Create(heroes, recipes, shop, bonuses), CatalogPath);
             foreach (string problem in catalog.Validate()) Debug.LogError("Unlock catalog: " + problem, catalog);

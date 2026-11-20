@@ -121,13 +121,13 @@ namespace ProjectNeo.UI
             if (fighting)
             {
                 if (battleStatus == null) return;
-                battleStatus.text = $"Enemies {battle.EnemiesAlive} - Allies {battle.AlliesAlive}\nGate: " + (battle.GateDestroyed ? "Destroyed" : "Intact");
-                if (battle.IsRetreating) battleStatus.text += " - Retreating";
+                battleStatus.text = $"적 {battle.EnemiesAlive} - 아군 {battle.AlliesAlive}\n성문: " + (battle.GateDestroyed ? "파괴됨" : "온전함");
+                if (battle.IsRetreating) battleStatus.text += " - 후퇴 중";
                 // 웨이브가 여럿인 전투에서만 진행 상황을 보여 준다(B-7.1).
                 if (battle.WaveCount > 1)
                 {
                     float next = battle.SecondsUntilNextWave;
-                    battleStatus.text += $"\nWave {battle.WavesReleased}/{battle.WaveCount}" + (next >= 0f ? $" - next {Mathf.CeilToInt(next)}s" : " - final");
+                    battleStatus.text += $"\n웨이브 {battle.WavesReleased}/{battle.WaveCount}" + (next >= 0f ? $" - 다음 {Mathf.CeilToInt(next)}초" : " - 마지막");
                 }
                 foreach (var actor in ProjectNeo.Combat.CharacterActor.ActiveActors)
                 {
@@ -136,13 +136,13 @@ namespace ProjectNeo.UI
                     if (traveller != null)
                     {
                         if (traveller.PlayerHint.Length > 0) battleStatus.text += "\n" + traveller.PlayerHint;
-                        if (traveller.HasInterruptNotice) battleStatus.text += "\n" + "Ladder push interrupted by hit!";
+                        if (traveller.HasInterruptNotice) battleStatus.text += "\n" + "공격을 받아 사다리 밀기가 끊겼습니다!";
                     }
                     break;
                 }
                 foreach (var ladder in battle.Ladders)
                     if (ladder.PlayerCanPush)
-                    { battleStatus.text += $"\n{battle.Settings.Siege.PushLadder.GetBindingDisplayString()} · Push ladder {Mathf.RoundToInt(ladder.State.PushProgress * 100f)}%"; break; }
+                    { battleStatus.text += $"\n{battle.Settings.Siege.PushLadder.GetBindingDisplayString()} · 사다리 밀기 {Mathf.RoundToInt(ladder.State.PushProgress * 100f)}%"; break; }
                 string consumable = battle.Consumables != null ? battle.Consumables.Hint() : string.Empty;
                 if (consumable.Length > 0) battleStatus.text += "\n" + consumable;
                 string cannon = CannonHint();
@@ -160,24 +160,24 @@ namespace ProjectNeo.UI
             // 탐색 안내는 부대 키 줄과 성문 알림까지 담는다(PREP-05).
             prompt.sizeDelta = new Vector2(-32f, phaseView.IsExplorationView || phaseView.IsPlacementView ? 96f : 64f);
             interactionHint.text = phaseView.IsBuildView
-                ? $"Construction - {interaction.CloseKey} to return"
+                ? $"건설 - {interaction.CloseKey} 돌아가기"
                 : phaseView.IsPlacementView ? PlacementHint()
                 : phaseView.IsPanelView
-                ? $"{interaction.CloseKey} to close"
+                ? $"{interaction.CloseKey} 닫기"
                 : interaction.Target != null
                     ? $"{interaction.InteractKey} · {interaction.Target.Prompt}"
-                    : $"WASD move - {interaction.InteractKey} interact - {interaction.EquipmentKey} gear - {interaction.OrganizationKey} squads - {interaction.EnemyPreviewKey} enemies"
-                        + (battle != null && battle.PerkWindow != null ? $" - {battle.PerkWindow.KeyText} perks" : string.Empty);
+                    : $"WASD 이동 - {interaction.InteractKey} 상호작용 - {interaction.EquipmentKey} 장비 - {interaction.OrganizationKey} 부대 - {interaction.EnemyPreviewKey} 적 정보"
+                        + (battle != null && battle.PerkWindow != null ? $" - {battle.PerkWindow.KeyText} 특성" : string.Empty);
             if (phaseView.IsExplorationView && battle != null)
             {
                 string startHint = interaction.CanStartBattle
-                    ? $"Hold {interaction.BattleStartKey} - Start battle"
-                    : "Preparing battlefield";
+                    ? $"{interaction.BattleStartKey} 길게 누르기 - 전투 시작"
+                    : "전장 준비 중";
                 if (interaction.BattleStartProgress > 0f) startHint += $" · {Mathf.FloorToInt(interaction.BattleStartProgress * 100f)}%";
                 // 준비 시간(PREP-06): 기다릴 시간이 남아 있으면 같은 줄에 기다리기 키를 붙인다.
                 if (interaction.CanWait)
                 {
-                    startHint += $" - Hold {interaction.WaitKey} - Wait {battle.RunLink.State.PrepTime.WaitHours:0.#}h";
+                    startHint += $" - {interaction.WaitKey} 길게 누르기 - {battle.RunLink.State.PrepTime.WaitHours:0.#}시간 기다리기";
                     if (interaction.WaitProgress > 0f) startHint += $" · {Mathf.FloorToInt(interaction.WaitProgress * 100f)}%";
                 }
                 interactionHint.text += "\n" + startHint;
@@ -198,7 +198,7 @@ namespace ProjectNeo.UI
             if (prep == null || prep.Center == null) return "";
             string keys = SquadCommandHud.KeyLine(prep.Center.Settings);
             string open = interaction.PlacementKey;
-            return $"{keys} - {open} squad placement view";
+            return $"{keys} - {open} 부대 배치 화면";
         }
 
         /// <summary>부대 배치 화면 안내(PREP-05). 조작과 고른 부대, 마지막 알림을 보여준다.</summary>
@@ -206,9 +206,9 @@ namespace ProjectNeo.UI
         {
             GamePrepPlacement prep = phaseView.PrepPlacement;
             string back = $"{interaction.PlacementKey}·{interaction.CloseKey}";
-            string text = $"Squad placement - F1-F4/` or click a unit to select - left click to move - right click to clear - {back} to return";
+            string text = $"부대 배치 - F1-F4/` 또는 유닛 클릭으로 선택 - 좌클릭 이동 - 우클릭 선택 해제 - {back} 돌아가기";
             if (prep == null) return text;
-            text += "\n" + "Selected: " + prep.SelectionText();
+            text += "\n" + "선택: " + prep.SelectionText();
             if (prep.Message.Length > 0) text += " · " + prep.Message;
             return text;
         }
@@ -221,14 +221,14 @@ namespace ProjectNeo.UI
             if (manned != null)
             {
                 string reload = manned.Reload.IsReady
-                    ? "Loaded"
-                    : $"Reloading {Mathf.FloorToInt(manned.Reload.Progress * 100f)}%";
-                string text = $"Cannon - Click fire - {cannonOperator.InteractKey}/Esc leave - {reload}";
+                    ? "장전됨"
+                    : $"재장전 {Mathf.FloorToInt(manned.Reload.Progress * 100f)}%";
+                string text = $"대포 - 클릭 발사 - {cannonOperator.InteractKey}/Esc 내리기 - {reload}";
                 if (!string.IsNullOrEmpty(cannonOperator.Message)) text += "\n" + cannonOperator.Message;
                 return text;
             }
             return cannonOperator.Nearby != null
-                ? $"{cannonOperator.InteractKey} - Man cannon"
+                ? $"{cannonOperator.InteractKey} - 대포 잡기"
                 : string.Empty;
         }
 
@@ -245,18 +245,18 @@ namespace ProjectNeo.UI
             int stage = flow.Run != null ? flow.Run.StageNumber : 0;
             // 승천 단계가 있으면 제목 뒤에 붙인다(FLOW-03).
             int ascension = flow.Run != null ? flow.Run.AscensionLevel : 0;
-            string ascensionLabel = ascension > 0 ? $" - Ascension {ascension}" : string.Empty;
+            string ascensionLabel = ascension > 0 ? $" - 승천 {ascension}" : string.Empty;
 
             // 런 데이터가 붙어 있으면 준비 중 보유 골드를 함께 보여준다.
             int? gold = flow.Run != null && flow.Run.State != null ? flow.Run.State.Wallet.Gold : (int?)null;
-            string goldLabel = gold.HasValue ? $" - Gold {gold}" : string.Empty;
+            string goldLabel = gold.HasValue ? $" - 골드 {gold}" : string.Empty;
             phaseLabel.text = phase switch
             {
-                GamePhase.Preparation => ($"Preparation - Stage {stage}") + ascensionLabel + goldLabel,
-                GamePhase.Battle => $"Battle - Stage {stage}" + ascensionLabel,
-                GamePhase.Reward => $"Victory - Reward (Stage {stage})" + ascensionLabel,
-                GamePhase.RunResult => $"Defeat - Run result (Stage {stage})" + ascensionLabel,
-                GamePhase.Ending => "Run complete - All stages cleared" + ascensionLabel,
+                GamePhase.Preparation => ($"준비 - 스테이지 {stage}") + ascensionLabel + goldLabel,
+                GamePhase.Battle => $"전투 - 스테이지 {stage}" + ascensionLabel,
+                GamePhase.Reward => $"승리 - 보상 (스테이지 {stage})" + ascensionLabel,
+                GamePhase.RunResult => $"패배 - 런 결과 (스테이지 {stage})" + ascensionLabel,
+                GamePhase.Ending => "런 완료 - 모든 스테이지 클리어" + ascensionLabel,
                 _ => string.Empty,
             };
         }
@@ -265,11 +265,11 @@ namespace ProjectNeo.UI
         public string EndingText()
         {
             int level = flow.Run != null ? flow.Run.AscensionLevel : 0;
-            string cleared = level > 0 ? $"Ascension {level} cleared." : "Base game cleared.";
+            string cleared = level > 0 ? $"승천 {level} 클리어." : "기본 게임 클리어.";
             int unlocked = battle != null ? battle.AscensionUnlockedAtEnding : 0;
-            if (unlocked > 0) return cleared + $"\nAscension {unlocked} unlocked! Pick it with New Game on the title screen.";
+            if (unlocked > 0) return cleared + $"\n승천 {unlocked} 해금! 타이틀 화면의 새 게임에서 고를 수 있습니다.";
             return cleared + (battle != null && battle.AscensionTable != null && level >= battle.AscensionTable.MaxLevel
-                ? "\nThis is the highest Ascension."
+                ? "\n가장 높은 승천입니다."
                 : string.Empty);
         }
     }

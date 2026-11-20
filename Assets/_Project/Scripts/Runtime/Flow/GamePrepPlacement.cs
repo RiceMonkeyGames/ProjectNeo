@@ -18,7 +18,7 @@ namespace ProjectNeo.Flow
     /// </summary>
     public sealed class GamePrepPlacement : MonoBehaviour
     {
-        public const string OutsideMessage = "Cannot place squads outside the castle.";
+        public const string OutsideMessage = "성 밖에는 부대를 배치할 수 없습니다.";
 
         GamePhaseView phaseView;
         SquadCommandInput commandInput;
@@ -197,7 +197,7 @@ namespace ProjectNeo.Flow
             if (selectAll.WasPressedThisFrame()) { center.Commander.SelectAll(); Message = ""; }
             if (Mouse.current == null || topDownCamera == null) return;
             Vector2 pointer = Mouse.current.position.ReadValue();
-            if (Mouse.current.rightButton.wasPressedThisFrame) { center.Commander.ClearSelection(); Message = "Selection cleared."; }
+            if (Mouse.current.rightButton.wasPressedThisFrame) { center.Commander.ClearSelection(); Message = "선택을 해제했습니다."; }
             else if (Mouse.current.leftButton.wasPressedThisFrame && !OverUI(pointer))
                 ClickAt(topDownCamera.ScreenPointToRay(pointer));
         }
@@ -205,18 +205,18 @@ namespace ProjectNeo.Flow
         public bool SelectSquadForPlacement(int squad)
         {
             bool selected = center.Commander.Select(squad);
-            Message = selected ? "" : $"Squad {squad + 1} does not exist.";
+            Message = selected ? "" : $"{squad + 1}부대가 없습니다.";
             return selected;
         }
 
         /// <summary>선택한 부대 번호를 "1번, 3번"처럼 적는다. 없으면 "없음".</summary>
         public string SelectionText()
         {
-            if (center == null) return "None";
+            if (center == null) return "없음";
             var builder = new System.Text.StringBuilder();
             for (int i = 0; i < center.Commander.SquadCount; i++)
                 if (center.Commander.IsSelected(i)) builder.Append(builder.Length == 0 ? "" : ", ").Append(i + 1);
-            return builder.Length == 0 ? "None" : builder.ToString();
+            return builder.Length == 0 ? "없음" : builder.ToString();
         }
 
         /// <summary>
@@ -235,21 +235,21 @@ namespace ProjectNeo.Flow
                 if (rayHits[i].distance >= nearest || rayHits[i].collider.gameObject.scene != gameObject.scene) continue;
                 nearest = rayHits[i].distance; first = rayHits[i];
             }
-            if (!first.HasValue) { Message = "Cannot move there."; return false; }
+            if (!first.HasValue) { Message = "그곳으로 이동할 수 없습니다."; return false; }
             RaycastHit hit = first.Value;
             var unit = hit.collider.GetComponentInParent<UnitCombatAI>();
             if (unit != null)
             {
                 int squad = SquadOf(unit);
-                if (squad < 0) { Message = "This ally does not belong to a squad."; return false; }
+                if (squad < 0) { Message = "이 아군은 부대에 속해 있지 않습니다."; return false; }
                 return SelectSquadForPlacement(squad);
             }
-            if (hit.collider.GetComponentInParent<CharacterActor>() != null) { Message = "This ally does not belong to a squad."; return false; }
-            if (center.Commander.SelectedCount == 0) { Message = "Select a squad first."; return false; }
+            if (hit.collider.GetComponentInParent<CharacterActor>() != null) { Message = "이 아군은 부대에 속해 있지 않습니다."; return false; }
+            if (center.Commander.SelectedCount == 0) { Message = "먼저 부대를 선택하세요."; return false; }
             if (hit.normal.y < settings.MinimumSurfaceUp
                 || !NavMesh.SamplePosition(hit.point, out NavMeshHit navigation, settings.NavigationSnapDistance, NavMesh.AllAreas)
                 || Mathf.Abs(navigation.position.y - hit.point.y) > settings.VerticalSnapTolerance)
-            { Message = "Cannot move there."; return false; }
+            { Message = "그곳으로 이동할 수 없습니다."; return false; }
             string rejected = CheckDestination(navigation.position);
             if (rejected != null) { Message = rejected; return false; }
             float facing = topDownCamera != null ? topDownCamera.transform.eulerAngles.y : 0f;

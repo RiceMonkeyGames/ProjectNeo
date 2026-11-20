@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 17119106421786a4397e5680614831e5, type: 3}
   m_Name: SpawnLeft
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Stages.SpawnPointDefinition
-  displayName: Left
+  displayName: "\uC67C\uCABD"
   cell: {x: 25, y: 90}

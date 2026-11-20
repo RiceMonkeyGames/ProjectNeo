@@ -24,8 +24,8 @@ namespace ProjectNeo.Editor
         {
             var melee = Load<SoldierDefinition>(MeleePath);
             var ranged = Load<SoldierDefinition>(RangedPath);
-            SetSoldier(melee, "Melee soldier", 15);
-            SetSoldier(ranged, "Ranged soldier", 20);
+            SetSoldier(melee, "근접 잡졸", 15);
+            SetSoldier(ranged, "원거리 잡졸", 20);
 
             var facility = Load<FacilityDefinition>(FacilityPath);
             var data = new SerializedObject(facility);

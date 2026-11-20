@@ -27,8 +27,8 @@ namespace ProjectNeo.Run
 
         PerkLoadout Perks => State.Perks;
 
-        public string PointsText => Perks == null ? "Perk points: -"
-            : $"Perk points: {Perks.AvailablePoints} left (spent {Perks.SpentPoints})";
+        public string PointsText => Perks == null ? "특성 포인트: -"
+            : $"특성 포인트: {Perks.AvailablePoints} 남음 (사용 {Perks.SpentPoints})";
 
         public bool IsAllocated(PerkDefinition perk) => Perks != null && perk != null && ContainsAllocated(perk);
         public bool CanAllocate(PerkDefinition perk) => State.CheckPerk(perk) == PerkAllocateCheck.Ok;
@@ -58,10 +58,10 @@ namespace ProjectNeo.Run
             ArmedPerk = null;
             if (!State.TryAllocatePerk(perk))
             {
-                Notice = "Could not take this perk.";
+                Notice = "이 특성을 얻지 못했습니다.";
                 return UnlockClickResult.Refused;
             }
-            Notice = $"Took {perk.DisplayName}.";
+            Notice = $"{perk.DisplayName} 획득.";
             return UnlockClickResult.Opened;
         }
 
@@ -72,22 +72,22 @@ namespace ProjectNeo.Run
         {
             if (perk == null) return string.Empty;
             string head = $"{perk.DisplayName}\n<size=80%>{Describe(perk)}</size>";
-            if (IsAllocated(perk)) return head + "\n<size=80%>Taken</size>";
-            if (perk == ArmedPerk) return head + $"\n<size=80%>Click again to take ({perk.PointCost} pt)</size>";
+            if (IsAllocated(perk)) return head + "\n<size=80%>획득함</size>";
+            if (perk == ArmedPerk) return head + $"\n<size=80%>한 번 더 클릭해서 획득 ({perk.PointCost}포인트)</size>";
             List<PerkDefinition> missing = Perks != null ? Perks.MissingPrerequisites(perk) : new List<PerkDefinition>();
-            if (missing.Count > 0) return head + $"\n<size=80%>Needs {Names(missing)}</size>";
-            return head + $"\n<size=80%>{perk.PointCost} pt</size>";
+            if (missing.Count > 0) return head + $"\n<size=80%>필요: {Names(missing)}</size>";
+            return head + $"\n<size=80%>{perk.PointCost}포인트</size>";
         }
 
         string Reason(PerkAllocateCheck check, PerkDefinition perk) => check switch
         {
-            PerkAllocateCheck.AlreadyAllocated => $"{perk.DisplayName} is already taken.",
-            PerkAllocateCheck.MissingPrerequisite => $"Take {Names(Perks.MissingPrerequisites(perk))} first.",
-            PerkAllocateCheck.NotEnoughPoints => $"Not enough perk points: {perk.PointCost} needed, {Perks.AvailablePoints} left.",
-            PerkAllocateCheck.BattlePending => "Perks cannot be taken during battle.",
-            PerkAllocateCheck.Locked => $"{perk.DisplayName} is locked.",
-            PerkAllocateCheck.NoLoadout => "Perks are not available yet.",
-            _ => "This perk does not exist.",
+            PerkAllocateCheck.AlreadyAllocated => $"{perk.DisplayName}은(는) 이미 얻었습니다.",
+            PerkAllocateCheck.MissingPrerequisite => $"먼저 {Names(Perks.MissingPrerequisites(perk))}을(를) 얻으세요.",
+            PerkAllocateCheck.NotEnoughPoints => $"특성 포인트가 부족합니다: {perk.PointCost} 필요, {Perks.AvailablePoints} 남음.",
+            PerkAllocateCheck.BattlePending => "전투 중에는 특성을 얻을 수 없습니다.",
+            PerkAllocateCheck.Locked => $"{perk.DisplayName}은(는) 잠겨 있습니다.",
+            PerkAllocateCheck.NoLoadout => "아직 특성을 사용할 수 없습니다.",
+            _ => "없는 특성입니다.",
         };
 
         static string Names(List<PerkDefinition> perks)
@@ -108,37 +108,40 @@ namespace ProjectNeo.Run
             foreach (PerkRunEffect effect in perk.RunEffects)
                 parts.Add(effect.kind switch
                 {
-                    PerkRunEffectKind.RewardGoldPercent => $"Victory gold {Signed(effect.value)}%",
-                    PerkRunEffectKind.ShopPricePercent => $"Shop prices {Signed(effect.value)}%",
-                    PerkRunEffectKind.PrepHours => $"Prep time {Signed(effect.value)}h",
+                    PerkRunEffectKind.RewardGoldPercent => $"승리 골드 {Signed(effect.value)}%",
+                    PerkRunEffectKind.ShopPricePercent => $"상점 가격 {Signed(effect.value)}%",
+                    PerkRunEffectKind.PrepHours => $"준비 시간 {Signed(effect.value)}시간",
                     _ => effect.kind.ToString(),
                 });
             foreach (PerkSpecialEffect effect in perk.SpecialEffects)
                 if (effect is MoraleBoostPerkEffect morale)
-                    parts.Add($"Squad morale {Signed(morale.Amount)} {TriggerName(morale.Trigger)}");
+                    parts.Add($"부대 사기 {Signed(morale.Amount)} {TriggerName(morale.Trigger)}");
             return string.Join(", ", parts);
         }
 
         static string TargetName(PerkTarget target) => target switch
         {
-            PerkTarget.Player => "Player",
-            PerkTarget.Heroes => "Hero",
-            _ => "Soldier",
+            PerkTarget.Player => "플레이어",
+            PerkTarget.Heroes => "영웅",
+            _ => "병사",
         };
 
         static string StatName(StatType stat) => stat switch
         {
-            StatType.MaxHealth => "health",
-            StatType.AttackSpeed => "attack speed",
-            StatType.MoveSpeed => "move speed",
-            _ => stat.ToString().ToLowerInvariant(),
+            StatType.MaxHealth => "체력",
+            StatType.Attack => "공격력",
+            StatType.Defense => "방어력",
+            StatType.AttackSpeed => "공격 속도",
+            StatType.MoveSpeed => "이동 속도",
+            StatType.AttackRange => "사거리",
+            _ => stat.ToString(),
         };
 
         static string TriggerName(PerkTrigger trigger) => trigger switch
         {
-            PerkTrigger.BattleStart => "at battle start",
-            PerkTrigger.AllySquadMemberDied => "when an ally squad member dies",
-            _ => "when a skill is used",
+            PerkTrigger.BattleStart => "(전투 시작 시)",
+            PerkTrigger.AllySquadMemberDied => "(아군 부대원이 죽을 때)",
+            _ => "(스킬을 쓸 때)",
         };
 
         static string Amount(StatModifier modifier) =>

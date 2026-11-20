@@ -26,20 +26,20 @@ namespace ProjectNeo.Editor
 
             BossDefinition[] bosses =
             {
-                Save(BossDefinition.Create("boss_gate_crusher", "Gate Crusher", BossRole.Siege, gate, 1.5f, 400f, 21f, 4f,
+                Save(BossDefinition.Create("boss_gate_crusher", "성문 분쇄자", BossRole.Siege, gate, 1.5f, 400f, 21f, 4f,
                     structureDamageMultiplier: 2f, rewardGold: 30, rewardMaterials: Reward(hide, 2))),
-                Save(BossDefinition.Create("boss_duelist", "Duelist", BossRole.Duelist, ladder, 1.4f, 450f, 28f, 4f,
+                Save(BossDefinition.Create("boss_duelist", "결투가", BossRole.Duelist, ladder, 1.4f, 450f, 28f, 4f,
                     moveSpeedMultiplier: 1.3f, rewardGold: 40, rewardMaterials: Reward(bone, 2)).WithHeroPreference(3f)),
-                Save(BossDefinition.Create("boss_marksman", "Marksman", BossRole.Artillery, archer, 1.4f, 350f, 26f, 2f,
+                Save(BossDefinition.Create("boss_marksman", "명사수", BossRole.Artillery, archer, 1.4f, 350f, 26f, 2f,
                     attackRange: 22f, rewardGold: 50, rewardMaterials: new[] { Pair(bone, 2), Pair(hide, 1) })),
-                Save(BossDefinition.Create("boss_war_captain", "War Captain", BossRole.Commander, ladder, 1.6f, 600f, 21f, 5f,
+                Save(BossDefinition.Create("boss_war_captain", "전쟁 대장", BossRole.Commander, ladder, 1.6f, 600f, 21f, 5f,
                     rewardGold: 60, rewardMaterials: Reward(hide, 3)).WithAura(12f, 0.2f, 2f, 0.2f)),
-                Save(BossDefinition.Create("boss_siege_giant", "Siege Giant", BossRole.Siege, wall, 1.9f, 900f, 28f, 6f,
+                Save(BossDefinition.Create("boss_siege_giant", "공성 거인", BossRole.Siege, wall, 1.9f, 900f, 28f, 6f,
                     moveSpeedMultiplier: 0.8f, structureDamageMultiplier: 3f, rewardGold: 70,
                     rewardMaterials: new[] { Pair(bone, 3), Pair(hide, 2) })),
-                Save(BossDefinition.Create("boss_sky_hunter", "Sky Hunter", BossRole.Duelist, flyer, 1.5f, 600f, 28f, 4f,
+                Save(BossDefinition.Create("boss_sky_hunter", "하늘 사냥꾼", BossRole.Duelist, flyer, 1.5f, 600f, 28f, 4f,
                     rewardGold: 80, rewardMaterials: Reward(feather, 4)).WithHeroPreference(3f)),
-                Save(BossDefinition.Create("boss_warlord", "Warlord", BossRole.Commander, gate, 1.8f, 1200f, 28f, 6f,
+                Save(BossDefinition.Create("boss_warlord", "군벌", BossRole.Commander, gate, 1.8f, 1200f, 28f, 6f,
                     rewardGold: 90, rewardMaterials: new[] { Pair(bone, 3), Pair(hide, 3), Pair(feather, 2) })
                     .WithAura(15f, 0.3f, 3f, 0.3f)),
             };

@@ -33,16 +33,16 @@ namespace ProjectNeo.Editor
         {
             AscensionTable table = AssetDatabase.LoadAssetAtPath<AscensionTable>(TablePath);
             AscensionTable fresh = AscensionTable.Create(0.1f,
-                Level("Enemy HP +15%", Rule(AscensionRuleKind.EnemyHealthPercent, 0.15f)),
-                Level("Starting gold -25%", Rule(AscensionRuleKind.StartingGoldPercent, -0.25f)),
-                Level("Enemy attack +15%", Rule(AscensionRuleKind.EnemyAttackPercent, 0.15f)),
-                Level("Preparation time 12h -> 10h", Rule(AscensionRuleKind.PrepBudgetHours, -2f)),
-                Level("Victory gold -20%", Rule(AscensionRuleKind.VictoryGoldPercent, -0.2f)),
-                Level("Enemies per wave +20%", Rule(AscensionRuleKind.EnemyCountPercent, 0.2f)),
-                Level("Squad starting morale 150 -> 120", Rule(AscensionRuleKind.StartingMorale, -30f)),
-                Level("Boss HP +30%, attack +20%", Rule(AscensionRuleKind.BossHealthPercent, 0.3f), Rule(AscensionRuleKind.BossAttackPercent, 0.2f)),
-                Level("Wall repair time x2", Rule(AscensionRuleKind.RepairTimePercent, 1f)),
-                Level("Enemy move speed +15%", Rule(AscensionRuleKind.EnemyMoveSpeedPercent, 0.15f)));
+                Level("적 HP +15%", Rule(AscensionRuleKind.EnemyHealthPercent, 0.15f)),
+                Level("시작 골드 -25%", Rule(AscensionRuleKind.StartingGoldPercent, -0.25f)),
+                Level("적 공격력 +15%", Rule(AscensionRuleKind.EnemyAttackPercent, 0.15f)),
+                Level("준비 시간 12시간 -> 10시간", Rule(AscensionRuleKind.PrepBudgetHours, -2f)),
+                Level("승리 골드 -20%", Rule(AscensionRuleKind.VictoryGoldPercent, -0.2f)),
+                Level("웨이브당 적 +20%", Rule(AscensionRuleKind.EnemyCountPercent, 0.2f)),
+                Level("부대 시작 사기 150 -> 120", Rule(AscensionRuleKind.StartingMorale, -30f)),
+                Level("보스 HP +30%, 공격력 +20%", Rule(AscensionRuleKind.BossHealthPercent, 0.3f), Rule(AscensionRuleKind.BossAttackPercent, 0.2f)),
+                Level("성벽 수리 시간 x2", Rule(AscensionRuleKind.RepairTimePercent, 1f)),
+                Level("적 이동 속도 +15%", Rule(AscensionRuleKind.EnemyMoveSpeedPercent, 0.15f)));
             if (table == null)
             {
                 fresh.name = "Ascension";
@@ -103,7 +103,7 @@ namespace ProjectNeo.Editor
             layout.childForceExpandWidth = true; layout.childForceExpandHeight = false;
             window.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            TMP_Text title = Label(window.transform, "Choose Ascension", 36f, 24f);
+            TMP_Text title = Label(window.transform, "승천 고르기", 36f, 24f);
             title.name = "Label_AscensionTitle";
             title.fontStyle = FontStyles.Bold;
             title.alignment = TextAlignmentOptions.Center;
@@ -116,7 +116,7 @@ namespace ProjectNeo.Editor
             rowLayout.childForceExpandWidth = false; rowLayout.childForceExpandHeight = true;
             GameObject previous = ConstructionPrototypeSetup.Button(row.transform, "<", picker.Previous);
             previous.GetComponent<LayoutElement>().preferredWidth = 56f;
-            TMP_Text level = Label(row.transform, "Ascension 0", 40f, 20f);
+            TMP_Text level = Label(row.transform, "승천 0", 40f, 20f);
             level.name = "Label_AscensionLevel";
             level.alignment = TextAlignmentOptions.Center;
             level.GetComponent<LayoutElement>().flexibleWidth = 1f;
@@ -128,8 +128,8 @@ namespace ProjectNeo.Editor
             rules.textWrappingMode = TextWrappingModes.Normal;
             rules.alignment = TextAlignmentOptions.TopLeft;
 
-            ConstructionPrototypeSetup.Button(window.transform, "Start run", picker.StartSelected);
-            ConstructionPrototypeSetup.Button(window.transform, "Cancel", picker.Close);
+            ConstructionPrototypeSetup.Button(window.transform, "Start run", picker.StartSelected, "런 시작");
+            ConstructionPrototypeSetup.Button(window.transform, "Cancel", picker.Close, "취소");
 
             picker.Configure(table, overlay, level, rules);
             overlay.SetActive(false);
@@ -156,7 +156,7 @@ namespace ProjectNeo.Editor
             Transform old = panel.Find("Button_Finish run");
             if (old != null) UnityEngine.Object.DestroyImmediate(old.gameObject);
 
-            GameObject finish = ConstructionPrototypeSetup.Button(panel, "Finish run", hud.FinishRun);
+            GameObject finish = ConstructionPrototypeSetup.Button(panel, "Finish run", hud.FinishRun, "런 끝내기");
             finish.transform.SetSiblingIndex(nextStage.transform.GetSiblingIndex() + 1);
             var nextLayout = nextStage.GetComponent<LayoutElement>();
             if (nextLayout != null) finish.GetComponent<LayoutElement>().preferredHeight = nextLayout.preferredHeight;

@@ -54,7 +54,7 @@ namespace ProjectNeo.Editor
             CombatPrototypeSetup.EnsureFolder(Data);
             var grid = CombatPrototypeSetup.Save(BuildGridDefinition.Create(16, 20, 3f, 3), Data + "/Grid.asset");
             // 성문 파괴병이 바로 뚫지 못하도록 이 시험의 성문은 체력을 따로 둔다.
-            var gate = CombatPrototypeSetup.Save(BuildPieceDefinition.Create(BuildPieceKind.Gate, "Main gate",
+            var gate = CombatPrototypeSetup.Save(BuildPieceDefinition.Create(BuildPieceKind.Gate, "메인 성문",
                 new Vector2Int(2, 1), maxHealth: 600f, prefab: gatePrefab), Data + "/Gate.asset");
             var settings = CombatPrototypeSetup.Save(SiegeSettings.Create(40,
                 new[] { new PieceCost { piece = wall, cost = 2 }, new PieceCost { piece = stairs, cost = 3 } },
@@ -201,8 +201,8 @@ namespace ProjectNeo.Editor
             SetReference(center, "settings", command);
             var help = (TMP_Text)new SerializedObject(commandHud).FindProperty("help").objectReferenceValue;
             help.text =
-                "F1-F10: select squad - `: select all\n1: move to aim point - 2: attack - 3: hold\n"
-                + "WASD: move - Mouse: look - Click: attack - Esc: release cursor\nHold F: push nearby ladder";
+                "F1-F10: 부대 선택 - `: 전체 선택\n1: 조준점으로 이동 - 2: 공격 - 3: 정지\n"
+                + "WASD: 이동 - 마우스: 시점 - 클릭: 공격 - Esc: 커서 해제\nF 길게 누르기: 가까운 사다리 밀기";
             EditorUtility.SetDirty(help);
             // 부대가 10개여도 목록이 배경 안에 들어오게 늘린다.
             var size = new Vector2(326f, 300f);
@@ -275,35 +275,35 @@ namespace ProjectNeo.Editor
             layout.padding = new RectOffset(14, 14, 12, 12); layout.spacing = 4f;
             layout.childControlWidth = true; layout.childControlHeight = true; layout.childForceExpandHeight = false;
 
-            Label(panel.transform, "SIEGE PREP", 30f, 22f);
-            TMP_Text budget = Label(panel.transform, "Cost", 24f, 18f);
-            Button(panel.transform, "Wall", hud.SelectWall);
-            Button(panel.transform, "Stairs", hud.SelectStairs);
-            GameObject weapon = Button(panel.transform, "Cannon", null);
+            Label(panel.transform, "공성 준비", 30f, 22f);
+            TMP_Text budget = Label(panel.transform, "비용", 24f, 18f);
+            Button(panel.transform, "Wall", hud.SelectWall, "성벽");
+            Button(panel.transform, "Stairs", hud.SelectStairs, "계단");
+            GameObject weapon = Button(panel.transform, "Cannon", null, "대포");
             UnityEventTools.AddIntPersistentListener(weapon.GetComponent<UnityEngine.UI.Button>().onClick, hud.SelectWeapon, 0);
-            Button(panel.transform, "Rotate", hud.Rotate);
-            Button(panel.transform, "Dismantle", hud.Dismantle);
-            Button(panel.transform, "Cancel", hud.Cancel);
-            Label(panel.transform, "PLACE SQUADS", 22f, 15f);
+            Button(panel.transform, "Rotate", hud.Rotate, "회전");
+            Button(panel.transform, "Dismantle", hud.Dismantle, "해체");
+            Button(panel.transform, "Cancel", hud.Cancel, "취소");
+            Label(panel.transform, "부대 배치", 22f, 15f);
             // 부대 수 상한만큼 버튼을 만들어 두고, 실행 중에 실제 편성된 부대만 보여준다.
             var squadButtons = new GameObject[center.Config.MaxSquads];
             var squadLabels = new TMP_Text[squadButtons.Length];
             for (int i = 0; i < squadButtons.Length; i++)
             {
-                squadButtons[i] = Button(panel.transform, "Squad" + (i + 1), null);
+                squadButtons[i] = Button(panel.transform, "Squad" + (i + 1), null, (i + 1) + "부대");
                 squadLabels[i] = squadButtons[i].GetComponentInChildren<TMP_Text>();
                 UnityEventTools.AddIntPersistentListener(squadButtons[i].GetComponent<UnityEngine.UI.Button>().onClick, hud.SelectSquad, i);
             }
             hud.ConfigureSquads(center, squadButtons, squadLabels);
-            TMP_Text selection = Label(panel.transform, "Selection", 52f, 14f);
-            TMP_Text enemies = Label(panel.transform, "Enemies", 44f, 14f);
-            TMP_Text status = Label(panel.transform, "Status", 44f, 14f);
-            GameObject start = Button(panel.transform, "Start", hud.StartBattle);
+            TMP_Text selection = Label(panel.transform, "선택", 52f, 14f);
+            TMP_Text enemies = Label(panel.transform, "적", 44f, 14f);
+            TMP_Text status = Label(panel.transform, "상태", 44f, 14f);
+            GameObject start = Button(panel.transform, "Start", hud.StartBattle, "시작");
             start.GetComponent<UnityEngine.UI.Image>().color = new Color(0.62f, 0.2f, 0.16f);
             start.GetComponent<UnityEngine.UI.LayoutElement>().preferredHeight = 40f;
             TMP_Text hint = Floating(root.transform, "Hint", new Vector2(1f, 1f), new Vector2(-24f, -24f),
                 new Vector2(460f, 90f), 17f, TextAlignmentOptions.TopRight);
-            hint.text = "Q/E: rotate view - Click: place - Right click: cancel\nBrown markers show ladder positions.";
+            hint.text = "Q/E: 시점 회전 - 클릭: 배치 - 우클릭: 취소\n갈색 표시는 사다리 위치입니다.";
             hud.Configure(director, prep, placement, settings, wall, stairs, new[] { cannon }, budget, selection, status,
                 enemies);
             return hud;
@@ -326,7 +326,7 @@ namespace ProjectNeo.Editor
             image.color = new Color(0.03f, 0.05f, 0.07f, 0.8f); image.raycastTarget = false;
             TMP_Text label = Floating(root.transform, "Status", new Vector2(0.5f, 1f), new Vector2(0f, -18f),
                 new Vector2(600f, 60f), 20f, TextAlignmentOptions.Top);
-            label.text = "Siege";
+            label.text = "공성";
             root.AddComponent<SiegeStatusHud>().Configure(director, ladders, label);
         }
 
@@ -356,9 +356,9 @@ namespace ProjectNeo.Editor
             return label;
         }
 
-        static GameObject Button(Transform parent, string title, UnityEngine.Events.UnityAction action)
+        static GameObject Button(Transform parent, string title, UnityEngine.Events.UnityAction action, string caption = null)
         {
-            GameObject button = ConstructionPrototypeSetup.Button(parent, title, action);
+            GameObject button = ConstructionPrototypeSetup.Button(parent, title, action, caption);
             button.GetComponent<UnityEngine.UI.LayoutElement>().preferredHeight = 30f;
             return button;
         }

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: perk_economy_war_chest
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Meta.PerkDefinition
   id: perk_economy_war_chest
-  displayName: War Chest
+  displayName: "\uAD70\uC790\uAE08"
   category: 1
   pointCost: 1
   unlockedByDefault: 1

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: boss_warlord
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Stages.BossDefinition
   id: boss_warlord
-  displayName: Warlord
+  displayName: "\uAD70\uBC8C"
   role: 2
   basePrefab: {fileID: 3311207010470909413, guid: 6336293aee1c1264089c9649769650a6, type: 3}
   visualScale: 1.8

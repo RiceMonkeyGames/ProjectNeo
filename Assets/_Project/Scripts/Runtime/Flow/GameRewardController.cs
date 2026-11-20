@@ -108,10 +108,10 @@ namespace ProjectNeo.Flow
         public string DescribeRunEnd()
         {
             if (RunEndUnlockPoints < 0) return string.Empty;
-            string multiplier = RunEndMultiplier > 1f ? $" (Ascension x{RunEndMultiplier:0.0#})" : string.Empty;
-            string text = $"Stages cleared {RunEndStagesCleared}\nUnlock points +{RunEndUnlockPoints}{multiplier} (total {GameSession.Meta.unlockPoints})";
+            string multiplier = RunEndMultiplier > 1f ? $" (승천 x{RunEndMultiplier:0.0#})" : string.Empty;
+            string text = $"클리어한 스테이지 {RunEndStagesCleared}\n해금 포인트 +{RunEndUnlockPoints}{multiplier} (합계 {GameSession.Meta.unlockPoints})";
             if (LastScore != null)
-                text += $"\nRun score {RunScore.Number(LastScore.Total)}" + (IsNewBest ? " - New best!" : $" (best {RunScore.Number(GameSession.Meta.bestRunScore)})")
+                text += $"\n런 점수 {RunScore.Number(LastScore.Total)}" + (IsNewBest ? " - 최고 기록!" : $" (최고 {RunScore.Number(GameSession.Meta.bestRunScore)})")
                     + $"\n{LastScore.Breakdown()}";
             return text;
         }
@@ -151,15 +151,15 @@ namespace ProjectNeo.Flow
             RunState state = battle != null ? battle.RunLink.State : null;
             if (LastReward == null || state == null) return string.Empty;
             var text = new StringBuilder();
-            text.Append($"Gold +{LastReward.Gold} (total {state.Wallet.Gold})");
-            if (PerkGoldBonus > 0) text.Append($" - perk bonus +{PerkGoldBonus}");
+            text.Append($"골드 +{LastReward.Gold} (합계 {state.Wallet.Gold})");
+            if (PerkGoldBonus > 0) text.Append($" - 특성 보너스 +{PerkGoldBonus}");
             foreach (KeyValuePair<MaterialDefinition, int> material in LastReward.Materials)
-                text.Append($"\n{material.Key.DisplayName} +{material.Value} (total {state.Wallet.GetMaterial(material.Key)})");
+                text.Append($"\n{material.Key.DisplayName} +{material.Value} (합계 {state.Wallet.GetMaterial(material.Key)})");
             foreach (ItemDefinition item in LastReward.Items)
-                text.Append($"\nItem: {item.DisplayName}");
+                text.Append($"\n아이템: {item.DisplayName}");
             MetaProgress meta = GameSession.Meta;
-            text.Append($"\nCommander XP +{LastReward.CommanderXp} (Lv {meta.commanderLevel})");
-            if (LevelsGained > 0) text.Append($" - Level up! Perk points {meta.perkPoints}");
+            text.Append($"\n지휘관 경험치 +{LastReward.CommanderXp} (Lv {meta.commanderLevel})");
+            if (LevelsGained > 0) text.Append($" - 레벨 업! 특성 포인트 {meta.perkPoints}");
             return text.ToString();
         }
     }

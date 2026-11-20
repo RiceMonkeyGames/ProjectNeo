@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: PerkTree_Economy
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Meta.PerkTreeDefinition
   category: 1
-  displayName: Economy
+  displayName: "\uACBD\uC81C"
   perks:
   - {fileID: 11400000, guid: d1b8e6f6d4c99f94e8574d1d89ea9f6a, type: 2}
   - {fileID: 11400000, guid: 97e2db27fa63c144cacf1d6e88d7e1db, type: 2}

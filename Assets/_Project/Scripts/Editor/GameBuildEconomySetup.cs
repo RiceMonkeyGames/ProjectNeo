@@ -76,11 +76,11 @@ namespace ProjectNeo.Editor
             if (panel == null) throw new InvalidOperationException("ConstructionHud has no BuildPanel.");
             Transform dismantle = panel.Find("Button_Dismantle");
             if (dismantle == null)
-                ConstructionPrototypeSetup.Button(panel, "Dismantle", economy.ToggleDismantle);
+                ConstructionPrototypeSetup.Button(panel, "Dismantle", economy.ToggleDismantle, "해체");
             else Rewire(dismantle, economy.ToggleDismantle);
             Transform repair = panel.Find("Button_Repair all");
             if (repair == null)
-                ConstructionPrototypeSetup.Button(panel, "Repair all", economy.RepairAllFromButton);
+                ConstructionPrototypeSetup.Button(panel, "Repair all", economy.RepairAllFromButton, "전체 수리");
             else Rewire(repair, economy.RepairAllFromButton);
 
             Transform existing = panel.Find("EconomyStatus");
@@ -89,7 +89,7 @@ namespace ProjectNeo.Editor
             root.transform.SetParent(panel, false);
             root.GetComponent<UnityEngine.UI.LayoutElement>().preferredHeight = 70f;
             var text = root.GetComponent<TextMeshProUGUI>();
-            text.text = "Gold"; text.fontSize = 14f; text.enableAutoSizing = true; text.fontSizeMin = 11f; text.fontSizeMax = 14f;
+            text.text = "골드"; text.fontSize = 14f; text.enableAutoSizing = true; text.fontSizeMin = 11f; text.fontSizeMax = 14f;
             text.color = new Color(1f, 0.9f, 0.55f); text.raycastTarget = false;
             text.font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF.asset");
             return text;

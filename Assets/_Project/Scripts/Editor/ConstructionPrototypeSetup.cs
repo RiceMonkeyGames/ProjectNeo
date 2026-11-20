@@ -42,12 +42,12 @@ namespace ProjectNeo.Editor
             Material gridMaterial = CombatPrototypeSetup.MaterialAsset("ConstructionGrid", new Color(0.48f, 0.65f, 0.52f));
             Material ghostMaterial = GhostMaterial();
             var preview = CombatPrototypeSetup.Save(PlacementViewSettings.Create(ghostMaterial), Data + "/Preview.asset");
-            var wall = CombatPrototypeSetup.Save(BuildPieceDefinition.Create(BuildPieceKind.Wall, "Wall", Vector2Int.one,
+            var wall = CombatPrototypeSetup.Save(BuildPieceDefinition.Create(BuildPieceKind.Wall, "성벽", Vector2Int.one,
                 prefab: PiecePrefab("Wall", BuildPieceKind.Wall, stone),
                 mountPoints: new[] { new BuildMountPoint("top", Vector3.up) }), Data + "/Wall.asset");
-            var stairs = CombatPrototypeSetup.Save(BuildPieceDefinition.Create(BuildPieceKind.Stairs, "Stairs", Vector2Int.one,
+            var stairs = CombatPrototypeSetup.Save(BuildPieceDefinition.Create(BuildPieceKind.Stairs, "계단", Vector2Int.one,
                 prefab: PiecePrefab("Stairs", BuildPieceKind.Stairs, stone)), Data + "/Stairs.asset");
-            var gate = CombatPrototypeSetup.Save(BuildPieceDefinition.Create(BuildPieceKind.Gate, "Main gate", new Vector2Int(2, 1),
+            var gate = CombatPrototypeSetup.Save(BuildPieceDefinition.Create(BuildPieceKind.Gate, "메인 성문", new Vector2Int(2, 1),
                 maxHealth: 300f, prefab: PiecePrefab("MainGate", BuildPieceKind.Gate, gateMaterial)), Data + "/Gate.asset");
 
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -83,7 +83,7 @@ namespace ProjectNeo.Editor
             camera.gameObject.AddComponent<AudioListener>();
             var controller = new GameObject("PlacementController").AddComponent<PlacementController>();
             controller.Configure(world, camera, preview);
-            var hero = CombatPrototypeSetup.Save(HeroDefinition.Create("construction_test_unit", true, 0,
+            var hero = CombatPrototypeSetup.Save(HeroDefinition.Create("건설 시험 유닛", true, 0,
                 new StatValue(StatType.MaxHealth, 100f), new StatValue(StatType.MoveSpeed, 4f)), Data + "/TestUnit.asset");
             var profile = CombatPrototypeSetup.Save(CombatProfile.Create(), Data + "/UnitBody.asset");
             var unitObject = CombatPrototypeSetup.Actor("TestUnit", hero, profile,
@@ -235,19 +235,19 @@ namespace ProjectNeo.Editor
             layout.padding = new RectOffset(16, 16, 18, 18); layout.spacing = 9f;
             layout.childControlWidth = true; layout.childControlHeight = true; layout.childForceExpandHeight = false;
 
-            Label(panel.transform, "WALL BUILDER", 36f, 24f);
-            Label(panel.transform, "Q/E: view, R: piece", 25f, 14f);
-            Button(panel.transform, "Wall", hud.SelectWall);
-            Button(panel.transform, "Stairs", hud.SelectStairs);
-            Button(panel.transform, "Rotate (R)", hud.Rotate);
-            Button(panel.transform, "Cancel", hud.Cancel);
-            TMP_Text selection = Label(panel.transform, "Choose a piece", 86f, 16f);
-            Label(panel.transform, "Click: place / Right click: cancel", 42f, 14f);
-            Label(panel.transform, "MOVEMENT / COLLAPSE TEST", 28f, 15f);
-            Button(panel.transform, "Walk onto wall", hud.WalkToWall);
-            Button(panel.transform, "Break support", hud.CollapseUnderUnit);
-            TMP_Text health = Label(panel.transform, "Unit health", 28f, 15f);
-            TMP_Text status = Label(panel.transform, "Build walls and stairs.", 70f, 14f);
+            Label(panel.transform, "성벽 건설", 36f, 24f);
+            Label(panel.transform, "Q/E: 시점, R: 조각 회전", 25f, 14f);
+            Button(panel.transform, "Wall", hud.SelectWall, "성벽");
+            Button(panel.transform, "Stairs", hud.SelectStairs, "계단");
+            Button(panel.transform, "Rotate (R)", hud.Rotate, "회전 (R)");
+            Button(panel.transform, "Cancel", hud.Cancel, "취소");
+            TMP_Text selection = Label(panel.transform, "조각을 고르세요", 86f, 16f);
+            Label(panel.transform, "클릭: 배치 / 우클릭: 취소", 42f, 14f);
+            Label(panel.transform, "이동 / 붕괴 시험", 28f, 15f);
+            Button(panel.transform, "Walk onto wall", hud.WalkToWall, "성벽 위로 걷기");
+            Button(panel.transform, "Break support", hud.CollapseUnderUnit, "받침 부수기");
+            TMP_Text health = Label(panel.transform, "유닛 체력", 28f, 15f);
+            TMP_Text status = Label(panel.transform, "성벽과 계단을 지으세요.", 70f, 14f);
             hud.Configure(controller, sandbox, wall, stairs, selection, status, health);
             var eventSystem = new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
             eventSystem.GetComponent<InputSystemUIInputModule>().AssignDefaultActions();
@@ -264,7 +264,8 @@ namespace ProjectNeo.Editor
             return label;
         }
 
-        internal static GameObject Button(Transform parent, string title, UnityAction action)
+        /// <summary>Button named "Button_" + <paramref name="title"/>; shows <paramref name="caption"/> when given (UI-04 Korean captions keep English object names).</summary>
+        internal static GameObject Button(Transform parent, string title, UnityAction action, string caption = null)
         {
             var root = new GameObject("Button_" + title, typeof(RectTransform), typeof(UnityEngine.UI.Image),
                 typeof(UnityEngine.UI.Button), typeof(UnityEngine.UI.LayoutElement));
@@ -273,7 +274,7 @@ namespace ProjectNeo.Editor
             var image = root.GetComponent<UnityEngine.UI.Image>(); image.color = new Color(0.15f, 0.24f, 0.29f);
             var button = root.GetComponent<UnityEngine.UI.Button>(); button.targetGraphic = image;
             if (action != null) UnityEventTools.AddPersistentListener(button.onClick, action);
-            TMP_Text text = Label(root.transform, title, 38f, 17f);
+            TMP_Text text = Label(root.transform, caption ?? title, 38f, 17f);
             var rect = text.GetComponent<RectTransform>(); rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
             rect.offsetMin = new Vector2(10f, 0f); rect.offsetMax = new Vector2(-10f, 0f);
             text.alignment = TextAlignmentOptions.MidlineLeft;

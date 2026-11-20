@@ -183,10 +183,10 @@ namespace ProjectNeo.Flow
 
             var header = Group("Header", panel.transform, true, 12f);
             header.gameObject.AddComponent<LayoutElement>().preferredHeight = 40f;
-            Label(header, "Perks", 26f, 40f, FontStyles.Bold).GetComponent<LayoutElement>().preferredWidth = 120f;
+            Label(header, "특성", 26f, 40f, FontStyles.Bold).GetComponent<LayoutElement>().preferredWidth = 120f;
             pointsLabel = Label(header, string.Empty, 20f, 40f, FontStyles.Normal);
             pointsLabel.GetComponent<LayoutElement>().flexibleWidth = 1f;
-            MakeButton(header, "Button_Close", "Close", 17f, 40f, Close).GetComponent<LayoutElement>().preferredWidth = 140f;
+            MakeButton(header, "Button_Close", "닫기", 17f, 40f, Close).GetComponent<LayoutElement>().preferredWidth = 140f;
             statusLabel = Label(panel.transform, string.Empty, 16f, 24f, FontStyles.Normal);
 
             var body = Group("Trees", panel.transform, true, 14f);
@@ -201,7 +201,7 @@ namespace ProjectNeo.Flow
             }
             panel.SetActive(false);
 
-            rewardButton = MakeButton(root.transform, "Button_OpenPerks", "Perks (K)", 18f, 44f, () => Open()).gameObject;
+            rewardButton = MakeButton(root.transform, "Button_OpenPerks", "특성 (K)", 18f, 44f, () => Open()).gameObject;
             var rect = (RectTransform)rewardButton.transform;
             rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(1f, 0f);
             rect.anchoredPosition = new Vector2(-24f, 24f);

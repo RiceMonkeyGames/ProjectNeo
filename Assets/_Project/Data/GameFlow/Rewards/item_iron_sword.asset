@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: item_iron_sword
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Economy.ItemDefinition
   id: item_iron_sword
-  displayName: Iron sword
+  displayName: "\uCCA0\uAC80"
   kind: 0
   price:
     gold: 40

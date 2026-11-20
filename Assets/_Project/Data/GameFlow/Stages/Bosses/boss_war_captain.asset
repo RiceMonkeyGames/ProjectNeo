@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: boss_war_captain
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Stages.BossDefinition
   id: boss_war_captain
-  displayName: War Captain
+  displayName: "\uC804\uC7C1 \uB300\uC7A5"
   role: 2
   basePrefab: {fileID: 1786433762328342860, guid: c378e8883465b87419682e8417179d72, type: 3}
   visualScale: 1.6

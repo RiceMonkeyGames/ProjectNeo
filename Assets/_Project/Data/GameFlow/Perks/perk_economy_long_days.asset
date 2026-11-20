@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: perk_economy_long_days
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Meta.PerkDefinition
   id: perk_economy_long_days
-  displayName: Long Days
+  displayName: "\uAE34 \uD558\uB8E8"
   category: 1
   pointCost: 1
   unlockedByDefault: 1

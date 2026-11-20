@@ -61,13 +61,13 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(2, rewards.RunEndStagesCleared);
             Assert.AreEqual(2, rewards.RunEndUnlockPoints, "스테이지당 1점(StageRewards.asset)");
             Assert.AreEqual(2, GameSession.Meta.unlockPoints);
-            StringAssert.StartsWith("Stages cleared 2\nUnlock points +2 (total 2)", rewards.DescribeRunEnd());
+            StringAssert.StartsWith("클리어한 스테이지 2\n해금 포인트 +2 (합계 2)", rewards.DescribeRunEnd());
             // 런 점수(META-04): 한 번 계산되고 슬롯 최고 점수가 된다.
             Assert.IsNotNull(rewards.LastScore);
             Assert.Greater(rewards.LastScore.Total, 0, "남은 골드와 생존 잡졸만으로도 점수가 있다");
             Assert.IsTrue(rewards.IsNewBest);
             Assert.AreEqual(rewards.LastScore.Total, GameSession.Meta.bestRunScore);
-            StringAssert.Contains($"Run score {ProjectNeo.Run.RunScore.Number(rewards.LastScore.Total)} - New best!", rewards.DescribeRunEnd());
+            StringAssert.Contains($"런 점수 {ProjectNeo.Run.RunScore.Number(rewards.LastScore.Total)} - 최고 기록!", rewards.DescribeRunEnd());
             Assert.IsFalse(rewards.TryGrantRunEnd(), "한 런에 한 번만 준다");
             Assert.AreEqual(2, GameSession.Meta.unlockPoints);
         }

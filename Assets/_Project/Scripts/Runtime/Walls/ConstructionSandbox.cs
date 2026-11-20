@@ -12,16 +12,16 @@ namespace ProjectNeo.Walls
         [SerializeField] CharacterActor unit;
         [SerializeField] SquadCommandCenter commandCenter;
         public CharacterActor Unit => unit;
-        public string Message { get; private set; } = "Try building walls and stairs.";
+        public string Message { get; private set; } = "성벽과 계단을 지어 보세요.";
         public void Configure(ConstructionWorld owner, CharacterActor testUnit) { world = owner; unit = testUnit; }
         public void ConfigureCommands(SquadCommandCenter center) => commandCenter = center;
         void Start() => unit.gameObject.SetActive(true);
 
         public void WalkToWall()
         {
-            if (world.IsRebuilding || world.RebuildPending) { Message = "Updating terrain. Try again shortly."; return; }
+            if (world.IsRebuilding || world.RebuildPending) { Message = "지형을 갱신하는 중입니다. 잠시 후 다시 시도하세요."; return; }
             var agent = unit.GetComponent<NavMeshAgent>();
-            if (!agent.enabled || !agent.isOnNavMesh) { Message = "Wait for the unit to land, then try again."; return; }
+            if (!agent.enabled || !agent.isOnNavMesh) { Message = "유닛이 내려앉을 때까지 기다린 뒤 다시 시도하세요."; return; }
             var path = new NavMeshPath();
             foreach (PlacedStructure structure in world.Structures)
             {
@@ -40,10 +40,10 @@ namespace ProjectNeo.Walls
                     agent.SetPath(path);
                     agent.isStopped = false;
                 }
-                Message = "The unit is climbing the stairs onto the wall.";
+                Message = "유닛이 계단을 올라 성벽 위로 가고 있습니다.";
                 return;
             }
-            Message = "No reachable wall. Connect the top of the stairs to a wall.";
+            Message = "갈 수 있는 성벽이 없습니다. 계단 꼭대기를 성벽과 이으세요.";
         }
 
         public void CollapseUnderWeapon()
@@ -52,15 +52,15 @@ namespace ProjectNeo.Walls
             {
                 string name = weapon.Definition.DisplayName;
                 weapon.Support.ReceiveDamage(weapon.Support.Health.Current);
-                Message = name + " was destroyed when its supporting wall collapsed.";
+                Message = name + "이(가) 받치던 성벽이 무너져 파괴되었습니다.";
                 return;
             }
-            Message = "Place a siege weapon on a wall first.";
+            Message = "먼저 성벽 위에 공성 무기를 놓으세요.";
         }
 
         public void CollapseUnderUnit()
         {
-            if (unit.Health.IsDead) { Message = "The test unit died. Restart Play Mode to reset."; return; }
+            if (unit.Health.IsDead) { Message = "시험 유닛이 죽었습니다. 플레이 모드를 다시 시작하세요."; return; }
             PlacedStructure support = null;
             float nearest = float.PositiveInfinity;
             foreach (RaycastHit hit in Physics.RaycastAll(unit.transform.position + Vector3.up * 0.4f,
@@ -70,9 +70,9 @@ namespace ProjectNeo.Walls
                 if (candidate == null || hit.distance >= nearest) continue;
                 support = candidate; nearest = hit.distance;
             }
-            if (support == null) { Message = "Move the unit onto a wall or stairs first."; return; }
+            if (support == null) { Message = "먼저 유닛을 성벽이나 계단 위로 옮기세요."; return; }
             support.ReceiveDamage(support.Health.Current);
-            Message = "The supporting piece collapsed. Check the fall and damage.";
+            Message = "받침 조각이 무너졌습니다. 낙하와 피해를 확인하세요.";
         }
     }
 }

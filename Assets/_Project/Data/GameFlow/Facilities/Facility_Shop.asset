@@ -32,6 +32,7 @@ MonoBehaviour:
       weight: 1
     heroPool: []
     recipes: []
+    battlementStyle: 0
   - upgradeCost:
       gold: 60
       materials: []
@@ -54,6 +55,7 @@ MonoBehaviour:
       weight: 0.5
     heroPool: []
     recipes: []
+    battlementStyle: 0
   - upgradeCost:
       gold: 120
       materials: []
@@ -76,4 +78,5 @@ MonoBehaviour:
       weight: 1.5
     heroPool: []
     recipes: []
-  displayName: Shop
+    battlementStyle: 0
+  displayName: "\uC0C1\uC810"

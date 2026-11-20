@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: perk_units_veteran_captains
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Meta.PerkDefinition
   id: perk_units_veteran_captains
-  displayName: Veteran Captains
+  displayName: "\uB178\uB828\uD55C \uB300\uC7A5"
   category: 2
   pointCost: 1
   unlockedByDefault: 1

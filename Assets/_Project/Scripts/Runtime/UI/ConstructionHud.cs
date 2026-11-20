@@ -44,37 +44,37 @@ namespace ProjectNeo.UI
                 string issue;
                 switch (placement.MountIssue)
                 {
-                    case MountIssue.None: issue = "Can place"; break;
-                    case MountIssue.NoSupport: issue = "Point at a wall top"; break;
-                    case MountIssue.NoMountPoint: issue = "This piece has no mount point"; break;
-                    case MountIssue.Occupied: issue = "A weapon already occupies this mount"; break;
-                    case MountIssue.UnfinishedSupport: issue = "This piece is still under construction"; break;
-                    default: issue = "Choose a location"; break;
+                    case MountIssue.None: issue = "배치 가능"; break;
+                    case MountIssue.NoSupport: issue = "성벽 위를 가리키세요"; break;
+                    case MountIssue.NoMountPoint: issue = "이 조각에는 설치 자리가 없습니다"; break;
+                    case MountIssue.Occupied: issue = "이미 무기가 설치되어 있습니다"; break;
+                    case MountIssue.UnfinishedSupport: issue = "이 조각은 아직 짓는 중입니다"; break;
+                    default: issue = "위치를 고르세요"; break;
                 }
                 selection.text = placement.SelectedWeapon.DisplayName + "\n" + issue;
             }
-            else if (placement.Selected == null) selection.text = "Choose a piece to build";
+            else if (placement.Selected == null) selection.text = "지을 조각을 고르세요";
             else
             {
                 string issue;
                 switch (placement.Issue)
                 {
-                    case PlacementIssue.None: issue = "Can place"; break;
-                    case PlacementIssue.OutsideGrid: issue = "Outside the grid"; break;
-                    case PlacementIssue.Occupied: issue = "Overlaps another piece"; break;
-                    case PlacementIssue.ReservedGate: issue = "Reserved gate location"; break;
-                    case PlacementIssue.UnitInTheWay: issue = "Overlaps a unit"; break;
-                    case PlacementIssue.UnevenSupport: issue = "Support heights differ"; break;
-                    case PlacementIssue.UnfinishedSupport: issue = "The piece below is still under construction"; break;
-                    default: issue = "Choose a location"; break;
+                    case PlacementIssue.None: issue = "배치 가능"; break;
+                    case PlacementIssue.OutsideGrid: issue = "격자 밖입니다"; break;
+                    case PlacementIssue.Occupied: issue = "다른 조각과 겹칩니다"; break;
+                    case PlacementIssue.ReservedGate: issue = "성문 자리입니다"; break;
+                    case PlacementIssue.UnitInTheWay: issue = "유닛과 겹칩니다"; break;
+                    case PlacementIssue.UnevenSupport: issue = "받침 높이가 다릅니다"; break;
+                    case PlacementIssue.UnfinishedSupport: issue = "아래 조각이 아직 짓는 중입니다"; break;
+                    default: issue = "위치를 고르세요"; break;
                 }
-                string floor = placement.PreviewLevel > 0 ? " · " + (placement.PreviewLevel + 1) + " floor" : "";
+                string floor = placement.PreviewLevel > 0 ? " · " + (placement.PreviewLevel + 1) + "층" : "";
                 selection.text = placement.Selected.DisplayName + " · " + placement.Rotation * 90 + "°" + floor + "\n" + issue;
-                if (placement.IsPreviewVisible && placement.StairNeedsConnection) selection.text += "\nStairs are not connected to a wall yet";
+                if (placement.IsPreviewVisible && placement.StairNeedsConnection) selection.text += "\n계단이 아직 성벽과 이어지지 않았습니다";
             }
             status.text = sandbox.Message;
             if (sandbox.Unit.Health != null)
-                unitHealth.text = "Test unit HP  " + sandbox.Unit.Health.Current.ToString("0") + " / " + sandbox.Unit.Health.Maximum.ToString("0");
+                unitHealth.text = "시험 유닛 HP  " + sandbox.Unit.Health.Current.ToString("0") + " / " + sandbox.Unit.Health.Maximum.ToString("0");
         }
 
     }

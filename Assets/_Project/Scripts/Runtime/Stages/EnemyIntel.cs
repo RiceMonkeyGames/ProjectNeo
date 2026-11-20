@@ -138,11 +138,11 @@ namespace ProjectNeo.Stages
             foreach (string id in order) rows.Add(new EnemyIntelRow(names[id], left[id], total[id], !known));
         }
 
-        /// <summary>여러 줄 글자. 적이 없으면 "No enemies".</summary>
+        /// <summary>여러 줄 글자. 적이 없으면 "적 없음".</summary>
         public string Describe()
         {
             IReadOnlyList<EnemyIntelRow> list = Rows();
-            if (list.Count == 0) return "No enemies";
+            if (list.Count == 0) return "적 없음";
             var text = new StringBuilder();
             for (int i = 0; i < list.Count; i++)
             {
@@ -153,14 +153,26 @@ namespace ProjectNeo.Stages
         }
 
         /// <summary>적 목록에 보일 보스 이름. 예: "Boss: Gate Crusher".</summary>
-        public static string BossLabel(BossDefinition boss) => "Boss: " + (boss != null ? boss.DisplayName : "Unknown");
+        public static string BossLabel(BossDefinition boss) => "보스: " + (boss != null ? boss.DisplayName : "알 수 없음");
 
-        /// <summary>프리팹 이름을 보여 줄 이름으로 바꾼다. 예: "enemy_gate_breaker" → "Gate Breaker".</summary>
+        /// <summary>알려진 적 프리팹의 한글 이름 (UI-04). 없는 이름은 프리팹 이름을 다듬어 쓴다.</summary>
+        static readonly Dictionary<string, string> KnownNames = new Dictionary<string, string>(System.StringComparer.OrdinalIgnoreCase)
+        {
+            { "ladder", "사다리병" },
+            { "archer", "궁수" },
+            { "gate_breaker", "성문 파괴병" },
+            { "wall_breaker", "성벽 파괴병" },
+            { "flyer", "비행병" },
+            { "flyer_high_archer", "고공 비행 궁수" },
+        };
+
+        /// <summary>프리팹 이름을 보여 줄 이름으로 바꾼다. 예: "enemy_gate_breaker" → "성문 파괴병", "Mystery_unit" → "Mystery Unit".</summary>
         public static string DisplayName(string prefabName)
         {
-            if (string.IsNullOrEmpty(prefabName)) return "Unknown";
+            if (string.IsNullOrEmpty(prefabName)) return "알 수 없음";
             string name = prefabName;
             if (name.StartsWith("enemy_", System.StringComparison.OrdinalIgnoreCase)) name = name.Substring(6);
+            if (KnownNames.TryGetValue(name, out string known)) return known;
             string[] words = name.Replace('-', '_').Split(new[] { '_', ' ' }, System.StringSplitOptions.RemoveEmptyEntries);
             if (words.Length == 0) return prefabName;
             for (int i = 0; i < words.Length; i++)
