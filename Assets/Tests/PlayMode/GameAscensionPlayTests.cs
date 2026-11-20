@@ -110,6 +110,10 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(rewards.Table.RunEndUnlockPoints(7, 0), rewards.RunEndUnlockPoints, "기본 게임은 배율 x1");
             Assert.AreEqual(rewards.RunEndUnlockPoints, GameSession.Meta.unlockPoints);
             StringAssert.Contains("해금 포인트 +", hud.StatusText);
+            // 엔딩 화면의 런 점수(META-04 수동 확인 대체): 첫 런이라 최고 기록이 된다.
+            Assert.IsNotNull(rewards.LastScore);
+            StringAssert.Contains($"런 점수 {RunScore.Number(rewards.LastScore.Total)} - 최고 기록!", hud.StatusText);
+            Assert.AreEqual(rewards.LastScore.Total, GameSession.Meta.bestRunScore);
             StringAssert.Contains("런 완료", hud.PhaseText);
         }
     }

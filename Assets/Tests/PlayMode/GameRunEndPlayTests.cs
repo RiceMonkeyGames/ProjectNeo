@@ -1,6 +1,7 @@
 using System.Collections;
 using NUnit.Framework;
 using ProjectNeo.Flow;
+using ProjectNeo.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
@@ -70,6 +71,32 @@ namespace ProjectNeo.Tests
             StringAssert.Contains($"런 점수 {ProjectNeo.Run.RunScore.Number(rewards.LastScore.Total)} - 최고 기록!", rewards.DescribeRunEnd());
             Assert.IsFalse(rewards.TryGrantRunEnd(), "한 런에 한 번만 준다");
             Assert.AreEqual(2, GameSession.Meta.unlockPoints);
+            // 패배 화면(META-04 수동 확인 대체): HUD 전투 상태 칸에 실제로 점수와 최고 기록 표시가 보인다.
+            var hud = Object.FindAnyObjectByType<GameFlowHud>();
+            StringAssert.Contains($"런 점수 {ProjectNeo.Run.RunScore.Number(rewards.LastScore.Total)} - 최고 기록!", hud.StatusText);
+            StringAssert.Contains(rewards.LastScore.Breakdown(), hud.StatusText, "점수 내역도 함께 보인다");
+        }
+
+        [UnityTest]
+        public IEnumerator Defeat_BelowBest_KeepsAndShowsTheSavedBest()
+        {
+            const int best = 9999999;
+            GameSession.Meta.bestRunScore = best;
+            var rewards = Object.FindAnyObjectByType<GameRewardController>();
+            yield return Fight(BattleOutcome.Victory);
+            Assert.IsTrue(GameSession.Flow.ContinueToNextStage());
+            yield return null;
+
+            yield return Fight(BattleOutcome.Defeat);
+
+            Assert.AreEqual(GamePhase.RunResult, GameSession.Flow.Phase);
+            Assert.IsNotNull(rewards.LastScore);
+            Assert.Less(rewards.LastScore.Total, best);
+            Assert.IsFalse(rewards.IsNewBest);
+            Assert.AreEqual(best, GameSession.Meta.bestRunScore, "더 낮은 점수는 최고 점수를 바꾸지 않는다");
+            var hud = Object.FindAnyObjectByType<GameFlowHud>();
+            StringAssert.Contains($"런 점수 {ProjectNeo.Run.RunScore.Number(rewards.LastScore.Total)} (최고 9,999,999)", hud.StatusText);
+            StringAssert.DoesNotContain("최고 기록!", hud.StatusText);
         }
 
         [UnityTest]

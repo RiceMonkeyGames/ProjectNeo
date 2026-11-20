@@ -1,6 +1,6 @@
 # META-04 | 2026-11-20 | Meta - Run Score Calculation & Display
 
-Last Updated: 2026-11-20 15:00:01 (KST)
+Last Updated: 2026-11-21 02:11:18 (KST)
 
 > Purpose: Task history. | Parent: [history/README](../README.md) | Related: [PrepEconomyMeta](../../design/PrepEconomyMeta.md#meta-progression), [META-08](META-08.md), [FlowRunEconomy codemap](../../codemap/FlowRunEconomy.md)
 
@@ -30,5 +30,6 @@ Q-70 fixed the run score formula and Q-78 (FLOW-03) replaced the post-ending loo
 ## Verification
 
 - 2026-11-20, `Tools/Agent/unity-verify-local.ps1 -Mode all`: `DOTNET_PRECHECK=PASSED`, `COMPILE=PASSED`, `EDITMODE=PASSED (Total=545 Passed=545 Failed=0 Skipped=0)`, `PLAYMODE=PASSED (Total=253 Passed=253 Failed=0 Skipped=0)`.
-- Manual check: deferred by the user (2026-11-20) to merge first; the Backlog row stays `Waiting for Verification` until it is done.
-- Verified scope: formula, multiplier, tally and run save (EditMode); run-end settlement and best score in the Game scene (PlayMode). On-screen text is covered by the manual check. Standalone build not run.
+- Manual check: deferred by the user (2026-11-20) to merge first, then replaced at the user's request (2026-11-21) by PlayMode assertions on the on-screen text.
+- 2026-11-21, on-screen text automated (test-only change, no runtime code touched): `GameRunEndPlayTests.Defeat_GrantsOnePointPerStageClearedOnce` reads `GameFlowHud.StatusText` for the defeat score, `New best!` mark and breakdown; new `GameRunEndPlayTests.Defeat_BelowBest_KeepsAndShowsTheSavedBest` checks a lower score keeps the saved best and shows `(best N)`; the `GameAscensionPlayTests` ending test checks the ending HUD score and saved best; new `TitleUnlockPlayTests.SlotText_ShowsTheSavedBestRunScore` checks the Title slot `Best 12,345` (and none when the best is 0). `Tools/Agent/unity-verify-local.ps1 -Mode play -Filter <class>`: `GameRunEndPlayTests` 3/3, `GameAscensionPlayTests` 2/2, `TitleUnlockPlayTests` 3/3 passed. Full suites were not re-run.
+- Verified scope: formula, multiplier, tally and run save (EditMode); run-end settlement, best score and the displayed result/Title text in the Game and Title scenes (PlayMode). Visual layout (text overflow/clipping) is not covered by tests. Standalone build not run.
