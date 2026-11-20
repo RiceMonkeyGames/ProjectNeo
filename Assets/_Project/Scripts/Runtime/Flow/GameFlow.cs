@@ -4,7 +4,7 @@ using ProjectNeo.Run;
 namespace ProjectNeo.Flow
 {
     /// <summary>
-    /// 타이틀 → 준비 → 전투 → (승리) 보상 → 다음 준비, (패배) 런 결과 → 타이틀의 단계 전환 규칙.
+    /// 타이틀 → 준비 → 전투 → (승리) 보상 → 다음 준비(마지막 스테이지면 엔딩), (패배) 런 결과 → 타이틀의 단계 전환 규칙.
     /// 씬과 화면을 알지 않는다. 허용되지 않은 전환은 false를 돌려주고 상태를 바꾸지 않는다.
     /// </summary>
     public sealed class GameFlow
@@ -21,10 +21,10 @@ namespace ProjectNeo.Flow
         public event Action<GamePhase> PhaseChanged;
 
         /// <summary>타이틀에서 새 런을 시작해 1스테이지 준비로 간다. <paramref name="state"/>는 이 런이 소유할 데이터다.</summary>
-        public bool StartRun(RunState state = null)
+        public bool StartRun(RunState state = null, int ascensionLevel = 0)
         {
             if (Phase != GamePhase.Title) return false;
-            Run = new RunProgress(state);
+            Run = new RunProgress(state, 1, ascensionLevel);
             LastOutcome = null;
             Enter(GamePhase.Preparation);
             return true;
@@ -34,10 +34,10 @@ namespace ProjectNeo.Flow
         /// 타이틀에서 저장된 런을 이어 한다(FLOW-02). 저장된 스테이지의 준비 단계로 들어간다.
         /// 런 데이터는 게임 씬이 저장 기록으로 되살려 붙인다.
         /// </summary>
-        public bool ResumeRun(int stageNumber)
+        public bool ResumeRun(int stageNumber, int ascensionLevel = 0)
         {
             if (Phase != GamePhase.Title) return false;
-            Run = new RunProgress(null, stageNumber);
+            Run = new RunProgress(null, stageNumber, ascensionLevel);
             LastOutcome = null;
             Enter(GamePhase.Preparation);
             return true;
@@ -50,7 +50,7 @@ namespace ProjectNeo.Flow
         public bool RestartRunAtFirstStage()
         {
             if (Run == null || Run.State != null) return false;
-            Run = new RunProgress();
+            Run = new RunProgress(null, 1, Run.AscensionLevel);
             return true;
         }
 
@@ -95,12 +95,31 @@ namespace ProjectNeo.Flow
             return FinishBattle(result.Outcome);
         }
 
-        /// <summary>보상을 마치고 다음 스테이지 준비로 간다.</summary>
+        /// <summary>
+        /// 런의 스테이지 수를 알려 준다(FLOW-03). 마지막 스테이지의 보상 뒤에는 다음 스테이지 대신 엔딩으로 간다.
+        /// 런이 없으면 false. 0이면 마지막 스테이지가 없다.
+        /// </summary>
+        public bool SetStageCount(int count)
+        {
+            if (Run == null) return false;
+            Run.SetStageCount(count);
+            return true;
+        }
+
+        /// <summary>보상을 마치고 다음 스테이지 준비로 간다. 마지막 스테이지면 false이고 <see cref="FinishRun"/>을 쓴다.</summary>
         public bool ContinueToNextStage()
         {
-            if (Phase != GamePhase.Reward) return false;
+            if (Phase != GamePhase.Reward || Run.IsFinalStage) return false;
             Run.AdvanceStage();
             Enter(GamePhase.Preparation);
+            return true;
+        }
+
+        /// <summary>마지막 스테이지의 보상을 마치고 엔딩으로 간다(FLOW-03). 보상 단계의 마지막 스테이지가 아니면 false.</summary>
+        public bool FinishRun()
+        {
+            if (Phase != GamePhase.Reward || !Run.IsFinalStage) return false;
+            Enter(GamePhase.Ending);
             return true;
         }
 

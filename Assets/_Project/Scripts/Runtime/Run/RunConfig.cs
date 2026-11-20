@@ -26,9 +26,12 @@ namespace ProjectNeo.Run
         [SerializeField] PrepTimeSettings prepTime;
         [Tooltip("런 사이 해금 트랙(META-07). 비어 있으면 예전 해금 플래그(처음부터 해금)만 본다.")]
         [SerializeField] UnlockCatalog unlockCatalog;
+        [Tooltip("승천 단계 표(FLOW-03, Q-78). 비어 있으면 승천 단계를 쓰지 않는다.")]
+        [SerializeField] AscensionTable ascension;
 
         public SquadConfig SquadConfig => squadConfig;
         public UnlockCatalog UnlockCatalog => unlockCatalog;
+        public AscensionTable Ascension => ascension;
         public PrepTimeSettings PrepTime => prepTime;
         public IReadOnlyList<FacilityDefinition> Facilities => facilities;
         public EconomyConfig Economy => economy;

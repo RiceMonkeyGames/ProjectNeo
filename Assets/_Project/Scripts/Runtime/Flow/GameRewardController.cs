@@ -45,7 +45,8 @@ namespace ProjectNeo.Flow
         void OnPhaseChanged(GamePhase phase)
         {
             if (phase == GamePhase.Reward) TryGrant();
-            if (phase == GamePhase.RunResult) TryGrantRunEnd();
+            // 런은 패배(런 결과) 또는 마지막 스테이지 뒤 엔딩(FLOW-03)으로 끝난다.
+            if (phase == GamePhase.RunResult || phase == GamePhase.Ending) TryGrantRunEnd();
         }
 
         /// <summary>이 런이 끝날 때 받은 해금 포인트. 아직 받지 않았으면 -1.</summary>
@@ -55,24 +56,33 @@ namespace ProjectNeo.Flow
 
         /// <summary>
         /// 런이 끝날 때 해금 포인트를 한 번 준다(META-08, Q-76): 클리어한 스테이지와 처치한 보스 수에 따라
-        /// <see cref="StageRewardTable"/>의 값만큼 메타 진행에 넣고 바로 저장한다. 지금은 패배가 런의 끝이다
-        /// (마지막 스테이지 뒤의 런 종료는 FLOW-03, 보스 처치 수는 SIEGE-09가 넘긴다). 이미 줬거나 연결이 없으면 false.
+        /// <see cref="StageRewardTable"/>의 값만큼 메타 진행에 넣고 바로 저장한다. 런은 패배 또는 마지막 스테이지 뒤
+        /// 엔딩(FLOW-03)으로 끝나며, 엔딩이면 지금 스테이지까지 깬 것으로 센다. 승천 단계의 배율(Q-78)을 곱하고 올림한다.
+        /// 보스 처치 수는 SIEGE-09가 넘긴다. 이미 줬거나 연결이 없으면 false.
         /// </summary>
         public bool TryGrantRunEnd(int bossesKilled = 0)
         {
             if (RunEndUnlockPoints >= 0 || table == null || flow.Run == null) return false;
-            RunEndStagesCleared = Mathf.Max(0, flow.Run.StageNumber - 1);
-            RunEndUnlockPoints = table.RunEndUnlockPoints(RunEndStagesCleared, bossesKilled);
+            int cleared = flow.Phase == GamePhase.Ending ? flow.Run.StageNumber : flow.Run.StageNumber - 1;
+            RunEndStagesCleared = Mathf.Max(0, cleared);
+            int basePoints = table.RunEndUnlockPoints(RunEndStagesCleared, bossesKilled);
+            RunState state = battle != null ? battle.RunLink.State : null;
+            RunEndUnlockPoints = state != null ? state.Ascension.ScaleReward(basePoints) : basePoints;
+            RunEndMultiplier = state != null ? state.Ascension.RewardMultiplier : 1f;
             GameSession.Meta.unlockPoints += RunEndUnlockPoints;
             GameSession.SaveMeta();
             return true;
         }
 
-        /// <summary>런 결과 화면에 보여줄 글. 런 종료 포인트를 아직 주지 않았으면 빈 문자열.</summary>
+        /// <summary>런 종료 해금 포인트에 곱한 승천 배율(FLOW-03). 기본 게임이면 1.</summary>
+        public float RunEndMultiplier { get; private set; } = 1f;
+
+        /// <summary>런 결과·엔딩 화면에 보여줄 글. 런 종료 포인트를 아직 주지 않았으면 빈 문자열.</summary>
         public string DescribeRunEnd()
         {
             if (RunEndUnlockPoints < 0) return string.Empty;
-            return $"Stages cleared {RunEndStagesCleared}\nUnlock points +{RunEndUnlockPoints} (total {GameSession.Meta.unlockPoints})";
+            string multiplier = RunEndMultiplier > 1f ? $" (Ascension x{RunEndMultiplier:0.0#})" : string.Empty;
+            return $"Stages cleared {RunEndStagesCleared}\nUnlock points +{RunEndUnlockPoints}{multiplier} (total {GameSession.Meta.unlockPoints})";
         }
 
         /// <summary>지급할 보상이 있으면 한 번 지급하고 true. 이미 받았거나 연결·표가 없으면 false.</summary>
@@ -86,7 +96,9 @@ namespace ProjectNeo.Flow
 
             var random = new SeededRandom(state.SeedFor(result.BattleNumber));
             StageReward reward = StageReward.Roll(table, flow.Run.StageNumber, result, random);
-            // 내실 퍽의 보상 골드 효과(META-02)는 굴린 골드 전체에 붙는다.
+            // 승천의 승리 골드 감소(FLOW-03)를 먼저 적용한다. 단계 0이면 그대로다.
+            reward.ScaleGold(state.Ascension.VictoryGold);
+            // 내실 퍽의 보상 골드 효과(META-02)는 (승천 적용 뒤) 굴린 골드 전체에 붙는다.
             PerkGoldBonus = state.PerkRewardGoldBonus(reward.Gold);
             reward.AddGold(PerkGoldBonus);
             if (!state.ApplyReward(reward)) return false;

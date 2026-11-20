@@ -23,7 +23,8 @@ namespace ProjectNeo.Run
         {
             if (PrepTime == null || HasPendingBattle || ClockPreparation == BattlesFought) return false;
             ClockPreparation = BattlesFought;
-            Clock.Begin(PrepTime.BudgetHours + PerkPrepHours);
+            // 승천의 준비 시간 감소(FLOW-03)는 기본 예산에, 퍽의 추가 시간(META-02)은 그 위에 더한다.
+            Clock.Begin(Ascension.PrepBudgetHours(PrepTime.BudgetHours) + PerkPrepHours);
             Changed?.Invoke();
             return true;
         }

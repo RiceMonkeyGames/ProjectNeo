@@ -92,6 +92,8 @@ namespace ProjectNeo.Flow
             Subscribe();
             float start = health.IsDead ? 0f : health.Current;
             float hours = Time.RepairHours((health.Maximum - start) / health.Maximum);
+            // 승천의 수리 시간 증가(FLOW-03).
+            if (State != null) hours = State.Ascension.RepairHours(hours);
             return Add(new WorkOrder(WorkKind.Repair, kind, key, hours, gold, start), target);
         }
 

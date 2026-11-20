@@ -8,5 +8,7 @@ namespace ProjectNeo.Flow
         Battle = 2,
         Reward = 3,
         RunResult = 4,
+        /// <summary>마지막 스테이지 보상 뒤의 엔딩(FLOW-03). 런이 승리로 끝나고 타이틀로만 갈 수 있다.</summary>
+        Ending = 5,
     }
 }

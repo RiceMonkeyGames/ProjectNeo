@@ -34,6 +34,8 @@ namespace ProjectNeo.Run
         public PrepTimeRecord prepTime = new PrepTimeRecord();
         /// <summary>이번 런에서 찍은 퍽 id(META-02). 예전 저장에는 없어서 비어 있다.</summary>
         public List<string> perks = new List<string>();
+        /// <summary>이 런의 승천 단계(FLOW-03). 예전 저장에는 없어 0(기본 게임)으로 읽힌다.</summary>
+        public int ascensionLevel;
     }
 
     [Serializable]

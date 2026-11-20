@@ -18,6 +18,8 @@ namespace ProjectNeo.UI
         [SerializeField] GameObject defeatButton;
         [SerializeField] GameObject nextStageButton;
         [SerializeField] GameObject returnToTitleButton;
+        [Tooltip("마지막 스테이지 보상 뒤 엔딩으로 가는 버튼(FLOW-03). 이때는 다음 스테이지 버튼 대신 보인다.")]
+        [SerializeField] GameObject finishRunButton;
         [SerializeField] GamePhaseView phaseView;
         [SerializeField] PreparationInteraction interaction;
         [SerializeField] TMP_Text interactionHint;
@@ -49,6 +51,11 @@ namespace ProjectNeo.UI
             defeatButton = defeat; nextStageButton = nextStage; returnToTitleButton = returnToTitle;
         }
 
+        public void ConfigureFinishRun(GameObject finishRun) => finishRunButton = finishRun;
+
+        /// <summary>마지막 스테이지 보상을 마치고 엔딩으로 간다(FLOW-03).</summary>
+        public void FinishRun() => flow.FinishRun();
+
         public void StartBattle()
         {
             if (battle != null) battle.TryStartBattle();
@@ -79,8 +86,17 @@ namespace ProjectNeo.UI
             GameRewardController rewards = battle != null ? battle.GetComponent<GameRewardController>() : null;
             bool rewarding = flow.Phase == GamePhase.Reward && rewards != null && rewards.LastReward != null;
             bool runEnded = flow.Phase == GamePhase.RunResult && rewards != null && rewards.RunEndUnlockPoints >= 0;
+            bool ending = flow.Phase == GamePhase.Ending && battle != null;
             interactionHint.transform.parent.gameObject.SetActive(preparation);
-            if (battleStatus != null) battleStatus.transform.parent.gameObject.SetActive(fighting || rewarding || runEnded);
+            if (battleStatus != null) battleStatus.transform.parent.gameObject.SetActive(fighting || rewarding || runEnded || ending);
+            if (ending)
+            {
+                // 엔딩(FLOW-03): 깬 단계·열린 승천 단계 아래에 런 종료 해금 포인트(META-08)를 보여준다.
+                string runEnd = rewards != null ? rewards.DescribeRunEnd() : string.Empty;
+                if (battleStatus != null) battleStatus.text = EndingText() + (runEnd.Length > 0 ? "\n" + runEnd : string.Empty);
+                explorationReticle.SetActive(false);
+                return;
+            }
             explorationReticle.SetActive(preparation && phaseView.IsExplorationView);
 
             // 대포에 탄 동안에만 조준선에 발사 가능·재장전 상태를 보여준다.
@@ -220,21 +236,40 @@ namespace ProjectNeo.UI
             startBattleButton.SetActive(battle == null && phase == GamePhase.Preparation);
             victoryButton.SetActive(battle == null && phase == GamePhase.Battle);
             defeatButton.SetActive(battle == null && phase == GamePhase.Battle);
-            nextStageButton.SetActive(phase == GamePhase.Reward);
-            returnToTitleButton.SetActive(phase == GamePhase.RunResult);
+            bool finalReward = phase == GamePhase.Reward && flow.Run != null && flow.Run.IsFinalStage;
+            // 엔딩 버튼이 없는 씬에서는 다음 스테이지 버튼을 그대로 둔다(눌러도 마지막 스테이지에서는 넘어가지 않는다).
+            nextStageButton.SetActive(phase == GamePhase.Reward && (!finalReward || finishRunButton == null));
+            if (finishRunButton != null) finishRunButton.SetActive(finalReward);
+            returnToTitleButton.SetActive(phase == GamePhase.RunResult || phase == GamePhase.Ending);
             int stage = flow.Run != null ? flow.Run.StageNumber : 0;
+            // 승천 단계가 있으면 제목 뒤에 붙인다(FLOW-03).
+            int ascension = flow.Run != null ? flow.Run.AscensionLevel : 0;
+            string ascensionLabel = ascension > 0 ? $" - Ascension {ascension}" : string.Empty;
 
             // 런 데이터가 붙어 있으면 준비 중 보유 골드를 함께 보여준다.
             int? gold = flow.Run != null && flow.Run.State != null ? flow.Run.State.Wallet.Gold : (int?)null;
             string goldLabel = gold.HasValue ? $" - Gold {gold}" : string.Empty;
             phaseLabel.text = phase switch
             {
-                GamePhase.Preparation => ($"Preparation - Stage {stage}") + goldLabel,
-                GamePhase.Battle => $"Battle - Stage {stage}",
-                GamePhase.Reward => $"Victory - Reward (Stage {stage})",
-                GamePhase.RunResult => $"Defeat - Run result (Stage {stage})",
+                GamePhase.Preparation => ($"Preparation - Stage {stage}") + ascensionLabel + goldLabel,
+                GamePhase.Battle => $"Battle - Stage {stage}" + ascensionLabel,
+                GamePhase.Reward => $"Victory - Reward (Stage {stage})" + ascensionLabel,
+                GamePhase.RunResult => $"Defeat - Run result (Stage {stage})" + ascensionLabel,
+                GamePhase.Ending => "Run complete - All stages cleared" + ascensionLabel,
                 _ => string.Empty,
             };
+        }
+
+        /// <summary>엔딩 화면의 내역(FLOW-03): 깬 단계와 새로 열린 승천 단계.</summary>
+        public string EndingText()
+        {
+            int level = flow.Run != null ? flow.Run.AscensionLevel : 0;
+            string cleared = level > 0 ? $"Ascension {level} cleared." : "Base game cleared.";
+            int unlocked = battle != null ? battle.AscensionUnlockedAtEnding : 0;
+            if (unlocked > 0) return cleared + $"\nAscension {unlocked} unlocked! Pick it with New Game on the title screen.";
+            return cleared + (battle != null && battle.AscensionTable != null && level >= battle.AscensionTable.MaxLevel
+                ? "\nThis is the highest Ascension."
+                : string.Empty);
         }
     }
 }

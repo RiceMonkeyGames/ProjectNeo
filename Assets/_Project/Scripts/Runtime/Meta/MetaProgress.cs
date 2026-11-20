@@ -26,6 +26,11 @@ namespace ProjectNeo.Meta
         public List<string> unlockedIds = new List<string>();
         /// <summary>해금 트랙에서 연 항목 id(META-05). 처음부터 열린 항목은 넣지 않는다.</summary>
         public List<string> openedEntryIds = new List<string>();
+        /// <summary>
+        /// 새 런에서 고를 수 있는 가장 높은 승천 단계(FLOW-03, Q-78). 0이면 기본 게임만 있다. 예전 저장에는 없어 0으로 읽힌다.
+        /// 규칙은 <see cref="AscensionProgress"/>.
+        /// </summary>
+        public int ascensionUnlocked;
 
         public bool IsUnlocked(IUnlockable unlockable)
         {
