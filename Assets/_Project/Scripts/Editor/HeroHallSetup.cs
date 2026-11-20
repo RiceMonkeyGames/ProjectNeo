@@ -17,7 +17,7 @@ namespace ProjectNeo.Editor
     /// </summary>
     public static class HeroHallSetup
     {
-        public const string DisplayName = "Hero Hall";
+        public const string DisplayName = "영웅관";
         public const string BuildingName = "HeroHall";
         public const string SettingsPath = "Assets/_Project/Data/GameFlow/HeroPromotion.asset";
         const string StartPath = "Assets/_Project/Data/GameFlow/Build/RunStart.asset";
@@ -50,7 +50,7 @@ namespace ProjectNeo.Editor
             {
                 Material plaster = CombatPrototypeSetup.MaterialAsset("FacilityPlaster", new Color(0.73f, 0.65f, 0.48f));
                 Material roof = CombatPrototypeSetup.MaterialAsset("FacilityRoof", new Color(0.28f, 0.32f, 0.43f));
-                GameFlowSetup.Facility(layout, BuildingName, BuildingPosition, BuildingSize, plaster, roof);
+                GameFlowSetup.Facility(layout, BuildingName, BuildingPosition, BuildingSize, plaster, roof, DisplayName);
                 building = layout.Find(BuildingName);
                 // 다른 건물과 같이 간판에 화면 이름을 쓴다.
                 foreach (TMPro.TextMeshPro sign in building.GetComponentsInChildren<TMPro.TextMeshPro>(true)) sign.text = DisplayName;

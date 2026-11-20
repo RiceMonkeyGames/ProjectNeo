@@ -7,7 +7,7 @@ namespace ProjectNeo.Stages
     [CreateAssetMenu(menuName = "ProjectNeo/Stages/Stage")]
     public sealed class StageDefinition : ScriptableObject
     {
-        [SerializeField] string displayName = "Stage";
+        [SerializeField] string displayName = "스테이지";
         [Tooltip("위에서부터 순서대로 나온다. 시작 시간은 오름차순으로 둔다.")]
         [SerializeField] StageWave[] waves = new StageWave[0];
 

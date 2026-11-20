@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: perk_combat_swift_strikes
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Meta.PerkDefinition
   id: perk_combat_swift_strikes
-  displayName: Swift Strikes
+  displayName: "\uBE60\uB978 \uC77C\uACA9"
   category: 0
   pointCost: 1
   unlockedByDefault: 1

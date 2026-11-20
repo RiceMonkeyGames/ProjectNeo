@@ -75,14 +75,14 @@ namespace ProjectNeo.Tests
                 Assert.IsTrue(equipment.IsOpen && view.IsPanelView, "I로 장비 화면을 연다.");
                 Assert.IsFalse(Object.FindAnyObjectByType<PlayerInputController>().enabled);
                 Assert.AreEqual(1, equipment.InventoryRows);
-                StringAssert.Contains("Equipment slots 0 / 3", equipment.StatusText);
+                StringAssert.Contains("장비 칸 0 / 3", equipment.StatusText);
 
                 Assert.IsTrue(equipment.TryEquip(0));
                 Assert.AreEqual(attack + 4f, player.Stats.GetValue(StatType.Attack), 0.001f);
                 Assert.AreEqual(1, player.Character.Equipment.Count);
                 Assert.AreEqual(0, state.Inventory.CountOf(sword));
-                StringAssert.Contains("Equipment slots 1 / 3", equipment.StatusText);
-                StringAssert.Contains("equip", equipment.BodyText);
+                StringAssert.Contains("장비 칸 1 / 3", equipment.StatusText);
+                StringAssert.Contains("장착", equipment.BodyText);
 
                 Assert.IsTrue(equipment.TryUnequip(0));
                 Assert.AreEqual(attack, player.Stats.GetValue(StatType.Attack), 0.001f);

@@ -88,7 +88,7 @@ namespace ProjectNeo.Editor
             center.Configure(config, commandSettings, rosters);
             var input = commandRoot.AddComponent<SquadCommandInput>();
             input.Configure(center, camera); input.enabled = false;
-            SquadCommandSetup.CreateHud(center, input, "\nTab: construction view");
+            SquadCommandSetup.CreateHud(center, input, "\nTab: 건설 화면");
             SquadCommandSetup.AddMarkers(center);
             GameObject commandHud = Find<SquadCommandHud>(scene).gameObject;
             AddHudBacking(commandHud.GetComponent<SquadCommandHud>());
@@ -118,7 +118,7 @@ namespace ProjectNeo.Editor
             rect.anchoredPosition = new Vector2(-24f, -24f); rect.sizeDelta = new Vector2(440f, 64f);
             var label = root.GetComponent<TextMeshProUGUI>();
             label.font = Required<TMP_FontAsset>("Assets/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF.asset");
-            label.text = "Tab: first-person commands"; label.fontSize = 22f;
+            label.text = "Tab: 1인칭 지휘"; label.fontSize = 22f;
             label.alignment = TextAlignmentOptions.TopRight; label.raycastTarget = false;
             hud.ConfigureWeapons(new List<SiegeWeaponDefinition>(hud.Weapons).ToArray());
         }

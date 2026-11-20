@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: hero_archer
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Characters.HeroDefinition
   id: hero_archer
-  displayName: Mercenary archer
+  displayName: "\uC6A9\uBCD1 \uAD81\uC218"
   unlockedByDefault: 1
   hireCost:
     gold: 60

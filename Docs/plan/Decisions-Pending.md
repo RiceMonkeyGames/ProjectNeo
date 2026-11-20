@@ -1,6 +1,6 @@
 # Pending Decisions & Active Operational Policies
 
-Last Updated: 2026-11-19 21:09:01 (KST)
+Last Updated: 2026-11-20 21:07:07 (KST)
 
 > Purpose: Undecided or partial design/implementation decisions (`Q-*`) and active operational rules. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Resolved](Decisions-Resolved.md), [OpenQuestions](../design/OpenQuestions.md)
 
@@ -18,7 +18,7 @@ Last Updated: 2026-11-19 21:09:01 (KST)
 |---|---|---|---|
 | Q-01 | Synty pack and finalized piece specifications | Production art integration | Undecided. Generic modular architecture approved; dimensions in assets. |
 | Q-10 | Final troop headcount, baseline gear, performance budget | Art integration, M6 | Undecided. B-1 500-unit test is not a production guarantee. |
-| Q-11 | Command keys, combat HUD, prep UI layout | B-5.3, M2 UI | Partial: F1–F10 in Siege prototype; default F1–F4, `, 1, 2, 3. Final HUD layout undecided. |
+| Q-11 | Command keys, combat HUD, prep UI layout | B-5.3, M2 UI | Partial: F1–F10 in Siege prototype; default F1–F4, `, 1, 2, 3. Overall UI style and staging decided 2026-11-20 (UI-05 to UI-08, [Decisions-Resolved](Decisions-Resolved.md)); battle HUD layout and command keys still undecided (needed by UI-08). |
 | Q-13 | Mid-run saves, resume capability, save slots | M2 lifecycle, M3 persistence | Partial (2026-11-16, META-01): meta save implemented with three slots, save on every meta change and on quit, backup recovery. Run save and Title "Continue" implemented in FLOW-02 (2026-11-16) with choices delegated to the agent: one run per slot, automatic saves at preparation start / battle start / reward / quit during preparation, no mid-battle save, defeat deletes the run save. Still open: saving inside a battle, manual saves, and save migration when content ids change. |
 | Q-14 | Release platforms, distribution channels, launch dates, scale | M4 scope, M7 delivery | Undecided. Focus on core completion criteria first. |
 | Q-15 | Supported input devices, settings, languages, accessibility | M2 framework, M5 UI | Undecided. Avoid arbitrary additions. |

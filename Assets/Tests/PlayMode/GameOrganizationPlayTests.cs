@@ -85,7 +85,7 @@ namespace ProjectNeo.Tests
             Assert.AreSame(state.Army.Squads[squadCount], state.SquadOf(soldier));
             Assert.IsTrue(InScene(center, squadCount, soldier, battle));
             Assert.AreEqual(sourceSize - 1, state.Army.Squads[source].Members.Count);
-            StringAssert.Contains("Squad " + (squadCount + 1), organization.BodyText);
+            StringAssert.Contains((squadCount + 1) + "부대", organization.BodyText);
 
             Assert.IsTrue(organization.Select(soldier));
             Assert.IsFalse(organization.DropOnReserve(), "잡졸은 대기로 보낼 수 없다.");
@@ -95,7 +95,7 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(squadCount, center.Commander.SquadCount);
             Assert.AreSame(state.Army.Squads[source], state.SquadOf(soldier));
             Assert.IsTrue(InScene(center, source, soldier, battle));
-            StringAssert.Contains("Empty squad", organization.BodyText);
+            StringAssert.Contains("빈 부대", organization.BodyText);
 
             Assert.IsFalse(organization.Select(state.Player), "플레이어는 카드에서 고를 수 없다(Q-32 임시).");
             organization.Close();

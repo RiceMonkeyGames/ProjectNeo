@@ -31,7 +31,7 @@ namespace ProjectNeo.Siege
         public int SelectedSquad { get; private set; } = -1;
         public bool Dismantling { get; private set; }
         public bool Locked { get; private set; }
-        public string Message { get; private set; } = "Repair walls and place squads, then start battle.";
+        public string Message { get; private set; } = "성벽을 수리하고 부대를 배치한 뒤 전투를 시작하세요.";
 
         public void Configure(ConstructionWorld owner, Camera buildCamera, PlacementController placementController,
             SquadCommandCenter commandCenter, SiegeSettings siegeSettings, float facing)
@@ -63,7 +63,7 @@ namespace ProjectNeo.Siege
         {
             if (Locked) return false;
             if (Budget.CanAfford(SelectionCost)) return true;
-            Message = "Not enough budget.";
+            Message = "예산이 부족합니다.";
             return false;
         }
 
@@ -72,7 +72,7 @@ namespace ProjectNeo.Siege
             int cost = settings.CostOf(structure.Placement.Definition);
             Budget.TrySpend(cost);
             pieceCosts[structure.Placement.Id] = cost;
-            Message = structure.Placement.Definition.DisplayName + " built.";
+            Message = structure.Placement.Definition.DisplayName + " 건설.";
         }
 
         void OnWeaponMounted(PlacedSiegeWeapon weapon)
@@ -80,7 +80,7 @@ namespace ProjectNeo.Siege
             int cost = settings.CostOf(weapon.Definition);
             Budget.TrySpend(cost);
             weaponCosts[weapon.Mount.Id] = cost;
-            Message = weapon.Definition.DisplayName + " installed.";
+            Message = weapon.Definition.DisplayName + " 설치.";
         }
 
         public void SelectSquad(int squad)
@@ -90,7 +90,7 @@ namespace ProjectNeo.Siege
             Dismantling = false;
             SelectedSquad = squad;
             center.Commander.Select(squad);
-            Message = ProjectNeo.UI.SquadCommandHud.SquadName(center, squad) + ": Click ground or a wall top to place.";
+            Message = ProjectNeo.UI.SquadCommandHud.SquadName(center, squad) + ": 땅이나 성벽 위를 클릭해 배치하세요.";
         }
 
         public void BeginDismantle()
@@ -99,7 +99,7 @@ namespace ProjectNeo.Siege
             placement.Cancel();
             SelectedSquad = -1;
             Dismantling = true;
-            Message = "Dismantle: click a piece built this preparation for a full refund.";
+            Message = "해체: 이번 준비 중에 지은 조각을 클릭하면 전액 환불합니다.";
         }
 
         public void CancelTool()
@@ -122,14 +122,14 @@ namespace ProjectNeo.Siege
             if (Locked || squad < 0 || squad >= center.Squads.Count) return false;
             if (world.IsRebuilding || world.RebuildPending)
             {
-                Message = "Updating terrain. Try again shortly.";
+                Message = "지형을 갱신하는 중입니다. 잠시 후 다시 시도하세요.";
                 return false;
             }
             SquadCommandSettings command = center.Settings;
             if (!NavMesh.SamplePosition(point, out NavMeshHit origin, command.NavigationSnapDistance, NavMesh.AllAreas)
                 || Mathf.Abs(origin.position.y - point.y) > command.VerticalSnapTolerance)
             {
-                Message = "Cannot place a squad there.";
+                Message = "그곳에는 부대를 배치할 수 없습니다.";
                 return false;
             }
             var members = new List<UnitCombatAI>();
@@ -155,7 +155,7 @@ namespace ProjectNeo.Siege
             center.Commander.Select(squad);
             center.Commander.Issue(new SquadOrder(SquadOrderKind.Hold));
             foreach (UnitCombatAI member in members) member.SetDirective(UnitDirective.Hold);
-            Message = (squad + 1) + ": squad placed.";
+            Message = (squad + 1) + ": 부대 배치.";
             return true;
         }
 
@@ -170,24 +170,24 @@ namespace ProjectNeo.Siege
                 string name = weapon.Definition.DisplayName;
                 if (!world.RemoveWeapon(weapon)) return false;
                 if (weaponCosts.TryGetValue(id, out int refund)) { Budget.Refund(refund); weaponCosts.Remove(id); }
-                Message = name + " dismantled.";
+                Message = name + " 해체.";
                 return true;
             }
             int pieceId = structure.Placement.Id;
             if (!pieceCosts.TryGetValue(pieceId, out int cost))
             {
-                Message = "Original pieces cannot be dismantled.";
+                Message = "처음부터 있던 조각은 해체할 수 없습니다.";
                 return false;
             }
             string pieceName = structure.Placement.Definition.DisplayName;
             if (!world.TryDismantle(structure))
             {
-                Message = "Cannot dismantle: a unit is on top or overlapping.";
+                Message = "해체할 수 없습니다: 위에 유닛이 있거나 겹쳐 있습니다.";
                 return false;
             }
             Budget.Refund(cost);
             pieceCosts.Remove(pieceId);
-            Message = pieceName + " dismantled.";
+            Message = pieceName + " 해체.";
             return true;
         }
 
@@ -223,10 +223,10 @@ namespace ProjectNeo.Siege
             if (Dismantling)
             {
                 var structure = rayHits[picked].collider.GetComponentInParent<PlacedStructure>();
-                if (structure == null) Message = "Click a piece to dismantle.";
+                if (structure == null) Message = "해체할 조각을 클릭하세요.";
                 else Dismantle(structure);
             }
-            else if (rayHits[picked].normal.y < center.Settings.MinimumSurfaceUp) Message = "Click ground or a wall top.";
+            else if (rayHits[picked].normal.y < center.Settings.MinimumSurfaceUp) Message = "땅이나 성벽 위를 클릭하세요.";
             else PlaceSquad(SelectedSquad, rayHits[picked].point);
         }
     }

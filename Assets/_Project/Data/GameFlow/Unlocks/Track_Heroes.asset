@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: Track_Heroes
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Meta.UnlockTrackDefinition
   category: 0
-  displayName: Heroes
+  displayName: "\uC601\uC6C5"
   entries:
   - id: hero_swordsman
-    displayName: Mercenary swordsman
+    displayName: "\uC6A9\uBCD1 \uAC80\uC0AC"
     cost: 0
     prerequisiteIds: []
     openedByDefault: 1
@@ -25,7 +25,7 @@ MonoBehaviour:
       targetId: hero_swordsman
       amount: 1
   - id: hero_archer
-    displayName: Mercenary archer
+    displayName: "\uC6A9\uBCD1 \uAD81\uC218"
     cost: 0
     prerequisiteIds:
     - hero_swordsman
@@ -35,7 +35,7 @@ MonoBehaviour:
       targetId: hero_archer
       amount: 1
   - id: hero_knight
-    displayName: Knight
+    displayName: "\uAE30\uC0AC"
     cost: 2
     prerequisiteIds:
     - hero_archer
@@ -45,7 +45,7 @@ MonoBehaviour:
       targetId: hero_knight
       amount: 1
   - id: hero_paladin
-    displayName: Paladin
+    displayName: "\uC131\uAE30\uC0AC"
     cost: 3
     prerequisiteIds:
     - hero_knight

@@ -57,10 +57,10 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(15, window.RowCount, "트리 3개 x 퍽 5개");
             Assert.AreEqual(UnlockClickResult.Armed, window.Click(first));
             Assert.AreEqual(UnlockClickResult.Opened, window.Click(first));
-            StringAssert.Contains("Taken", window.RowText(first));
+            StringAssert.Contains("획득함", window.RowText(first));
             Assert.Greater(player.Stats.GetValue(StatType.Attack), attack, "첫 전투 퍽(공격 +15%)이 바로 붙는다");
             Assert.AreEqual(UnlockClickResult.Refused, window.Click(window.Trees.Trees[0].Perks[4]));
-            StringAssert.StartsWith("Take ", window.StatusText);
+            StringAssert.StartsWith("먼저 ", window.StatusText);
 
             window.Close();
             Assert.IsFalse(window.IsOpen);

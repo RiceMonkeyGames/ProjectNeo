@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: TestUnit
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Characters.HeroDefinition
   id: construction_test_unit
-  displayName: construction_test_unit
+  displayName: "\uAC74\uC124 \uC2DC\uD5D8 \uC720\uB2DB"
   unlockedByDefault: 1
   hireCost:
     gold: 0
@@ -25,3 +25,5 @@ MonoBehaviour:
   - stat: 4
     value: 4
   skills: []
+  tier: 1
+  unitPrefab: {fileID: 0}

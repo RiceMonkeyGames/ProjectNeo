@@ -70,7 +70,7 @@ namespace ProjectNeo.UI
                 bool exists = i < count;
                 buttons[i].SetActive(exists);
                 if (exists) buttons[i].GetComponentInChildren<TMP_Text>(true).text =
-                    SquadCommandHud.SquadName(center, i) + "  (" + center.Squads[i].Members.Count + " units)";
+                    SquadCommandHud.SquadName(center, i) + "  (" + center.Squads[i].Members.Count + "명)";
             }
             var layout = panel.GetComponent<UnityEngine.UI.VerticalLayoutGroup>();
             float step = template.GetComponent<UnityEngine.UI.LayoutElement>().preferredHeight + (layout != null ? layout.spacing : 0f);
@@ -104,44 +104,44 @@ namespace ProjectNeo.UI
         void Update()
         {
             FitPanel();
-            budget.text ="Budget  " + prep.Budget.Remaining + " / " + prep.Budget.Total;
-            enemies.text = "Incoming enemies\nLadders " + director.CountEnemies(SiegeAttackerRole.Ladder)
-                + " - Gate breakers " + director.CountEnemies(SiegeAttackerRole.GateBreaker)
-                + " - Archers " + director.CountEnemies(SiegeAttackerRole.Archer);
+            budget.text ="예산  " + prep.Budget.Remaining + " / " + prep.Budget.Total;
+            enemies.text = "다가오는 적\n사다리 " + director.CountEnemies(SiegeAttackerRole.Ladder)
+                + " - 성문 파괴병 " + director.CountEnemies(SiegeAttackerRole.GateBreaker)
+                + " - 궁수 " + director.CountEnemies(SiegeAttackerRole.Archer);
             status.text = prep.Message;
-            if (prep.SelectedSquad >= 0) selection.text = (prep.SelectedSquad + 1) + ": Place squad\nClick ground or a wall top";
-            else if (prep.Dismantling) selection.text = "Dismantle\nClick a piece built this preparation";
+            if (prep.SelectedSquad >= 0) selection.text = (prep.SelectedSquad + 1) + ": 부대 배치\n땅이나 성벽 위를 클릭";
+            else if (prep.Dismantling) selection.text = "해체\n이번 준비 중에 지은 조각을 클릭";
             else if (placement.SelectedWeapon != null)
             {
                 string issue;
                 switch (placement.MountIssue)
                 {
-                    case MountIssue.None: issue = "Can place"; break;
-                    case MountIssue.NoSupport: issue = "Point at a wall top"; break;
-                    case MountIssue.NoMountPoint: issue = "This piece has no mount point"; break;
-                    case MountIssue.Occupied: issue = "A weapon already occupies this mount"; break;
-                    default: issue = "Choose a location"; break;
+                    case MountIssue.None: issue = "배치 가능"; break;
+                    case MountIssue.NoSupport: issue = "성벽 위를 가리키세요"; break;
+                    case MountIssue.NoMountPoint: issue = "이 조각에는 설치 자리가 없습니다"; break;
+                    case MountIssue.Occupied: issue = "이미 무기가 설치되어 있습니다"; break;
+                    default: issue = "위치를 고르세요"; break;
                 }
-                selection.text = placement.SelectedWeapon.DisplayName + " - Cost "
+                selection.text = placement.SelectedWeapon.DisplayName + " - 비용 "
                     + settings.CostOf(placement.SelectedWeapon) + "\n" + issue;
             }
-            else if (placement.Selected == null) selection.text = "Choose a piece or squad to place";
+            else if (placement.Selected == null) selection.text = "배치할 조각이나 부대를 고르세요";
             else
             {
                 string issue;
                 switch (placement.Issue)
                 {
-                    case PlacementIssue.None: issue = "Can place"; break;
-                    case PlacementIssue.OutsideGrid: issue = "Outside the grid"; break;
-                    case PlacementIssue.Occupied: issue = "Overlaps another piece"; break;
-                    case PlacementIssue.ReservedGate: issue = "Reserved gate location"; break;
-                    case PlacementIssue.UnitInTheWay: issue = "Overlaps a unit"; break;
-                    default: issue = "Choose a location"; break;
+                    case PlacementIssue.None: issue = "배치 가능"; break;
+                    case PlacementIssue.OutsideGrid: issue = "격자 밖입니다"; break;
+                    case PlacementIssue.Occupied: issue = "다른 조각과 겹칩니다"; break;
+                    case PlacementIssue.ReservedGate: issue = "성문 자리입니다"; break;
+                    case PlacementIssue.UnitInTheWay: issue = "유닛과 겹칩니다"; break;
+                    default: issue = "위치를 고르세요"; break;
                 }
-                selection.text = placement.Selected.DisplayName + " - Cost " + settings.CostOf(placement.Selected)
+                selection.text = placement.Selected.DisplayName + " - 비용 " + settings.CostOf(placement.Selected)
                     + " · " + placement.Rotation * 90 + "°\n" + issue;
                 if (placement.IsPreviewVisible && placement.StairNeedsConnection)
-                    selection.text += "\nStairs are not connected to a wall yet";
+                    selection.text += "\n계단이 아직 성벽과 이어지지 않았습니다";
             }
         }
 

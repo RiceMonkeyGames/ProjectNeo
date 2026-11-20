@@ -53,11 +53,11 @@ namespace ProjectNeo.Editor
         public static StageRewardTable CreateData(out MetaConfig meta)
         {
             if (!AssetDatabase.IsValidFolder(Folder)) AssetDatabase.CreateFolder("Assets/_Project/Data/GameFlow", "Rewards");
-            MaterialDefinition bone = Material("mat_bone", "Bone shard");
-            MaterialDefinition hide = Material("mat_hide", "Tough hide");
-            MaterialDefinition feather = Material("mat_feather", "Feather");
-            ItemDefinition sword = Item("item_iron_sword", "Iron sword", ItemKind.Equipment, 40);
-            ItemDefinition potion = Item("item_potion", "Healing potion", ItemKind.Consumable, 10);
+            MaterialDefinition bone = Material("mat_bone", "뼈 조각");
+            MaterialDefinition hide = Material("mat_hide", "질긴 가죽");
+            MaterialDefinition feather = Material("mat_feather", "깃털");
+            ItemDefinition sword = Item("item_iron_sword", "철검", ItemKind.Equipment, 40);
+            ItemDefinition potion = Item("item_potion", "회복약", ItemKind.Consumable, 10);
 
             meta = LoadOrCreate(Folder + "/Meta.asset", () => ScriptableObject.CreateInstance<MetaConfig>());
             // 프로토타입 임의 값(2026-11-12). 적 ID는 전투가 세는 적 프리팹 이름이다.

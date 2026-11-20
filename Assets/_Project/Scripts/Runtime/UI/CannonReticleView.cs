@@ -142,12 +142,12 @@ namespace ProjectNeo.UI
         {
             switch (state)
             {
-                case CannonAimState.Ready: return "Ready";
+                case CannonAimState.Ready: return "발사 준비";
                 case CannonAimState.Reloading:
-                    return $"Reloading {reloadRemaining:0.0}s";
-                case CannonAimState.OutOfRange: return "Out of range";
-                case CannonAimState.OutOfArc: return "Outside arc";
-                default: return "No target";
+                    return $"재장전 {reloadRemaining:0.0}초";
+                case CannonAimState.OutOfRange: return "사거리 밖";
+                case CannonAimState.OutOfArc: return "사격 범위 밖";
+                default: return "목표 없음";
             }
         }
     }

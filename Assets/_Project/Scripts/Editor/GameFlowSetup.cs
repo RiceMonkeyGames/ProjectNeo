@@ -57,8 +57,8 @@ namespace ProjectNeo.Editor
             var screen = root.AddComponent<TitleScreen>();
             screen.Configure(catalog);
             Label(panel, "ProjectNeo", 80f, 44f).alignment = TextAlignmentOptions.Center;
-            ConstructionPrototypeSetup.Button(panel, "New Game", screen.StartGame);
-            ConstructionPrototypeSetup.Button(panel, "Quit", screen.Quit);
+            ConstructionPrototypeSetup.Button(panel, "New Game", screen.StartGame, "새 게임");
+            ConstructionPrototypeSetup.Button(panel, "Quit", screen.Quit, "종료");
             SaveSlots(panel, screen);
             EventSystem();
             EditorSceneManager.SaveScene(scene, TitlePath);
@@ -106,7 +106,7 @@ namespace ProjectNeo.Editor
             if (unlocks == null) unlocks = screen.gameObject.AddComponent<UnlockScreen>();
 
             // 'Unlocks' 버튼은 삭제 버튼 바로 위에 둔다.
-            GameObject open = ConstructionPrototypeSetup.Button(panel, "Unlocks", screen.OpenUnlocks);
+            GameObject open = ConstructionPrototypeSetup.Button(panel, "Unlocks", screen.OpenUnlocks, "해금");
             Transform delete = panel.Find("Button_Delete slot");
             if (delete != null) open.transform.SetSiblingIndex(delete.GetSiblingIndex());
 
@@ -127,10 +127,10 @@ namespace ProjectNeo.Editor
             var headerLayout = header.GetComponent<HorizontalLayoutGroup>();
             headerLayout.spacing = 12f; headerLayout.childControlWidth = true; headerLayout.childControlHeight = true;
             headerLayout.childForceExpandWidth = false; headerLayout.childForceExpandHeight = true;
-            TMP_Text points = Label(header.transform, "Unlock points: 0", 44f, 26f);
+            TMP_Text points = Label(header.transform, "해금 포인트: 0", 44f, 26f);
             points.name = "Label_UnlockPoints";
             points.gameObject.GetComponent<LayoutElement>().flexibleWidth = 1f;
-            GameObject close = ConstructionPrototypeSetup.Button(header.transform, "Close", unlocks.Close);
+            GameObject close = ConstructionPrototypeSetup.Button(header.transform, "Close", unlocks.Close, "닫기");
             close.GetComponent<LayoutElement>().preferredWidth = 160f;
 
             TMP_Text status = Label(overlay.transform, string.Empty, 26f, 16f);
@@ -150,13 +150,13 @@ namespace ProjectNeo.Editor
                 var columnLayout = column.GetComponent<VerticalLayoutGroup>();
                 columnLayout.spacing = 8f; columnLayout.childControlWidth = true; columnLayout.childControlHeight = true;
                 columnLayout.childForceExpandWidth = true; columnLayout.childForceExpandHeight = false;
-                TMP_Text title = Label(column.transform, "Track", 34f, 20f);
+                TMP_Text title = Label(column.transform, "분류", 34f, 20f);
                 title.name = "Label_TrackTitle";
                 title.fontStyle = FontStyles.Bold;
                 columns[i] = column.GetComponent<RectTransform>();
             }
 
-            GameObject row = ConstructionPrototypeSetup.Button(overlay.transform, "Row", null);
+            GameObject row = ConstructionPrototypeSetup.Button(overlay.transform, "Row", null, "항목");
             row.name = "RowTemplate";
             row.GetComponent<LayoutElement>().preferredHeight = 48f;
             TMP_Text rowText = row.GetComponentInChildren<TMP_Text>();
@@ -186,7 +186,7 @@ namespace ProjectNeo.Editor
             var slotLabels = new TMP_Text[ProjectNeo.Meta.MetaSaveStore.SlotCount];
             for (int i = 0; i < slotLabels.Length; i++)
             {
-                GameObject slot = ConstructionPrototypeSetup.Button(panel, "Slot " + (i + 1), null);
+                GameObject slot = ConstructionPrototypeSetup.Button(panel, "Slot " + (i + 1), null, "슬롯 " + (i + 1));
                 UnityEditor.Events.UnityEventTools.AddIntPersistentListener(slot.GetComponent<Button>().onClick, screen.SelectSlot, i);
                 slot.transform.SetSiblingIndex(1 + i);
                 slotLabels[i] = slot.GetComponentInChildren<TMP_Text>();
@@ -196,7 +196,7 @@ namespace ProjectNeo.Editor
             status.alignment = TextAlignmentOptions.Center;
             status.transform.SetSiblingIndex(1 + slotLabels.Length);
 
-            GameObject delete = ConstructionPrototypeSetup.Button(panel, "Delete selected slot", screen.DeleteSelectedSlot);
+            GameObject delete = ConstructionPrototypeSetup.Button(panel, "Delete selected slot", screen.DeleteSelectedSlot, "고른 슬롯 삭제");
             delete.name = "Button_Delete slot";
             delete.GetComponent<Image>().color = new Color(0.32f, 0.16f, 0.16f);
             Transform quit = panel.Find("Button_Quit");
@@ -205,7 +205,7 @@ namespace ProjectNeo.Editor
             screen.ConfigureSlots(slotLabels, delete.GetComponentInChildren<TMP_Text>(), status);
 
             // 이어 하기(FLOW-02)는 새 게임 바로 위에 둔다. 글자와 누를 수 있는지는 TitleScreen이 실행 중에 정한다.
-            GameObject resume = ConstructionPrototypeSetup.Button(panel, "Continue", screen.ContinueGame);
+            GameObject resume = ConstructionPrototypeSetup.Button(panel, "Continue", screen.ContinueGame, "이어 하기");
             Transform newGame = panel.Find("Button_New Game");
             if (newGame != null) resume.transform.SetSiblingIndex(newGame.GetSiblingIndex());
             screen.ConfigureContinue(resume.GetComponent<Button>(), resume.GetComponentInChildren<TMP_Text>());
@@ -227,12 +227,12 @@ namespace ProjectNeo.Editor
 
             Transform panel = Panel("GameFlowHUD", out GameObject root);
             var hud = root.AddComponent<GameFlowHud>();
-            TMP_Text phase = Label(panel, "Phase", 44f, 22f);
-            GameObject start = ConstructionPrototypeSetup.Button(panel, "Start battle", hud.StartBattle);
-            GameObject win = ConstructionPrototypeSetup.Button(panel, "Win (placeholder)", hud.Win);
-            GameObject lose = ConstructionPrototypeSetup.Button(panel, "Lose (placeholder)", hud.Lose);
-            GameObject next = ConstructionPrototypeSetup.Button(panel, "Next stage", hud.NextStage);
-            GameObject title = ConstructionPrototypeSetup.Button(panel, "Back to title", hud.ReturnToTitle);
+            TMP_Text phase = Label(panel, "단계", 44f, 22f);
+            GameObject start = ConstructionPrototypeSetup.Button(panel, "Start battle", hud.StartBattle, "전투 시작");
+            GameObject win = ConstructionPrototypeSetup.Button(panel, "Win (placeholder)", hud.Win, "승리 (임시)");
+            GameObject lose = ConstructionPrototypeSetup.Button(panel, "Lose (placeholder)", hud.Lose, "패배 (임시)");
+            GameObject next = ConstructionPrototypeSetup.Button(panel, "Next stage", hud.NextStage, "다음 스테이지");
+            GameObject title = ConstructionPrototypeSetup.Button(panel, "Back to title", hud.ReturnToTitle, "타이틀로");
             hud.Configure(phase, start, win, lose, next, title);
             EventSystem();
             EditorSceneManager.SaveScene(scene, GamePath);
@@ -279,10 +279,10 @@ namespace ProjectNeo.Editor
                 FindAll<SquadCommandInput>(game)[0], buildHud.gameObject, commandHud.gameObject, actors);
 
             HideTestControls(buildHud);
-            ReplaceCaption(buildHud, "Tab: first-person commands", "Preparation: build, then start the battle");
+            ReplaceCaption(buildHud, "Tab: 1인칭 지휘", "준비: 건설한 뒤 전투를 시작하세요");
             var commandData = new SerializedObject(commandHud);
             var help = (TMP_Text)commandData.FindProperty("help").objectReferenceValue;
-            help.text = help.text.Replace("\nTab: construction view", "\nEsc: release the cursor to use the temporary victory/defeat buttons");
+            help.text = help.text.Replace("\nTab: 건설 화면", "\nEsc: 커서를 풀어 임시 승리/패배 버튼 사용");
             EditorUtility.SetDirty(help);
 
             // 단계 화면이 건설 화면 가운데를 가리지 않게 위쪽으로 옮긴다.
@@ -436,7 +436,7 @@ namespace ProjectNeo.Editor
                 rect.anchoredPosition = new Vector2(0f, 64f); rect.sizeDelta = new Vector2(760f, 64f);
                 var background = root.GetComponent<UnityEngine.UI.Image>();
                 background.color = new Color(0.05f, 0.08f, 0.1f, 0.8f);
-                hint = Label(root.transform, "WASD move - Visit the construction station and press F", 48f, 20f);
+                hint = Label(root.transform, "WASD 이동 - 건설 작업대로 가서 F를 누르세요", 48f, 20f);
                 hint.alignment = TextAlignmentOptions.Center;
                 hint.rectTransform.anchorMin = Vector2.zero; hint.rectTransform.anchorMax = Vector2.one;
                 hint.rectTransform.offsetMin = new Vector2(12f, 4f); hint.rectTransform.offsetMax = new Vector2(-12f, -4f);
@@ -472,12 +472,12 @@ namespace ProjectNeo.Editor
             Decoration(layout.transform, "CrossAvenue", new Vector3(120f, 0.035f, 132f), new Vector3(90f, 0.04f, 6f), road);
             Decoration(layout.transform, "MusterGround", new Vector3(120f, 0.03f, 157.5f), new Vector3(54f, 0.04f, 27f), plaza);
 
-            Facility(layout.transform, "Tavern", new Vector3(91.5f, 0f, 112.5f), new Vector3(15f, 7f, 12f), plaster, roof);
-            Facility(layout.transform, "Shop", new Vector3(91.5f, 0f, 153f), new Vector3(12f, 6f, 12f), plaster, roof);
-            Facility(layout.transform, "Training", new Vector3(91.5f, 0f, 94.5f), new Vector3(15f, 5f, 9f), plaster, roof);
-            Facility(layout.transform, "Smithy", new Vector3(148.5f, 0f, 112.5f), new Vector3(15f, 7f, 12f), plaster, roof);
-            Facility(layout.transform, "Construction", new Vector3(148.5f, 0f, 153f), new Vector3(12f, 6f, 12f), plaster, roof);
-            Facility(layout.transform, HeroHallSetup.BuildingName, HeroHallSetup.BuildingPosition, HeroHallSetup.BuildingSize, plaster, roof);
+            Facility(layout.transform, "Tavern", new Vector3(91.5f, 0f, 112.5f), new Vector3(15f, 7f, 12f), plaster, roof, "주점");
+            Facility(layout.transform, "Shop", new Vector3(91.5f, 0f, 153f), new Vector3(12f, 6f, 12f), plaster, roof, "상점");
+            Facility(layout.transform, "Training", new Vector3(91.5f, 0f, 94.5f), new Vector3(15f, 5f, 9f), plaster, roof, "훈련장");
+            Facility(layout.transform, "Smithy", new Vector3(148.5f, 0f, 112.5f), new Vector3(15f, 7f, 12f), plaster, roof, "대장간");
+            Facility(layout.transform, "Construction", new Vector3(148.5f, 0f, 153f), new Vector3(12f, 6f, 12f), plaster, roof, "건설");
+            Facility(layout.transform, HeroHallSetup.BuildingName, HeroHallSetup.BuildingPosition, HeroHallSetup.BuildingSize, plaster, roof, HeroHallSetup.DisplayName);
         }
 
         static void Decoration(Transform parent, string name, Vector3 position, Vector3 scale, Material material)
@@ -488,7 +488,7 @@ namespace ProjectNeo.Editor
             UnityEngine.Object.DestroyImmediate(box.GetComponent<Collider>());
         }
 
-        internal static void Facility(Transform parent, string name, Vector3 position, Vector3 size, Material wallMaterial, Material roofMaterial)
+        internal static void Facility(Transform parent, string name, Vector3 position, Vector3 size, Material wallMaterial, Material roofMaterial, string sign = null)
         {
             var root = new GameObject(name);
             root.transform.SetParent(parent, false);
@@ -508,14 +508,14 @@ namespace ProjectNeo.Editor
                     : new Vector3(0f, size.y + 1.25f, 0f);
                 label.transform.localRotation = i == 0 ? Quaternion.identity : Quaternion.Euler(90f, 0f, 0f);
                 label.rectTransform.sizeDelta = new Vector2(size.x + 2f, 3f);
-                label.fontSize = 16f; label.alignment = TextAlignmentOptions.Center; label.text = name;
+                label.fontSize = 16f; label.alignment = TextAlignmentOptions.Center; label.text = sign ?? name;
             }
         }
 
         static void AddNavigationHelp(ConstructionHud hud)
         {
-            ReplaceCaption(hud, "Preparation: build, then start the battle",
-                "Preparation - Middle mouse: pan / Wheel: zoom / Home: reset");
+            ReplaceCaption(hud, "준비: 건설한 뒤 전투를 시작하세요",
+                "준비 - 가운데 버튼: 이동 / 휠: 확대/축소 / Home: 초기화");
         }
 
         static void Place(Transform target, Vector3 position, float yaw)
@@ -536,7 +536,7 @@ namespace ProjectNeo.Editor
                 var label = child.GetComponent<TMP_Text>();
                 bool testButton = name == "Button_Walk onto wall" || name == "Button_Break support" || name == "Button_Break weapon support";
                 bool testLabel = name == "Label" && label != null
-                    && (label.text == "MOVEMENT / COLLAPSE TEST" || label.text == "Unit health");
+                    && (label.text == "이동 / 붕괴 시험" || label.text == "유닛 체력");
                 if (testButton || testLabel) child.gameObject.SetActive(false);
             }
         }

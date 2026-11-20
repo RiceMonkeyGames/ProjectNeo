@@ -66,12 +66,12 @@ namespace ProjectNeo.UI
         {
             if (levelLabel != null)
                 levelLabel.text = Selected == 0
-                    ? $"< Ascension 0 - Base game >   (unlocked up to {Highest})"
-                    : $"< Ascension {Selected} >   (unlocked up to {Highest})";
+                    ? $"< 승천 0 - 기본 게임 >   ({Highest}까지 해금)"
+                    : $"< 승천 {Selected} >   ({Highest}까지 해금)";
             if (rulesLabel == null) return;
-            if (Selected == 0) { rulesLabel.text = "No extra rules."; return; }
+            if (Selected == 0) { rulesLabel.text = "추가 규칙 없음."; return; }
             float multiplier = AscensionEffects.For(table, Selected).RewardMultiplier;
-            rulesLabel.text = string.Join("\n", table.DescribeUpTo(Selected)) + $"\nScore and unlock points x{multiplier:0.0#}";
+            rulesLabel.text = string.Join("\n", table.DescribeUpTo(Selected)) + $"\n점수와 해금 포인트 x{multiplier:0.0#}";
         }
     }
 }

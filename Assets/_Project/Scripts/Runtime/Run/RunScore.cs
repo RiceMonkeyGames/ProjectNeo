@@ -25,14 +25,14 @@ namespace ProjectNeo.Run
             if (table == null) throw new ArgumentNullException(nameof(table));
             if (tally == null) throw new ArgumentNullException(nameof(tally));
             var score = new RunScore();
-            score.Add("Stages", tally.StagesCleared * table.ScorePerStageCleared);
-            score.Add("Bosses", tally.BossesKilled * table.ScorePerBossKilled);
-            score.Add("Enemies", tally.EnemiesKilled * table.ScorePerEnemyKilled);
-            score.Add("Gate held", tally.GateIntactVictories * table.ScorePerGateIntactVictory);
-            score.Add("Heroes", Math.Max(0, livingHeroes) * table.ScorePerLivingHero);
-            score.Add("Grunts", Math.Max(0, livingGrunts) * table.ScorePerLivingGrunt);
-            score.Add("Gold", Math.Max(0, gold) / table.GoldPerScorePoint);
-            if (reachedEnding) score.Add("Ending", table.ScoreForEnding);
+            score.Add("스테이지", tally.StagesCleared * table.ScorePerStageCleared);
+            score.Add("보스", tally.BossesKilled * table.ScorePerBossKilled);
+            score.Add("적", tally.EnemiesKilled * table.ScorePerEnemyKilled);
+            score.Add("성문 사수", tally.GateIntactVictories * table.ScorePerGateIntactVictory);
+            score.Add("영웅", Math.Max(0, livingHeroes) * table.ScorePerLivingHero);
+            score.Add("잡졸", Math.Max(0, livingGrunts) * table.ScorePerLivingGrunt);
+            score.Add("골드", Math.Max(0, gold) / table.GoldPerScorePoint);
+            if (reachedEnding) score.Add("엔딩", table.ScoreForEnding);
             score.Multiplier = Math.Max(0f, multiplier);
             score.Total = (int)Math.Round(score.Subtotal * (double)score.Multiplier, MidpointRounding.AwayFromZero);
             return score;
@@ -48,7 +48,7 @@ namespace ProjectNeo.Run
         /// <summary>결과 화면용 한 줄: "Stages 3,000 + Enemies 120 ... x1.2".</summary>
         public string Breakdown()
         {
-            if (parts.Count == 0) return "No points";
+            if (parts.Count == 0) return "점수 없음";
             var items = new List<string>();
             foreach (KeyValuePair<string, int> part in parts) items.Add($"{part.Key} {Number(part.Value)}");
             string text = string.Join(" + ", items);

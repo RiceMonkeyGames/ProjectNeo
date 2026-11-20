@@ -1,11 +1,12 @@
 # Completed Backlog Archive (Done)
 
-Last Updated: 2026-11-20 20:17:09 (KST)
+Last Updated: 2026-11-20 20:58:00 (KST)
 
 > Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
 | Task ID | Description | Assignee | Outcome & History Link |
 |---|---|---|---|
+| UI-04 | Korean-Only UI Text | 신용준 | Done 2026-11-20 on user confirmation after manual check; branch `feature/ui-04`. Replaces the UI-02 English choice: player-facing UI authored in Korean (one language, no runtime swap); key names and HP/Lv/EXP stay English. Noto Sans KR (OFL) added as the global TMP fallback font; runtime strings in 41 files, 272 scene/data captions, setup scripts and test expectations updated; known enemy prefabs get Korean intel names. EditMode 582/582, PlayMode 262/262. Standalone build unverified. [History](../history/UI/UI-04.md). |
 | PREP-10 | Hero Promotion & Training Facility | 신용준 | Done 2026-11-20 on user confirmation after manual check (Hero Hall popup, refusal without EXP, promotion after two victories, grade stats in the `I` window); branch `feature/prep-10`. New `FacilityType.HeroHall`; heroes start at hire tier grade, surviving captains gain 100 EXP per victory (200/400 needed), promotion 100g/250g + 1 prep hour, +15% max HP/attack per grade; grade/EXP saved, old saves start at hire tier. EditMode 552/552, PlayMode 254/254. [History](../history/PREP/PREP-10.md). |
 | SIEGE-09 | Placeholder Stage Bosses | SeongminHwang | Done 2026-11-20 on user confirmation after manual play; branch `feature/siege-09`. Seven placeholder bosses (Q-74 roles) in the last wave of stages 1-7, boss health bar, commander aura/penalty, duelist targeting, siege structure damage, no retreat, boss-only rewards, boss kills into run score and unlock points. EditMode 559, PlayMode 255. [History](../history/SIEGE/SIEGE-09.md) |
 | SIEGE-10 | Auto Battlements on Top Wall Tier | youngho | Done 2026-11-20 on user confirmation after manual play in `Game.unity`; branch `feature/siege-10`. Top-tier outer edges get automatic battlements (Defense facility Lv1 parapet, Lv2 crenels via the build-panel "Battlements" button, 60 gold), unbroken pattern with ladders resting on the middle crenel sill, cannon cells as sill-only gun ports, allied shots pass, shooters fall back to the upper body, enemy archers side-step once and otherwise wait. Follow-ups: SIEGE-11 (bastions), ART-04 (animations), COMBAT-10 (crouch-to-reload). [History](../history/SIEGE/SIEGE-10.md). |

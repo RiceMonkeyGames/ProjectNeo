@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: Track_StartingBonuses
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Meta.UnlockTrackDefinition
   category: 3
-  displayName: Starting bonuses
+  displayName: "\uC2DC\uC791 \uBCF4\uB108\uC2A4"
   entries:
   - id: bonus_gold_50
-    displayName: Starting gold +50
+    displayName: "\uC2DC\uC791 \uACE8\uB4DC +50"
     cost: 1
     prerequisiteIds: []
     openedByDefault: 0
@@ -25,7 +25,7 @@ MonoBehaviour:
       targetId: 
       amount: 50
   - id: bonus_potions_2
-    displayName: Starting potions x2
+    displayName: "\uC2DC\uC791 \uD68C\uBCF5\uC57D x2"
     cost: 2
     prerequisiteIds:
     - bonus_gold_50
@@ -35,7 +35,7 @@ MonoBehaviour:
       targetId: item_potion
       amount: 2
   - id: bonus_grunts_2
-    displayName: Starting grunts +2
+    displayName: "\uC2DC\uC791 \uC7A1\uC878 +2"
     cost: 3
     prerequisiteIds:
     - bonus_potions_2
@@ -45,7 +45,7 @@ MonoBehaviour:
       targetId: 
       amount: 2
   - id: bonus_gold_100
-    displayName: Starting gold +100
+    displayName: "\uC2DC\uC791 \uACE8\uB4DC +100"
     cost: 5
     prerequisiteIds:
     - bonus_grunts_2

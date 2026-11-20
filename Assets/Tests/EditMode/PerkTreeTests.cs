@@ -74,14 +74,14 @@ namespace ProjectNeo.Tests
 
             Assert.AreEqual(UnlockClickResult.Armed, window.Click(blade));
             Assert.AreEqual(0, run.Perks.Allocated.Count, "첫 클릭은 찍지 않는다");
-            StringAssert.Contains("Click again to take (1 pt)", window.EntryText(blade));
+            StringAssert.Contains("한 번 더 클릭해서 획득 (1포인트)", window.EntryText(blade));
 
             Assert.AreEqual(UnlockClickResult.Opened, window.Click(blade));
 
             CollectionAssert.AreEqual(new[] { blade }, run.Perks.Allocated);
-            Assert.AreEqual("Took Sharpened Blade.", window.Notice);
-            StringAssert.Contains("Taken", window.EntryText(blade));
-            Assert.AreEqual("Perk points: 2 left (spent 1)", window.PointsText);
+            Assert.AreEqual("Sharpened Blade 획득.", window.Notice);
+            StringAssert.Contains("획득함", window.EntryText(blade));
+            Assert.AreEqual("특성 포인트: 2 남음 (사용 1)", window.PointsText);
             Assert.IsNull(window.ArmedPerk);
         }
 
@@ -89,31 +89,31 @@ namespace ProjectNeo.Tests
         public void Window_RefusesWithTheReason()
         {
             var window = new PerkWindowModel(run, catalog);
-            StringAssert.Contains("Needs Toughness, Swift Strikes", window.EntryText(champion));
+            StringAssert.Contains("필요: Toughness, Swift Strikes", window.EntryText(champion));
 
             Assert.AreEqual(UnlockClickResult.Refused, window.Click(toughness));
-            Assert.AreEqual("Take Sharpened Blade first.", window.Notice);
+            Assert.AreEqual("먼저 Sharpened Blade을(를) 얻으세요.", window.Notice);
 
             window.Click(blade); window.Click(blade);
             Assert.AreEqual(UnlockClickResult.Refused, window.Click(blade));
-            Assert.AreEqual("Sharpened Blade is already taken.", window.Notice);
+            Assert.AreEqual("Sharpened Blade은(는) 이미 얻었습니다.", window.Notice);
 
             run.CreateBattleInput(1);
             Assert.AreEqual(UnlockClickResult.Refused, window.Click(toughness));
-            Assert.AreEqual("Perks cannot be taken during battle.", window.Notice);
+            Assert.AreEqual("전투 중에는 특성을 얻을 수 없습니다.", window.Notice);
         }
 
         [Test]
         public void Describe_BuildsATextFromTheEffects()
         {
-            Assert.AreEqual("Player attack +15%", PerkWindowModel.Describe(blade));
-            Assert.AreEqual("Player defense +5", PerkWindowModel.Describe(champion));
+            Assert.AreEqual("플레이어 공격력 +15%", PerkWindowModel.Describe(blade));
+            Assert.AreEqual("플레이어 방어력 +5", PerkWindowModel.Describe(champion));
             PerkDefinition shop = Track(PerkDefinition.Create("shop", PerkCategory.Economy,
                 runEffects: new[] { new PerkRunEffect(PerkRunEffectKind.ShopPricePercent, -10f), new PerkRunEffect(PerkRunEffectKind.PrepHours, 1f) }));
-            Assert.AreEqual("Shop prices -10%, Prep time +1h", PerkWindowModel.Describe(shop));
+            Assert.AreEqual("상점 가격 -10%, 준비 시간 +1시간", PerkWindowModel.Describe(shop));
             MoraleBoostPerkEffect avenge = Track(MoraleBoostPerkEffect.Create(PerkTrigger.AllySquadMemberDied, 3f));
             PerkDefinition morale = Track(PerkDefinition.Create("morale", PerkCategory.UnitBoost, specialEffects: new PerkSpecialEffect[] { avenge }));
-            Assert.AreEqual("Squad morale +3 when an ally squad member dies", PerkWindowModel.Describe(morale));
+            Assert.AreEqual("부대 사기 +3 (아군 부대원이 죽을 때)", PerkWindowModel.Describe(morale));
         }
 
         [Test]

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: boss_gate_crusher
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Stages.BossDefinition
   id: boss_gate_crusher
-  displayName: Gate Crusher
+  displayName: "\uC131\uBB38 \uBD84\uC1C4\uC790"
   role: 0
   basePrefab: {fileID: 3311207010470909413, guid: 6336293aee1c1264089c9649769650a6, type: 3}
   visualScale: 1.5

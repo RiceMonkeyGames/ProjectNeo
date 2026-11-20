@@ -78,7 +78,7 @@ namespace ProjectNeo.Tests
             BossUnit unit = battle.Bosses[0];
             Assert.AreSame(boss, unit.Definition);
             Assert.IsFalse(unit.gameObject.activeSelf, "보스도 웨이브가 나오기 전에는 꺼져 있다.");
-            StringAssert.Contains("Boss: Test Captain × 1", battle.Intel.Describe());
+            StringAssert.Contains("보스: Test Captain × 1", battle.Intel.Describe());
             Assert.IsNull(battle.ActiveBoss, "준비 단계에는 체력바에 보일 보스가 없다.");
             Vector3 baseScale = ladder.transform.Find("Visual").localScale;
             Assert.AreEqual(baseScale.x * 1.6f, unit.transform.Find("Visual").localScale.x, 0.001f, "겉모습만 커진다.");

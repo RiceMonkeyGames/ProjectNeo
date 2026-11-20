@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: perk_units_rally
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Meta.PerkDefinition
   id: perk_units_rally
-  displayName: Rally
+  displayName: "\uC7AC\uC9D1\uACB0"
   category: 2
   pointCost: 1
   unlockedByDefault: 1

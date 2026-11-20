@@ -84,7 +84,7 @@ namespace ProjectNeo.UI
             if (model == null) return UnlockClickResult.Refused;
             UnlockClickResult result = model.Click(entryId);
             if (result == UnlockClickResult.Opened && !GameSession.SaveMeta())
-                model.AppendNotice("Could not save the slot.");
+                model.AppendNotice("슬롯을 저장하지 못했습니다.");
             Refresh();
             return result;
         }

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: PerkTree_UnitEnhancement
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Meta.PerkTreeDefinition
   category: 2
-  displayName: Unit Enhancement
+  displayName: "\uC720\uB2DB \uAC15\uD654"
   perks:
   - {fileID: 11400000, guid: 9727d5cf0003ac248ab94cfc7639f328, type: 2}
   - {fileID: 11400000, guid: 9c735fd045ede914db0167407f54d140, type: 2}

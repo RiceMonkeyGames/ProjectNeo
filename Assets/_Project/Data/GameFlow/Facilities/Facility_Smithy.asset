@@ -40,6 +40,7 @@ MonoBehaviour:
         materials:
         - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
           amount: 3
+    battlementStyle: 0
   - upgradeCost:
       gold: 60
       materials: []
@@ -74,6 +75,7 @@ MonoBehaviour:
           amount: 4
         - material: {fileID: 11400000, guid: d8a422bc2c200bc4098f7e97952c696e, type: 2}
           amount: 2
+    battlementStyle: 0
   - upgradeCost:
       gold: 120
       materials: []
@@ -116,4 +118,5 @@ MonoBehaviour:
           amount: 4
         - material: {fileID: 11400000, guid: 983096480f690a248a516a89f583ca4f, type: 2}
           amount: 2
-  displayName: Smithy
+    battlementStyle: 0
+  displayName: "\uB300\uC7A5\uAC04"

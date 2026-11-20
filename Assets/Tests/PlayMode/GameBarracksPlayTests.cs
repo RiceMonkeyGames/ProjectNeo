@@ -62,9 +62,9 @@ namespace ProjectNeo.Tests
             yield return null;
             Assert.AreEqual(2, state.RecruitableSoldiers.Count, "1레벨부터 근접·원거리 모두 모집한다.");
             Assert.AreEqual(2, facilities.OfferRows);
-            StringAssert.StartsWith("Recruit", facilities.OfferHeaderText);
+            StringAssert.StartsWith("모집", facilities.OfferHeaderText);
             Assert.AreEqual(-1, facilities.ChosenSquad, "처음에는 자동 배치다.");
-            StringAssert.Contains("Training bonus", facilities.BodyText);
+            StringAssert.Contains("훈련 보너스", facilities.BodyText);
             Vector3 barracks = Object.FindObjectsByType<FacilityStation>()
                 .First(station => station.Type == FacilityType.TrainingGround).transform.position;
 
@@ -75,7 +75,7 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(first + 1, center.Squads[0].Members.Count, "자동 배치는 자리가 남은 첫 부대.");
             UnitCombatAI recruit = center.Squads[0].Members.Last();
             Assert.Less(Flat(recruit.transform.position, barracks), 12f, "병영 앞에 나타난다.");
-            StringAssert.Contains("Squad 1", facilities.Message);
+            StringAssert.Contains("1부대", facilities.Message);
 
             Assert.IsTrue(facilities.ChooseSquad(1));
             Assert.AreEqual(1, facilities.ChosenSquad);
@@ -88,7 +88,7 @@ namespace ProjectNeo.Tests
             Assert.IsTrue(state.Wallet.TrySpend(new Cost(state.Wallet.Gold - 10)));
             int soldiers = state.Soldiers.Count;
             Assert.IsFalse(facilities.TryRecruit(0));
-            StringAssert.Contains("Not enough funds", facilities.Message);
+            StringAssert.Contains("자금", facilities.Message);
             Assert.AreEqual(10, state.Wallet.Gold);
             Assert.AreEqual(soldiers, state.Soldiers.Count, "돈이 모자라면 런·씬 모두 바뀌지 않는다.");
 

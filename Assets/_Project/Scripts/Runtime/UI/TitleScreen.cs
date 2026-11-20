@@ -51,7 +51,7 @@ namespace ProjectNeo.UI
             if (SceneSwitcher.IsLoading || unlockScreen == null) return;
             deleteArmedSlot = NoSlot;
             newGameArmedSlot = NoSlot;
-            notice = unlockScreen.Open(selectedSlot) ? string.Empty : "Unlocks are not available.";
+            notice = unlockScreen.Open(selectedSlot) ? string.Empty : "해금을 사용할 수 없습니다.";
             Refresh();
         }
 
@@ -107,7 +107,7 @@ namespace ProjectNeo.UI
             newGameArmedSlot = NoSlot;
             if (!GameSession.ContinueRun(selectedSlot))
             {
-                notice = "There is no run to continue.";
+                notice = "이어 할 런이 없습니다.";
                 Refresh();
                 return;
             }
@@ -123,7 +123,7 @@ namespace ProjectNeo.UI
             if (store.Inspect(selectedSlot).Status == MetaLoadStatus.Empty && !hasRunFile)
             {
                 deleteArmedSlot = NoSlot;
-                notice = "This slot is empty.";
+                notice = "빈 슬롯입니다.";
             }
             else if (deleteArmedSlot != selectedSlot)
             {
@@ -136,8 +136,8 @@ namespace ProjectNeo.UI
                 // 슬롯을 지우면 그 슬롯에서 진행 중이던 런 저장도 함께 지운다.
                 bool runDeleted = GameSession.RunSaves.Delete(selectedSlot);
                 notice = store.Delete(selectedSlot) && runDeleted
-                    ? $"Slot {selectedSlot + 1} deleted."
-                    : "Could not delete the slot.";
+                    ? $"슬롯 {selectedSlot + 1}을(를) 지웠습니다."
+                    : "슬롯을 지우지 못했습니다.";
             }
             Refresh();
         }
@@ -150,7 +150,7 @@ namespace ProjectNeo.UI
             {
                 newGameArmedSlot = selectedSlot;
                 deleteArmedSlot = NoSlot;
-                notice = "A run is in progress. Click New Game again to discard it.";
+                notice = "진행 중인 런이 있습니다. 새 게임을 한 번 더 누르면 버립니다.";
                 Refresh();
                 return;
             }
@@ -205,12 +205,12 @@ namespace ProjectNeo.UI
             if (continueButton != null) continueButton.interactable = run.HasRun;
             if (continueLabel != null)
                 continueLabel.text = run.HasRun
-                    ? $"Continue (Stage {run.Snapshot.stageNumber}" + (run.Snapshot.ascensionLevel > 0 ? $", Ascension {run.Snapshot.ascensionLevel})" : ")")
-                    : "Continue";
+                    ? $"이어 하기 (스테이지 {run.Snapshot.stageNumber}" + (run.Snapshot.ascensionLevel > 0 ? $", 승천 {run.Snapshot.ascensionLevel})" : ")")
+                    : "이어 하기";
             if (deleteLabel != null)
             {
                 bool armed = deleteArmedSlot == selectedSlot;
-                if (armed) deleteLabel.text = $"Click again to delete slot {selectedSlot + 1}";
+                if (armed) deleteLabel.text = $"한 번 더 누르면 슬롯 {selectedSlot + 1} 삭제";
                 else if (deleteCaptionWasArmed) deleteLabel.text = defaultDeleteCaption;
                 deleteCaptionWasArmed = armed;
             }
@@ -221,24 +221,24 @@ namespace ProjectNeo.UI
         static string DescribeRun(int slot)
         {
             ProjectNeo.Run.RunLoadResult run = GameSession.RunSaves.Inspect(slot);
-            return run.HasRun ? $" - Stage {run.Snapshot.stageNumber} in progress" : string.Empty;
+            return run.HasRun ? $" - 스테이지 {run.Snapshot.stageNumber} 진행 중" : string.Empty;
         }
 
         static string Describe(int slot, MetaLoadResult result)
         {
-            string name = $"Slot {slot + 1}";
+            string name = $"슬롯 {slot + 1}";
             MetaProgress progress = result.Progress;
-            string summary = $"Commander Lv {progress.commanderLevel} - Unlock points {progress.unlockPoints}";
-            if (progress.ascensionUnlocked > 0) summary += $" - Ascension {progress.ascensionUnlocked}";
-            if (progress.bestRunScore > 0) summary += $" - Best {ProjectNeo.Run.RunScore.Number(progress.bestRunScore)}";
+            string summary = $"지휘관 Lv {progress.commanderLevel} - 해금 포인트 {progress.unlockPoints}";
+            if (progress.ascensionUnlocked > 0) summary += $" - 승천 {progress.ascensionUnlocked}";
+            if (progress.bestRunScore > 0) summary += $" - 최고 {ProjectNeo.Run.RunScore.Number(progress.bestRunScore)}";
             switch (result.Status)
             {
                 case MetaLoadStatus.Loaded: return $"{name}: {summary}";
                 case MetaLoadStatus.RestoredFromBackup:
-                    return $"{name}: {summary} (from backup)";
+                    return $"{name}: {summary} (백업에서 복구)";
                 case MetaLoadStatus.Unreadable:
-                    return $"{name}: Damaged - starts fresh";
-                default: return $"{name}: Empty";
+                    return $"{name}: 손상됨 - 새로 시작";
+                default: return $"{name}: 비어 있음";
             }
         }
     }

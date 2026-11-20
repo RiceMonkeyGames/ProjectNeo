@@ -26,6 +26,7 @@ MonoBehaviour:
     itemPool: []
     heroPool: []
     recipes: []
+    battlementStyle: 0
   - upgradeCost:
       gold: 60
       materials: []
@@ -44,6 +45,7 @@ MonoBehaviour:
     itemPool: []
     heroPool: []
     recipes: []
+    battlementStyle: 0
   - upgradeCost:
       gold: 120
       materials: []
@@ -62,4 +64,5 @@ MonoBehaviour:
     itemPool: []
     heroPool: []
     recipes: []
-  displayName: Training ground
+    battlementStyle: 0
+  displayName: "\uD6C8\uB828\uC7A5"

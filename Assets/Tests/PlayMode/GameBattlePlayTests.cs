@@ -249,10 +249,10 @@ namespace ProjectNeo.Tests
             var station = gate.GetComponent<PreparationGateStation>();
             Assert.IsNotNull(station, "성문에 준비 단계 상호작용이 붙는다.");
             Assert.IsFalse(gate.IsDoorOpen);
-            Assert.AreEqual("Open gate", station.Prompt);
+            Assert.AreEqual("성문 열기", station.Prompt);
             Assert.IsTrue(station.Interact());
             Assert.IsTrue(gate.IsHeldOpen && gate.IsDoorOpen);
-            Assert.AreEqual("Close gate", station.Prompt);
+            Assert.AreEqual("성문 닫기", station.Prompt);
             yield return Navigation();
             Assert.IsTrue(station.Interact());
             Assert.IsFalse(gate.IsHeldOpen || gate.IsDoorOpen);

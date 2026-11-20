@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: boss_sky_hunter
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Stages.BossDefinition
   id: boss_sky_hunter
-  displayName: Sky Hunter
+  displayName: "\uD558\uB298 \uC0AC\uB0E5\uAFBC"
   role: 1
   basePrefab: {fileID: 7517096732457025389, guid: a4246cb22c7768840aae61bb4b280916, type: 3}
   visualScale: 1.5

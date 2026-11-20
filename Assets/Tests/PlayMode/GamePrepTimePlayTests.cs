@@ -71,8 +71,8 @@ namespace ProjectNeo.Tests
                 Assert.Greater(budget, 0f);
                 Assert.AreEqual(budget, state.Clock.Remaining, 0.0001f, "첫 준비는 예산이 가득 차 있다.");
                 Assert.IsTrue(clockHud.IsShowing);
-                StringAssert.Contains($"{budget:0.#}h left", clockHud.Text);
-                StringAssert.Contains($"Hold {interaction.WaitKey} - Wait", hud.InteractionHint);
+                StringAssert.Contains($"{budget:0.#}시간 남음", clockHud.Text);
+                StringAssert.Contains($"{interaction.WaitKey} 길게 누르기 - ", hud.InteractionHint);
                 // 시설 창(가운데)이 열려도 위 가운데 시계 줄이 가려지지 않는다.
                 Canvas.ForceUpdateCanvases();
                 RectTransform clockRect = clockHud.Area, phaseBox = (RectTransform)hud.transform.Find("Panel");
@@ -113,8 +113,8 @@ namespace ProjectNeo.Tests
                 Assert.IsTrue(state.Clock.IsExhausted);
                 Assert.IsFalse(interaction.CanWait);
                 yield return null;
-                StringAssert.DoesNotContain("Wait", hud.InteractionHint);
-                StringAssert.Contains("out of time", clockHud.Text);
+                StringAssert.DoesNotContain("기다리기", hud.InteractionHint);
+                StringAssert.Contains("시간 없음", clockHud.Text);
                 Assert.IsTrue(interaction.CanStartBattle, "시간을 다 써도 B로 전투를 시작할 수 있다.");
 
                 Assert.IsTrue(battle.TryStartBattle());
@@ -130,7 +130,7 @@ namespace ProjectNeo.Tests
                 Assert.AreEqual(budget, state.Clock.Remaining, 0.0001f, "다음 준비는 예산을 새로 채운다.");
                 Assert.AreEqual(1, state.ClockPreparation);
                 Assert.IsTrue(clockHud.IsShowing);
-                StringAssert.DoesNotContain("out of time", clockHud.Text);
+                StringAssert.DoesNotContain("시간 없음", clockHud.Text);
             }
             finally
             {

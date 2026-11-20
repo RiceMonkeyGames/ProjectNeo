@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: perk_economy_haggler
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Meta.PerkDefinition
   id: perk_economy_haggler
-  displayName: Haggler
+  displayName: "\uD765\uC815\uAFBC"
   category: 1
   pointCost: 1
   unlockedByDefault: 1

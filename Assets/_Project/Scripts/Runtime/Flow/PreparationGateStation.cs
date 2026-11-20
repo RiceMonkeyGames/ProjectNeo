@@ -11,8 +11,8 @@ namespace ProjectNeo.Flow
 
         public PlacedStructure Gate => gate;
         public override GamePhaseView PhaseView => owner != null ? owner.PhaseView : null;
-        public override string Prompt => gate != null && gate.Health != null && gate.Health.IsDead ? "Destroyed gate (open until repaired)"
-            : gate != null && gate.IsHeldOpen ? "Close gate" : "Open gate";
+        public override string Prompt => gate != null && gate.Health != null && gate.Health.IsDead ? "부서진 성문 (수리 전까지 열림)"
+            : gate != null && gate.IsHeldOpen ? "성문 닫기" : "성문 열기";
 
         public void Bind(GamePrepGate manager, PlacedStructure structure) { owner = manager; gate = structure; }
 

@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 17119106421786a4397e5680614831e5, type: 3}
   m_Name: SpawnCenter
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Stages.SpawnPointDefinition
-  displayName: Center
+  displayName: "\uAC00\uC6B4\uB370"
   cell: {x: 40, y: 90}

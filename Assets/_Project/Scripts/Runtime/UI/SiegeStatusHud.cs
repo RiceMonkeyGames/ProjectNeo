@@ -23,17 +23,17 @@ namespace ProjectNeo.UI
             {
                 case SiegePhase.Preparation:
                     label.text = director.IsConstructionView
-                        ? "Preparation - Tab: explore in first person"
-                        : "Preparation - Tab: construction view (start battle there)";
+                        ? "준비 - Tab: 1인칭으로 둘러보기"
+                        : "준비 - Tab: 건설 화면 (거기서 전투 시작)";
                     break;
                 case SiegePhase.Battle:
-                    string text = "Battle - Enemies " + director.EnemiesAlive + " - Allies " + director.AlliesAlive
-                        + (director.GateDestroyed ? " - Gate destroyed" : "")
-                        + (director.RetreatOrdered ? "\nEnemies are retreating after losing their siege equipment" : "");
+                    string text = "전투 - 적 " + director.EnemiesAlive + " - 아군 " + director.AlliesAlive
+                        + (director.GateDestroyed ? " - 성문 파괴됨" : "")
+                        + (director.RetreatOrdered ? "\n공성 장비를 잃은 적이 후퇴하고 있습니다" : "");
                     foreach (SiegeLadder ladder in ladders)
                     {
                         if (ladder == null || !ladder.PlayerCanPush) continue;
-                        text += "\nHold F: Push ladder  " + Mathf.RoundToInt(ladder.State.PushProgress * 100f) + "%";
+                        text += "\nF 길게 누르기: 사다리 밀기  " + Mathf.RoundToInt(ladder.State.PushProgress * 100f) + "%";
                         break;
                     }
                     foreach (var actor in ProjectNeo.Combat.CharacterActor.ActiveActors)
@@ -46,9 +46,9 @@ namespace ProjectNeo.UI
                     label.text = text;
                     break;
                 default:
-                    label.text = (director.Outcome != SiegeOutcome.Victory ? "Defeat"
-                            : director.EnemiesFled > 0 ? "Victory! Remaining enemies retreated." : "Victory! All enemies defeated.")
-                        + "\nR: Restart";
+                    label.text = (director.Outcome != SiegeOutcome.Victory ? "패배"
+                            : director.EnemiesFled > 0 ? "승리! 남은 적이 후퇴했습니다." : "승리! 모든 적을 물리쳤습니다.")
+                        + "\nR: 다시 시작";
                     break;
             }
         }

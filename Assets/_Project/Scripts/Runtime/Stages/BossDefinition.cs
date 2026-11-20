@@ -12,7 +12,7 @@ namespace ProjectNeo.Stages
     {
         [Tooltip("처치 기록·보상에 쓰는 ID. 적 프리팹 이름과 겹치지 않게 boss_로 시작한다.")]
         [SerializeField] string id = "boss";
-        [SerializeField] string displayName = "Boss";
+        [SerializeField] string displayName = "보스";
         [SerializeField] BossRole role = BossRole.Siege;
         [Tooltip("바탕이 되는 기존 적 프리팹. SiegeAttacker가 있고 비활성 상태여야 한다.")]
         [SerializeField] GameObject basePrefab;

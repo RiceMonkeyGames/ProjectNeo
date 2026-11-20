@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: perk_combat_champion
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Meta.PerkDefinition
   id: perk_combat_champion
-  displayName: Champion
+  displayName: "\uD22C\uC0AC"
   category: 0
   pointCost: 1
   unlockedByDefault: 1

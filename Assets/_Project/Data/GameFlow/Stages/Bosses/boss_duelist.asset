@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: boss_duelist
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Stages.BossDefinition
   id: boss_duelist
-  displayName: Duelist
+  displayName: "\uACB0\uD22C\uAC00"
   role: 1
   basePrefab: {fileID: 1786433762328342860, guid: c378e8883465b87419682e8417179d72, type: 3}
   visualScale: 1.4

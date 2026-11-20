@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: Track_ShopItems
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Meta.UnlockTrackDefinition
   category: 2
-  displayName: Shop items
+  displayName: "\uC0C1\uC810 \uBB3C\uD488"
   entries:
   - id: shop_potion
-    displayName: Healing potion
+    displayName: "\uD68C\uBCF5\uC57D"
     cost: 0
     prerequisiteIds: []
     openedByDefault: 1
@@ -25,7 +25,7 @@ MonoBehaviour:
       targetId: item_potion
       amount: 1
   - id: shop_wood_shield
-    displayName: Wooden shield
+    displayName: "\uB098\uBB34 \uBC29\uD328"
     cost: 0
     prerequisiteIds:
     - shop_potion
@@ -35,7 +35,7 @@ MonoBehaviour:
       targetId: item_wood_shield
       amount: 1
   - id: shop_iron_sword
-    displayName: Iron sword
+    displayName: "\uCCA0\uAC80"
     cost: 0
     prerequisiteIds:
     - shop_wood_shield
@@ -45,7 +45,7 @@ MonoBehaviour:
       targetId: item_iron_sword
       amount: 1
   - id: shop_leather_armor
-    displayName: Leather armor
+    displayName: "\uAC00\uC8FD \uAC11\uC637"
     cost: 0
     prerequisiteIds:
     - shop_iron_sword
@@ -55,7 +55,7 @@ MonoBehaviour:
       targetId: item_leather_armor
       amount: 1
   - id: shop_chain_armor
-    displayName: Chain armor
+    displayName: "\uC0AC\uC2AC \uAC11\uC637"
     cost: 1
     prerequisiteIds:
     - shop_leather_armor
@@ -65,7 +65,7 @@ MonoBehaviour:
       targetId: item_chain_armor
       amount: 1
   - id: shop_steel_sword
-    displayName: Steel sword
+    displayName: "\uAC15\uCCA0\uAC80"
     cost: 2
     prerequisiteIds:
     - shop_chain_armor
