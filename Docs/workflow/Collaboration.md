@@ -1,6 +1,6 @@
 # Collaboration, Backlog & Task ID Rules
 
-Last Updated: 2026-11-20 21:20:25 (KST)
+Last Updated: 2026-11-21 01:35:59 (KST)
 
 > Purpose: Team workflow, Task ID rules, shared file locks, and `.claude` boundaries. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [Team](../plan/Team.md)
 
@@ -19,6 +19,13 @@ Last Updated: 2026-11-20 21:20:25 (KST)
    - `docs-git` (`model: haiku`, preloads `claim`/`finish`/`sync-summary`): `Docs/` updates, Backlog claim/archive, history drafts, and git operations. Write scope limited to `Docs/`; general commits/pushes require explicit user confirmation from the main session.
    - `qa-verifier` (`model: sonnet`, preloads `verify`, `Edit`/`Write` disallowed): runs `code-rules-check.ps1` + `unity-verify.ps1` sequentially (respecting the single Unity Editor constraint), audits diffs against `Docs/design/` and `Principles.md`, and returns defect findings plus a manual verification checklist.
    - `repo-scout` (`model: haiku`, `Read`/`Grep`/`Glob` only): fast symbol, call-site, and `Docs/codemap/` lookups to prevent search noise from bloating the main context.
+10. **Default Delegation (TOOL-subagent-default, user decision 2026-11-21)**: Claude Code sessions use the role subagents above by default; the user does not need to ask each time.
+   - `docs-git`: `/claim` (preflight, Backlog row, claim commit/push, branch), `/finish` archive steps, history and codemap drafts, `Last Updated` updates, and general commits/pushes **after** the user approved them in the main session (pass the approved scope: files, message, branch).
+   - `qa-verifier`: after each implementation step, `code-rules-check.ps1` plus Unity verification (on this team's PCs the local wrapper if present), diff audit against `Docs/design/` and `Principles.md`, and a manual-check draft. Only one Unity run at a time: the main session does not start its own Unity run while `qa-verifier` is running one.
+   - `repo-scout`: searches spanning many files, call-site tracing, codemap/history lookups.
+   - Main session keeps: code and asset edits (via Editor APIs), ambiguous design/architecture questions, approval gates, final reporting, and quick one-command checks where a subagent would cost more than it saves.
+   - Brief each subagent with the task ID, branch, approved scope and constraints (human assignee name, `Assets/ThirdParty` untouched, no `develop` merges). Treat its report as input to check, not as user approval.
+   - Codex has no subagents: it keeps doing the same steps inline with the shared skills.
 
 ### Status Conventions
 
