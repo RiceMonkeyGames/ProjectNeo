@@ -145,11 +145,16 @@ namespace ProjectNeo.Tests
             Assert.IsTrue(State.TrySpendPrepTime(0.5f));
             Assert.AreEqual("50%", third.GetComponent<UnderConstructionView>().LabelText);
             Assert.AreEqual("50%", fourth.GetComponent<UnderConstructionView>().LabelText);
+            StringAssert.Contains("Unfinished work 2", Work.BattleStartWarning(), "진행 중인 작업이 있으면 경고한다(Q-77).");
+            StringAssert.Contains("current progress", Work.BattleStartWarning());
 
             // 다섯 번째는 시작도 못 한 채 전투를 맞는다.
             Vector2Int e = FreeCell(a, b, c, d);
             PlacedStructure fifth = Build(e);
             Assert.IsNotNull(fifth);
+            StringAssert.Contains("Unfinished work 3", Work.BattleStartWarning());
+            StringAssert.Contains("1 not started will be removed and refunded", Work.BattleStartWarning(),
+                "0% 주문은 전투 시작 때 없어지고 환불됨을 알린다(Q-77).");
             int beforeBattle = State.Wallet.Gold;
             yield return Navigation();
             Assert.IsTrue(battle.TryStartBattle());
@@ -161,6 +166,7 @@ namespace ProjectNeo.Tests
             Assert.IsFalse(third.GetComponent<UnderConstructionView>().IsShowing);
             Assert.AreEqual(first.Health.Maximum, first.Health.Current);
             Assert.AreEqual(0, Work.Queue.Orders.Count, "전투 시작 뒤 주문은 남지 않는다.");
+            Assert.AreEqual(string.Empty, Work.BattleStartWarning(), "주문이 없으면 경고도 없다.");
         }
 
         [UnityTest]

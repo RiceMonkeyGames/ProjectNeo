@@ -1,6 +1,6 @@
 # Editor Setup & Test Scripts
 
-Last Updated: 2026-11-21 01:49:40 (KST)
+Last Updated: 2026-11-21 02:20:57 (KST)
 
 > Purpose: Map of Editor setup menus, build scripts, and EditMode/PlayMode test suites. | Parent: [codemap/README](README.md) | Related: [UnityCLI](../workflow/UnityCLI.md), [Status](../plan/Status.md)
 
@@ -41,7 +41,7 @@ Last Updated: 2026-11-21 01:49:40 (KST)
 ## EditMode Tests (`Assets/Tests/EditMode/`)
 
 - `CharacterAnimationRulesTests.cs` (`ART-04`): bow draw cycle (fast draw to meet the impact, release at impact, reload and hold while engaged, lower when not, fire during hold/release/mid-draw), melee start offset, aim pitch mapping, engaged window, lowering the bow while running, flat weapon direction, random attack pick without repeat, sheath draw-at-once and sheathe-after-calm (`WeaponSheathRule`), arrow-line aim offset and model yaw, stable variant, profile clamping.
-- `WorkQueueTests.cs` (`SIEGE-08`): two crews with leftover carry-over and finish estimate, single crew and duplicate/remove, repair HP and rounded-down refund, castle capture of work/unfinished weapons and record read-back.
+- `WorkQueueTests.cs` (`SIEGE-08`, `Q-77`): 0% build-order count (repairs excluded), two crews with leftover carry-over and finish estimate, single crew and duplicate/remove, repair HP and rounded-down refund, castle capture of work/unfinished weapons and record read-back.
 - `EnemyIntelTests.cs` (`C-5`): per-type merge across waves, hidden groups as `? × N` without type names, single reveal, reveal-all, remaining clamp and unchanged-version, prefab display names, plan/stage hidden flag carry-over.
 - `BossRulesTests.cs` (`SIEGE-09`): boss target stats (zero keeps the base value, move-speed percent), Ascension percent on top, commander aura/penalty values and radius edge, no aura for other roles, duelist distance scale, structure damage, flyer priority targeting with fallback, boss as last plan group (count 1, kept by `WithCounts`, skipped without prefab), `Boss: <name>` in a hidden wave, boss-only reward, boss kills counted on defeat. `StageCatalogDataTests` also checks that every real stage has one distinct boss in its last wave and that the four Q-74 roles are covered.
 - `PrepTimeTests.cs` (`PREP-06`): clock spend/overspend/refill/restore; blacksmith craft/upgrade time cost and no payment when short; no spending while a battle is pending and a full budget at the next preparation; no limit without settings; save/restore keeps used hours, old saves refill.
@@ -76,7 +76,7 @@ Last Updated: 2026-11-21 01:49:40 (KST)
 
 ## PlayMode Tests (`Assets/Tests/PlayMode/`)
 
-- `GameConstructionWorkPlayTests.cs` (`SIEGE-08`): Game scene work orders: under-construction view and stacking/mount refusal, two crews, battle-start cleanup (0% removed and refunded, HP = progress), unfinished cannon not armed until fully repaired, repair refunds and gate closing on completion, preparation save records.
+- `GameConstructionWorkPlayTests.cs` (`SIEGE-08`, `Q-77`): Game scene work orders: battle-start warning text (in progress / not started / empty after battle start), under-construction view and stacking/mount refusal, two crews, battle-start cleanup (0% removed and refunded, HP = progress), unfinished cannon not armed until fully repaired, repair refunds and gate closing on completion, preparation save records.
 - `GameEnemyIntelPlayTests.cs` (`C-5`): Game scene preview closed until toggled, `? × N` for a hidden group, always shown in battle with live remaining counts after kills, hidden group revealed when its wave is released, no overlap with `SquadsBacking` and `BattleStatus`, hidden on reward, hidden again next preparation.
 - `GameBossPlayTests.cs` (`SIEGE-09`): Game scene boss released with its wave (inactive before, Visual scaled, boss HP/ATK, preview row), boss health bar shown/updated/hidden, commander aura buff and wave penalty after death, boss gold/material in the victory reward and `ScoreTally.BossesKilled`; an artillery boss stays (range 22) while a regular archer retreats, and victory waits for the boss.
 - `GamePrepTimePlayTests.cs` (`PREP-06`): Game scene clock from the real asset, top-center line clear of facility/equipment windows and hidden over the organization window, hold-`T` wait (progress, exactly one hour, fresh press), out-of-time hint/label, battle still startable, hidden in battle, refilled next preparation.
