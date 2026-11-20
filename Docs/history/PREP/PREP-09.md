@@ -1,6 +1,6 @@
 # PREP-09 | 2026-11-21 | Preparation - Apply Final Squad Caps (10 Squads x 20)
 
-Last Updated: 2026-11-21 01:28:01 (KST)
+Last Updated: 2026-11-21 01:40:55 (KST)
 
 > Purpose: Task history. | Parent: [history/README](../README.md) | Related: [Combat](../../design/Combat.md), [Decisions-Resolved](../../plan/Decisions-Resolved.md), [Backlog](../../Backlog.md)
 
@@ -33,9 +33,10 @@ Q-57 (team meeting, 2026-11-19) set the final caps: at most 10 squads with 20 so
 - `Tools/Agent/unity-verify-local.ps1 -Mode play -SkipDotnet -Filter GameSquadCapsPlayTests`: compile passed, 2/2 passed.
 - `Tools/Agent/unity-verify-local.ps1 -Mode all -SkipDotnet`: compile passed, EditMode 604/604, PlayMode 284/284.
 - `Tools/Agent/code-rules-check.ps1`: passed (0 violations). `git diff --check` reports only Unity's blank `m_Name:` lines in `Game.unity`.
-- Manual play: not done yet.
+- Manual play (2026-11-21, user, `Title.unity` -> new run -> `Game.unity`): passed (barracks fill to 20, squad list and enemy intel layout, `O` window cards and scrolling, `F1`-`F10`).
+- Standalone build: not verified.
 - Performance with 200 allies: not measured (Q-10).
 
-## Remaining
+## Outcome
 
-- Manual check in `Game.unity`, then finish.
+Done 2026-11-21 on user confirmation; archived in [Backlog-Done](../../archive/Backlog-Done.md).
