@@ -45,6 +45,19 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
+        public IEnumerator SlotText_ShowsTheSavedBestRunScore()
+        {
+            // META-04 수동 확인 대체: 최고 점수가 있는 슬롯만 "최고 N"을 보여 준다.
+            store.Save(0, new MetaProgress { bestRunScore = 12345 });
+            store.Save(1, new MetaProgress());
+            yield return OpenTitle();
+            var title = Object.FindAnyObjectByType<TitleScreen>();
+
+            StringAssert.Contains("최고 12,345", title.SlotText(0));
+            StringAssert.DoesNotContain("최고", title.SlotText(1), "최고 점수가 0이면 표시하지 않는다");
+        }
+
+        [UnityTest]
         public IEnumerator BuyingAnEntry_SavesTheSlotRightAway()
         {
             store.Save(1, new MetaProgress { unlockPoints = 4 });
