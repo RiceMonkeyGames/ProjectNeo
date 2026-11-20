@@ -1,6 +1,6 @@
 # Prototype Scenes & Asset Details
 
-Last Updated: 2026-11-16 22:28:48 (KST)
+Last Updated: 2026-11-21 01:49:40 (KST)
 
 > Purpose: Detailed setup, assets, and controls for prototype scenes (B-2, B-3, B-4, B-5, B-5.4, Siege). | Parent: [codemap/README](README.md) | Related: [Scenes](Scenes.md)
 
@@ -19,7 +19,7 @@ Last Updated: 2026-11-16 22:28:48 (KST)
 
 - `Assets/_Project/Scenes/UnitBattlePrototype.unity`: Spectator automated battle scene (10 blue allies vs 10 red enemies: 7 melee, 3 ranged per side), central obstacle, baked NavMesh.
 - `Assets/_Project/Data/UnitBattlePrototype/`: 4 grunt definitions, melee/ranged `CombatProfile`, AI settings, baked NavMesh data (allies tuned stronger).
-- `Assets/_Project/Prefabs/UnitBattlePrototype/`: 4 grunt prefabs and linear projectile prefab (root = combat/colliders/NavMeshAgent/AI; `Visual` = placeholder geometry; since ART-03 also a Synty `Visual/Model` with the capsule `Body` renderer disabled). Menu `ProjectNeo/Setup/Apply Character Models` (re)applies the unit-to-model mapping to grunt and siege enemy prefabs; rerun it after any setup menu regenerates those prefabs. It also assigns the locomotion Animator controllers in `Assets/_Project/Art/Characters/Animation/` and the `CharacterModelAnimator` speed driver.
+- `Assets/_Project/Prefabs/UnitBattlePrototype/`: 4 grunt prefabs and linear projectile prefab (root = combat/colliders/NavMeshAgent/AI; `Visual` = placeholder geometry; since ART-03 also a Synty `Visual/Model` with the capsule `Body` renderer disabled). Menu `ProjectNeo/Setup/Apply Character Models` (re)applies the unit-to-model mapping to grunt and siege enemy prefabs; rerun it after any setup menu regenerates those prefabs. It also regenerates the Animator controllers (`AC_Unit_Ground_Masc_Melee`, `AC_Unit_Ground_Masc_Bow` (was `AC_Unit_Ground_Femn_Bow` until round 5), `AC_Unit_Flyer_Melee`, `AC_Unit_Flyer_Bow`), the upper-body mask `AM_UpperBody`, the lower-body mask `AM_LowerBody` (synced `BowLegs` layer on archer controllers) and the animation profiles `CAP_Unit_*` in `Assets/_Project/Art/Characters/Animation/`, attaches hand weapons (`Weapon` under the hand bone: Kingdom sword/bows, Rivals Slayer/BigOrk/Troll/SpiritDemon weapons; archers get an 8-direction Synty Base Locomotion blend with ExplosiveLLC `Archer@Walk` as the forward walk; adds `CharacterAnimationEventSink` to each model; ground melee units get a `WeaponSheath` socket under the hips bone (measured from the unsheathe grab pose, blade hanging down and back, tilted so long weapons clear the ground) with the weapon sheathed by default) and configures the `CharacterModelAnimator` driver (ART-04).
 - `CharacterActor.Configure(...)` must be invoked before activating disabled GameObjects. Activation initializes stats/health and registers unit; death/deactivation unregisters. AI targets closest enemy with complete NavMesh path. Ranged attacks fire non-homing linear projectiles on windup completion (cancel if target dies/escapes during windup; airborne projectiles finish path even if shooter dies).
 
 ## B-5 Squad Command (`SquadCommandPrototype.unity`)

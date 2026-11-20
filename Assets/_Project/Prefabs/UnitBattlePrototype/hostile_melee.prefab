@@ -90,6 +90,38 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &1880162834682506216
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3916437710552072774}
+  m_Layer: 0
+  m_Name: WeaponSheath
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3916437710552072774
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1880162834682506216}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.61350954, y: 0.2168343, z: 0.028968371, w: -0.75878185}
+  m_LocalPosition: {x: 0.36839578, y: -0.23326191, z: 0.15269688}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 6802471024486345409}
+  m_Father: {fileID: 2332350161921868800}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &4088108819382846563
 GameObject:
   m_ObjectHideFlags: 0
@@ -214,7 +246,7 @@ Transform:
   - {fileID: 119064439273507840}
   - {fileID: 5373062344254893539}
   - {fileID: 4224637440095887592}
-  - {fileID: 2132911804885937495}
+  - {fileID: 2323869856739529596}
   m_Father: {fileID: 7629882457241206062}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &42783544665636331
@@ -233,7 +265,7 @@ MonoBehaviour:
   body: {fileID: 5675549018161605462}
   healthBar: {fileID: 5373062344254893539}
   attackMarker: {fileID: 8595376078689675720}
-  model: {fileID: 2132911804885937495}
+  model: {fileID: 2323869856739529596}
 --- !u!114 &635605830261766322
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -247,7 +279,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Combat.CharacterModelAnimator
   actor: {fileID: 2031947374358919612}
-  animator: {fileID: 2073297321970849609}
+  animator: {fileID: 2385852559468489058}
+  profile: {fileID: 11400000, guid: 6a76e96df79b7284f8d21e59425bcbb5, type: 2}
+  weapon: {fileID: 6802471024486345409}
+  sheath: {fileID: 3916437710552072774}
 --- !u!1 &8595376078689675720
 GameObject:
   m_ObjectHideFlags: 0
@@ -448,7 +483,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Combat.UnitCombatAI
   settings: {fileID: 11400000, guid: 3a47cd52a6580524c99d9188779967dc, type: 2}
---- !u!1001 &2132416361528344281
+--- !u!1001 &2327879211314086130
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -515,7 +550,7 @@ PrefabInstance:
     - target: {fileID: 95149039229069712, guid: b2739774a07ffdb459c1bd60e3ef4f10, type: 3}
       propertyPath: m_Controller
       value: 
-      objectReference: {fileID: 9100000, guid: 25f6d9b4a26c6da46b2a7c7eb25ca1fe, type: 2}
+      objectReference: {fileID: 9100000, guid: b257b369e9efca44f83bf608c8187188, type: 2}
     - target: {fileID: 95149039229069712, guid: b2739774a07ffdb459c1bd60e3ef4f10, type: 3}
       propertyPath: m_ApplyRootMotion
       value: 0
@@ -566,16 +601,110 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: 95e0681ca6bd0a247861f9efe04f90d8, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 4615554179073266, guid: b2739774a07ffdb459c1bd60e3ef4f10, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3916437710552072774}
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1033247876357254, guid: b2739774a07ffdb459c1bd60e3ef4f10, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3755849984148325465}
   m_SourcePrefab: {fileID: 100100000, guid: b2739774a07ffdb459c1bd60e3ef4f10, type: 3}
---- !u!95 &2073297321970849609 stripped
-Animator:
-  m_CorrespondingSourceObject: {fileID: 95149039229069712, guid: b2739774a07ffdb459c1bd60e3ef4f10, type: 3}
-  m_PrefabInstance: {fileID: 2132416361528344281}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &2132911804885937495 stripped
+--- !u!4 &2323869856739529596 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4013894390911886, guid: b2739774a07ffdb459c1bd60e3ef4f10, type: 3}
-  m_PrefabInstance: {fileID: 2132416361528344281}
+  m_PrefabInstance: {fileID: 2327879211314086130}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &2327765573934914676 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1033247876357254, guid: b2739774a07ffdb459c1bd60e3ef4f10, type: 3}
+  m_PrefabInstance: {fileID: 2327879211314086130}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &3755849984148325465
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2327765573934914676}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a17ef7394158f7a41ad30e911cd21989, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Combat.CharacterAnimationEventSink
+--- !u!4 &2332350161921868800 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4615554179073266, guid: b2739774a07ffdb459c1bd60e3ef4f10, type: 3}
+  m_PrefabInstance: {fileID: 2327879211314086130}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &2385852559468489058 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 95149039229069712, guid: b2739774a07ffdb459c1bd60e3ef4f10, type: 3}
+  m_PrefabInstance: {fileID: 2327879211314086130}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &6802927508767797989
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 3916437710552072774}
+    m_Modifications:
+    - target: {fileID: 1216674268834692, guid: 404a923dea987c14498264bf7d13d458, type: 3}
+      propertyPath: m_Name
+      value: Weapon
+      objectReference: {fileID: 0}
+    - target: {fileID: 4470466264897572, guid: 404a923dea987c14498264bf7d13d458, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4470466264897572, guid: 404a923dea987c14498264bf7d13d458, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4470466264897572, guid: 404a923dea987c14498264bf7d13d458, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4470466264897572, guid: 404a923dea987c14498264bf7d13d458, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: -0.00000004371139
+      objectReference: {fileID: 0}
+    - target: {fileID: 4470466264897572, guid: 404a923dea987c14498264bf7d13d458, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4470466264897572, guid: 404a923dea987c14498264bf7d13d458, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4470466264897572, guid: 404a923dea987c14498264bf7d13d458, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4470466264897572, guid: 404a923dea987c14498264bf7d13d458, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4470466264897572, guid: 404a923dea987c14498264bf7d13d458, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4470466264897572, guid: 404a923dea987c14498264bf7d13d458, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 23713279165426590, guid: 404a923dea987c14498264bf7d13d458, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 95e0681ca6bd0a247861f9efe04f90d8, type: 2}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 404a923dea987c14498264bf7d13d458, type: 3}
+--- !u!4 &6802471024486345409 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4470466264897572, guid: 404a923dea987c14498264bf7d13d458, type: 3}
+  m_PrefabInstance: {fileID: 6802927508767797989}
   m_PrefabAsset: {fileID: 0}
