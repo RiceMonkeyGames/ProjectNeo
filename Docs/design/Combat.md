@@ -1,6 +1,6 @@
 # Game Design: Combat, Units & Win/Loss
 
-Last Updated: 2026-11-20 11:52:10 (KST)
+Last Updated: 2026-11-20 20:52:43 (KST)
 
 > Purpose: Rules for perspective, squad commands, damage, unit lifecycles, and battle outcomes. | Parent: [design/README](README.md) | Related: [WallsAndSiege](WallsAndSiege.md), [MoraleAndWave](MoraleAndWave.md)
 
@@ -70,6 +70,7 @@ Team decisions 2026-11-19 (Q-62~Q-65); implementation COMBAT-06.
 - **Cost** (Q-64): cooldown only, no mana, stamina or charges. Every skill is ready when a battle starts.
 - **Effects** (Q-65): an extensible effect design supporting area damage, buff/debuff, heal, morale gain (COMBAT-07 gain rules) and stagger (COMBAT-04 poise) at a basic level; sample skills are proposed with COMBAT-06.
 - **Acquisition** (Q-66, Q-72, Q-73, 2026-11-19): player skills are learned through skill entries in the Combat perk tree; they reset with the perk allocation when a run ends, and when the player knows more than 3, three are equipped during preparation. Each hero has 3 fixed skills in its data; each grade opens the next one.
+- **COMBAT-06 inputs and scope** (user, 2026-11-20): player skill slots use `Z` / `X` / `C` (bindings in data, final layout Q-11). Manual hero cast (Auto off): select the squad (`F1`-`F4`) and press `Alt` + the slot key; its captain hero casts that slot toward the screen aim point. The player's 3 equipped skills and each hero's Auto toggle live in the preparation equipment window (`I`). M2 ships about 6 shared sample skills, one per effect family (area damage, attack buff, enemy slow debuff, heal, morale rally, stagger strike), reused by Combat-tree skill perks and hero fixed slots; the final skill roster waits for M4 content planning (Q-61).
 
 ## Win/Loss Conditions
 

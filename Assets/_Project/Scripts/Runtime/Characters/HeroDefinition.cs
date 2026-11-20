@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using ProjectNeo.Core;
 using ProjectNeo.Economy;
+using ProjectNeo.Skills;
 using ProjectNeo.Stats;
 using UnityEngine;
 

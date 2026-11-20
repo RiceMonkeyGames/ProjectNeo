@@ -37,6 +37,8 @@ namespace ProjectNeo.Characters
         public float HeightRatio => IsCrouching ? motor.height / standingHeight : 1f;
         public float EyeHeight => settings.CameraHeight * HeightRatio;
         public PlayerControlSettings Settings => settings;
+        /// <summary>사다리·대포·건설·낙하 등으로 이동이 멈춘 상태(COMBAT-06: 이때는 스킬도 쓰지 않는다).</summary>
+        public bool IsMovementSuspended => movementSuspended;
 
         public void SetMovementSuspended(bool suspended)
         {

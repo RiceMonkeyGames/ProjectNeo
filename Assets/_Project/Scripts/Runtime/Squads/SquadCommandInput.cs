@@ -15,6 +15,8 @@ namespace ProjectNeo.Squads
         InputAction selectAll, move, attack, hold;
         public string Message { get; private set; } = "";
         public SquadCommandCenter Center => center;
+        /// <summary>조준 광선을 쏘는 카메라(COMBAT-06 스킬 조준도 같은 화면 가운데를 쓴다).</summary>
+        public Camera View => view;
         /// <summary>
         /// 목적지 있는 지시를 내리기 전에 묻는다. 거절 문구를 돌려주면 지시하지 않는다(PREP-05 준비 단계 성 안 제한). null이면 허용.
         /// </summary>

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ProjectNeo.Economy;
+using ProjectNeo.Skills;
 using ProjectNeo.Stats;
 
 namespace ProjectNeo.Characters

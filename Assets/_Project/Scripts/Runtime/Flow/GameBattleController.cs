@@ -196,6 +196,27 @@ namespace ProjectNeo.Flow
             // 보스 체력바(SIEGE-09). Game.unity를 고치지 않고 실행 중에 붙인다.
             BossHud = gameObject.AddComponent<ProjectNeo.UI.BossHealthHud>();
             BossHud.Configure(this);
+            // 액티브 스킬 입력·HUD(COMBAT-06). Game.unity를 고치지 않고 실행 중에 붙인다.
+            if (player != null)
+            {
+                Skills = gameObject.AddComponent<GameSkills>();
+                Skills.Configure(flow, settings, player, commander, morale, () => RunLink, SkillCamera);
+                SkillHud = gameObject.AddComponent<ProjectNeo.UI.SkillHud>();
+                SkillHud.Configure(Skills);
+            }
+        }
+        /// <summary>액티브 스킬 입력과 칸 구성(COMBAT-06). 플레이어가 없으면 null.</summary>
+        public GameSkills Skills { get; private set; }
+        /// <summary>플레이어 스킬 칸 HUD(COMBAT-06).</summary>
+        public ProjectNeo.UI.SkillHud SkillHud { get; private set; }
+        Camera skillCamera;
+        // 스킬 조준은 분대 지시와 같은 화면 가운데를 쓴다.
+        Camera SkillCamera()
+        {
+            if (skillCamera != null) return skillCamera;
+            SquadCommandInput input = FindAnyObjectByType<SquadCommandInput>();
+            skillCamera = input != null && input.View != null ? input.View : Camera.main;
+            return skillCamera;
         }
         /// <summary>보스 체력바(SIEGE-09).</summary>
         public ProjectNeo.UI.BossHealthHud BossHud { get; private set; }
