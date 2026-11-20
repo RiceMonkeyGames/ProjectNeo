@@ -773,6 +773,8 @@ namespace ProjectNeo.Run
                 }
             }
             if (result.CastleAfter != null) Castle = result.CastleAfter.Clone();
+            // 런 점수(META-04)에 이번 전투의 처치 수·승리·성문 상태를 센다.
+            ScoreTally.Record(result);
 
             LastBattleResult = result;
             BattlesFought = pendingBattle;

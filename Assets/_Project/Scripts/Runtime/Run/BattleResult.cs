@@ -42,6 +42,8 @@ namespace ProjectNeo.Run
         public BattleEndReason EndReason { get; }
         /// <summary>전투가 끝난 뒤의 성. 부서진 조각은 빠지고 내려앉은 조각은 바뀐 층으로 담긴다.</summary>
         public CastleState CastleAfter { get; set; }
+        /// <summary>전투가 끝났을 때 성문이 멀쩡했는지(META-04 런 점수). 모르면 true로 본다.</summary>
+        public bool GateIntact { get; set; } = true;
         public IReadOnlyDictionary<int, UnitFate> Fates => fates;
         /// <summary>처치한 적 종류별 수. 키는 적 정의의 ID다. 재료 보상(C-4)이 읽는다.</summary>
         public IReadOnlyDictionary<string, int> EnemiesKilled => enemiesKilled;

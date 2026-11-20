@@ -230,6 +230,7 @@ namespace ProjectNeo.UI
             MetaProgress progress = result.Progress;
             string summary = $"Commander Lv {progress.commanderLevel} - Unlock points {progress.unlockPoints}";
             if (progress.ascensionUnlocked > 0) summary += $" - Ascension {progress.ascensionUnlocked}";
+            if (progress.bestRunScore > 0) summary += $" - Best {ProjectNeo.Run.RunScore.Number(progress.bestRunScore)}";
             switch (result.Status)
             {
                 case MetaLoadStatus.Loaded: return $"{name}: {summary}";
