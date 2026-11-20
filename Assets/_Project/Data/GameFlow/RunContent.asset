@@ -54,3 +54,11 @@ MonoBehaviour:
   - aac3647309965694ebd130dc919fcbf7
   weapons:
   - {fileID: 11400000, guid: dcd5362db7ff6a84db2f93ac232125a8, type: 2}
+  perks:
+  - {fileID: 11400000, guid: 1adbe44f89a842d4784bca0adb192c85, type: 2}
+  - {fileID: 11400000, guid: 0a8854f5d93e58141bbac290bef9a9fc, type: 2}
+  - {fileID: 11400000, guid: 8c4959e9126197b4aa08fac9b07964e7, type: 2}
+  - {fileID: 11400000, guid: 6cee3aabd9a5e514ba7550b54e1ecdab, type: 2}
+  - {fileID: 11400000, guid: c617f3c4bccd7b04d87f7a7b9eb6ed3f, type: 2}
+  - {fileID: 11400000, guid: aeecee8d5cf6710419236412709ae429, type: 2}
+  - {fileID: 11400000, guid: 009bb6946a2be864a9c215969428e574, type: 2}

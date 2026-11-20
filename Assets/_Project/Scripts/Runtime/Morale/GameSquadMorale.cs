@@ -272,9 +272,10 @@ namespace ProjectNeo.Morale
                 moraleHandlers.Add(new KeyValuePair<SquadMorale, Action>(battle.Morale, changed));
                 RefreshAttack(battle);
                 if (battle.StartedShaken) SetNotice(i, "Low morale: weakened " + CollapseName(battle.Collapse));
+                // 아군 부대원(대장 포함)이 죽으면 그 시점의 퍽 특수 효과도 발동한다(META-02).
                 foreach (UnitCombatAI member in squad.Members)
-                    if (IsAlive(member)) WatchDeath(member.Actor, battle.OnMemberDied);
-                if (IsAlive(squad.Leader)) WatchDeath(squad.Leader.Actor, battle.OnCaptainDied);
+                    if (IsAlive(member)) WatchDeath(member.Actor, () => { battle.OnMemberDied(); RaiseMemberDied(); });
+                if (IsAlive(squad.Leader)) WatchDeath(squad.Leader.Actor, () => { battle.OnCaptainDied(); RaiseMemberDied(); });
             }
             if (world != null) world.PieceCollapsing += OnPieceCollapsing;
             center.Commander.OrderRequested += AcceptOrder;
@@ -318,6 +319,11 @@ namespace ProjectNeo.Morale
             if (!recover || center == null) return;
             // Q-39: 모든 부대가 전투 후 max(현재 + 20, 80)이 된다. 도망친 부대(0)는 80에서 다음 전투를 시작한다.
             for (int i = 0; i < center.Squads.Count; i++) MoraleRules.RecoverAfterBattle(MoraleOf(i), settings);
+        }
+
+        void RaiseMemberDied()
+        {
+            if (battleActive) perks?.RaiseTrigger(PerkTrigger.AllySquadMemberDied, this);
         }
 
         void WatchDeath(CharacterActor actor, Action handler)

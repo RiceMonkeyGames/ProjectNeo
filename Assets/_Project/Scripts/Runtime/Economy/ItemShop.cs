@@ -102,6 +102,19 @@ namespace ProjectNeo.Economy
         /// <summary>이번 준비 단계에서 이미 rerollsDone번 리롤했을 때 다음 리롤의 골드(PREP-02).</summary>
         public int GetRerollCost(int rerollsDone) => config.GetRerollCost(rerollsDone);
 
+        /// <summary>구매가 골드를 바꾸는 퍼센트(퍽 상점 가격 효과, META-02). -20이면 20% 싸다. 재료 비용은 그대로다.</summary>
+        public float PriceChangePercent { get; set; }
+
+        /// <summary>지금 상점에서 이 아이템을 사는 비용. 골드에 <see cref="PriceChangePercent"/>를 반영하고 반올림한다(0 아래로 내려가지 않는다).</summary>
+        public Cost GetBuyPrice(ItemDefinition item)
+        {
+            if (item == null) return new Cost(0);
+            Cost price = item.Price;
+            if (Mathf.Approximately(PriceChangePercent, 0f)) return price;
+            int gold = Mathf.Max(0, Mathf.RoundToInt(Mathf.Max(price.gold, 0) * (1f + PriceChangePercent / 100f)));
+            return new Cost(gold, price.materials != null ? price.materials.ToArray() : new MaterialAmount[0]);
+        }
+
         /// <summary>매물에 있고 비용을 낼 수 있으면 차감하고 보관함에 넣는다.</summary>
         public bool TryBuy(ItemDefinition item, Wallet wallet, Inventory inventory)
         {
@@ -118,7 +131,7 @@ namespace ProjectNeo.Economy
             if (inventory == null) throw new ArgumentNullException(nameof(inventory));
             if (index < 0 || index >= stock.Count) return false;
             ItemDefinition item = stock[index];
-            if (item == null || !wallet.TrySpend(item.Price)) return false;
+            if (item == null || !wallet.TrySpend(GetBuyPrice(item))) return false;
             stock.RemoveAt(index);
             if (index < locked.Count) locked.RemoveAt(index);
             inventory.Add(item);

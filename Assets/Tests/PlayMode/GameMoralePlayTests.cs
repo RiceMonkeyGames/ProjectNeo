@@ -466,9 +466,11 @@ namespace ProjectNeo.Tests
                 new PerkSpecialEffect[] { effect });
             try
             {
-                var loadout = new PerkLoadout(new MetaProgress { perkPoints = 1 });
-                Assert.IsTrue(loadout.TryAllocate(perk));
-                morale.UsePerks(loadout);
+                // 준비마다 Game 씬이 이 런의 퍽을 사기에 붙이므로(META-02) 런의 퍽 묶음에 찍는다.
+                PerkLoadout loadout = battle.RunLink.State.Perks;
+                Assert.IsNotNull(loadout);
+                loadout.BonusPoints = 1;
+                Assert.IsTrue(battle.RunLink.State.TryAllocatePerk(perk));
                 Assert.GreaterOrEqual(center.Squads.Count, 2);
                 float[] before = Enumerable.Range(0, center.Squads.Count).Select(i => morale.MoraleOf(i).Value).ToArray();
 
