@@ -23,5 +23,18 @@ namespace ProjectNeo.Run
             PlayerSkillLoadout.Refresh(learned);
             return PlayerSkillLoadout.EquippedSkills(learned);
         }
+
+        /// <summary>배운 스킬을 첫 빈 칸에 장착한다. 이미 장착했거나, 배우지 않았거나, 빈 칸이 없으면 false.</summary>
+        public bool TryEquipPlayerSkill(string skillId)
+        {
+            if (PlayerSkillLoadout.IsEquipped(skillId)) return false;
+            for (int slot = 0; slot < PlayerSkillLoadout.SlotCount; slot++)
+                if (PlayerSkillLoadout.EquippedId(slot) == null)
+                    return PlayerSkillLoadout.TryEquip(slot, skillId, LearnedPlayerSkills());
+            return false;
+        }
+
+        /// <summary>칸의 스킬을 뺀다. 빈 칸은 다음 전투 시작 때 남은 배운 스킬로 채워진다(<see cref="EquippedPlayerSkills"/>).</summary>
+        public bool UnequipPlayerSkill(int slot) => PlayerSkillLoadout.Unequip(slot);
     }
 }

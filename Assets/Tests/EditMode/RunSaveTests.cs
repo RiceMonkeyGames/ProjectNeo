@@ -199,6 +199,26 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
+        public void CaptureThenRestore_KeepsEachHerosSkillAuto_AndOldSavesStayAuto()
+        {
+            RunState run = RichRun();
+            RunHero hired = run.Heroes.First(hero => !hero.IsPlayer);
+            Assert.IsTrue(hired.SkillAuto, "새 영웅은 자동 사용이 켜져 있다");
+            hired.SkillAuto = false;
+
+            string json = Json(run.Capture(1, content));
+            RunState restored = RunState.Restore(JsonUtility.FromJson<RunSnapshot>(json), content, options, out string error);
+            Assert.IsNotNull(restored, error);
+            Assert.IsFalse(((RunHero)restored.Find(hired.Id)).SkillAuto);
+            Assert.IsTrue(restored.Player.SkillAuto);
+
+            RunSnapshot old = JsonUtility.FromJson<RunSnapshot>(json.Replace("\"skillManual\": true", "\"unused\": true"));
+            RunState fromOld = RunState.Restore(old, content, options, out error);
+            Assert.IsNotNull(fromOld, error);
+            Assert.IsTrue(((RunHero)fromOld.Find(hired.Id)).SkillAuto, "필드가 없는 예전 저장은 자동 켜짐");
+        }
+
+        [Test]
         public void OldSaveWithEquippedFallenHero_RestoresTheGearToTheStash()
         {
             // PREP-08 이전 저장: 죽은 영웅이 강화한 장비를 낀 채 기록돼 있다(Q-31 이전 동작).

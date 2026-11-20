@@ -31,6 +31,11 @@ namespace ProjectNeo.Run
         public int Grade { get; internal set; } = 1;
         /// <summary>다음 등급까지 모은 전투 경험치(PREP-10). 다음 등급에 필요한 값을 넘지 않는다.</summary>
         public int Exp { get; internal set; }
+        /// <summary>
+        /// 전투에서 이 영웅의 AI가 스킬을 스스로 쓰는지(Q-62, COMBAT-06). 기본은 켜짐이고 준비 단계 장비 창에서 바꾼다.
+        /// 꺼져 있어도 분대 선택 + Alt + 스킬 키로 직접 시킬 수 있다. 플레이어는 쓰지 않는다.
+        /// </summary>
+        public bool SkillAuto { get; set; } = true;
 
         public RunHero(int id, Character character, bool isPlayer) : base(id)
         {

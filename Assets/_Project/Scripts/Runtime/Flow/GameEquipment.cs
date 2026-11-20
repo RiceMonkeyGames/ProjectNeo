@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Text;
 using ProjectNeo.Economy;
 using ProjectNeo.Run;
+using ProjectNeo.Skills;
 using ProjectNeo.Stats;
 using TMPro;
 using UnityEngine;
@@ -14,6 +15,8 @@ namespace ProjectNeo.Flow
     /// 보관함의 장비를 클릭하면 런 플레이어에게 끼우고, 착용 중인 장비를 클릭하면 벗긴다. 런 플레이어는 씬 플레이어와
     /// 같은 캐릭터를 쓰므로 스탯이 씬에 바로 반영된다. 고용한 영웅이 있으면 착용 목록 맨 위 줄로 대상(플레이어·영웅)을 바꾼다(D-3, Q-48).
     /// 고용 영웅도 씬 유닛과 같은 캐릭터를 써서 바로 반영된다.
+    /// 오른쪽 목록 맨 위 줄로 장비 보기와 스킬 보기(COMBAT-06)를 바꾼다. 스킬 보기에서 플레이어는 배운 스킬 중 3개를 장착하고,
+    /// 영웅은 등급으로 열린 고정 스킬을 보고 자동 사용을 켜고 끈다.
     /// <see cref="GameBattleController"/>와 같은 오브젝트에 붙어 그 런 연결을 쓴다.
     /// </summary>
     [RequireComponent(typeof(GameBattleController))]
@@ -32,6 +35,8 @@ namespace ProjectNeo.Flow
         readonly List<Button> rows = new List<Button>();
         GameBattleController battle;
         GameFlow flow;
+        TMP_Text equippedHeader, inventoryHeader;
+        string equippedHeaderText, inventoryHeaderText;
 
         public bool IsOpen { get; private set; }
         public string Message { get; private set; } = string.Empty;
@@ -39,6 +44,11 @@ namespace ProjectNeo.Flow
         public string BodyText => body != null ? body.text : string.Empty;
         public int EquippedRows => equippedList != null ? ActiveChildren(equippedList) : 0;
         public int InventoryRows => inventoryList != null ? ActiveChildren(inventoryList) : 0;
+        /// <summary>스킬 보기인지(아니면 장비 보기).</summary>
+        public bool SkillView { get; private set; }
+        /// <summary>왼쪽·오른쪽 목록의 줄 글자(테스트용).</summary>
+        public List<string> EquippedRowTexts => RowTexts(equippedList);
+        public List<string> InventoryRowTexts => RowTexts(inventoryList);
 
         public void Configure(GamePhaseView view, PreparationInteraction input, GameObject popup, TMP_Text statusLabel,
             TMP_Text bodyLabel, RectTransform equipped, RectTransform inventory, Button template)
@@ -53,6 +63,17 @@ namespace ProjectNeo.Flow
             flow = GameSession.Flow;
             if (panel != null) panel.SetActive(false);
             if (rowTemplate != null) rowTemplate.gameObject.SetActive(false);
+            equippedHeader = Header(equippedList);
+            inventoryHeader = Header(inventoryList);
+            equippedHeaderText = equippedHeader != null ? equippedHeader.text : string.Empty;
+            inventoryHeaderText = inventoryHeader != null ? inventoryHeader.text : string.Empty;
+        }
+
+        // 목록 제목은 목록과 같은 열 안의 "Header" 글자다(GameFacilitySetup.Column).
+        static TMP_Text Header(RectTransform list)
+        {
+            Transform header = list != null && list.parent != null ? list.parent.Find("Header") : null;
+            return header != null ? header.GetComponent<TMP_Text>() : null;
         }
 
         void OnEnable() { if (interaction != null) interaction.EquipmentRequested += OnRequested; }
@@ -97,6 +118,9 @@ namespace ProjectNeo.Flow
             IsOpen = true;
             Message = string.Empty;
             selected = Player;
+            SkillView = false;
+            // 퍽을 바꿨을 수 있으니 배운 스킬에 맞춰 장착 칸을 정리한다(빈 칸은 배운 순서로 채운다).
+            State.PlayerSkillLoadout.Refresh(State.LearnedPlayerSkills());
             panel.SetActive(true);
             Rebuild();
             return true;
@@ -134,6 +158,51 @@ namespace ProjectNeo.Flow
             return removed;
         }
 
+        /// <summary>장비 보기와 스킬 보기를 바꾼다.</summary>
+        public bool ToggleView()
+        {
+            if (!IsOpen) return false;
+            SkillView = !SkillView;
+            Message = string.Empty;
+            Rebuild();
+            return true;
+        }
+
+        /// <summary>플레이어의 배운 스킬 중 장착하지 않은 것의 index번째를 첫 빈 칸에 장착한다.</summary>
+        public bool TryEquipSkill(int index)
+        {
+            RunState state = State;
+            List<SkillDefinition> spare = SpareSkills(state);
+            if (!IsOpen || !SkillView || SelectedHero == null || !SelectedHero.IsPlayer || index < 0 || index >= spare.Count) return false;
+            bool equipped = state.TryEquipPlayerSkill(spare[index].Id);
+            Message = equipped ? $"{spare[index].DisplayName} 장착" : "빈 스킬 칸이 없습니다. 먼저 스킬을 빼세요.";
+            Rebuild();
+            return equipped;
+        }
+
+        /// <summary>플레이어 스킬 칸의 스킬을 뺀다.</summary>
+        public bool TryUnequipSkill(int slot)
+        {
+            RunState state = State;
+            if (!IsOpen || !SkillView || SelectedHero == null || !SelectedHero.IsPlayer) return false;
+            SkillDefinition skill = SkillById(state.LearnedPlayerSkills(), state.PlayerSkillLoadout.EquippedId(slot));
+            bool removed = state.UnequipPlayerSkill(slot);
+            if (removed) Message = $"{(skill != null ? skill.DisplayName : "스킬")} 해제. 빈 칸은 전투 시작 때 남은 배운 스킬로 채워집니다.";
+            Rebuild();
+            return removed;
+        }
+
+        /// <summary>고른 영웅(플레이어 제외)의 스킬 자동 사용을 켜고 끈다.</summary>
+        public bool ToggleHeroAuto()
+        {
+            RunHero hero = SelectedHero;
+            if (!IsOpen || !SkillView || hero == null || hero.IsPlayer) return false;
+            hero.SkillAuto = !hero.SkillAuto;
+            Message = hero.SkillAuto ? "자동 사용 켜짐: 영웅이 알아서 스킬을 씁니다." : "자동 사용 꺼짐: 분대를 고르고 Alt + 스킬 키로 시킵니다.";
+            Rebuild();
+            return true;
+        }
+
         void Hide()
         {
             IsOpen = false;
@@ -155,11 +224,36 @@ namespace ProjectNeo.Flow
             return gear;
         }
 
+        static List<SkillDefinition> SpareSkills(RunState state)
+        {
+            var spare = new List<SkillDefinition>();
+            if (state == null) return spare;
+            foreach (SkillDefinition skill in state.LearnedPlayerSkills())
+                if (skill != null && !state.PlayerSkillLoadout.IsEquipped(skill.Id)) spare.Add(skill);
+            return spare;
+        }
+
+        static SkillDefinition SkillById(IReadOnlyList<SkillDefinition> skills, string id)
+        {
+            if (skills == null || string.IsNullOrEmpty(id)) return null;
+            foreach (SkillDefinition skill in skills)
+                if (skill != null && skill.Id == id) return skill;
+            return null;
+        }
+
         void Rebuild()
         {
             RunState state = State;
             RunHero hero = SelectedHero;
             if (hero == null) return;
+            if (equippedHeader != null) equippedHeader.text = SkillView ? "스킬 칸" : equippedHeaderText;
+            if (inventoryHeader != null)
+                inventoryHeader.text = SkillView ? (hero.IsPlayer ? "배운 스킬 (클릭해서 장착)" : "스킬 사용") : inventoryHeaderText;
+            if (SkillView)
+            {
+                RebuildSkills(state, hero);
+                return;
+            }
             var character = hero.Character;
             if (status != null)
             {
@@ -176,9 +270,7 @@ namespace ProjectNeo.Flow
                 body.text = (string.IsNullOrEmpty(Message) ? string.Empty : Message + "\n") + "보관함 장비를 클릭하면 장착하고, 착용 중인 장비를 클릭하면 벗습니다.";
             ClearRows();
             if (rowTemplate == null) return;
-            if (state.Heroes.Count > 1)
-                AddRow(equippedList, $"대상: {character.Definition.DisplayName}" + (hero.IsPlayer ? " (플레이어)" : string.Empty)
-                    + " - 클릭해서 바꾸기", () => NextHero());
+            AddHeadRows(state, hero);
             if (character.Equipment.Count == 0) AddRow(equippedList, "착용한 장비가 없습니다.", null);
             for (int i = 0; i < character.Equipment.Count; i++)
             {
@@ -193,6 +285,94 @@ namespace ProjectNeo.Flow
                 int index = i;
                 AddRow(inventoryList, $"{gear[i].DisplayName} · {Describe(gear[i])}", () => TryEquip(index));
             }
+        }
+
+        // 왼쪽 맨 위: 대상 바꾸기(고용 영웅이 있을 때). 오른쪽 맨 위: 보기 바꾸기.
+        void AddHeadRows(RunState state, RunHero hero)
+        {
+            if (state.Heroes.Count > 1)
+                AddRow(equippedList, $"대상: {hero.Definition.DisplayName}" + (hero.IsPlayer ? " (플레이어)" : string.Empty)
+                    + " - 클릭해서 바꾸기", () => NextHero());
+            AddRow(inventoryList, SkillView ? "보기: 스킬 - 클릭해서 장비 보기" : "보기: 장비 - 클릭해서 스킬 보기", () => ToggleView());
+        }
+
+        void RebuildSkills(RunState state, RunHero hero)
+        {
+            GameSkills skills = battle != null ? battle.Skills : null;
+            if (hero.IsPlayer)
+            {
+                List<SkillDefinition> learned = state.LearnedPlayerSkills();
+                int count = state.PlayerSkillLoadout.EquippedSkills(learned).Count;
+                if (status != null)
+                    status.text = (state.Heroes.Count > 1 ? $"{hero.Definition.DisplayName} · " : string.Empty)
+                        + $"스킬 칸 {count} / {state.PlayerSkillLoadout.SlotCount} · 배운 스킬 {learned.Count}";
+                if (body != null)
+                    body.text = (string.IsNullOrEmpty(Message) ? string.Empty : Message + "\n")
+                        + (learned.Count == 0 ? "배운 스킬이 없습니다. 퍽 창의 전투 트리에서 스킬 퍽을 찍으면 배웁니다."
+                            : "배운 스킬을 클릭하면 빈 칸에 장착하고, 칸을 클릭하면 뺍니다.");
+                ClearRows();
+                if (rowTemplate == null) return;
+                AddHeadRows(state, hero);
+                for (int i = 0; i < state.PlayerSkillLoadout.SlotCount; i++)
+                {
+                    int slot = i;
+                    SkillDefinition skill = SkillById(learned, state.PlayerSkillLoadout.EquippedId(i));
+                    string key = SlotKey(skills, i);
+                    if (skill == null) AddRow(equippedList, $"{key}: 비어 있음", null);
+                    else AddRow(equippedList, $"{key}: {DescribeSkill(skill)}", () => TryUnequipSkill(slot));
+                }
+                List<SkillDefinition> spare = SpareSkills(state);
+                if (spare.Count == 0) AddRow(inventoryList, learned.Count == 0 ? "배운 스킬이 없습니다." : "배운 스킬을 모두 장착했습니다.", null);
+                for (int i = 0; i < spare.Count; i++)
+                {
+                    int index = i;
+                    AddRow(inventoryList, DescribeSkill(spare[i]), () => TryEquipSkill(index));
+                }
+                return;
+            }
+
+            IReadOnlyList<SkillDefinition> fixedSkills = hero.Definition.Skills;
+            List<SkillDefinition> open = SkillSlotRules.OpenHeroSkills(fixedSkills, hero.Grade);
+            if (status != null)
+                status.text = $"{hero.Definition.DisplayName} · 등급 {hero.Grade} · 스킬 칸 {open.Count} / {SkillSlotRules.MaxSlots}"
+                    + $" · 자동 사용 {(hero.SkillAuto ? "켜짐" : "꺼짐")}";
+            if (body != null)
+                body.text = (string.IsNullOrEmpty(Message) ? string.Empty : Message + "\n")
+                    + "영웅 스킬은 정해져 있고 등급이 오르면 칸이 열립니다. 전투 중 분대를 고르고 Alt + 스킬 키로 직접 시킬 수 있습니다.";
+            ClearRows();
+            if (rowTemplate == null) return;
+            AddHeadRows(state, hero);
+            int opened = 0;
+            int fixedCount = fixedSkills != null ? fixedSkills.Count : 0;
+            for (int i = 0; i < fixedCount && i < SkillSlotRules.MaxSlots; i++)
+            {
+                SkillDefinition skill = fixedSkills[i];
+                if (skill == null) continue;
+                if (i < SkillSlotRules.HeroSlots(hero.Grade))
+                    AddRow(equippedList, $"{ModifierKey(skills)}+{SlotKey(skills, opened++)}: {DescribeSkill(skill)}", null);
+                else AddRow(equippedList, $"잠김: {skill.DisplayName} (등급 {i + 1}에 열림)", null);
+            }
+            if (open.Count == 0) AddRow(equippedList, "스킬이 없습니다.", null);
+            AddRow(inventoryList, $"자동 사용: {(hero.SkillAuto ? "켜짐" : "꺼짐")} - 클릭해서 바꾸기", () => ToggleHeroAuto());
+        }
+
+        static string SlotKey(GameSkills skills, int slot)
+        {
+            string key = skills != null ? skills.KeyOf(slot) : string.Empty;
+            return string.IsNullOrEmpty(key) ? (slot + 1).ToString() : key;
+        }
+
+        static string ModifierKey(GameSkills skills) => skills != null ? skills.ModifierKey : "Alt";
+
+        static string DescribeSkill(SkillDefinition skill) => $"{skill.DisplayName} · 쿨다운 {skill.Cooldown:0.#}초";
+
+        static List<string> RowTexts(RectTransform list)
+        {
+            var texts = new List<string>();
+            if (list == null) return texts;
+            foreach (Transform child in list)
+                if (child.gameObject.activeSelf) texts.Add(child.GetComponentInChildren<TMP_Text>(true).text);
+            return texts;
         }
 
         void AddRow(RectTransform list, string text, UnityEngine.Events.UnityAction action)

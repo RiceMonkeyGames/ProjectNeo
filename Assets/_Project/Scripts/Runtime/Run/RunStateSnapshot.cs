@@ -79,6 +79,7 @@ namespace ProjectNeo.Run
             snapshot.prepTime.budget = Clock.Budget;
             snapshot.prepTime.used = Clock.Used;
             snapshot.perks.AddRange(PerkIds());
+            snapshot.playerSkills.AddRange(PlayerSkillLoadout.Capture());
             snapshot.score = CaptureScore();
 
             snapshot.shop.stockedFor = ShopStockedFor;
@@ -125,6 +126,7 @@ namespace ProjectNeo.Run
             var record = new HeroRecord
             {
                 unitId = hero.Id, id = hero.Definition.Id, isPlayer = hero.IsPlayer, grade = hero.Grade, exp = hero.Exp,
+                skillManual = !hero.SkillAuto,
             };
             foreach (ItemInstance item in hero.Character.Equipment) record.equipment.Add(Record(item));
             return record;
@@ -250,7 +252,7 @@ namespace ProjectNeo.Run
                     return null;
                 }
                 state.Equip(character, record, content, options);
-                var hero = new RunHero(record.unitId, character, record.isPlayer);
+                var hero = new RunHero(record.unitId, character, record.isPlayer) { SkillAuto = !record.skillManual };
                 state.units.Add(hero.Id, hero);
                 state.heroes.Add(hero);
                 if (hero.IsPlayer) state.Player = hero;
@@ -323,6 +325,8 @@ namespace ProjectNeo.Run
             state.Castle = CastleState.FromRecords(pieces, weapons);
 
             state.RestorePerks(snapshot.perks, content);
+            // 퍽 묶음은 나중에 씬이 만들므로 여기서는 id만 되살린다. 배우지 않은 id는 다음 Refresh에서 빠진다.
+            state.PlayerSkillLoadout.Restore(snapshot.playerSkills);
             state.RestoreScore(snapshot.score);
             state.nextUnitId = Math.Max(snapshot.nextUnitId, highestId + 1);
             state.BattlesFought = snapshot.battlesFought;

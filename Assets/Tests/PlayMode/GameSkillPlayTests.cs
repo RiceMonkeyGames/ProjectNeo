@@ -219,5 +219,63 @@ namespace ProjectNeo.Tests
             Assert.IsTrue(brain.Auto, "기본은 자동 시전");
             Assert.IsNull(player.GetComponent<HeroSkillAI>(), "플레이어는 자동 시전하지 않는다.");
         }
+
+        [UnityTest]
+        public IEnumerator 장비_창_스킬_보기에서_스킬을_바꿔_끼우고_영웅_자동_사용을_끈다()
+        {
+            RunState state = GameSession.Flow.Run.State;
+            PerkTreeCatalog trees = Object.FindAnyObjectByType<GameFacilities>().StartConfig.PerkTrees;
+            PerkDefinition Perk(string id) => trees.AllPerks().Single(perk => perk.Id == id);
+            state.Perks.BonusPoints = 10;
+            // 회오리(선행 없음) -> 벼린 칼날 -> 방패 강타 -> 강인함 -> 전투 함성: 배운 스킬 3개.
+            foreach (string id in new[] { "perk_combat_skill_whirlwind", "perk_combat_sharpened_blade", "perk_combat_skill_shield_bash",
+                "perk_combat_toughness", "perk_combat_skill_war_cry" })
+                Assert.IsTrue(state.TryAllocatePerk(Perk(id)), id);
+            Assert.AreEqual(3, state.LearnedPlayerSkills().Count);
+
+            var facilities = Object.FindAnyObjectByType<GameFacilities>();
+            state.Wallet.AddGold(200);
+            Assert.IsTrue(Object.FindObjectsByType<FacilityStation>().Single(s => s.Type == ProjectNeo.Facilities.FacilityType.Tavern).Interact());
+            Assert.IsTrue(facilities.ChooseCaptainSquad(0));
+            Assert.IsTrue(facilities.TryHire(0));
+            facilities.Close();
+            yield return null;
+
+            var equipment = Object.FindAnyObjectByType<GameEquipment>();
+            Assert.IsTrue(equipment.Open());
+            Assert.IsFalse(equipment.SkillView);
+            Assert.IsTrue(equipment.ToggleView());
+            Assert.IsTrue(equipment.SkillView);
+            StringAssert.Contains("스킬 칸 3 / 3", equipment.StatusText);
+            Assert.IsTrue(equipment.EquippedRowTexts.Any(text => text.StartsWith("Z: 회오리 베기")), string.Join(" | ", equipment.EquippedRowTexts));
+            Assert.IsFalse(equipment.TryEquipSkill(0), "남은 배운 스킬이 없다.");
+
+            Assert.IsTrue(equipment.TryUnequipSkill(0));
+            StringAssert.Contains("스킬 칸 2 / 3", equipment.StatusText);
+            Assert.IsTrue(equipment.InventoryRowTexts.Any(text => text.StartsWith("회오리 베기")), "뺀 스킬이 배운 스킬 목록에 나온다.");
+            Assert.IsTrue(equipment.TryEquipSkill(0));
+            Assert.AreEqual("skill_whirlwind", state.PlayerSkillLoadout.EquippedId(0), "첫 빈 칸에 다시 들어간다.");
+
+            Assert.IsTrue(equipment.NextHero());
+            RunHero hero = equipment.SelectedHero;
+            Assert.IsFalse(hero.IsPlayer);
+            Assert.IsTrue(equipment.EquippedRowTexts.Any(text => text.StartsWith("Alt+Z: ")), string.Join(" | ", equipment.EquippedRowTexts));
+            Assert.IsTrue(equipment.EquippedRowTexts.Any(text => text.StartsWith("잠김: ")), "1등급 영웅은 둘째 칸부터 잠겨 있다.");
+            Assert.IsTrue(equipment.ToggleHeroAuto());
+            Assert.IsFalse(hero.SkillAuto);
+            StringAssert.Contains("자동 사용 꺼짐", equipment.StatusText);
+            Assert.IsTrue(equipment.ToggleView());
+            Assert.IsFalse(equipment.ToggleHeroAuto(), "장비 보기에서는 바꾸지 않는다.");
+            equipment.Close();
+            yield return null;
+
+            yield return StartBattle();
+            CollectionAssert.AreEqual(new[] { "skill_whirlwind", "skill_shield_bash", "skill_war_cry" },
+                Enumerable.Range(0, skills.PlayerCaster.Slots.Count).Select(i => skills.PlayerCaster.Slots.Get(i).Id).ToArray());
+            SquadCommandCenter center = Object.FindAnyObjectByType<SquadCommandCenter>();
+            HeroSkillAI brain = center.Squads[0].Leader.GetComponent<HeroSkillAI>();
+            Assert.IsNotNull(brain);
+            Assert.IsFalse(brain.Auto, "장비 창에서 끈 자동 사용이 전투에 반영된다.");
+        }
     }
 }

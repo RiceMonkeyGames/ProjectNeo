@@ -149,6 +149,45 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
+        public void SkillLoadout_EquipsLearnedSkills_AndSurvivesTheRunSave()
+        {
+            var skills = new ProjectNeo.Skills.SkillDefinition[4];
+            var grants = new PerkDefinition[4];
+            for (int i = 0; i < skills.Length; i++)
+            {
+                skills[i] = Track(ProjectNeo.Skills.SkillDefinition.Create("s" + i, 10f, ProjectNeo.Skills.SkillTargetMode.Self, 0f, 3f));
+                grants[i] = Track(PerkDefinition.Create("grant" + i, PerkCategory.Combat, grantedSkill: skills[i]));
+            }
+            RunState run = NewRun(4);
+            foreach (PerkDefinition grant in grants) run.TryAllocatePerk(grant);
+
+            CollectionAssert.AreEqual(new[] { skills[0], skills[1], skills[2] }, run.EquippedPlayerSkills(), "3개까지는 배운 순서로 채운다");
+            Assert.IsFalse(run.TryEquipPlayerSkill("s3"), "빈 칸이 없으면 장착하지 못한다");
+            Assert.IsTrue(run.UnequipPlayerSkill(1));
+            Assert.IsFalse(run.TryEquipPlayerSkill("unknown"), "배우지 않은 스킬은 장착하지 못한다");
+            Assert.IsTrue(run.TryEquipPlayerSkill("s3"));
+            Assert.IsFalse(run.TryEquipPlayerSkill("s3"), "이미 장착한 스킬");
+
+            var content = Track(RunContentCatalog.Create(new[] { sword }, new MaterialDefinition[0], new[] { playerHero },
+                new SoldierDefinition[0], new[] { shop }, new BuildPieceDefinition[0], new SiegeWeaponDefinition[0]));
+            content.SetPerks(grants);
+            var options = new RunRestoreOptions { SquadConfig = squadConfig, PrepTime = time, Economy = economy };
+            RunSnapshot saved = JsonUtility.FromJson<RunSnapshot>(JsonUtility.ToJson(run.Capture(1, content)));
+            CollectionAssert.AreEqual(new[] { "s0", "s3", "s2" }, saved.playerSkills);
+
+            RunState restored = RunState.Restore(saved, content, options, out string error);
+            Assert.IsNotNull(restored, error);
+            restored.SetupPerks(new MetaProgress { perkPoints = 4 });
+            CollectionAssert.AreEqual(new[] { skills[0], skills[3], skills[2] }, restored.EquippedPlayerSkills(), "칸 순서를 지킨다");
+
+            saved.playerSkills = null;
+            RunState old = RunState.Restore(saved, content, options, out error);
+            Assert.IsNotNull(old, error);
+            old.SetupPerks(new MetaProgress { perkPoints = 4 });
+            CollectionAssert.AreEqual(new[] { skills[0], skills[1], skills[2] }, old.EquippedPlayerSkills(), "예전 저장은 배운 순서로 채운다");
+        }
+
+        [Test]
         public void RestoredPerks_NeedEnoughPoints()
         {
             RunState run = NewRun(1);
