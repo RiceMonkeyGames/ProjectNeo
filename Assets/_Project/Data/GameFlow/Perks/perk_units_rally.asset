@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 245f67fb49f0e7f418de26ef3bd6270c, type: 3}
+  m_Name: perk_units_rally
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Meta.PerkDefinition
+  id: perk_units_rally
+  displayName: Rally
+  category: 2
+  pointCost: 1
+  unlockedByDefault: 1
+  statEffects: []
+  specialEffects:
+  - {fileID: 11400000, guid: 1c057b87868306540899e6c15de6fea5, type: 2}
+  runEffects: []
+  prerequisites:
+  - {fileID: 11400000, guid: 9c735fd045ede914db0167407f54d140, type: 2}
+  description: 

@@ -171,15 +171,21 @@ namespace ProjectNeo.Flow
                 Consumables = gameObject.AddComponent<GameConsumables>();
                 Consumables.Configure(flow, settings, player, () => RunLink.State);
             }
-#if UNITY_EDITOR
-            // 퍽 찍기 화면(META-09) 전까지 에디터에서만 쓰는 개발 단축키(F11, META-02).
-            gameObject.AddComponent<GameDevPerkShortcut>();
-#endif
+            // 퍽 창(META-09). Game.unity를 고치지 않고 실행 중에 붙인다. 퍽 트리는 새 런 설정(RunStart)에 있다.
+            var startFacilities = GetComponent<GameFacilities>();
+            ProjectNeo.Meta.PerkTreeCatalog perkTrees = startFacilities != null && startFacilities.StartConfig != null ? startFacilities.StartConfig.PerkTrees : null;
+            if (perkTrees != null)
+            {
+                PerkWindow = gameObject.AddComponent<GamePerkWindow>();
+                PerkWindow.Configure(FindAnyObjectByType<GamePhaseView>(), perkTrees);
+            }
         }
         /// <summary>준비 단계 성문 열기(PREP-05).</summary>
         public GamePrepGate PrepGate { get; private set; }
         /// <summary>전투 중 소모품 사용(PREP-04).</summary>
         public GameConsumables Consumables { get; private set; }
+        /// <summary>퍽 창(META-09). 퍽 트리가 없으면 null.</summary>
+        public GamePerkWindow PerkWindow { get; private set; }
         void OnEnable() { flow.PhaseChanged += OnPhaseChanged; GameSession.Quitting += SaveRunOnQuit; }
         void OnDisable() { flow.PhaseChanged -= OnPhaseChanged; GameSession.Quitting -= SaveRunOnQuit; }
         void Start() => OnPhaseChanged(flow.Phase);

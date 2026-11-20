@@ -166,7 +166,8 @@ namespace ProjectNeo.UI
                 ? $"{interaction.CloseKey} to close"
                 : interaction.Target != null
                     ? $"{interaction.InteractKey} · {interaction.Target.Prompt}"
-                    : $"WASD move - {interaction.InteractKey} interact - {interaction.EquipmentKey} gear - {interaction.OrganizationKey} squads - {interaction.EnemyPreviewKey} enemies";
+                    : $"WASD move - {interaction.InteractKey} interact - {interaction.EquipmentKey} gear - {interaction.OrganizationKey} squads - {interaction.EnemyPreviewKey} enemies"
+                        + (battle != null && battle.PerkWindow != null ? $" - {battle.PerkWindow.KeyText} perks" : string.Empty);
             if (phaseView.IsExplorationView && battle != null)
             {
                 string startHint = interaction.CanStartBattle

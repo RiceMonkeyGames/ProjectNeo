@@ -54,6 +54,10 @@ namespace ProjectNeo.Meta
         [SerializeField] List<PerkSpecialEffect> specialEffects = new List<PerkSpecialEffect>();
         [Tooltip("런 전체 효과(보상 골드·상점 가격·준비 시간, META-02).")]
         [SerializeField] List<PerkRunEffect> runEffects = new List<PerkRunEffect>();
+        [Tooltip("이 퍽을 찍기 전에 모두 찍어 두어야 하는 퍽(META-09 퍽 트리).")]
+        [SerializeField] List<PerkDefinition> prerequisites = new List<PerkDefinition>();
+        [Tooltip("퍽 창에 보여 줄 한 줄 설명. 비어 있으면 효과로 만든 설명을 쓴다.")]
+        [SerializeField] string description;
 
         public string Id => id;
         public string DisplayName => displayName;
@@ -64,6 +68,8 @@ namespace ProjectNeo.Meta
         public IReadOnlyList<PerkStatEffect> StatEffects => statEffects;
         public IReadOnlyList<PerkSpecialEffect> SpecialEffects => specialEffects;
         public IReadOnlyList<PerkRunEffect> RunEffects => runEffects ??= new List<PerkRunEffect>();
+        public IReadOnlyList<PerkDefinition> Prerequisites => prerequisites ??= new List<PerkDefinition>();
+        public string Description => description ?? string.Empty;
 
         /// <summary>이 퍽의 런 효과 중 한 종류의 합.</summary>
         public float RunEffectTotal(PerkRunEffectKind kind)
@@ -83,12 +89,16 @@ namespace ProjectNeo.Meta
             int pointCost = 1,
             bool unlockedByDefault = true,
             IEnumerable<PerkRunEffect> runEffects = null,
-            string displayName = null)
+            string displayName = null,
+            IEnumerable<PerkDefinition> prerequisites = null,
+            string description = null)
         {
             var perk = CreateInstance<PerkDefinition>();
             perk.id = id;
             perk.displayName = string.IsNullOrEmpty(displayName) ? id : displayName;
             if (runEffects != null) perk.runEffects = new List<PerkRunEffect>(runEffects);
+            if (prerequisites != null) foreach (PerkDefinition required in prerequisites) if (required != null) perk.prerequisites.Add(required);
+            perk.description = description ?? string.Empty;
             perk.category = category;
             perk.pointCost = pointCost;
             perk.unlockedByDefault = unlockedByDefault;
