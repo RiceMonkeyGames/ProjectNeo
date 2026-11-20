@@ -33,10 +33,17 @@ namespace ProjectNeo.UI
         public static string KeyLine(SquadCommandSettings settings)
         {
             if (settings == null) return "";
+            return $"{SelectKeys(settings)} 부대 선택 - {settings.Move.GetBindingDisplayString()} 이동 - "
+                + $"{settings.Attack.GetBindingDisplayString()} 공격 - {settings.Hold.GetBindingDisplayString()} 정지";
+        }
+
+        /// <summary>부대 선택 키 범위와 전체 선택 키("F1~F10·`"). 키 수는 설정 에셋에서 읽는다(PREP-09).</summary>
+        public static string SelectKeys(SquadCommandSettings settings)
+        {
+            if (settings == null) return "";
             string first = settings.SelectSquad.Length > 0 ? settings.SelectSquad[0].GetBindingDisplayString() : "";
             string last = settings.SelectSquad.Length > 0 ? settings.SelectSquad[settings.SelectSquad.Length - 1].GetBindingDisplayString() : "";
-            return $"{first}~{last}·{settings.SelectAll.GetBindingDisplayString()} 부대 선택 - {settings.Move.GetBindingDisplayString()} 이동 - "
-                + $"{settings.Attack.GetBindingDisplayString()} 공격 - {settings.Hold.GetBindingDisplayString()} 정지";
+            return $"{first}~{last}·{settings.SelectAll.GetBindingDisplayString()}";
         }
 
         public void Configure(SquadCommandCenter commandCenter, SquadCommandInput commandInput,

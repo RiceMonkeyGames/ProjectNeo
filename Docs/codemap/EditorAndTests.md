@@ -1,6 +1,6 @@
 # Editor Setup & Test Scripts
 
-Last Updated: 2026-11-21 00:49:56 (KST)
+Last Updated: 2026-11-21 01:28:01 (KST)
 
 > Purpose: Map of Editor setup menus, build scripts, and EditMode/PlayMode test suites. | Parent: [codemap/README](README.md) | Related: [UnityCLI](../workflow/UnityCLI.md), [Status](../plan/Status.md)
 
@@ -8,7 +8,7 @@ Last Updated: 2026-11-21 00:49:56 (KST)
 
 - `KoreanFontSetup.cs` (`UI-04`): Menu `ProjectNeo/Setup/Korean Font`. Creates `Art/Fonts/NotoSansKR SDF.asset` from `NotoSansKR-Regular.otf`, pre-fills the glyphs in `KoreanCharset.txt` and registers it in the global TMP fallback list. Re-runnable.
 - `KoreanUiMigration.cs` / `KoreanUiMigration.Texts.cs` (`UI-04`): Menu `ProjectNeo/Setup/Migrate UI To Korean`. Rewrites English scene/prefab TMP captions and definition display strings to Korean through Editor APIs from the `Texts` table; `Audit()` lists unmapped English text, `Dump(path)` writes all of it. Use after merging work that adds English captions. `EnglishUiMigration.cs` (UI-02) is obsolete.
-- `EnemyIntelHudSetup.cs` (`C-5`): Menu `ProjectNeo/Setup/Add Enemy Intel HUD (C-5)`. Adds/updates the left `EnemyIntel` panel (just below `SquadCommandHUD/SquadsBacking`, `(16, -176)` at 1280×720) (title + rows, height fits content) and `EnemyIntelHud` on `GameFlowHUD` in `Game.unity`. Re-runnable.
+- `EnemyIntelHudSetup.cs` (`C-5`): Menu `ProjectNeo/Setup/Add Enemy Intel HUD (C-5)`. Adds/updates the left `EnemyIntel` panel (just below `SquadCommandHUD/SquadsBacking`, `(16, -272)` at 1280×720 since PREP-09) (title + rows, height fits content) and `EnemyIntelHud` on `GameFlowHUD` in `Game.unity`. Re-runnable.
 - `PrepTimeSetup.cs` (`PREP-06`): Menu `ProjectNeo/Setup/Configure Preparation Time (PREP-06)`. Creates `Data/GameFlow/PrepTime.asset` if missing, links it to `RunStart.asset` when empty, and adds/updates the top-center `PrepClock` line and `PrepClockHud` on `GameFlowHUD` in `Game.unity` (keeps the phase box at its original position). Re-runnable.
 - `EquipmentUpgradeSetup.cs`: `ProjectNeo/Setup/Configure Equipment Upgrades` creates the shared settings, binds RunStart and fills only empty item upgrade-material lists from crafting materials × target level; keeps existing data and does not edit the scene. Also called by the facility generator.
 
@@ -29,7 +29,8 @@ Last Updated: 2026-11-21 00:49:56 (KST)
 - `GameRewardSetup.cs`: Menu `ProjectNeo/Setup/Connect Rewards To Game Scene`. Generates materials, items, and reward controllers.
 - `GameBuildEconomySetup.cs`: Menu `ProjectNeo/Setup/Connect Build Costs To Game Scene`. Connects build costs, demolition, and repairs.
 - `GameFacilitySetup.cs`: Menu `ProjectNeo/Setup/Connect Facilities To Game Scene`. Generates 5 facility definitions, `GameFacilities`, `FacilityStation` on 4 courtyard buildings, `FacilityPanel`, D-5 `Economy.asset` (50% sell), 4 shop items (`Data/GameFlow/Rewards/item_*`), level stock pools, and D-7 `EquipmentPanel` / `GameEquipment` / `I` key.
-- `SquadOrganizationSetup.cs`: Menu `ProjectNeo/Setup/Connect Squad Organization To Game Scene`. D-8 `OrganizationPanel` (UI-01: horizontal card scroll, card template with Header button + List, row template) (reuses `GameFacilitySetup` popup helpers) and `GameSquadOrganization` on the battle object; marks `Interaction.asset` dirty to save the new `O` key.
+- `SquadCapsSetup.cs` (`PREP-09`): Menu `ProjectNeo/Setup/Apply Final Squad Caps (PREP-09)`. Creates Game-only `Data/GameFlow/SquadConfig.asset` (10 squads x 20 soldiers, captain not counted) and `Data/GameFlow/Command.asset` (WallCommand formation, select keys `F1`-`F10`), links them to the Game `SquadCommandCenter` (prototype assets untouched), grows the squad list to `GameBattleSetup.SquadListHeight`, moves `EnemyIntel`, and applies `SquadOrganizationSetup.ApplyScrolling`. Re-runnable. Tests: PlayMode `GameSquadCapsPlayTests` (2).
+- `SquadOrganizationSetup.cs`: Menu `ProjectNeo/Setup/Connect Squad Organization To Game Scene`. D-8 `OrganizationPanel` (UI-01: card scroll, PREP-09 `ApplyScrolling`: both directions with a horizontal bar, cards sized to their rows by `GameSquadOrganization`, card template with Header button + List, row template) (reuses `GameFacilitySetup` popup helpers) and `GameSquadOrganization` on the battle object; marks `Interaction.asset` dirty to save the new `O` key.
 - `TavernSetup.cs`: Menu `ProjectNeo/Setup/Create Tavern Heroes`. D-3 hero assets in `Data/GameFlow/Heroes/` (swordsman/archer tier 1 60g, knight tier 2 120g, paladin tier 3 200g; grunt prefabs as bodies) and `Facility_Tavern.asset` level hero pools (only when empty). No scene edits.
 - `GameUnitSpawnSetup.cs`: Menu `ProjectNeo/Setup/Connect Unit Spawning To Game Scene`. Wires `GameUnitSpawner` and fills soldier prefab slots.
 - `BarracksSetup.cs`: Menu `ProjectNeo/Setup/Configure Barracks Data`. Configures `Facility_TrainingGround.asset` and `allied_melee`/`allied_ranged` recruit costs/names.

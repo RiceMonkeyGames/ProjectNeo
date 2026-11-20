@@ -1,6 +1,6 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-20 22:16:49 (KST)
+Last Updated: 2026-11-21 01:13:43 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
@@ -87,7 +87,7 @@ Construction return-hint input (QA-build-zoom-ui-hover, 2026-11-14): User reques
 | Q-54 | M2 scope cut | M2 close | Resolved (2026-11-19, team meeting): Nothing is cut: minimal skills (COMBAT-06), perk injection and unlock point routing (META-02) and scouting (PREP-07) all stay in M2. [History](../history/Q/Q-54.md). |
 | Q-55 | In-game current time | PREP-07 | Resolved (2026-11-19, team meeting): No time of day or calendar; the only in-game time is the 12h preparation budget (Q-53). [History](../history/Q/Q-55.md). |
 | Q-56 | Team ownership after B-6~B-9 | M2 remainder, M3+ | Resolved (2026-11-19, team meeting): No fixed domain owners; anyone claims any Waiting backlog task and the assignee owns its files while In Progress. Shared-file and single-editor rules stay. [History](../history/Q/Q-56.md). |
-| Q-57 | Squad counts & member caps | PREP-09 | Resolved (2026-11-19, team meeting): At most 10 squads, 20 soldiers per squad. Captain counting, keys for squads 5-10 and the 200-ally performance check are open items of PREP-09. [History](../history/Q/Q-57.md). |
+| Q-57 | Squad counts & member caps | PREP-09 | Resolved (2026-11-19, team meeting): At most 10 squads, 20 soldiers per squad. PREP-09 open items (user, 2026-11-21): the hero captain does not count toward the 20 (up to 20 soldiers + 1 captain); squads 1-10 are selected with `F1`-`F10` until Q-11 sets the final keys; the Game scene gets its own squad config and command key assets so the teammate prototype scenes keep theirs; the 200-ally performance check moves to Q-10. [History](../history/Q/Q-57.md). |
 | Q-62 | Skill owners & slots | COMBAT-06 | Resolved (2026-11-19, team meeting): The player and heroes have active skills (squads use their captain's). At most 3 slots. The player has 3 slots from the start; a hero gains a slot as its grade rises (1 -> 2 -> 3). How a hero's grade rises and where hero skills come from: Q-73. [History](../history/Q/Q-62.md). |
 | Q-63 | Skill activation & targeting | COMBAT-06 | Resolved (2026-11-19, team meeting): The player casts skills directly. Hero skills are cast by their AI while Auto is on; the player can switch Auto off and cast them manually. Targeting is built as an extensible, data-driven target mode (self, point/area, unit, squad and later additions). Manual hero cast input: with Q-11. [History](../history/Q/Q-63.md). |
 | Q-64 | Skill cost & cooldown | COMBAT-06 | Resolved (2026-11-19, team meeting): Cooldown only, no resource or charges. Every skill is ready (cooldown reset) when a battle starts. [History](../history/Q/Q-64.md). |

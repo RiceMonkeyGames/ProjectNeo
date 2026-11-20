@@ -119,7 +119,53 @@ namespace ProjectNeo.Editor
 
             GameFacilitySetup.ButtonAt(panel.transform, "Button_Close", "닫기 (Esc)", new Vector2(0.5f, 0f), new Vector2(0f, 20f),
                 new Vector2(200f, 48f), organization.Close, out _);
+            ApplyScrolling(panel.transform);
             panel.SetActive(false);
+        }
+
+        /// <summary>
+        /// PREP-09: 부대가 대장 + 20명까지라 카드가 카드 영역보다 길어진다. 카드 영역을 세로로도 스크롤하게 하고(휠은 세로),
+        /// 가로는 아래 가로 막대나 끌기로 옮긴다. 카드 높이는 실행 중에 <see cref="GameSquadOrganization"/>이 줄 수에 맞춘다.
+        /// 이미 있는 패널에 다시 실행해도 된다(패널을 새로 만들지 않으므로 다른 설정이 건 참조가 남는다).
+        /// </summary>
+        internal static void ApplyScrolling(Transform panel)
+        {
+            var scrollView = panel.Find("Cards").GetComponent<ScrollRect>();
+            RectTransform cards = scrollView.content;
+            cards.anchorMin = new Vector2(0f, 1f); cards.anchorMax = new Vector2(0f, 1f); cards.pivot = new Vector2(0f, 1f);
+            cards.anchoredPosition = Vector2.zero; cards.sizeDelta = Vector2.zero;
+            var fitter = cards.GetComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            scrollView.horizontal = true; scrollView.vertical = true;
+            scrollView.movementType = ScrollRect.MovementType.Clamped; scrollView.scrollSensitivity = 30f;
+
+            // 가로 막대: 카드 영역 바로 아래(닫기 버튼 위) 가는 줄.
+            Transform old = scrollView.transform.Find("HorizontalBar");
+            if (old != null) UnityEngine.Object.DestroyImmediate(old.gameObject);
+            var bar = new GameObject("HorizontalBar", typeof(RectTransform), typeof(Image), typeof(Scrollbar));
+            bar.transform.SetParent(scrollView.transform, false);
+            var barRect = bar.GetComponent<RectTransform>();
+            barRect.anchorMin = new Vector2(0f, 0f); barRect.anchorMax = new Vector2(1f, 0f); barRect.pivot = new Vector2(0.5f, 1f);
+            barRect.anchoredPosition = new Vector2(0f, -4f); barRect.sizeDelta = new Vector2(0f, 12f);
+            bar.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.35f);
+            var area = new GameObject("SlidingArea", typeof(RectTransform));
+            area.transform.SetParent(bar.transform, false);
+            var areaRect = area.GetComponent<RectTransform>();
+            areaRect.anchorMin = Vector2.zero; areaRect.anchorMax = Vector2.one; areaRect.offsetMin = areaRect.offsetMax = Vector2.zero;
+            var handle = new GameObject("Handle", typeof(RectTransform), typeof(Image));
+            handle.transform.SetParent(area.transform, false);
+            var handleRect = handle.GetComponent<RectTransform>();
+            handleRect.offsetMin = handleRect.offsetMax = Vector2.zero;
+            var handleImage = handle.GetComponent<Image>();
+            handleImage.color = new Color(0.55f, 0.62f, 0.7f, 0.9f);
+            var scrollbar = bar.GetComponent<Scrollbar>();
+            scrollbar.direction = Scrollbar.Direction.LeftToRight;
+            scrollbar.handleRect = handleRect; scrollbar.targetGraphic = handleImage;
+            scrollView.horizontalScrollbar = scrollbar;
+            scrollView.horizontalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHide;
+            scrollView.verticalScrollbar = null;
+            EditorUtility.SetDirty(scrollView); EditorUtility.SetDirty(fitter); EditorUtility.SetDirty(cards);
         }
     }
 }

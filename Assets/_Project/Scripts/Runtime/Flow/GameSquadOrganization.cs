@@ -215,6 +215,44 @@ namespace ProjectNeo.Flow
             RectTransform reserveList = AddCard("예비 영웅 (전투 불참)" + (Selected is RunHero ? "\n대장 해제" : string.Empty), () => DropOnReserve());
             if (reserve.Count == 0) AddRow(reserveList, "예비 영웅이 없습니다 (주점에서 고용).", null);
             foreach (RunHero hero in reserve) AddRow(reserveList, Mark(hero) + NameOf(hero), () => Select(hero));
+            FitCardHeights();
+        }
+
+        /// <summary>보이는 카드 중 index번째(부대 순서, 그다음 새 부대·대기 카드). 없으면 null.</summary>
+        public RectTransform CardAt(int index)
+        {
+            foreach (GameObject card in cards)
+            {
+                if (card == null || !card.activeSelf) continue;
+                if (index-- == 0) return (RectTransform)card.transform;
+            }
+            return null;
+        }
+
+        // PREP-09: 부대가 대장 + 20명까지라 줄이 카드 영역보다 길어질 수 있다. 카드마다 줄 수에 맞는 높이를 주면
+        // 카드 영역(세로 스크롤)이 가장 긴 카드만큼 늘어난다. 짧은 카드도 보이는 영역 높이까지는 채운다.
+        void FitCardHeights()
+        {
+            var viewport = cardArea != null ? cardArea.parent as RectTransform : null;
+            var areaLayout = cardArea != null ? cardArea.GetComponent<HorizontalLayoutGroup>() : null;
+            float fill = viewport != null ? viewport.rect.height - (areaLayout != null ? areaLayout.padding.vertical : 0) : 0f;
+            var rowSize = rowTemplate != null ? rowTemplate.GetComponent<LayoutElement>() : null;
+            float row = rowSize != null && rowSize.preferredHeight > 0f ? rowSize.preferredHeight : 26f;
+            foreach (GameObject card in cards)
+            {
+                if (card == null || !card.activeSelf) continue;
+                var size = card.GetComponent<LayoutElement>();
+                var list = card.transform.Find("List") as RectTransform;
+                if (size == null || list == null) continue;
+                var listLayout = list.GetComponent<VerticalLayoutGroup>();
+                int rows = list.childCount;
+                float spacing = listLayout != null ? listLayout.spacing : 0f;
+                float padding = listLayout != null ? listLayout.padding.vertical : 0f;
+                // 목록은 카드 안에서 머리 버튼 자리(위)와 아래 여백만큼 작다.
+                float frame = list.offsetMin.y - list.offsetMax.y;
+                float needed = frame + padding + rows * row + Mathf.Max(0, rows - 1) * spacing;
+                size.minHeight = Mathf.Max(needed, fill);
+            }
         }
 
         string Mark(RunUnit unit) => unit == Selected ? "> " : string.Empty;
