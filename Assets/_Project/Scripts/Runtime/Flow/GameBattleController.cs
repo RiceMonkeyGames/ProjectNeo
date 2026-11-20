@@ -216,6 +216,8 @@ namespace ProjectNeo.Flow
                 if (build != null && build.StartConfig != null && RunLink.State != null)
                 {
                     RunLink.State.SetupPrepTime(build.StartConfig.PrepTime);
+                    // 영웅 등급 수치(PREP-10)도 첫 저장 전에 붙인다.
+                    RunLink.State.SetupHeroPromotion(build.StartConfig.HeroPromotion);
                     RunLink.State.BeginPreparationClockIfNeeded();
                 }
                 // 되살린 런의 작업 주문을 다시 넣고 미완성 무기 표시를 맞춘다(SIEGE-08). 되살린 주문은 한 번만 쓴다.

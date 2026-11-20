@@ -24,6 +24,13 @@ namespace ProjectNeo.Run
         public Character Character { get; }
         public HeroDefinition Definition => Character.Definition;
         public bool IsPlayer { get; }
+        /// <summary>
+        /// 영웅 등급(PREP-10, Q-73). 1부터이고 고용 등급(<see cref="HeroDefinition.Tier"/>)에서 시작한다. 등급마다 스킬 칸이 하나씩 열린다.
+        /// 플레이어는 등급을 쓰지 않는다. 바꾸는 것은 <see cref="RunState"/>의 승급 규칙뿐이다.
+        /// </summary>
+        public int Grade { get; internal set; } = 1;
+        /// <summary>다음 등급까지 모은 전투 경험치(PREP-10). 다음 등급에 필요한 값을 넘지 않는다.</summary>
+        public int Exp { get; internal set; }
 
         public RunHero(int id, Character character, bool isPlayer) : base(id)
         {

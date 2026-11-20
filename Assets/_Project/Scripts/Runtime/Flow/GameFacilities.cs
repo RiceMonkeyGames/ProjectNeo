@@ -137,6 +137,7 @@ namespace ProjectNeo.Flow
             state.SetupShop(startConfig.Economy);
             state.SetupEquipmentUpgrades(startConfig.EquipmentUpgrades);
             state.SetupPrepTime(startConfig.PrepTime);
+            state.SetupHeroPromotion(startConfig.HeroPromotion);
             return state;
         }
 
@@ -482,6 +483,63 @@ namespace ProjectNeo.Flow
             _ => "Could not craft.",
         };
 
+        /// <summary>영웅의 전당에서 승급 대상 영웅(플레이어 제외)의 index번째를 한 등급 올린다(PREP-10). 비용과 준비 시간을 낸다.</summary>
+        public bool TryPromote(int index)
+        {
+            RunState state = State;
+            if (OpenFacility != FacilityType.HeroHall || state == null || flow.Phase != GamePhase.Preparation) return false;
+            IReadOnlyList<RunHero> heroes = state.GradedHeroes;
+            if (index < 0 || index >= heroes.Count) return false;
+            RunHero hero = heroes[index];
+            state.TryGetNextGradeStep(hero, out HeroGradeStep step);
+            HeroPromoteCheck check = battle != null && battle.RunLink != null ? battle.RunLink.TryPromote(hero) : HeroPromoteCheck.NotConfigured;
+            bool promoted = check == HeroPromoteCheck.Ok;
+            Message = promoted ? $"{hero.Definition.DisplayName} promoted to grade {hero.Grade} · {Describe(step.cost)}"
+                : $"{hero.Definition.DisplayName}: " + Reason(check);
+            Rebuild();
+            return promoted;
+        }
+
+        static string Reason(HeroPromoteCheck check) => check switch
+        {
+            HeroPromoteCheck.BattlePending => "Cannot promote during battle.",
+            HeroPromoteCheck.MaxGrade => "Already at the highest grade.",
+            HeroPromoteCheck.NotEnoughExp => "Not enough EXP. Heroes earn EXP by winning battles as squad captains.",
+            HeroPromoteCheck.NotEnoughFunds => "Not enough funds.",
+            HeroPromoteCheck.NotEnoughTime => "Not enough time.",
+            HeroPromoteCheck.NotConfigured => "Promotion settings are missing.",
+            _ => "Cannot promote this hero.",
+        };
+
+        void BuildHeroHallRows(RunState state)
+        {
+            IReadOnlyList<RunHero> heroes = state.GradedHeroes;
+            if (heroes.Count == 0) AddRow(offerList, "No heroes yet. Hire heroes at the tavern.", null);
+            for (int i = 0; i < heroes.Count; i++)
+            {
+                int index = i;
+                RunHero hero = heroes[i];
+                string role = state.LeadingSquadOf(hero) is Squad<RunUnit> squad ? $"Squad {state.IndexOf(squad) + 1} captain" : "Reserve";
+                bool canGrow = state.TryGetNextGradeStep(hero, out HeroGradeStep step);
+                string detail = canGrow
+                    ? $"EXP {hero.Exp}/{step.expRequired} · Promote - {Describe(step.cost)}{TimeTag(state, state.PromotionHours)}"
+                    : "Highest grade";
+                // 최고 등급이 아니면 눌러서 모자란 이유(경험치·골드·시간)를 볼 수 있게 둔다.
+                Button row = AddRow(offerList, $"{hero.Definition.DisplayName} · Grade {hero.Grade} · {role}\n{detail}",
+                    canGrow ? () => TryPromote(index) : null);
+                if (row != null) row.GetComponentInChildren<TMP_Text>(true).fontSize = 12f;
+            }
+            HeroPromotionSettings settings = state.HeroPromotion;
+            if (settings == null) { AddRow(inventoryList, "Promotion settings are missing.", null); return; }
+            AddRow(inventoryList, "Per grade above 1: " + DescribeModifiers(settings.BonusPerGrade), null);
+            AddRow(inventoryList, $"Each grade opens one more skill slot (max {settings.MaxGrade}).", null);
+            AddRow(inventoryList, $"Victory: +{settings.ExpPerVictory} EXP to surviving captains", null);
+        }
+
+        static string DescribeHeroHall(RunState state) =>
+            "Heroes gain EXP by winning battles as squad captains. Reserve heroes gain none.\n"
+            + "Promote a hero with full EXP for gold and preparation time. A hero starts at its hire tier grade.";
+
         /// <summary>병영에서 모집할 수 있는 잡졸의 index번째를 고른 부대(없으면 자동 배치)로 모집한다(D-4). 비용을 낸다.</summary>
         public bool TryRecruit(int index)
         {
@@ -550,29 +608,32 @@ namespace ProjectNeo.Flow
             bool barracks = type == FacilityType.TrainingGround;
             bool smithy = type == FacilityType.Smithy && state.Shop != null;
             bool tavern = type == FacilityType.Tavern;
+            bool heroHall = type == FacilityType.HeroHall;
             if (body != null)
             {
                 string text = shop ? $"Offers refresh each preparation; upgrades apply to the next preparation's offers.\nReroll costs increase until the next preparation. Locking is free (limit {state.ShopMaxLocked})."
                     : barracks ? DescribeTraining(facility)
                     : smithy ? DescribeSmithy(facility)
                     : tavern ? DescribeTavern(facility)
+                    : heroHall ? DescribeHeroHall(state)
                     : Purpose(type) + "\nFacility functions and upgrade effects will be added later.";
                 body.text = string.IsNullOrEmpty(Message) ? text : Message + "\n" + text;
             }
-            if (tradeArea != null) tradeArea.SetActive(shop || barracks || smithy || tavern);
+            if (tradeArea != null) tradeArea.SetActive(shop || barracks || smithy || tavern || heroHall);
             if (rerollButton != null) rerollButton.gameObject.SetActive(shop);
             if (shop && rerollLabel != null) rerollLabel.text = $"Reroll - {state.ShopRerollCost} gold";
             if (offerHeader != null)
                 offerHeader.text = barracks ? "Recruit (click to recruit)" : smithy ? "Craft (click to craft)"
-                    : tavern ? "Heroes (click to hire)" : shopOfferHeader;
+                    : tavern ? "Heroes (click to hire)" : heroHall ? "Heroes (click to promote)" : shopOfferHeader;
             if (inventoryHeader != null)
                 inventoryHeader.text = barracks ? "Squad (click to select)" : smithy ? "Upgrade / Sell equipment"
-                    : tavern ? "Assignment (click to select)" : shopInventoryHeader;
+                    : tavern ? "Assignment (click to select)" : heroHall ? "Grade bonus" : shopInventoryHeader;
             ClearRows();
             if (rowTemplate == null) return;
             if (barracks) { BuildBarracksRows(state); return; }
             if (tavern) { BuildTavernRows(state); return; }
             if (smithy) { BuildSmithyRows(state); return; }
+            if (heroHall) { BuildHeroHallRows(state); return; }
             if (!shop) return;
             IReadOnlyList<ItemDefinition> stock = state.Shop.Stock;
             if (stock.Count == 0) AddRow(offerList, "No offers available.", null);
@@ -827,6 +888,7 @@ namespace ProjectNeo.Flow
             FacilityType.TrainingGround => "Recruit / train soldiers",
             FacilityType.Smithy => "Craft / upgrade / sell equipment",
             FacilityType.Defense => "Prepare walls / weapons",
+            FacilityType.HeroHall => "Promote heroes",
             _ => string.Empty,
         };
     }

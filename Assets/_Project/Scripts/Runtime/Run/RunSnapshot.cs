@@ -80,6 +80,10 @@ namespace ProjectNeo.Run
         public int unitId;
         public string id;
         public bool isPlayer;
+        /// <summary>영웅 등급(PREP-10). 예전 저장에는 없어 0이고, 그러면 고용 등급에서 시작한다.</summary>
+        public int grade;
+        /// <summary>다음 등급까지 모은 경험치(PREP-10).</summary>
+        public int exp;
         public List<ItemRecord> equipment = new List<ItemRecord>();
     }
 

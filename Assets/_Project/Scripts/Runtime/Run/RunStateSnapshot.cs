@@ -20,6 +20,12 @@ namespace ProjectNeo.Run
         public PrepTimeSettings PrepTime;
         /// <summary>승천 단계 표(FLOW-03). 없으면 저장된 단계를 되살려도 규칙이 붙지 않는다(단계 0).</summary>
         public AscensionTable Ascension;
+        /// <summary>영웅 승급 수치(PREP-10). 없으면 등급 능력치·승급을 쓰지 않는다.</summary>
+        public HeroPromotionSettings HeroPromotion;
+        /// <summary>
+        /// 시작 설정의 시설 목록(PREP-10). 저장에 없는 시설(예: 영웅의 전당이 생기기 전 저장)을 시작 레벨로 더한다. 없으면 저장된 시설만 되살린다.
+        /// </summary>
+        public IEnumerable<FacilityDefinition> Facilities;
         /// <summary>
         /// 살아 있는 영웅이 쓸 캐릭터. 씬 유닛의 캐릭터를 넘기면 런에서 바꾼 장비가 씬 스탯에 바로 반영된다(D-7).
         /// 비우거나 null을 돌려주면 새 캐릭터를 만든다.
@@ -116,7 +122,10 @@ namespace ProjectNeo.Run
 
         static HeroRecord Record(RunHero hero)
         {
-            var record = new HeroRecord { unitId = hero.Id, id = hero.Definition.Id, isPlayer = hero.IsPlayer };
+            var record = new HeroRecord
+            {
+                unitId = hero.Id, id = hero.Definition.Id, isPlayer = hero.IsPlayer, grade = hero.Grade, exp = hero.Exp,
+            };
             foreach (ItemInstance item in hero.Character.Equipment) record.equipment.Add(Record(item));
             return record;
         }
@@ -223,6 +232,7 @@ namespace ProjectNeo.Run
             state.SetupPrepTime(options.PrepTime);
             state.RestorePrepClock(snapshot.prepTime);
             state.SetupAscension(options.Ascension, snapshot.ascensionLevel);
+            state.SetupHeroPromotion(options.HeroPromotion);
             if (snapshot.gold > 0) state.Wallet.AddGold(snapshot.gold);
             foreach (MaterialRecord material in snapshot.materials ?? new List<MaterialRecord>())
                 if (material.amount > 0) state.Wallet.AddMaterial(content.Material(material.id), material.amount);
@@ -244,6 +254,8 @@ namespace ProjectNeo.Run
                 state.units.Add(hero.Id, hero);
                 state.heroes.Add(hero);
                 if (hero.IsPlayer) state.Player = hero;
+                // 등급이 없는 예전 저장(PREP-10 이전)은 고용 등급에서 시작한다.
+                state.InitGrade(hero, record.grade > 0 ? record.grade : state.StartingGrade(definition), record.exp);
                 highestId = Math.Max(highestId, hero.Id);
             }
             foreach (HeroRecord record in snapshot.fallenHeroes ?? new List<HeroRecord>())
@@ -253,7 +265,11 @@ namespace ProjectNeo.Run
                 // PREP-08 이전 저장에는 죽은 영웅이 장비를 낀 채 남아 있다. Q-31에 따라 보관함으로 돌려놓는다.
                 state.ReturnEquipment(character);
                 // 영구 사망한 영웅은 런 유닛 목록에 없다. 번호는 0만 아니면 된다.
-                state.fallenHeroes.Add(new RunHero(Math.Max(1, record.unitId), character, false));
+                var fallen = new RunHero(Math.Max(1, record.unitId), character, false)
+                {
+                    Grade = Math.Max(1, record.grade > 0 ? record.grade : character.Definition.Tier), Exp = Math.Max(0, record.exp),
+                };
+                state.fallenHeroes.Add(fallen);
                 highestId = Math.Max(highestId, record.unitId);
             }
 
@@ -277,6 +293,7 @@ namespace ProjectNeo.Run
 
             foreach (FacilityRecord record in snapshot.facilities ?? new List<FacilityRecord>())
                 state.AddFacility(content.Facility((FacilityType)record.type)).RestoreLevel(record.level);
+            state.AddFacilities(options.Facilities);
 
             state.SetupShop(options.Economy);
             ShopRecord shop = snapshot.shop ?? new ShopRecord();

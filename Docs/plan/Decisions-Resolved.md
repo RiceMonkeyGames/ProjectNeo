@@ -1,6 +1,6 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-20 14:58:18 (KST)
+Last Updated: 2026-11-20 16:18:18 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
@@ -99,6 +99,8 @@ Construction return-hint input (QA-build-zoom-ui-hover, 2026-11-14): User reques
 | Q-66 | Skills, perks & progression | COMBAT-06, META-09 | Resolved (2026-11-19, team meeting): Perks are player (commander) only; heroes have no perks; new player skills come from perk points earned on Commander level-up, as Combat-tree entries (Q-72). Hero skills come from hero data by grade (Q-73). [History](../history/Q/Q-66.md). |
 
 ## Detailed Decision Records
+
+- **PREP-10 promotion details (2026-11-20, user)**: New facility `Hero Hall` (`FacilityType.HeroHall = 5`) instead of reusing `TrainingGround`, which is the barracks. Fixed EXP on victory for surviving deployed heroes (100; 200/400 needed for grades 2/3); promotion costs gold (100g/250g) plus 1 prep hour; each grade above 1 adds +15% max HP and attack. Values in data. Rules: [PrepEconomyMeta](../design/PrepEconomyMeta.md).
 
 - **PREP-01 integration (2026-11-14)**: User resumed after PREP-03 merge. Confirmed prototype materials = crafting materials × target upgrade level; item data owns the per-step requirements. Equipped items must be unequipped to the stash before upgrading.
 

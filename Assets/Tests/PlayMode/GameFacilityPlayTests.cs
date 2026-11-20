@@ -2,6 +2,7 @@ using System.Collections;
 using System.Linq;
 using NUnit.Framework;
 using ProjectNeo.Characters;
+using ProjectNeo.Combat;
 using ProjectNeo.Facilities;
 using ProjectNeo.Flow;
 using ProjectNeo.UI;
@@ -102,18 +103,50 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
-        public IEnumerator 런_데이터에_시설_다섯_곳이_시작_레벨로_붙는다()
+        public IEnumerator 런_데이터에_시설_여섯_곳이_시작_레벨로_붙는다()
         {
             Assert.IsNotNull(facilities, "Game 씬 전투 오브젝트에 시설 컴포넌트가 있어야 한다.");
             foreach (FacilityType type in new[] { FacilityType.Tavern, FacilityType.Shop, FacilityType.TrainingGround,
-                         FacilityType.Smithy, FacilityType.Defense })
+                         FacilityType.Smithy, FacilityType.Defense, FacilityType.HeroHall })
             {
                 FacilityState state = facilities.Facility(type);
                 Assert.IsNotNull(state, type.ToString());
                 Assert.AreEqual(0, state.Level);
             }
-            Assert.AreEqual(5, GameSession.Flow.Run.State.Facilities.Count);
+            Assert.AreEqual(6, GameSession.Flow.Run.State.Facilities.Count);
             yield break;
+        }
+
+        [UnityTest]
+        public IEnumerator 영웅의_전당에서_고용한_영웅의_등급을_보고_경험치가_모자라면_승급을_거부한다()
+        {
+            ProjectNeo.Run.RunState state = GameSession.Flow.Run.State;
+            state.Wallet.AddGold(500);
+            Assert.IsTrue(Station(FacilityType.Tavern).Interact());
+            Assert.IsTrue(facilities.ChooseCaptainSquad(0));
+            Assert.IsTrue(facilities.TryHire(0));
+            facilities.Close();
+            yield return null;
+
+            ProjectNeo.Run.RunHero hero = state.GradedHeroes.Single();
+            Assert.AreEqual(state.StartingGrade(hero.Definition), hero.Grade, "a hired hero starts at its hire tier grade");
+            CharacterActor actor = Object.FindObjectsByType<CharacterActor>().Single(found => found.Character == hero.Character);
+            Assert.AreEqual(actor.Health.Maximum, actor.Health.Current, 0.001f, "a new hero starts at full health after the grade bonus");
+
+            FacilityStation hall = Station(FacilityType.HeroHall);
+            Assert.IsTrue(hall.Interact());
+            Assert.AreEqual(FacilityType.HeroHall, facilities.OpenFacility);
+            Assert.AreEqual("Hero Hall", facilities.TitleText);
+            int gold = state.Wallet.Gold;
+            bool promoted = facilities.TryPromote(0);
+            if (hero.Grade < state.HeroPromotion.MaxGrade)
+            {
+                Assert.IsFalse(promoted, "a new hero has no EXP");
+                StringAssert.Contains("Not enough EXP", facilities.BodyText);
+                Assert.AreEqual(gold, state.Wallet.Gold, "nothing is spent on a refusal");
+            }
+            facilities.Close();
+            yield return null;
         }
 
         [UnityTest]

@@ -15,6 +15,8 @@ namespace ProjectNeo.Facilities
         TrainingGround = 2,
         Smithy = 3,
         Defense = 4,
+        /// <summary>영웅의 전당(PREP-10): 영웅 승급. 병영은 이름이 겹치지만 <see cref="TrainingGround"/>다.</summary>
+        HeroHall = 5,
     }
 
     /// <summary>

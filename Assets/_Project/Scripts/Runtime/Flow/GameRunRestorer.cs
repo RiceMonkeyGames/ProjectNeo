@@ -70,6 +70,9 @@ namespace ProjectNeo.Flow
                 EquipmentUpgrades = startConfig != null ? startConfig.EquipmentUpgrades : null,
                 PrepTime = startConfig != null ? startConfig.PrepTime : null,
                 Ascension = startConfig != null ? startConfig.Ascension : null,
+                HeroPromotion = startConfig != null ? startConfig.HeroPromotion : null,
+                // 예전 저장에 없는 시설(영웅의 전당, PREP-10)은 시작 레벨로 더한다.
+                Facilities = startConfig != null ? startConfig.Facilities : null,
                 // 씬 유닛의 캐릭터를 런 영웅과 공유해야 런에서 바꾼 장비가 씬 스탯에 바로 반영된다(D-7).
                 CharacterFor = (record, definition) =>
                     actors.TryGetValue(record.unitId, out CharacterActor actor) && actor != null ? actor.Character : null,

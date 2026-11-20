@@ -238,12 +238,34 @@ namespace ProjectNeo.Flow
             RunHero hired = state.TryHire(hero, squad, actor.Character);
             if (hired == null) { Object.Destroy(unit.gameObject); unit = null; return HireCheck.NotOffered; }
             binding.BindNew(actor, hired);
+            // 고용 등급의 능력치(PREP-10)로 최대 체력이 늘었을 수 있다. 새로 온 영웅은 가득 찬 채로 시작한다.
+            if (actor.Health != null && !actor.Health.IsDead) actor.Health.RestoreFull();
             if (captainOf >= 0)
             {
                 hasGatherPoint = squads.TryGetGatherPoint(captainOf, out gatherPoint);
                 squads.SetLeader(captainOf, unit);
             }
             return HireCheck.Ok;
+        }
+
+        /// <summary>
+        /// 영웅의 전당에서 영웅을 한 등급 올린다(PREP-10). 런 규칙(<see cref="RunState.TryPromote"/>)을 따르고, 체력이 가득 찼던 씬 유닛은
+        /// 늘어난 최대 체력까지 채운다. 준비 단계가 아니면 하지 않는다.
+        /// </summary>
+        public HeroPromoteCheck TryPromote(RunHero hero)
+        {
+            if (binding == null || flow.Run == null || flow.Run.State != binding.State || flow.Phase != GamePhase.Preparation)
+                return HeroPromoteCheck.NotConfigured;
+            RunState state = binding.State;
+            HeroPromoteCheck check = state.CheckPromote(hero);
+            if (check != HeroPromoteCheck.Ok) return check;
+            CharacterActor actor = null;
+            foreach (CharacterActor candidate in binding.ObjectsInRun())
+                if (candidate != null && binding.IdOf(candidate) == hero.Id) { actor = candidate; break; }
+            bool wasFull = actor != null && actor.Health != null && !actor.Health.IsDead && actor.Health.Current >= actor.Health.Maximum;
+            if (!state.TryPromote(hero)) return HeroPromoteCheck.NotPromotable;
+            if (wasFull) actor.Health.RestoreFull();
+            return HeroPromoteCheck.Ok;
         }
 
         /// <summary>
