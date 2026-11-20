@@ -269,7 +269,8 @@ namespace ProjectNeo.Flow
         }
 
         /// <summary>
-        /// 준비 중에 부대 대장을 정한다(D-8). hero가 null이면 비운다. 영웅의 씬 유닛이 있으면 씬 부대장도 바꾼다.
+        /// 준비 중에 부대 대장을 정한다(D-8). hero가 null이면 비운다. 영웅의 씬 유닛이 있으면 씬 부대장도 바꾸고,
+        /// 새 대장은 그 부대가 모인 곳으로 걸어간다(BUG-hired-unit-not-joining-squad).
         /// </summary>
         public OrganizeCheck TrySetCaptain(int squad, RunHero hero)
         {
@@ -280,7 +281,9 @@ namespace ProjectNeo.Flow
             if (check != OrganizeCheck.Ok) return check;
             state.TrySetCaptain(state.Army.Squads[squad], hero);
             CharacterActor actor = hero != null ? binding.ObjectOf(hero.Id) : null;
-            squads.SetLeader(squad, actor != null ? actor.GetComponent<UnitCombatAI>() : null);
+            UnitCombatAI unit = actor != null ? actor.GetComponent<UnitCombatAI>() : null;
+            squads.SetLeader(squad, unit);
+            if (unit != null && squads.TryGetGatherPoint(squad, out Vector3 gather)) unit.SetDirective(UnitDirective.Move, gather);
             return OrganizeCheck.Ok;
         }
 

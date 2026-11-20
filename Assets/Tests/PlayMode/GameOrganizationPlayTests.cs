@@ -121,9 +121,13 @@ namespace ProjectNeo.Tests
             Assert.IsTrue(organization.Select(hero));
             Assert.IsFalse(organization.DropOnSquad(-1), "영웅은 새 부대 카드에 놓을 수 없다.");
             Assert.AreSame(hero, organization.Selected, "놓지 못하면 선택이 남는다.");
+            Assert.IsTrue(center.TryGetGatherPoint(0, out Vector3 gather), "시작 부대 0에는 부대원이 있다.");
+            Assert.AreEqual(UnitDirective.Hold, unit.Directive, "대기 영웅은 주점 앞에 선다.");
             Assert.IsTrue(organization.DropOnSquad(0));
             Assert.AreSame(hero, state.Army.Squads[0].Leader);
             Assert.AreSame(unit, center.Squads[0].Leader, "씬 부대장도 바뀐다.");
+            Assert.AreEqual(UnitDirective.Move, unit.Directive, "새 대장은 부대 쪽으로 걸어간다(BUG-hired-unit-not-joining-squad).");
+            Assert.Less(Vector3.Distance(gather, unit.MoveDestination), 0.01f, "목적지는 부대가 모인 곳이다.");
 
             if (state.Army.Squads.Count > 1)
             {
