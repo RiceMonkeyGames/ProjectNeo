@@ -6,7 +6,7 @@ using UnityEngine;
 namespace ProjectNeo.UI
 {
     /// <summary>
-    /// 타이틀에서 새 게임을 누른 뒤 승천 단계를 고르는 작은 창(FLOW-03, Q-78). 열린 단계 안에서만 고를 수 있고,
+    /// 타이틀에서 새 게임을 누르면 열리는 출정 준비 화면(UI-05; FLOW-03, Q-78). 런 사이 해금 버튼과 함께 승천 단계를 고른다. 열린 단계 안에서만 고를 수 있고,
     /// 고른 단계까지 쌓인 규칙을 보여 준다. 시작을 누르면 고른 단계를 알려 주고 닫힌다.
     /// </summary>
     public sealed class AscensionPicker : MonoBehaviour

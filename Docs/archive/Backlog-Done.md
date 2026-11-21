@@ -1,11 +1,12 @@
 # Completed Backlog Archive (Done)
 
-Last Updated: 2026-11-20 20:58:00 (KST)
+Last Updated: 2026-11-21 11:47:33 (KST)
 
 > Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
 | Task ID | Description | Assignee | Outcome & History Link |
 |---|---|---|---|
+| UI-05 | UI Overhaul 1: Title Flow (Main Menu, Slot Window, Expedition Screen) | 신용준 | Done 2026-11-21 on user confirmation after manual check in the Editor; branch `feature/ui-05`. Scope changed by the user from the shared style to the Title flow: main menu first, slot window, then a separate expedition step (Ascension, between-run unlocks, depart, back); finished runs return to that slot's expedition screen. First medieval restyle rejected and reverted; style moves to UI-06. Korean font atlas rebuilt and made static after Hangul broke. EditMode 582/582, PlayMode 263/263. [History](../history/UI/UI-05.md). |
 | UI-04 | Korean-Only UI Text | 신용준 | Done 2026-11-20 on user confirmation after manual check; branch `feature/ui-04`. Replaces the UI-02 English choice: player-facing UI authored in Korean (one language, no runtime swap); key names and HP/Lv/EXP stay English. Noto Sans KR (OFL) added as the global TMP fallback font; runtime strings in 41 files, 272 scene/data captions, setup scripts and test expectations updated; known enemy prefabs get Korean intel names. EditMode 582/582, PlayMode 262/262. Standalone build unverified. [History](../history/UI/UI-04.md). |
 | PREP-10 | Hero Promotion & Training Facility | 신용준 | Done 2026-11-20 on user confirmation after manual check (Hero Hall popup, refusal without EXP, promotion after two victories, grade stats in the `I` window); branch `feature/prep-10`. New `FacilityType.HeroHall`; heroes start at hire tier grade, surviving captains gain 100 EXP per victory (200/400 needed), promotion 100g/250g + 1 prep hour, +15% max HP/attack per grade; grade/EXP saved, old saves start at hire tier. EditMode 552/552, PlayMode 254/254. [History](../history/PREP/PREP-10.md). |
 | SIEGE-09 | Placeholder Stage Bosses | SeongminHwang | Done 2026-11-20 on user confirmation after manual play; branch `feature/siege-09`. Seven placeholder bosses (Q-74 roles) in the last wave of stages 1-7, boss health bar, commander aura/penalty, duelist targeting, siege structure damage, no retreat, boss-only rewards, boss kills into run score and unlock points. EditMode 559, PlayMode 255. [History](../history/SIEGE/SIEGE-09.md) |

@@ -37,8 +37,14 @@ namespace ProjectNeo.Editor
                 AssetDatabase.AddObjectToAsset(material, fontAsset);
             }
 
+            // Fill the atlas while dynamic, then freeze it (UI-05): a dynamic atlas keeps growing in Play Mode, which
+            // dirties the asset and broke Hangul once its glyph table and atlas got out of sync. KoreanCharset.txt
+            // (ASCII + KS X 1001 Hangul) covers every Hangul character the UI uses; add characters there and re-run.
             string charset = File.ReadAllText(CharsetPath);
+            fontAsset.atlasPopulationMode = AtlasPopulationMode.Dynamic;
+            fontAsset.ClearFontAssetData(true);
             fontAsset.TryAddCharacters(charset, out string missing);
+            fontAsset.atlasPopulationMode = AtlasPopulationMode.Static;
             EditorUtility.SetDirty(fontAsset);
 
             var fallbacks = TMP_Settings.fallbackFontAssets;

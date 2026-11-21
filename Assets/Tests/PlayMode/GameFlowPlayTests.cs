@@ -56,7 +56,7 @@ namespace ProjectNeo.Tests
             yield return SceneManager.LoadSceneAsync("Title", LoadSceneMode.Single);
             yield return null;
             var title = Object.FindAnyObjectByType<TitleScreen>();
-            Transform panel = title.transform.Find("Panel");
+            Transform panel = title.transform.Find("SlotPanel");
             Assert.IsNotNull(panel.Find("Button_Slot 3"), "Title 씬에 저장 슬롯 버튼 3개가 있어야 한다.");
             StringAssert.Contains("Lv 5", title.SlotText(1));
             StringAssert.StartsWith("> ", title.SlotText(GameSession.SaveStore.GetLastSlot()), "마지막에 쓴 슬롯이 골라져 있다.");
@@ -72,6 +72,8 @@ namespace ProjectNeo.Tests
             Assert.IsFalse(title.IsDeleteArmed, "슬롯을 다시 고르면 삭제 대기가 풀린다.");
 
             title.StartGame();
+            Assert.IsTrue(title.IsExpeditionOpen, "새 게임은 출정 준비 화면을 연다(UI-05).");
+            title.Ascension.StartSelected();
             yield return WaitForActiveScene("Game");
 
             Assert.AreEqual(1, GameSession.ActiveSlot);
@@ -83,6 +85,49 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
+        public IEnumerator Title_StartsOnMainMenu_StartOpensSlotWindow_BackReturns()
+        {
+            yield return SceneManager.LoadSceneAsync("Title", LoadSceneMode.Single);
+            yield return null;
+            var title = Object.FindAnyObjectByType<TitleScreen>();
+            GameObject main = title.transform.Find("Panel").gameObject;
+            GameObject slots = title.transform.Find("SlotPanel").gameObject;
+            Assert.IsTrue(main.activeSelf, "타이틀은 메인 화면부터 보인다(UI-05).");
+            Assert.IsFalse(slots.activeSelf);
+            Assert.IsFalse(title.IsSlotMenuOpen);
+            Assert.IsNotNull(main.transform.Find("Button_Start"));
+            Assert.IsNotNull(main.transform.Find("Button_Quit"));
+            Assert.IsNull(main.transform.Find("Button_Unlocks"), "해금은 슬롯을 고른 뒤 슬롯 창에서 연다.");
+
+            main.transform.Find("Button_Start").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
+            Assert.IsTrue(title.IsSlotMenuOpen);
+            Assert.IsFalse(main.activeSelf);
+            foreach (string name in new[] { "Button_Slot 1", "Button_Continue", "Button_New Game", "Button_Delete slot", "Button_Back" })
+                Assert.IsNotNull(slots.transform.Find(name), name);
+            Assert.IsNull(slots.transform.Find("Button_Unlocks"), "해금은 슬롯 창이 아니라 출정 준비 화면에 있다.");
+
+            title.SelectSlot(0);
+            slots.transform.Find("Button_New Game").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
+            Assert.IsTrue(title.IsExpeditionOpen, "새 게임은 출정 준비 화면을 연다.");
+            Assert.AreEqual("Title", SceneManager.GetActiveScene().name, "출정 전에는 게임에 들어가지 않는다.");
+            Assert.IsFalse(slots.activeSelf, "출정 준비는 팝업이 아니라 다음 단계라 슬롯 창을 숨긴다.");
+            Assert.IsFalse(main.activeSelf);
+            Transform window = title.transform.Find("AscensionOverlay/Window");
+            Assert.IsNotNull(window.Find("Button_Unlocks"));
+            window.Find("Button_Unlocks").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
+            Assert.IsTrue(title.Unlocks.IsOpen);
+            Assert.Greater(title.transform.Find("UnlockOverlay").GetSiblingIndex(), title.transform.Find("AscensionOverlay").GetSiblingIndex(),
+                "해금 창은 출정 준비 화면 위에 그려진다.");
+            window.Find("Button_Cancel").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
+            Assert.IsFalse(title.IsExpeditionOpen);
+            Assert.IsFalse(title.Unlocks.IsOpen, "뒤로 가면 열린 해금 창도 닫힌다.");
+            Assert.IsTrue(title.IsSlotMenuOpen, "출정 준비의 뒤로는 슬롯 창으로 돌아간다.");
+            slots.transform.Find("Button_Back").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
+            Assert.IsFalse(title.IsSlotMenuOpen);
+            Assert.IsTrue(main.activeSelf);
+        }
+
+        [UnityTest]
         public IEnumerator 타이틀에서_저장된_슬롯을_두_번_눌러_지운다()
         {
             GameSession.SaveStore.Save(2, new ProjectNeo.Meta.MetaProgress { commanderLevel = 3 });
@@ -90,7 +135,7 @@ namespace ProjectNeo.Tests
             yield return null;
             var title = Object.FindAnyObjectByType<TitleScreen>();
 
-            var deleteLabel = title.transform.Find("Panel/Button_Delete slot").GetComponentInChildren<TMPro.TMP_Text>();
+            var deleteLabel = title.transform.Find("SlotPanel/Button_Delete slot").GetComponentInChildren<TMPro.TMP_Text>();
             string defaultCaption = deleteLabel.text;
             Assert.AreEqual("고른 슬롯 삭제", defaultCaption);
             title.SelectSlot(2);
@@ -278,6 +323,7 @@ namespace ProjectNeo.Tests
 
             title.StartGame();
             title.StartGame();
+            if (title.IsExpeditionOpen) title.Ascension.StartSelected();
             yield return WaitForActiveScene("Game");
 
             Assert.AreEqual(1, SceneManager.sceneCount, "타이틀 씬은 내려가야 한다.");
@@ -290,7 +336,9 @@ namespace ProjectNeo.Tests
         public IEnumerator 게임_씬_안에서_단계가_바뀌고_패배_후_타이틀_씬으로_돌아온다()
         {
             yield return SceneManager.LoadSceneAsync("Title", LoadSceneMode.Single);
-            Object.FindAnyObjectByType<TitleScreen>().StartGame();
+            var title = Object.FindAnyObjectByType<TitleScreen>();
+            title.StartGame();
+            if (title.IsExpeditionOpen) title.Ascension.StartSelected();
             yield return WaitForActiveScene("Game");
             var hud = Object.FindAnyObjectByType<GameFlowHud>();
             GameFlow flow = GameSession.Flow;
@@ -312,7 +360,11 @@ namespace ProjectNeo.Tests
 
             Assert.AreEqual(GamePhase.Title, flow.Phase);
             Assert.IsNull(flow.Run);
-            Assert.IsNotNull(Object.FindAnyObjectByType<TitleScreen>());
+            yield return null;
+            var back = Object.FindAnyObjectByType<TitleScreen>();
+            Assert.IsNotNull(back);
+            Assert.IsTrue(back.IsExpeditionOpen && !back.IsSlotMenuOpen, "런이 끝나고 돌아오면 같은 슬롯의 출정 준비 화면이 바로 열린다(UI-05).");
+            Assert.IsFalse(flow.ReturnedFromRunEnd, "표시는 한 번만 쓴다.");
         }
 
         [UnityTest]

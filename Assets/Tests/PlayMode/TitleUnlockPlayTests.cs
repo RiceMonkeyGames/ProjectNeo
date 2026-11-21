@@ -83,6 +83,10 @@ namespace ProjectNeo.Tests
         {
             yield return OpenTitle();
             var title = Object.FindAnyObjectByType<TitleScreen>();
+            Assert.IsNull(GameObject.Find("Button_Unlocks"), "해금은 메인 화면에 없고 슬롯 창에서만 보인다(UI-05).");
+            title.OpenSlotMenu();
+            Assert.IsNull(GameObject.Find("Button_Unlocks"), "슬롯 창에도 없고 출정 준비 화면에만 있다.");
+            Assert.IsTrue(title.OpenExpedition());
             UnityEngine.UI.Button button = GameObject.Find("Button_Unlocks").GetComponent<UnityEngine.UI.Button>();
 
             button.onClick.Invoke();
