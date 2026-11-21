@@ -32,6 +32,10 @@ namespace ProjectNeo.Combat
         [SerializeField, Min(0f)] float coverRiseLead = 0.5f;
         // 이 거리(m, 수평) 안에 자기 편 성가퀴가 있으면 그 뒤에 선 것으로 본다(COMBAT-10). 0이면 웅크리지 않는다.
         [SerializeField, Min(0f)] float coverSearchRadius = 1.2f;
+        // 원거리 공격이 쏘는 유닛의 발밑 물체(성벽 조각)를 스쳐도 되는 깊이(m, 발 높이 아래).
+        // 모서리를 스치는 정도만 허용한다. 3m 성문 위 한가운데 궁수가 성문 앞 적의 상체를 맞히지 못하는 값이다. 이보다 깊이 벽 몸통을 지나면 막힌다(BUG-wall-archer-shoots-through-footing).
+        [SerializeField, Min(0f)] float footingClearance = 0.3f;
+        public float FootingClearance => footingClearance;
         public float CrouchHeightRatio => crouchHeightRatio;
         public float CoverRiseLead => coverRiseLead;
         public float CoverSearchRadius => coverSearchRadius;
@@ -59,7 +63,7 @@ namespace ProjectNeo.Combat
             float projectileRadius = 0.08f, float projectileLifetime = 5f, float minimumDamage = 1f,
             float upwardShotDamageRatio = 1f, float upwardShotMinimumRise = 1.5f,
             float highGroundRangeBonus = 0.25f, float highGroundMinimumDrop = 1.5f, float staggerPower = -1f, float projectileGravity = 9.81f,
-            float crouchHeightRatio = 0.55f, float coverRiseLead = 0.5f, float coverSearchRadius = 1.2f)
+            float crouchHeightRatio = 0.55f, float coverRiseLead = 0.5f, float coverSearchRadius = 1.2f, float footingClearance = 0.3f)
         {
             var profile = CreateInstance<CombatProfile>();
             profile.impactDelay = Mathf.Max(0f, impactDelay);
@@ -81,6 +85,7 @@ namespace ProjectNeo.Combat
             profile.crouchHeightRatio = Mathf.Clamp(crouchHeightRatio, 0.3f, 1f);
             profile.coverRiseLead = Mathf.Max(0f, coverRiseLead);
             profile.coverSearchRadius = Mathf.Max(0f, coverSearchRadius);
+            profile.footingClearance = Mathf.Max(0f, footingClearance);
             return profile;
         }
     }

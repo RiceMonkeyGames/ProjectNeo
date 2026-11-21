@@ -4,10 +4,7 @@ namespace ProjectNeo.Combat
 {
     public static class CombatPhysics
     {
-        /// <summary>
-        /// 유닛이 딛고 선 물체(땅·성벽 윗면). 원거리 공격은 이 물체에 막히지 않는다.
-        /// 성벽 위 궁수가 성벽 바로 아래를 내려다보고 쏠 때, 선이 자기 발밑 성벽 모서리를 스치는 것을 막는다.
-        /// </summary>
+        /// <summary>유닛이 딛고 선 물체(땅·성벽 윗면). 사람 몸은 제외한다.</summary>
         public static Collider GroundUnder(CharacterActor actor)
         {
             Collider ground = null;
@@ -22,6 +19,14 @@ namespace ProjectNeo.Combat
             }
             return ground;
         }
+
+        /// <summary>
+        /// 원거리 공격이 발밑 물체를 지나도 되는 가장 낮은 높이. 발 높이에서 <see cref="CombatProfile.FootingClearance"/>만큼 아래다.
+        /// 성벽 위 궁수가 모서리 너머로 몸을 내밀고 쏘는 만큼만 허용하고, 그보다 깊이 벽 몸통을 뚫지는 못한다
+        /// (BUG-wall-archer-shoots-through-footing).
+        /// </summary>
+        public static float FootingFloor(CharacterActor attacker) =>
+            attacker.transform.position.y - attacker.Profile.FootingClearance;
 
         static readonly Collider[] coverBuffer = new Collider[16];
 
@@ -47,11 +52,13 @@ namespace ProjectNeo.Combat
         /// 대상에서 쏠 수 있는 지점을 찾는다(SIEGE-10). 몸 가운데(<see cref="CharacterActor.AimPoint"/>)를 먼저 보고,
         /// 가려졌으면 위쪽 몸통(<see cref="CombatProfile.UpperAimRatio"/>)을 본다. 둘 다 가려지면 false이고 지점은 몸 가운데다.
         /// 낮은 난간 뒤 수비병의 상체를 노리게 해 준다. 솟은 부분(머론) 뒤처럼 온몸이 가려지면 여전히 쏘지 못한다.
+        /// 원거리 공격자가 딛고 선 물체는 모서리를 스치는 만큼만 지날 수 있다(<see cref="FootingFloor"/>).
         /// </summary>
         public static bool TryGetShotPoint(CharacterActor attacker, CharacterActor target, out Vector3 point)
         {
             Collider footing = attacker.Profile.AttackKind == AttackKind.Projectile ? GroundUnder(attacker) : null;
-            return TryGetShotPoint(attacker.AimPoint, footing, attacker, target, out point);
+            return TryGetShotPoint(attacker.AimPoint, footing, footing != null ? FootingFloor(attacker) : 0f,
+                attacker, target, out point);
         }
 
         /// <summary>
@@ -59,27 +66,30 @@ namespace ProjectNeo.Combat
         /// 사거리는 보지 않는다.
         /// </summary>
         public static bool HasClearShotFrom(Vector3 standPoint, CharacterActor attacker, CharacterActor target) =>
-            TryGetShotPoint(standPoint + Vector3.up * (attacker.Profile.Height * 0.5f), null, attacker, target, out _);
+            TryGetShotPoint(standPoint + Vector3.up * (attacker.Profile.Height * 0.5f), null, 0f, attacker, target, out _);
 
-        static bool TryGetShotPoint(Vector3 origin, Collider footing, CharacterActor attacker, CharacterActor target, out Vector3 point)
+        static bool TryGetShotPoint(Vector3 origin, Collider footing, float footingFloor, CharacterActor attacker,
+            CharacterActor target, out Vector3 point)
         {
             point = target.AimPoint;
-            if (IsClear(origin, footing, attacker, target, point)) return true;
+            if (IsClear(origin, footing, footingFloor, attacker, target, point)) return true;
             // 웅크린 대상은 낮아진 키로 잰다(COMBAT-10). 받침 뒤에 웅크리면 위쪽 몸통도 가려진다.
             Vector3 upper = target.transform.position + Vector3.up * (target.CurrentHeight * target.Profile.UpperAimRatio);
-            if (!IsClear(origin, footing, attacker, target, upper)) return false;
+            if (!IsClear(origin, footing, footingFloor, attacker, target, upper)) return false;
             point = upper;
             return true;
         }
 
-        static bool IsClear(Vector3 origin, Collider footing, CharacterActor attacker, CharacterActor target, Vector3 point)
+        static bool IsClear(Vector3 origin, Collider footing, float footingFloor, CharacterActor attacker,
+            CharacterActor target, Vector3 point)
         {
             Vector3 offset = point - origin;
             if (offset.sqrMagnitude < 1e-6f) return true;
             foreach (RaycastHit hit in Physics.RaycastAll(origin, offset.normalized, offset.magnitude,
                 ~0, QueryTriggerInteraction.Ignore))
             {
-                if (hit.collider.gameObject.scene != attacker.gameObject.scene || hit.collider == footing
+                if (hit.collider == footing && GrazesFooting(footing, footingFloor, point, origin)) continue;
+                if (hit.collider.gameObject.scene != attacker.gameObject.scene
                     || ShotCover.Passes(hit.collider, attacker.Team)) continue;
                 var actor = hit.collider.GetComponentInParent<CharacterActor>();
                 if (actor == target || actor == attacker) continue;
@@ -87,6 +97,15 @@ namespace ProjectNeo.Combat
                 return false;
             }
             return true;
+        }
+
+        // 선(from → to)이 발밑 물체를 빠져나가는 점이 허용 깊이(footingFloor) 위인지. RaycastAll은 들어가는 점만 주므로
+        // 반대쪽(대상)에서 거꾸로 쏴 나가는 점을 찾는다. 대상 쪽 끝이 물체 안이면 빠져나가지 못한 것이다.
+        static bool GrazesFooting(Collider footing, float footingFloor, Vector3 to, Vector3 from)
+        {
+            Vector3 back = from - to;
+            return footing.Raycast(new Ray(to, back.normalized), out RaycastHit exit, back.magnitude)
+                && exit.point.y >= footingFloor;
         }
 
         /// <summary>

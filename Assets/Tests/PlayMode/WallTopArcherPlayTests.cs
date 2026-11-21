@@ -152,14 +152,36 @@ namespace ProjectNeo.Tests
         {
             // 보너스 없이도, 사거리 안(10.95m)이라고 판정한 대상에게는 화살이 닿아야 한다.
             // 겨눈 가슴까지는 약 11.7m라서, 고치기 전에는 화살이 사거리 11m에서 사라져 닿지 않았다.
-            CharacterActor archer = Archer("WallArcher", CombatTeam.Allied, new Vector3(0f, WallHeight, 0f), 0f);
-            CharacterActor enemy = Archer("GroundEnemy", CombatTeam.Hostile, GroundAtReach(10.95f), 0f, facingYaw: 180f);
+            // 이렇게 가파른 각도는 한가운데서는 발밑 성벽에 가리므로(BUG-wall-archer-shoots-through-footing),
+            // 궁수와 대상을 함께 바깥 모서리 쪽(모서리에서 0.6m 안)으로 옮긴다.
+            var nearEdge = new Vector3(0f, 0f, 0.9f);
+            CharacterActor archer = Archer("WallArcher", CombatTeam.Allied, new Vector3(0f, WallHeight, 0f) + nearEdge, 0f);
+            CharacterActor enemy = Archer("GroundEnemy", CombatTeam.Hostile, GroundAtReach(10.95f) + nearEdge, 0f,
+                facingYaw: 180f);
             Assert.AreEqual(Range, CombatPhysics.AttackRange(archer, enemy), 0.001f, "보너스가 0이면 사거리는 그대로다.");
             Assert.Greater(Vector3.Distance(archer.AimPoint, enemy.AimPoint), Range, "겨눈 지점은 사거리보다 멀다.");
             Assert.IsTrue(archer.CanAttack(enemy));
             Assert.IsTrue(archer.TryAttack(enemy));
             yield return WaitForHit(enemy);
             Assert.Less(enemy.Health.Current, enemy.Health.Maximum, "사거리 안이라고 판정한 대상에게 화살이 닿지 않았다.");
+        }
+
+        [UnityTest]
+        public IEnumerator WallArcher_CannotShootThroughItsOwnWallPiece_AtEnemyHuggingTheWallBase()
+        {
+            // BUG-wall-archer-shoots-through-footing: 성벽 바깥면(z = +1.5)에 바짝 붙은 적은 한가운데 궁수의
+            // 발밑 성벽 몸통 뒤에 숨는다. 사선 검사도, 억지로 쏜 화살도 성벽을 뚫지 못한다.
+            CharacterActor archer = Archer("WallArcher", CombatTeam.Allied, new Vector3(0f, WallHeight, 0f), 0.25f);
+            CharacterActor enemy = Archer("GroundEnemy", CombatTeam.Hostile, new Vector3(0f, 0f, 2f), 0.25f, facingYaw: 180f);
+            Assert.IsTrue(CombatPhysics.IsInRange(archer, enemy), "사거리 안이어야 사선만 따질 수 있다.");
+            Assert.IsFalse(CombatPhysics.HasClearShot(archer, enemy), "발밑 성벽 몸통을 지나는 선은 막혀야 한다.");
+            Assert.IsFalse(archer.CanAttack(enemy));
+            Vector3 launch = ArrowBallistics.LaunchVelocity(archer.AimPoint, enemy.AimPoint,
+                archer.Profile.ProjectileSpeed, archer.Profile.ProjectileGravity);
+            GameObject shot = Object.Instantiate(projectilePrefab, archer.AimPoint, Quaternion.LookRotation(launch));
+            shot.GetComponent<CombatProjectile>().Launch(archer, 30f, launch);
+            yield return WaitForHit(enemy);
+            Assert.AreEqual(enemy.Health.Maximum, enemy.Health.Current, "화살이 발밑 성벽을 뚫고 맞혔다.");
         }
 
         [UnityTest]
