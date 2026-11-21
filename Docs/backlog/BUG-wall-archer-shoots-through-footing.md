@@ -1,9 +1,9 @@
 ---
 id: BUG-wall-archer-shoots-through-footing
 title: Wall-Top Archers Shoot Through Their Own Wall Piece
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: youngho
+branch: fix/bug-wall-archer-shoots-through-footing
 area: BUG
 depends_on: []
 created: 2026-11-21
