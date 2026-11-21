@@ -113,6 +113,11 @@ namespace ProjectNeo.Editor
             EditorUtility.SetDirty(label);
         }
 
+        static void CopyIfPresent(Component source, Component target)
+        {
+            if (source != null) EditorUtility.CopySerialized(source, target);
+        }
+
         // Same look and layout as the main Panel column, wider for the slot summaries, with a header label.
         static GameObject SlotPanel(Transform screenRoot, Transform panel)
         {
@@ -123,10 +128,11 @@ namespace ProjectNeo.Editor
                 typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
             slotPanel.transform.SetParent(screenRoot, false);
             slotPanel.transform.SetSiblingIndex(panel.GetSiblingIndex() + 1);
-            EditorUtility.CopySerialized(panel.GetComponent<RectTransform>(), slotPanel.GetComponent<RectTransform>());
-            EditorUtility.CopySerialized(panel.GetComponent<Image>(), slotPanel.GetComponent<Image>());
-            EditorUtility.CopySerialized(panel.GetComponent<VerticalLayoutGroup>(), slotPanel.GetComponent<VerticalLayoutGroup>());
-            EditorUtility.CopySerialized(panel.GetComponent<ContentSizeFitter>(), slotPanel.GetComponent<ContentSizeFitter>());
+            // After UI-10 the main Panel is a full-screen art layer without these components; copy only what is there.
+            CopyIfPresent(panel.GetComponent<RectTransform>(), slotPanel.GetComponent<RectTransform>());
+            CopyIfPresent(panel.GetComponent<Image>(), slotPanel.GetComponent<Image>());
+            CopyIfPresent(panel.GetComponent<VerticalLayoutGroup>(), slotPanel.GetComponent<VerticalLayoutGroup>());
+            CopyIfPresent(panel.GetComponent<ContentSizeFitter>(), slotPanel.GetComponent<ContentSizeFitter>());
             var rect = (RectTransform)slotPanel.transform;
             rect.sizeDelta = new Vector2(SlotPanelWidth, rect.sizeDelta.y);
 

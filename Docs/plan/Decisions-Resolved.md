@@ -1,6 +1,6 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-21 11:30:56 (KST)
+Last Updated: 2026-11-21 16:03:51 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
@@ -19,6 +19,8 @@ Morale gain hooks (COMBAT-07, 2026-11-17, user): (1) a morale gain never trigger
 Player HP HUD (UI-03, user decision, 2026-11-17): bottom-right health bar plus current/maximum HP numbers, visible during preparation and battle gameplay. [Rule](../design/Combat.md).
 
 Run save and continue (FLOW-02, 2026-11-16): The user delegated the open Q-13 choices to the agent's recommendation and conventional practice, asking for a design that is easy to change. Chosen: one run per save slot; automatic saves only (preparation start, battle start, reward granted, quit during preparation), each switchable in `RunSavePolicy`; battles are never saved, so a mid-battle quit returns to that battle's preparation; quitting on the reward screen continues at the next stage and cannot repeat the reward; defeat deletes the run save; Title `Continue` only when a run save exists; `New Game` over a saved run needs a second click; an unrestorable run save is set aside and a new run starts. New UI text is English only (UI-02 decision). [Rule](../design/PrepEconomyMeta.md), [history](../history/FLOW/FLOW-02.md).
+
+Title main menu look (2026-11-21, user, UI-10): the first Title screen copies the layout of the Fantasy Warrior HUD sample `00_Demo_FantasyWarrior_Title` (chosen from three HTML mockups: sample layout, centered framed panel, dark minimal): full-screen backdrop with tracery frame, banner-plate logo with the dragon greeble, one parchment start button, a small quit link in the bottom-right corner. Its text was first English in the pack's Grenze font; the same day the user switched it to Korean (`프로젝트 네오`, `게임 시작`, `게임종료`), so it follows the Korean UI rule and uses Noto Sans KR (Grenze has no Hangul). The expedition screen stays plain until UI-06. Slot window (same day, user, UI-10): mockup A (cards) chosen from cards / list + detail / framed window; three slot cards with a gold frame on the selected one and the run in progress on the card, only two buttons (이어 하기 without the stage, 새 게임), the delete-slot action renamed 초기화, text stays Korean. Follow-up (same day, user): 새 게임 and 초기화 act on the first click, replacing the FLOW-02 / META-01 second-click confirmations (새 게임 goes straight to the expedition screen; a saved run is only discarded when the player departs, so 뒤로 keeps it); 새 게임 uses the same parchment button as 이어 하기.
 
 Title flow (2026-11-21, user, UI-05): the Title opens on a main menu (logo, start, quit); start opens the slot window (three slots, continue, new game, delete, back). New game opens an expedition screen between runs (Ascension level, between-run unlocks, depart, back) instead of starting at once; it is a step of its own that replaces the slot window, not a popup, and its back returns to the slot window; and a finished run (defeat or ending) returns straight to that slot's expedition screen. Unlocks are no longer on the main menu or the slot window. Look work is deferred until the flow is accepted. [history](../history/UI/UI-05.md).
 
