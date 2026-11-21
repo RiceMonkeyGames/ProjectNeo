@@ -98,32 +98,9 @@ namespace ProjectNeo.Editor
         static Transform Child(Transform panel, string name) =>
             panel.Find(name) ?? throw new InvalidOperationException("SlotPanel is missing " + name);
 
-        // Copied layer by layer from the sample nameplate (HUD_FantasyWarrior_Event_DialogueBox02 / Name, 700x120 on the
-        // 3840 canvas): Box_Background01 fills the plate, the Banner05 frame juts out 55 left/right, 33.6 up and 28 down,
-        // the name text is inset 80 on each side. Built at sample size x Scale and enlarged as a whole (HeaderScale) so the
-        // layers keep the sample's proportions.
-        const float HeaderScale = 1.6f;
-
-        static TMP_Text Header(RectTransform panel, RectTransform visual, TMP_FontAsset font)
-        {
-            var group = Node(visual, "Header");
-            Place(group, new Vector2(0.5f, 1f), new Vector2(0f, -100f), new Vector2(700f, 120f) * Scale);
-            group.localScale = Vector3.one * HeaderScale;
-            var plate = Image(group, "SPR_Background", "SPR_HUD_FantasyWarrior_Box_Background01", new Color32(0x1D, 0x3A, 0x52, 0xCC), 1f * 3f);
-            Stretch(plate.rectTransform, Vector2.zero, Vector2.zero);
-            var frame = Image(group, "SPR_Frame", "SPR_FantasyWarrior_Banner05", Color.white, 2f * 3f);
-            Stretch(frame.rectTransform, new Vector2(-55f, -28f) * Scale, new Vector2(55f, 33.6f) * Scale);
-
-            var header = (RectTransform)Child(panel, "Label_SlotsHeader");
-            DestroyComponent<UnityEngine.UI.LayoutElement>(header.gameObject);
-            Place(header, group.anchorMin, group.anchoredPosition, (group.sizeDelta - new Vector2(160f, 0f) * Scale) * HeaderScale);
-            var label = header.GetComponent<TMP_Text>();
-            label.text = "슬롯 선택";
-            Font(label, font, 28f, Cream, TextAlignmentOptions.Center);
-            label.raycastTarget = false;
-            EditorUtility.SetDirty(label);
-            return label;
-        }
+        // The nameplate header is shared with the expedition screen (FantasyHudStyle.Nameplate).
+        static TMP_Text Header(RectTransform panel, RectTransform visual, TMP_FontAsset font) =>
+            Nameplate(visual, (RectTransform)Child(panel, "Label_SlotsHeader"), "슬롯 선택", font);
 
         // A slot card: dark parchment fill in a dim bronze frame, gold highlight frame (off until selected), the static
         // slot name and the detail text that TitleScreen fills. The fill takes the button's color tint.

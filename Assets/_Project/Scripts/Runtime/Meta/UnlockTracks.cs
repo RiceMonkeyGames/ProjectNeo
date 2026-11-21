@@ -4,12 +4,67 @@ using System.Collections.Generic;
 namespace ProjectNeo.Meta
 {
     /// <summary>
-    /// 런 사이 해금 트랙 규칙(Q-76, Darkest Dungeon 2 방식). 랜덤도 중복도 없다.
-    /// 선행 항목이 모두 열렸고 해금 포인트가 충분하면 고른 항목을 연다. 되돌리기(환불)는 없다.
+    /// 런 사이 해금 트랙 규칙(Q-76). 화면은 트랙을 골라 무작위로 연다(<see cref="TryDraw"/>, UI-06 사용자 결정 2026-11-21):
+    /// 트랙의 고정 비용을 내고, 선행 항목이 모두 열린 미해금 항목 가운데 하나를 같은 확률로 연다. 중복도 환불도 없다.
     /// 예외로 업데이트에서 항목이 없어지면 쓴 포인트를 돌려준다(<see cref="Migrate"/>, META-10).
+    /// 항목을 직접 여는 <see cref="TryOpen"/>은 항목 비용을 쓰며 옛 저장 옮기기와 테스트용으로 남아 있다.
     /// </summary>
     public static class UnlockTracks
     {
+        /// <summary>트랙 화면에서 항목이 보이는 상태.</summary>
+        public static UnlockEntryState StateOf(MetaProgress progress, UnlockCatalog catalog, UnlockEntry entry)
+        {
+            if (IsOpened(progress, entry)) return UnlockEntryState.Opened;
+            return PrerequisitesOpened(progress, catalog, entry) ? UnlockEntryState.Candidate : UnlockEntryState.Locked;
+        }
+
+        /// <summary>다음 무작위 해금에서 나올 수 있는 항목들(미해금이고 선행이 모두 열림), 트랙 순서대로.</summary>
+        public static List<UnlockEntry> DrawCandidates(MetaProgress progress, UnlockCatalog catalog, UnlockTrackDefinition track)
+        {
+            if (progress == null) throw new ArgumentNullException(nameof(progress));
+            if (catalog == null) throw new ArgumentNullException(nameof(catalog));
+            var candidates = new List<UnlockEntry>();
+            if (track == null) return candidates;
+            foreach (UnlockEntry entry in track.Entries)
+                if (entry != null && StateOf(progress, catalog, entry) == UnlockEntryState.Candidate) candidates.Add(entry);
+            return candidates;
+        }
+
+        /// <summary>이 트랙에서 지금 무작위 해금을 할 수 있는지. 아무것도 바꾸지 않는다.</summary>
+        public static UnlockDrawCheck CheckDraw(MetaProgress progress, UnlockCatalog catalog, UnlockTrackDefinition track)
+        {
+            if (track == null) return UnlockDrawCheck.UnknownTrack;
+            if (DrawCandidates(progress, catalog, track).Count == 0) return UnlockDrawCheck.NothingLeft;
+            if (progress.unlockPoints < track.DrawCost) return UnlockDrawCheck.NotEnoughPoints;
+            return UnlockDrawCheck.Ok;
+        }
+
+        /// <summary>
+        /// 할 수 있으면 트랙 비용을 내고 후보 하나를 무작위로 열어 돌려준다. 할 수 없으면 아무것도 바꾸지 않고 null.
+        /// </summary>
+        public static UnlockEntry TryDraw(MetaProgress progress, UnlockCatalog catalog, UnlockTrackDefinition track,
+            Core.IRandomSource random, out UnlockDrawCheck check)
+        {
+            if (random == null) throw new ArgumentNullException(nameof(random));
+            check = CheckDraw(progress, catalog, track);
+            if (check != UnlockDrawCheck.Ok) return null;
+
+            List<UnlockEntry> candidates = DrawCandidates(progress, catalog, track);
+            UnlockEntry entry = candidates[Math.Min(random.NextInt(candidates.Count), candidates.Count - 1)];
+            progress.unlockPoints -= track.DrawCost;
+            progress.openedEntryIds.Add(entry.Id);
+            // 업데이트로 이 항목이 없어지면 낸 트랙 비용을 돌려준다(META-10).
+            SetSpent(progress, entry.Id, track.DrawCost);
+            return entry;
+        }
+
+        static bool PrerequisitesOpened(MetaProgress progress, UnlockCatalog catalog, UnlockEntry entry)
+        {
+            foreach (string prerequisite in entry.PrerequisiteIds)
+                if (!IsOpened(progress, catalog.FindEntry(prerequisite))) return false;
+            return true;
+        }
+
         public static bool IsOpened(MetaProgress progress, UnlockEntry entry)
         {
             if (progress == null) throw new ArgumentNullException(nameof(progress));

@@ -116,6 +116,11 @@ namespace ProjectNeo.Tests
             Assert.IsFalse(slots.activeSelf, "출정 준비는 팝업이 아니라 다음 단계라 슬롯 창을 숨긴다.");
             Assert.IsFalse(main.activeSelf);
             Transform window = title.transform.Find("AscensionOverlay/Window");
+            // UI-06 시안 C: 난이도 카드(단계 / 해금 단계 줄)와 해금 카드(고른 슬롯의 보유 포인트).
+            StringAssert.StartsWith("승천 ", title.Ascension.LevelText);
+            StringAssert.DoesNotContain("<", title.Ascension.LevelText, "좌우 화살표는 버튼이라 단계 글에 넣지 않는다.");
+            Assert.IsNotEmpty(title.Ascension.UnlockedText);
+            StringAssert.Contains($">{GameSession.SaveStore.Inspect(0).Progress.unlockPoints}<", title.ExpeditionPointsText);
             Assert.IsNotNull(window.Find("Button_Unlocks"));
             window.Find("Button_Unlocks").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
             Assert.IsTrue(title.Unlocks.IsOpen);
