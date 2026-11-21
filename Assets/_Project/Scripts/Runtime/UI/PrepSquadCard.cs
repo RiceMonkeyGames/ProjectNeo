@@ -1,4 +1,4 @@
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,6 +8,7 @@ namespace ProjectNeo.UI
     public sealed class PrepSquadCard : MonoBehaviour
     {
         [SerializeField] Image background;
+        [SerializeField] Image frame;
         [SerializeField] TMP_Text title;
         [SerializeField] TMP_Text headcount;
         [SerializeField] RectTransform headcountFill;
@@ -21,6 +22,9 @@ namespace ProjectNeo.UI
         public float HeadcountRatio => headcountFill != null ? headcountFill.anchorMax.x : 0f;
         public float MoraleRatio => moraleFill != null ? moraleFill.anchorMax.x : 0f;
         public bool Selected { get; private set; }
+
+        /// <summary>테두리 그림(선택 시 색이 바뀐다). 스프라이트 없는 단색 모양이면 비워 둔다.</summary>
+        public void ConfigureFrame(Image border) => frame = border;
 
         public void Configure(Image panel, TMP_Text name, TMP_Text people, RectTransform peopleFill,
             TMP_Text moraleLabel, RectTransform moraleBar, Image moraleBarImage)
@@ -41,6 +45,7 @@ namespace ProjectNeo.UI
             if (style == null) return;
             if (moraleFillImage != null) moraleFillImage.color = style.MoraleFill(band);
             if (background != null) background.color = selected ? style.PanelSelected : style.Panel;
+            if (frame != null) frame.color = selected ? style.FrameSelected : style.Frame;
         }
 
         static void SetFill(RectTransform fill, float ratio)

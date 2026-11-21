@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using ProjectNeo.Flow;
 using ProjectNeo.Morale;
 using ProjectNeo.Squads;
@@ -26,6 +26,7 @@ namespace ProjectNeo.Editor
         public const string KeyHintName = "KeyListHint";
         public const string ContextName = "ContextPrompt";
         const string ClockName = "PrepClock";
+        public const string FrameName = "Frame";
         internal const float BarHeight = 34f;
         // 자원 바 아래 여백. 분대 카드와 적 정보 창이 이 아래에서 시작한다.
         internal const float BelowBar = BarHeight + 12f;
@@ -62,6 +63,7 @@ namespace ProjectNeo.Editor
             PlaceEnemyIntel(hud);
             BuildKeyList(hud, style, font, interaction, view, battle, center);
             BuildContextPrompt(hud, style, font);
+            StyleSharedPanels(hud, style);
 
             // 자원 바는 시설 창보다 위에 그린다(PREP-06 시계 줄과 같은 규칙).
             hud.transform.Find(BarName).SetAsLastSibling();
@@ -76,7 +78,7 @@ namespace ProjectNeo.Editor
             if (!AssetDatabase.IsValidFolder("Assets/_Project/Data/UI")) AssetDatabase.CreateFolder("Assets/_Project/Data", "UI");
             style = HudStyle.Create();
             AssetDatabase.CreateAsset(style, StylePath);
-            AssetDatabase.SaveAssets();
+            HudStyleLook.ApplyFantasyWarrior(style);
             return style;
         }
 
@@ -103,11 +105,11 @@ namespace ProjectNeo.Editor
             if (lineImage != null) lineImage.color = new Color(0f, 0f, 0f, 0f);
             RectTransform track = Rect(line, "Track");
             track.anchorMin = Vector2.zero; track.anchorMax = new Vector2(1f, 0f); track.pivot = new Vector2(0.5f, 0f);
-            track.anchoredPosition = Vector2.zero; track.sizeDelta = new Vector2(0f, 6f);
-            Gauge(track, style, style.GaugeTrack);
+            track.anchoredPosition = Vector2.zero; track.sizeDelta = new Vector2(0f, 7f);
+            Track(track, style);
             RectTransform fill = Rect(track, "Fill");
             fill.anchorMin = Vector2.zero; fill.anchorMax = Vector2.one; fill.offsetMin = fill.offsetMax = Vector2.zero;
-            Gauge(fill, style, style.TimeFill);
+            Fill(fill, style, style.TimeFill);
             track.SetAsFirstSibling();
             TextMeshProUGUI label = Text(line, "Text", font, style.BodySize, style.Heading, TextAlignmentOptions.Center, "준비 시간 -- / --");
             Stretch(label.rectTransform, new Vector2(0f, 0f), Vector2.one, new Vector2(0f, 8f), Vector2.zero);
@@ -142,6 +144,7 @@ namespace ProjectNeo.Editor
             RectTransform card = Rect(column, "CardTemplate");
             Get<LayoutElement>(card.gameObject).preferredHeight = CardHeight;
             Image background = Panel(card, style, style.Panel);
+            Image border = card.Find(FrameName) != null ? card.Find(FrameName).GetComponent<Image>() : null;
             // 1줄: 이름(왼쪽)과 인원(오른쪽). 그 아래 얇은 인원 게이지. 2줄: 사기 글과 사기 게이지.
             TextMeshProUGUI title = Text(card, "Title", font, style.BodySize, style.Heading, TextAlignmentOptions.MidlineLeft, "부대 1 - 근접");
             Row(title.rectTransform, 3f, 18f, 10f, -80f);
@@ -153,6 +156,7 @@ namespace ProjectNeo.Editor
             RectTransform moraleFill = Bar(card, "MoraleTrack", 36f, 8f, 84f, style, style.MoraleFill(MoraleBand.Normal), out Image moraleImage);
             var template = Get<PrepSquadCard>(card.gameObject);
             template.Configure(background, title, people, peopleFill, moraleLabel, moraleFill, moraleImage);
+            template.ConfigureFrame(border);
             EditorUtility.SetDirty(template);
             card.SetAsFirstSibling();
             card.gameObject.SetActive(false);
@@ -229,11 +233,30 @@ namespace ProjectNeo.Editor
         {
             RectTransform track = Rect(card, name);
             Row(track, top, height, left, -10f);
-            Gauge(track, style, style.GaugeTrack);
+            Track(track, style);
             RectTransform fill = Rect(track, "Fill");
             fill.anchorMin = Vector2.zero; fill.anchorMax = Vector2.one; fill.offsetMin = fill.offsetMax = Vector2.zero;
-            fillImage = Gauge(fill, style, color);
+            fillImage = Fill(fill, style, color);
             return fill;
+        }
+
+        static void StyleSharedPanels(GameFlowHud hud, HudStyle style)
+        {
+            // 준비 화면에 함께 보이는 기존 판(아래 안내 줄, 플레이어 체력, 적 정보 창)도 같은 모양으로 맞춘다.
+            // 위치·크기·글은 그대로 두고 바탕·테두리·게이지 그림만 바꾼다. 전투 HUD 판(BattleStatus)은 UI-08에서 다룬다.
+            foreach (string name in new[] { "InteractionPrompt", "PlayerHealth", "EnemyIntel" })
+            {
+                var rect = hud.transform.Find(name) as RectTransform;
+                if (rect != null) Panel(rect, style, style.Panel);
+            }
+            var health = hud.GetComponent<PlayerHealthHud>();
+            if (health == null) return;
+            var fill = new SerializedObject(health).FindProperty("fill").objectReferenceValue as RectTransform;
+            if (fill == null || fill.parent == null) return;
+            Image fillImage = fill.GetComponent<Image>();
+            Color fillColor = fillImage != null ? fillImage.color : style.MoraleFill(MoraleBand.Low);
+            Track((RectTransform)fill.parent, style);
+            Fill(fill, style, fillColor);
         }
 
         // 카드 위에서 top만큼 내려온 높이 height의 줄. left/right는 카드 왼쪽·오른쪽 가장자리에서의 거리(오른쪽은 음수).
@@ -249,21 +272,51 @@ namespace ProjectNeo.Editor
             rect.anchorMin = min; rect.anchorMax = max; rect.offsetMin = offsetMin; rect.offsetMax = offsetMax;
         }
 
+        // 판: 색을 입힌 바탕 + (스프라이트가 있으면) 첫 자식으로 테두리. 테두리는 글보다 뒤에, 레이아웃 계산에서는 빠진다.
         static Image Panel(RectTransform rect, HudStyle style, Color color)
         {
-            Image image = Get<Image>(rect.gameObject);
-            image.sprite = style.PanelSprite;
-            image.type = style.PanelSprite != null ? Image.Type.Sliced : Image.Type.Simple;
-            image.color = color;
-            image.raycastTarget = false;
+            Image image = Paint(Get<Image>(rect.gameObject), style.PanelSprite, style.PanelPixelsPerUnit, color);
+            Transform existing = rect.Find(FrameName);
+            if (style.FrameSprite == null)
+            {
+                if (existing != null) UnityEngine.Object.DestroyImmediate(existing.gameObject);
+                return image;
+            }
+            RectTransform frame = Rect(rect, FrameName);
+            frame.anchorMin = Vector2.zero; frame.anchorMax = Vector2.one; frame.offsetMin = frame.offsetMax = Vector2.zero;
+            frame.SetAsFirstSibling();
+            Get<LayoutElement>(frame.gameObject).ignoreLayout = true;
+            Paint(Get<Image>(frame.gameObject), style.FrameSprite, style.FramePixelsPerUnit, style.Frame);
             return image;
         }
 
-        static Image Gauge(RectTransform rect, HudStyle style, Color color)
+        // 게이지 바탕: 모양 스프라이트가 있으면 마스크가 되어 채움을 그 모양으로 자른다.
+        static void Track(RectTransform rect, HudStyle style)
         {
-            Image image = Get<Image>(rect.gameObject);
-            image.sprite = style.GaugeSprite;
-            image.type = style.GaugeSprite != null ? Image.Type.Sliced : Image.Type.Simple;
+            Image image = Paint(Get<Image>(rect.gameObject), style.GaugeSprite, style.GaugePixelsPerUnit, style.GaugeTrack);
+            var mask = rect.GetComponent<Mask>();
+            if (style.GaugeSprite == null)
+            {
+                if (mask != null) UnityEngine.Object.DestroyImmediate(mask);
+                return;
+            }
+            if (mask == null) mask = rect.gameObject.AddComponent<Mask>();
+            mask.showMaskGraphic = true;
+            image.raycastTarget = false;
+        }
+
+        static Image Fill(RectTransform rect, HudStyle style, Color color)
+        {
+            Sprite fill = style.GaugeFillSprite != null ? style.GaugeFillSprite : style.GaugeSprite;
+            return Paint(Get<Image>(rect.gameObject), fill, style.GaugePixelsPerUnit, color);
+        }
+
+        static Image Paint(Image image, Sprite sprite, float pixelsPerUnit, Color color)
+        {
+            image.sprite = sprite;
+            image.type = sprite != null && sprite.border != Vector4.zero ? Image.Type.Sliced : Image.Type.Simple;
+            image.pixelsPerUnitMultiplier = sprite != null ? pixelsPerUnit : 1f;
+            image.fillCenter = true;
             image.color = color;
             image.raycastTarget = false;
             return image;
