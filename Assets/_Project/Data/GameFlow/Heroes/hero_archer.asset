@@ -27,11 +27,13 @@ MonoBehaviour:
   - stat: 2
     value: 3
   - stat: 5
-    value: 12
+    value: 18
   - stat: 3
     value: 1
   - stat: 4
     value: 3.6
+  - stat: 6
+    value: 3
   skills:
   - {fileID: 11400000, guid: 7f4ae52478a030e4481c0513d0f0b2ea, type: 2}
   - {fileID: 11400000, guid: 5fcbfc29e1a5b6d479e9ed7fbaf504bb, type: 2}

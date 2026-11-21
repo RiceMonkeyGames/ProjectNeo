@@ -71,12 +71,14 @@ namespace ProjectNeo.Tests
         }
 
         CharacterActor Unit(string name, CombatTeam team, Vector3 position, bool ai = false,
-            bool ranged = false, float attack = 30f, float defense = 0f, float health = 100f, float projectileSpeed = 18f)
+            bool ranged = false, float attack = 30f, float defense = 0f, float health = 100f, float projectileSpeed = 18f,
+            float spread = 0f)
         {
             var definition = Track(SoldierDefinition.Create(name, new Cost(0),
                 new StatValue(StatType.MaxHealth, health), new StatValue(StatType.Attack, attack),
                 new StatValue(StatType.Defense, defense), new StatValue(StatType.AttackSpeed, 2f),
-                new StatValue(StatType.AttackRange, ranged ? 15f : 2.5f), new StatValue(StatType.MoveSpeed, 3.5f)));
+                new StatValue(StatType.AttackRange, ranged ? 15f : 2.5f), new StatValue(StatType.MoveSpeed, 3.5f),
+                new StatValue(StatType.AimSpread, spread)));
             var profile = Track(CombatProfile.Create(0.05f, 70f, 0.4f, 2f,
                 ranged ? AttackKind.Projectile : AttackKind.Melee, projectilePrefab, projectileSpeed));
             var root = new GameObject(name);
@@ -239,6 +241,50 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(100f, enemy.Health.Current);
         }
 
+        sealed class FixedShotRandom : ProjectNeo.Core.IRandomSource
+        {
+            readonly float[] values;
+            int next;
+            public FixedShotRandom(params float[] values) { this.values = values; }
+            public int NextInt(int maxExclusive) => 0;
+            public float NextFloat() => values[next++ % values.Length];
+        }
+
+        [UnityTest]
+        public IEnumerator Arrow_FliesArcAboveStraightLine_AndHits()
+        {
+            var archer = Unit("Archer", CombatTeam.Allied, Vector3.zero, ranged: true);
+            var enemy = Unit("Enemy", CombatTeam.Hostile, new Vector3(0f, 0f, 14f));
+            float aimHeight = archer.AimPoint.y;
+            Assert.IsTrue(archer.TryAttack(enemy));
+            float highest = float.NegativeInfinity;
+            for (int frame = 0; frame < 120 && enemy.Health.Current >= 100f; frame++)
+            {
+                foreach (CombatProjectile shot in Object.FindObjectsByType<CombatProjectile>())
+                    if (shot.gameObject.scene == scene) highest = Mathf.Max(highest, shot.transform.position.y);
+                yield return null;
+            }
+            Assert.Less(enemy.Health.Current, 100f, "포물선 화살도 대상에 맞는다.");
+            Assert.Greater(highest, aimHeight + 0.4f, "화살은 직선보다 높이 떠서 난다(14m 약 0.8m).");
+        }
+
+        [UnityTest]
+        public IEnumerator AimSpread_ShotAtCircleEdge_Misses()
+        {
+            ProjectNeo.Core.IRandomSource previous = CharacterActor.ShotRandom;
+            // 원의 가장자리, 오른쪽(각도 0). 10°면 14m에서 약 2.5m 옆으로 빗나간다.
+            CharacterActor.ShotRandom = new FixedShotRandom(0.999999f, 0f);
+            try
+            {
+                var archer = Unit("Archer", CombatTeam.Allied, Vector3.zero, ranged: true, spread: 10f);
+                var enemy = Unit("Enemy", CombatTeam.Hostile, new Vector3(0f, 0f, 14f));
+                Assert.IsTrue(archer.TryAttack(enemy));
+                yield return Frames(120);
+                Assert.AreEqual(100f, enemy.Health.Current, "흩어진 화살은 빗나갈 수 있다.");
+            }
+            finally { CharacterActor.ShotRandom = previous; }
+        }
+
         [UnityTest]
         public IEnumerator FastProjectile_StopsAtThinWall()
         {
@@ -247,7 +293,7 @@ namespace ProjectNeo.Tests
             Box("ThinWall", new Vector3(0f, 1f, 4f), new Vector3(4f, 2f, 0.05f));
             Physics.SyncTransforms();
             var projectile = Object.Instantiate(projectilePrefab, archer.AimPoint, Quaternion.identity).GetComponent<CombatProjectile>();
-            projectile.Launch(archer, 30f, Vector3.forward, 15f);
+            projectile.Launch(archer, 30f, Vector3.forward * 1200f);
             yield return Frames(3);
             Assert.IsTrue(projectile == null);
             Assert.AreEqual(100f, enemy.Health.Current);

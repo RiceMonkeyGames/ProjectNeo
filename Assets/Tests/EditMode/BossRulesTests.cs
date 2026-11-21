@@ -70,6 +70,23 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
+        public void StatModifiers_AimSpreadTarget_OnlyWhenSet()
+        {
+            StatSheet stats = MeleeStats();
+            stats.SetBase(StatType.AimSpread, 3f);
+            BossDefinition marksman = Boss(range: 30f).WithAimSpread(1f);
+            stats.AddModifiers(BossRules.StatModifiers(marksman, stats.GetBase), marksman);
+            Assert.AreEqual(1f, stats.GetValue(StatType.AimSpread), 0.001f, "명사수는 탄퍼짐 1°");
+            Assert.AreEqual(30f, stats.GetValue(StatType.AttackRange), 0.001f);
+
+            StatSheet plain = MeleeStats();
+            plain.SetBase(StatType.AimSpread, 3f);
+            BossDefinition other = Boss();
+            plain.AddModifiers(BossRules.StatModifiers(other, plain.GetBase), other);
+            Assert.AreEqual(3f, plain.GetValue(StatType.AimSpread), 0.001f, "목표값 0이면 바탕 탄퍼짐 그대로");
+        }
+
+        [Test]
         public void StatModifiers_AscensionPercentMultipliesBossValue()
         {
             StatSheet stats = MeleeStats();

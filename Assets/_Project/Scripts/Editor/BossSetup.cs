@@ -31,7 +31,8 @@ namespace ProjectNeo.Editor
                 Save(BossDefinition.Create("boss_duelist", "결투가", BossRole.Duelist, ladder, 1.4f, 450f, 28f, 4f,
                     moveSpeedMultiplier: 1.3f, rewardGold: 40, rewardMaterials: Reward(bone, 2)).WithHeroPreference(3f)),
                 Save(BossDefinition.Create("boss_marksman", "명사수", BossRole.Artillery, archer, 1.4f, 350f, 26f, 2f,
-                    attackRange: 22f, rewardGold: 50, rewardMaterials: new[] { Pair(bone, 2), Pair(hide, 1) })),
+                    attackRange: ArcherRangeMigration.MarksmanRange, rewardGold: 50, rewardMaterials: new[] { Pair(bone, 2), Pair(hide, 1) })
+                    .WithAimSpread(ArcherRangeMigration.MarksmanSpread)),
                 Save(BossDefinition.Create("boss_war_captain", "전쟁 대장", BossRole.Commander, ladder, 1.6f, 600f, 21f, 5f,
                     rewardGold: 60, rewardMaterials: Reward(hide, 3)).WithAura(12f, 0.2f, 2f, 0.2f)),
                 Save(BossDefinition.Create("boss_siege_giant", "공성 거인", BossRole.Siege, wall, 1.9f, 900f, 28f, 6f,

@@ -29,21 +29,6 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(1f, RangeRules.HighGroundMultiplier(-0.1f, -2f, 0.25f));
         }
 
-        [TestCase(11f, 9f, 11f)]       // 겨눈 지점이 사거리 안이면 사거리만큼 난다
-        [TestCase(11f, 11.7f, 11.7f)]  // 가파르게 내려 쏘면 겨눈 지점까지는 난다
-        [TestCase(-1f, 2f, 2f)]
-        public void Flight_CoversTheAimedPoint(float range, float aimDistance, float expected)
-        {
-            Assert.AreEqual(expected, RangeRules.FlightDistance(range, aimDistance), 0.0001f);
-        }
-
-        [Test]
-        public void Flight_IgnoresInvalidValues()
-        {
-            Assert.AreEqual(5f, RangeRules.FlightDistance(float.NaN, 5f));
-            Assert.AreEqual(11f, RangeRules.FlightDistance(11f, float.PositiveInfinity));
-        }
-
         [Test]
         public void Profile_DefaultsGiveQuarterBonusFromOneAndHalfMeters()
         {

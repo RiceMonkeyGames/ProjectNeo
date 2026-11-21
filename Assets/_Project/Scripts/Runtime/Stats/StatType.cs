@@ -11,5 +11,7 @@ namespace ProjectNeo.Stats
         AttackSpeed = 3,
         MoveSpeed = 4,
         AttackRange = 5,
+        /// <summary>원거리 탄퍼짐 각도(도). 조준점 둘레에 거리 × tan(각도) 반경으로 흩어진다(COMBAT-09).</summary>
+        AimSpread = 6,
     }
 }

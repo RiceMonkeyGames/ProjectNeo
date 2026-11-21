@@ -39,6 +39,8 @@ namespace ProjectNeo.Combat
             if (value) pendingImpact = false;
         }
         public static IReadOnlyList<CharacterActor> ActiveActors => activeActors;
+        /// <summary>원거리 탄퍼짐에 쓰는 난수(COMBAT-09). 테스트는 고정 난수로 바꿔 끼운다.</summary>
+        public static Core.IRandomSource ShotRandom { get; set; } = new Core.SeededRandom(Environment.TickCount);
         public event Action AttackStarted;
         public event Action HitReceived;
         public event Action<CharacterActor> HitReceivedFrom;
@@ -165,13 +167,12 @@ namespace ProjectNeo.Combat
             {
                 // 몸 가운데가 가려졌으면 보이는 위쪽 몸통을 겨눈다(SIEGE-10, 낮은 난간 뒤 수비병).
                 CombatPhysics.TryGetShotPoint(this, nearest, out Vector3 aimAt);
-                GameObject shot = Instantiate(profile.ProjectilePrefab, AimPoint,
-                    Quaternion.LookRotation(aimAt - AimPoint));
+                // 조준점 둘레로 흩어진 지점을 낮은 포물선으로 노린다(COMBAT-09). 움직이는 대상의 앞을 노리지는 않는다.
+                Vector3 landing = AimSpreadRules.Apply(AimPoint, aimAt, Stats.GetValue(StatType.AimSpread), ShotRandom);
+                Vector3 launch = ArrowBallistics.LaunchVelocity(AimPoint, landing, profile.ProjectileSpeed, profile.ProjectileGravity);
+                GameObject shot = Instantiate(profile.ProjectilePrefab, AimPoint, Quaternion.LookRotation(launch));
                 UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(shot, gameObject.scene);
-                // 사거리 판정을 통과한 대상에게는 화살이 닿도록, 겨눈 지점까지의 거리만큼은 날아가게 한다.
-                Vector3 aim = aimAt - AimPoint;
-                shot.GetComponent<CombatProjectile>().Launch(this, attack, aim.normalized,
-                    RangeRules.FlightDistance(CombatPhysics.AttackRange(this, nearest), aim.magnitude));
+                shot.GetComponent<CombatProjectile>().Launch(this, attack, launch);
             }
             attackTarget = null;
         }

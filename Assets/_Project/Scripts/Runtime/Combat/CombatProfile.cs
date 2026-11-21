@@ -15,6 +15,8 @@ namespace ProjectNeo.Combat
         [SerializeField, Min(0.01f)] float projectileSpeed = 18f;
         [SerializeField, Min(0.01f)] float projectileRadius = 0.08f;
         [SerializeField, Min(0.01f)] float projectileLifetime = 5f;
+        // 화살 포물선 중력(COMBAT-09). 발사 속도(projectileSpeed)와 함께 낮은 포물선을 정한다. 0이면 곧게 난다.
+        [SerializeField, Min(0f)] float projectileGravity = 9.81f;
         // 아래에서 위로 쏠 때의 피해 비율. 대상이 이 높이 이상 위에 있으면 적용한다. 1이면 변화 없음.
         [SerializeField, Min(0f)] float upwardShotMinimumRise = 1.5f;
         [SerializeField, Range(0f, 1f)] float upwardShotDamageRatio = 1f;
@@ -40,13 +42,14 @@ namespace ProjectNeo.Combat
         public float ProjectileSpeed => projectileSpeed;
         public float ProjectileRadius => projectileRadius;
         public float ProjectileLifetime => projectileLifetime;
+        public float ProjectileGravity => projectileGravity;
 
         public static CombatProfile Create(float impactDelay = 0.18f, float attackHalfAngle = 55f,
             float radius = 0.4f, float height = 2f, AttackKind attackKind = AttackKind.Melee,
             GameObject projectilePrefab = null, float projectileSpeed = 18f,
             float projectileRadius = 0.08f, float projectileLifetime = 5f, float minimumDamage = 1f,
             float upwardShotDamageRatio = 1f, float upwardShotMinimumRise = 1.5f,
-            float highGroundRangeBonus = 0.25f, float highGroundMinimumDrop = 1.5f, float staggerPower = -1f)
+            float highGroundRangeBonus = 0.25f, float highGroundMinimumDrop = 1.5f, float staggerPower = -1f, float projectileGravity = 9.81f)
         {
             var profile = CreateInstance<CombatProfile>();
             profile.impactDelay = Mathf.Max(0f, impactDelay);
@@ -59,6 +62,7 @@ namespace ProjectNeo.Combat
             profile.projectileSpeed = Mathf.Max(0.01f, projectileSpeed);
             profile.projectileRadius = Mathf.Max(0.01f, projectileRadius);
             profile.projectileLifetime = Mathf.Max(0.01f, projectileLifetime);
+            profile.projectileGravity = Mathf.Max(0f, projectileGravity);
             profile.upwardShotDamageRatio = Mathf.Clamp01(upwardShotDamageRatio);
             profile.upwardShotMinimumRise = Mathf.Max(0f, upwardShotMinimumRise);
             profile.highGroundRangeBonus = Mathf.Max(0f, highGroundRangeBonus);

@@ -3,21 +3,25 @@ using UnityEngine;
 
 namespace ProjectNeo.Combat
 {
-    /// <summary>발사 때 정한 직선으로 이동한다. 충돌은 이동 구간 전체에서 검사한다.</summary>
+    /// <summary>
+    /// 발사 속도와 중력으로 포물선을 그리며 난다(COMBAT-09). 충돌은 매 프레임 이동 구간 전체에서 검사하고,
+    /// 땅·성벽 등 무엇에든 닿으면 그 자리에서 멈춘다. 수명(ProjectileLifetime)이 지나면 사라진다.
+    /// </summary>
     public sealed class CombatProjectile : MonoBehaviour
     {
         CharacterActor owner;
         CombatTeam team;
         CombatProfile profile;
-        Vector3 direction;
+        Vector3 start;
+        Vector3 velocity;
+        float gravity;
         float attack;
-        float remainingDistance;
-        float remainingTime;
+        float elapsed;
         bool launched;
         float launchHeight;
         Collider footing;
 
-        public void Launch(CharacterActor source, float attackPower, Vector3 flightDirection, float range)
+        public void Launch(CharacterActor source, float attackPower, Vector3 launchVelocity)
         {
             owner = source;
             launchHeight = source.transform.position.y;
@@ -26,39 +30,52 @@ namespace ProjectNeo.Combat
             team = source.Team;
             profile = source.Profile;
             attack = attackPower;
-            direction = flightDirection.normalized;
-            remainingDistance = range;
-            remainingTime = profile.ProjectileLifetime;
+            start = transform.position;
+            velocity = launchVelocity;
+            gravity = profile.ProjectileGravity;
+            elapsed = 0f;
             launched = true;
+            Face(launchVelocity);
         }
 
         void Update()
         {
             if (!launched) return;
-            float delta = Mathf.Min(Time.deltaTime, remainingTime);
-            float distance = Mathf.Min(profile.ProjectileSpeed * delta, remainingDistance);
+            float delta = Mathf.Min(Time.deltaTime, profile.ProjectileLifetime - elapsed);
             Vector3 origin = transform.position;
             // SphereCast는 시작점에 이미 겹친 충돌체를 놓칠 수 있어 별도로 검사한다.
             foreach (Collider overlap in Physics.OverlapSphere(origin, profile.ProjectileRadius, ~0, QueryTriggerInteraction.Ignore))
                 if (TryImpact(overlap)) return;
 
-            RaycastHit? nearest = null;
-            foreach (RaycastHit hit in Physics.SphereCastAll(origin, profile.ProjectileRadius, direction,
-                distance, ~0, QueryTriggerInteraction.Ignore))
+            elapsed += delta;
+            Vector3 next = ArrowBallistics.Evaluate(start, velocity, gravity, elapsed);
+            Vector3 step = next - origin;
+            float distance = step.magnitude;
+            if (distance > 0f)
             {
-                if (ShouldIgnore(hit.collider)) continue;
-                if (!nearest.HasValue || hit.distance < nearest.Value.distance) nearest = hit;
+                Vector3 direction = step / distance;
+                RaycastHit? nearest = null;
+                foreach (RaycastHit hit in Physics.SphereCastAll(origin, profile.ProjectileRadius, direction,
+                    distance, ~0, QueryTriggerInteraction.Ignore))
+                {
+                    if (ShouldIgnore(hit.collider)) continue;
+                    if (!nearest.HasValue || hit.distance < nearest.Value.distance) nearest = hit;
+                }
+                if (nearest.HasValue)
+                {
+                    transform.position = origin + direction * nearest.Value.distance;
+                    TryImpact(nearest.Value.collider);
+                    return;
+                }
             }
-            if (nearest.HasValue)
-            {
-                transform.position = origin + direction * nearest.Value.distance;
-                TryImpact(nearest.Value.collider);
-                return;
-            }
-            transform.position += direction * distance;
-            remainingDistance -= distance;
-            remainingTime -= delta;
-            if (remainingDistance <= 0f || remainingTime <= 0f) Destroy(gameObject);
+            transform.position = next;
+            Face(ArrowBallistics.VelocityAt(velocity, gravity, elapsed));
+            if (elapsed >= profile.ProjectileLifetime) Destroy(gameObject);
+        }
+
+        void Face(Vector3 heading)
+        {
+            if (heading.sqrMagnitude > 0.0001f) transform.rotation = Quaternion.LookRotation(heading);
         }
 
         bool ShouldIgnore(Collider collider)

@@ -41,9 +41,10 @@ namespace ProjectNeo.Editor
             var ranged = CombatPrototypeSetup.Save(CombatProfile.Create(0.3f, 55f, 0.4f, 2f,
                 AttackKind.Projectile, projectile), Data + "/Ranged.asset");
             var alliedMelee = Soldier("allied_melee", 100f, 22f, 4f, 1.5f);
-            var alliedRanged = Soldier("allied_ranged", 80f, 18f, 2f, 11f);
+            // 원거리 사거리·탄퍼짐은 COMBAT-09 값(ArcherRangeMigration)과 같다.
+            var alliedRanged = Soldier("allied_ranged", 80f, 18f, 2f, ArcherRangeMigration.SoldierRange, ArcherRangeMigration.DefaultSpread);
             var hostileMelee = Soldier("적 근접병", 80f, 14f, 2f, 1.5f);
-            var hostileRanged = Soldier("적 원거리병", 65f, 13f, 1f, 11f);
+            var hostileRanged = Soldier("적 원거리병", 65f, 13f, 1f, ArcherRangeMigration.SoldierRange, ArcherRangeMigration.DefaultSpread);
 
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             RenderSettings.ambientLight = new Color(0.65f, 0.7f, 0.8f);
@@ -89,12 +90,13 @@ namespace ProjectNeo.Editor
             AssetDatabase.SaveAssets();
         }
 
-        static SoldierDefinition Soldier(string id, float health, float attack, float defense, float range)
+        static SoldierDefinition Soldier(string id, float health, float attack, float defense, float range, float spread = 0f)
         {
             return CombatPrototypeSetup.Save(SoldierDefinition.Create(id, new Cost(0),
                 new StatValue(StatType.MaxHealth, health), new StatValue(StatType.Attack, attack),
                 new StatValue(StatType.Defense, defense), new StatValue(StatType.AttackRange, range),
-                new StatValue(StatType.AttackSpeed, 1f), new StatValue(StatType.MoveSpeed, 3.5f)), Data + "/" + id + ".asset");
+                new StatValue(StatType.AttackSpeed, 1f), new StatValue(StatType.MoveSpeed, 3.5f),
+                new StatValue(StatType.AimSpread, spread)), Data + "/" + id + ".asset");
         }
 
         static GameObject UnitPrefab(SoldierDefinition soldier, CombatProfile profile, UnitAISettings ai,

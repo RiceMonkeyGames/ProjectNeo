@@ -32,7 +32,8 @@ namespace ProjectNeo.Editor
             if (!AssetDatabase.IsValidFolder(Folder)) AssetDatabase.CreateFolder("Assets/_Project/Data/GameFlow", "Heroes");
             // 프로토타입 임의 값(2026-11-13). 같은 등급 잡졸보다 체력·공격·방어가 높고, 등급이 오를수록 강하다.
             HeroDefinition swordsman = Hero("hero_swordsman", "용병 검사", 1, 60, MeleeBody, 180f, 30f, 6f, 1.5f);
-            HeroDefinition archer = Hero("hero_archer", "용병 궁수", 1, 60, RangedBody, 130f, 26f, 3f, 12f);
+            HeroDefinition archer = Hero("hero_archer", "용병 궁수", 1, 60, RangedBody, 130f, 26f, 3f,
+                ArcherRangeMigration.HeroArcherRange, ArcherRangeMigration.DefaultSpread);
             HeroDefinition knight = Hero("hero_knight", "기사", 2, 120, MeleeBody, 260f, 38f, 9f, 1.6f);
             HeroDefinition paladin = Hero("hero_paladin", "성기사", 3, 200, MeleeBody, 360f, 48f, 12f, 1.6f);
 
@@ -65,7 +66,7 @@ namespace ProjectNeo.Editor
 
         // 이미 있으면 그대로 둔다(인스펙터에서 바꾼 값 보존). 없으면 만들고 이름·스탯·몸체를 넣는다.
         static HeroDefinition Hero(string id, string name, int tier, int gold, string bodyPath, float health, float attack,
-            float defense, float range)
+            float defense, float range, float spread = 0f)
         {
             string path = $"{Folder}/{id}.asset";
             var existing = AssetDatabase.LoadAssetAtPath<HeroDefinition>(path);
@@ -82,6 +83,7 @@ namespace ProjectNeo.Editor
                 new StatValue(StatType.MaxHealth, health), new StatValue(StatType.Attack, attack),
                 new StatValue(StatType.Defense, defense), new StatValue(StatType.AttackRange, range),
                 new StatValue(StatType.AttackSpeed, 1f), new StatValue(StatType.MoveSpeed, 3.6f),
+                new StatValue(StatType.AimSpread, spread),
             };
             foreach (StatValue value in values)
             {

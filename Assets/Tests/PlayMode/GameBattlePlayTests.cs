@@ -136,7 +136,7 @@ namespace ProjectNeo.Tests
             int enemyCount = battle.Enemies.Count;
             var shot = new GameObject("PendingBattleShot").AddComponent<CombatProjectile>();
             shot.transform.position = battle.Enemies[0].Actor.AimPoint;
-            shot.Launch(battle.Enemies[0].Actor, 1f, Vector3.up, 100f);
+            shot.Launch(battle.Enemies[0].Actor, 1f, Vector3.up * 18f);
             foreach (var enemy in battle.Enemies) Kill(enemy.Actor);
             yield return null; yield return null;
             Assert.AreEqual(GamePhase.Reward, GameSession.Flow.Phase);
