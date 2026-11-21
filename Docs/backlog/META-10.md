@@ -1,9 +1,9 @@
 ---
 id: META-10
 title: Save Migration for Renamed or Removed Content
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: SeongminHwang
+branch: feature/meta-10
 area: META
 depends_on: []
 created: 2026-11-21
