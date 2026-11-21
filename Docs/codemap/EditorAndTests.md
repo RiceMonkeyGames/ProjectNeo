@@ -1,6 +1,6 @@
 # Editor Setup & Test Scripts
 
-Last Updated: 2026-11-21 11:00:50 (KST)
+Last Updated: 2026-11-21 12:02:15 (KST)
 
 > Purpose: Map of Editor setup menus, build scripts, and EditMode/PlayMode test suites. | Parent: [codemap/README](README.md) | Related: [UnityCLI](../workflow/UnityCLI.md), [Status](../plan/Status.md)
 
@@ -8,7 +8,7 @@ Last Updated: 2026-11-21 11:00:50 (KST)
 
 - `TitleMenuSetup.cs` (`UI-05`): Menu `ProjectNeo/Setup/Split Title Main Menu And Slot Window (UI-05)`. Splits `Title.unity` into the main menu (`Panel`: logo, `Button_Start`, `Button_Quit`) and `SlotPanel` (slots, status, continue, new game, delete, `Button_Back`), turns the Ascension window into the expedition screen (header, `Button_Unlocks`, depart, back) and draws `UnlockOverlay` above it. Keeps object names and references. Re-runnable.
 - `KoreanFontSetup.cs` (`UI-04`): Menu `ProjectNeo/Setup/Korean Font`. Creates `Art/Fonts/NotoSansKR SDF.asset` from `NotoSansKR-Regular.otf`, pre-fills the glyphs in `KoreanCharset.txt` and registers it in the global TMP fallback list. Re-runnable.
-- `KoreanUiMigration.cs` / `KoreanUiMigration.Texts.cs` (`UI-04`): Menu `ProjectNeo/Setup/Migrate UI To Korean`. Rewrites English scene/prefab TMP captions and definition display strings to Korean through Editor APIs from the `Texts` table; `Audit()` lists unmapped English text, `Dump(path)` writes all of it. Use after merging work that adds English captions. `EnglishUiMigration.cs` (UI-02) is obsolete.
+- `KoreanUiMigration.cs` / `KoreanUiMigration.Texts.cs` (`UI-04`): Menu `ProjectNeo/Setup/Migrate UI To Korean`. Rewrites English scene/prefab TMP captions and definition display strings to Korean through Editor APIs from the `Texts` table; `Audit()` lists unmapped English text (Korean strings with key names or units also show up and are fine), `Dump(path)` writes all of it, `ReplaceInDisplayText(from, to)` fixes a glossary term (UI-09). Use after merging work that adds English captions. `EnglishUiMigration.cs` (UI-02) is obsolete.
 - `EnemyIntelHudSetup.cs` (`C-5`): Menu `ProjectNeo/Setup/Add Enemy Intel HUD (C-5)`. Adds/updates the left `EnemyIntel` panel (just below `SquadCommandHUD/SquadsBacking`, `(16, -272)` at 1280×720 since PREP-09) (title + rows, height fits content) and `EnemyIntelHud` on `GameFlowHUD` in `Game.unity`. Re-runnable.
 - `PrepTimeSetup.cs` (`PREP-06`): Menu `ProjectNeo/Setup/Configure Preparation Time (PREP-06)`. Creates `Data/GameFlow/PrepTime.asset` if missing, links it to `RunStart.asset` when empty, and adds/updates the top-center `PrepClock` line and `PrepClockHud` on `GameFlowHUD` in `Game.unity` (keeps the phase box at its original position). Re-runnable.
 - `EquipmentUpgradeSetup.cs`: `ProjectNeo/Setup/Configure Equipment Upgrades` creates the shared settings, binds RunStart and fills only empty item upgrade-material lists from crafting materials × target level; keeps existing data and does not edit the scene. Also called by the facility generator.

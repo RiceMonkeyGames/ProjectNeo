@@ -208,7 +208,7 @@ namespace ProjectNeo.Flow
         /// </summary>
         public SkillCastResult CastCaptains(int slot)
         {
-            if (squads == null || squads.Commander == null) return Fail(SkillCastResult.NoSkill, "선택한 분대가 없습니다.");
+            if (squads == null || squads.Commander == null) return Fail(SkillCastResult.NoSkill, "선택한 부대가 없습니다.");
             if (!prepared) PrepareBattle();
             bool anySelected = false, anyCast = false;
             SkillCastResult first = SkillCastResult.NoSkill;
@@ -223,7 +223,7 @@ namespace ProjectNeo.Flow
                 if (result == SkillCastResult.Cast) anyCast = true;
                 else if (first == SkillCastResult.NoSkill) first = result;
             }
-            if (!anySelected) return Fail(SkillCastResult.NoSkill, "먼저 분대를 선택하세요.");
+            if (!anySelected) return Fail(SkillCastResult.NoSkill, "먼저 부대를 선택하세요.");
             if (anyCast)
             {
                 LastResult = SkillCastResult.Cast;

@@ -51,7 +51,7 @@ namespace ProjectNeo.Editor
             var skills = new Dictionary<string, SkillDefinition>();
             Add(skills, Whirlwind, "회오리 베기", "주변 3m 안의 적을 모두 벤다(공격력 100% + 10).",
                 12f, SkillTargetMode.Self, 0f, 3f, SkillEffect.Damage(10f, 1f));
-            Add(skills, WarCry, "전투 함성", "자기 분대(분대가 없으면 주변 8m 아군)의 공격력을 8초 동안 25% 올린다.",
+            Add(skills, WarCry, "전투 함성", "자기 부대(부대가 없으면 주변 8m 아군)의 공격력을 8초 동안 25% 올린다.",
                 25f, SkillTargetMode.OwnSquad, 0f, 8f, SkillEffect.Buff(StatModifier.Percent(StatType.Attack, 0.25f), 8f));
             Add(skills, Hobble, "발 묶기", "12m 안의 적 하나를 6초 동안 이동 속도 50%, 공격 속도 25% 느리게 한다.",
                 15f, SkillTargetMode.TargetUnit, 12f, 0f,
@@ -59,7 +59,7 @@ namespace ProjectNeo.Editor
                 SkillEffect.Debuff(StatModifier.Percent(StatType.AttackSpeed, -0.25f), 6f));
             Add(skills, HealingLight, "치유의 빛", "15m 안의 조준 지점 4m 안 아군의 체력을 회복한다(40 + 공격력 50%).",
                 20f, SkillTargetMode.AimPoint, 15f, 4f, SkillEffect.Heal(40f, 0.5f));
-            Add(skills, Rally, "결집", "자기 분대(분대가 없으면 주변 8m 아군이 속한 분대)의 사기를 15 올린다.",
+            Add(skills, Rally, "결집", "자기 부대(부대가 없으면 주변 8m 아군이 속한 부대)의 사기를 15 올린다.",
                 30f, SkillTargetMode.OwnSquad, 0f, 8f, SkillEffect.MoraleGain(15f));
             Add(skills, ShieldBash, "방패 강타", "바로 앞의 적 하나를 강하게 쳐서 행동을 끊는다(5 + 공격력 50%, 경직 100).",
                 10f, SkillTargetMode.TargetUnit, 2.5f, 0f, SkillEffect.Damage(5f, 0.5f), SkillEffect.Stagger(100f));

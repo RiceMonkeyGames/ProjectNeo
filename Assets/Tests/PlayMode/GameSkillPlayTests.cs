@@ -168,7 +168,7 @@ namespace ProjectNeo.Tests
                 yield return Press(keyboard, Key.LeftAlt, Key.Z);
                 Assert.AreEqual(0, captainCasts);
                 Assert.AreEqual(0, playerCasts, "Alt를 누르면 플레이어 스킬은 쓰지 않는다.");
-                StringAssert.Contains("분대를 선택", skills.Message);
+                StringAssert.Contains("부대를 선택", skills.Message);
 
                 Assert.IsTrue(center.Commander.Select(0));
                 yield return Press(keyboard, Key.LeftAlt, Key.Z);

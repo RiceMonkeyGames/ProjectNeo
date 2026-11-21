@@ -198,7 +198,7 @@ namespace ProjectNeo.Flow
             RunHero hero = SelectedHero;
             if (!IsOpen || !SkillView || hero == null || hero.IsPlayer) return false;
             hero.SkillAuto = !hero.SkillAuto;
-            Message = hero.SkillAuto ? "자동 사용 켜짐: 영웅이 알아서 스킬을 씁니다." : "자동 사용 꺼짐: 분대를 고르고 Alt + 스킬 키로 시킵니다.";
+            Message = hero.SkillAuto ? "자동 사용 켜짐: 영웅이 알아서 스킬을 씁니다." : "자동 사용 꺼짐: 부대를 고르고 Alt + 스킬 키로 시킵니다.";
             Rebuild();
             return true;
         }
@@ -338,7 +338,7 @@ namespace ProjectNeo.Flow
                     + $" · 자동 사용 {(hero.SkillAuto ? "켜짐" : "꺼짐")}";
             if (body != null)
                 body.text = (string.IsNullOrEmpty(Message) ? string.Empty : Message + "\n")
-                    + "영웅 스킬은 정해져 있고 등급이 오르면 칸이 열립니다. 전투 중 분대를 고르고 Alt + 스킬 키로 직접 시킬 수 있습니다.";
+                    + "영웅 스킬은 정해져 있고 등급이 오르면 칸이 열립니다. 전투 중 부대를 고르고 Alt + 스킬 키로 직접 시킬 수 있습니다.";
             ClearRows();
             if (rowTemplate == null) return;
             AddHeadRows(state, hero);

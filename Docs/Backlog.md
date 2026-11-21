@@ -1,6 +1,6 @@
 # ProjectNeo Development Backlog
 
-Last Updated: 2026-11-21 11:55:08 (KST)
+Last Updated: 2026-11-21 12:42:56 (KST)
 Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP0i5M34nC7sStyZT3s60drXyg_ctz_Y/edit?tab=t.0#heading=h.c9sft4i3oi7)
 
 > Purpose: Active task selection, assignment, and status tracking (`Done` tasks live in [Backlog-Done.md](archive/Backlog-Done.md)). | Parent: [INDEX](INDEX.md) | Related: [Collaboration](workflow/Collaboration.md), [Status](plan/Status.md)
@@ -36,7 +36,6 @@ Source: [Google Docs (Legacy)](https://docs.google.com/document/d/1zyEvUQFRwFjPP
 | UI-06 | UI Overhaul 2: Title & Preparation HUD | Waiting for Prerequisite | Unassigned | Registered 2026-11-20. Needs UI-05. Rebuild Title (slots as cards, Ascension/unlock entry) and the first-person preparation HUD with the shared style: resource bar (gold, materials, prep time), squad cards with morale/health gauges instead of text lines, compact key hints (context prompt near the crosshair, full list on a toggle), enemy preview panel. 2026-11-21: the Title flow (main menu -> slot window -> expedition screen) was done in UI-05; the shared medieval style asset and components were not built (first restyle rejected), so this task now also owns the style/look for the Title and preparation HUD. |
 | UI-07 | UI Overhaul 3: Facility, Equipment, Squad & Perk Windows | Waiting for Prerequisite | Unassigned | Registered 2026-11-20. Needs UI-05. Common window layout for Shop, Tavern, Training ground, Smithy, Hero Hall, Construction, Equipment (`I`), Squad organization (`O`) and Perks (`K`): item cards with icon slots, cost and stat lines, tooltips with stat comparison, clear disabled/refusal states. Keep facility rules unchanged. |
 | UI-08 | UI Overhaul 4: Battle HUD | Waiting for Prerequisite | Unassigned | Registered 2026-11-20. Needs UI-05 and the Q-11 team decision (command keys and battle HUD layout; teammate area). Battle status, wave/enemy counts, squad command bar, cannon and ladder prompts, boss bar in the shared style. Coordinate with COMBAT-08 (formations) and COMBAT-06 (skills) UI. |
-| UI-09 | Korean Text for Features Merged After UI-04 | In Progress | 신용준 | Branch `feature/ui-09`. Registered 2026-11-21 from user request. Translate player-facing English UI text added after the UI-04 merge (PREP-09, COMBAT-06, Q-77, ART-04, META-04 and others) to Korean under the UI-04 rule (key names and HP/Lv/EXP stay English); update tests that assert that text. |
 
 ---
 
