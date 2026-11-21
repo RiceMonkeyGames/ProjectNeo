@@ -1,6 +1,6 @@
 # Team Division of Labor & Roadmap Governance
 
-Last Updated: 2026-11-19 20:21:53 (KST)
+Last Updated: 2026-11-21 23:00:04 (KST)
 
 > Purpose: Assignee ownership matrix, shared modification rights, and roadmap governance rules. | Parent: [INDEX](../INDEX.md) | Related: [Collaboration](../workflow/Collaboration.md), [Backlog](../Backlog.md)
 
@@ -12,6 +12,8 @@ Last Updated: 2026-11-19 20:21:53 (KST)
 | User | Game entry and loop architecture (`G-0`, `G-1`): Scene switches, Title → Prep → Combat → Reward/Results phases, run data lifecycle (`C-1a`, `C-1~2`). | Shared combat core (`CharacterActor`, `UnitCombatAI`), isolated enemy test scenes. |
 
 **Ownership after B-6~B-9 (Q-56, team decision 2026-11-19)**: No fixed domain owners from now on. Any member claims any `Waiting` backlog task; the backlog assignee owns that task's files while it is `In Progress`. The matrix above records the M1 split for reference and its locked-file columns no longer apply. Shared-file sequencing, one `Game.unity` editor at a time and the single-editor test rule below still apply. Design questions go to the user first.
+
+**UI ownership (team agreement 2026-11-21)**: All `UI-NN` work belongs to the user (신용준), including tasks another member had claimed (UI-06 reassigned). Battle-side UI that touches teammate systems (UI-08, battle keys in UI-11) still needs coordination on the underlying combat code and the Q-11 decision.
 
 - **Prototype vs real scenes (2026-11-11)**: `*Prototype` scenes stay as standalone demos; real game loop lives in `Title` and `Game`.
 - **G-0 / G-1 state**: Wired in `Title` and `Game`; both scenes appended to build list (first build scene is `Title` since QA-standalone-build, 2026-11-16; prototype scenes follow). Default castle (2026-11-12): 80×100 grid (240×300m), 3m cells, up to 3 tiers, 96×96m castle, 90×90m courtyard, 120m northern field, 5 placeholder facilities, player start at south courtyard `(40, 34)`. Temporary G-1 defaults: 3 × 4 squads, reused `ConstructionHud`, no stage reset except survivor healing.
