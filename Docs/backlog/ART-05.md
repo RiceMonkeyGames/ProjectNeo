@@ -1,9 +1,9 @@
 ---
 id: ART-05
 title: Arrow Model & Arrows Stuck on Hit
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: SeongminHwang
+branch: feature/art-05
 area: ART
 depends_on: []
 created: 2026-11-21
