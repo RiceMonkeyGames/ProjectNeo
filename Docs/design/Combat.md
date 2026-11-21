@@ -1,6 +1,6 @@
 # Game Design: Combat, Units & Win/Loss
 
-Last Updated: 2026-11-21 01:13:43 (KST)
+Last Updated: 2026-11-21 14:49:27 (KST)
 
 > Purpose: Rules for perspective, squad commands, damage, unit lifecycles, and battle outcomes. | Parent: [design/README](README.md) | Related: [WallsAndSiege](WallsAndSiege.md), [MoraleAndWave](MoraleAndWave.md)
 
@@ -22,6 +22,14 @@ Last Updated: 2026-11-21 01:13:43 (KST)
   - Unreachable destinations or broken paths halt at closest reachable point; clustered stalls near destination count as arrived.
   - Squads without orders at battle start begin in Hold state. Squad count/caps are data-driven. Final values (Q-57, team decision 2026-11-19): at most **10 squads** with **20 soldiers** each. The hero captain is not counted (a full squad is 20 soldiers + 1 captain; user, 2026-11-21). Squads 1-10 are selected with `F1`-`F10` (temporary until Q-11). Applied to the Game scene data by PREP-09.
   - Captain hero death drops squad morale by the largest fixed amount (2026-11-12).
+- **Formations & drag placement (COMBAT-08, approved 2026-11-21, user; Bannerlord 2-inspired)**:
+  - *Types*: Line and Column use the squad command asset's existing formation spacing (default 1.4m; the Game scene asset currently uses 1.1m), and Column is 2 files wide by default (`ColumnFiles`; drag width ignored). Close (0.9m), Loose (2.5m). Spacings are temporary data values. Each squad keeps its own formation and frontage width.
+  - *Choosing*: `G` cycles the selected squads' formation (temporary key until Q-11/UI-08).
+  - *Battle (first person)*: right mouse button pressed on the ground, dragged and released draws the front line: its length is the frontage width, so the number of ranks follows from the head count; the squad faces perpendicular to the line, away from the camera side. With several squads selected, the line is split equally, left to right in squad number order. A right click without drag (or `1` Move) moves with the current width and the camera facing. Each soldier's slot is shown as a marker while dragging.
+  - *Prep squad placement screen (`P`, top-down)*: left-click drag does the same; a plain left click moves as before; right click still clears the selection. The remembered prep placement also keeps formation and width.
+  - *Narrow ground*: ranks are clamped to what fits. The available depth behind the line is measured on the NavMesh (works anywhere); on wall tops the wall walkway width is also used as an upper limit. When ranks are cut, the extra soldiers extend the line sideways (along the wall); any slot that still has no ground snaps to the nearest walkable point. Example: 4 ranks requested on a 2-rank wall top → 2 ranks, twice as long.
+  - Bannerlord itself only projects invalid slots to the nearest walkable point (units bunch up); the rank clamp is ProjectNeo's own rule. Crenel firing slots are COMBAT-10.
+  - *Roster changes (approved 2026-11-21, user)*: the squad command center re-forms a squad by itself whenever its roster changes, so callers no longer need to place newcomers. Joins (recruit, organization move, captain change, return from rout) re-form at the end of that frame: a moving squad re-plans all slots; a holding squad keeps every soldier already on a slot (within 45% of the spacing) and gives newcomers the free slots. Losses (death, rout) refill only in holding squads, batched for `RefillDelay` (2s, data value): each emptied slot is taken by the nearest soldier whose slot disappeared, so one rear soldier steps up instead of the whole squad shuffling. Squads under Attack or without a destination are left alone.
 
 ## Player Health HUD
 

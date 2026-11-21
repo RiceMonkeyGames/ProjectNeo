@@ -24,9 +24,38 @@ namespace ProjectNeo.Squads
         [SerializeField] SquadRoster[] rosters = new SquadRoster[0];
         Army<UnitCombatAI> army;
         readonly HashSet<UnitCombatAI> detached = new HashSet<UnitCombatAI>();
+        readonly List<Vector3> slotBuffer = new List<Vector3>();
+        readonly List<UnitCombatAI> commandable = new List<UnitCombatAI>();
+        readonly List<UnitCombatAI> countBuffer = new List<UnitCombatAI>();
+        // 부대원이 바뀐 분대를 프레임 끝에 한 번만 다시 세운다(COMBAT-08). 부대 번호가 당겨져도 따라가도록 분대 객체로 기억한다.
+        readonly Dictionary<Squad<UnitCombatAI>, RosterWatch> rosterWatch = new Dictionary<Squad<UnitCombatAI>, RosterWatch>();
+        readonly List<Vector3> postBuffer = new List<Vector3>();
+        readonly List<bool> hasPostBuffer = new List<bool>();
+
+        sealed class RosterWatch
+        {
+            public int LastCount = -1;
+            public bool Dirty;
+            public float RefillAt = float.PositiveInfinity;
+        }
+
+        /// <summary>
+        /// 자리가 진형 간격의 이 비율보다 가까우면 그 부대원은 제자리로 본다. 도착한 유닛은 목적지 근처(0.35m 안팎)에 서므로
+        /// 그만큼은 넘고, 이웃 자리와 헷갈리지 않게 간격의 절반보다는 작다.
+        /// </summary>
+        public const float KeepPostFraction = 0.45f;
+        readonly List<int> lineSquads = new List<int>();
+        bool reformSuppressed;
         public SquadCommander Commander { get; private set; }
         public SquadCommandSettings Settings => settings;
         public IReadOnlyList<Squad<UnitCombatAI>> Squads => army.Squads;
+        /// <summary>전열을 끄는 동안의 자리 미리보기(COMBAT-08).</summary>
+        public FormationPreview Preview { get; } = new FormationPreview();
+        /// <summary>
+        /// 그 지점이 성벽 위면 주어진 방향으로 잰 통로 폭(m), 아니면 +∞(COMBAT-08). 줄 수 상한으로 쓴다.
+        /// 성벽을 아는 쪽(Flow)이 연결한다. 없으면 길찾기 메시로 잰 깊이만 쓴다.
+        /// </summary>
+        public Func<Vector3, Vector3, float> WalkwayWidth;
 
         public void Configure(SquadConfig squadConfig, SquadCommandSettings commandSettings, SquadRoster[] squadRosters)
         {
@@ -51,6 +80,7 @@ namespace ProjectNeo.Squads
             }
             Commander = new SquadCommander(army.Squads.Count);
             Commander.OrderChanged += Apply;
+            Commander.FormationChanged += Reform;
         }
 
         // 전투 시작 때 아무 지시도 받지 않은 부대는 중지 상태다.
@@ -78,7 +108,9 @@ namespace ProjectNeo.Squads
             foreach (Squad<UnitCombatAI> other in army.Squads)
                 foreach (UnitCombatAI existing in other.Members)
                     if (existing == member) return false;
-            return army.Squads[squad].TryAdd(member);
+            if (!army.Squads[squad].TryAdd(member)) return false;
+            MarkRosterChanged(army.Squads[squad]);
+            return true;
         }
 
         /// <summary>
@@ -92,7 +124,7 @@ namespace ProjectNeo.Squads
             foreach (Squad<UnitCombatAI> squad in army.Squads)
             {
                 if (squad.Leader == member) { squad.Leader = null; removed = true; }
-                if (squad.Remove(member)) removed = true;
+                if (squad.Remove(member)) { removed = true; MarkRosterChanged(squad); }
             }
             detached.Remove(member);
             return removed;
@@ -113,6 +145,7 @@ namespace ProjectNeo.Squads
             if (target.IsFull) return false;
             source.Remove(member);
             target.TryAdd(member);
+            MarkRosterChanged(source); MarkRosterChanged(target);
             return true;
         }
 
@@ -151,6 +184,7 @@ namespace ProjectNeo.Squads
         {
             if (squad < 0 || squad >= army.Squads.Count) return false;
             army.Squads[squad].Leader = leader;
+            MarkRosterChanged(army.Squads[squad]);
             return true;
         }
 
@@ -237,27 +271,176 @@ namespace ProjectNeo.Squads
         static bool IsAlive(UnitCombatAI member) => member != null && member.isActiveAndEnabled
             && member.Actor.Health != null && !member.Actor.Health.IsDead;
 
+        // 지시를 받는 살아 있는 부대원. 대장(D-3 고용 영웅)도 부대 지시를 따르며 대형 맨 앞 자리에 선다.
+        List<UnitCombatAI> CollectCommandable(int index, List<UnitCombatAI> output)
+        {
+            output.Clear();
+            UnitCombatAI leader = army.Squads[index].Leader;
+            if (IsAlive(leader) && !detached.Contains(leader)) output.Add(leader);
+            foreach (UnitCombatAI member in army.Squads[index].Members)
+                if (IsAlive(member) && !detached.Contains(member) && member != leader) output.Add(member);
+            return output;
+        }
+
+        /// <summary>지시를 받는 살아 있는 인원(대장 포함, 도망 중 제외).</summary>
+        public int CommandableCount(int squad) =>
+            squad < 0 || squad >= army.Squads.Count ? 0 : CollectCommandable(squad, countBuffer).Count;
+
+        // ── 진형(COMBAT-08) ─────────────────────────────────────
+
+        /// <summary>
+        /// 진형 <paramref name="kind"/>, 전열 폭 <paramref name="width"/>(음수면 기본)로 <paramref name="count"/>명이 설 자리.
+        /// 기준점 앞뒤로 걸을 수 있는 깊이와 성벽 통로 폭에 들어가는 줄 수로 자르고, 자른 만큼 줄을 옆으로 늘린다.
+        /// 걸을 수 없는 자리는 가까운 걸을 수 있는 곳으로, 그것도 없으면 기준점으로 붙인다.
+        /// </summary>
+        public void PlanSlots(FormationKind kind, float width, Vector3 anchor, float facing, bool frontAnchored, int count,
+            List<Vector3> output)
+        {
+            output.Clear();
+            if (count <= 0) return;
+            float spacing = settings.Spacing(kind);
+            int files = kind == FormationKind.Column ? settings.ColumnFiles
+                : width < 0f ? settings.FormationColumns
+                : FormationLayout.FilesForWidth(width, spacing, count);
+            Vector3 forward = Quaternion.Euler(0f, facing, 0f) * Vector3.forward;
+            float forwardRoom = Room(anchor, forward), backRoom = Room(anchor, -forward);
+            float depth = forwardRoom + backRoom;
+            if (WalkwayWidth != null)
+                depth = Mathf.Min(depth, Mathf.Max(0f, WalkwayWidth(anchor, forward) - 2f * AgentRadius()));
+            Vector2Int shape = FormationLayout.Shape(count, files, spacing, depth);
+            float offset = FormationLayout.CenterOffset(shape.y, spacing, frontAnchored, forwardRoom, backRoom);
+            output.AddRange(FormationLayout.Slots(anchor + forward * offset, facing, count, shape.x, spacing));
+            for (int i = 0; i < output.Count; i++)
+                output[i] = NavMesh.SamplePosition(output[i], out NavMeshHit hit, settings.NavigationSnapDistance, NavMesh.AllAreas)
+                    && Mathf.Abs(hit.position.y - anchor.y) <= settings.VerticalSnapTolerance ? hit.position : anchor;
+        }
+
+        /// <summary>부대 하나의 지금 진형·폭으로 설 자리.</summary>
+        public void PlanSlots(int squad, Vector3 anchor, float facing, bool frontAnchored, int count, List<Vector3> output) =>
+            PlanSlots(Commander.FormationOf(squad), Commander.WidthOf(squad), anchor, facing, frontAnchored, count, output);
+
+        // 기준점에서 그 방향으로 걸을 수 있는 거리. 재는 거리 안에서 막히지 않으면 +∞.
+        float Room(Vector3 anchor, Vector3 direction)
+        {
+            if (!NavMesh.SamplePosition(anchor, out NavMeshHit start, settings.NavigationSnapDistance, NavMesh.AllAreas))
+                return float.PositiveInfinity;
+            float probe = settings.DepthProbeDistance;
+            if (!NavMesh.Raycast(start.position, start.position + direction * probe, out NavMeshHit edge, NavMesh.AllAreas))
+                return float.PositiveInfinity;
+            return edge.distance;
+        }
+
+        static float AgentRadius() => NavMesh.GetSettingsCount() > 0 ? NavMesh.GetSettingsByIndex(0).agentRadius : 0.5f;
+
+        /// <summary>
+        /// 땅에 그은 선(<paramref name="start"/>→<paramref name="end"/>)에 선택한 부대를 세운다. 여러 부대면 선을 똑같이 나눠
+        /// 왼쪽부터 부대 번호 순으로 나란히 선다. 선 길이가 각 부대의 전열 폭이 되고, 선에 수직으로 보는 쪽을 바라본다.
+        /// <paramref name="check"/>가 거절 문구를 돌려주면 아무 부대도 움직이지 않는다. 지시받은 부대 수.
+        /// </summary>
+        public int IssueLine(Vector3 start, Vector3 end, Vector3 viewForward, SquadOrderKind kind,
+            Func<Vector3, string> check, out string rejected)
+        {
+            rejected = null;
+            float facing = FormationLayout.FacingFromLine(start, end, viewForward);
+            CollectSelected(lineSquads);
+            if (lineSquads.Count == 0) return 0;
+            var anchors = new Vector3[lineSquads.Count];
+            var widths = new float[lineSquads.Count];
+            for (int k = 0; k < lineSquads.Count; k++)
+            {
+                LineSegment(start, end, facing, k, out anchors[k], out widths[k]);
+                rejected = check?.Invoke(anchors[k]);
+                if (!string.IsNullOrEmpty(rejected)) return 0;
+            }
+            int issued = 0;
+            for (int k = 0; k < lineSquads.Count; k++)
+            {
+                // 폭을 먼저 바꿔야 새 지시의 자리가 새 폭으로 잡힌다. 지시가 거절되면 폭을 되돌린다.
+                float previous = Commander.WidthOf(lineSquads[k]);
+                SetWidthQuietly(lineSquads[k], widths[k]);
+                if (Commander.IssueTo(lineSquads[k], new SquadOrder(kind, anchors[k], facing, true))) issued++;
+                else SetWidthQuietly(lineSquads[k], previous);
+            }
+            return issued;
+        }
+
+        void SetWidthQuietly(int squad, float width)
+        {
+            reformSuppressed = true;
+            try { Commander.SetWidth(squad, width); }
+            finally { reformSuppressed = false; }
+        }
+
+        /// <summary>선을 긋는 동안 선택한 부대들이 설 자리를 <see cref="Preview"/>에 채운다.</summary>
+        public void PreviewLine(Vector3 start, Vector3 end, Vector3 viewForward)
+        {
+            Preview.Begin();
+            float facing = FormationLayout.FacingFromLine(start, end, viewForward);
+            CollectSelected(lineSquads);
+            for (int k = 0; k < lineSquads.Count; k++)
+            {
+                LineSegment(start, end, facing, k, out Vector3 anchor, out float width);
+                PlanSlots(Commander.FormationOf(lineSquads[k]), width, anchor, facing, true,
+                    CommandableCount(lineSquads[k]), slotBuffer);
+                Preview.Add(slotBuffer);
+            }
+        }
+
+        void CollectSelected(List<int> output)
+        {
+            output.Clear();
+            for (int i = 0; i < Commander.SquadCount; i++) if (Commander.IsSelected(i)) output.Add(i);
+        }
+
+        void LineSegment(Vector3 start, Vector3 end, float facing, int k, out Vector3 anchor, out float width)
+        {
+            FormationLayout.Segment(start, end, facing, lineSquads.Count, k, out Vector3 from, out Vector3 to);
+            anchor = (from + to) * 0.5f;
+            Vector3 along = to - from; along.y = 0f;
+            width = along.magnitude;
+            if (NavMesh.SamplePosition(anchor, out NavMeshHit hit, settings.NavigationSnapDistance, NavMesh.AllAreas)
+                && Mathf.Abs(hit.position.y - anchor.y) <= settings.VerticalSnapTolerance)
+                anchor = hit.position;
+        }
+
+        /// <summary>선택한 부대의 진형을 다음 것으로 바꾼다. 바꾼 부대 수.</summary>
+        public int CycleSelectedFormation()
+        {
+            int changed = 0;
+            for (int i = 0; i < Commander.SquadCount; i++)
+                if (Commander.IsSelected(i) && Commander.SetFormation(i, SquadCommander.Next(Commander.FormationOf(i)))) changed++;
+            return changed;
+        }
+
+        // 진형이나 폭이 바뀌면 그 자리에서 다시 선다. 목적지가 없던 부대는 지금 모인 곳에서 선다.
+        void Reform(int index)
+        {
+            if (reformSuppressed || index < 0 || index >= army.Squads.Count) return;
+            SquadOrder order = Commander.OrderOf(index);
+            if (order.HasDestination)
+            {
+                if (order.Kind == SquadOrderKind.Hold)
+                    Commander.IssueTo(index, new SquadOrder(SquadOrderKind.Move, order.Destination, order.Facing, order.FrontAnchored));
+                else Apply(index, order);
+                return;
+            }
+            if (order.Kind != SquadOrderKind.Hold || !TryGetGatherPoint(index, out Vector3 point)) return;
+            float facing = 0f;
+            foreach (UnitCombatAI member in CollectCommandable(index, commandable)) { facing = member.transform.eulerAngles.y; break; }
+            Commander.IssueTo(index, new SquadOrder(SquadOrderKind.Move, point, facing));
+        }
+
         void Apply(int index, SquadOrder order)
         {
-            var alive = new List<UnitCombatAI>();
-            // 대장(D-3 고용 영웅)도 부대 지시를 따른다. 대형 맨 앞 자리에 선다.
-            UnitCombatAI leader = army.Squads[index].Leader;
-            if (IsAlive(leader) && !detached.Contains(leader)) alive.Add(leader);
-            foreach (UnitCombatAI member in army.Squads[index].Members)
-                if (IsAlive(member) && !detached.Contains(member) && member != leader) alive.Add(member);
+            List<UnitCombatAI> alive = CollectCommandable(index, new List<UnitCombatAI>());
+            // 지시가 모두를 다시 세우므로 지금 인원을 기준으로 삼고, 쌓여 있던 다시 서기는 버린다.
+            RosterWatch watch = WatchOf(army.Squads[index]);
+            watch.LastCount = alive.Count; watch.Dirty = false; watch.RefillAt = float.PositiveInfinity;
             if (order.Kind == SquadOrderKind.Move || (order.Kind == SquadOrderKind.Attack && order.HasDestination))
             {
                 UnitDirective toward = order.Kind == SquadOrderKind.Move ? UnitDirective.Move : UnitDirective.Engage;
-                List<Vector3> slots = SquadFormation.Slots(order.Destination, order.Facing, alive.Count,
-                    settings.FormationColumns, settings.FormationSpacing);
-                for (int i = 0; i < alive.Count; i++)
-                {
-                    // 대형 자리가 걸을 수 없는 곳이면 목적지 자체로 보낸다.
-                    Vector3 slot = NavMesh.SamplePosition(slots[i], out NavMeshHit hit, settings.NavigationSnapDistance,
-                        NavMesh.AllAreas) && Mathf.Abs(hit.position.y - order.Destination.y) <= settings.VerticalSnapTolerance
-                        ? hit.position : order.Destination;
-                    alive[i].SetDirective(toward, slot);
-                }
+                PlanSlots(index, order.Destination, order.Facing, order.FrontAnchored, alive.Count, slotBuffer);
+                for (int i = 0; i < alive.Count; i++) alive[i].SetDirective(toward, slotBuffer[i]);
                 return;
             }
             UnitDirective directive = order.Kind == SquadOrderKind.Attack ? UnitDirective.Engage : UnitDirective.Hold;
@@ -281,9 +464,76 @@ namespace ProjectNeo.Squads
             }
         }
 
+        // ── 부대원 변화에 맞춰 다시 서기(COMBAT-08) ─────────────────
+
+        RosterWatch WatchOf(Squad<UnitCombatAI> squad)
+        {
+            if (!rosterWatch.TryGetValue(squad, out RosterWatch watch)) rosterWatch[squad] = watch = new RosterWatch();
+            return watch;
+        }
+
+        void MarkRosterChanged(Squad<UnitCombatAI> squad)
+        {
+            if (squad != null) WatchOf(squad).Dirty = true;
+        }
+
+        /// <summary>
+        /// 분대마다 지시받는 인원을 살핀다. 늘었거나(모집·편성·복귀) 편성이 바뀌면 이 프레임 끝에 바로 다시 서고,
+        /// 줄었으면(전사·도망) 자리를 지키는 분대만 잠시 모았다가 뒷줄에서 빈자리를 메운다.
+        /// </summary>
+        void LateUpdate()
+        {
+            float now = Time.time;
+            for (int i = 0; i < army.Squads.Count; i++)
+            {
+                Squad<UnitCombatAI> squad = army.Squads[i];
+                RosterWatch watch = WatchOf(squad);
+                int count = CollectCommandable(i, countBuffer).Count;
+                if (watch.LastCount < 0) watch.LastCount = count;
+                if (count > watch.LastCount) watch.Dirty = true;
+                else if (count < watch.LastCount && float.IsPositiveInfinity(watch.RefillAt))
+                    watch.RefillAt = now + settings.RefillDelay;
+                watch.LastCount = count;
+                if (!watch.Dirty && now < watch.RefillAt) continue;
+                watch.Dirty = false; watch.RefillAt = float.PositiveInfinity;
+                Reslot(i);
+            }
+        }
+
+        /// <summary>
+        /// 지금 지시 그대로 대형 자리를 다시 나눈다. 이동 중이면 모두 새 자리로 가고, 자리를 지키는 중이면 제자리인 부대원은 두고
+        /// 빈자리만 뒤에서 당겨 채운다(새 부대원은 남은 자리). 공격 중이거나 목적지 없는 분대는 건드리지 않는다.
+        /// </summary>
+        public void Reslot(int index)
+        {
+            if (index < 0 || index >= army.Squads.Count) return;
+            SquadOrder order = Commander.OrderOf(index);
+            if (!order.HasDestination || order.Kind == SquadOrderKind.Attack) return;
+            if (order.Kind == SquadOrderKind.Move) { Apply(index, order); return; }
+            List<UnitCombatAI> alive = CollectCommandable(index, commandable);
+            PlanSlots(index, order.Destination, order.Facing, order.FrontAnchored, alive.Count, slotBuffer);
+            postBuffer.Clear(); hasPostBuffer.Clear();
+            foreach (UnitCombatAI member in alive)
+            {
+                bool holding = member.Directive == UnitDirective.Hold;
+                postBuffer.Add(holding ? member.HoldPost : member.transform.position);
+                hasPostBuffer.Add(holding);
+            }
+            float keep = settings.Spacing(Commander.FormationOf(index)) * KeepPostFraction;
+            int[] assigned = FormationLayout.AssignSlots(postBuffer, hasPostBuffer, slotBuffer, keep);
+            for (int i = 0; i < alive.Count; i++)
+            {
+                if (assigned[i] < 0) continue;
+                Vector3 slot = slotBuffer[assigned[i]];
+                // 제자리인 부대원은 싸우던 대상을 잃지 않도록 다시 지시하지 않는다.
+                if (hasPostBuffer[i] && (postBuffer[i] - slot).sqrMagnitude <= keep * keep) continue;
+                alive[i].SetDirective(UnitDirective.Hold, slot);
+            }
+        }
+
         void OnDestroy()
         {
-            if (Commander != null) Commander.OrderChanged -= Apply;
+            if (Commander != null) { Commander.OrderChanged -= Apply; Commander.FormationChanged -= Reform; }
         }
     }
 }

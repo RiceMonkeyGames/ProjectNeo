@@ -1,10 +1,12 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-21 11:30:56 (KST)
+Last Updated: 2026-11-21 14:49:27 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
 ## Resolved `Q-*` Table
+
+Squad formations and drag placement (COMBAT-08, 2026-11-21, user): (1) controls: battle right-click drag sets the front line (width → ranks, facing perpendicular away from the camera), right click without drag moves at the current width; (2) narrow ground: NavMesh depth probe everywhere plus the wall walkway width as an upper limit on wall tops; cut ranks extend the line sideways; (3) per-soldier slot markers while dragging; (4) formations Line / Close / Loose / Column, cycled with `G` (temporary until Q-11); (5) prep placement screen (`P`) also gets left-click drag, and the remembered placement keeps formation and width. (6) roster changes re-form the squad automatically (joins at once; deaths/rout refill holding squads after 2s, one rear soldier steps up). Rules: [Combat](../design/Combat.md).
 
 COMBAT-06 skill inputs and scope (2026-11-20, user): (1) player skill keys `Z` / `X` / `C` (data bindings, final layout with Q-11); (2) manual hero cast while Auto is off: selected squad (`F1`-`F4`) + `Alt` + slot key, the captain casts toward the screen aim point; (3) player skill equip (3 of the learned) and per-hero Auto toggle in the preparation equipment window (`I`); (4) about 6 shared sample skills, one per effect family, reused by skill perks and hero fixed slots; final roster with Q-61. [Rule](../design/Combat.md#active-skills)
 
