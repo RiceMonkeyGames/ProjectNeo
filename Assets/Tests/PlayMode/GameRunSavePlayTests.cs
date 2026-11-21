@@ -89,7 +89,7 @@ namespace ProjectNeo.Tests
             yield return null;
         }
 
-        IEnumerator NewGame(int slot) => EnterGame(title => { title.SelectSlot(slot); title.StartGame(); });
+        IEnumerator NewGame(int slot) => EnterGame(title => { title.SelectSlot(slot); title.StartGame(); if (title.IsExpeditionOpen) title.Ascension.StartSelected(); });
         IEnumerator Continue(int slot) => EnterGame(title => { title.SelectSlot(slot); title.ContinueGame(); });
 
         static void Kill(CharacterActor actor) => actor.ReceiveDamage(actor.Health.Current + 1f);
@@ -118,7 +118,7 @@ namespace ProjectNeo.Tests
         {
             yield return OpenTitle();
             var title = Object.FindAnyObjectByType<TitleScreen>();
-            Assert.IsNotNull(title.transform.Find("Panel/Button_Continue"), "Title 씬에 이어 하기 버튼이 있어야 한다.");
+            Assert.IsNotNull(title.transform.Find("SlotPanel/Button_Continue"), "Title 씬에 이어 하기 버튼이 있어야 한다.");
             title.SelectSlot(0);
             Assert.IsFalse(title.CanContinue);
 
@@ -356,7 +356,7 @@ namespace ProjectNeo.Tests
             Assert.IsTrue(title.CanContinue);
             title.StartGame();
             Assert.IsTrue(title.IsNewGameArmed);
-            yield return EnterGame(screen => screen.StartGame());
+            yield return EnterGame(screen => { screen.StartGame(); if (screen.IsExpeditionOpen) screen.Ascension.StartSelected(); });
             Assert.IsFalse(battle.RunLink.WasRestored, "두 번째로 누르면 저장된 런을 버리고 새로 시작한다.");
             Assert.AreEqual(1, GameSession.Flow.Run.StageNumber);
         }

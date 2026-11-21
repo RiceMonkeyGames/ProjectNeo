@@ -21,6 +21,10 @@ namespace ProjectNeo.UI
         [SerializeField] TMP_Text continueLabel;
         [SerializeField] UnlockScreen unlockScreen;
         [SerializeField] AscensionPicker ascensionPicker;
+        [Header("Screens (UI-05)")]
+        [SerializeField, Tooltip("Main menu shown first: logo, start, quit.")] GameObject mainMenu;
+        [SerializeField, Tooltip("Slot window opened from the main menu: slots, continue, new game, unlocks, delete, back.")]
+        GameObject slotMenu;
 
         int selectedSlot;
         int deleteArmedSlot = NoSlot;
@@ -65,6 +69,44 @@ namespace ProjectNeo.UI
 
         public void Configure(SceneCatalog sceneCatalog) => catalog = sceneCatalog;
 
+        public void ConfigureMenus(GameObject main, GameObject slots)
+        {
+            mainMenu = main;
+            slotMenu = slots;
+        }
+
+        /// <summary>슬롯 창이 열려 있는지. 메뉴가 연결되지 않은 옛 씬에서는 항상 true(한 화면에 다 있음).</summary>
+        public bool IsSlotMenuOpen => slotMenu == null || slotMenu.activeSelf;
+
+        /// <summary>메인 화면에서 "게임 시작"을 누르면 슬롯 창으로 넘어간다(UI-05).</summary>
+        public void OpenSlotMenu()
+        {
+            if (SceneSwitcher.IsLoading) return;
+            ShowSlotMenu(true);
+            deleteArmedSlot = NoSlot;
+            newGameArmedSlot = NoSlot;
+            notice = string.Empty;
+            Refresh();
+        }
+
+        /// <summary>슬롯 창에서 "뒤로"를 누르면 메인 화면으로 돌아간다. 열린 승천·해금 창도 닫는다.</summary>
+        public void BackToMain()
+        {
+            if (ascensionPicker != null) ascensionPicker.Close();
+            if (unlockScreen != null && unlockScreen.IsOpen) unlockScreen.Close();
+            deleteArmedSlot = NoSlot;
+            newGameArmedSlot = NoSlot;
+            notice = string.Empty;
+            ShowSlotMenu(false);
+            Refresh();
+        }
+
+        void ShowSlotMenu(bool open)
+        {
+            if (mainMenu != null) mainMenu.SetActive(!open);
+            if (slotMenu != null) slotMenu.SetActive(open);
+        }
+
         public void ConfigureSlots(TMP_Text[] slots, TMP_Text delete, TMP_Text status)
         {
             slotLabels = slots;
@@ -80,7 +122,12 @@ namespace ProjectNeo.UI
             defaultDeleteCaption = deleteLabel != null ? deleteLabel.text : string.Empty;
             selectedSlot = GameSession.SaveStore.GetLastSlot();
             if (unlockScreen != null) unlockScreen.Closed += Refresh;
+            // 런이 끝나고 돌아왔으면 같은 슬롯의 출정 준비 화면을 바로 연다. 처음 켰을 때는 메인 화면부터.
+            bool returnedFromRun = GameSession.Flow.TakeReturnedFromRunEnd();
+            if (returnedFromRun && MetaSaveStore.IsValidSlot(GameSession.ActiveSlot)) selectedSlot = GameSession.ActiveSlot;
+            ShowSlotMenu(returnedFromRun);
             Refresh();
+            if (returnedFromRun) OpenExpedition();
         }
 
         void OnDestroy()
@@ -155,19 +202,40 @@ namespace ProjectNeo.UI
                 return;
             }
             if (GameSession.Flow.Phase != GamePhase.Title) return;
-            // 열린 승천 단계가 있으면 단계를 고르는 창을 먼저 연다(FLOW-03). 기본 게임만 있으면 바로 시작한다.
-            int highest = ascensionPicker != null && ascensionPicker.Table != null
-                ? AscensionProgress.HighestUnlocked(GameSession.SaveStore.Inspect(selectedSlot).Progress, ascensionPicker.Table.MaxLevel)
-                : 0;
-            if (highest > 0 && ascensionPicker.Open(highest, BeginRun))
-            {
-                newGameArmedSlot = NoSlot;
-                deleteArmedSlot = NoSlot;
-                notice = string.Empty;
-                Refresh();
-                return;
-            }
+            if (OpenExpedition()) return;
             BeginRun(0);
+        }
+
+        /// <summary>
+        /// 고른 슬롯의 출정 준비 화면을 연다(UI-05): 런 사이 해금, 승천 단계 선택, 출정. 열린 단계가 없으면 기본 게임만 고를 수 있다.
+        /// 창이 없으면 false(옛 씬에서는 바로 시작).
+        /// </summary>
+        public bool OpenExpedition()
+        {
+            if (SceneSwitcher.IsLoading || ascensionPicker == null || ascensionPicker.Table == null) return false;
+            int highest = AscensionProgress.HighestUnlocked(GameSession.SaveStore.Inspect(selectedSlot).Progress,
+                ascensionPicker.Table.MaxLevel);
+            if (!ascensionPicker.Open(highest, BeginRun)) return false;
+            // 팝업이 아니라 다음 단계처럼 보이게 메인·슬롯 화면을 숨긴다.
+            if (mainMenu != null) mainMenu.SetActive(false);
+            if (slotMenu != null) slotMenu.SetActive(false);
+            newGameArmedSlot = NoSlot;
+            deleteArmedSlot = NoSlot;
+            notice = string.Empty;
+            Refresh();
+            return true;
+        }
+
+        public bool IsExpeditionOpen => ascensionPicker != null && ascensionPicker.IsOpen;
+
+        /// <summary>출정 준비 화면의 "뒤로": 화면을 닫고 슬롯 창으로 돌아간다. 열린 해금 창도 닫는다.</summary>
+        public void CloseExpedition()
+        {
+            if (unlockScreen != null && unlockScreen.IsOpen) unlockScreen.Close();
+            if (ascensionPicker != null) ascensionPicker.Close();
+            notice = string.Empty;
+            ShowSlotMenu(true);
+            Refresh();
         }
 
         /// <summary>고른 슬롯에서 이 승천 단계로 새 런을 시작해 게임 씬으로 간다. 슬롯의 저장된 런은 버린다.</summary>

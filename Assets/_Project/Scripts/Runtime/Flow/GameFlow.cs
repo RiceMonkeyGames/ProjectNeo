@@ -23,6 +23,12 @@ namespace ProjectNeo.Flow
         /// <summary>타이틀에서 새 런을 시작해 1스테이지 준비로 간다. <paramref name="state"/>는 이 런이 소유할 데이터다.</summary>
         public bool StartRun(RunState state = null, int ascensionLevel = 0)
         {
+            ReturnedFromRunEnd = false;
+            return StartRunCore(state, ascensionLevel);
+        }
+
+        bool StartRunCore(RunState state, int ascensionLevel)
+        {
             if (Phase != GamePhase.Title) return false;
             Run = new RunProgress(state, 1, ascensionLevel);
             LastOutcome = null;
@@ -123,10 +129,25 @@ namespace ProjectNeo.Flow
             return true;
         }
 
+        /// <summary>
+        /// 마지막으로 타이틀에 돌아온 것이 런 결과(패배)나 엔딩 뒤였는지(UI-05). 타이틀은 이때 메인 화면 대신
+        /// 같은 슬롯의 출정 준비 화면을 바로 연다. <see cref="TakeReturnedFromRunEnd"/>로 한 번만 읽는다.
+        /// </summary>
+        public bool ReturnedFromRunEnd { get; private set; }
+
+        /// <summary>런 종료 뒤 복귀 표시를 읽고 지운다.</summary>
+        public bool TakeReturnedFromRunEnd()
+        {
+            bool value = ReturnedFromRunEnd;
+            ReturnedFromRunEnd = false;
+            return value;
+        }
+
         /// <summary>런을 끝내고 타이틀로 돌아간다. 런 진행 정보는 버린다.</summary>
         public bool ReturnToTitle()
         {
             if (Phase == GamePhase.Title) return false;
+            ReturnedFromRunEnd = Phase == GamePhase.RunResult || Phase == GamePhase.Ending;
             Run = null;
             LastOutcome = null;
             Enter(GamePhase.Title);

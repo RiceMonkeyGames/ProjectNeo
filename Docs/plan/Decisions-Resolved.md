@@ -1,6 +1,6 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-21 02:20:57 (KST)
+Last Updated: 2026-11-21 11:30:56 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
@@ -19,6 +19,8 @@ Morale gain hooks (COMBAT-07, 2026-11-17, user): (1) a morale gain never trigger
 Player HP HUD (UI-03, user decision, 2026-11-17): bottom-right health bar plus current/maximum HP numbers, visible during preparation and battle gameplay. [Rule](../design/Combat.md).
 
 Run save and continue (FLOW-02, 2026-11-16): The user delegated the open Q-13 choices to the agent's recommendation and conventional practice, asking for a design that is easy to change. Chosen: one run per save slot; automatic saves only (preparation start, battle start, reward granted, quit during preparation), each switchable in `RunSavePolicy`; battles are never saved, so a mid-battle quit returns to that battle's preparation; quitting on the reward screen continues at the next stage and cannot repeat the reward; defeat deletes the run save; Title `Continue` only when a run save exists; `New Game` over a saved run needs a second click; an unrestorable run save is set aside and a new run starts. New UI text is English only (UI-02 decision). [Rule](../design/PrepEconomyMeta.md), [history](../history/FLOW/FLOW-02.md).
+
+Title flow (2026-11-21, user, UI-05): the Title opens on a main menu (logo, start, quit); start opens the slot window (three slots, continue, new game, delete, back). New game opens an expedition screen between runs (Ascension level, between-run unlocks, depart, back) instead of starting at once; it is a step of its own that replaces the slot window, not a popup, and its back returns to the slot window; and a finished run (defeat or ending) returns straight to that slot's expedition screen. Unlocks are no longer on the main menu or the slot window. Look work is deferred until the flow is accepted. [history](../history/UI/UI-05.md).
 
 UI overhaul direction (2026-11-20, user): the current UI is to be overhauled. Problems named: inconsistent look (plain grey boxes, no frames or icons), information shown as text lines instead of gauges/cards, always-on long key-hint lines, and hard-to-use facility/equipment/organization/perk windows. Chosen: medieval fantasy style (dark wood/iron frames, parchment panels, gold accents) to suit the siege theme and later Synty art; stay on uGUI with one shared style asset and shared prefabs (no UI Toolkit rewrite); staged work UI-05 (style and components) -> UI-06 (Title and preparation HUD) -> UI-07 (facility and other windows) -> UI-08 (battle HUD, after the Q-11 command-key/HUD decision with the teammate). Text stays Korean (UI-04). Art base: UI assets from the team's asset submodule, chosen in UI-05 after surveying all packs (Synty INTERFACE Fantasy Warrior HUD is one candidate). Screen aspect: design for 16:9 (reference resolution 1920x1080).
 
