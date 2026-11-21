@@ -64,6 +64,8 @@ namespace ProjectNeo.UI
         {
             if (catalog == null || panel == null || !MetaSaveStore.IsValidSlot(slot)) return false;
             if (GameSession.ActiveSlot != slot) GameSession.SelectSlot(slot);
+            // 업데이트로 없어진 항목은 포인트를 돌려준 뒤 보여 준다(META-10).
+            if (GameFacilities.MigrateUnlocks(catalog) > 0) GameSession.SaveMeta();
             model = new UnlockScreenModel(GameSession.Meta, catalog);
             BuildRows();
             panel.SetActive(true);

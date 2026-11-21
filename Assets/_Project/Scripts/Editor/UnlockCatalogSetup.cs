@@ -64,6 +64,8 @@ namespace ProjectNeo.Editor
                 data.ApplyModifiedPropertiesWithoutUndo();
                 EditorUtility.SetDirty(runStart);
             }
+            // 목록을 덮어쓰면 이름 바꾸기 표 연결이 지워지므로 다시 잇는다(META-10).
+            ContentRenameSetup.Link();
             AssetDatabase.SaveAssets();
         }
 

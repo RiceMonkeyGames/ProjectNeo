@@ -377,6 +377,16 @@ namespace ProjectNeo.Flow
 
         bool runReadyHandled;
 
+        /// <summary>해금 항목 이름 바꾸기·환불(META-10). 고친 곳의 수. 무엇을 했는지는 개발자 로그에만 남긴다.</summary>
+        public static int MigrateUnlocks(UnlockCatalog catalog)
+        {
+            if (catalog == null || GameSession.Meta == null) return 0;
+            var log = new List<string>();
+            int changes = UnlockTracks.Migrate(GameSession.Meta, catalog, catalog.Renames, log);
+            if (log.Count > 0) Debug.Log("Meta save migrated (META-10):\n- " + string.Join("\n- ", log));
+            return changes;
+        }
+
         /// <summary>
         /// 런 데이터가 씬에 붙은 직후 한 번 부른다(META-07). 예전 해금 목록을 해금 트랙으로 옮기고,
         /// 새 런이면 열린 시작 보너스(골드·아이템·일반병)를 준다. 되살린 런에는 다시 주지 않는다.
@@ -389,7 +399,9 @@ namespace ProjectNeo.Flow
             RunState state = PreparedState();
             if (catalog == null || state == null) return;
 
-            if (UnlockTracks.ImportLegacyUnlocks(GameSession.Meta, catalog) > 0) GameSession.SaveMeta();
+            // 업데이트로 바뀌거나 없어진 해금 항목을 먼저 고친다(META-10).
+            bool migrated = MigrateUnlocks(catalog) > 0;
+            if (UnlockTracks.ImportLegacyUnlocks(GameSession.Meta, catalog) > 0 || migrated) GameSession.SaveMeta();
             if (restored) return;
 
             UnlockStartingBonus bonus = UnlockTracks.StartingBonus(GameSession.Meta, catalog);

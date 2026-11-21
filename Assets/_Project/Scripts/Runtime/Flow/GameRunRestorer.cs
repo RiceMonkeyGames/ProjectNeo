@@ -38,6 +38,7 @@ namespace ProjectNeo.Flow
         /// </summary>
         public RunUnitBinding<CharacterActor> Restore(RunSnapshot snapshot)
         {
+            Migrate(snapshot);
             LastError = Precheck(snapshot);
             if (LastError.Length > 0) return null;
 
@@ -97,6 +98,22 @@ namespace ProjectNeo.Flow
             foreach (CharacterActor actor in binding.ObjectsInRun())
                 if (actor != null && actor.Health != null && !actor.Health.IsDead) actor.Health.RestoreFull();
             return binding;
+        }
+
+        /// <summary>
+        /// 업데이트로 바뀌거나 없어진 콘텐츠를 고친다(META-10). 이름 바꾸기 표는 런 콘텐츠 목록에 붙은 것을 쓰고,
+        /// 없어진 플레이어 영웅은 씬 플레이어의 영웅으로 바꾼다. 무엇을 고쳤는지는 개발자 로그에만 남긴다.
+        /// 고친 기록은 다음 저장 때 그대로 파일에 쓰인다.
+        /// </summary>
+        void Migrate(RunSnapshot snapshot)
+        {
+            if (snapshot == null || content == null) return;
+            var renames = content is RunContentCatalog catalog ? catalog.Renames : null;
+            HeroDefinition defaultPlayer = player != null && player.Character != null ? player.Character.Definition
+                : startConfig != null ? startConfig.PlayerHero : null;
+            var log = new List<string>();
+            if (RunSaveMigration.Migrate(snapshot, content, renames, defaultPlayer, log) == 0) return;
+            Debug.Log("Run save migrated (META-10):\n- " + string.Join("\n- ", log));
         }
 
         // 씬을 바꾸기 전에 되살릴 수 있는지 모두 확인한다. 문제가 없으면 빈 문자열.

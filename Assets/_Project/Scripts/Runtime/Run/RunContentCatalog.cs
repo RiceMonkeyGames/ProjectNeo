@@ -26,6 +26,12 @@ namespace ProjectNeo.Run
         [SerializeField] List<SiegeWeaponDefinition> weapons = new List<SiegeWeaponDefinition>();
         [Tooltip("런에서 찍을 수 있는 퍽(META-02). 에디터 메뉴가 프로젝트의 퍽 에셋으로 채운다.")]
         [SerializeField] List<ProjectNeo.Meta.PerkDefinition> perks = new List<ProjectNeo.Meta.PerkDefinition>();
+        [Tooltip("업데이트에서 바뀐 콘텐츠 ID 표(META-10). 런 저장을 되살리기 전에 옛 ID를 새 ID로 바꾼다. 해금 목록과 같은 에셋을 쓴다.")]
+        [SerializeField] ProjectNeo.Core.ContentRenameTable renames;
+
+        /// <summary>콘텐츠 ID 이름 바꾸기 표(META-10). 없으면 이름을 바꾸지 않는다.</summary>
+        public ProjectNeo.Core.ContentRenameTable Renames => renames;
+        public void SetRenames(ProjectNeo.Core.ContentRenameTable table) => renames = table;
 
         public IReadOnlyList<ItemDefinition> Items => items;
         public IReadOnlyList<MaterialDefinition> Materials => materials;

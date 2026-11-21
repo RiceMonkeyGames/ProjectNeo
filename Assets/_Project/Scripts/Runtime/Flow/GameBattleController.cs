@@ -96,6 +96,8 @@ namespace ProjectNeo.Flow
             RunContentCatalog content = settings != null ? settings.RunContent : null;
             if (content == null) return link;
             link.Content = content;
+            var build = GetComponent<GameBuildEconomy>();
+            if (build != null) link.BuildCosts = build.Table;
             var facilities = GetComponent<GameFacilities>();
             link.Restorer = new GameRunRestorer(commander, player, world, GetComponent<GameUnitSpawner>(), content,
                 facilities != null ? facilities.StartConfig : null);

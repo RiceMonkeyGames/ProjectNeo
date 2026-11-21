@@ -8,8 +8,13 @@ namespace ProjectNeo.Meta
     public sealed class UnlockCatalog : ScriptableObject
     {
         [SerializeField] List<UnlockTrackDefinition> tracks = new List<UnlockTrackDefinition>();
+        [Tooltip("업데이트에서 바뀐 콘텐츠 ID 표(META-10). 연 해금 항목 id를 새 id로 바꾼다. 런 콘텐츠 목록과 같은 에셋을 쓴다.")]
+        [SerializeField] ProjectNeo.Core.ContentRenameTable renames;
 
         public IReadOnlyList<UnlockTrackDefinition> Tracks => tracks;
+        /// <summary>콘텐츠 ID 이름 바꾸기 표(META-10). 없으면 이름을 바꾸지 않는다.</summary>
+        public ProjectNeo.Core.ContentRenameTable Renames => renames;
+        public void SetRenames(ProjectNeo.Core.ContentRenameTable table) => renames = table;
 
         public static UnlockCatalog Create(params UnlockTrackDefinition[] tracks)
         {

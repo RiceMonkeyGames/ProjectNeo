@@ -74,6 +74,8 @@ namespace ProjectNeo.Run
         public string id;
         public int upgradeLevel;
         public long upgradeGoldSpent;
+        /// <summary>저장할 때의 구매가(META-10). 아이템이 없어지면 이 값과 강화 골드를 돌려준다.</summary>
+        public ValueRecord value;
     }
 
     [Serializable]
@@ -89,6 +91,8 @@ namespace ProjectNeo.Run
         /// <summary>스킬 자동 사용을 끈 영웅(COMBAT-06). 예전 저장에는 없어 false(자동 켜짐)로 읽힌다.</summary>
         public bool skillManual;
         public List<ItemRecord> equipment = new List<ItemRecord>();
+        /// <summary>저장할 때의 고용비(META-10). 영웅이 없어지면 돌려준다. 플레이어는 비어 있다.</summary>
+        public ValueRecord value = new ValueRecord();
     }
 
     [Serializable]
@@ -96,6 +100,8 @@ namespace ProjectNeo.Run
     {
         public int unitId;
         public string id;
+        /// <summary>저장할 때의 모집비(META-10). 병종이 없어지면 돌려준다.</summary>
+        public ValueRecord value;
     }
 
     [Serializable]
@@ -157,6 +163,8 @@ namespace ProjectNeo.Run
         public float workDone;
         public int workGold;
         public float workStartHealth;
+        /// <summary>저장할 때의 건설비(META-10). 조각이 없어지면 돌려준다. 처음부터 있던 조각은 0이다.</summary>
+        public ValueRecord value;
     }
 
     [Serializable]
@@ -176,5 +184,7 @@ namespace ProjectNeo.Run
         public float workDone;
         public int workGold;
         public float workStartHealth;
+        /// <summary>저장할 때의 건설비(META-10). 무기가 없어지면 돌려준다.</summary>
+        public ValueRecord value;
     }
 }

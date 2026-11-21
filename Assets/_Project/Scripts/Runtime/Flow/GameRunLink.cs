@@ -36,6 +36,8 @@ namespace ProjectNeo.Flow
         public GameRunRestorer Restorer { get; set; }
         /// <summary>런 저장에 쓰는 ID 창구(FLOW-02). 없으면 <see cref="CaptureSnapshot"/>이 null이다.</summary>
         public IRunContentLookup Content { get; set; }
+        /// <summary>성 조각·무기 건설비(META-10). 저장에 값을 적어 두어 업데이트로 없어지면 돌려준다. 없으면 0으로 적는다.</summary>
+        public BuildCostTable BuildCosts { get; set; }
         /// <summary>성을 기록할 때 조각·무기에 걸린 작업 주문과 미완성 무기를 알려 준다(SIEGE-08). 없으면 주문 없이 기록한다.</summary>
         public System.Func<BuildPlacement, CastleWorkState> PieceWork { get; set; }
         public System.Func<MountedWeapon, CastleWorkState> WeaponWork { get; set; }
@@ -64,7 +66,7 @@ namespace ProjectNeo.Flow
         {
             if (binding == null || Content == null || flow.Run == null || flow.Run.State != binding.State) return null;
             if (!binding.State.HasPendingBattle) binding.State.SetCastle(CaptureCastle());
-            return binding.State.Capture(flow.Run.StageNumber + stageOffset, Content);
+            return binding.State.Capture(flow.Run.StageNumber + stageOffset, Content, BuildCosts);
         }
         public int IdOf(CharacterActor actor) => binding?.IdOf(actor) ?? 0;
 

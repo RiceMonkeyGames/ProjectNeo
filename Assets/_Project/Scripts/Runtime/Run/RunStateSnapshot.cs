@@ -39,8 +39,10 @@ namespace ProjectNeo.Run
         /// <summary>
         /// 지금 런을 저장 기록으로 옮긴다. 런을 바꾸지 않는다. <paramref name="stageNumber"/>는 이어 할 때 들어갈 스테이지다.
         /// 잡졸도 대장도 없는 부대는 다음 준비 때 어차피 없어지므로(Q-50) 담지 않는다.
+        /// 아이템·영웅·병사·성 조각·무기에는 지금 값을 함께 적는다(META-10). 업데이트에서 없어지면 그 값을 돌려준다.
+        /// <paramref name="buildCosts"/>가 없으면 성 조각·무기 값은 0이다.
         /// </summary>
-        public RunSnapshot Capture(int stageNumber, IRunContentLookup content = null)
+        public RunSnapshot Capture(int stageNumber, IRunContentLookup content = null, BuildCostTable buildCosts = null)
         {
             var snapshot = new RunSnapshot
             {
@@ -60,8 +62,7 @@ namespace ProjectNeo.Run
                 if (squad.Members.Count == 0 && squad.Leader == null) continue;
                 var record = new SquadRecord { leaderUnitId = squad.Leader != null ? squad.Leader.Id : 0 };
                 foreach (RunUnit member in squad.Members)
-                    if (member is RunSoldier soldier)
-                        record.soldiers.Add(new SoldierRecord { unitId = soldier.Id, id = soldier.Definition.Id });
+                    if (member is RunSoldier soldier) record.soldiers.Add(Record(soldier));
                 if (squad.Morale != null)
                 {
                     record.hasMorale = true; record.moraleMax = squad.Morale.Max; record.morale = squad.Morale.Value;
@@ -69,8 +70,7 @@ namespace ProjectNeo.Run
                 snapshot.squads.Add(record);
             }
             foreach (RunSoldier soldier in soldiers)
-                if (SquadOf(soldier) == null)
-                    snapshot.looseSoldiers.Add(new SoldierRecord { unitId = soldier.Id, id = soldier.Definition.Id });
+                if (SquadOf(soldier) == null) snapshot.looseSoldiers.Add(Record(soldier));
 
             foreach (FacilityState facility in facilities)
                 snapshot.facilities.Add(new FacilityRecord { type = (int)facility.Definition.Type, level = facility.Level });
@@ -104,6 +104,8 @@ namespace ProjectNeo.Run
                     isFixed = piece.IsFixed, health = piece.Health,
                     workKind = (int)piece.Work.Kind, workOrder = piece.Work.Order, workHours = piece.Work.Hours,
                     workDone = piece.Work.Done, workGold = piece.Work.GoldPaid, workStartHealth = piece.Work.StartHealth,
+                    // 처음부터 있던 조각은 산 것이 아니라 돌려줄 값이 없다.
+                    value = ValueRecord.OfGold(piece.IsFixed || buildCosts == null ? 0 : buildCosts.CostOf(piece.Definition)),
                 });
             foreach (CastleWeaponState weapon in Castle.Weapons)
                 snapshot.castle.weapons.Add(new CastleWeaponRecord
@@ -112,6 +114,7 @@ namespace ProjectNeo.Run
                     rotation = weapon.Rotation, health = weapon.Health, unfinished = weapon.Unfinished,
                     workKind = (int)weapon.Work.Kind, workOrder = weapon.Work.Order, workHours = weapon.Work.Hours,
                     workDone = weapon.Work.Done, workGold = weapon.Work.GoldPaid, workStartHealth = weapon.Work.StartHealth,
+                    value = ValueRecord.OfGold(buildCosts == null ? 0 : buildCosts.CostOf(weapon.Definition)),
                 });
             return snapshot;
         }
@@ -119,6 +122,12 @@ namespace ProjectNeo.Run
         static ItemRecord Record(ItemInstance item) => new ItemRecord
         {
             id = item.Definition.Id, upgradeLevel = item.UpgradeLevel, upgradeGoldSpent = item.UpgradeGoldSpent,
+            value = ValueRecord.Of(item.Definition.Price),
+        };
+
+        static SoldierRecord Record(RunSoldier soldier) => new SoldierRecord
+        {
+            unitId = soldier.Id, id = soldier.Definition.Id, value = ValueRecord.Of(soldier.Definition.RecruitCost),
         };
 
         static HeroRecord Record(RunHero hero)
@@ -127,6 +136,7 @@ namespace ProjectNeo.Run
             {
                 unitId = hero.Id, id = hero.Definition.Id, isPlayer = hero.IsPlayer, grade = hero.Grade, exp = hero.Exp,
                 skillManual = !hero.SkillAuto,
+                value = hero.IsPlayer ? new ValueRecord() : ValueRecord.Of(hero.Definition.HireCost),
             };
             foreach (ItemInstance item in hero.Character.Equipment) record.equipment.Add(Record(item));
             return record;

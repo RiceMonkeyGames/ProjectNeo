@@ -6,6 +6,7 @@ namespace ProjectNeo.Meta
     /// <summary>
     /// 런 사이 해금 트랙 규칙(Q-76, Darkest Dungeon 2 방식). 랜덤도 중복도 없다.
     /// 선행 항목이 모두 열렸고 해금 포인트가 충분하면 고른 항목을 연다. 되돌리기(환불)는 없다.
+    /// 예외로 업데이트에서 항목이 없어지면 쓴 포인트를 돌려준다(<see cref="Migrate"/>, META-10).
     /// </summary>
     public static class UnlockTracks
     {
@@ -40,6 +41,7 @@ namespace ProjectNeo.Meta
             UnlockEntry entry = catalog.FindEntry(entryId);
             progress.unlockPoints -= entry.Cost;
             progress.openedEntryIds.Add(entry.Id);
+            SetSpent(progress, entry.Id, entry.Cost);
             return UnlockOpenCheck.Ok;
         }
 
@@ -91,9 +93,86 @@ namespace ProjectNeo.Meta
                 if (!entry.Payload.IsContent || !legacy.Contains(entry.Payload.TargetId)) continue;
                 if (IsOpened(progress, entry)) continue;
                 progress.openedEntryIds.Add(entry.Id);
+                // 공짜로 옮긴 항목이라 없어져도 돌려줄 포인트가 없다(META-10).
+                SetSpent(progress, entry.Id, 0);
                 opened++;
             }
             return opened;
+        }
+
+        /// <summary>
+        /// 업데이트로 바뀌거나 없어진 해금 항목을 고친다(META-10, 사용자 결정 2026-11-21). 연 항목 id를 이름 바꾸기 표로
+        /// 새 id로 바꾸고, 그래도 목록에 없는 항목은 빼고 쓴 포인트를 돌려준다. 쓴 포인트 기록이 없는 예전 항목은
+        /// 지금 비용으로 채운다(예전 가챠 해금에서 옮긴 항목은 0). 무엇을 했는지는 log에만 적는다.
+        /// 고친 곳의 수를 돌려준다. 0이 아니면 메타를 저장해야 한다.
+        /// </summary>
+        public static int Migrate(MetaProgress progress, UnlockCatalog catalog, ProjectNeo.Core.ContentRenameTable renames,
+            List<string> log = null)
+        {
+            if (progress == null) throw new ArgumentNullException(nameof(progress));
+            if (catalog == null) throw new ArgumentNullException(nameof(catalog));
+            progress.openedEntryIds ??= new List<string>();
+            progress.unlockSpent ??= new List<UnlockSpentRecord>();
+            int changes = 0;
+
+            if (renames != null)
+            {
+                for (int i = 0; i < progress.openedEntryIds.Count; i++)
+                {
+                    string renamed = renames.Resolve(ProjectNeo.Core.ContentKind.UnlockEntry, progress.openedEntryIds[i]);
+                    if (renamed == progress.openedEntryIds[i]) continue;
+                    log?.Add($"renamed unlock entry '{progress.openedEntryIds[i]}' -> '{renamed}'");
+                    progress.openedEntryIds[i] = renamed;
+                    changes++;
+                }
+                for (int i = 0; i < progress.unlockSpent.Count; i++)
+                {
+                    UnlockSpentRecord spent = progress.unlockSpent[i];
+                    spent.entryId = renames.Resolve(ProjectNeo.Core.ContentKind.UnlockEntry, spent.entryId);
+                    progress.unlockSpent[i] = spent;
+                }
+            }
+
+            var seen = new HashSet<string>();
+            for (int i = progress.openedEntryIds.Count - 1; i >= 0; i--)
+            {
+                string id = progress.openedEntryIds[i];
+                if (catalog.FindEntry(id) != null && seen.Add(id)) continue;
+                progress.openedEntryIds.RemoveAt(i);
+                changes++;
+                if (catalog.FindEntry(id) != null) { log?.Add($"unlock entry '{id}' was listed twice"); continue; }
+                int points = SpentOn(progress, id);
+                progress.unlockPoints += points;
+                progress.unlockSpent.RemoveAll(record => record.entryId == id);
+                log?.Add($"removed unlock entry '{id}'; refunded {points} unlock points");
+            }
+            progress.unlockSpent.RemoveAll(record => !progress.openedEntryIds.Contains(record.entryId));
+
+            var legacy = new HashSet<string>(progress.unlockedIds ?? new List<string>());
+            foreach (string id in progress.openedEntryIds)
+            {
+                if (progress.unlockSpent.Exists(record => record.entryId == id)) continue;
+                UnlockEntry entry = catalog.FindEntry(id);
+                bool imported = entry.Payload.IsContent && legacy.Contains(entry.Payload.TargetId);
+                SetSpent(progress, id, imported ? 0 : entry.Cost);
+                changes++;
+            }
+            return changes;
+        }
+
+        static int SpentOn(MetaProgress progress, string entryId)
+        {
+            int points = 0;
+            foreach (UnlockSpentRecord record in progress.unlockSpent)
+                if (record.entryId == entryId) points = Math.Max(points, record.points);
+            return Math.Max(0, points);
+        }
+
+        static void SetSpent(MetaProgress progress, string entryId, int points)
+        {
+            progress.unlockSpent ??= new List<UnlockSpentRecord>();
+            progress.unlockSpent.RemoveAll(record => record.entryId == entryId);
+            progress.unlockSpent.Add(new UnlockSpentRecord(entryId, Math.Max(0, points)));
         }
     }
 }

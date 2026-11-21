@@ -302,12 +302,13 @@ namespace ProjectNeo.Tests
             yield return NewGame(0);
             RunSnapshot broken = battle.RunLink.CaptureSnapshot();
             broken.stageNumber = 4;
-            broken.stash.Add(new ItemRecord { id = "item_that_was_removed" });
+            // 없어진 콘텐츠는 META-10이 고치므로, 고칠 수 없는 기록(음수 골드)으로 확인한다.
+            broken.gold = -1;
             Assert.IsTrue(GameSession.SaveRun(broken));
             int defaultSquads = commander.Squads.Count;
 
             yield return QuitToTitle();
-            LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("item_that_was_removed"));
+            LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("invalid counters"));
             yield return Continue(0);
             Assert.IsFalse(battle.RunLink.WasRestored);
             Assert.IsNotNull(State);
@@ -316,6 +317,29 @@ namespace ProjectNeo.Tests
             AssertSceneMatchesRun();
             Assert.AreEqual(1, System.IO.Directory.GetFiles(saveDirectory, "run_slot1.json.corrupt-*").Length, "되살릴 수 없는 저장은 지우지 않고 따로 둔다.");
             Assert.AreEqual(1, GameSession.RunSaves.Inspect(0).Snapshot.stageNumber, "새 런이 다시 저장된다.");
+        }
+
+        [UnityTest]
+        public IEnumerator 업데이트로_없어진_아이템이_든_런은_값을_돌려받고_그대로_이어진다()
+        {
+            // META-10: 없어진 아이템은 빼고 저장해 둔 값을 돌려주며, 런은 버리지 않고 같은 스테이지로 이어진다.
+            yield return OpenTitle();
+            yield return NewGame(0);
+            RunSnapshot saved = battle.RunLink.CaptureSnapshot();
+            saved.stageNumber = 3;
+            int gold = saved.gold;
+            var value = new ValueRecord { gold = 55 };
+            saved.stash.Add(new ItemRecord { id = "item_that_was_removed", upgradeGoldSpent = 5, value = value });
+            Assert.IsTrue(GameSession.SaveRun(saved));
+
+            yield return QuitToTitle();
+            yield return Continue(0);
+            Assert.IsTrue(battle.RunLink.WasRestored, "the run continues instead of being set aside");
+            Assert.AreEqual(3, GameSession.Flow.Run.StageNumber);
+            Assert.AreEqual(gold + 60, State.Wallet.Gold, "the recorded value and the upgrade gold come back");
+            Assert.IsFalse(State.Inventory.Items.Any(item => item.Definition == null));
+            AssertSceneMatchesRun();
+            Assert.AreEqual(0, System.IO.Directory.GetFiles(saveDirectory, "run_slot1.json.corrupt-*").Length);
         }
 
         [UnityTest]

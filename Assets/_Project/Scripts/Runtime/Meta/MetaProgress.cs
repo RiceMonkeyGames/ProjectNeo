@@ -27,6 +27,11 @@ namespace ProjectNeo.Meta
         /// <summary>해금 트랙에서 연 항목 id(META-05). 처음부터 열린 항목은 넣지 않는다.</summary>
         public List<string> openedEntryIds = new List<string>();
         /// <summary>
+        /// 연 해금 항목마다 쓴 포인트(META-10). 항목이 업데이트로 없어지면 이만큼 돌려준다.
+        /// 예전 저장에는 없어서 <see cref="UnlockTracks.Migrate"/>가 지금 비용으로 채운다.
+        /// </summary>
+        public List<UnlockSpentRecord> unlockSpent = new List<UnlockSpentRecord>();
+        /// <summary>
         /// 새 런에서 고를 수 있는 가장 높은 승천 단계(FLOW-03, Q-78). 0이면 기본 게임만 있다. 예전 저장에는 없어 0으로 읽힌다.
         /// 규칙은 <see cref="AscensionProgress"/>.
         /// </summary>
