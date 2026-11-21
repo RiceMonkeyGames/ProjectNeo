@@ -89,34 +89,24 @@ try {
         }
     }
 
-    # Compact active lock digest from Docs/Backlog.md (avoid reading full prose)
-    $backlogPath = Join-Path $root 'Docs\Backlog.md'
-    $inProgress = @()
-    if (Test-Path $backlogPath) {
-        $rows = Get-Content $backlogPath -Encoding UTF8 | Where-Object { $_ -match '^\|' }
-        foreach ($r in $rows) {
-            $cols = $r -split '\|'
-            if ($cols.Count -lt 6) { continue }
-            $id = $cols[1].Trim()
-            $status = $cols[3].Trim()
-            $assignee = $cols[4].Trim()
-            $notes = $cols[5].Trim()
-            if ($status -eq 'In Progress') {
-                $branchHint = ''
-                if ($notes -match 'Branch\s+`([^`]+)`') {
-                    $branchHint = $Matches[1]
-                }
-                if ($branchHint) {
-                    $inProgress += "  - $id | $assignee | $branchHint"
-                } else {
-                    $inProgress += "  - $id | $assignee"
-                }
+    # Compact active backlog digest from Docs/backlog/*.md frontmatter (top 16 lines per file)
+    $allTasks = @(Get-ActiveBacklogTasks -Root $root)
+    $waitingCount = @($allTasks | Where-Object { $_.Status -ieq 'Waiting' }).Count
+    $inProgressTasks = @($allTasks | Where-Object { $_.Status -ieq 'In Progress' } | Sort-Object Id)
+
+    Write-Output "ACTIVE_BACKLOG_TOTAL=$($allTasks.Count)"
+    Write-Output "ACTIVE_WAITING=$waitingCount"
+    Write-Output "ACTIVE_IN_PROGRESS=$($inProgressTasks.Count)"
+    if ($inProgressTasks.Count -gt 0) {
+        $inProgressLines = @()
+        foreach ($t in $inProgressTasks) {
+            if ($t.Branch) {
+                $inProgressLines += "  - $($t.Id) | $($t.Assignee) | $($t.Branch)"
+            } else {
+                $inProgressLines += "  - $($t.Id) | $($t.Assignee)"
             }
         }
-    }
-    Write-Output "ACTIVE_IN_PROGRESS=$($inProgress.Count)"
-    if ($inProgress.Count -gt 0) {
-        Write-BoundedLines -Lines $inProgress -MaxLines $MaxTasks -TruncateHint "inspect Docs/Backlog.md"
+        Write-BoundedLines -Lines $inProgressLines -MaxLines $MaxTasks -TruncateHint "run Tools/Agent/backlog-list.ps1 -Status 'In Progress'"
     }
 } finally {
     Pop-Location

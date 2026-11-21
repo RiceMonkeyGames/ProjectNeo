@@ -1,8 +1,6 @@
-# Completed Backlog Archive (Done)
+# Completed Backlog Archive (Done — Frozen Legacy Archive)
 
-Last Updated: 2026-11-21 21:12:39 (KST)
-
-> Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
+> **FROZEN READ-ONLY ARCHIVE (2026-11-21, `TOOL-backlog-split`)**: Do **not** append new entries here. Completed tasks after `COMBAT-10` live exclusively in `Docs/history/<PREFIX>/<TASK-ID>.md` (query with `Tools/Agent/backlog-list.ps1 -IncludeHistory`). | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
 | Task ID | Description | Assignee | Outcome & History Link |
 |---|---|---|---|

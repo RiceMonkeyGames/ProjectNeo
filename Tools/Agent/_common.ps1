@@ -1,5 +1,11 @@
 # Shared helpers for ProjectNeo agent workflow wrappers (PowerShell 5.1 compatible)
 
+try {
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+    $OutputEncoding = [System.Text.Encoding]::UTF8
+} catch {
+}
+
 function Get-ProjectNeoRoot {
     param([string]$FallbackDir)
     $gitRoot = (& git rev-parse --show-toplevel 2>$null)
@@ -76,4 +82,126 @@ function Get-TaskPrefix {
         return $Matches[1].ToUpperInvariant()
     }
     return 'LEGACY'
+}
+
+function Read-TaskFrontmatterFromLines {
+    param(
+        [string[]]$Lines,
+        [string]$FilePath = '',
+        [string]$RelativePath = ''
+    )
+    $map = @{}
+    $hasStart = $false
+    $hasEnd = $false
+    if ($Lines -and $Lines.Count -gt 0 -and $Lines[0].Trim() -eq '---') {
+        $hasStart = $true
+        for ($i = 1; $i -lt $Lines.Count; $i++) {
+            $ln = $Lines[$i]
+            if ($ln.Trim() -eq '---') {
+                $hasEnd = $true
+                break
+            }
+            if ($ln -match '^([A-Za-z0-9_]+)\s*:\s*(.*)$') {
+                $k = $Matches[1].Trim().ToLowerInvariant()
+                $v = $Matches[2].Trim()
+                if (($v.Length -ge 2) -and (($v.StartsWith('"') -and $v.EndsWith('"')) -or ($v.StartsWith("'") -and $v.EndsWith("'")))) {
+                    $v = $v.Substring(1, $v.Length - 2)
+                }
+                $map[$k] = $v
+            }
+        }
+    }
+
+    $expectedId = ''
+    if ($FilePath) {
+        $expectedId = [System.IO.Path]::GetFileNameWithoutExtension($FilePath)
+    }
+
+    $id       = if ($map.ContainsKey('id') -and $map['id']) { $map['id'] } else { $expectedId }
+    $title    = if ($map.ContainsKey('title')) { $map['title'] } else { '' }
+    $status   = if ($map.ContainsKey('status')) { $map['status'] } else { '' }
+    $assignee = if ($map.ContainsKey('assignee')) { $map['assignee'] } else { '' }
+    $branch   = if ($map.ContainsKey('branch')) { $map['branch'] } else { '' }
+    $area     = if ($map.ContainsKey('area') -and $map['area']) { $map['area'].ToUpperInvariant() } elseif ($id) { Get-TaskPrefix -TaskId $id } else { '' }
+    $depends  = if ($map.ContainsKey('depends_on')) { $map['depends_on'] } else { '[]' }
+    $created  = if ($map.ContainsKey('created')) { $map['created'] } else { '' }
+
+    $valid = $hasStart -and $hasEnd -and ($map.ContainsKey('id') -and $map['id']) -and ($title -ne '') -and ($status -ne '') -and ($assignee -ne '')
+    if ($valid -and $expectedId -and ($map['id'] -cne $expectedId)) {
+        $valid = $false
+    }
+
+    return [PSCustomObject]@{
+        Id           = $id
+        Title        = $title
+        Status       = $status
+        Assignee     = $assignee
+        Branch       = $branch
+        Area         = $area
+        DependsOn    = $depends
+        Created      = $created
+        FilePath     = $FilePath
+        RelativePath = $RelativePath
+        Valid        = $valid
+    }
+}
+
+function Read-TaskFrontmatter {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+        [string]$Root = ''
+    )
+    $topLines = @(Get-Content -LiteralPath $Path -Encoding UTF8 -TotalCount 16)
+    $rel = $Path
+    if ($Root) {
+        $prefix = $Root.TrimEnd('\') + '\'
+        if ($Path.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+            $rel = $Path.Substring($prefix.Length) -replace '\\', '/'
+        }
+    }
+    return Read-TaskFrontmatterFromLines -Lines $topLines -FilePath $Path -RelativePath $rel
+}
+
+function Get-ActiveBacklogTasks {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Root
+    )
+    $backlogDir = Join-Path $Root 'Docs\backlog'
+    if (-not (Test-Path -LiteralPath $backlogDir -PathType Container)) {
+        return @()
+    }
+    $files = @(Get-ChildItem -LiteralPath $backlogDir -File -Filter '*.md' |
+        Where-Object { $_.Name -ine 'README.md' } |
+        Sort-Object Name)
+    $tasks = @()
+    foreach ($f in $files) {
+        $tasks += Read-TaskFrontmatter -Path $f.FullName -Root $Root
+    }
+    return @($tasks)
+}
+
+function Find-TaskHistoryPath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Root,
+        [Parameter(Mandatory = $true)]
+        [string]$TaskId
+    )
+    $prefix = Get-TaskPrefix -TaskId $TaskId
+    $directRel = "Docs/history/$prefix/$TaskId.md"
+    $directFull = Join-Path $Root ($directRel -replace '/', '\')
+    if (Test-Path -LiteralPath $directFull -PathType Leaf) {
+        return $directRel
+    }
+    $histDir = Join-Path $Root 'Docs\history'
+    if (Test-Path -LiteralPath $histDir -PathType Container) {
+        $match = Get-ChildItem -LiteralPath $histDir -Recurse -File -Filter "$TaskId.md" | Select-Object -First 1
+        if ($match) {
+            $rootPrefix = $Root.TrimEnd('\') + '\'
+            return ($match.FullName.Substring($rootPrefix.Length) -replace '\\', '/')
+        }
+    }
+    return $null
 }
