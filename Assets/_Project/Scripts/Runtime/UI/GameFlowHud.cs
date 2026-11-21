@@ -221,7 +221,7 @@ namespace ProjectNeo.UI
             GamePrepPlacement prep = phaseView.PrepPlacement;
             string back = $"{interaction.PlacementKey}·{interaction.CloseKey}";
             string keys = prep != null && prep.Center != null ? SquadCommandHud.SelectKeys(prep.Center.Settings) : "F1~F10·`";
-            string text = $"부대 배치 - {keys} 또는 유닛 클릭으로 선택 - 좌클릭 이동 - 우클릭 선택 해제 - {back} 돌아가기";
+            string text = $"부대 배치 - {keys} 또는 유닛 클릭으로 선택 - 좌클릭 이동(끌면 전열) - 우클릭 선택 해제 - {back} 돌아가기";
             if (prep == null) return text;
             text += "\n" + "선택: " + prep.SelectionText();
             if (prep.Message.Length > 0) text += " · " + prep.Message;

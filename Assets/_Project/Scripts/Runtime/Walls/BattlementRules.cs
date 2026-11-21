@@ -75,6 +75,35 @@ namespace ProjectNeo.Walls
         }
 
         /// <summary>
+        /// 성벽 위 통로 폭(COMBAT-08 진형 줄 수 상한). <paramref name="cell"/>에서 <paramref name="axis"/> 방향 앞뒤로
+        /// 같은 높이의 맨 위 조각(계단 제외)이 이어진 칸 수 × 칸 크기에서, 양 끝 면에 선 성가퀴 두께를 뺀다.
+        /// 맨 위 조각이 없거나 계단이면 +∞(성벽 위가 아니다).
+        /// </summary>
+        public static float WalkwayWidth(BuildLayout layout, BuildGridDefinition grid, ICollection<Vector2Int> outside,
+            Vector2Int cell, Vector2Int axis, float thickness)
+        {
+            BuildPlacement top = layout.Top(cell);
+            int face = DirectionIndex(axis), back = DirectionIndex(-axis);
+            if (top == null || top.Definition.Kind == BuildPieceKind.Stairs || face < 0) return float.PositiveInfinity;
+            float surface = top.Elevation + top.Definition.Height;
+            int cells = 1;
+            Vector2Int high = cell, low = cell;
+            while (SameSurface(layout, grid, high + axis, surface)) { high += axis; cells++; }
+            while (SameSurface(layout, grid, low - axis, surface)) { low -= axis; cells++; }
+            float width = cells * grid.CellSize;
+            if ((Faces(layout, grid, outside, high) & (1 << face)) != 0) width -= thickness;
+            if ((Faces(layout, grid, outside, low) & (1 << back)) != 0) width -= thickness;
+            return Mathf.Max(0f, width);
+        }
+
+        static bool SameSurface(BuildLayout layout, BuildGridDefinition grid, Vector2Int cell, float surface)
+        {
+            BuildPlacement other = InGrid(grid, cell) ? layout.Top(cell) : null;
+            return other != null && other.Definition.Kind != BuildPieceKind.Stairs
+                && Mathf.Abs(other.Elevation + other.Definition.Height - surface) <= SurfaceTolerance;
+        }
+
+        /// <summary>
         /// 길이 <paramref name="edgeLength"/>인 면 하나에 놓을 덩어리를 채운다. 면 전체에 낮은 받침(난간)이 이어진다.
         /// 성가퀴는 그 위에 솟은 부분을 일정 간격으로 놓되, 면 가운데가 빈틈(크레넬)이 되게 한다. 사다리는 면 가운데에 걸리므로
         /// 늘 빈틈의 받침 위에 놓이고, 무늬는 사다리 자리에서도 끊기지 않는다. 칸 길이가 주기의 배수면 이웃 칸과 무늬가 이어진다.

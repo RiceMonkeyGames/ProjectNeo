@@ -151,6 +151,34 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(0, segments.Count);
         }
 
+        float Walkway(int x, int z, Vector2Int axis)
+        {
+            BattlementRules.CollectOutside(layout, grid, outside);
+            return BattlementRules.WalkwayWidth(layout, grid, outside, new Vector2Int(x, z), axis, 0.4f);
+        }
+
+        [Test]
+        public void WalkwayWidth_SubtractsBattlementsOnlyWhereTheyStand()
+        {
+            Ring();
+            // COMBAT-08: 고리 성벽 한 칸 폭 3m - 바깥 성가퀴 0.4m = 2.6m. 안쪽 면에는 성가퀴가 없다.
+            Assert.AreEqual(2.6f, Walkway(3, 5, Vector2Int.up), 1e-4f);
+            Assert.AreEqual(2.6f, Walkway(3, 5, Vector2Int.down), 1e-4f, "direction sign does not matter");
+            Assert.AreEqual(2.6f, Walkway(5, 3, Vector2Int.right), 1e-4f);
+            // 성벽을 따라 재면 이어진 칸이 다 들어가고, 양 끝 바깥 면 두께만 빠진다.
+            Assert.AreEqual(15f - 0.8f, Walkway(3, 5, Vector2Int.right), 1e-4f);
+        }
+
+        [Test]
+        public void WalkwayWidth_OpenWallHasBattlementsOnBothSides_AndEmptyCellsAreNotWalls()
+        {
+            Place(wall, 2, 3); Place(wall, 3, 3); Place(wall, 4, 3);
+            Assert.AreEqual(2.2f, Walkway(3, 3, Vector2Int.up), 1e-4f);
+            Assert.IsTrue(float.IsPositiveInfinity(Walkway(3, 4, Vector2Int.up)), "no piece: not a wall top");
+            Assert.IsTrue(float.IsPositiveInfinity(BattlementRules.WalkwayWidth(layout, grid, outside, new Vector2Int(3, 3),
+                new Vector2Int(1, 1), 0.4f)), "diagonal axis is not measured");
+        }
+
         static void AssertSegment(BattlementSegment segment, float start, float end, float height)
         {
             Assert.AreEqual(start, segment.Start, 1e-4f);
