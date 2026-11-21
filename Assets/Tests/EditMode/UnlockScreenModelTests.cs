@@ -91,6 +91,8 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(UnlockClickResult.Opened, model.Draw(new FixedRandom(2)));
             Assert.AreEqual("bonus_c", model.LastOpenedId, "난수 2는 세 번째 후보");
             Assert.AreEqual(4, progress.unlockPoints, "트랙 비용 2");
+            Assert.IsTrue(progress.unlockSpent.Exists(record => record.entryId == "bonus_c" && record.points == 2),
+                "낸 트랙 비용을 기록한다(항목이 없어지면 META-10이 돌려준다)");
 
             Assert.AreEqual(UnlockClickResult.Opened, model.Draw(new FixedRandom(0)));
             Assert.AreEqual("bonus_a", model.LastOpenedId, "이미 열린 항목은 후보에서 빠진다");
