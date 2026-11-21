@@ -1,6 +1,6 @@
 # COMBAT-08 | 2026-11-21 | Combat - Squad formations and drag placement
 
-Last Updated: 2026-11-21 14:49:27 (KST)
+Last Updated: 2026-11-21 15:07:13 (KST)
 
 Owner: youngho. Branch: `feature/combat-08` (recreated from develop `237a09e` on 2026-11-21). Status: In progress. Automated checks pass; manual play is pending the user. Backlog status is not changed here; completion, archive and branch push wait for user confirmation.
 
@@ -48,7 +48,7 @@ Agent defaults (open to change):
 - New PlayMode: `SquadCommandPlayTests.DrawnLine_SplitsAcrossSelectedSquads_SetsWidthAndFacing_AndPreviewsSlots`, `WallCommandPlayTests.Formation_OnWallTop_ClampsRanksAcrossTheWalkway`, `SquadCommandPlayTests.HoldingSquad_FillsAFrontGapFromTheRear_AndANewMemberTakesAFreeSlot`.
 - No human manual play and no standalone build claimed yet.
 
-## Manual verification (pending user)
+## Manual verification (user confirmed Done 2026-11-21; no separate play report recorded)
 
 - Re-run the new tests: Unity Test Runner → EditMode filter `FormationLayoutTests` and `BattlementRulesTests`; PlayMode filter `SquadCommandPlayTests` and `WallCommandPlayTests`. Expected: all green.
 - Scene `Assets/_Project/Scenes/Game.unity`: in preparation, press `P` and left-click drag across the courtyard. Expected: a line with per-soldier slot markers; the selected squad's ranks change with the line length; a plain left click still moves.
