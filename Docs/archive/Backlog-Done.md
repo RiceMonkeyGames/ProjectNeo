@@ -1,11 +1,12 @@
 # Completed Backlog Archive (Done)
 
-Last Updated: 2026-11-21 16:19:23 (KST)
+Last Updated: 2026-11-21 21:12:39 (KST)
 
 > Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
 | Task ID | Description | Assignee | Outcome & History Link |
 |---|---|---|---|
+| COMBAT-10 | Wall-Top Cover Fire (Crouch to Reload) | youngho | Done 2026-11-21 on user confirmation after manual play; branch `feature/combat-10`, merged to develop. Sill 0.8m -> 1.1m (Lv1 and Lv2); AI allied ranged units behind their own battlement crouch while reloading and rise 0.5s before the next shot (crouched height 55%); at Lv2 a ranged squad's front rank snaps to crenels, leftovers stand behind; archer attack speed 1.0 -> 0.4 after playtest. [History](../history/COMBAT/COMBAT-10.md) |
 | COMBAT-09 | Arcing Arrows, Longer Archer Range & Hit Spread | youngho | Done 2026-11-21 on user confirmation after manual play; branch `feature/combat-09`, merged to develop. Arrows fly a gravity arc (speed 18, gravity 9.81, low arc, 45° fallback); range about 1.5× (ranged soldiers 16m, hero archer 18m, Marksman 30m); new stat `AimSpread` (3°, Marksman 1°); straight-line LoS kept. Existing assets updated by `ArcherRangeMigration`. EditMode 659/659; PlayMode full run passed apart from one wrongly edited assertion, reverted and re-run. History: [COMBAT-09](../history/COMBAT/COMBAT-09.md). |
 | COMBAT-08 | Squad Formations & Drag Placement | youngho | Done 2026-11-21 on user confirmation; branch `feature/combat-08`, merged to develop (`02affad`). Formations Line/Close/Loose/Column (G), battle right-drag and prep `P` left-drag front lines, rank clamp on narrow ground with wall walkway cap, slot preview, roster re-forming and 2s rear refill. EditMode 640/640, PlayMode 290/290. History: [COMBAT-08](../history/COMBAT/COMBAT-08.md). |
 | UI-09 | Korean Text for Features Merged After UI-04 | 신용준 | Done 2026-11-21 on user confirmation; branch `feature/ui-09`. Only the Q-77 work-order warning was English (translated); 분대 unified to 부대 in COMBAT-06 text, skill and perk data; added `KoreanUiMigration.ReplaceInDisplayText`. EditMode 625/625, PlayMode 287/287. In-game reading of the changed text left to the user. [History](../history/UI/UI-09.md). |

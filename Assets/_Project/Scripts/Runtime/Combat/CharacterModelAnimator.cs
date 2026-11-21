@@ -85,7 +85,10 @@ namespace ProjectNeo.Combat
         int baseState;
         bool dead;
 
-        /// <summary>웅크린 자세(COMBAT-10에서 성가퀴 뒤 재장전에 쓴다). 웅크리기 클립이 없는 묶음은 무시한다.</summary>
+        /// <summary>
+        /// 웅크린 자세를 직접 켠다. 전투 몸통이 웅크렸으면(<see cref="CharacterActor.IsCrouched"/>, COMBAT-10 성가퀴 뒤 재장전) 이 값과 관계없이 웅크린다.
+        /// 웅크리기 클립이 없는 묶음은 무시한다.
+        /// </summary>
         public bool Crouched { get; set; }
         /// <summary>사망 동작을 직접 재생하는지. 아니면 자세를 멈추고 눕히기는 PlaceholderCombatView가 맡는다.</summary>
         public bool PlaysDeath => profile != null && profile.DeathCount > 0;
@@ -194,7 +197,7 @@ namespace ProjectNeo.Combat
         void UpdateBase(bool engaged)
         {
             string state = !profile.GroundLocomotion ? HoverState
-                : Crouched && profile.Crouch ? CrouchState
+                : (Crouched || actor.IsCrouched) && profile.Crouch ? CrouchState
                 : engaged && profile.CombatIdle ? CombatLocomotionState
                 : LocomotionState;
             int hash = Animator.StringToHash(state);

@@ -30,13 +30,22 @@ namespace ProjectNeo.Combat
         public Collider Body { get; private set; }
         /// <summary>공중 유닛이면 그 몸통 상태. 땅 유닛은 null이다.</summary>
         public AirborneBody Airborne { get; private set; }
-        public Vector3 AimPoint => transform.position + Vector3.up * (profile.Height * 0.5f);
+        public Vector3 AimPoint => transform.position + Vector3.up * (CurrentHeight * 0.5f);
+        /// <summary>지금 키. 웅크렸으면 <see cref="CombatProfile.CrouchHeightRatio"/>만큼 낮다(COMBAT-10).</summary>
+        public float CurrentHeight => profile.Height * (IsCrouched ? profile.CrouchHeightRatio : 1f);
+        /// <summary>성가퀴 뒤에 웅크려 있는지(COMBAT-10). 판정 몸통과 조준점이 낮아진다.</summary>
+        public bool IsCrouched { get; private set; }
+        /// <summary>다음 공격까지 남은 시간(초).</summary>
+        public float CooldownRemaining => cooldown;
         public bool IsAttacking => pendingImpact;
         public bool IsOnLadder { get; private set; }
         public void SetOnLadder(bool value)
         {
             IsOnLadder = value;
-            if (value) pendingImpact = false;
+            if (!value) return;
+            pendingImpact = false;
+            // 웅크린 채 사다리에 오르지 않는다(COMBAT-10). 사다리 중에는 AI의 웅크리기 판단이 돌지 않는다.
+            SetCrouched(false);
         }
         public static IReadOnlyList<CharacterActor> ActiveActors => activeActors;
         /// <summary>원거리 탄퍼짐에 쓰는 난수(COMBAT-09). 테스트는 고정 난수로 바꿔 끼운다.</summary>
@@ -72,6 +81,22 @@ namespace ProjectNeo.Combat
 
         public void SetTeam(CombatTeam combatTeam) => team = combatTeam;
 
+        /// <summary>
+        /// 웅크리거나 일어난다(COMBAT-10). 캡슐 판정 몸통을 발을 고정한 채 키 비율만큼 줄이고 되돌린다.
+        /// 플레이어 몸통(CharacterController)은 플레이어 입력이 따로 맡으므로 건드리지 않는다.
+        /// </summary>
+        public void SetCrouched(bool value)
+        {
+            if (IsCrouched == value || profile == null) return;
+            IsCrouched = value;
+            if (Body is CapsuleCollider capsule)
+            {
+                float height = CurrentHeight;
+                capsule.height = height;
+                capsule.center = Vector3.up * (height * 0.5f);
+            }
+        }
+
         void Awake()
         {
             if ((definition == null && soldierDefinition == null) || profile == null)
@@ -101,6 +126,7 @@ namespace ProjectNeo.Combat
         {
             activeActors.Remove(this);
             pendingImpact = false;
+            SetCrouched(false);
         }
 
         public bool IsEnemy(CharacterActor other) => other != null && other != this
@@ -209,6 +235,7 @@ namespace ProjectNeo.Combat
         void OnDied()
         {
             pendingImpact = false;
+            SetCrouched(false);
             activeActors.Remove(this);
             foreach (Collider body in GetComponents<Collider>()) body.enabled = false;
             Died?.Invoke();

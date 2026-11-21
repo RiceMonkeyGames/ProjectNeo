@@ -54,8 +54,12 @@ namespace ProjectNeo.Flow
             world = placement != null ? placement.World : null;
             if (commandInput != null) commandInput.DestinationCheck = CheckDestination;
             // 진형 줄 수 상한으로 성벽 위 통로 폭을 쓴다(COMBAT-08).
+            // 원거리 분대 앞줄은 성가퀴 빈틈 사격 자리에 선다(COMBAT-10).
             if (center != null && world != null && world.TryGetComponent(out battlements))
+            {
                 center.WalkwayWidth = battlements.WalkwayWidthAt;
+                center.CrenelPoints = battlements.CollectCrenelStandPoints;
+            }
             if (center != null && center.Commander != null)
             {
                 center.Commander.OrderChanged += OnOrderChanged;
@@ -78,6 +82,9 @@ namespace ProjectNeo.Flow
             if (center != null && battlements != null
                 && center.WalkwayWidth == (System.Func<Vector3, Vector3, float>)battlements.WalkwayWidthAt)
                 center.WalkwayWidth = null;
+            if (center != null && battlements != null
+                && center.CrenelPoints == (System.Action<Vector3, float, List<Vector3>>)battlements.CollectCrenelStandPoints)
+                center.CrenelPoints = null;
             if (subscribed && center != null && center.Commander != null)
             {
                 center.Commander.OrderChanged -= OnOrderChanged;

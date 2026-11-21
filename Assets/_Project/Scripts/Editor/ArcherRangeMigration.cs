@@ -15,6 +15,8 @@ namespace ProjectNeo.Editor
     {
         public const float SoldierRange = 16f, HeroArcherRange = 18f, MarksmanRange = 30f;
         public const float DefaultSpread = 3f, MarksmanSpread = 1f;
+        /// <summary>원거리 잡졸·영웅 궁수 공격 속도(초당 0.4발 = 2.5초에 한 발, COMBAT-10 사용자 결정 2026-11-21).</summary>
+        public const float ArcherAttackSpeed = 0.4f;
 
         static readonly (string path, float range)[] Soldiers =
         {

@@ -23,6 +23,23 @@ namespace ProjectNeo.Combat
             return ground;
         }
 
+        static readonly Collider[] coverBuffer = new Collider[16];
+
+        /// <summary>
+        /// 자기 편 사격을 통과시키는 엄폐물(성가퀴)이 <paramref name="radius"/> 안에 있는지(COMBAT-10 웅크려 재장전).
+        /// 성가퀴는 아군 편으로만 세워지므로 성벽을 차지한 적은 해당하지 않는다.
+        /// </summary>
+        public static bool IsBehindOwnCover(CharacterActor actor, float radius)
+        {
+            if (radius <= 0f) return false;
+            int count = Physics.OverlapSphereNonAlloc(actor.transform.position + Vector3.up * 0.5f, radius, coverBuffer,
+                ~0, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < count; i++)
+                if (coverBuffer[i].gameObject.scene == actor.gameObject.scene && ShotCover.Passes(coverBuffer[i], actor.Team))
+                    return true;
+            return false;
+        }
+
         public static bool HasClearShot(CharacterActor attacker, CharacterActor target) =>
             TryGetShotPoint(attacker, target, out _);
 
@@ -48,7 +65,8 @@ namespace ProjectNeo.Combat
         {
             point = target.AimPoint;
             if (IsClear(origin, footing, attacker, target, point)) return true;
-            Vector3 upper = target.transform.position + Vector3.up * (target.Profile.Height * target.Profile.UpperAimRatio);
+            // 웅크린 대상은 낮아진 키로 잰다(COMBAT-10). 받침 뒤에 웅크리면 위쪽 몸통도 가려진다.
+            Vector3 upper = target.transform.position + Vector3.up * (target.CurrentHeight * target.Profile.UpperAimRatio);
             if (!IsClear(origin, footing, attacker, target, upper)) return false;
             point = upper;
             return true;

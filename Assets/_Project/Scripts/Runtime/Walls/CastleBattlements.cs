@@ -110,6 +110,69 @@ namespace ProjectNeo.Walls
             return BattlementRules.WalkwayWidth(world.Layout, world.Grid, outside, cell, step, thickness);
         }
 
+        /// <summary>빈틈 사격 자리가 성가퀴 안쪽 면에서 떨어진 거리(m). 유닛 반지름에 약간의 여유를 더한 값이다.</summary>
+        public const float CrenelStandOffset = 0.45f;
+        readonly List<float> crenelBuffer = new List<float>();
+
+        /// <summary>
+        /// <paramref name="center"/>에서 수평 <paramref name="radius"/> 안의, 지금 서 있는 성가퀴 빈틈(크레넬) 뒤 사격 자리(COMBAT-10).
+        /// 빈틈 가운데에서 성벽 안쪽으로 두께 + <see cref="CrenelStandOffset"/>만큼 들어온 통로 위 지점이다.
+        /// 성가퀴(Lv2)가 아니거나 포구(받침만)·짓는 중인 조각은 넣지 않는다. 옆면에도 성가퀴가 선 모서리의 끝 빈틈은 뺀다.
+        /// </summary>
+        public void CollectCrenelStandPoints(Vector3 center, float radius, List<Vector3> output)
+        {
+            output.Clear();
+            if (world == null || world.Layout == null || settings == null || style != BattlementStyle.Crenellated) return;
+            EnsureOutside();
+            float size = world.Grid.CellSize;
+            float thickness = Mathf.Min(settings.Thickness, size * 0.5f);
+            float inset = thickness + CrenelStandOffset;
+            Vector3 local = world.LocalPoint(center);
+            Vector2Int middle = world.Layout.WorldToCell(local);
+            int reach = Mathf.CeilToInt(radius / size) + 1;
+            for (int x = middle.x - reach; x <= middle.x + reach; x++)
+                for (int z = middle.y - reach; z <= middle.y + reach; z++)
+                {
+                    var cell = new Vector2Int(x, z);
+                    BuildPlacement top = world.Layout.Top(cell);
+                    if (top == null || StyleFor(top) != BattlementStyle.Crenellated
+                        || !byPlacement.TryGetValue(top.Id, out Built entry) || entry.Root == null) continue;
+                    int faces = BattlementRules.Faces(world.Layout, world.Grid, outside, cell);
+                    if (faces == 0) continue;
+                    float surface = top.Elevation + top.Definition.Height;
+                    float minX = x * size, minZ = z * size;
+                    BattlementRules.CrenelCenters(BattlementStyle.Crenellated, settings, size, crenelBuffer);
+                    for (int face = 0; face < 4; face++)
+                    {
+                        if ((faces & (1 << face)) == 0) continue;
+                        // 면을 따라 재는 축의 시작·끝 쪽 옆면(0·2면은 서·동, 1·3면은 남·북).
+                        int startSide = face % 2 == 0 ? 3 : 2, endSide = face % 2 == 0 ? 1 : 0;
+                        foreach (float along in crenelBuffer)
+                        {
+                            if (along <= 1e-3f && (faces & (1 << startSide)) != 0) continue;
+                            if (along >= size - 1e-3f && (faces & (1 << endSide)) != 0) continue;
+                            Vector3 point = face switch
+                            {
+                                0 => new Vector3(minX + along, surface, minZ + size - inset),
+                                1 => new Vector3(minX + size - inset, surface, minZ + along),
+                                2 => new Vector3(minX + along, surface, minZ + inset),
+                                _ => new Vector3(minX + inset, surface, minZ + along),
+                            };
+                            Vector3 worldPoint = world.transform.TransformPoint(point);
+                            Vector3 flat = worldPoint - center; flat.y = 0f;
+                            if (flat.sqrMagnitude > radius * radius || Contains(output, worldPoint)) continue;
+                            output.Add(worldPoint);
+                        }
+                    }
+                }
+        }
+
+        static bool Contains(List<Vector3> points, Vector3 point)
+        {
+            foreach (Vector3 other in points) if ((other - point).sqrMagnitude < 0.01f) return true;
+            return false;
+        }
+
         const float OnTopTolerance = 0.75f;
         static readonly float AxisAlignment = Mathf.Cos(30f * Mathf.Deg2Rad);
 
