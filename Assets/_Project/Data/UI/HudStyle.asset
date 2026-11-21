@@ -12,9 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 17fe935b7f235ce4d9f0efffd8f74468, type: 3}
   m_Name: HudStyle
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.UI.HudStyle
-  panel: {r: 0.035, g: 0.045, b: 0.06, a: 0.88}
-  panelSelected: {r: 0.16, g: 0.14, b: 0.08, a: 0.92}
-  panelSprite: {fileID: 0}
+  panel: {r: 0.13, g: 0.16, b: 0.17, a: 0.9}
+  panelSelected: {r: 0.3, g: 0.22, b: 0.1, a: 0.94}
+  panelSprite: {fileID: 21300000, guid: fc4bbb1265a4ce6459d98288dc673fdd, type: 3}
+  panelPixelsPerUnit: 2
+  frameSprite: {fileID: 21300000, guid: 0cdc79f85bf8c464587df7955d26ba79, type: 3}
+  frame: {r: 0.78, g: 0.78, b: 0.78, a: 1}
+  frameSelected: {r: 1, g: 1, b: 1, a: 1}
+  framePixelsPerUnit: 8
   text: {r: 1, g: 1, b: 1, a: 1}
   heading: {r: 1, g: 0.86, b: 0.55, a: 1}
   muted: {r: 0.72, g: 0.74, b: 0.78, a: 1}
@@ -22,8 +27,10 @@ MonoBehaviour:
   titleSize: 18
   bodySize: 17
   smallSize: 15
-  gaugeTrack: {r: 0.12, g: 0.13, b: 0.15, a: 1}
-  gaugeSprite: {fileID: 0}
+  gaugeTrack: {r: 0.07, g: 0.08, b: 0.08, a: 0.85}
+  gaugeSprite: {fileID: 21300000, guid: 4da15d8b9199c754bb2678e34b7658c7, type: 3}
+  gaugeFillSprite: {fileID: 21300000, guid: c0fa701a17901954a881ea26088dc343, type: 3}
+  gaugePixelsPerUnit: 6
   timeFill: {r: 0.92, g: 0.74, b: 0.32, a: 1}
   headcountFill: {r: 0.45, g: 0.68, b: 0.9, a: 1}
   moraleLow: {r: 0.85, g: 0.25, b: 0.2, a: 1}
