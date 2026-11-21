@@ -1,11 +1,12 @@
 # Completed Backlog Archive (Done)
 
-Last Updated: 2026-11-21 11:47:33 (KST)
+Last Updated: 2026-11-21 12:42:56 (KST)
 
 > Purpose: Archive of completed (`Done`) backlog items moved out of `Docs/Backlog.md` to reduce active context size. | Parent: [INDEX](../INDEX.md) | Related: [Backlog](../Backlog.md), [history/README](../history/README.md)
 
 | Task ID | Description | Assignee | Outcome & History Link |
 |---|---|---|---|
+| UI-09 | Korean Text for Features Merged After UI-04 | 신용준 | Done 2026-11-21 on user confirmation; branch `feature/ui-09`. Only the Q-77 work-order warning was English (translated); 분대 unified to 부대 in COMBAT-06 text, skill and perk data; added `KoreanUiMigration.ReplaceInDisplayText`. EditMode 625/625, PlayMode 287/287. In-game reading of the changed text left to the user. [History](../history/UI/UI-09.md). |
 | UI-05 | UI Overhaul 1: Title Flow (Main Menu, Slot Window, Expedition Screen) | 신용준 | Done 2026-11-21 on user confirmation after manual check in the Editor; branch `feature/ui-05`. Scope changed by the user from the shared style to the Title flow: main menu first, slot window, then a separate expedition step (Ascension, between-run unlocks, depart, back); finished runs return to that slot's expedition screen. First medieval restyle rejected and reverted; style moves to UI-06. Korean font atlas rebuilt and made static after Hangul broke. EditMode 582/582, PlayMode 263/263. [History](../history/UI/UI-05.md). |
 | Q-77 | Team Decision: Unstarted Build Orders at Battle Start | youngho | Done 2026-11-21 on user request; branch `feature/q-77`. Kept the SIEGE-08 rule (0% build order removed and fully refunded at battle start) and added a passive yellow warning line under the start-battle hint listing unfinished work orders and how many are still at 0% (no confirmation dialog). EditMode 541/541, PlayMode 253/253. Standalone build unverified. [History](../history/Q/Q-77.md) |
 | META-04 | Run Score Calculation & Display | SeongminHwang | Done 2026-11-21 on user confirmation; branch `feature/meta-04` (merged to develop 2026-11-20). The manual check of the result and Title score text was replaced at the user's request by PlayMode assertions on the on-screen text. History: [META-04](../history/META/META-04.md). |

@@ -22,5 +22,5 @@ MonoBehaviour:
   runEffects: []
   prerequisites:
   - {fileID: 11400000, guid: bc97a200433b91445a3853d56c027afb, type: 2}
-  description: "\uC2A4\uD0AC \uC2B5\uB4DD: \uC790\uAE30 \uBD84\uB300(\uBD84\uB300\uAC00 \uC5C6\uC73C\uBA74 \uC8FC\uBCC0 8m \uC544\uAD70)\uC758 \uACF5\uACA9\uB825\uC744 8\uCD08 \uB3D9\uC548 25% \uC62C\uB9B0\uB2E4."
+  description: "\uC2A4\uD0AC \uC2B5\uB4DD: \uC790\uAE30 \uBD80\uB300(\uBD80\uB300\uAC00 \uC5C6\uC73C\uBA74 \uC8FC\uBCC0 8m \uC544\uAD70)\uC758 \uACF5\uACA9\uB825\uC744 8\uCD08 \uB3D9\uC548 25% \uC62C\uB9B0\uB2E4."
   grantedSkill: {fileID: 11400000, guid: 28c16125e9452254c87ab5d57e6b7588, type: 2}

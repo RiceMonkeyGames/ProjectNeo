@@ -145,15 +145,15 @@ namespace ProjectNeo.Tests
             Assert.IsTrue(State.TrySpendPrepTime(0.5f));
             Assert.AreEqual("50%", third.GetComponent<UnderConstructionView>().LabelText);
             Assert.AreEqual("50%", fourth.GetComponent<UnderConstructionView>().LabelText);
-            StringAssert.Contains("Unfinished work 2", Work.BattleStartWarning(), "진행 중인 작업이 있으면 경고한다(Q-77).");
-            StringAssert.Contains("current progress", Work.BattleStartWarning());
+            StringAssert.Contains("끝나지 않은 작업 2개", Work.BattleStartWarning(), "진행 중인 작업이 있으면 경고한다(Q-77).");
+            StringAssert.Contains("지금까지 진행한 만큼", Work.BattleStartWarning());
 
             // 다섯 번째는 시작도 못 한 채 전투를 맞는다.
             Vector2Int e = FreeCell(a, b, c, d);
             PlacedStructure fifth = Build(e);
             Assert.IsNotNull(fifth);
-            StringAssert.Contains("Unfinished work 3", Work.BattleStartWarning());
-            StringAssert.Contains("1 not started will be removed and refunded", Work.BattleStartWarning(),
+            StringAssert.Contains("끝나지 않은 작업 3개", Work.BattleStartWarning());
+            StringAssert.Contains("시작 안 한 1개는 전투가 시작되면 없어지고 환불", Work.BattleStartWarning(),
                 "0% 주문은 전투 시작 때 없어지고 환불됨을 알린다(Q-77).");
             int beforeBattle = State.Wallet.Gold;
             yield return Navigation();

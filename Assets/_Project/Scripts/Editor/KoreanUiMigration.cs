@@ -53,6 +53,13 @@ namespace ProjectNeo.Editor
             return result;
         }
 
+        /// <summary>Glossary fix in authored display text (scene captions, definition display strings), e.g. 분대 -> 부대 (UI-09).</summary>
+        public static string ReplaceInDisplayText(string from, string to)
+        {
+            int changed = Visit((location, text) => string.IsNullOrEmpty(text) ? text : text.Replace(from, to), true);
+            return "changed=" + changed;
+        }
+
         public static string Audit()
         {
             var unmapped = new StringBuilder();

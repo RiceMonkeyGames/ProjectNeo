@@ -314,9 +314,9 @@ namespace ProjectNeo.Flow
             if (!IsActive || pending == 0) return string.Empty;
             int notStarted = queue.NotStartedBuildCount;
             string detail = notStarted > 0
-                ? $"{notStarted} not started will be removed and refunded at battle start"
-                : "enters battle at current progress";
-            return $"<color=#FFC857>! Unfinished work {pending} - {detail}</color>";
+                ? $"시작 안 한 {notStarted}개는 전투가 시작되면 없어지고 환불됩니다"
+                : "지금까지 진행한 만큼만 전투에 들어갑니다";
+            return $"<color=#FFC857>! 끝나지 않은 작업 {pending}개 - {detail}</color>";
         }
 
         void ShowView(Component target, float progress)

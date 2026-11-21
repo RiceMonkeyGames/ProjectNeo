@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Skills.SkillDefinition
   id: skill_war_cry
   displayName: "\uC804\uD22C \uD568\uC131"
-  description: "\uC790\uAE30 \uBD84\uB300(\uBD84\uB300\uAC00 \uC5C6\uC73C\uBA74 \uC8FC\uBCC0 8m \uC544\uAD70)\uC758 \uACF5\uACA9\uB825\uC744 8\uCD08 \uB3D9\uC548 25% \uC62C\uB9B0\uB2E4."
+  description: "\uC790\uAE30 \uBD80\uB300(\uBD80\uB300\uAC00 \uC5C6\uC73C\uBA74 \uC8FC\uBCC0 8m \uC544\uAD70)\uC758 \uACF5\uACA9\uB825\uC744 8\uCD08 \uB3D9\uC548 25% \uC62C\uB9B0\uB2E4."
   cooldown: 25
   targetMode: 3
   range: 0
