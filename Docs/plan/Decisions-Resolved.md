@@ -6,6 +6,8 @@ Last Updated: 2026-11-21 21:09:15 (KST)
 
 ## Resolved `Q-*` Table
 
+Save migration details (META-10, 2026-11-21, user): (1) removed content is refunded at the full price paid (items: buy price plus upgrade gold; heroes: hire cost, gear to the stash; soldiers: recruit cost; castle pieces and siege weapons: build cost; meta unlock entries: unlock points); shop/tavern offers are restocked, perks return their point, equipped skills are cleared; (2) developer log only, no player notice; (3) renames in one shared asset (kind, old id, new id); (4) a removed player hero is swapped for the current default player hero, keeping progress and gear. Rules: [PrepEconomyMeta](../design/PrepEconomyMeta.md).
+
 Remaining save scope for M3 (Q-13, 2026-11-21, user): (1) no in-battle save; quitting mid-battle keeps returning to that battle's preparation and replays it (FLOW-02 rule confirmed); (2) no free manual saves; a `Save and return to Title` action during preparation saves at the same moment quitting already does (FLOW-04); (3) content id changes: a data rename table maps old ids to new ids, and content that no longer exists is dropped from the run with a refund, so the run continues instead of being discarded (META-10). The FLOW-02 automatic save moments are confirmed as the rule. Rules: [PrepEconomyMeta](../design/PrepEconomyMeta.md), [history](../history/Q/Q-13.md).
 
 Arrow model and stuck arrows (ART-05, 2026-11-21, user): (1) model `PolygonFantasyKingdom` `SM_Prop_Arrow_01_Optimized`; (2) stuck arrows stay 30s; (3) at most 100 stuck arrows in the scene, oldest removed first; (4) arrows stuck in a character stay on the corpse until it disappears or the 30s run out; all are cleared at battle end. Rules: [Combat](../design/Combat.md).
