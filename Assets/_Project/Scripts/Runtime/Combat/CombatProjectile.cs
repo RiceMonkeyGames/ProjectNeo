@@ -6,6 +6,7 @@ namespace ProjectNeo.Combat
     /// <summary>
     /// 발사 속도와 중력으로 포물선을 그리며 난다(COMBAT-09). 충돌은 매 프레임 이동 구간 전체에서 검사하고,
     /// 땅·성벽 등 무엇에든 닿으면 그 자리에서 멈춘다. 수명(ProjectileLifetime)이 지나면 사라진다.
+    /// StuckArrow가 붙은 화살은 맞은 자리에 박혀 남는다(ART-05).
     /// </summary>
     public sealed class CombatProjectile : MonoBehaviour
     {
@@ -95,7 +96,8 @@ namespace ProjectNeo.Combat
                 target.ReceiveDamage(DamageRules.Calculate(attack, target.Stats.GetValue(StatType.Defense), profile.MinimumDamage)
                     * (target.Airborne != null ? 1f : DamageRules.ElevationMultiplier(target.transform.position.y - launchHeight,
                         profile.UpwardShotMinimumRise, profile.UpwardShotDamageRatio)), owner);
-            Destroy(gameObject);
+            // 화살 프리팹(StuckArrow)은 맞은 자리에 박혀 남고, 그렇지 않은 발사체는 사라진다(ART-05).
+            if (!TryGetComponent(out StuckArrow arrow) || !arrow.Stick(collider, profile.ProjectileRadius)) Destroy(gameObject);
             launched = false;
             return true;
         }

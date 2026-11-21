@@ -37,6 +37,8 @@ namespace ProjectNeo.Editor
             Material ground = CombatPrototypeSetup.MaterialAsset("Ground", new Color(0.22f, 0.3f, 0.25f));
             Material stone = CombatPrototypeSetup.MaterialAsset("Stone", new Color(0.38f, 0.43f, 0.49f));
             GameObject projectile = CreateProjectile(yellow);
+            // 임시 구체를 화살 모델로 바꾸고 박혀 남게 한다(ART-05).
+            ArrowModelSetup.Apply();
             var melee = CombatPrototypeSetup.Save(CombatProfile.Create(), Data + "/Melee.asset");
             var ranged = CombatPrototypeSetup.Save(CombatProfile.Create(0.3f, 55f, 0.4f, 2f,
                 AttackKind.Projectile, projectile), Data + "/Ranged.asset");

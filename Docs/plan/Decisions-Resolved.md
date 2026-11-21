@@ -6,6 +6,8 @@ Last Updated: 2026-11-21 21:09:15 (KST)
 
 ## Resolved `Q-*` Table
 
+Arrow model and stuck arrows (ART-05, 2026-11-21, user): (1) model `PolygonFantasyKingdom` `SM_Prop_Arrow_01_Optimized`; (2) stuck arrows stay 30s; (3) at most 100 stuck arrows in the scene, oldest removed first; (4) arrows stuck in a character stay on the corpse until it disappears or the 30s run out; all are cleared at battle end. Rules: [Combat](../design/Combat.md).
+
 Wall-top cover fire (COMBAT-10, 2026-11-21, user): (1) sill 0.8m -> 1.1m for Lv1 and Lv2; (2) only AI-controlled allied ranged units behind their own battlement crouch to reload, rising 0.5s before the next shot (crouched height 55%); (3) at Lv2 a ranged squad's front rank snaps to the nearest crenels and leftovers form rear ranks; (4) enemy archers unchanged; (5) after playtest, archer attack speed 1.0 -> 0.4 (ranged soldiers and hero archer; damage and Marksman unchanged). Rules: [Combat](../design/Combat.md), [WallsAndSiege](../design/WallsAndSiege.md).
 
 Arcing arrows, range and spread (COMBAT-09, 2026-11-21, user): (1) range about 1.5× (ranged soldiers 16m, hero archer 18m, Marksman 30m; high-ground +25% kept); (2) arrows fly a gravity arc with launch speed 18 and gravity 9.81, low arc, 45° fallback when out of reach; (3) spread is a new unit stat `AimSpread` (degrees; 3° default, Marksman 1°) so items and skills can modify it; (4) straight-line line of sight is kept, no lobbing over walls. Rules: [Combat](../design/Combat.md).
