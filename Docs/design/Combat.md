@@ -1,6 +1,6 @@
 # Game Design: Combat, Units & Win/Loss
 
-Last Updated: 2026-11-21 14:49:27 (KST)
+Last Updated: 2026-11-21 15:55:10 (KST)
 
 > Purpose: Rules for perspective, squad commands, damage, unit lifecycles, and battle outcomes. | Parent: [design/README](README.md) | Related: [WallsAndSiege](WallsAndSiege.md), [MoraleAndWave](MoraleAndWave.md)
 
@@ -49,12 +49,17 @@ Last Updated: 2026-11-21 14:49:27 (KST)
   - **Exceptions & extensibility**: `Move` orders, routing/retreating, ladder climbing, and active siege tasks (gate/wall/cannon breaking, raising ladders) suppress retaliation/target switching. Targeting policy is structured to support future priority/fixed-target unit types.
 - **High ground and wall-top archers (BUG-wall-archer-los, 2026-11-15; choices delegated to the agent by the user, open to revision after playtest)**:
   - **High-ground range**: A grounded ranged attacker whose feet are at least `HighGroundMinimumDrop` (1.5m, same as the upward-shot rise) above the target's feet multiplies its range by `1 + HighGroundRangeBonus` (25%; `CombatProfile`, data-configurable, 0 disables). No bonus when shooting upward or level, for melee, or for flying attackers. No extra damage bonus: enemies shooting up at wall tops already deal 50%. Reason: enemy archers stop at the edge of their own range to the front-most defender, which left rear-rank wall-top archers 1–2m short and idle while their squad was being shot.
-  - **Arrow flight**: An arrow flies at least as far as the aimed point of a target that passed the range check. Range is measured to the nearest point of the target's body but arrows aim at its center, so steep shots near maximum range used to vanish just short of the target.
+  - **Arrow flight**: Superseded by COMBAT-09 (below): arrows now fly a ballistic arc until they hit something, so they always reach the aimed point. (Old rule: an arrow flew at least as far as the aimed point of a target that passed the range check.)
   - **Line of sight**: Unchanged. The shooter's own footing piece never blocks its shots; other wall pieces still block both ways, so a wall edge that hides a defender also protects it. No walking to the wall edge.
   - **Hold with no shot and no path**: The unit stays on its post and re-checks every decision interval; it does not leave the wall to chase.
 - **Hold stays on the post's level (BUG-wall-archer-leaves-wall, decided by the user 2026-11-20)**: In `Hold` (including the Hold that follows a finished `Move`), a unit does not chase or retaliate along a walking path that drops more than `HoldMaxDescent` (1.5m, `UnitAISettings`, data-configurable, 0 disables) below its post. This applies to **both melee and ranged** units, so a squad holding a wall top stays on the wall even when a breach and stairs give a path to enemies below; it still fights enemies that reach the wall top and shoots anything in range. This replaces the earlier melee note that Hold units "can descend stairs to engage breaches". `Engage` (Attack) orders keep the old behavior and may leave the wall to chase; `Move` still ignores enemies. The rule lives in the shared `Hold` logic, so enemies parked in `Hold` by the siege brain follow it too.
 - No friendly fire.
-- Ranged attacks fire linear projectiles upon release: dodgeable post-launch, blocked by walls, pass through allies.
+- Ranged attacks fire projectiles upon release: dodgeable post-launch, blocked by walls, pass through allies.
+- **Arcing arrows, range and spread (COMBAT-09, decided by the user 2026-11-21)**:
+  - **Ballistic flight**: Arrows fly a gravity arc like cannon shells instead of a straight line. Launch speed `ProjectileSpeed` 18 and `ProjectileGravity` 9.81 (`CombatProfile`, data-configurable); the low-arc solution is used (about 14° at 16m). If the aim point is out of reach at that speed, the arrow is launched at 45° (the farthest possible shot). Arrows do not lead moving targets, so they stay dodgeable. An arrow that hits the ground, a wall piece or any other obstacle stops there.
+  - **Range**: About 1.5× the old values — ranged soldiers (allied and enemy) 11 → 16m, hero archer 12 → 18m, Marksman boss 22 → 30m. The 25% high-ground bonus is unchanged (wall-top ranged soldier 20m).
+  - **Spread**: Each shot aims at a random point inside a circle around the aim point, perpendicular to the shot line, with radius `distance × tan(AimSpread)`. `AimSpread` is a new unit stat (`StatType.AimSpread`, degrees), so items and skills can change it through the normal stat modifiers. Defaults: 3° for ranged soldiers and the hero archer (about 0.8m at 16m), 1° for the Marksman. Randomness goes through `IRandomSource`.
+  - **Line of sight**: Unchanged. Target acquisition still uses the straight-line line-of-sight check; there is no lobbing over walls. A shot that passes that check can still be stopped by a wall or battlement it meets on its arc.
 
 ## Units
 

@@ -24,6 +24,8 @@ namespace ProjectNeo.Stages
         [SerializeField, Min(0f)] float attack;
         [SerializeField, Min(0f)] float defense;
         [SerializeField, Min(0f)] float attackRange;
+        [Tooltip("원거리 탄퍼짐 각도(도, COMBAT-09). 0이면 바탕 값을 그대로 둔다.")]
+        [SerializeField, Min(0f)] float aimSpread;
         [Tooltip("이동 속도 배율. 1이면 그대로.")]
         [SerializeField, Min(0.1f)] float moveSpeedMultiplier = 1f;
 
@@ -54,6 +56,7 @@ namespace ProjectNeo.Stages
         public float Attack => attack;
         public float Defense => defense;
         public float AttackRange => attackRange;
+        public float AimSpread => aimSpread;
         public float MoveSpeedMultiplier => moveSpeedMultiplier;
         public float StructureDamageMultiplier => structureDamageMultiplier;
         public float HeroPreference => heroPreference;
@@ -91,6 +94,13 @@ namespace ProjectNeo.Stages
         {
             auraRadius = Mathf.Max(0f, radius); auraAttackPercent = attackPercent;
             auraDefenseFlat = defenseFlat; deathAttackPenalty = Mathf.Max(0f, deathPenalty);
+            return this;
+        }
+
+        /// <summary>원거리 탄퍼짐 목표값을 정한다(테스트·설정 도구용, COMBAT-09). 0이면 바탕 값 유지.</summary>
+        public BossDefinition WithAimSpread(float degrees)
+        {
+            aimSpread = Mathf.Max(0f, degrees);
             return this;
         }
 

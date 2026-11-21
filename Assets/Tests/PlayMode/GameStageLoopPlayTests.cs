@@ -89,7 +89,7 @@ namespace ProjectNeo.Tests
             var first = battle.Enemies.First(enemy => enemy.gameObject.activeSelf);
             var shot = new GameObject("LoopPendingShot").AddComponent<CombatProjectile>();
             shot.transform.position = first.Actor.AimPoint;
-            shot.Launch(first.Actor, 1f, Vector3.up, 100f);
+            shot.Launch(first.Actor, 1f, Vector3.up * 18f);
 
             int releasedSeen = 0;
             // 마지막 웨이브는 80초 → 1/30초 프레임 기준 약 2400프레임. 여유를 둔다.

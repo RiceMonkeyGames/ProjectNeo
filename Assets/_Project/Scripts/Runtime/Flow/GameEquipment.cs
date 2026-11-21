@@ -426,6 +426,7 @@ namespace ProjectNeo.Flow
             StatType.AttackSpeed => "공격 속도",
             StatType.MoveSpeed => "이동 속도",
             StatType.AttackRange => "사거리",
+            StatType.AimSpread => "탄퍼짐",
             _ => stat.ToString(),
         };
     }

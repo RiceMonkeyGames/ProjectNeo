@@ -20,7 +20,8 @@ MonoBehaviour:
   maxHealth: 350
   attack: 26
   defense: 2
-  attackRange: 22
+  attackRange: 30
+  aimSpread: 1
   moveSpeedMultiplier: 1
   structureDamageMultiplier: 1
   heroPreference: 3

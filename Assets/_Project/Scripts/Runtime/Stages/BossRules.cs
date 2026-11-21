@@ -20,6 +20,7 @@ namespace ProjectNeo.Stages
             AddTarget(list, StatType.Attack, boss.Attack, baseValue);
             AddTarget(list, StatType.Defense, boss.Defense, baseValue);
             AddTarget(list, StatType.AttackRange, boss.AttackRange, baseValue);
+            AddTarget(list, StatType.AimSpread, boss.AimSpread, baseValue);
             if (!Approximately(boss.MoveSpeedMultiplier, 1f))
                 list.Add(StatModifier.Percent(StatType.MoveSpeed, boss.MoveSpeedMultiplier - 1f));
             return list;

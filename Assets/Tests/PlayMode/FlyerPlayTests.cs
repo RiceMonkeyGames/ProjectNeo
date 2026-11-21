@@ -232,7 +232,8 @@ namespace ProjectNeo.Tests
             GameObject shot = Object.Instantiate(shooter.Profile.ProjectilePrefab, shooter.AimPoint, Quaternion.identity);
             SceneManager.MoveGameObjectToScene(shot, scene);
             Vector3 direction = target.AimPoint - shooter.AimPoint;
-            shot.GetComponent<CombatProjectile>().Launch(shooter, attack, direction, direction.magnitude + 2f);
+            shot.GetComponent<CombatProjectile>().Launch(shooter, attack, ArrowBallistics.LaunchVelocity(shooter.AimPoint,
+                target.AimPoint, shooter.Profile.ProjectileSpeed, shooter.Profile.ProjectileGravity));
             for (int frame = 0; frame < 120 && shot != null; frame++) yield return null;
         }
     }

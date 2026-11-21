@@ -1,10 +1,12 @@
 # Resolved Decisions Archive
 
-Last Updated: 2026-11-21 14:50:34 (KST)
+Last Updated: 2026-11-21 15:43:06 (KST)
 
 > Purpose: Reference archive of already-resolved `Q-*` decisions and detailed implementation records. | Parent: [INDEX](../INDEX.md) | Related: [Decisions-Pending](Decisions-Pending.md), [design/README](../design/README.md)
 
 ## Resolved `Q-*` Table
+
+Arcing arrows, range and spread (COMBAT-09, 2026-11-21, user): (1) range about 1.5× (ranged soldiers 16m, hero archer 18m, Marksman 30m; high-ground +25% kept); (2) arrows fly a gravity arc with launch speed 18 and gravity 9.81, low arc, 45° fallback when out of reach; (3) spread is a new unit stat `AimSpread` (degrees; 3° default, Marksman 1°) so items and skills can modify it; (4) straight-line line of sight is kept, no lobbing over walls. Rules: [Combat](../design/Combat.md).
 
 Squad formations and drag placement (COMBAT-08, 2026-11-21, user): (1) controls: battle right-click drag sets the front line (width → ranks, facing perpendicular away from the camera), right click without drag moves at the current width; (2) narrow ground: NavMesh depth probe everywhere plus the wall walkway width as an upper limit on wall tops; cut ranks extend the line sideways; (3) per-soldier slot markers while dragging; (4) formations Line / Close / Loose / Column, cycled with `G` (temporary until Q-11); (5) prep placement screen (`P`) also gets left-click drag, and the remembered placement keeps formation and width. (6) roster changes re-form the squad automatically (joins at once; deaths/rout refill holding squads after 2s, one rear soldier steps up). Rules: [Combat](../design/Combat.md).
 

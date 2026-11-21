@@ -25,9 +25,11 @@ MonoBehaviour:
   - stat: 2
     value: 2
   - stat: 5
-    value: 11
+    value: 16
   - stat: 3
     value: 1
   - stat: 4
     value: 3.5
+  - stat: 6
+    value: 3
   unitPrefab: {fileID: 1580047652266255285, guid: 45375a83b76cc6340b53463ab6fa029c, type: 3}
