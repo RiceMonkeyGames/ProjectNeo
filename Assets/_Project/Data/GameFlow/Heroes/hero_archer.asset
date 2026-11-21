@@ -29,7 +29,7 @@ MonoBehaviour:
   - stat: 5
     value: 18
   - stat: 3
-    value: 1
+    value: 0.4
   - stat: 4
     value: 3.6
   - stat: 6

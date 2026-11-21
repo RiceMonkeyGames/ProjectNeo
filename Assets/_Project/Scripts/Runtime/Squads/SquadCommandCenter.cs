@@ -56,6 +56,32 @@ namespace ProjectNeo.Squads
         /// 성벽을 아는 쪽(Flow)이 연결한다. 없으면 길찾기 메시로 잰 깊이만 쓴다.
         /// </summary>
         public Func<Vector3, Vector3, float> WalkwayWidth;
+        /// <summary>
+        /// 기준점에서 수평 반경 안의 성가퀴 빈틈 사격 자리를 채운다(COMBAT-10). 원거리 분대 앞줄을 여기에 세운다.
+        /// 성벽을 아는 쪽(Flow)이 연결한다. 없으면 빈틈 자리를 쓰지 않는다.
+        /// </summary>
+        public Action<Vector3, float, List<Vector3>> CrenelPoints;
+        readonly List<Vector3> crenelBuffer = new List<Vector3>();
+        readonly List<Vector3> arrangedBuffer = new List<Vector3>();
+
+        /// <summary>원거리 분대인지(대장이 원거리이거나 부대원 과반이 원거리). 성가퀴 빈틈 사격 자리를 쓴다(COMBAT-10).</summary>
+        public bool IsRanged(int squad)
+        {
+            if (squad < 0 || squad >= army.Squads.Count) return false;
+            Squad<UnitCombatAI> value = army.Squads[squad];
+            if (IsRangedUnit(value.Leader)) return true;
+            int ranged = 0, total = 0;
+            foreach (UnitCombatAI member in value.Members)
+            {
+                if (member == null) continue;
+                total++;
+                if (IsRangedUnit(member)) ranged++;
+            }
+            return total > 0 && ranged * 2 > total;
+        }
+
+        static bool IsRangedUnit(UnitCombatAI unit) =>
+            unit != null && unit.Actor != null && unit.Actor.Profile != null && unit.Actor.Profile.AttackKind == AttackKind.Projectile;
 
         public void Configure(SquadConfig squadConfig, SquadCommandSettings commandSettings, SquadRoster[] squadRosters)
         {
@@ -293,8 +319,11 @@ namespace ProjectNeo.Squads
         /// 기준점 앞뒤로 걸을 수 있는 깊이와 성벽 통로 폭에 들어가는 줄 수로 자르고, 자른 만큼 줄을 옆으로 늘린다.
         /// 걸을 수 없는 자리는 가까운 걸을 수 있는 곳으로, 그것도 없으면 기준점으로 붙인다.
         /// </summary>
+        /// <remarks>
+        /// <paramref name="ranged"/>이면 앞줄을 가까운 성가퀴 빈틈 사격 자리에 세우고 남는 인원은 그 뒤 줄에 세운다(COMBAT-10).
+        /// </remarks>
         public void PlanSlots(FormationKind kind, float width, Vector3 anchor, float facing, bool frontAnchored, int count,
-            List<Vector3> output)
+            List<Vector3> output, bool ranged = false)
         {
             output.Clear();
             if (count <= 0) return;
@@ -310,6 +339,16 @@ namespace ProjectNeo.Squads
             Vector2Int shape = FormationLayout.Shape(count, files, spacing, depth);
             float offset = FormationLayout.CenterOffset(shape.y, spacing, frontAnchored, forwardRoom, backRoom);
             output.AddRange(FormationLayout.Slots(anchor + forward * offset, facing, count, shape.x, spacing));
+            if (ranged && CrenelPoints != null)
+            {
+                float radius = FormationLayout.WidthForFiles(shape.x, spacing) * 0.5f + spacing + CrenelSlotRules.MaxDepthOffset;
+                CrenelPoints(anchor, radius, crenelBuffer);
+                if (CrenelSlotRules.Arrange(output, shape.x, facing, spacing, crenelBuffer, arrangedBuffer) > 0)
+                {
+                    output.Clear();
+                    output.AddRange(arrangedBuffer);
+                }
+            }
             for (int i = 0; i < output.Count; i++)
                 output[i] = NavMesh.SamplePosition(output[i], out NavMeshHit hit, settings.NavigationSnapDistance, NavMesh.AllAreas)
                     && Mathf.Abs(hit.position.y - anchor.y) <= settings.VerticalSnapTolerance ? hit.position : anchor;
@@ -317,7 +356,8 @@ namespace ProjectNeo.Squads
 
         /// <summary>부대 하나의 지금 진형·폭으로 설 자리.</summary>
         public void PlanSlots(int squad, Vector3 anchor, float facing, bool frontAnchored, int count, List<Vector3> output) =>
-            PlanSlots(Commander.FormationOf(squad), Commander.WidthOf(squad), anchor, facing, frontAnchored, count, output);
+            PlanSlots(Commander.FormationOf(squad), Commander.WidthOf(squad), anchor, facing, frontAnchored, count, output,
+                IsRanged(squad));
 
         // 기준점에서 그 방향으로 걸을 수 있는 거리. 재는 거리 안에서 막히지 않으면 +∞.
         float Room(Vector3 anchor, Vector3 direction)
@@ -381,7 +421,7 @@ namespace ProjectNeo.Squads
             {
                 LineSegment(start, end, facing, k, out Vector3 anchor, out float width);
                 PlanSlots(Commander.FormationOf(lineSquads[k]), width, anchor, facing, true,
-                    CommandableCount(lineSquads[k]), slotBuffer);
+                    CommandableCount(lineSquads[k]), slotBuffer, IsRanged(lineSquads[k]));
                 Preview.Add(slotBuffer);
             }
         }

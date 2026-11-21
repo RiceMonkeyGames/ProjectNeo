@@ -1,6 +1,6 @@
 # Game Design: Combat, Units & Win/Loss
 
-Last Updated: 2026-11-21 15:55:10 (KST)
+Last Updated: 2026-11-21 20:58:37 (KST)
 
 > Purpose: Rules for perspective, squad commands, damage, unit lifecycles, and battle outcomes. | Parent: [design/README](README.md) | Related: [WallsAndSiege](WallsAndSiege.md), [MoraleAndWave](MoraleAndWave.md)
 
@@ -28,7 +28,7 @@ Last Updated: 2026-11-21 15:55:10 (KST)
   - *Battle (first person)*: right mouse button pressed on the ground, dragged and released draws the front line: its length is the frontage width, so the number of ranks follows from the head count; the squad faces perpendicular to the line, away from the camera side. With several squads selected, the line is split equally, left to right in squad number order. A right click without drag (or `1` Move) moves with the current width and the camera facing. Each soldier's slot is shown as a marker while dragging.
   - *Prep squad placement screen (`P`, top-down)*: left-click drag does the same; a plain left click moves as before; right click still clears the selection. The remembered prep placement also keeps formation and width.
   - *Narrow ground*: ranks are clamped to what fits. The available depth behind the line is measured on the NavMesh (works anywhere); on wall tops the wall walkway width is also used as an upper limit. When ranks are cut, the extra soldiers extend the line sideways (along the wall); any slot that still has no ground snaps to the nearest walkable point. Example: 4 ranks requested on a 2-rank wall top → 2 ranks, twice as long.
-  - Bannerlord itself only projects invalid slots to the nearest walkable point (units bunch up); the rank clamp is ProjectNeo's own rule. Crenel firing slots are COMBAT-10.
+  - Bannerlord itself only projects invalid slots to the nearest walkable point (units bunch up); the rank clamp is ProjectNeo's own rule. Crenel firing slots for ranged squads at Lv2: see COMBAT-10 below.
   - *Roster changes (approved 2026-11-21, user)*: the squad command center re-forms a squad by itself whenever its roster changes, so callers no longer need to place newcomers. Joins (recruit, organization move, captain change, return from rout) re-form at the end of that frame: a moving squad re-plans all slots; a holding squad keeps every soldier already on a slot (within 45% of the spacing) and gives newcomers the free slots. Losses (death, rout) refill only in holding squads, batched for `RefillDelay` (2s, data value): each emptied slot is taken by the nearest soldier whose slot disappeared, so one rear soldier steps up instead of the whole squad shuffling. Squads under Attack or without a destination are left alone.
 
 ## Player Health HUD
@@ -60,6 +60,12 @@ Last Updated: 2026-11-21 15:55:10 (KST)
   - **Range**: About 1.5× the old values — ranged soldiers (allied and enemy) 11 → 16m, hero archer 12 → 18m, Marksman boss 22 → 30m. The 25% high-ground bonus is unchanged (wall-top ranged soldier 20m).
   - **Spread**: Each shot aims at a random point inside a circle around the aim point, perpendicular to the shot line, with radius `distance × tan(AimSpread)`. `AimSpread` is a new unit stat (`StatType.AimSpread`, degrees), so items and skills can change it through the normal stat modifiers. Defaults: 3° for ranged soldiers and the hero archer (about 0.8m at 16m), 1° for the Marksman. Randomness goes through `IRandomSource`.
   - **Line of sight**: Unchanged. Target acquisition still uses the straight-line line-of-sight check; there is no lobbing over walls. A shot that passes that check can still be stopped by a wall or battlement it meets on its arc.
+- **Wall-top cover fire (COMBAT-10, decided by the user 2026-11-21)**:
+  - **Who**: Only AI-controlled allied ranged units standing behind their own battlement (a battlement piece within `CombatProfile.coverSearchRadius`, 1.2m, of the unit). The player, enemies (even on a captured wall top) and ground archers never crouch this way.
+  - **Crouch to reload**: Right after a shot the unit crouches behind the sill for most of the reload (attack cooldown). It stands up `CombatProfile.coverRiseLead` (0.5s, data value) before the next shot can fire, aims and releases standing. With no target it stays standing to watch. While crouched its hitbox and aim points shrink to `CombatProfile.crouchHeightRatio` (0.55, so 1.1m for a 2m unit): body centre 0.55m and upper body about 0.94m, both below the 1.1m sill, so a crouched defender is fully covered.
+  - **Attackers**: Enemy archers keep the existing behaviour: they hold a drawn bow while the target is hidden and release as soon as the body centre or upper body is exposed (SIEGE-10 aiming, COMBAT-09 arc and spread).
+  - **Archer attack speed** (user, 2026-11-21, after playtest: archers fired too often to show the crouch and were too strong): ranged soldiers (allied and enemy) and the hero archer go from 1.0 to 0.4 attacks per second (one shot every 2.5s). With the 0.3s release and 0.5s rise lead, a wall-top archer is crouched about 1.7s of each 2.5s cycle. Damage is unchanged; the Marksman boss is unchanged.
+  - **Crenel firing slots**: At Lv2 (crenellated), a ranged squad (leader or most members ranged) planning slots on a wall top puts its front rank in the crenels nearest the front line (one archer per crenel, standing on the walkway behind the crenel). Archers that get no crenel form the rear ranks behind them. Lv1 parapets, gun ports and melee squads keep the normal COMBAT-08 slots.
 
 ## Units
 

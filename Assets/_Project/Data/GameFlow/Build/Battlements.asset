@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Battlements
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Walls.BattlementSettings
   thickness: 0.4
-  parapetHeight: 0.8
+  parapetHeight: 1.1
   merlonHeight: 2.2
   merlonWidth: 0.75
   crenelWidth: 0.75

@@ -127,5 +127,24 @@ namespace ProjectNeo.Walls
                 if (end > start + 1e-4f) result.Add(new BattlementSegment(start, end, settings.MerlonHeight));
             }
         }
+
+        /// <summary>
+        /// 성가퀴 면 하나에서 빈틈(크레넬) 가운데 자리(면 시작에서 잰 거리, COMBAT-10 사격 자리).
+        /// 면 가운데가 늘 빈틈이고 한 주기마다 되풀이된다. 양 끝(0, 면 길이)의 반쪽 빈틈은 이웃 칸과 이어진 빈틈이라 포함한다.
+        /// 성가퀴가 아니면(난간·없음) 비운다.
+        /// </summary>
+        public static void CrenelCenters(BattlementStyle style, BattlementSettings settings, float edgeLength, List<float> result)
+        {
+            result.Clear();
+            if (style != BattlementStyle.Crenellated || settings == null || edgeLength <= 0f) return;
+            float period = settings.MerlonWidth + settings.CrenelWidth;
+            float middle = edgeLength * 0.5f;
+            int reach = Mathf.CeilToInt(middle / period) + 1;
+            for (int k = -reach; k <= reach; k++)
+            {
+                float center = middle + period * k;
+                if (center >= -1e-4f && center <= edgeLength + 1e-4f) result.Add(Mathf.Clamp(center, 0f, edgeLength));
+            }
+        }
     }
 }

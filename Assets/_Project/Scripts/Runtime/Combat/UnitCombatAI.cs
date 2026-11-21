@@ -29,6 +29,8 @@ namespace ProjectNeo.Combat
         float targetLockRemaining;
         CharacterActor retaliatingTarget;
         bool suppressRetaliation;
+        float coverCheckRemaining;
+        bool behindCover;
         public CharacterActor Target { get; private set; }
         // 지시를 받지 않은 유닛(적, 관전 전투)은 기존처럼 알아서 싸운다.
         public UnitDirective Directive { get; private set; } = UnitDirective.Engage;
@@ -109,6 +111,32 @@ namespace ProjectNeo.Combat
                 case UnitDirective.Hold: UpdateHold(); break;
                 default: UpdateEngage(); break;
             }
+            UpdateCoverCrouch();
+        }
+
+        /// <summary>
+        /// 성가퀴 뒤 원거리 유닛은 재장전 동안 웅크리고, 다음 발사 직전에 일어나 쏜다(COMBAT-10).
+        /// 엄폐물 검사는 멈춰 있을 때 판단 주기마다 한 번만 한다.
+        /// </summary>
+        void UpdateCoverCrouch()
+        {
+            CombatProfile profile = actor.Profile;
+            bool moving = agent.velocity.sqrMagnitude > 0.04f;
+            // 움직이는 동안은 엄폐물을 찾지 않고, 멈추면 바로 다시 찾는다.
+            if (profile.AttackKind != AttackKind.Projectile || profile.CoverSearchRadius <= 0f || moving)
+                coverCheckRemaining = 0f;
+            else
+            {
+                coverCheckRemaining -= Time.deltaTime;
+                if (coverCheckRemaining <= 0f)
+                {
+                    coverCheckRemaining = settings.DecisionInterval;
+                    behindCover = CombatPhysics.IsBehindOwnCover(actor, profile.CoverSearchRadius);
+                }
+            }
+            bool covered = behindCover && profile.AttackKind == AttackKind.Projectile && profile.CoverSearchRadius > 0f;
+            actor.SetCrouched(CoverCrouchRules.ShouldCrouch(covered, actor.IsAttacking, moving,
+                actor.CooldownRemaining, profile.CoverRiseLead));
         }
 
         void UpdateMove()

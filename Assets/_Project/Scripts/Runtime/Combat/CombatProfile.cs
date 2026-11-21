@@ -26,6 +26,15 @@ namespace ProjectNeo.Combat
         [SerializeField, Min(0f)] float staggerPower = 10f;
         // 몸 가운데가 가려졌을 때 대신 노리는 위쪽 몸통 높이(키 대비, SIEGE-10). 낮은 난간 뒤에서도 상체는 맞는다.
         [SerializeField, Range(0.5f, 1f)] float upperAimRatio = 0.85f;
+        // 성가퀴 뒤에서 웅크렸을 때의 키 비율(COMBAT-10). 판정 몸통과 조준점이 이만큼 낮아진다. 2m × 0.55 = 1.1m(받침 높이).
+        [SerializeField, Range(0.3f, 1f)] float crouchHeightRatio = 0.55f;
+        // 다음 발사 가능 시점보다 이만큼(초) 먼저 일어나 겨눈다(COMBAT-10).
+        [SerializeField, Min(0f)] float coverRiseLead = 0.5f;
+        // 이 거리(m, 수평) 안에 자기 편 성가퀴가 있으면 그 뒤에 선 것으로 본다(COMBAT-10). 0이면 웅크리지 않는다.
+        [SerializeField, Min(0f)] float coverSearchRadius = 1.2f;
+        public float CrouchHeightRatio => crouchHeightRatio;
+        public float CoverRiseLead => coverRiseLead;
+        public float CoverSearchRadius => coverSearchRadius;
         public float HighGroundMinimumDrop => highGroundMinimumDrop;
         public float UpperAimRatio => upperAimRatio;
         public float HighGroundRangeBonus => highGroundRangeBonus;
@@ -49,7 +58,8 @@ namespace ProjectNeo.Combat
             GameObject projectilePrefab = null, float projectileSpeed = 18f,
             float projectileRadius = 0.08f, float projectileLifetime = 5f, float minimumDamage = 1f,
             float upwardShotDamageRatio = 1f, float upwardShotMinimumRise = 1.5f,
-            float highGroundRangeBonus = 0.25f, float highGroundMinimumDrop = 1.5f, float staggerPower = -1f, float projectileGravity = 9.81f)
+            float highGroundRangeBonus = 0.25f, float highGroundMinimumDrop = 1.5f, float staggerPower = -1f, float projectileGravity = 9.81f,
+            float crouchHeightRatio = 0.55f, float coverRiseLead = 0.5f, float coverSearchRadius = 1.2f)
         {
             var profile = CreateInstance<CombatProfile>();
             profile.impactDelay = Mathf.Max(0f, impactDelay);
@@ -68,6 +78,9 @@ namespace ProjectNeo.Combat
             profile.highGroundRangeBonus = Mathf.Max(0f, highGroundRangeBonus);
             profile.highGroundMinimumDrop = Mathf.Max(0f, highGroundMinimumDrop);
             profile.staggerPower = staggerPower >= 0f ? staggerPower : (attackKind == AttackKind.Projectile ? 10f : 25f);
+            profile.crouchHeightRatio = Mathf.Clamp(crouchHeightRatio, 0.3f, 1f);
+            profile.coverRiseLead = Mathf.Max(0f, coverRiseLead);
+            profile.coverSearchRadius = Mathf.Max(0f, coverSearchRadius);
             return profile;
         }
     }

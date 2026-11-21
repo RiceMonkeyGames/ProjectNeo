@@ -7,7 +7,8 @@ namespace ProjectNeo.Walls
     public sealed class BattlementSettings : ScriptableObject
     {
         [SerializeField, Min(0.05f)] float thickness = 0.4f;
-        [SerializeField, Min(0.1f)] float parapetHeight = 0.8f;
+        // 웅크린 2m 유닛(1.1m)이 다 가려지고 선 유닛은 상체가 드러나는 높이(COMBAT-10, 0.8m에서 올림).
+        [SerializeField, Min(0.1f)] float parapetHeight = 1.1f;
         [SerializeField, Min(0.1f)] float merlonHeight = 2.2f;
         [SerializeField, Min(0.1f)] float merlonWidth = 0.75f;
         [SerializeField, Min(0.1f)] float crenelWidth = 0.75f;
@@ -25,7 +26,7 @@ namespace ProjectNeo.Walls
         /// <summary>비어 있으면 받치는 성벽의 재질을 쓴다.</summary>
         public Material Material => material;
 
-        public static BattlementSettings Create(float thickness = 0.4f, float parapetHeight = 0.8f, float merlonHeight = 2.2f,
+        public static BattlementSettings Create(float thickness = 0.4f, float parapetHeight = 1.1f, float merlonHeight = 2.2f,
             float merlonWidth = 0.75f, float crenelWidth = 0.75f, Material material = null)
         {
             var value = CreateInstance<BattlementSettings>();
