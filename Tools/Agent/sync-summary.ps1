@@ -34,8 +34,30 @@ try {
     Write-BoundedLines -Lines $files -MaxLines 20 -TruncateHint "run git diff --name-only HEAD..$BaseRef"
 
     Write-Output "--- BACKLOG DIFF ---"
-    $backlogDiff = @(& git diff "HEAD..$BaseRef" -- Docs/Backlog.md | Where-Object { $_ -match '^[+-]\|' -and $_ -notmatch '^[+-]{3}' })
-    Write-BoundedLines -Lines $backlogDiff -MaxLines 15
+    $backlogChanges = @(& git diff --name-status "HEAD..$BaseRef" -- Docs/backlog/)
+    $backlogSummary = @()
+    foreach ($entry in $backlogChanges) {
+        if (-not $entry.Trim()) { continue }
+        $cols = $entry -split "`t"
+        if ($cols.Count -lt 2) { continue }
+        $code = $cols[0].Trim()
+        $relPath = $cols[$cols.Count - 1].Trim()
+        $taskId = [System.IO.Path]::GetFileNameWithoutExtension($relPath)
+        if ($code -eq 'D') {
+            $backlogSummary += "  - [D] $taskId (removed/completed)"
+        } else {
+            $showRes = Invoke-StdoutOnly -FilePath 'git' -Arguments @('show', "${BaseRef}:$relPath")
+            if ($showRes.ExitCode -eq 0 -and $showRes.StdOut) {
+                $top = @($showRes.StdOut -split "`r?`n" | Select-Object -First 16)
+                $meta = Read-TaskFrontmatterFromLines -Lines $top -FilePath $relPath -RelativePath $relPath
+                $branchPart = if ($meta.Branch) { " | $($meta.Branch)" } else { '' }
+                $backlogSummary += "  - [$code] $($meta.Id) | $($meta.Status) | $($meta.Assignee)$branchPart | $($meta.Title)"
+            } else {
+                $backlogSummary += "  - [$code] $taskId"
+            }
+        }
+    }
+    Write-BoundedLines -Lines $backlogSummary -MaxLines 15
 
     Write-Output "--- RUNTIME PUBLIC API CHANGES ---"
     $apiDiff = @(& git diff -U0 "HEAD..$BaseRef" -- 'Assets/_Project/Scripts/Runtime/*.cs' 'Assets/_Project/Scripts/Runtime/**/*.cs' |

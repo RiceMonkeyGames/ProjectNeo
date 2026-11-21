@@ -11,9 +11,9 @@ $root = Get-ProjectNeoRoot -FallbackDir (Resolve-Path (Join-Path $PSScriptRoot '
 Push-Location $root
 try {
     $kst = Get-KstTimestamp
-    $backlogPath = Join-Path $root 'Docs\Backlog.md'
-    if (-not (Test-Path $backlogPath)) {
-        Write-Output "ERROR=Backlog file not found: Docs/Backlog.md"
+    $backlogDir = Join-Path $root 'Docs\backlog'
+    if (-not (Test-Path -LiteralPath $backlogDir -PathType Container)) {
+        Write-Output "ERROR=Backlog directory not found: Docs/backlog"
         exit 2
     }
 
@@ -31,19 +31,12 @@ try {
     $abRaw = (& git rev-list --left-right --count HEAD...origin/develop 2>$null)
     if ($LASTEXITCODE -eq 0 -and $abRaw) { $aheadBehind = $abRaw.Trim() }
 
-    $rows = Get-Content $backlogPath -Encoding UTF8 | Where-Object { $_ -match '^\|' }
-    $matchedLine = $null
-    foreach ($r in $rows) {
-        $cols = $r -split '\|'
-        if ($cols.Count -ge 6 -and $cols[1].Trim() -eq $TaskId) {
-            $matchedLine = $r
-            break
-        }
-    }
-
     $idValid = ($TaskId -match '^[A-Za-z0-9-]+$')
     $prefix = Get-TaskPrefix -TaskId $TaskId
     $suggestedBranch = if ($prefix -eq 'BUG') { "fix/$($TaskId.ToLowerInvariant())" } else { "feature/$($TaskId.ToLowerInvariant())" }
+    $taskRel = "Docs/backlog/$TaskId.md"
+    $taskFull = Join-Path $root ($taskRel -replace '/', '\')
+    $historyRel = Find-TaskHistoryPath -Root $root -TaskId $TaskId
 
     Write-Output "KST_NOW=$kst"
     Write-Output "CURRENT_BRANCH=$branch"
@@ -51,30 +44,36 @@ try {
     if ($aheadBehind) { Write-Output "HEAD_VS_ORIGIN_DEVELOP=$aheadBehind" }
     Write-Output "ID_FORMAT_VALID=$idValid"
     Write-Output "SUGGESTED_BRANCH=$suggestedBranch"
+    Write-Output "TASK_FILE=$taskRel"
 
-    if ($matchedLine) {
-        $cols = $matchedLine -split '\|'
-        $status = $cols[3].Trim()
-        $assignee = $cols[4].Trim()
+    if (Test-Path -LiteralPath $taskFull -PathType Leaf) {
+        $meta = Read-TaskFrontmatter -Path $taskFull -Root $root
         Write-Output "IN_BACKLOG=True"
-        Write-Output "TASK_STATUS=$status"
-        Write-Output "TASK_ASSIGNEE=$assignee"
-        if ($status -eq 'In Progress') {
-            Write-Output "CLAIM_OK=False (already In Progress by $assignee)"
+        Write-Output "IN_HISTORY=$([bool]$historyRel)"
+        Write-Output "TASK_STATUS=$($meta.Status)"
+        Write-Output "TASK_ASSIGNEE=$($meta.Assignee)"
+        if ($meta.Status -ieq 'In Progress') {
+            Write-Output "CLAIM_OK=False (already In Progress by $($meta.Assignee))"
             exit 3
         }
-        if ($status -eq 'Done') {
-            Write-Output "CLAIM_OK=False (already Done)"
+        if ($meta.Status -ieq 'Done') {
+            Write-Output "CLAIM_OK=False (already Done; remove active file $taskRel)"
             exit 3
         }
         Write-Output "CLAIM_OK=True"
     } else {
         Write-Output "IN_BACKLOG=False"
+        if ($historyRel) {
+            Write-Output "IN_HISTORY=True ($historyRel)"
+            Write-Output "CLAIM_OK=False (already completed in $historyRel)"
+            exit 3
+        }
+        Write-Output "IN_HISTORY=False"
         if (-not $idValid) {
             Write-Output "CLAIM_OK=False (new ID must match ^[A-Za-z0-9-]+$)"
             exit 4
         }
-        Write-Output "CLAIM_OK=True (new task; register in Docs/Backlog.md)"
+        Write-Output "CLAIM_OK=True (new task; create $taskRel)"
     }
 } finally {
     Pop-Location

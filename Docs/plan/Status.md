@@ -1,8 +1,7 @@
 # Current Implementation Status & Starting Point
 
-Last Updated: 2026-11-20 21:00:00 (KST)
-
-> Purpose: Active milestone state, implemented vs pending connections, and M2 early deliverables. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
+> Purpose: High-level milestone state and domain integration matrix. | Parent: [INDEX](../INDEX.md) | Related: [Milestones](Milestones.md), [Backlog](../Backlog.md), [Scenes](../codemap/Scenes.md)
+> **Update Rule (`TOOL-backlog-split`)**: Do **not** append per-task completion logs here on routine `/finish` runs — per-task records live exclusively in `Docs/history/<PREFIX>/<TASK-ID>.md`. Update this file only at milestone gates or major domain state transitions.
 
 **Current Milestone: M2 Repeatable Run Loop in progress. M1 Single Siege Battle Done (2026-11-18, closed by B-9.3).**
 
