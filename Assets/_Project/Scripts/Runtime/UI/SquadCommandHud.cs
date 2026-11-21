@@ -29,6 +29,18 @@ namespace ProjectNeo.UI
             if (backing != null) backing.gameObject.SetActive(visible);
         }
 
+        /// <summary>분대 목록 글이 보이는지. 준비 화면에서는 분대 카드(UI-06)가 대신 보인다.</summary>
+        public bool ListVisible => squads != null && squads.gameObject.activeSelf;
+
+        /// <summary>분대 목록 글과 그 배경을 켜고 끈다. 키 안내 상자는 그대로 둔다.</summary>
+        public void SetListVisible(bool visible)
+        {
+            if (squads == null || squads.gameObject.activeSelf == visible) return;
+            squads.gameObject.SetActive(visible);
+            Transform backing = transform.Find(squads.name + "Backing");
+            if (backing != null) backing.gameObject.SetActive(visible);
+        }
+
         /// <summary>부대 키를 한 줄로 적는다. 준비 안내처럼 다른 곳에서 같은 키를 보여줄 때 쓴다.</summary>
         public static string KeyLine(SquadCommandSettings settings)
         {

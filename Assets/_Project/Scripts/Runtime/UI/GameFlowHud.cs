@@ -27,7 +27,12 @@ namespace ProjectNeo.UI
         [SerializeField] GameBattleController battle;
         [SerializeField] TMP_Text battleStatus;
         [SerializeField] CannonOperator cannonOperator;
+        [Tooltip("조준점 바로 아래 상호작용 안내(UI-06). 비어 있으면 예전처럼 아래 안내 줄에 키 목록과 함께 적는다.")]
+        [SerializeField] TMP_Text contextPrompt;
         CannonReticleView cannonReticle;
+        /// <summary>조준점 아래 상호작용 안내 글. 보이지 않으면 빈 글.</summary>
+        public string ContextPrompt => contextPrompt != null && contextPrompt.transform.parent.gameObject.activeSelf ? contextPrompt.text : string.Empty;
+        public void ConfigureContextPrompt(TMP_Text prompt) => contextPrompt = prompt;
         /// <summary>대포 조작 중 조준선 표시(SIEGE-07). 한 번도 타지 않았으면 null.</summary>
         public CannonReticleView CannonReticle => cannonReticle;
         GameFlow flow;
@@ -88,6 +93,7 @@ namespace ProjectNeo.UI
             bool runEnded = flow.Phase == GamePhase.RunResult && rewards != null && rewards.RunEndUnlockPoints >= 0;
             bool ending = flow.Phase == GamePhase.Ending && battle != null;
             interactionHint.transform.parent.gameObject.SetActive(preparation);
+            ShowContextPrompt(preparation && phaseView.IsExplorationView && interaction.Target != null);
             if (battleStatus != null) battleStatus.transform.parent.gameObject.SetActive(fighting || rewarding || runEnded || ending);
             if (ending)
             {
@@ -157,17 +163,23 @@ namespace ProjectNeo.UI
             prompt.anchorMax = new Vector2(phaseView.IsBuildView ? 0.98f : 0.85f, 0f);
             prompt.pivot = new Vector2(0.5f, 0f);
             prompt.anchoredPosition = new Vector2(0f, 16f);
-            // 탐색 안내는 부대 키 줄과 성문 알림까지 담는다(PREP-05).
-            prompt.sizeDelta = new Vector2(-32f, phaseView.IsExplorationView || phaseView.IsPlacementView ? 96f : 64f);
+            // 짧은 안내(UI-06): 탐색 중 아래 줄은 전투 시작·기다리기와 경고만 담고, 키 목록은 H 창(KeyListHud)으로 옮겼다.
+            // 예전 씬(조준점 아래 안내 없음)은 PREP-05처럼 키 목록과 부대 키 줄까지 담는다.
+            bool shortHints = contextPrompt != null;
+            bool tall = phaseView.IsPlacementView || phaseView.IsExplorationView && !shortHints;
+            prompt.sizeDelta = new Vector2(-32f, tall ? 96f : 64f);
             interactionHint.text = phaseView.IsBuildView
                 ? $"건설 - {interaction.CloseKey} 돌아가기"
                 : phaseView.IsPlacementView ? PlacementHint()
                 : phaseView.IsPanelView
                 ? $"{interaction.CloseKey} 닫기"
+                : shortHints ? string.Empty
                 : interaction.Target != null
                     ? $"{interaction.InteractKey} · {interaction.Target.Prompt}"
                     : $"WASD 이동 - {interaction.InteractKey} 상호작용 - {interaction.EquipmentKey} 장비 - {interaction.OrganizationKey} 부대 - {interaction.EnemyPreviewKey} 적 정보"
                         + (battle != null && battle.PerkWindow != null ? $" - {battle.PerkWindow.KeyText} 특성" : string.Empty);
+            if (shortHints && phaseView.IsExplorationView && interaction.Target != null)
+                contextPrompt.text = PrepHudText.ContextPrompt(interaction.InteractKey, interaction.Target.Prompt);
             if (phaseView.IsExplorationView && battle != null)
             {
                 string startHint = interaction.CanStartBattle
@@ -180,7 +192,7 @@ namespace ProjectNeo.UI
                     startHint += $" - {interaction.WaitKey} 길게 누르기 - {battle.RunLink.State.PrepTime.WaitHours:0.#}시간 기다리기";
                     if (interaction.WaitProgress > 0f) startHint += $" · {Mathf.FloorToInt(interaction.WaitProgress * 100f)}%";
                 }
-                interactionHint.text += "\n" + startHint;
+                interactionHint.text = Join(interactionHint.text, startHint);
                 // 미완료 작업 경고(Q-77): 전투 시작 줄 바로 아래에 둔다.
                 string workWarning = WorkWarning();
                 if (workWarning.Length > 0)
@@ -188,11 +200,20 @@ namespace ProjectNeo.UI
                     interactionHint.text += "\n" + workWarning;
                     prompt.sizeDelta = new Vector2(prompt.sizeDelta.x, prompt.sizeDelta.y + 24f);
                 }
-                string squadHint = PreparationSquadHint();
+                string squadHint = shortHints ? string.Empty : PreparationSquadHint();
                 if (squadHint.Length > 0) interactionHint.text += "\n" + squadHint;
                 string gateMessage = battle.PrepGate != null ? battle.PrepGate.Message : "";
                 if (gateMessage.Length > 0) interactionHint.text += "\n" + gateMessage;
             }
+        }
+
+        static string Join(string first, string second) => first.Length == 0 ? second : first + "\n" + second;
+
+        void ShowContextPrompt(bool visible)
+        {
+            // 글과 그 배경(부모)을 함께 켜고 끈다. 아래 안내 줄(interactionHint)과 같은 짜임이다.
+            GameObject box = contextPrompt != null ? contextPrompt.transform.parent.gameObject : null;
+            if (box != null && box.activeSelf != visible) box.SetActive(visible);
         }
 
         string WorkWarning()

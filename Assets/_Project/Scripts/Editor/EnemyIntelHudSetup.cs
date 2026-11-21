@@ -18,6 +18,7 @@ namespace ProjectNeo.Editor
         const string PanelName = "EnemyIntel";
         // 기준 해상도(1280×720) 기준 왼쪽 여백과 폭. 왼쪽 위 부대 목록(SquadCommandHUD/SquadsBacking, 위 8 + 높이 252 = 260, PREP-09)
         // 바로 아래에 둔다. 왼쪽 가운데의 건설 도구 상자는 건설 화면에서만 보이고, 그때 이 창은 숨는다.
+        // UI-06부터 이 자리는 전투 중 자리이고, 준비 미리보기는 PrepHudSetup이 오른쪽 위로 옮긴다(EnemyIntelHud.ConfigurePlacement).
         internal static readonly Vector2 Offset = new Vector2(16f, -272f);
         const float Width = 240f;
 
@@ -42,8 +43,8 @@ namespace ProjectNeo.Editor
             var panel = existing != null ? (RectTransform)existing
                 : new GameObject(PanelName, typeof(RectTransform)).GetComponent<RectTransform>();
             panel.SetParent(hud.transform, false);
-            // 준비 시계 줄(PREP-06)은 맨 마지막에 그려야 하므로 그 바로 앞에 둔다.
-            Transform clock = hud.transform.Find("PrepClock");
+            // 준비 시계 줄(PREP-06)이나 그것을 담은 자원 바(UI-06)는 맨 마지막에 그려야 하므로 그 바로 앞에 둔다.
+            Transform clock = hud.transform.Find(PrepHudSetup.BarName) ?? hud.transform.Find("PrepClock");
             // 다시 실행해도 순서가 같도록 창을 맨 뒤로 보낸 다음 시계를 그 뒤로 보낸다.
             panel.SetAsLastSibling();
             if (clock != null) clock.SetAsLastSibling();

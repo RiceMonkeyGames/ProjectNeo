@@ -188,7 +188,10 @@ namespace ProjectNeo.Tests
                 {
                     var hud = Object.FindAnyObjectByType<GameFlowHud>();
                     StringAssert.Contains("준비 - 스테이지 1", hud.PhaseText);
-                    StringAssert.Contains("부대 선택", hud.InteractionHint);
+                    // UI-06: 부대 키는 아래 안내 줄 대신 H 전체 키 목록에 있다.
+                    var keyList = Object.FindAnyObjectByType<KeyListHud>();
+                    Assert.IsNotNull(keyList, "Game 씬에 전체 키 목록이 있어야 한다(ProjectNeo/Setup/Preparation HUD (UI-06)).");
+                    StringAssert.Contains("부대 선택", PrepHudText.KeyList(keyList.Build()));
                 }
             }
             Assert.Greater(koreanLabels, 10, "Title and Game captions are authored in Korean (UI-04).");

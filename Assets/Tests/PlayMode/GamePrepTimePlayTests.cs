@@ -75,11 +75,15 @@ namespace ProjectNeo.Tests
                 StringAssert.Contains($"{interaction.WaitKey} 길게 누르기 - ", hud.InteractionHint);
                 // 시설 창(가운데)이 열려도 위 가운데 시계 줄이 가려지지 않는다.
                 Canvas.ForceUpdateCanvases();
+                // UI-06: 시계 줄은 위 자원 바 가운데에 있고, 자원 바는 시설 창보다 위에 그린다. 준비 중에는 단계 상자 대신 보인다.
                 RectTransform clockRect = clockHud.Area, phaseBox = (RectTransform)hud.transform.Find("Panel");
-                var phaseText = (RectTransform)phaseBox.Find("Label");
-                Assert.AreEqual(hud.transform.childCount - 1, clockRect.GetSiblingIndex(), "시계 줄은 시설 창보다 위에 그린다.");
-                Assert.IsFalse(Bounds(clockRect).Overlaps(Bounds(phaseText)), "시계 줄은 단계 글자를 가리지 않는다(상자 위 여백에만 붙는다).");
-                Assert.AreEqual(-16f, phaseBox.anchoredPosition.y, 0.01f, "단계 상자는 원래 자리에 있다.");
+                var bar = Object.FindAnyObjectByType<PrepTopBarHud>();
+                Assert.IsNotNull(bar, "Game 씬에 준비 자원 바가 있어야 한다(ProjectNeo/Setup/Preparation HUD (UI-06)).");
+                Assert.IsTrue(bar.IsShowing);
+                Assert.AreEqual(bar.Area, clockRect.parent, "시계 줄은 자원 바 안에 있다.");
+                Assert.AreEqual(hud.transform.childCount - 1, bar.Area.GetSiblingIndex(), "자원 바는 시설 창보다 위에 그린다.");
+                Assert.IsFalse(phaseBox.gameObject.activeSelf, "준비 중에는 단계 상자 대신 자원 바가 보인다.");
+                Assert.AreEqual(1f, clockHud.FillRatio, 0.0001f, "첫 준비는 시간 게이지가 가득 차 있다.");
                 foreach (string popup in new[] { "FacilityPanel", "EquipmentPanel" })
                 {
                     Rect area = Bounds((RectTransform)hud.transform.Find(popup));

@@ -56,6 +56,9 @@ namespace ProjectNeo.Editor
             Transform phase = panel.Find("Label") ?? throw new InvalidOperationException("Game HUD phase Label is missing.");
             var phaseText = phase.GetComponent<TMP_Text>();
             var panelImage = panel.GetComponent<UnityEngine.UI.Image>();
+            // UI-06부터 시계 줄은 준비 자원 바 안에 있고 그 배치는 PrepHudSetup이 맡는다. 에셋 연결만 하고 끝낸다.
+            Transform bar = hud.transform.Find(PrepHudSetup.BarName);
+            if (bar != null && bar.Find(LabelName) != null) return;
 
             // 예전 실행이 단계 상자 안에 넣은 줄은 지운다(시설 창 위쪽에 가려졌다).
             Transform old = panel.Find(LabelName);

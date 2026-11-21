@@ -21,6 +21,13 @@ namespace ProjectNeo.UI
         [SerializeField] GameObject content;
         [SerializeField] TMP_Text title;
         [SerializeField] TMP_Text body;
+        [Header("Placement (UI-06)")]
+        [Tooltip("켜면 준비 미리보기와 전투 중 창 위치를 따로 둔다. 준비 중 왼쪽은 분대 카드가 쓴다.")]
+        [SerializeField] bool placeByPhase;
+        [SerializeField] Vector2 previewCorner = new Vector2(1f, 1f);
+        [SerializeField] Vector2 previewOffset;
+        [SerializeField] Vector2 battleCorner = new Vector2(0f, 1f);
+        [SerializeField] Vector2 battleOffset;
 
         EnemyIntel shown;
         int shownVersion = -1;
@@ -40,6 +47,24 @@ namespace ProjectNeo.UI
             Unlisten();
             interaction = input;
             if (isActiveAndEnabled) Listen();
+        }
+
+        /// <summary>준비 미리보기와 전투 중 창 자리(UI-06). corner는 화면 모서리(앵커·피벗), offset은 그 모서리에서의 거리.</summary>
+        public void ConfigurePlacement(Vector2 previewAt, Vector2 previewShift, Vector2 battleAt, Vector2 battleShift)
+        {
+            placeByPhase = true;
+            previewCorner = previewAt; previewOffset = previewShift;
+            battleCorner = battleAt; battleOffset = battleShift;
+        }
+
+        void Place(GamePhase phase)
+        {
+            if (!placeByPhase) return;
+            var rect = (RectTransform)content.transform;
+            bool fighting = phase == GamePhase.Battle;
+            Vector2 corner = fighting ? battleCorner : previewCorner;
+            rect.anchorMin = rect.anchorMax = rect.pivot = corner;
+            rect.anchoredPosition = fighting ? battleOffset : previewOffset;
         }
 
         /// <summary>준비 단계 창을 열거나 닫는다. V 키와 같다.</summary>
@@ -76,6 +101,7 @@ namespace ProjectNeo.UI
                 || phase == GamePhase.Preparation && PreviewOpen && phaseView != null && phaseView.IsExplorationView);
             if (content.activeSelf != show) content.SetActive(show);
             if (!show) return;
+            Place(phase);
             if (intel == shown && intel.Version == shownVersion && phase == shownPhase) return;
             shown = intel; shownVersion = intel.Version; shownPhase = phase;
             if (title != null) title.text = phase == GamePhase.Battle ? $"{BattleTitle} {intel.TotalRemaining}" : PreviewTitle;

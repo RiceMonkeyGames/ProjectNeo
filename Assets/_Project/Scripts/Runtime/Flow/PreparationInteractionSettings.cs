@@ -25,6 +25,9 @@ namespace ProjectNeo.Flow
         [Tooltip("준비 중 1인칭 탐색에서 다음 전투 적 목록 창을 열고 닫는 키(C-5).")]
         [SerializeField] InputAction enemyPreview = new InputAction("ToggleEnemyPreview", InputActionType.Button, "<Keyboard>/v");
         public InputAction EnemyPreview => enemyPreview;
+        [Tooltip("준비 중 1인칭 탐색에서 전체 키 목록을 열고 닫는 키(UI-06).")]
+        [SerializeField] InputAction keyList = new InputAction("ToggleKeyList", InputActionType.Button, "<Keyboard>/h");
+        public InputAction KeyList => keyList;
         public float WaitHoldSeconds => Mathf.Max(0.1f, waitHoldSeconds);
         public float Distance => distance;
         public InputAction Interact => interact;

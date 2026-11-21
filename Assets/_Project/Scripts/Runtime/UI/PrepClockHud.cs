@@ -16,8 +16,14 @@ namespace ProjectNeo.UI
         [SerializeField] TMP_Text label;
         [Tooltip("열려 있는 동안 시계를 숨기는 화면. 거의 화면 전체를 덮어 시계 줄이 제목에 닿는 창(부대 편성)만 넣는다.")]
         [SerializeField] GameObject[] hideWhileOpen = new GameObject[0];
+        [Tooltip("남은 준비 시간 게이지의 채움(UI-06). 비어 있으면 글만 보여 준다.")]
+        [SerializeField] RectTransform fill;
 
         public string Text => label != null ? label.text : string.Empty;
+        /// <summary>남은 시간 게이지 비율(0~1). 게이지가 없으면 0.</summary>
+        public float FillRatio => fill != null ? fill.anchorMax.x : 0f;
+
+        public void ConfigureGauge(RectTransform gaugeFill) => fill = gaugeFill;
         public bool IsShowing => content != null && content.activeSelf;
         public RectTransform Area => content != null ? (RectTransform)content.transform : null;
 
@@ -43,7 +49,9 @@ namespace ProjectNeo.UI
             bool show = state != null && state.PrepTime != null && GameSession.Flow.Phase == GamePhase.Preparation
                 && state.ClockPreparation == state.BattlesFought && !Covered();
             if (content.activeSelf != show) content.SetActive(show);
-            if (show) label.text = Describe(state.Clock);
+            if (!show) return;
+            label.text = Describe(state.Clock);
+            if (fill != null) fill.anchorMax = new Vector2(PrepHudText.Ratio(state.Clock.Remaining, state.Clock.Budget), 1f);
         }
 
         /// <summary>시계 한 줄. 예: "Prep time 7h left / 12h". 다 쓰면 끝에 안내를 붙인다.</summary>

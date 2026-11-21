@@ -13,10 +13,13 @@ namespace ProjectNeo.Flow
         [SerializeField] CharacterActor player;
         [SerializeField] PreparationInteractionSettings settings;
         [SerializeField] GameBattleController battle;
-        InputAction interact, close, equipment, organization, startBattle, squadPlacement, wait, enemyPreview;
+        InputAction interact, close, equipment, organization, startBattle, squadPlacement, wait, enemyPreview, keyList;
         public string EnemyPreviewKey => enemyPreview != null ? enemyPreview.GetBindingDisplayString() : string.Empty;
         /// <summary>1인칭 탐색 중 적 목록 키를 눌렀다(C-5). 적 목록 창이 듣고 열거나 닫는다.</summary>
         public event System.Action EnemyPreviewToggled;
+        public string KeyListKey => keyList != null ? keyList.GetBindingDisplayString() : string.Empty;
+        /// <summary>1인칭 탐색 중 전체 키 목록 키를 눌렀다(UI-06). 키 목록 창이 듣고 열거나 닫는다.</summary>
+        public event System.Action KeyListToggled;
         float waitElapsed;
         bool holdingWait;
         /// <summary>기다리기 키를 누르고 있는 진행률(0~1, PREP-06).</summary>
@@ -66,22 +69,26 @@ namespace ProjectNeo.Flow
             enemyPreview = settings.EnemyPreview != null && settings.EnemyPreview.bindings.Count > 0
                 ? settings.EnemyPreview.Clone()
                 : new InputAction("ToggleEnemyPreview", InputActionType.Button, "<Keyboard>/v");
+            // 예전 설정 에셋에 키가 비어 있어도 H로 전체 키 목록을 연다.
+            keyList = settings.KeyList != null && settings.KeyList.bindings.Count > 0
+                ? settings.KeyList.Clone()
+                : new InputAction("ToggleKeyList", InputActionType.Button, "<Keyboard>/h");
         }
         void OnEnable()
         {
             interact.Enable(); close.Enable(); equipment?.Enable(); organization?.Enable(); startBattle.Enable(); squadPlacement?.Enable();
-            wait?.Enable(); enemyPreview?.Enable();
+            wait?.Enable(); enemyPreview?.Enable(); keyList?.Enable();
         }
         void OnDisable()
         {
             interact?.Disable(); close?.Disable(); equipment?.Disable(); organization?.Disable(); startBattle?.Disable();
-            squadPlacement?.Disable(); wait?.Disable(); enemyPreview?.Disable();
+            squadPlacement?.Disable(); wait?.Disable(); enemyPreview?.Disable(); keyList?.Disable();
             Target = null; CancelBattleStart(); CancelWait();
         }
         void OnDestroy()
         {
             interact?.Dispose(); close?.Dispose(); equipment?.Dispose(); organization?.Dispose(); startBattle?.Dispose();
-            squadPlacement?.Dispose(); wait?.Dispose();
+            squadPlacement?.Dispose(); wait?.Dispose(); enemyPreview?.Dispose(); keyList?.Dispose();
         }
 
         void CancelBattleStart() { holdingBattleStart = false; battleStartElapsed = 0f; }
@@ -178,6 +185,8 @@ namespace ProjectNeo.Flow
                 // 적 목록 창은 화면을 막지 않으므로 전투 시작·기다리기 누르기를 끊지 않는다.
                 if (phaseView.IsExplorationView && enemyPreview != null && enemyPreview.WasPressedThisFrame())
                     EnemyPreviewToggled?.Invoke();
+                if (phaseView.IsExplorationView && keyList != null && keyList.WasPressedThisFrame())
+                    KeyListToggled?.Invoke();
                 UpdateBattleStart(); UpdateWait();
             }
         }

@@ -60,6 +60,17 @@ namespace ProjectNeo.Tests
             return Rect.MinMaxRect(corners[0].x, corners[0].y, corners[2].x, corners[2].y);
         }
 
+        static void AssertNoOverlap(EnemyIntelHud hud, params string[] names)
+        {
+            Rect intelArea = ScreenRect(hud.transform.Find("EnemyIntel"));
+            foreach (string name in names)
+            {
+                RectTransform other = Object.FindObjectsByType<RectTransform>(FindObjectsInactive.Include).FirstOrDefault(r => r.name == name);
+                Assert.IsNotNull(other, name);
+                Assert.IsFalse(intelArea.Overlaps(ScreenRect(other)), "적 목록 창이 " + name + "와 겹치지 않는다.");
+            }
+        }
+
         static void Kill(CharacterActor actor) => actor.ReceiveDamage(actor.Health.Current + 1f);
 
         GameObject Prefab(SiegeAttackerRole role) => battle.Settings.Enemies
@@ -90,13 +101,8 @@ namespace ProjectNeo.Tests
             Assert.IsTrue(hud.IsShowing);
             Assert.AreEqual(EnemyIntelHud.PreviewTitle, hud.Title);
             Assert.AreEqual($"{ladderName} × 2\n? × 1", hud.Body);
-            Rect intelArea = ScreenRect(hud.transform.Find("EnemyIntel"));
-            foreach (string name in new[] { "SquadsBacking", "BattleStatus" })
-            {
-                RectTransform other = Object.FindObjectsByType<RectTransform>(FindObjectsInactive.Include).FirstOrDefault(r => r.name == name);
-                Assert.IsNotNull(other, name);
-                Assert.IsFalse(intelArea.Overlaps(ScreenRect(other)), "적 목록 창이 " + name + "와 겹치지 않는다.");
-            }
+            // UI-06: 준비 미리보기는 오른쪽 위(자원 바 아래), 왼쪽은 분대 카드가 쓴다.
+            AssertNoOverlap(hud, "PrepSquadCards", "PrepTopBar");
             hud.TogglePreview();
             yield return null;
             Assert.IsFalse(hud.IsShowing);
@@ -104,6 +110,8 @@ namespace ProjectNeo.Tests
             Assert.IsTrue(battle.TryStartBattle());
             yield return null;
             Assert.IsTrue(hud.IsShowing, "전투 중에는 창을 닫아 두어도 보인다.");
+            // 전투 중에는 예전 자리(왼쪽 분대 목록 아래)로 돌아가 오른쪽 위 전투 상태 상자를 피한다.
+            AssertNoOverlap(hud, "SquadsBacking", "BattleStatus");
             Assert.AreEqual($"{EnemyIntelHud.BattleTitle} 3", hud.Title);
             Assert.IsTrue(battle.Intel.AnyHidden, "둘째 웨이브는 아직 나오지 않았다.");
 
