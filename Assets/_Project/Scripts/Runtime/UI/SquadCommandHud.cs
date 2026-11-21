@@ -46,8 +46,13 @@ namespace ProjectNeo.UI
         {
             if (settings == null) return "";
             return $"{SelectKeys(settings)} 부대 선택 - {settings.Move.GetBindingDisplayString()} 이동 - "
-                + $"{settings.Attack.GetBindingDisplayString()} 공격 - {settings.Hold.GetBindingDisplayString()} 정지";
+                + $"{settings.Attack.GetBindingDisplayString()} 공격 - {settings.Hold.GetBindingDisplayString()} 정지 - "
+                + $"{Display(settings.DragFormation, "우클릭")} 끌어 전열 - {Display(settings.CycleFormation, "G")} 진형";
         }
+
+        // 예전 설정 에셋에는 진형 키가 비어 있을 수 있어 기본 키 이름을 쓴다(COMBAT-08).
+        static string Display(UnityEngine.InputSystem.InputAction action, string fallback) =>
+            action != null && action.bindings.Count > 0 ? action.GetBindingDisplayString() : fallback;
 
         /// <summary>부대 선택 키 범위와 전체 선택 키("F1~F10·`"). 키 수는 설정 에셋에서 읽는다(PREP-09).</summary>
         public static string SelectKeys(SquadCommandSettings settings)

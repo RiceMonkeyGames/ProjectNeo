@@ -15,14 +15,19 @@ namespace ProjectNeo.Squads
         {
             public Vector3 Position { get; }
             public float Facing { get; }
-            public Entry(Vector3 position, float facing) { Position = position; Facing = facing; }
+            /// <summary>자리가 앞줄 가운데다(COMBAT-08 전열 긋기). 진형과 폭은 부대 지휘 상태에 남아 있다.</summary>
+            public bool FrontAnchored { get; }
+            public Entry(Vector3 position, float facing, bool frontAnchored = false)
+            {
+                Position = position; Facing = facing; FrontAnchored = frontAnchored;
+            }
         }
 
-        public void Remember(int squad, Vector3 position, float facing)
+        public void Remember(int squad, Vector3 position, float facing, bool frontAnchored = false)
         {
             if (squad < 0) return;
             while (entries.Count <= squad) entries.Add(null);
-            entries[squad] = new Entry(position, facing);
+            entries[squad] = new Entry(position, facing, frontAnchored);
         }
 
         public bool TryGet(int squad, out Entry entry)

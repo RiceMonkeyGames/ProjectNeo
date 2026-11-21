@@ -87,6 +87,33 @@ namespace ProjectNeo.Walls
         }
 
         /// <summary>
+        /// 그 지점이 성벽 맨 위면 <paramref name="direction"/> 쪽으로 잰 통로 폭(m), 아니면 +∞(COMBAT-08 진형 줄 수 상한).
+        /// 방향이 격자 축에서 30도 넘게 비껴 있으면 재지 않는다(+∞).
+        /// </summary>
+        public float WalkwayWidthAt(Vector3 point, Vector3 direction)
+        {
+            if (world == null || world.Layout == null) return float.PositiveInfinity;
+            Vector3 local = world.LocalPoint(point);
+            Vector2Int cell = world.Layout.WorldToCell(local);
+            BuildPlacement top = world.Layout.Top(cell);
+            if (top == null || Mathf.Abs(local.y - (top.Elevation + top.Definition.Height)) > OnTopTolerance)
+                return float.PositiveInfinity;
+            Vector3 axis = world.transform.InverseTransformDirection(direction);
+            axis.y = 0f;
+            if (axis.sqrMagnitude < 1e-6f) return float.PositiveInfinity;
+            axis.Normalize();
+            if (Mathf.Max(Mathf.Abs(axis.x), Mathf.Abs(axis.z)) < AxisAlignment) return float.PositiveInfinity;
+            Vector2Int step = Mathf.Abs(axis.x) >= Mathf.Abs(axis.z)
+                ? new Vector2Int(axis.x > 0f ? 1 : -1, 0) : new Vector2Int(0, axis.z > 0f ? 1 : -1);
+            EnsureOutside();
+            float thickness = style == BattlementStyle.None || settings == null ? 0f : settings.Thickness;
+            return BattlementRules.WalkwayWidth(world.Layout, world.Grid, outside, cell, step, thickness);
+        }
+
+        const float OnTopTolerance = 0.75f;
+        static readonly float AxisAlignment = Mathf.Cos(30f * Mathf.Deg2Rad);
+
+        /// <summary>
         /// 성이 첫 길찾기 메시를 만들기 직전에 부른다(<see cref="ConstructionWorld"/> Awake).
         /// 곧 만들 메시에 담기므로 다시 만들기를 요청하지 않는다.
         /// </summary>

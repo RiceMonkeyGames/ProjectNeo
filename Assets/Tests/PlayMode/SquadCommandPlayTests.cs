@@ -261,6 +261,86 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
+        public IEnumerator DrawnLine_SplitsAcrossSelectedSquads_SetsWidthAndFacing_AndPreviewsSlots()
+        {
+            // COMBAT-08: 북쪽을 보며 동서로 12m 선을 그으면 두 부대가 6m씩 나눠 북쪽을 보고 앞줄을 선에 맞춘다.
+            FreezeEnemies();
+            var markers = center.GetComponentInChildren<PlaceholderSquadMarkers>();
+            yield return null;
+            center.Commander.Select(0);
+            center.Commander.SelectAll();
+            Vector3 start = new Vector3(-16f, 0f, -2f), end = new Vector3(-4f, 0f, -2f);
+            center.PreviewLine(start, end, Vector3.forward);
+            yield return null;
+            int expected = center.CommandableCount(0) + center.CommandableCount(1) + center.CommandableCount(2);
+            Assert.AreEqual(expected, center.Preview.Slots.Count);
+            Assert.AreEqual(expected, markers.VisibleSlotCount, "every soldier's slot is marked while dragging");
+            Assert.AreEqual(3, center.IssueLine(start, end, Vector3.forward, SquadOrderKind.Move, null, out string rejected));
+            Assert.IsNull(rejected);
+            center.Preview.Clear();
+            yield return null;
+            Assert.AreEqual(0, markers.VisibleSlotCount);
+            for (int squad = 0; squad < 3; squad++)
+            {
+                SquadOrder order = center.Commander.OrderOf(squad);
+                Assert.IsTrue(order.FrontAnchored);
+                Assert.That(Mathf.DeltaAngle(order.Facing, 0f), Is.EqualTo(0f).Within(0.01f));
+                Assert.That(center.Commander.WidthOf(squad), Is.EqualTo(4f).Within(0.01f));
+            }
+            Assert.Less(center.Commander.OrderOf(0).Destination.x, center.Commander.OrderOf(1).Destination.x, "left to right by squad number");
+            yield return WaitForHold(0);
+            foreach (UnitCombatAI member in Members(0))
+                Assert.LessOrEqual(member.transform.position.z, -2f + 0.6f, "the drawn line is the front rank");
+
+            // 진형을 바꾸면 그 자리에서 다시 선다(폭은 m로 유지).
+            center.Commander.Select(0);
+            Assert.AreEqual(1, center.CycleSelectedFormation());
+            Assert.AreEqual(FormationKind.Close, center.Commander.FormationOf(0));
+            Assert.AreEqual(SquadOrderKind.Move, center.Commander.OrderOf(0).Kind, "re-forms in place");
+            Assert.IsTrue(center.Commander.OrderOf(0).FrontAnchored);
+
+            // 거절 문구가 오면 아무 부대도 움직이지 않는다.
+            center.Commander.SelectAll();
+            Assert.AreEqual(0, center.IssueLine(start, end, Vector3.forward, SquadOrderKind.Move, _ => "no", out rejected));
+            Assert.AreEqual("no", rejected);
+        }
+
+        [UnityTest]
+        public IEnumerator HoldingSquad_FillsAFrontGapFromTheRear_AndANewMemberTakesAFreeSlot()
+        {
+            // COMBAT-08: 자리를 지키는 분대에서 앞줄이 죽으면 잠시 뒤 뒤쪽 한 명이 그 자리로 오고, 나머지는 제자리다.
+            FreezeEnemies();
+            yield return null;
+            center.Commander.Select(0);
+            center.IssueLine(new Vector3(-12f, 0f, -2f), new Vector3(-10f, 0f, -2f), Vector3.forward, SquadOrderKind.Move, null, out _);
+            yield return WaitForHold(0);
+            yield return null;
+            List<UnitCombatAI> members = Members(0).ToList();
+            Assert.GreaterOrEqual(members.Count, 3, "needs a front rank and a rear");
+            UnitCombatAI front = members.OrderByDescending(member => member.HoldPost.z).First();
+            Vector3 gap = front.HoldPost;
+            Dictionary<UnitCombatAI, Vector3> before = members.Where(member => member != front)
+                .ToDictionary(member => member, member => member.HoldPost);
+            front.Actor.ReceiveDamage(100000f);
+            for (int i = 0; i < 10; i++) yield return null;
+            Assert.IsTrue(before.All(pair => Vector3.Distance(pair.Key.HoldPost, pair.Value) < 0.01f), "waits before refilling");
+            float wait = center.Settings.RefillDelay + 0.5f;
+            for (float t = 0f; t < wait; t += Time.deltaTime) yield return null;
+            int moved = before.Count(pair => Vector3.Distance(pair.Key.HoldPost, pair.Value) > 0.05f);
+            Assert.That(moved, Is.InRange(1, 2), "one rear unit moves up (a partial last rank may re-centre)");
+            Assert.IsTrue(before.Keys.Any(member => Vector3.Distance(member.HoldPost, gap) < 0.6f), "the front gap is filled");
+
+            // 다른 분대에서 옮겨 온 부대원은 모이는 곳에 겹치지 않고 남은 자리를 받는다.
+            UnitCombatAI newcomer = Members(1)[0];
+            newcomer.SetDirective(UnitDirective.Move, center.Commander.OrderOf(0).Destination);
+            Assert.IsTrue(center.MoveMember(newcomer, 0));
+            yield return null;
+            Assert.AreEqual(UnitDirective.Hold, newcomer.Directive);
+            foreach (UnitCombatAI member in before.Keys)
+                Assert.Greater(Vector3.Distance(member.HoldPost, newcomer.HoldPost), 0.5f, "the newcomer gets its own slot");
+        }
+
+        [UnityTest]
         public IEnumerator Input_OrdersMoveToTheScreenCenter_AndRejectsMissingSelectionOrSquad()
         {
             for (int i = 0; i < 3; i++) yield return null;

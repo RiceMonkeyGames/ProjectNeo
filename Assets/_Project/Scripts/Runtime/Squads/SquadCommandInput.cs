@@ -12,8 +12,12 @@ namespace ProjectNeo.Squads
         [SerializeField] Camera view;
         readonly RaycastHit[] hits = new RaycastHit[32];
         InputAction[] selectSquad;
-        InputAction selectAll, move, attack, hold;
+        InputAction selectAll, move, attack, hold, cycleFormation, dragFormation;
+        bool dragging, hasDragEnd;
+        Vector3 dragStart, dragEnd;
         public string Message { get; private set; } = "";
+        /// <summary>전열을 끄는 중이다(COMBAT-08).</summary>
+        public bool IsDragging => dragging;
         public SquadCommandCenter Center => center;
         /// <summary>조준 광선을 쏘는 카메라(COMBAT-06 스킬 조준도 같은 화면 가운데를 쓴다).</summary>
         public Camera View => view;
@@ -34,10 +38,20 @@ namespace ProjectNeo.Squads
             move = settings.Move.Clone();
             attack = settings.Attack.Clone();
             hold = settings.Hold.Clone();
+            // 예전 설정 에셋에는 이 키가 비어 있을 수 있어 기본 키를 쓴다.
+            cycleFormation = OrDefault(settings.CycleFormation, "CycleFormation", SquadCommandSettings.DefaultCycleFormationBinding);
+            dragFormation = OrDefault(settings.DragFormation, "DragFormation", SquadCommandSettings.DefaultDragFormationBinding);
         }
 
+        static InputAction OrDefault(InputAction source, string name, string binding) =>
+            source != null && source.bindings.Count > 0 ? source.Clone() : new InputAction(name, InputActionType.Button, binding);
+
         void OnEnable() { foreach (InputAction action in All()) action.Enable(); }
-        void OnDisable() { foreach (InputAction action in All()) action.Disable(); }
+        void OnDisable()
+        {
+            foreach (InputAction action in All()) action.Disable();
+            CancelDrag();
+        }
         void OnDestroy() { foreach (InputAction action in All()) action.Dispose(); }
 
         System.Collections.Generic.IEnumerable<InputAction> All()
@@ -45,6 +59,7 @@ namespace ProjectNeo.Squads
             if (selectSquad == null) yield break;
             foreach (InputAction action in selectSquad) yield return action;
             yield return selectAll; yield return move; yield return attack; yield return hold;
+            yield return cycleFormation; yield return dragFormation;
         }
 
         void Update()
@@ -55,6 +70,87 @@ namespace ProjectNeo.Squads
             if (move.WasPressedThisFrame()) OrderMove();
             if (attack.WasPressedThisFrame()) Order(SquadOrderKind.Attack);
             if (hold.WasPressedThisFrame()) Order(SquadOrderKind.Hold);
+            if (cycleFormation.WasPressedThisFrame()) CycleFormation();
+            if (dragFormation.WasPressedThisFrame()) BeginDrag();
+            if (dragging)
+            {
+                if (dragFormation.IsPressed()) UpdateDrag();
+                else EndDrag();
+            }
+        }
+
+        // ── 진형(COMBAT-08) ─────────────────────────────────────
+
+        static readonly string[] FormationNames = { "횡대", "밀집", "산개", "종대" };
+
+        public static string FormationName(FormationKind kind) =>
+            (int)kind >= 0 && (int)kind < FormationNames.Length ? FormationNames[(int)kind] : kind.ToString();
+
+        /// <summary>선택한 부대의 진형을 다음으로 바꾼다. 바꾼 부대가 있으면 true.</summary>
+        public bool CycleFormation()
+        {
+            if (center.Commander.SelectedCount == 0) { Message = "먼저 부대를 선택하세요."; return false; }
+            center.CycleSelectedFormation();
+            for (int i = 0; i < center.Commander.SquadCount; i++)
+                if (center.Commander.IsSelected(i)) { Message = "진형: " + FormationName(center.Commander.FormationOf(i)); break; }
+            return true;
+        }
+
+        /// <summary>화면 가운데가 가리키는 곳에서 전열 긋기를 시작한다. 시작했으면 true.</summary>
+        public bool BeginDrag()
+        {
+            CancelDrag();
+            if (center.Commander.SelectedCount == 0) { Message = "먼저 부대를 선택하세요."; return false; }
+            if (!TryGetAimPoint(out Vector3 point)) { Message = "그곳으로 이동할 수 없습니다."; return false; }
+            dragging = true; hasDragEnd = false; dragStart = point;
+            Message = "";
+            return true;
+        }
+
+        /// <summary>지금 가리키는 곳까지 선을 늘리고 자리 미리보기를 갱신한다.</summary>
+        public void UpdateDrag()
+        {
+            if (!dragging) return;
+            if (TryGetAimPoint(out Vector3 point)) { dragEnd = point; hasDragEnd = true; }
+            if (IsLine()) center.PreviewLine(dragStart, dragEnd, view.transform.forward);
+            else center.Preview.Clear();
+        }
+
+        /// <summary>
+        /// 긋기를 끝내고 지시한다. 충분히 끌었으면 그은 선에 서고, 아니면 시작점으로 지금 폭 그대로 이동한다. 지시했으면 true.
+        /// </summary>
+        public bool EndDrag()
+        {
+            if (!dragging) return false;
+            dragging = false;
+            center.Preview.Clear();
+            if (!IsLine()) return MoveTo(dragStart);
+            int issued = center.IssueLine(dragStart, dragEnd, view.transform.forward, SquadOrderKind.Move, DestinationCheck,
+                out string rejected);
+            Message = !string.IsNullOrEmpty(rejected) ? rejected : "";
+            return issued > 0;
+        }
+
+        public void CancelDrag()
+        {
+            dragging = false; hasDragEnd = false;
+            if (center != null) center.Preview.Clear();
+        }
+
+        bool IsLine()
+        {
+            if (!hasDragEnd) return false;
+            Vector3 along = dragEnd - dragStart; along.y = 0f;
+            return along.magnitude >= center.Settings.MinDragLength;
+        }
+
+        bool MoveTo(Vector3 point)
+        {
+            string rejected = DestinationCheck?.Invoke(point);
+            if (!string.IsNullOrEmpty(rejected)) { Message = rejected; return false; }
+            center.Commander.Issue(new SquadOrder(SquadOrderKind.Move, point, view.transform.eulerAngles.y));
+            Message = "";
+            return true;
         }
 
         public bool SelectSquad(int index)
@@ -70,11 +166,7 @@ namespace ProjectNeo.Squads
         {
             if (center.Commander.SelectedCount == 0) { Message = "먼저 부대를 선택하세요."; return false; }
             if (!TryGetAimPoint(out Vector3 point)) { Message = "그곳으로 이동할 수 없습니다."; return false; }
-            string rejected = DestinationCheck?.Invoke(point);
-            if (!string.IsNullOrEmpty(rejected)) { Message = rejected; return false; }
-            center.Commander.Issue(new SquadOrder(SquadOrderKind.Move, point, view.transform.eulerAngles.y));
-            Message = "";
-            return true;
+            return MoveTo(point);
         }
 
         public bool Order(SquadOrderKind kind)

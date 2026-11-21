@@ -103,6 +103,27 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
+        public IEnumerator Formation_OnWallTop_ClampsRanksAcrossTheWalkway()
+        {
+            // COMBAT-08: 한 줄 1명(폭 0)으로 8명을 세우면 8줄이 되지만, 성벽 위 통로를 가로지르는 방향으로는 들어가는 줄 수만 선다.
+            construction.WalkToWall();
+            Vector3 anchor = center.Commander.OrderOf(0).Destination;
+            yield return null;
+            var slots = new System.Collections.Generic.List<Vector3>();
+            int best = int.MaxValue;
+            foreach (float facing in new[] { 0f, 90f })
+            {
+                center.PlanSlots(FormationKind.Line, 0f, anchor, facing, false, 8, slots);
+                Vector3 forward = Quaternion.Euler(0f, facing, 0f) * Vector3.forward;
+                int ranks = slots.Select(slot => Mathf.RoundToInt(Vector3.Dot(slot - anchor, forward) / 0.3f)).Distinct().Count();
+                if (ranks >= best) continue;
+                best = ranks;
+                foreach (Vector3 slot in slots) Assert.That(slot.y, Is.EqualTo(anchor.y).Within(0.2f), "every slot stays on the wall top");
+            }
+            Assert.LessOrEqual(best, 2, "across the 3m wall top at most two ranks fit");
+        }
+
+        [UnityTest]
         public IEnumerator Squad_StopsOnWallWhenStairsDisappear()
         {
             construction.WalkToWall();

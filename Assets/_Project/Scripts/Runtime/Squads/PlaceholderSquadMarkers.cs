@@ -16,8 +16,17 @@ namespace ProjectNeo.Squads
         [SerializeField, Min(0.1f)] float memberDiameter = 1.3f;
         [SerializeField, Min(0.1f)] float destinationDiameter = 2.4f;
         [SerializeField, Min(0f)] float lift = 0.06f;
+        [SerializeField, Min(0f)] float slotDiameter = 0.6f;
         readonly Dictionary<UnitCombatAI, GameObject> memberDiscs = new Dictionary<UnitCombatAI, GameObject>();
         readonly List<GameObject> destinationDiscs = new List<GameObject>();
+        // 전열을 끄는 동안 병사마다 설 자리(COMBAT-08). 쓰는 만큼만 만들어 다시 쓴다.
+        readonly List<GameObject> slotDiscs = new List<GameObject>();
+
+        /// <summary>지금 보이는 자리 미리보기 원판 수.</summary>
+        public int VisibleSlotCount
+        {
+            get { int count = 0; foreach (GameObject disc in slotDiscs) if (disc.activeSelf) count++; return count; }
+        }
 
         public void Configure(SquadCommandCenter commandCenter, Material selection, Material destination)
         {
@@ -86,6 +95,19 @@ namespace ProjectNeo.Squads
                 bool show = order.HasDestination && order.Kind != SquadOrderKind.Hold && center.AliveCount(squad) > 0;
                 destinationDiscs[squad].SetActive(show);
                 if (show) destinationDiscs[squad].transform.position = order.Destination + Vector3.up * lift;
+            }
+            ShowSlots(center.Preview);
+        }
+
+        void ShowSlots(FormationPreview preview)
+        {
+            int count = preview.Active ? preview.Slots.Count : 0;
+            while (slotDiscs.Count < count) slotDiscs.Add(Disc("FormationSlot_" + (slotDiscs.Count + 1), slotDiameter, destinationMaterial));
+            for (int i = 0; i < slotDiscs.Count; i++)
+            {
+                bool show = i < count;
+                slotDiscs[i].SetActive(show);
+                if (show) slotDiscs[i].transform.position = preview.Slots[i] + Vector3.up * lift;
             }
         }
     }
