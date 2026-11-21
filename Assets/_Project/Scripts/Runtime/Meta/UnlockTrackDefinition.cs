@@ -10,10 +10,21 @@ namespace ProjectNeo.Meta
         [SerializeField] UnlockTrackCategory category;
         [SerializeField] string displayName;
         [SerializeField] List<UnlockEntry> entries = new List<UnlockEntry>();
+        [SerializeField, Min(0), Tooltip("UI-06: unlock points one random unlock on this track costs (user 2026-11-21: 1 on every track).")]
+        int drawCost = 1;
 
         public UnlockTrackCategory Category => category;
         public string DisplayName => string.IsNullOrEmpty(displayName) ? category.ToString() : displayName;
         public IReadOnlyList<UnlockEntry> Entries => entries;
+        /// <summary>이 트랙에서 무작위 해금 한 번에 드는 해금 포인트(UI-06). 항목마다의 비용은 쓰지 않는다.</summary>
+        public int DrawCost => Mathf.Max(0, drawCost);
+
+        /// <summary>무작위 해금 비용을 바꾼 트랙을 돌려준다(같은 객체). 테스트와 설정 스크립트가 쓴다.</summary>
+        public UnlockTrackDefinition WithDrawCost(int cost)
+        {
+            drawCost = Mathf.Max(0, cost);
+            return this;
+        }
 
         /// <summary>항목을 받은 그대로(선행 항목 포함) 담은 트랙을 만든다.</summary>
         public static UnlockTrackDefinition Create(UnlockTrackCategory category, string displayName, IEnumerable<UnlockEntry> entries)

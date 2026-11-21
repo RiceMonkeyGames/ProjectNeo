@@ -82,7 +82,7 @@ namespace ProjectNeo.Editor
         }
 
         /// <summary>
-        /// META-06 저장된 Title 씬에 'Unlocks' 버튼과 런 사이 해금 창(트랙 4열)을 더한다. 다시 실행하면 같은 것을 새로 만든다.
+        /// META-06 저장된 Title 씬에 'Unlocks' 버튼과 런 사이 해금 화면(UI-06부터 시안 B 패널)을 더한다. 다시 실행하면 같은 것을 새로 만든다.
         /// 해금 트랙 에셋(META-07)이 먼저 있어야 한다.
         /// </summary>
         [MenuItem("ProjectNeo/Setup/Add Unlock Screen To Title Scene (META-06)")]
@@ -110,64 +110,8 @@ namespace ProjectNeo.Editor
             Transform delete = panel.Find("Button_Delete slot");
             if (delete != null) open.transform.SetSiblingIndex(delete.GetSiblingIndex());
 
-            // 타이틀 위를 덮는 창. 배경 그림이 뒤의 타이틀 버튼을 가린다.
-            var overlay = new GameObject("UnlockOverlay", typeof(RectTransform), typeof(Image), typeof(VerticalLayoutGroup));
-            overlay.transform.SetParent(screen.transform, false);
-            var rect = overlay.GetComponent<RectTransform>();
-            rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one; rect.offsetMin = rect.offsetMax = Vector2.zero;
-            overlay.GetComponent<Image>().color = new Color(0.04f, 0.06f, 0.09f, 0.97f);
-            var layout = overlay.GetComponent<VerticalLayoutGroup>();
-            layout.padding = new RectOffset(30, 30, 24, 24); layout.spacing = 12f;
-            layout.childControlWidth = true; layout.childControlHeight = true;
-            layout.childForceExpandWidth = true; layout.childForceExpandHeight = false;
-
-            var header = new GameObject("Header", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
-            header.transform.SetParent(overlay.transform, false);
-            header.GetComponent<LayoutElement>().preferredHeight = 44f;
-            var headerLayout = header.GetComponent<HorizontalLayoutGroup>();
-            headerLayout.spacing = 12f; headerLayout.childControlWidth = true; headerLayout.childControlHeight = true;
-            headerLayout.childForceExpandWidth = false; headerLayout.childForceExpandHeight = true;
-            TMP_Text points = Label(header.transform, "해금 포인트: 0", 44f, 26f);
-            points.name = "Label_UnlockPoints";
-            points.gameObject.GetComponent<LayoutElement>().flexibleWidth = 1f;
-            GameObject close = ConstructionPrototypeSetup.Button(header.transform, "Close", unlocks.Close, "닫기");
-            close.GetComponent<LayoutElement>().preferredWidth = 160f;
-
-            TMP_Text status = Label(overlay.transform, string.Empty, 26f, 16f);
-            status.name = "Label_UnlockStatus";
-
-            var body = new GameObject("Tracks", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
-            body.transform.SetParent(overlay.transform, false);
-            body.GetComponent<LayoutElement>().flexibleHeight = 1f;
-            var bodyLayout = body.GetComponent<HorizontalLayoutGroup>();
-            bodyLayout.spacing = 14f; bodyLayout.childControlWidth = true; bodyLayout.childControlHeight = true;
-            bodyLayout.childForceExpandWidth = true; bodyLayout.childForceExpandHeight = true;
-            var columns = new RectTransform[4];
-            for (int i = 0; i < columns.Length; i++)
-            {
-                var column = new GameObject("Column_" + (i + 1), typeof(RectTransform), typeof(VerticalLayoutGroup));
-                column.transform.SetParent(body.transform, false);
-                var columnLayout = column.GetComponent<VerticalLayoutGroup>();
-                columnLayout.spacing = 8f; columnLayout.childControlWidth = true; columnLayout.childControlHeight = true;
-                columnLayout.childForceExpandWidth = true; columnLayout.childForceExpandHeight = false;
-                TMP_Text title = Label(column.transform, "분류", 34f, 20f);
-                title.name = "Label_TrackTitle";
-                title.fontStyle = FontStyles.Bold;
-                columns[i] = column.GetComponent<RectTransform>();
-            }
-
-            GameObject row = ConstructionPrototypeSetup.Button(overlay.transform, "Row", null, "항목");
-            row.name = "RowTemplate";
-            row.GetComponent<LayoutElement>().preferredHeight = 48f;
-            TMP_Text rowText = row.GetComponentInChildren<TMP_Text>();
-            rowText.fontSize = 15f; rowText.textWrappingMode = TextWrappingModes.Normal;
-            row.SetActive(false);
-
-            unlocks.Configure(unlockCatalog, overlay, points, status, columns, row.GetComponent<Button>());
-            overlay.SetActive(false);
-            screen.ConfigureUnlocks(unlocks);
-            EditorUtility.SetDirty(unlocks);
-            EditorUtility.SetDirty(screen);
+            // UI-06: 해금 화면은 시안 B 패널로 만든다(트랙 목록 + 항목 카드 + 무작위 해금).
+            TitleUnlockScreenSetup.Build(screen, unlocks, unlockCatalog);
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
         }

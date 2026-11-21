@@ -90,6 +90,92 @@ namespace ProjectNeo.Editor
             return Caption(button, caption, font, size, Ink);
         }
 
+        /// <summary>
+        /// A quieter companion to <see cref="ParchmentButton"/> (UI-06): dark teal plate (<c>Box_Background01</c>) in the dim
+        /// bronze card frame, cream caption. The plate takes the color tint.
+        /// </summary>
+        public static TMP_Text PlateButton(RectTransform button, string caption, TMP_FontAsset font, float size)
+        {
+            RectTransform visual = PrepareButton(button);
+            var plate = Image(visual, "SPR_Background", "SPR_HUD_FantasyWarrior_Box_Background01", new Color32(0x24, 0x4A, 0x66, 0xFF), 1f * 3f);
+            Stretch(plate.rectTransform, new Vector2(3f, 3f), new Vector2(-3f, -3f));
+            var frame = Image(visual, "SPR_Frame", "SPR_FantasyWarrior_Frame_Box12", CardFrame, 3f * 3f);
+            Stretch(frame.rectTransform, Vector2.zero, Vector2.zero);
+            Tinted(button, plate, new Color(0.9f, 0.9f, 0.9f), Color.white);
+            return Caption(button, caption, font, size, Cream);
+        }
+
+        /// <summary>Dim bronze frame color shared by cards and plate buttons (UI-10 slot cards).</summary>
+        public static readonly Color CardFrame = new Color32(0x9A, 0x74, 0x40, 0xB0);
+
+        /// <summary>
+        /// Card art like the UI-10 slot cards (dark parchment fill in the dim bronze <c>Frame_Box12</c>), as a plain group
+        /// under a <c>Visual</c> layer: no button, no text. Returns the group so callers can add dividers.
+        /// </summary>
+        public static RectTransform CardArt(RectTransform visual, string name, Vector2 position, Vector2 size)
+        {
+            var group = Node(visual, name);
+            Place(group, new Vector2(0.5f, 0.5f), position, size);
+            var fill = Image(group, "SPR_Background", "SPR_FantasyWarrior_Box_Parchment01", new Color32(0x16, 0x2C, 0x3D, 0xF0), 2f * 3f);
+            Stretch(fill.rectTransform, new Vector2(4f, 4f), new Vector2(-4f, -4f));
+            var frame = Image(group, "SPR_Frame", "SPR_FantasyWarrior_Frame_Box12", CardFrame, 3f * 3f);
+            Stretch(frame.rectTransform, Vector2.zero, Vector2.zero);
+            return group;
+        }
+
+        /// <summary>A thin bronze line placed at <paramref name="y"/> from the top of <paramref name="card"/>.</summary>
+        public static void Divider(RectTransform card, string name, float y, float inset)
+        {
+            var line = Node(card, name).gameObject.AddComponent<Image>();
+            line.color = new Color32(0x9A, 0x74, 0x40, 0x80);
+            line.raycastTarget = false;
+            Place(line.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -y), new Vector2(card.sizeDelta.x - inset * 2f, 1.5f));
+        }
+
+        // Copied layer by layer from the sample nameplate (HUD_FantasyWarrior_Event_DialogueBox02 / Name, 700x120 on the
+        // 3840 canvas): Box_Background01 fills the plate, the Banner05 frame juts out 55 left/right, 33.6 up and 28 down,
+        // the name text is inset 80 on each side. Built at sample size x Scale and enlarged as a whole (NameplateScale) so
+        // the layers keep the sample's proportions.
+        public const float NameplateScale = 1.6f;
+
+        /// <summary>
+        /// UI-10 screen header: the sample nameplate drawn under <paramref name="visual"/> near the top, with the existing
+        /// <paramref name="label"/> laid over it in Noto (cream, 28).
+        /// </summary>
+        public static TMP_Text Nameplate(RectTransform visual, RectTransform label, string text, TMP_FontAsset font)
+        {
+            var group = Node(visual, "Header");
+            Place(group, new Vector2(0.5f, 1f), new Vector2(0f, -100f), new Vector2(700f, 120f) * Scale);
+            group.localScale = Vector3.one * NameplateScale;
+            var plate = Image(group, "SPR_Background", "SPR_HUD_FantasyWarrior_Box_Background01", new Color32(0x1D, 0x3A, 0x52, 0xCC), 1f * 3f);
+            Stretch(plate.rectTransform, Vector2.zero, Vector2.zero);
+            var frame = Image(group, "SPR_Frame", "SPR_FantasyWarrior_Banner05", Color.white, 2f * 3f);
+            Stretch(frame.rectTransform, new Vector2(-55f, -28f) * Scale, new Vector2(55f, 33.6f) * Scale);
+
+            DestroyComponent<LayoutElement>(label.gameObject);
+            Place(label, group.anchorMin, group.anchoredPosition, (group.sizeDelta - new Vector2(160f, 0f) * Scale) * NameplateScale);
+            var tmp = label.GetComponent<TMP_Text>();
+            tmp.text = text;
+            Font(tmp, font, 28f, Cream, TextAlignmentOptions.Center);
+            tmp.raycastTarget = false;
+            EditorUtility.SetDirty(tmp);
+            return tmp;
+        }
+
+        /// <summary>The Title screens' 뒤로: gold caption with a reversed arrow, bottom-left inside the frame (UI-10 slot window).</summary>
+        public static TMP_Text BackLink(RectTransform back, TMP_FontAsset font)
+        {
+            Place(back, new Vector2(0f, 0f), new Vector2(70f, 72f), new Vector2(110f, 28f), new Vector2(0f, 0f));
+            TMP_Text label = TextButton(back, "뒤로", font, 20f, Gold);
+            label.rectTransform.offsetMin = new Vector2(24f, 0f);
+            label.alignment = TextAlignmentOptions.MidlineLeft;
+            var arrow = Image(back, "ICON", "SPR_HUD_FantasyWarrior_Arrow02", Gold, 1f);
+            arrow.preserveAspect = true;
+            Place(arrow.rectTransform, new Vector2(0f, 0.5f), new Vector2(10f, 1f), new Vector2(16f, 16f));
+            arrow.rectTransform.localEulerAngles = new Vector3(0f, 0f, 180f);
+            return label;
+        }
+
         /// <summary>A small caption-only button (sample "Button_Quit"): transparent hit area, tint on the caption.</summary>
         public static TMP_Text TextButton(RectTransform button, string caption, TMP_FontAsset font, float size, Color color)
         {

@@ -22,6 +22,8 @@ namespace ProjectNeo.UI
         [SerializeField] TMP_Text continueLabel;
         [SerializeField] UnlockScreen unlockScreen;
         [SerializeField] AscensionPicker ascensionPicker;
+        [SerializeField, Tooltip("UI-06: unlock points of the selected slot on the expedition screen's unlock card.")]
+        TMP_Text expeditionPointsLabel;
         [Header("Screens (UI-05)")]
         [SerializeField, Tooltip("Main menu shown first: logo, start, quit.")] GameObject mainMenu;
         [SerializeField, Tooltip("Slot window opened from the main menu: slots, continue, new game, unlocks, delete, back.")]
@@ -221,6 +223,10 @@ namespace ProjectNeo.UI
         }
 
         public void ConfigureAscension(AscensionPicker picker) => ascensionPicker = picker;
+
+        public void ConfigureExpeditionPoints(TMP_Text points) => expeditionPointsLabel = points;
+        /// <summary>출정 준비 화면 해금 카드의 보유 포인트 글(UI-06). 글이 없으면 빈 문자열.</summary>
+        public string ExpeditionPointsText => expeditionPointsLabel != null ? expeditionPointsLabel.text : string.Empty;
         public AscensionPicker Ascension => ascensionPicker;
 
         public void Quit()
@@ -247,6 +253,9 @@ namespace ProjectNeo.UI
             // 진행 중인 스테이지는 슬롯 카드에 나오므로 이어 하기 버튼은 짧게 둔다(UI-10).
             if (continueButton != null) continueButton.interactable = GameSession.RunSaves.Inspect(selectedSlot).HasRun;
             if (statusLabel != null) statusLabel.text = notice;
+            // 해금 창에서 포인트를 쓰고 닫으면(Closed) 여기서 다시 채운다.
+            if (expeditionPointsLabel != null)
+                expeditionPointsLabel.text = $"보유 해금 포인트  <color=#E3BB71>{store.Inspect(selectedSlot).Progress.unlockPoints}</color>";
         }
 
         // 슬롯 카드 아래에 붙이는 진행 중인 런 줄. 런 저장이 없으면 빈 문자열.

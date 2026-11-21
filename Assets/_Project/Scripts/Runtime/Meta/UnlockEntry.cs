@@ -19,8 +19,12 @@ namespace ProjectNeo.Meta
         [Tooltip("true면 사지 않아도 처음부터 열려 있다. 예전 '처음부터 해금' 플래그를 옮긴 것.")]
         [SerializeField] bool openedByDefault;
         [SerializeField] UnlockPayload payload;
+        [SerializeField, Tooltip("UI-06: thumbnail on the unlock screen card. Empty shows the blank thumbnail frame.")]
+        Sprite icon;
 
         public string Id => id ?? string.Empty;
+        /// <summary>해금 화면 카드의 썸네일(UI-06). 없으면 null(빈 칸만 보인다).</summary>
+        public Sprite Icon => icon;
         public string DisplayName => string.IsNullOrEmpty(displayName) ? Id : displayName;
         public int Cost => cost;
         public IReadOnlyList<string> PrerequisiteIds => prerequisiteIds ??= new List<string>();
@@ -71,7 +75,16 @@ namespace ProjectNeo.Meta
         /// <summary>선행 항목만 바꾼 복사본.</summary>
         public UnlockEntry WithPrerequisites(IEnumerable<string> prerequisites)
         {
-            return Create(Id, cost, payload, openedByDefault, prerequisites, displayName);
+            UnlockEntry copy = Create(Id, cost, payload, openedByDefault, prerequisites, displayName);
+            copy.icon = icon;
+            return copy;
+        }
+
+        /// <summary>썸네일을 바꾼 항목을 돌려준다(같은 객체). 설정 스크립트와 테스트가 쓴다.</summary>
+        public UnlockEntry WithIcon(Sprite thumbnail)
+        {
+            icon = thumbnail;
+            return this;
         }
     }
 }
