@@ -45,6 +45,10 @@ namespace ProjectNeo.Editor
             fontAsset.ClearFontAssetData(true);
             fontAsset.TryAddCharacters(charset, out string missing);
             fontAsset.atlasPopulationMode = AtlasPopulationMode.Static;
+            // TMP fills the material's _ScaleRatioA/B/C the first time it draws text with it, which left the saved asset
+            // showing as changed after every test or Play session (UI-10). Compute them now so the saved values match.
+            ShaderUtilities.UpdateShaderRatios(fontAsset.material);
+            EditorUtility.SetDirty(fontAsset.material);
             EditorUtility.SetDirty(fontAsset);
 
             var fallbacks = TMP_Settings.fallbackFontAssets;

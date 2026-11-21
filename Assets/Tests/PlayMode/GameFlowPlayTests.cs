@@ -59,17 +59,20 @@ namespace ProjectNeo.Tests
             Transform panel = title.transform.Find("SlotPanel");
             Assert.IsNotNull(panel.Find("Button_Slot 3"), "Title 씬에 저장 슬롯 버튼 3개가 있어야 한다.");
             StringAssert.Contains("Lv 5", title.SlotText(1));
-            StringAssert.StartsWith("> ", title.SlotText(GameSession.SaveStore.GetLastSlot()), "마지막에 쓴 슬롯이 골라져 있다.");
+            int last = GameSession.SaveStore.GetLastSlot();
+            Assert.AreEqual(last, title.SelectedSlot, "마지막에 쓴 슬롯이 골라져 있다.");
+            for (int i = 0; i < 3; i++)
+                Assert.AreEqual(i == last, title.IsSlotHighlighted(i), "고른 슬롯 카드에만 금색 테두리가 켜진다(UI-10).");
+            title.SelectSlot(2);
+            Assert.IsTrue(title.IsSlotHighlighted(2));
+            Assert.IsFalse(title.IsSlotHighlighted(last == 2 ? 0 : last));
 
             title.SelectSlot(0);
             title.DeleteSelectedSlot();
-            Assert.IsFalse(title.IsDeleteArmed, "빈 슬롯은 지울 것이 없다.");
+            Assert.AreEqual(ProjectNeo.Meta.MetaLoadStatus.Empty, GameSession.SaveStore.Inspect(0).Status, "빈 슬롯은 지울 것이 없다.");
+            Assert.AreEqual(ProjectNeo.Meta.MetaLoadStatus.Loaded, GameSession.SaveStore.Inspect(1).Status, "다른 슬롯은 그대로다.");
 
             title.SelectSlot(1);
-            title.DeleteSelectedSlot();
-            Assert.IsTrue(title.IsDeleteArmed, "저장된 슬롯은 한 번 더 눌러야 지운다.");
-            title.SelectSlot(1);
-            Assert.IsFalse(title.IsDeleteArmed, "슬롯을 다시 고르면 삭제 대기가 풀린다.");
 
             title.StartGame();
             Assert.IsTrue(title.IsExpeditionOpen, "새 게임은 출정 준비 화면을 연다(UI-05).");
@@ -128,7 +131,7 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
-        public IEnumerator 타이틀에서_저장된_슬롯을_두_번_눌러_지운다()
+        public IEnumerator 타이틀에서_저장된_슬롯을_초기화하면_한_번에_지워진다()
         {
             GameSession.SaveStore.Save(2, new ProjectNeo.Meta.MetaProgress { commanderLevel = 3 });
             yield return SceneManager.LoadSceneAsync("Title", LoadSceneMode.Single);
@@ -137,16 +140,12 @@ namespace ProjectNeo.Tests
 
             var deleteLabel = title.transform.Find("SlotPanel/Button_Delete slot").GetComponentInChildren<TMPro.TMP_Text>();
             string defaultCaption = deleteLabel.text;
-            Assert.AreEqual("고른 슬롯 삭제", defaultCaption);
+            Assert.AreEqual("초기화", defaultCaption);
             title.SelectSlot(2);
             title.DeleteSelectedSlot();
-            StringAssert.Contains("한 번 더 누르면 슬롯 3 삭제", deleteLabel.text);
-            Assert.AreEqual(ProjectNeo.Meta.MetaLoadStatus.Loaded, GameSession.SaveStore.Inspect(2).Status);
-            title.DeleteSelectedSlot();
-
-            Assert.AreEqual(ProjectNeo.Meta.MetaLoadStatus.Empty, GameSession.SaveStore.Inspect(2).Status);
-            Assert.IsFalse(title.IsDeleteArmed);
-            Assert.AreEqual(defaultCaption, deleteLabel.text);
+            Assert.AreEqual(ProjectNeo.Meta.MetaLoadStatus.Empty, GameSession.SaveStore.Inspect(2).Status, "한 번 누르면 바로 초기화된다(UI-10).");
+            Assert.AreEqual(defaultCaption, title.DeleteText);
+            StringAssert.Contains("비어 있음", title.SlotText(2));
         }
 
         static IEnumerator WaitForActiveScene(string name)
@@ -324,7 +323,6 @@ namespace ProjectNeo.Tests
             var title = Object.FindAnyObjectByType<TitleScreen>();
             Assert.IsNotNull(title);
 
-            title.StartGame();
             title.StartGame();
             if (title.IsExpeditionOpen) title.Ascension.StartSelected();
             yield return WaitForActiveScene("Game");

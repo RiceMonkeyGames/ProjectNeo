@@ -164,8 +164,8 @@ namespace ProjectNeo.Tests
             title = Object.FindAnyObjectByType<TitleScreen>();
             title.SelectSlot(0);
             Assert.IsTrue(title.CanContinue);
-            StringAssert.Contains("1", title.ContinueText);
-            StringAssert.Contains("1", title.SlotText(0));
+            Assert.AreEqual("이어 하기", title.ContinueText, "진행 중인 스테이지는 슬롯 카드에 나온다(UI-10).");
+            StringAssert.Contains("스테이지 1 진행 중", title.SlotText(0));
 
             yield return Continue(0);
             Assert.IsTrue(battle.RunLink.WasRestored);
@@ -264,14 +264,13 @@ namespace ProjectNeo.Tests
             yield return QuitToTitle();
             var title = Object.FindAnyObjectByType<TitleScreen>();
             title.SelectSlot(2);
-            StringAssert.Contains("3", title.ContinueText);
-            // 저장된 런이 있으면 새 게임은 한 번 더 눌러야 한다.
+            StringAssert.Contains("스테이지 3 진행 중", title.SlotText(2));
+            // 새 게임은 한 번에 출정 준비로 가지만, 저장된 런은 출정할 때까지 버리지 않는다(UI-10).
             title.StartGame();
-            Assert.IsTrue(title.IsNewGameArmed);
+            Assert.IsTrue(title.IsExpeditionOpen);
             Assert.AreEqual("Title", SceneManager.GetActiveScene().name);
-            Assert.IsTrue(GameSession.HasRunSave(2), "확인 전에는 런 저장을 버리지 않는다.");
-            title.SelectSlot(2);
-            Assert.IsFalse(title.IsNewGameArmed);
+            Assert.IsTrue(GameSession.HasRunSave(2), "출정 전에는 런 저장을 버리지 않는다.");
+            title.CloseExpedition();
 
             yield return Continue(2);
             Assert.IsTrue(battle.RunLink.WasRestored);
@@ -320,7 +319,7 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
-        public IEnumerator 타이틀에서_새_게임을_두_번_누르면_저장된_런을_버리고_슬롯을_지우면_런_저장도_지워진다()
+        public IEnumerator 타이틀에서_새_게임으로_출정하면_저장된_런을_버리고_슬롯을_초기화하면_런_저장도_지워진다()
         {
             yield return OpenTitle();
             yield return NewGame(1);
@@ -339,8 +338,6 @@ namespace ProjectNeo.Tests
             var title = Object.FindAnyObjectByType<TitleScreen>();
             title.SelectSlot(1);
             title.DeleteSelectedSlot();
-            Assert.IsTrue(title.IsDeleteArmed);
-            title.DeleteSelectedSlot();
             Assert.IsFalse(GameSession.HasRunSave(1), "슬롯을 지우면 진행 중이던 런도 지워진다.");
             Assert.AreEqual(MetaLoadStatus.Empty, GameSession.SaveStore.Inspect(1).Status);
             Assert.IsFalse(title.CanContinue);
@@ -355,9 +352,11 @@ namespace ProjectNeo.Tests
             title.SelectSlot(1);
             Assert.IsTrue(title.CanContinue);
             title.StartGame();
-            Assert.IsTrue(title.IsNewGameArmed);
+            Assert.IsTrue(title.IsExpeditionOpen);
+            Assert.IsTrue(GameSession.HasRunSave(1), "출정 전에는 런 저장을 버리지 않는다.");
+            title.CloseExpedition();
             yield return EnterGame(screen => { screen.StartGame(); if (screen.IsExpeditionOpen) screen.Ascension.StartSelected(); });
-            Assert.IsFalse(battle.RunLink.WasRestored, "두 번째로 누르면 저장된 런을 버리고 새로 시작한다.");
+            Assert.IsFalse(battle.RunLink.WasRestored, "출정하면 저장된 런을 버리고 새로 시작한다.");
             Assert.AreEqual(1, GameSession.Flow.Run.StageNumber);
         }
     }
