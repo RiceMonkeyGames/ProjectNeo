@@ -21,6 +21,8 @@ namespace ProjectNeo.Walls
         [SerializeField] MachicolationSettings settings;
 
         readonly HashSet<Vector2Int> outside = new HashSet<Vector2Int>();
+        readonly HashSet<Vector2Int> enclosed = new HashSet<Vector2Int>();
+        bool enclosedReady;
         readonly List<MachicolationSpot> spots = new List<MachicolationSpot>();
         readonly List<ShotOpening> openings = new List<ShotOpening>();
         readonly Dictionary<PlacedStructure, bool> watched = new Dictionary<PlacedStructure, bool>();
@@ -38,6 +40,8 @@ namespace ProjectNeo.Walls
             Unsubscribe();
             world = owner;
             settings = machicolationSettings;
+            enclosedReady = false;
+            outsideRevision = -1;
             Subscribe();
             dirty = true;
         }
@@ -73,7 +77,9 @@ namespace ProjectNeo.Walls
             Clear();
             if (outsideRevision != world.LayoutRevision)
             {
-                BattlementRules.CollectOutside(world.Layout, world.Grid, outside);
+                // 성가퀴와 같은 기준: 기본 성이 둘러싼 안뜰은 성벽에 틈이 나도 늘 안쪽이다(BUG-battlement-inner-faces).
+                EnsureEnclosed();
+                BattlementRules.CollectOutside(world.Layout, world.Grid, outside, enclosed);
                 outsideRevision = world.LayoutRevision;
             }
             MachicolationLayout.Collect(world.Layout, world.Grid, outside, settings.StandInset, spots);
@@ -86,6 +92,16 @@ namespace ProjectNeo.Walls
                 if (!CollectColumn(spot.Cell, out bool underConstruction) || underConstruction) continue;
                 Build(spot, inset);
             }
+        }
+
+        void EnsureEnclosed()
+        {
+            if (enclosedReady) return;
+            enclosedReady = true;
+            var start = new BuildLayout(world.Grid);
+            foreach (InitialBuildPiece seed in world.InitialPieces)
+                if (seed.definition != null) start.TryPlace(seed.definition, seed.cell, seed.rotation, out _, seed.fixedGate);
+            BattlementRules.CollectEnclosed(start, world.Grid, enclosed);
         }
 
         // 그 칸을 차지한 조각(모든 층)을 roots에 모은다. 맨 위 조각이 짓는 중이면 구멍을 만들지 않는다.
