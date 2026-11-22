@@ -15,17 +15,24 @@ namespace ProjectNeo.Combat
             return Mathf.Min(start, Mathf.Max(0f, clipSeconds - 0.05f));
         }
 
-        /// <summary>
-        /// 겨눈 곳의 높낮이를 -1(아래)~1(위)로 바꾼다. <paramref name="rangeDegrees"/>도 이상이면 끝값이다.
-        /// 수평 거리가 거의 없으면 높이 차의 부호만 본다.
-        /// </summary>
-        public static float AimPitch(Vector3 from, Vector3 to, float rangeDegrees)
+        /// <summary>방향의 높이각(도). 위가 +, 아래가 -. 수평 성분이 거의 없으면 ±90도, 길이가 0이면 0.</summary>
+        public static float PitchDegrees(Vector3 direction)
         {
-            Vector3 offset = to - from;
-            float horizontal = new Vector2(offset.x, offset.z).magnitude;
-            if (rangeDegrees <= 0f) return 0f;
-            float degrees = Mathf.Atan2(offset.y, Mathf.Max(horizontal, 0.0001f)) * Mathf.Rad2Deg;
-            return Mathf.Clamp(degrees / rangeDegrees, -1f, 1f);
+            if (direction.sqrMagnitude < 1e-8f) return 0f;
+            float horizontal = new Vector2(direction.x, direction.z).magnitude;
+            return Mathf.Atan2(direction.y, Mathf.Max(horizontal, 0.0001f)) * Mathf.Rad2Deg;
+        }
+
+        /// <summary>
+        /// 화살이 떠날 높이각(<paramref name="degrees"/>)을 활 조준 섞기 값 -1(아래)~0(정면)~1(위)로 바꾼다(COMBAT-11).
+        /// 각 클립의 화살 선 각도(<paramref name="down"/>, <paramref name="middle"/>, <paramref name="up"/>) 사이를 구간마다
+        /// 따로 나눠, 섞인 자세의 화살 선이 그 각도를 향하게 한다. 클립 범위 밖이면 끝값이다.
+        /// </summary>
+        public static float BowPitchBlend(float degrees, float down, float middle, float up)
+        {
+            if (degrees >= middle)
+                return up > middle ? Mathf.Clamp01((degrees - middle) / (up - middle)) : 0f;
+            return middle > down ? -Mathf.Clamp01((middle - degrees) / (middle - down)) : 0f;
         }
 
         /// <summary>교전 자세(전투 대기·활 당김)를 유지할지. 마지막 공격 뒤 일정 시간 또는 겨눈 채 기다리라는 지시가 있으면 유지한다.</summary>

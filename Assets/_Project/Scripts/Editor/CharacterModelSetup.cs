@@ -185,6 +185,7 @@ namespace ProjectNeo.Editor
             var contacts = new List<float>();
             var lengths = new List<float>();
             float load = 0.83f, release = 0.8f;
+            (float down, float middle, float up)? bowPitch = null;
             (float grab, float unsheatheLength, float release, float sheatheLength) sheathMotion = default;
             if (style == Style.Melee)
             {
@@ -223,6 +224,9 @@ namespace ProjectNeo.Editor
                 }
                 load = Bow("Load", "").length;
                 release = Bow("Release", "").length;
+                // 활을 당긴 자세에서 화살 선이 몇 도를 보는지 클립마다 잰다(COMBAT-11 활 기울기).
+                bowPitch = (MeasureBowPitch(measureModel, Bow("Hold", "_Down")), MeasureBowPitch(measureModel, Bow("Hold", "")),
+                    MeasureBowPitch(measureModel, Bow("Hold", "_Up")));
                 if (ground)
                 {
                     // 동작 레이어와 같은 상태를 다리에만 적용하는 동기화 레이어. 무게는 런타임에 서 있을 때만 올린다.
@@ -246,8 +250,9 @@ namespace ProjectNeo.Editor
             bool created = profile == null;
             if (created) profile = ScriptableObject.CreateInstance<CharacterAnimationProfile>();
             profile.Set(ground, ground, ground, contacts.ToArray(), lengths.ToArray(), ground ? DeathCount : 0,
-                hit.length, load, release, engagedSeconds: 2.5f, aimPitchRange: 40f, crossFadeSeconds: 0.25f);
+                hit.length, load, release, engagedSeconds: 2.5f, crossFadeSeconds: 0.25f);
             profile.SetSheathMotion(sheathMotion.grab, sheathMotion.unsheatheLength, sheathMotion.release, sheathMotion.sheatheLength);
+            if (bowPitch.HasValue) profile.SetBowPitch(bowPitch.Value.down, bowPitch.Value.middle, bowPitch.Value.up);
             if (created) AssetDatabase.CreateAsset(profile, profilePath);
             else EditorUtility.SetDirty(profile);
             return (controller, profile);
@@ -438,6 +443,22 @@ namespace ProjectNeo.Editor
                     previous = local;
                 }
                 return best;
+            }
+            finally { EditorSceneManager.ClosePreviewScene(scene); }
+        }
+
+        // 활을 당긴 채 멈춘 클립 가운데 순간에 시위 손(오른손)→활 손(왼손) 선의 높이각(도). 런타임 AimOffset과 같은 선이다.
+        static float MeasureBowPitch(string modelPath, AnimationClip clip)
+        {
+            var scene = EditorSceneManager.NewPreviewScene();
+            try
+            {
+                var instance = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(modelPath), scene);
+                var animator = instance.GetComponentInChildren<Animator>();
+                Transform bowHand = animator.GetBoneTransform(HumanBodyBones.LeftHand);
+                Transform stringHand = animator.GetBoneTransform(HumanBodyBones.RightHand);
+                clip.SampleAnimation(instance, clip.length * 0.5f);
+                return CharacterAnimationRules.PitchDegrees(bowHand.position - stringHand.position);
             }
             finally { EditorSceneManager.ClosePreviewScene(scene); }
         }

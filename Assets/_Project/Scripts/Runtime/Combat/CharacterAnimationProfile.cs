@@ -20,8 +20,13 @@ namespace ProjectNeo.Combat
         [SerializeField, Min(0.05f)] float bowReleaseSeconds = 0.8f;
         [Tooltip("마지막 공격 뒤 전투 대기 자세를 유지하는 시간(초).")]
         [SerializeField, Min(0f)] float engagedSeconds = 2.5f;
-        [Tooltip("이 각도 이상 위·아래를 겨누면 위·아래 조준 클립을 그대로 쓴다.")]
-        [SerializeField, Range(5f, 90f)] float aimPitchRange = 40f;
+        [Header("활 위·아래 조준 클립의 화살 선 각도 (COMBAT-11)")]
+        [Tooltip("아래 조준 클립(AimPitch -1)에서 시위 손→활 손 선의 높이각(도). 설정 메뉴가 잰다.")]
+        [SerializeField, Range(-90f, 0f)] float bowPitchDown = -48.5f;
+        [Tooltip("정면 클립(AimPitch 0)의 높이각(도). 정면 클립도 살짝 아래를 본다.")]
+        [SerializeField, Range(-30f, 30f)] float bowPitchMiddle = -3.8f;
+        [Tooltip("위 조준 클립(AimPitch +1)의 높이각(도).")]
+        [SerializeField, Range(0f, 90f)] float bowPitchUp = 41.5f;
         [SerializeField, Min(0f)] float crossFadeSeconds = 0.25f;
         [Tooltip("이 속도(m/s) 이상으로 움직이는 궁수는 활을 당긴 채 두지 않고 내린다(달리며 조준하는 어색한 자세 방지).")]
         [SerializeField, Min(0f)] float bowLowerSpeed = 1.5f;
@@ -64,18 +69,28 @@ namespace ProjectNeo.Combat
         public float BowLoadSeconds => bowLoadSeconds;
         public float BowReleaseSeconds => bowReleaseSeconds;
         public float EngagedSeconds => engagedSeconds;
-        public float AimPitchRange => aimPitchRange;
+        public float BowPitchDown => bowPitchDown;
+        public float BowPitchMiddle => bowPitchMiddle;
+        public float BowPitchUp => bowPitchUp;
+
+        /// <summary>설정 메뉴가 잰 활 조준 클립 각도(도)를 넣는다. 아래 ≤ 정면 ≤ 위 순서로 맞춘다.</summary>
+        public void SetBowPitch(float down, float middle, float up)
+        {
+            bowPitchMiddle = Mathf.Clamp(middle, -30f, 30f);
+            bowPitchDown = Mathf.Clamp(down, -90f, bowPitchMiddle);
+            bowPitchUp = Mathf.Clamp(up, bowPitchMiddle, 90f);
+        }
         public float CrossFadeSeconds => crossFadeSeconds;
         public float BowLowerSpeed => bowLowerSpeed;
 
         public static CharacterAnimationProfile Create(bool groundLocomotion = true, bool combatIdle = true, bool crouch = true,
             float[] meleeContactSeconds = null, float[] meleeClipSeconds = null, int deathCount = 0,
             float hitSeconds = 0.6f, float bowLoadSeconds = 0.83f, float bowReleaseSeconds = 0.8f,
-            float engagedSeconds = 2.5f, float aimPitchRange = 40f, float crossFadeSeconds = 0.25f, float bowLowerSpeed = 1.5f)
+            float engagedSeconds = 2.5f, float crossFadeSeconds = 0.25f, float bowLowerSpeed = 1.5f)
         {
             var profile = CreateInstance<CharacterAnimationProfile>();
             profile.Set(groundLocomotion, combatIdle, crouch, meleeContactSeconds, meleeClipSeconds, deathCount,
-                hitSeconds, bowLoadSeconds, bowReleaseSeconds, engagedSeconds, aimPitchRange, crossFadeSeconds);
+                hitSeconds, bowLoadSeconds, bowReleaseSeconds, engagedSeconds, crossFadeSeconds);
             profile.bowLowerSpeed = Mathf.Max(0f, bowLowerSpeed);
             return profile;
         }
@@ -83,7 +98,7 @@ namespace ProjectNeo.Combat
         /// <summary>설정 메뉴가 기존 에셋을 다시 채울 때 쓴다.</summary>
         public void Set(bool groundLocomotion, bool combatIdle, bool crouch, float[] meleeContactSeconds, float[] meleeClipSeconds,
             int deathCount, float hitSeconds, float bowLoadSeconds, float bowReleaseSeconds,
-            float engagedSeconds, float aimPitchRange, float crossFadeSeconds)
+            float engagedSeconds, float crossFadeSeconds)
         {
             this.groundLocomotion = groundLocomotion;
             this.combatIdle = combatIdle;
@@ -95,7 +110,6 @@ namespace ProjectNeo.Combat
             this.bowLoadSeconds = Mathf.Max(0.05f, bowLoadSeconds);
             this.bowReleaseSeconds = Mathf.Max(0.05f, bowReleaseSeconds);
             this.engagedSeconds = Mathf.Max(0f, engagedSeconds);
-            this.aimPitchRange = Mathf.Clamp(aimPitchRange, 5f, 90f);
             this.crossFadeSeconds = Mathf.Max(0f, crossFadeSeconds);
         }
     }
