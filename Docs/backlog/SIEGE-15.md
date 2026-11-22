@@ -1,9 +1,9 @@
 ---
 id: SIEGE-15
 title: Enemy Assault Transition Thresholds & Archer Positioning Pass
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: 신용준
+branch: feature/siege-15
 area: SIEGE
 depends_on: []
 created: 2026-11-22
