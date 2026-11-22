@@ -39,5 +39,17 @@ namespace ProjectNeo.Walls
         CornerStairs = 19,
         /// <summary>무너진 끝 구획의 통로 바닥 성한 절반(Floor_Wood_03, 반 모듈 × 한 모듈).</summary>
         FloorHalf = 20,
+        /// <summary>망루 맨윗층 방의 벽판(Wall_01, 충돌체 있음. 맨윗층은 조각 상자 대신 킷이 벽을 맡는다).</summary>
+        TowerPanel = 21,
+        /// <summary>망루 맨윗층 바깥 면의 화살 구멍 벽판(Wall_Arrowslit_01, 충돌체 있음).</summary>
+        TowerArrowslit = 22,
+        /// <summary>망루 맨윗층에서 통로로 난 문 벽판(Wall_Door_01, 뚫린 문, 충돌체 있음).</summary>
+        TowerDoor = 23,
+        /// <summary>망루 지붕 둘레의 내민 받침(Wall_Corbels_01).</summary>
+        TowerCorbel = 24,
+        /// <summary>망루 지붕 모서리의 내민 받침(Wall_Corbels_Corner_01).</summary>
+        TowerCorbelCorner = 25,
+        /// <summary>망루 지붕 모서리의 높은 흉벽 기둥(Battlements_Pillar_01, 1.2배).</summary>
+        TowerCap = 26,
     }
 }

@@ -6,6 +6,8 @@ Last Updated: 2026-11-22 00:00:21 (KST)
 
 ## Resolved `Q-*` Table
 
+Towers (SIEGE-14 spike, 2026-11-23, user): a new outwork piece `Tower` beside the unchanged bastion, more expensive and stronger: 2×2 cells, outside the wall line, one storey taller than the touching walls (auto-stacked on placement), nothing but tower tiers on top, siege weapons mount on its roof (bastions keep theirs), and allied ranged units on its roof get +20% range and +20% damage as data-driven stat modifiers. Details in [WallsAndSiege](../design/WallsAndSiege.md).
+
 Stairs behind a collapsed wall (SIEGE-14 spike, 2026-11-23, user): (1) stairs whose top lands on a wall cell stay when that wall collapses and keep closing the gap (they do not collapse with it, since they cost resources to build); (2) the stairs' top end shows the same rubble cross-section (`DestroyedWall_Rubble_Top_01`) as the collapsed wall's V ruin; (3) stairs are weaker than walls so attackers can break through them (spike value 50 HP vs a wall's 100, to be balanced at integration). Making enemies choose blocking stairs as an attack target is enemy AI work (teammate) for the Game integration.
 
 No wall valleys (SIEGE-14 spike, 2026-11-22, user): (1) a wall top lower than both neighbours on one axis (two-storey / one-storey / two-storey) may not be created: placements and dismantles that would leave one are refused; (2) when a wall piece collapses, every storey above it in that cell collapses with it (no dropping down a level), so a collapsed two-storey wall must be rebuilt at full height, and placing a wall in such a gap stacks it to the neighbours' height in one action. Implemented behind `BuildGridDefinition.forbidValleys` (on for the 5m spike grid only, off in Game until integration).

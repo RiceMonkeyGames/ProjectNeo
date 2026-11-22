@@ -17,6 +17,10 @@ namespace ProjectNeo.Walls
         BastionStack = 11,
         /// <summary>이웃 성벽이 앞뒤보다 낮은 골짜기(2층-1층-2층)가 된다(SIEGE-14, <see cref="BuildGridDefinition.ForbidValleys"/>).</summary>
         Valley = 12,
+        /// <summary>망루는 성 바깥 빈 칸에, 같은 층·같은 높이의 성벽에 붙여 지어야 한다(SIEGE-14).</summary>
+        TowerNeedsWall = 13,
+        /// <summary>망루 위에는 망루 층만, 망루 층은 망루 위에만 쌓는다(SIEGE-14).</summary>
+        TowerStack = 14,
     }
 
     public sealed class BuildPlacement

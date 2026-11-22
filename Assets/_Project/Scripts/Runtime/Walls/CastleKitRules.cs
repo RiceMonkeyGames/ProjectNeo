@@ -29,7 +29,7 @@ namespace ProjectNeo.Walls
 
         /// <summary>킷으로 꾸미는 성벽류(통로가 있는 조각)인지.</summary>
         public static bool IsWallLike(BuildPieceKind kind) =>
-            kind == BuildPieceKind.Wall || kind == BuildPieceKind.Bastion || kind == BuildPieceKind.Gate;
+            kind == BuildPieceKind.Wall || kind == BuildPieceKind.Bastion || kind == BuildPieceKind.Gate || kind == BuildPieceKind.Tower;
 
         public static void Collect(BuildLayout layout, BuildGridDefinition grid, ICollection<Vector2Int> outside,
             ICollection<int> unfinished, IReadOnlyDictionary<Vector2Int, int> breaches, CastleKitSettings settings,
@@ -44,6 +44,11 @@ namespace ProjectNeo.Walls
             foreach (BuildPlacement placement in layout.Placements)
             {
                 if (!IsWallLike(placement.Definition.Kind) || Unfinished(unfinished, placement)) continue;
+                if (placement.Definition.Kind == BuildPieceKind.Tower)
+                {
+                    AddTower(layout, grid, outside, unfinished, breaches, settings, placement, size, result);
+                    continue;
+                }
                 for (int x = 0; x < placement.Size.x; x++)
                     for (int z = 0; z < placement.Size.y; z++)
                     {
@@ -294,11 +299,126 @@ namespace ProjectNeo.Walls
         static bool Same(BuildLayout layout, ICollection<int> unfinished, Vector2Int cell, float height) =>
             Mathf.Abs(TopOf(layout, unfinished, cell, out _) - height) <= HeightTolerance;
 
-        // 그 칸 맨 위가 성벽류이고 정확히 한 층 높은지.
+        // 그 칸 맨 위가 성벽류이고 정확히 한 층 높은지. 망루는 안쪽 계단·문으로 오르므로 통로에 계단을 두지 않는다.
         static bool Higher(BuildLayout layout, ICollection<int> unfinished, Vector2Int cell, float low)
         {
             float high = TopOf(layout, unfinished, cell, out BuildPlacement upper);
-            return high >= 0f && Mathf.Abs(high - low - upper.Definition.Height) <= HeightTolerance;
+            return high >= 0f && upper.Definition.Kind != BuildPieceKind.Tower
+                && Mathf.Abs(high - low - upper.Definition.Height) <= HeightTolerance;
+        }
+
+        /// <summary>
+        /// 망루(데모 탑과 같은 짜임, 사용자 결정 2026-11-23). 층마다 드러난 면에 벽판(이음새 기둥은 망루 네 모서리에만),
+        /// 맨 윗층은 통로 높이의 방: 통로 쪽 면 한 칸에 문, 그 옆 칸에 통로 쪽 벽을 따라 지붕으로 오르는 계단, 나머지 면은 화살 구멍 벽판.
+        /// 지붕은 나무 바닥(계단 위는 반 바닥으로 뚫는다), 둘레에 내민 받침과 바깥으로 내민 흉벽, 모서리에 높은 흉벽 기둥.
+        /// 맨 윗층 벽판·계단은 충돌체가 있고, 지붕 충돌은 쓰는 쪽(<see cref="CastleKitDresser"/>)이 조각 위에 판으로 둔다.
+        /// </summary>
+        static void AddTower(BuildLayout layout, BuildGridDefinition grid, ICollection<Vector2Int> outside, ICollection<int> unfinished,
+            IReadOnlyDictionary<Vector2Int, int> breaches, CastleKitSettings settings, BuildPlacement placement, float size,
+            List<CastleKitPlacement> result)
+        {
+            bool topTier = layout.Top(placement.Cell) == placement;
+            TowerRules.Interior room = topTier ? TowerRules.RoomOf(layout, grid, placement) : default;
+            float y = placement.Elevation;
+            for (int x = 0; x < placement.Size.x; x++)
+                for (int z = 0; z < placement.Size.y; z++)
+                {
+                    Vector2Int cell = placement.Cell + new Vector2Int(x, z);
+                    for (int face = 0; face < 4; face++)
+                    {
+                        if (Covered(layout, unfinished, breaches, cell + BattlementRules.Directions[face], placement.Level)) continue;
+                        CastleKitPiece piece = CastleKitPiece.Panel;
+                        if (topTier)
+                        {
+                            if (room.HasRoom && face == room.InnerFace)
+                                piece = cell == room.DoorCell ? CastleKitPiece.TowerDoor : CastleKitPiece.TowerPanel;
+                            else piece = CastleKitPiece.TowerArrowslit;
+                        }
+                        FaceEnds(cell, face, size, out Vector3 start, out Vector3 end);
+                        foreach (Vector3 joint in new[] { start, end })
+                            if (IsCorner(placement, joint, size)) Claim(pillars, joint, joint, size, placement.Level, cell, y);
+                        result.Add(new CastleKitPlacement(piece, cell, Pivot(face, start, end, y), FaceYaw(face)));
+                    }
+                }
+            if (topTier) AddTowerTop(layout, settings, placement, room, size, result);
+        }
+
+        static void AddTowerTop(BuildLayout layout, CastleKitSettings settings, BuildPlacement placement, TowerRules.Interior room,
+            float size, List<CastleKitPlacement> result)
+        {
+            float floor = placement.Elevation, top = floor + placement.Definition.Height;
+            float scale = size / settings.ModuleSize;
+            for (int x = 0; x < placement.Size.x; x++)
+                for (int z = 0; z < placement.Size.y; z++)
+                {
+                    Vector2Int cell = placement.Cell + new Vector2Int(x, z);
+                    var corner = new Vector3((cell.x + 1) * size, 0f, (cell.y + 1) * size);
+                    if (room.HasRoom) result.Add(new CastleKitPlacement(CastleKitPiece.Floor, cell, corner + Vector3.up * floor, 0f));
+                    // 계단 칸 지붕은 통로 쪽 절반을 비워 계단이 지붕으로 나온다.
+                    if (room.HasRoom && cell == room.StairCell)
+                        result.Add(HalfFloor(cell, -BattlementRules.Directions[room.InnerFace], size, top));
+                    else result.Add(new CastleKitPlacement(CastleKitPiece.Floor, cell, corner + Vector3.up * top, 0f));
+                    for (int face = 0; face < 4; face++)
+                    {
+                        Vector2Int next = cell + BattlementRules.Directions[face];
+                        if (Inside(placement, next)) continue;
+                        // 지붕보다 낮은 쪽 둘레에만(데모처럼 성벽 쪽 면도 포함).
+                        BuildPlacement other = layout.Top(next);
+                        if (other != null && other.Elevation + other.Definition.Height >= top - HeightTolerance) continue;
+                        Vector2Int d = BattlementRules.Directions[face];
+                        Vector3 outward = new Vector3(d.x, 0f, d.y) * (settings.TowerOverhang * scale);
+                        FaceEnds(cell, face, size, out Vector3 start, out Vector3 end);
+                        Vector3 pivot = Pivot(face, start, end, top) + outward;
+                        result.Add(new CastleKitPlacement(CastleKitPiece.TowerCorbel, cell, pivot, FaceYaw(face)));
+                        result.Add(new CastleKitPlacement(CastleKitPiece.Battlement, cell, pivot, FaceYaw(face)));
+                    }
+                }
+            // 네 모서리: 면 f와 시계 방향 다음 면 사이 모서리의 받침은 FaceYaw(f)로 돌리면 바깥을 본다.
+            float x0 = placement.Cell.x * size, z0 = placement.Cell.y * size;
+            float x1 = x0 + placement.Size.x * size, z1 = z0 + placement.Size.y * size;
+            Vector3[] corners = { new Vector3(x1, top, z1), new Vector3(x1, top, z0), new Vector3(x0, top, z0), new Vector3(x0, top, z1) };
+            for (int face = 0; face < 4; face++)
+            {
+                Vector3 point = corners[face];
+                Vector2Int owner = new Vector2Int(Mathf.Min(Mathf.FloorToInt(point.x / size), placement.Cell.x + placement.Size.x - 1),
+                    Mathf.Min(Mathf.FloorToInt(point.z / size), placement.Cell.y + placement.Size.y - 1));
+                result.Add(new CastleKitPlacement(CastleKitPiece.TowerCorbelCorner, owner, point, FaceYaw(face)));
+                Vector2Int a = BattlementRules.Directions[face], b = BattlementRules.Directions[(face + 1) % 4];
+                Vector3 diagonal = new Vector3(a.x + b.x, 0f, a.y + b.y) * (settings.TowerCapOffset * scale);
+                result.Add(new CastleKitPlacement(CastleKitPiece.TowerCap, owner, point + diagonal, 0f));
+            }
+            if (!room.HasRoom) return;
+            // 방 안 계단: 계단 칸에서 문 칸 반대쪽 면으로 오르고, 통로 쪽 벽을 따라 붙인다(벽 두께 안쪽).
+            float width = settings.StairWidth * scale;
+            float yaw = FaceYaw(room.RiseFace) + 90f;
+            Vector3 side = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
+            Vector2Int inner = BattlementRules.Directions[room.InnerFace];
+            float lateral = size * 0.5f - 0.3f * scale - width * 0.5f;
+            if (Vector3.Dot(side, new Vector3(inner.x, 0f, inner.y)) < 0f) lateral = -lateral;
+            result.Add(Stair(settings, room.StairCell, room.RiseFace, size, floor, lateral));
+        }
+
+        // 반 바닥(Floor_Wood_03: 기준점에서 로컬 −x로 반 모듈, −z로 한 모듈). 칸의 direction 쪽 절반을 덮는다.
+        static CastleKitPlacement HalfFloor(Vector2Int cell, Vector2Int direction, float size, float y)
+        {
+            float yaw = Mathf.Atan2(-direction.y, direction.x) * Mathf.Rad2Deg;
+            Vector3 forward = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
+            var center = new Vector3((cell.x + 0.5f) * size, y, (cell.y + 0.5f) * size);
+            Vector3 pivot = center + new Vector3(direction.x, 0f, direction.y) * (size * 0.5f) + forward * (size * 0.5f);
+            return new CastleKitPlacement(CastleKitPiece.FloorHalf, cell, pivot, yaw);
+        }
+
+        static bool Inside(BuildPlacement placement, Vector2Int cell) =>
+            cell.x >= placement.Cell.x && cell.y >= placement.Cell.y
+            && cell.x < placement.Cell.x + placement.Size.x && cell.y < placement.Cell.y + placement.Size.y;
+
+        // 성 좌표 점이 조각 바닥 사각형의 모서리인지.
+        static bool IsCorner(BuildPlacement placement, Vector3 point, float size)
+        {
+            int px = Mathf.RoundToInt(point.x / size), pz = Mathf.RoundToInt(point.z / size);
+            bool edgeX = px == placement.Cell.x || px == placement.Cell.x + placement.Size.x;
+            bool edgeZ = pz == placement.Cell.y || pz == placement.Cell.y + placement.Size.y;
+            return edgeX && edgeZ;
         }
 
         // 계단 모델(Stairs_Wood_Straight_01)은 기준점이 꼭대기이고 로컬 +x로 내려가며(한 칸 길이) 로컬 −z로 폭이 펼쳐진다.

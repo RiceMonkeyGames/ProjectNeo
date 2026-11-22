@@ -9,7 +9,7 @@ namespace ProjectNeo.Walls
     [CreateAssetMenu(menuName = "ProjectNeo/Construction/Castle Kit Settings")]
     public sealed class CastleKitSettings : ScriptableObject
     {
-        const int PieceCount = 21;
+        const int PieceCount = 27;
 
         [SerializeField] GameObject[] prefabs = new GameObject[PieceCount];
         // 킷 한 칸(벽판 폭·층 높이). 칸 크기가 이와 다르면 조각을 고르게 늘리거나 줄인다.
@@ -33,6 +33,13 @@ namespace ProjectNeo.Walls
         public float BreachHalfWidth => breachHalfWidth;
         [SerializeField, Range(0.3f, 1f)] float breachHalfWidth = 0.7f;
         [SerializeField, Min(1f)] float cornerStairStretch = 1.12f;
+        // 망루 지붕(데모 탑과 같은 값, 모듈 기준 m): 받침·흉벽을 면에서 바깥으로 내민 거리, 모서리 흉벽 기둥의 대각 내밈과 배율.
+        [SerializeField, Min(0f)] float towerOverhang = 0.5f;
+        [SerializeField, Min(0f)] float towerCapOffset = 0.3f;
+        [SerializeField, Min(0.1f)] float towerCapScale = 1.2f;
+        public float TowerOverhang => towerOverhang;
+        public float TowerCapOffset => towerCapOffset;
+        public float TowerCapScale => towerCapScale;
 
         public GameObject Prefab(CastleKitPiece piece)
         {

@@ -52,6 +52,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 09be25efe3fc48640b58897dce998fc2, type: 2}
   - {fileID: 11400000, guid: 953dab19ee53567499f83ed9194e409e, type: 2}
   - {fileID: 11400000, guid: 3e8e750cf38308a41a2e36ecc6ee5a8d, type: 2}
+  - {fileID: 11400000, guid: 4695340436207e74ea2ee59e0b0cdc6c, type: 2}
   - {fileID: 11400000, guid: 67b582854151fb14dab06c9f4c9f2183, type: 2}
   pieceIds:
   - dc1e88579bbb29f428e498188dcd48e4
@@ -62,6 +63,7 @@ MonoBehaviour:
   - 09be25efe3fc48640b58897dce998fc2
   - 953dab19ee53567499f83ed9194e409e
   - 3e8e750cf38308a41a2e36ecc6ee5a8d
+  - 4695340436207e74ea2ee59e0b0cdc6c
   - 67b582854151fb14dab06c9f4c9f2183
   weapons:
   - {fileID: 11400000, guid: dcd5362db7ff6a84db2f93ac232125a8, type: 2}

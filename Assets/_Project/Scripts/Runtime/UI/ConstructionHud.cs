@@ -12,6 +12,8 @@ namespace ProjectNeo.UI
         [SerializeField] BuildPieceDefinition stairs;
         // 수성 무기를 놓는 보루(SIEGE-11). 비어 있으면 버튼이 아무것도 고르지 않는다.
         [SerializeField] BuildPieceDefinition bastion;
+        // 보루보다 비싸고 강한 2×2 망루(SIEGE-14 시험). 비어 있으면 버튼이 아무것도 고르지 않는다.
+        [SerializeField] BuildPieceDefinition tower;
         [SerializeField] TMP_Text selection;
         [SerializeField] TMP_Text status;
         [SerializeField] TMP_Text unitHealth;
@@ -35,6 +37,7 @@ namespace ProjectNeo.UI
         public void SelectBastion() { if (bastion != null) placement.Select(bastion); }
         public void ConfigureBastion(BuildPieceDefinition bastionPiece) => bastion = bastionPiece;
         public BuildPieceDefinition Bastion => bastion;
+        public void SelectTower() { if (tower != null) placement.Select(tower); }
         public void Cancel() => placement.Cancel();
         public void Rotate() => placement.Rotate();
         public void WalkToWall() => sandbox.WalkToWall();
@@ -50,8 +53,8 @@ namespace ProjectNeo.UI
                 switch (placement.MountIssue)
                 {
                     case MountIssue.None: issue = "배치 가능"; break;
-                    case MountIssue.NoSupport: issue = "보루 위를 가리키세요"; break;
-                    case MountIssue.NoMountPoint: issue = "무기는 보루 위에만 놓습니다"; break;
+                    case MountIssue.NoSupport: issue = "보루나 망루 위를 가리키세요"; break;
+                    case MountIssue.NoMountPoint: issue = "무기는 보루·망루 위에만 놓습니다"; break;
                     case MountIssue.Occupied: issue = "이미 무기가 설치되어 있습니다"; break;
                     case MountIssue.UnfinishedSupport: issue = "이 조각은 아직 짓는 중입니다"; break;
                     default: issue = "위치를 고르세요"; break;
@@ -75,6 +78,8 @@ namespace ProjectNeo.UI
                     case PlacementIssue.LadderLane: issue = "사다리가 서는 자리입니다"; break;
                     case PlacementIssue.BastionStack: issue = "보루 위에는 보루만 쌓습니다"; break;
                     case PlacementIssue.Valley: issue = "양옆보다 낮은 골짜기(2층-1층-2층)가 됩니다"; break;
+                    case PlacementIssue.TowerNeedsWall: issue = "망루는 성 바깥에서 성벽에 붙여 짓습니다"; break;
+                    case PlacementIssue.TowerStack: issue = "망루 위에는 아무것도 쌓을 수 없습니다"; break;
                     default: issue = "위치를 고르세요"; break;
                 }
                 string floor = placement.PreviewLevel > 0 ? " · " + (placement.PreviewLevel + 1) + "층" : "";

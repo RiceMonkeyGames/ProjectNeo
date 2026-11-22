@@ -5,7 +5,7 @@ namespace ProjectNeo.Walls
 {
     /// <summary>
     /// SIEGE-14 시험 씬 전용 키. 성문·쇠창살 상태와 성벽 무너짐을 직접 바꿔 본다.
-    /// P 쇠창살 올림/내림, O 성문 열어 두기/닫기, B 성문 부수기/고치기, K 화면 가운데로 가리킨 성벽·보루·계단 무너뜨리기.
+    /// P 쇠창살 올림/내림, O 성문 열어 두기/닫기, B 성문 부수기/고치기, K 화면 가운데로 가리킨 성벽·보루·계단·망루 무너뜨리기.
     /// </summary>
     public sealed class CastleKitTestKeys : MonoBehaviour
     {
@@ -42,7 +42,7 @@ namespace ProjectNeo.Walls
             return null;
         }
 
-        // 화면 가운데에서 가장 가까운 성벽·보루·계단(성문 제외).
+        // 화면 가운데에서 가장 가까운 성벽·보루·계단·망루(성문 제외).
         PlacedStructure Aimed()
         {
             Camera view = Camera.main;
@@ -56,7 +56,7 @@ namespace ProjectNeo.Walls
                 var structure = hits[i].collider.GetComponentInParent<PlacedStructure>();
                 if (structure == null || hits[i].distance >= nearest) continue;
                 BuildPieceKind kind = structure.Placement.Definition.Kind;
-                if (kind != BuildPieceKind.Wall && kind != BuildPieceKind.Bastion && kind != BuildPieceKind.Stairs) continue;
+                if (kind != BuildPieceKind.Wall && kind != BuildPieceKind.Bastion && kind != BuildPieceKind.Stairs && kind != BuildPieceKind.Tower) continue;
                 found = structure; nearest = hits[i].distance;
             }
             return found;

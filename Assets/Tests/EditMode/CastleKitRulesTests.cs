@@ -145,6 +145,35 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
+        public void Tower_GetsADoorArrowSlitsAndAnInteriorStair_AndNoWalkwayStairs()
+        {
+            var tower = Track(BuildPieceDefinition.Create(BuildPieceKind.Tower, "tower", new Vector2Int(2, 2), Cell, 400f));
+            foreach (int x in new[] { 3, 4, 5, 6 }) { Place(wall, x, 3); Place(wall, x, 3); }
+            for (int tier = 0; tier < 3; tier++) Place(tower, 4, 4);
+            Collect();
+            Assert.AreEqual(new Vector2Int(4, 4), Of(CastleKitPiece.TowerDoor).Single().Cell, "a door from the walkway");
+            Assert.AreEqual(new Vector2Int(5, 4), Of(CastleKitPiece.TowerPanel).Single().Cell, "the stair cell's walkway face is plain");
+            Assert.AreEqual(6, Of(CastleKitPiece.TowerArrowslit).Count(), "the other top-storey faces");
+            CastleKitPlacement stair = Of(CastleKitPiece.WallStairs).Single();
+            Assert.AreEqual(new Vector2Int(5, 4), stair.Cell, "only the interior stair; walkways get none toward the tower");
+            Assert.AreEqual(10f, stair.Position.y, 1e-3f, "from the room floor");
+            Assert.AreEqual(new Vector2Int(5, 4), Of(CastleKitPiece.FloorHalf).Single().Cell, "the roof opens above the stair");
+            Assert.AreEqual(4, Of(CastleKitPiece.TowerCap).Count());
+            Assert.AreEqual(4, Of(CastleKitPiece.TowerCorbelCorner).Count());
+            Assert.AreEqual(8, Of(CastleKitPiece.TowerCorbel).Count(), "every roof edge is above its neighbour");
+        }
+
+        [Test]
+        public void TowerPillars_StandOnlyAtItsFourCorners()
+        {
+            var tower = Track(BuildPieceDefinition.Create(BuildPieceKind.Tower, "tower", new Vector2Int(2, 2), Cell, 400f));
+            Place(tower, 4, 4);
+            Collect();
+            CollectionAssert.AreEquivalent(new[] { new Vector2(20f, 20f), new Vector2(30f, 20f), new Vector2(20f, 30f), new Vector2(30f, 30f) },
+                Of(CastleKitPiece.Pillar).Select(p => new Vector2(p.Position.x, p.Position.z)).ToArray(), "no pillars at mid-face joints");
+        }
+
+        [Test]
         public void Gate_GetsOuterFrameOnItsRotationSide_AndInnerFrameOpposite()
         {
             Place(gate, 5, 5, rotation: 0, fixedGate: true);

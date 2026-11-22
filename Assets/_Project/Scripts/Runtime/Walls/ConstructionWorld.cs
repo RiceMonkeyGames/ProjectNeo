@@ -122,7 +122,10 @@ namespace ProjectNeo.Walls
                 BattlementRules.CollectOutside(Layout, grid, outsideCells);
                 outsideRevision = LayoutRevision;
             }
-            return BastionRules.Check(Layout, grid, outsideCells, ladderLanes.Keys, definition, cell, rotation, level, elevation);
+            PlacementIssue outwork = BastionRules.Check(Layout, grid, outsideCells, ladderLanes.Keys, definition, cell, rotation, level, elevation);
+            if (outwork != PlacementIssue.None) return outwork;
+            // 망루 규칙(SIEGE-14): 보루처럼 바깥에 성벽과 맞닿게, 위에는 망루 층만.
+            return TowerRules.Check(Layout, grid, outsideCells, ladderLanes.Keys, definition, cell, rotation, level, elevation);
         }
 
         readonly HashSet<Vector2Int> outsideCells = new HashSet<Vector2Int>();
@@ -151,6 +154,12 @@ namespace ProjectNeo.Walls
             if (CheckPlacement(definition, cell, rotation) != PlacementIssue.None) return false;
             // 골짜기 규칙(SIEGE-14): 골짜기가 될 자리면 양옆 높이까지 한 번에 쌓는다. 규칙을 쓰지 않으면 늘 1개.
             int count = Mathf.Max(1, Layout.ValleyFill(definition, cell, rotation));
+            // 망루(SIEGE-14)는 맞닿은 가장 높은 성벽보다 한 층 높게 한 번에 쌓는다.
+            if (definition.Kind == BuildPieceKind.Tower)
+            {
+                CheckPlacement(definition, cell, rotation, out int level, out _);
+                count = TowerRules.Tiers(Layout, grid, definition, cell, rotation, level);
+            }
             for (int i = 0; i < count; i++)
             {
                 if (!Layout.TryPlace(definition, cell, rotation, out var stacked)) break;

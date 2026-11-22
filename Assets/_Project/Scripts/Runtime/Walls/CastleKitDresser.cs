@@ -122,7 +122,7 @@ namespace ProjectNeo.Walls
         {
             BuildPlacement placement = structure != null ? structure.Placement : null;
             if (placement == null || !CastleKitRules.IsWallLike(placement.Definition.Kind)) return;
-            bool bastion = placement.Definition.Kind == BuildPieceKind.Bastion;
+            bool bastion = placement.Definition.Kind == BuildPieceKind.Bastion || placement.Definition.Kind == BuildPieceKind.Tower;
             for (int x = 0; x < placement.Size.x; x++)
                 for (int z = 0; z < placement.Size.y; z++)
                 {
@@ -250,7 +250,7 @@ namespace ProjectNeo.Walls
                 existing.Root = Build(entry.Key, entry.Value, out existing.HasColliders);
                 navigation |= existing.HasColliders;
             }
-            UpdateStructures();
+            navigation |= UpdateStructures();
             // 기둥·계단 충돌체가 바뀌면 길찾기 메시를 다시 만든다(성가퀴와 같은 방식).
             if (navigation) world.RequestNavigationRebuild();
         }
@@ -292,8 +292,10 @@ namespace ProjectNeo.Walls
         }
 
         // 다 지은 성벽류의 임시 외형은 숨긴다(짓는 중이거나 계단 등은 그대로). 성문 문짝·쇠창살은 AnimateGate가 맡는다.
-        void UpdateStructures()
+        // 망루 맨윗층의 방 충돌 상태가 바뀌면 true(길찾기 메시를 다시 만든다).
+        bool UpdateStructures()
         {
+            bool changed = false;
             foreach (PlacedStructure structure in world.Structures)
             {
                 if (structure == null || structure.Placement == null) continue;
@@ -302,7 +304,64 @@ namespace ProjectNeo.Walls
                 Transform visual = structure.transform.Find("Visual");
                 if (visual != null)
                     foreach (Renderer renderer in visual.GetComponentsInChildren<Renderer>(true)) renderer.enabled = !dressed;
+                if (placement.Definition.Kind == BuildPieceKind.Tower) changed |= UpdateTowerRoom(structure, dressed);
             }
+            return changed;
+        }
+
+        const string HollowTopName = "HollowTop";
+        // 망루 조각마다 지금 둔 방 짜임(0이면 방 없음, 상자 충돌).
+        readonly Dictionary<PlacedStructure, int> towerRooms = new Dictionary<PlacedStructure, int>();
+
+        /// <summary>
+        /// 망루 맨윗층이 방이면(킷이 벽판·계단 충돌체를 둔다) 조각 상자 충돌을 끄고, 지붕 판만 계단 위를 뚫어 둔다.
+        /// 판은 조각 아래에 두어 지붕을 가리킨 무기 배치가 그 망루를 찾는다. 방이 아니면(아래층, 짓는 중) 상자를 되살린다.
+        /// </summary>
+        bool UpdateTowerRoom(PlacedStructure structure, bool dressed)
+        {
+            BuildPlacement placement = structure.Placement;
+            TowerRules.Interior room = dressed && world.Layout.Top(placement.Cell) == placement
+                ? TowerRules.RoomOf(world.Layout, world.Grid, placement) : default;
+            int key = room.HasRoom ? 1 + room.InnerFace * 7 + (room.StairCell.x * 31 + room.StairCell.y) * 17 : 0;
+            Transform hollow = structure.transform.Find(HollowTopName);
+            towerRooms.TryGetValue(structure, out int current);
+            if (current == key && (key == 0) == (hollow == null)) return false;
+            towerRooms[structure] = key;
+            foreach (Collider collider in structure.GetComponents<Collider>())
+                if (!collider.isTrigger && collider != structure.DoorCollider) collider.enabled = !room.HasRoom;
+            if (hollow != null) { hollow.SetParent(null); Destroy(hollow.gameObject); }
+            if (!room.HasRoom) return true;
+
+            var slab = new GameObject(HollowTopName);
+            slab.layer = structure.gameObject.layer;
+            slab.transform.SetParent(structure.transform, false);
+            // 조각 좌표는 바닥 가운데가 원점, 가로·세로 −0.5~0.5, 높이 0~1(크기는 조각 transform이 늘린다).
+            float size = world.Grid.CellSize;
+            Vector2Int inner = BattlementRules.Directions[room.InnerFace];
+            var d = new Vector3(inner.x, 0f, inner.y);
+            var across = new Vector3(-d.z, 0f, d.x);
+            var center = new Vector3((room.StairCell.x + 0.5f) * size, 0f, (room.StairCell.y + 0.5f) * size);
+            Vector3 a = Normalized(structure, center - across * (size * 0.5f));
+            Vector3 b = Normalized(structure, center + d * (size * 0.5f) + across * (size * 0.5f));
+            float hx0 = Mathf.Min(a.x, b.x), hx1 = Mathf.Max(a.x, b.x), hz0 = Mathf.Min(a.z, b.z), hz1 = Mathf.Max(a.z, b.z);
+            float thickness = Mathf.Min(0.5f, 0.25f / Mathf.Max(0.1f, placement.Definition.Height));
+            AddSlab(slab, -0.5f, hx0, -0.5f, 0.5f, thickness);
+            AddSlab(slab, hx1, 0.5f, -0.5f, 0.5f, thickness);
+            AddSlab(slab, hx0, hx1, -0.5f, hz0, thickness);
+            AddSlab(slab, hx0, hx1, hz1, 0.5f, thickness);
+            return true;
+        }
+
+        // 성 좌표 점을 조각의 정규화 좌표로.
+        Vector3 Normalized(PlacedStructure structure, Vector3 castlePoint) =>
+            structure.transform.InverseTransformPoint(world.transform.TransformPoint(castlePoint));
+
+        static void AddSlab(GameObject owner, float x0, float x1, float z0, float z1, float thickness)
+        {
+            if (x1 - x0 < 0.001f || z1 - z0 < 0.001f) return;
+            var box = owner.AddComponent<BoxCollider>();
+            box.center = new Vector3((x0 + x1) * 0.5f, 1f - thickness * 0.5f, (z0 + z1) * 0.5f);
+            box.size = new Vector3(x1 - x0, thickness, z1 - z0);
         }
 
         static int Signature(List<CastleKitPlacement> list)
@@ -353,7 +412,8 @@ namespace ProjectNeo.Walls
                 float stretch = placement.Piece == CastleKitPiece.CornerStairs ? settings.CornerStairStretch : 1f;
                 bool ruin = placement.Piece == CastleKitPiece.BrokenTop || placement.Piece == CastleKitPiece.RubbleTop;
                 float stretchX = ruin ? settings.BreachHalfWidth : stretch;
-                piece.transform.localScale = new Vector3(scale * stretchX, scale * placement.ScaleY, (placement.MirrorZ ? -scale : scale) * stretch);
+                float uniform = placement.Piece == CastleKitPiece.TowerCap ? settings.TowerCapScale : 1f;
+                piece.transform.localScale = uniform * new Vector3(scale * stretchX, scale * placement.ScaleY, (placement.MirrorZ ? -scale : scale) * stretch);
                 hasColliders |= piece.GetComponentInChildren<Collider>(true) != null;
             }
             return root;

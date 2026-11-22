@@ -19,3 +19,4 @@ MonoBehaviour:
   maxHealth: 100
   prefab: {fileID: 1391201567461355385, guid: 1f68a6a7148ed4b4a89e674bb8e3fbd0, type: 3}
   mountPoints: []
+  occupantModifiers: []
