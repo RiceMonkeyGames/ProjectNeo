@@ -94,8 +94,14 @@ namespace ProjectNeo.Siege
         [SerializeField, Range(1, 8)] int archerSideStepCount = 3;
         [SerializeField, Min(0f)] float archerSearchCooldown = 10f;
         [SerializeField, Min(0f)] float archerSpotCommitSeconds = 5f;
+        // 대규모 수성전 최적화(PERF-siege-ai-scale): 한 프레임에 옆 사격 자리를 탐색할 수 있는 최대 궁수 수(0 = 무제한).
+        [SerializeField, Min(0)] int maxArcherRepositionSearchesPerFrame = 2;
+        // 지상 공성 적들이 '걸어서 닿는 아군 없음' 결과를 공유하는 시간(초). 성문/성벽 파괴나 사다리 연결 시 즉시 무효화된다.
+        [SerializeField, Min(0f)] float reachabilityCacheTtl = 0.5f;
         public float ArcherSearchCooldown => archerSearchCooldown;
         public float ArcherSpotCommitSeconds => archerSpotCommitSeconds;
+        public int MaxArcherRepositionSearchesPerFrame => Mathf.Max(0, maxArcherRepositionSearchesPerFrame);
+        public float ReachabilityCacheTtl => Mathf.Max(0f, reachabilityCacheTtl);
         public ArcherCoverPlan CreateArcherCoverPlan() =>
             new ArcherCoverPlan(archerRepositionDelay, archerSearchCooldown, archerSpotCommitSeconds);
         public float ArcherRepositionDelay => archerRepositionDelay;

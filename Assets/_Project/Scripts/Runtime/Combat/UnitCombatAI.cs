@@ -44,6 +44,10 @@ namespace ProjectNeo.Combat
         AILodTier lodTier = AILodTier.Lod0;
         bool inViewCone = true;
         float lodCheckRemaining;
+        // 분대 단위 대기 슬립(PERF-siege-ai-scale): 분대 전체 바운딩 범위 안에 적이 없으면 Hold 탐색을 건너뛴다.
+        bool squadNeighborhoodClear;
+        public void SetSquadNeighborhoodClear(bool clear) => squadNeighborhoodClear = clear;
+        public bool IsSquadNeighborhoodClear => squadNeighborhoodClear;
         // 자리 방향(COMBAT-14). 대형이 바라볼 방향이나 자리를 받은 때의 방향(도). 없으면 돌지 않는다.
         float? postFacing;
         // 근접 위협 후퇴(COMBAT-14).
@@ -111,6 +115,7 @@ namespace ProjectNeo.Combat
             blockAction = RangedBlockAction.Attack;
             hasClearShotCached = true;
             clearShotDirty = true;
+            squadNeighborhoodClear = false;
             fallingBack = false;
             // 방향은 부대 대형 방향을 함께 받은 지시(SetDirective(지시, 목적지, 방향))만 지킨다(COMBAT-14).
             // 공성 적 판단처럼 중지 중에 스스로 방향을 돌리는 쪽과 다투지 않게 여기서는 비운다.
@@ -378,14 +383,14 @@ namespace ProjectNeo.Combat
             {
                 decisionRemaining = NextDecisionInterval();
                 refreshed = true;
-                if (Target == null)
+                if (Target == null && !squadNeighborhoodClear)
                 {
                     Target = FindTargetInReach();
                     if (Target == null && chases) Target = FindTargetNearPost();
                     if (Target != null) targetLockRemaining = settings.TargetSwitchCooldown;
                 }
             }
-            if (UpdateMeleeThreat(refreshed, true)) return;
+            if (UpdateMeleeThreat(refreshed && !squadNeighborhoodClear, true)) return;
             if (refreshed && Target != null) TryUpgradeThreatTarget();
             if (Target != null && CanStrikeFromHere(Target))
             {
@@ -413,7 +418,7 @@ namespace ProjectNeo.Combat
                 }
                 if (Target != null) return;
             }
-            if (UpdateOpening(refreshed)) return;
+            if (!squadNeighborhoodClear && UpdateOpening(refreshed)) return;
             // 자리로 돌아가기. 여유 거리(HoldReturnDistance)보다 멀리 밀려났을 때만 출발하고, 출발하면 도착 거리까지 붙는다.
             // 자리가 다른 유닛에 막혀 더 못 가면 거기서 멈춘다. 살짝 밀린 정도로 자리 다툼을 하지 않는다.
             Vector3 offset = HoldPost - transform.position;
@@ -899,6 +904,7 @@ namespace ProjectNeo.Combat
 
         void OnHitReceived(CharacterActor attacker)
         {
+            squadNeighborhoodClear = false;
             if (suppressRetaliation || attacker == null || !actor.isActiveAndEnabled) return;
             if (actor.Health == null || actor.Health.IsDead || actor.IsOnLadder) return;
             if (!agent.enabled || !agent.isOnNavMesh || Directive == UnitDirective.Move) return;
