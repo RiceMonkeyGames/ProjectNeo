@@ -271,7 +271,7 @@ namespace ProjectNeo.Siege
                 if (!IsInBattle(enemy)) continue;
                 alive++;
                 if (enemy.Role != SiegeAttackerRole.Archer) breachers++;
-                if (enemy.IsAssaulting) assaulting++;
+                if (enemy.HasEntryRoute) assaulting++;
                 if (!enemy.HasDecided) undecided++;
             }
             return SiegeOutcomeRules.ShouldRetreat(alive, breachers, assaulting, undecided);

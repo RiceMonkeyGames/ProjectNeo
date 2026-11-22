@@ -11,7 +11,9 @@ namespace ProjectNeo.Siege
         readonly float delay;
         readonly float cooldown;
         readonly float commit;
+        readonly float duckTolerance;
         float blockedSince = -1f;
+        float duckSince = -1f;
         float nextSearch;
         float commitUntil;
 
@@ -20,17 +22,22 @@ namespace ProjectNeo.Siege
         /// <summary>쏠 대상이 없어 제자리에서 겨눈 채 기다린다.</summary>
         public bool IsWaiting { get; private set; }
 
-        public ArcherCoverPlan(float delay, float cooldown, float commit)
+        /// <param name="duckTolerance">
+        /// 마지막으로 쏠 수 있던 수비병이 재장전하느라 성가퀴 뒤에 웅크렸을 때(COMBAT-10) 자리를 옮기지 않고 겨눈 채 기다리는 최대 시간(SIEGE-15).
+        /// 0이면 기다리지 않는다.
+        /// </param>
+        public ArcherCoverPlan(float delay, float cooldown, float commit, float duckTolerance = 0f)
         {
             this.delay = delay < 0f ? 0f : delay;
             this.cooldown = cooldown < 0f ? 0f : cooldown;
             this.commit = commit < 0f ? 0f : commit;
+            this.duckTolerance = duckTolerance < 0f ? 0f : duckTolerance;
         }
 
         /// <summary>처음 상태로 돌린다(돌격·후퇴 등 다른 일을 하다 돌아왔을 때).</summary>
         public void Clear()
         {
-            blockedSince = -1f; nextSearch = 0f; commitUntil = 0f;
+            blockedSince = -1f; nextSearch = 0f; commitUntil = 0f; duckSince = -1f;
             HasSpot = false; IsWaiting = false;
         }
 
@@ -41,8 +48,25 @@ namespace ProjectNeo.Siege
         public void Approaching()
         {
             blockedSince = -1f;
+            duckSince = -1f;
             IsWaiting = false;
         }
+
+        /// <summary>
+        /// 마지막으로 쏠 수 있던 수비병이 사거리 안에서 웅크려 잠깐 가려졌다(SIEGE-15). 참는 시간 안이면 true를 돌려주고,
+        /// 가려진 시간을 재지 않은 채 제자리에서 겨누고 기다린다. 참는 시간이 지나면 false이고, 그때부터 보통처럼 가려진 시간을 잰다.
+        /// </summary>
+        public bool TargetDucked(float now)
+        {
+            if (duckSince < 0f) duckSince = now;
+            if (now - duckSince >= duckTolerance) return false;
+            blockedSince = -1f;
+            IsWaiting = true;
+            return true;
+        }
+
+        /// <summary>웅크린 대상이 없다. 다음에 웅크리면 참는 시간을 처음부터 잰다.</summary>
+        public void NoDuckedTarget() => duckSince = -1f;
 
         /// <summary>고른 자리를 지킬지. 지키는 시간 안이면 늘 지키고, 지난 뒤에는 그 자리가 아직 쓸모 있을 때만 지킨다.</summary>
         public bool KeepSpot(float now, bool stillUseful)

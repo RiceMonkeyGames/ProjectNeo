@@ -41,11 +41,38 @@ namespace ProjectNeo.Siege
             expiresAt = ttl > 0f ? now + ttl : now;
         }
 
+        // 돌파구(성 안·성벽 위 아군에게 걸어서 닿는 길) 없음 결과(SIEGE-15). 위의 '아무 아군에게도 닿지 않음'과 따로 둔다.
+        int breachNavRevision = -1;
+        int breachLadderMask = -1;
+        int breachActorRevision = -1;
+        float breachExpiresAt = -1f;
+        bool hasBreachResult;
+
+        /// <summary>성 밖 땅의 공격자가 돌파구 대상 아군에게 닿는 길이 없다는 결과가 아직 유효한지(SIEGE-15).</summary>
+        public bool HasValidNoBreach(int navigationRevision, int ladderMask, int actorRevision, float now) =>
+            hasBreachResult
+            && breachNavRevision == navigationRevision
+            && breachLadderMask == ladderMask
+            && breachActorRevision == actorRevision
+            && now < breachExpiresAt;
+
+        /// <summary>돌파구 대상 아군에게 닿는 길이 없음을 기록한다. 길찾기 메시·사다리·아군 변화나 유효 시간으로 무효가 된다.</summary>
+        public void RecordNoBreach(int navigationRevision, int ladderMask, int actorRevision, float now, float ttl)
+        {
+            breachNavRevision = navigationRevision;
+            breachLadderMask = ladderMask;
+            breachActorRevision = actorRevision;
+            hasBreachResult = true;
+            breachExpiresAt = ttl > 0f ? now + ttl : now;
+        }
+
         public void Invalidate()
         {
             hasCachedResult = false;
             cachedGroundUnreachable = false;
             expiresAt = -1f;
+            hasBreachResult = false;
+            breachExpiresAt = -1f;
         }
 
         /// <summary>

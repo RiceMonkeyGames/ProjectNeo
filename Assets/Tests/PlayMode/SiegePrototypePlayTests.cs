@@ -3,6 +3,7 @@ using System.Linq;
 using NUnit.Framework;
 using ProjectNeo.Combat;
 using ProjectNeo.Siege;
+using ProjectNeo.Stats;
 using ProjectNeo.Squads;
 using ProjectNeo.Walls;
 using UnityEngine;
@@ -884,6 +885,189 @@ namespace ProjectNeo.Tests
             Assert.IsFalse(interrupted, "사다리 올리기는 피격으로 중단되면 안 된다.");
             yield return null;
             Assert.Greater(state.RaiseProgress, beforeHit, "피격 후 사다리 올리기 진행이 멈췄다.");
+        }
+
+        // ── SIEGE-15 돌격 전환·궁수 위치·재장전 웅크림 ───────────────────
+
+        // 아군 하나를 정한 자리에 세워 둔다. 스스로 움직이거나 싸우지 않게 AI를 끈다.
+        CharacterActor PlaceStillAlly(Vector3 position)
+        {
+            UnitCombatAI ally = center.Squads[SquadOf(AttackKind.Melee)].Members[0];
+            ally.enabled = false;
+            Move(ally.Actor, position);
+            return ally.Actor;
+        }
+
+        static void Move(CharacterActor actor, Vector3 position)
+        {
+            NavMeshAgent agent = actor.GetComponent<NavMeshAgent>();
+            Assert.IsTrue(agent.Warp(position), "유닛을 옮기지 못했다.");
+            agent.ResetPath();
+        }
+
+        static Vector3 FieldPoint(float x, float z) =>
+            NavMesh.SamplePosition(new Vector3(x, 0f, z), out NavMeshHit hit, 3f, NavMesh.AllAreas) ? hit.position : new Vector3(x, 0f, z);
+
+        // 판단은 켠 채로 적 궁수 하나를 꺼내 둔다.
+        SiegeAttackerBrain PlaceEnemyArcher(Vector3 position)
+        {
+            SiegeAttackerBrain archer = director.Enemies.OfType<SiegeAttackerBrain>()
+                .First(unit => unit.Role == SiegeAttackerRole.Archer && !unit.gameObject.activeSelf);
+            archer.transform.position = position;
+            archer.gameObject.SetActive(true);
+            Assert.IsTrue(archer.GetComponent<NavMeshAgent>().Warp(position));
+            return archer;
+        }
+
+        [UnityTest]
+        public IEnumerator ClosedWalls_FarSortieAlly_DoesNotPullSiegeEnemies_ButLeashDoes()
+        {
+            yield return CloseWalls();
+            Vector3 far = FieldPoint(20f, 12f);
+            CharacterActor sortie = PlaceStillAlly(far);
+            director.StartBattle();
+            SiegeAttackerBrain[] brains = director.Enemies.OfType<SiegeAttackerBrain>().ToArray();
+            float release = director.Settings.AssaultLeashReleaseRadius;
+            for (int i = 0; i < 240; i++)
+            {
+                yield return null;
+                sortie.Health.RestoreFull();
+                foreach (SiegeAttackerBrain enemy in brains)
+                {
+                    if (!enemy.IsAssaulting) continue;
+                    float distance = Vector3.Distance(enemy.transform.position, sortie.transform.position);
+                    Assert.LessOrEqual(distance, release + 2f, $"{enemy.Role} 적이 성 밖 먼 아군 하나에 끌려 돌격했다({distance:F1}m).");
+                }
+            }
+            Assert.IsTrue(brains.Any(enemy => enemy.Role != SiegeAttackerRole.Archer && enemy.HasDecided && !enemy.IsAssaulting),
+                "공성병이 공성 임무를 하지 않는다.");
+
+            // 근접 반경 안에 들어오면 그 적은 돌격하고, 풀림 반경 밖으로 멀어지면 공성 임무로 돌아간다.
+            SiegeAttackerBrain breaker = brains.First(enemy => enemy.Role == SiegeAttackerRole.GateBreaker
+                && !enemy.Actor.Health.IsDead && !enemy.IsAssaulting && !enemy.IsMidAction);
+            Move(sortie, FieldPoint(breaker.transform.position.x, breaker.transform.position.z + 4f));
+            int frames = 0;
+            while (!breaker.IsAssaulting && frames++ < 120) { sortie.Health.RestoreFull(); yield return null; }
+            Assert.IsTrue(breaker.IsAssaulting, "근접 반경 안의 성 밖 아군에게 돌격하지 않았다.");
+            Move(sortie, far);
+            frames = 0;
+            while (breaker.IsAssaulting && frames++ < 180) { sortie.Health.RestoreFull(); yield return null; }
+            Assert.IsFalse(breaker.IsAssaulting, "성 밖 아군이 멀어졌는데 공성 임무로 돌아가지 않았다.");
+        }
+
+        [UnityTest]
+        public IEnumerator OpenGap_EnemyArchersKeepShootingFromOutside_WhileBreakersAssault()
+        {
+            int archers = SquadOf(AttackKind.Projectile);
+            Assert.IsTrue(prep.PlaceSquad(archers, WallTop(9)), prep.Message);
+            yield return WaitForNavigation();
+            director.StartBattle();
+            bool breakerAssaulted = false;
+            // archerBreachAdvanceDelay(8초)보다 짧게 본다.
+            for (int i = 0; i < 180; i++)
+            {
+                yield return null;
+                breakerAssaulted |= director.Enemies.Any(enemy => enemy.Role != SiegeAttackerRole.Archer && enemy.IsAssaulting);
+                Assert.IsFalse(director.Enemies.Any(enemy => enemy.Role == SiegeAttackerRole.Archer && enemy.IsAssaulting),
+                    "돌파구가 열리자마자 적 궁수가 성 안 난전으로 뛰어들었다.");
+            }
+            Assert.IsTrue(breakerAssaulted, "뚫린 곳이 있는데 공성병이 돌격하지 않았다.");
+            Assert.IsTrue(director.Enemies.Any(enemy => enemy.Role == SiegeAttackerRole.Archer && enemy.HasEntryRoute),
+                "궁수가 돌파구를 보지 못했다(후퇴 판정에 쓰임).");
+            Assert.IsFalse(director.RetreatOrdered);
+        }
+
+        [UnityTest]
+        public IEnumerator ProtrudingWall_EnemyArcherApproachesItsSideFace()
+        {
+            var stubCell = new Vector2Int(3, WallRow + 1);
+            Assert.IsTrue(Build(wall, stubCell.x, stubCell.y), prep.Message);
+            yield return WaitForNavigation();
+            Vector3 stubBase = world.WorldCenter(wall, stubCell, 0);
+            int archers = SquadOf(AttackKind.Projectile);
+            Assert.IsTrue(prep.PlaceSquad(archers, stubBase + Vector3.up * wall.Height), prep.Message);
+            yield return null;
+            foreach (UnitCombatAI member in center.Squads[archers].Members) member.enabled = false;
+            // 다른 아군과 플레이어는 뒤쪽 들판 끝으로 옮겨, 튀어나온 성벽 위 부대가 가장 가까운 대상이 되게 한다.
+            int moved = 0;
+            for (int s = 0; s < center.Squads.Count; s++)
+            {
+                if (s == archers) continue;
+                foreach (UnitCombatAI member in center.Squads[s].Members)
+                {
+                    member.enabled = false;
+                    Move(member.Actor, FieldPoint(-20f + moved++ * 1.5f, -27f));
+                }
+            }
+            var player = Find<PlayerInputController>();
+            var body = player.GetComponent<CharacterController>();
+            body.enabled = false;
+            player.transform.position = new Vector3(20f, 0.1f, -27f);
+            body.enabled = true;
+            Physics.SyncTransforms();
+            SiegeAttackerBrain archer = PlaceEnemyArcher(FieldPoint(stubBase.x + 25f, stubBase.z + 2f));
+            yield return null;
+            float range = archer.Actor.Stats.GetValue(StatType.AttackRange);
+            Assert.Less(range + 4f, 26f, "시험 배치: 뒤로 옮긴 아군이 튀어나온 성벽보다 가까워진다.");
+            Move(archer.Actor, FieldPoint(stubBase.x + range + 4f, stubBase.z + 2f));
+            UnitCombatAI ai = archer.GetComponent<UnitCombatAI>();
+            int frames = 0;
+            while (ai.Directive != UnitDirective.Move && frames++ < 120) yield return null;
+            Assert.AreEqual(UnitDirective.Move, ai.Directive, "궁수가 사격 자리로 가지 않았다.");
+            Vector3 offset = ai.MoveDestination - stubBase;
+            Assert.Greater(offset.x, range * 0.5f, $"튀어나온 성벽의 옆면(동쪽) 바깥으로 가지 않았다: {offset}");
+            Assert.Less(Mathf.Abs(offset.z), 3.5f, $"옆면 법선 대신 성 정면(바깥) 방향으로 섰다: {offset}");
+        }
+
+        [UnityTest]
+        public IEnumerator EnemyArcher_WaitsInPlace_WhileTargetReloadCrouches()
+        {
+            int archers = SquadOf(AttackKind.Projectile);
+            Assert.IsTrue(prep.PlaceSquad(archers, WallTop(9)), prep.Message);
+            yield return WaitForNavigation();
+            var members = center.Squads[archers].Members;
+            foreach (UnitCombatAI member in members) member.enabled = false;
+            float cell = world.Grid.CellSize;
+            Vector3 wallBase = world.WorldCenter(wall, new Vector2Int(9, WallRow), 0);
+            CharacterActor defender = members[0].Actor;
+            Move(defender, wallBase + Vector3.forward * (cell * 0.5f - 0.6f) + Vector3.up * wall.Height);
+            for (int i = 1; i < members.Count; i++) Move(members[i].Actor, FieldPoint(-12f + i * 2f, -22f));
+            // 성가퀴 난간처럼 성벽 위 바깥 가장자리에 1.1m 높이 벽을 세운다(시험 장면에는 성가퀴가 없다).
+            var sill = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            sill.name = "TestSill";
+            SceneManager.MoveGameObjectToScene(sill, scene);
+            sill.transform.position = wallBase + Vector3.forward * (cell * 0.5f - 0.15f) + Vector3.up * (wall.Height + 0.55f);
+            sill.transform.localScale = new Vector3(cell, 1.1f, 0.3f);
+            Physics.SyncTransforms();
+
+            SiegeAttackerBrain archer = PlaceEnemyArcher(FieldPoint(wallBase.x, wallBase.z + cell * 0.5f + 12f));
+            yield return null;
+            float range = archer.Actor.Stats.GetValue(StatType.AttackRange);
+            Assert.Greater(range, 13f, "시험 배치가 궁수 사거리 밖이다.");
+            Assert.IsTrue(CombatPhysics.HasClearShot(archer.Actor, defender), "선 수비병이 보여야 한다(시험 배치 확인).");
+            defender.SetCrouched(true);
+            Assert.IsFalse(CombatPhysics.HasClearShot(archer.Actor, defender), "웅크린 수비병은 가려져야 한다(시험 배치 확인).");
+            defender.SetCrouched(false);
+
+            int frames = 0;
+            while (!archer.IsArcherFiring && frames++ < 120) { defender.Health.RestoreFull(); yield return null; }
+            Assert.IsTrue(archer.IsArcherFiring, "보이는 수비병을 쏘지 않았다.");
+            Vector3 stand = archer.transform.position;
+            defender.SetCrouched(true);
+            // 가려진 시간(archerRepositionDelay 3초)을 넘겨도 참는 시간(4초) 안에는 옆으로 비켜서지 않는다.
+            for (int i = 0; i < 105; i++)
+            {
+                defender.Health.RestoreFull();
+                yield return null;
+                Assert.IsFalse(archer.IsArcherRepositioning, "재장전하느라 웅크린 수비병 때문에 옆으로 비켜섰다.");
+                // 중지(Hold) 중 쫓기도 막으므로 뚫린 곳으로 수비병을 쫓아 들어가지 않는다(SetHoldChaseSuppressed).
+                Assert.Less(Vector3.Distance(archer.transform.position, stand), 1f, "웅크린 수비병 때문에 자리를 옮겼다.");
+            }
+            Assert.IsTrue(archer.IsArcherWaiting, "웅크린 수비병을 겨눈 채 기다리지 않았다.");
+            defender.SetCrouched(false);
+            frames = 0;
+            while (!archer.IsArcherFiring && frames++ < 60) { defender.Health.RestoreFull(); yield return null; }
+            Assert.IsTrue(archer.IsArcherFiring, "일어선 수비병을 다시 쏘지 않았다.");
         }
     }
 }

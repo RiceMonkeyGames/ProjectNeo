@@ -98,12 +98,24 @@ namespace ProjectNeo.Siege
         [SerializeField, Min(0)] int maxArcherRepositionSearchesPerFrame = 2;
         // 지상 공성 적들이 '걸어서 닿는 아군 없음' 결과를 공유하는 시간(초). 성문/성벽 파괴나 사다리 연결 시 즉시 무효화된다.
         [SerializeField, Min(0f)] float reachabilityCacheTtl = 0.5f;
+        // 돌격 전환(SIEGE-15): 성 밖 땅의 적은 돌파구가 열리거나 걸어서 닿는 아군이 이 반경 안에 들어올 때만 돌격한다.
+        // 근접 반경 때문에 돌격한 뒤에는 풀림 반경 밖으로 멀어져야 공성 임무로 돌아간다.
+        [SerializeField, Min(0f)] float assaultLeashRadius = 8f;
+        [SerializeField, Min(0f)] float assaultLeashReleaseRadius = 12f;
+        // 돌파구가 열려도 궁수는 바깥에서 쏘고, 쏠 대상이 없는 채 이 시간이 지나야 들어간다.
+        [SerializeField, Min(0f)] float archerBreachAdvanceDelay = 8f;
+        // 마지막으로 쏠 수 있던 수비병이 재장전하느라 웅크렸을 때(COMBAT-10) 자리를 옮기지 않고 기다리는 최대 시간.
+        [SerializeField, Min(0f)] float archerCrouchTolerance = 4f;
+        public float AssaultLeashRadius => assaultLeashRadius;
+        public float AssaultLeashReleaseRadius => Mathf.Max(assaultLeashRadius, assaultLeashReleaseRadius);
+        public float ArcherBreachAdvanceDelay => archerBreachAdvanceDelay;
+        public float ArcherCrouchTolerance => archerCrouchTolerance;
         public float ArcherSearchCooldown => archerSearchCooldown;
         public float ArcherSpotCommitSeconds => archerSpotCommitSeconds;
         public int MaxArcherRepositionSearchesPerFrame => Mathf.Max(0, maxArcherRepositionSearchesPerFrame);
         public float ReachabilityCacheTtl => Mathf.Max(0f, reachabilityCacheTtl);
         public ArcherCoverPlan CreateArcherCoverPlan() =>
-            new ArcherCoverPlan(archerRepositionDelay, archerSearchCooldown, archerSpotCommitSeconds);
+            new ArcherCoverPlan(archerRepositionDelay, archerSearchCooldown, archerSpotCommitSeconds, archerCrouchTolerance);
         public float ArcherRepositionDelay => archerRepositionDelay;
         public float ArcherSideStep => archerSideStep;
         public int ArcherSideStepCount => archerSideStepCount;
