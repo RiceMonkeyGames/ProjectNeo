@@ -41,7 +41,7 @@ namespace ProjectNeo.Editor
             CombatPrototypeSetup.EnsureFolder(Data);
             CombatPrototypeSetup.EnsureFolder(Prefabs);
             // Q-21 임시값. 플레이 테스트 뒤 에셋에서 조정한다.
-            CannonSettings settings = CombatPrototypeSetup.Save(CannonSettings.Create(), SettingsPath);
+            CannonSettings settings = CombatPrototypeSetup.Save(CannonSettings.Create(aimHalfAngle: BastionSetup.AutoAimHalfAngle, manualAimHalfAngle: BastionSetup.ManualAimHalfAngle), SettingsPath);
             shell = AssetDatabase.LoadAssetAtPath<CannonShell>(ShellPath);
             if (shell == null)
             {

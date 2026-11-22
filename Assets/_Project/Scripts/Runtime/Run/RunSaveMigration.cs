@@ -253,18 +253,31 @@ namespace ProjectNeo.Run
                     CastleWeaponRecord weapon = castle.weapons[i];
                     weapon.id = Rename(ContentKind.SiegeWeapon, weapon.id);
                     bool supported = weapon.supportIndex >= 0 && weapon.supportIndex < newIndex.Length && newIndex[weapon.supportIndex] >= 0;
-                    if (content.Weapon(weapon.id) != null && supported)
+                    // 받치는 조각에서 그 설치 자리가 없어졌으면(SIEGE-11: 성벽은 더 이상 무기를 받지 않는다) 없어진 콘텐츠로 본다.
+                    bool mountable = supported && HasMountPoint(content.Piece(kept[newIndex[weapon.supportIndex]].id), weapon.mountId);
+                    bool known = content.Weapon(weapon.id) != null;
+                    if (known && mountable)
                     {
                         weapon.supportIndex = newIndex[weapon.supportIndex];
                         castle.weapons[i] = weapon;
                         continue;
                     }
                     Refund(weapon.value);
-                    Note(supported
-                        ? $"removed siege weapon '{weapon.id}'; refunded {Describe(weapon.value)}"
-                        : $"removed siege weapon '{weapon.id}' whose castle piece was removed; refunded {Describe(weapon.value)}");
+                    Note(!supported
+                        ? $"removed siege weapon '{weapon.id}' whose castle piece was removed; refunded {Describe(weapon.value)}"
+                        : !known
+                            ? $"removed siege weapon '{weapon.id}'; refunded {Describe(weapon.value)}"
+                            : $"removed siege weapon '{weapon.id}' whose castle piece no longer has mount point '{weapon.mountId}'; refunded {Describe(weapon.value)}");
                     castle.weapons.RemoveAt(i);
                 }
+            }
+
+            static bool HasMountPoint(ProjectNeo.Walls.BuildPieceDefinition piece, string mountId)
+            {
+                if (piece == null || string.IsNullOrEmpty(mountId)) return false;
+                foreach (ProjectNeo.Walls.BuildMountPoint point in piece.MountPoints)
+                    if (point.id == mountId) return true;
+                return false;
             }
 
             void PayRefund(RunSnapshot s)

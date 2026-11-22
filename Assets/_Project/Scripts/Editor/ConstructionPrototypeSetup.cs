@@ -22,7 +22,7 @@ namespace ProjectNeo.Editor
     public static class ConstructionPrototypeSetup
     {
         public const string ScenePath = "Assets/_Project/Scenes/ConstructionPrototype.unity";
-        const string Data = "Assets/_Project/Data/ConstructionPrototype";
+        internal const string Data = "Assets/_Project/Data/ConstructionPrototype";
         const string Prefabs = "Assets/_Project/Prefabs/ConstructionPrototype";
         const string Art = "Assets/_Project/Art/Placeholder";
 
@@ -43,8 +43,9 @@ namespace ProjectNeo.Editor
             Material ghostMaterial = GhostMaterial();
             var preview = CombatPrototypeSetup.Save(PlacementViewSettings.Create(ghostMaterial), Data + "/Preview.asset");
             var wall = CombatPrototypeSetup.Save(BuildPieceDefinition.Create(BuildPieceKind.Wall, "성벽", Vector2Int.one,
-                prefab: PiecePrefab("Wall", BuildPieceKind.Wall, stone),
-                mountPoints: new[] { new BuildMountPoint("top", Vector3.up) }), Data + "/Wall.asset");
+                prefab: PiecePrefab("Wall", BuildPieceKind.Wall, stone)), Data + "/Wall.asset");
+            // 수성 무기는 보루에만 놓는다(SIEGE-11). 성벽에는 설치 자리가 없다.
+            BastionSetup.CreateBastion();
             var stairs = CombatPrototypeSetup.Save(BuildPieceDefinition.Create(BuildPieceKind.Stairs, "계단", Vector2Int.one,
                 prefab: PiecePrefab("Stairs", BuildPieceKind.Stairs, stone)), Data + "/Stairs.asset");
             var gate = CombatPrototypeSetup.Save(BuildPieceDefinition.Create(BuildPieceKind.Gate, "메인 성문", new Vector2Int(2, 1),
@@ -121,7 +122,7 @@ namespace ProjectNeo.Editor
             return CombatPrototypeSetup.Save(material, path);
         }
 
-        static GameObject PiecePrefab(string name, BuildPieceKind kind, Material material)
+        internal static GameObject PiecePrefab(string name, BuildPieceKind kind, Material material)
         {
             string path = Prefabs + "/" + name + ".prefab";
             var existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);

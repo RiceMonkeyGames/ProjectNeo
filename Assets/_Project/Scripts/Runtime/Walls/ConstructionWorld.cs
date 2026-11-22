@@ -114,8 +114,34 @@ namespace ProjectNeo.Walls
                         if (structures.TryGetValue(Layout.At(cell + new Vector2Int(x, z), level - 1).Id, out PlacedStructure below)
                             && below != null && below.IsUnderConstruction) return PlacementIssue.UnfinishedSupport;
             }
-            return PlacementIssue.None;
+            // 보루 규칙(SIEGE-11). 성 바깥 판정은 준비 중 직접 바꾼 배치가 바뀔 때만 다시 센다(성가퀴와 같은 기준).
+            if (outsideRevision != LayoutRevision)
+            {
+                BattlementRules.CollectOutside(Layout, grid, outsideCells);
+                outsideRevision = LayoutRevision;
+            }
+            return BastionRules.Check(Layout, grid, outsideCells, ladderLanes.Keys, definition, cell, rotation, level, elevation);
         }
+
+        readonly HashSet<Vector2Int> outsideCells = new HashSet<Vector2Int>();
+        int outsideRevision = -1;
+        // 칸마다 그 칸에 선 사다리 수. 사다리는 씬에 고정되어 있고 준비 중에도 꺼진 채 남아 있다.
+        readonly Dictionary<Vector2Int, int> ladderLanes = new Dictionary<Vector2Int, int>();
+
+        /// <summary>사다리가 서는 칸(사다리 자리 칸의 바로 바깥)을 알린다. 그 칸에는 보루를 짓지 않는다(SIEGE-11).</summary>
+        public void ReserveLadderLane(Vector2Int cell)
+        {
+            ladderLanes.TryGetValue(cell, out int count);
+            ladderLanes[cell] = count + 1;
+        }
+
+        public void ReleaseLadderLane(Vector2Int cell)
+        {
+            if (!ladderLanes.TryGetValue(cell, out int count)) return;
+            if (count <= 1) ladderLanes.Remove(cell); else ladderLanes[cell] = count - 1;
+        }
+
+        public bool IsLadderLane(Vector2Int cell) => ladderLanes.ContainsKey(cell);
 
         public bool TryPlace(BuildPieceDefinition definition, Vector2Int cell, int rotation, out PlacedStructure body)
         {

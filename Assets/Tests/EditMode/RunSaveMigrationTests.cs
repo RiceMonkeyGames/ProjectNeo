@@ -228,6 +228,27 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
+        public void WeaponOnPieceThatLostItsMountPoint_IsRefunded_AndThePieceKept()
+        {
+            RunSnapshot saved = Run().Capture(1, Content(), buildCosts);
+            int gold = saved.gold;
+            // SIEGE-11: 성벽 조각에서 무기 설치 자리가 빠졌다.
+            var data = new UnityEditor.SerializedObject(wall);
+            data.FindProperty("mountPoints").ClearArray();
+            data.ApplyModifiedPropertiesWithoutUndo();
+            RunContentCatalog content = Content();
+            var log = new List<string>();
+
+            Assert.Greater(RunSaveMigration.Migrate(saved, content, null, playerHero, log), 0);
+
+            Assert.AreEqual(gold + 80, saved.gold, "the weapon's recorded value comes back in full");
+            Assert.AreEqual(2, saved.castle.pieces.Count, "the wall itself stays");
+            Assert.IsEmpty(saved.castle.weapons);
+            Assert.IsTrue(log.Any(line => line.Contains("no longer has mount point 'top'")), string.Join("\n", log));
+            Assert.IsNotNull(RunState.Restore(saved, content, options, out string error), error);
+        }
+
+        [Test]
         public void RemovedPiece_BeforeAWeaponSupport_ReindexesTheWeapon()
         {
             RunSnapshot saved = Run().Capture(1, Content(), buildCosts);

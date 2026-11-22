@@ -39,6 +39,13 @@ namespace ProjectNeo.Walls
         public bool IsPreviewVisible => ghost != null && ghost.activeSelf;
         public bool StairNeedsConnection => Selected != null && Selected.Kind == BuildPieceKind.Stairs
             && !world.Layout.HasLanding(new BuildPlacement(0, Selected, PreviewCell, Rotation, false, PreviewLevel, PreviewElevation));
+        /// <summary>
+        /// 고른 보루를 지금 자리에 지으면 윗면이 옆 성벽 통로와 높이가 맞지 않아 걸어서 닿지 못하는지(SIEGE-11, 짓기는 허용하고 알린다).
+        /// 위에 보루를 더 쌓으면 이어진다.
+        /// </summary>
+        public bool BastionNeedsConnection => Selected != null && Selected.Kind == BuildPieceKind.Bastion
+            && !BastionRules.JoinsWalkway(world.Layout, world.Grid, PreviewCell,
+                BuildLayout.RotatedSize(Selected.Footprint, Rotation), PreviewElevation + Selected.Height);
 
         public void Configure(ConstructionWorld owner, Camera cameraView, PlacementViewSettings viewSettings)
         { world = owner; view = cameraView; settings = viewSettings; }

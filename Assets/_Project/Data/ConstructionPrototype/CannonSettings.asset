@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Siege.CannonSettings
   minimumRange: 6
   maximumRange: 60
-  aimHalfAngle: 45
+  aimHalfAngle: 90
+  manualAimHalfAngle: 135
+  swivelSpeed: 180
   blastRadius: 3
   centerDamage: 40
   edgeDamageRatio: 0.5

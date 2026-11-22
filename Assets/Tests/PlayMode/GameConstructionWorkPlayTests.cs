@@ -116,7 +116,7 @@ namespace ProjectNeo.Tests
             controller.Select(wall);
             controller.UpdatePreview(world.WorldCenter(wall, cell, 0));
             Assert.AreEqual(PlacementIssue.UnfinishedSupport, controller.Issue, "짓는 중인 조각 위에는 쌓지 않는다.");
-            Assert.AreEqual(MountIssue.UnfinishedSupport, world.CheckMount(Cannon, piece, "top"));
+            Assert.AreEqual(MountIssue.NoMountPoint, world.CheckMount(Cannon, piece, "top"), "성벽에는 무기를 놓지 않는다(SIEGE-11).");
             controller.Cancel();
 
             Assert.IsTrue(State.TrySpendPrepTime(0.4f));
@@ -170,11 +170,35 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
+        public IEnumerator 보루는_비용을_내고_짓는_중에는_무기를_받지_않으며_완성되면_받는다()
+        {
+            yield return null;
+            BuildPieceDefinition bastion = BastionTestSupport.Definition(SceneManager.GetActiveScene());
+            Assert.AreEqual(25, economy.Table.CostOf(bastion), "보루 임시 비용(SIEGE-11)");
+            Assert.IsTrue(BastionTestSupport.TryFindSpot(world, bastion, out Vector2Int cell), "성벽 앞에 보루 자리가 있어야 한다.");
+            int gold = State.Wallet.Gold;
+            controller.Select(bastion);
+            controller.UpdatePreview(world.WorldCenter(bastion, cell, 0));
+            Assert.AreEqual(PlacementIssue.None, controller.Issue);
+            Assert.IsTrue(controller.Confirm());
+            PlacedStructure piece = world.Structures.Single(p => p.Placement.Cell == cell && p.Placement.Level == 0);
+            Assert.AreEqual(gold - 25, State.Wallet.Gold);
+            Assert.AreEqual(150f, piece.Health.Maximum);
+            Assert.IsTrue(piece.IsUnderConstruction);
+            Assert.AreEqual(MountIssue.UnfinishedSupport, world.CheckMount(Cannon, piece, "top"), "짓는 중인 보루에는 무기를 놓지 않는다.");
+            Assert.IsTrue(State.TryWait());
+            Assert.IsFalse(piece.IsUnderConstruction);
+            Assert.AreEqual(MountIssue.None, world.CheckMount(Cannon, piece, "top"));
+        }
+
+        [UnityTest]
         public IEnumerator 다_짓지_못한_대포는_전투에서_쏘지_않고_다음_준비에_끝까지_수리하면_완성된다()
         {
             yield return null;
-            PlacedStructure support = world.Structures.First(piece => piece.Placement.Definition.Kind == BuildPieceKind.Wall
-                && !world.Layout.IsCovered(piece.Placement) && world.CheckMount(Cannon, piece, "top") == MountIssue.None);
+            // 무기는 보루에만 놓는다(SIEGE-11). 다 지은 보루를 받침으로 쓴다.
+            PlacedStructure support = BastionTestSupport.PlaceBesideWalls(world,
+                BastionTestSupport.Definition(SceneManager.GetActiveScene()), 1)[0];
+            yield return Navigation();
             PlacedSiegeWeapon cannon = Mount(Cannon, support);
             Assert.IsNotNull(cannon);
             Assert.IsTrue(cannon.IsUnfinished);

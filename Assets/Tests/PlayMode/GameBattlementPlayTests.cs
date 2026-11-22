@@ -247,31 +247,38 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
-        public IEnumerator CannonCell_BecomesAGunPort_WithOnlyTheSill()
+        public IEnumerator BastionCannon_OpensAGunPortOnlyOnTheFaceItPointsAt()
         {
             yield return null;
             battlements.SetStyle(BattlementStyle.Crenellated);
-            PlacedStructure support = NorthWallWithoutLadder();
+            PlacedStructure wall = NorthWallWithoutLadder();
             var economy = Object.FindAnyObjectByType<GameBuildEconomy>();
             SiegeWeaponDefinition cannon = economy.Table.Weapons.Select(entry => entry.weapon)
                 .First(definition => definition != null && definition.Id == "cannon");
-            Assert.AreEqual(MountIssue.None, world.CheckMount(cannon, support, "top"));
-            Assert.AreEqual(2, Battlement(support).GetComponentsInChildren<Collider>().Count(part => part.name == "Merlon"));
+            Assert.AreEqual(MountIssue.NoMountPoint, world.CheckMount(cannon, wall, "top"), "성벽에는 무기를 놓지 않는다(SIEGE-11).");
 
+            PlacedStructure support = BastionTestSupport.PlaceBeside(world, BastionTestSupport.Definition(SceneManager.GetActiveScene()),
+                wall, out int outward, Vector2Int.up, true);
+            Assert.IsNotNull(support, "사다리 없는 북쪽 성벽 앞에는 보루를 지을 수 있다.");
+            Assert.AreEqual(0, outward);
+            Vector2Int cell = support.Placement.Cell;
+            Assert.AreEqual((1 << 0) | (1 << 1) | (1 << 3), battlements.FacesAt(cell), "보루는 북·동·서 바깥 면에 성가퀴가 선다.");
+            Assert.AreEqual(0, battlements.FacesAt(wall.Placement.Cell) & 1, "보루와 맞닿은 성벽 면은 열린다.");
+            Assert.AreEqual(6, Battlement(support).GetComponentsInChildren<Collider>().Count(part => part.name == "Merlon"));
+
+            Assert.AreEqual(MountIssue.None, world.CheckMount(cannon, support, "top"));
             Assert.IsTrue(world.TryMount(cannon, support, "top", out PlacedSiegeWeapon weapon));
-            Assert.IsTrue(battlements.IsGunPortAt(support.Placement.Cell));
+            Assert.IsTrue(battlements.IsGunPortAt(cell));
+            Assert.IsTrue(battlements.IsGunPortAt(cell, 0), "대포가 향한 북쪽 면이 포구다.");
+            Assert.IsFalse(battlements.IsGunPortAt(cell, 1));
+            Assert.IsFalse(battlements.IsGunPortAt(cell, 3));
             Collider[] parts = Battlement(support).GetComponentsInChildren<Collider>();
-            Assert.AreEqual(0, parts.Count(part => part.name == "Merlon"), "대포 칸은 솟은 부분이 없다.");
-            Assert.AreEqual(1, parts.Count(part => part.name == "Parapet"), "받침(포구 아래)은 남는다.");
-            Vector2Int neighbour = support.Placement.Cell + Vector2Int.right;
-            PlacedStructure next = world.Structures.First(p => world.Layout.Top(neighbour) == p.Placement);
-            if (!battlements.IsGunPortAt(neighbour))
-                Assert.AreEqual(2, Battlement(next).GetComponentsInChildren<Collider>().Count(part => part.name == "Merlon"),
-                    "옆 칸은 그대로 성가퀴다.");
+            Assert.AreEqual(4, parts.Count(part => part.name == "Merlon"), "포구 면만 솟은 부분이 없고 옆면은 남는다.");
+            Assert.AreEqual(3, parts.Count(part => part.name == "Parapet"), "세 면 모두 받침은 남는다.");
 
             Assert.IsTrue(world.RemoveWeapon(weapon));
-            Assert.IsFalse(battlements.IsGunPortAt(support.Placement.Cell));
-            Assert.AreEqual(2, Battlement(support).GetComponentsInChildren<Collider>().Count(part => part.name == "Merlon"),
+            Assert.IsFalse(battlements.IsGunPortAt(cell));
+            Assert.AreEqual(6, Battlement(support).GetComponentsInChildren<Collider>().Count(part => part.name == "Merlon"),
                 "대포를 치우면 성가퀴가 돌아온다.");
         }
 

@@ -18,7 +18,4 @@ MonoBehaviour:
   height: 3
   maxHealth: 100
   prefab: {fileID: 2063767235405788365, guid: dd88b6b831cc0fd40be673a4acface0b, type: 3}
-  mountPoints:
-  - id: top
-    normalizedPosition: {x: 0, y: 1, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
+  mountPoints: []

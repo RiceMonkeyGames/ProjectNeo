@@ -44,11 +44,13 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 34bc9f3a4931a764a826204aa679a5be, type: 2}
   - {fileID: 11400000, guid: 98046023463d0e049812dc46c6e71c1f, type: 2}
   pieces:
+  - {fileID: 11400000, guid: dc1e88579bbb29f428e498188dcd48e4, type: 2}
   - {fileID: 11400000, guid: 808c026c839abdb4aa59f6e639e1c812, type: 2}
   - {fileID: 11400000, guid: 9bec35695a6f5a848b88ce14e4da5884, type: 2}
   - {fileID: 11400000, guid: c1c038f7a168fe347bc9a0582b3d05bf, type: 2}
   - {fileID: 11400000, guid: aac3647309965694ebd130dc919fcbf7, type: 2}
   pieceIds:
+  - dc1e88579bbb29f428e498188dcd48e4
   - 808c026c839abdb4aa59f6e639e1c812
   - 9bec35695a6f5a848b88ce14e4da5884
   - c1c038f7a168fe347bc9a0582b3d05bf

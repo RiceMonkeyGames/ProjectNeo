@@ -393,7 +393,8 @@ namespace ProjectNeo.Morale
                 foreach (BattleSquadMorale battle in battles) battle?.OnGateDestroyed();
                 return;
             }
-            if (kind != BuildPieceKind.Wall) return;
+            // 보루(SIEGE-11)도 성벽을 잃은 것으로 친다.
+            if (kind != BuildPieceKind.Wall && kind != BuildPieceKind.Bastion) return;
             // 한 번 무너질 때 위에 쌓인 조각이 함께 부서져도 부대마다 한 번만 깎는다.
             Vector3 position = piece.transform.position;
             for (int i = 0; i < battles.Count; i++)
