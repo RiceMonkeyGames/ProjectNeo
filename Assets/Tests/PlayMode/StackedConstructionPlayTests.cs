@@ -273,15 +273,23 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
-        public IEnumerator 아래_성벽이_부서지면_위_성벽과_그_위의_무기가_한_층_내려앉는다()
+        public IEnumerator 아래_보루가_부서지면_위_보루와_그_위의_무기가_한_층_내려앉는다()
         {
-            var cell = new Vector2Int(45, 59);
-            PlacedStructure lower = Lower(cell);
-            Assert.IsTrue(world.TryPlace(wall, cell, 0, out PlacedStructure upper));
+            // 2층 성벽 앞에 2층 보루를 쌓는다(SIEGE-11: 쌓은 층도 그 층의 성벽과 맞닿아야 하고, 무기는 보루에만 놓는다).
+            var wallCell = new Vector2Int(45, 59);
+            Lower(wallCell);
+            Assert.IsTrue(world.TryPlace(wall, wallCell, 0, out PlacedStructure upperWall), "2층 성벽: " + world.CheckPlacement(wall, wallCell, 0));
+            BuildPieceDefinition bastion = BastionTestSupport.Definition(SceneManager.GetActiveScene());
+            Vector2Int cell = wallCell + Vector2Int.up;
+            Assert.AreEqual(PlacementIssue.None, world.CheckPlacement(bastion, cell, 0), "1층 보루");
+            Assert.IsTrue(world.TryPlace(bastion, cell, 0, out PlacedStructure lower));
+            Assert.AreEqual(PlacementIssue.None, world.CheckPlacement(bastion, cell, 0), "2층 보루");
+            Assert.IsTrue(world.TryPlace(bastion, cell, 0, out PlacedStructure upper));
+            Assert.AreEqual(1, upper.Placement.Level);
             SiegeWeaponDefinition cannon = Object.FindAnyObjectByType<ConstructionHud>(FindObjectsInactive.Include).Weapons[0];
-            Assert.AreEqual(MountIssue.Occupied, world.CheckMount(cannon, lower, "top"), "덮인 성벽에는 무기를 놓을 수 없다.");
-            Assert.IsTrue(world.TryMount(cannon, upper, "top", out PlacedSiegeWeapon weapon));
-            Assert.AreEqual(PlacementIssue.Occupied, world.CheckPlacement(wall, cell, 0), "무기가 놓인 성벽 위에는 쌓을 수 없다.");
+            Assert.AreEqual(MountIssue.Occupied, world.CheckMount(cannon, lower, "top"), "덮인 보루에는 무기를 놓을 수 없다.");
+            Assert.IsTrue(world.TryMount(cannon, upper, "top", out PlacedSiegeWeapon weapon), "위 보루 무기: " + world.CheckMount(cannon, upper, "top"));
+            Assert.AreEqual(PlacementIssue.Occupied, world.CheckPlacement(bastion, cell, 0), "무기가 놓인 보루 위에는 쌓을 수 없다.");
             float groundY = lower.transform.position.y;
             float weaponHeight = weapon.transform.position.y - upper.transform.position.y;
             upper.ReceiveDamage(30f);
@@ -298,9 +306,13 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(1, world.Structures.Count(piece => piece.Placement.Cell == cell));
             yield return WaitForNavigation();
 
-            Vector3 newTop = upper.transform.position + Vector3.up * wall.Height;
-            Assert.IsTrue(NavMesh.SamplePosition(newTop, out NavMeshHit hit, 0.5f, NavMesh.AllAreas));
-            Assert.AreEqual(newTop.y, hit.position.y, 0.5f, "내려앉은 성벽 윗면이 다시 길이 된다.");
+            Vector3 newTop = upper.transform.position + Vector3.up * bastion.Height;
+            // 옆 성벽이 아직 2층이면 내려앉은 보루 윗면은 통로와 끊긴 작은 섬이라 길찾기 메시에 남지 않는다.
+            // 위 성벽도 부서져 높이가 같아지면 보루 윗면이 통로와 이어져 다시 길이 된다.
+            upperWall.ReceiveDamage(upperWall.Health.Current);
+            yield return WaitForNavigation();
+            Assert.IsTrue(NavMesh.SamplePosition(newTop, out NavMeshHit hit, 0.5f, NavMesh.AllAreas), "내려앉은 보루 윗면 길찾기");
+            Assert.AreEqual(newTop.y, hit.position.y, 0.5f, "내려앉은 보루 윗면이 다시 길이 된다.");
         }
     }
 }

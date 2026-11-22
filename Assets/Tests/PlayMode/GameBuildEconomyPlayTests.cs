@@ -136,8 +136,9 @@ namespace ProjectNeo.Tests
             SiegeWeaponDefinition cannon = economy.Table.Weapons.Select(entry => entry.weapon)
                 .FirstOrDefault(definition => definition != null && definition.Id == "cannon");
             Assert.IsNotNull(cannon, "Game 건설 비용표에 대포가 있어야 한다.");
-            PlacedStructure support = world.Structures.First(piece => piece.Placement.Definition.Kind == BuildPieceKind.Wall
-                && !world.Layout.IsCovered(piece.Placement) && world.CheckMount(cannon, piece, "top") == MountIssue.None);
+            // 무기는 보루에만 놓는다(SIEGE-11).
+            PlacedStructure support = BastionTestSupport.PlaceBesideWalls(world,
+                BastionTestSupport.Definition(SceneManager.GetActiveScene()), 1)[0];
             Assert.IsTrue(world.TryMount(cannon, support, "top", out PlacedSiegeWeapon weapon));
             Assert.AreEqual(150f, weapon.Health.Maximum, "Q-21 대포 체력");
             PlacedStructure wallPiece = world.Structures.First(piece => piece != support

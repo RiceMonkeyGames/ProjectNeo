@@ -116,7 +116,11 @@ namespace ProjectNeo.Tests
         [UnityTest]
         public IEnumerator WallTopClimber_WithoutReachableAllies_DestroysNearbyCannon()
         {
-            FindWallRun(out PlacedStructure start, out PlacedStructure end);
+            FindWallRun(out PlacedStructure start, out PlacedStructure wallEnd);
+            // 수성 무기는 보루에만 놓는다(SIEGE-11). 줄 끝 성벽 옆에 보루를 지어 대포를 올린다.
+            PlacedStructure end = BastionTestSupport.PlaceBeside(world, BastionTestSupport.Definition(scene), wallEnd, out _);
+            Assert.IsNotNull(end, "줄 끝 성벽 옆에 보루를 지을 수 있어야 한다.");
+            yield return NavigationReady();
             Assert.IsTrue(world.TryMount(cannonDefinition, end, "top", out PlacedSiegeWeapon weapon));
             weapon.gameObject.SetActive(true);
             SiegeAttackerBrain climber = SpawnClimber(Top(start));
@@ -132,21 +136,26 @@ namespace ProjectNeo.Tests
             for (int frame = 0; frame < 2400 && removed == 0; frame++) yield return null;
             Assert.AreEqual(1, removed, "대포가 부서져야 한다.");
             Assert.AreEqual(SiegeWeaponRemoval.Destroyed, reason);
-            Assert.IsTrue(world.Structures.Contains(end), "받침 성벽은 남는다.");
-            for (int frame = 0; frame < 30 && climber.CannonTarget != null; frame++) yield return null;
+            Assert.IsTrue(world.Structures.Contains(end), "받침 보루는 남는다.");
+            // 부서진 대포는 Unity 비교로는 null과 같아 보이므로 실제 참조가 비워질 때까지 기다린다.
+            for (int frame = 0; frame < 30 && !ReferenceEquals(climber.CannonTarget, null); frame++) yield return null;
             Assert.IsNull(climber.CannonTarget, "부순 뒤에는 다른 할 일을 고른다.");
         }
 
         [UnityTest]
         public IEnumerator WallTopClimber_PrefersReachableAlly_OverCannon()
         {
-            FindWallRun(out PlacedStructure start, out PlacedStructure end);
+            FindWallRun(out PlacedStructure start, out PlacedStructure wallEnd);
+            // 수성 무기는 보루에만 놓는다(SIEGE-11). 줄 끝 성벽 옆에 보루를 지어 대포를 올린다.
+            PlacedStructure end = BastionTestSupport.PlaceBeside(world, BastionTestSupport.Definition(scene), wallEnd, out _);
+            Assert.IsNotNull(end, "줄 끝 성벽 옆에 보루를 지을 수 있어야 한다.");
+            yield return NavigationReady();
             Assert.IsTrue(world.TryMount(cannonDefinition, end, "top", out PlacedSiegeWeapon weapon));
             weapon.gameObject.SetActive(true);
             UnitCombatAI ally = Find<SquadCommandCenter>().Squads.SelectMany(s => s.Members).First();
             ally.GetComponent<NavMeshAgent>().enabled = false;
             ally.enabled = false;
-            ally.transform.position = Top(end) + (Top(end) - Top(start)).normalized * 1.5f;
+            ally.transform.position = Top(wallEnd) + (Top(wallEnd) - Top(start)).normalized * 1.5f;
             ally.gameObject.SetActive(true);
             Physics.SyncTransforms();
             SiegeAttackerBrain climber = SpawnClimber(Top(start));

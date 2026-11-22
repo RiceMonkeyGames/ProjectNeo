@@ -135,16 +135,17 @@ namespace ProjectNeo.Walls
                 {
                     var cell = new Vector2Int(x, z);
                     BuildPlacement top = world.Layout.Top(cell);
-                    if (top == null || StyleFor(top) != BattlementStyle.Crenellated
-                        || !byPlacement.TryGetValue(top.Id, out Built entry) || entry.Root == null) continue;
+                    if (top == null || !byPlacement.TryGetValue(top.Id, out Built entry) || entry.Root == null) continue;
                     int faces = BattlementRules.Faces(world.Layout, world.Grid, outside, cell);
                     if (faces == 0) continue;
+                    // 포구 면(받침만)에는 빈틈 사격 자리가 없다(SIEGE-11).
+                    int gunPorts = GunPortFaces(top);
                     float surface = top.Elevation + top.Definition.Height;
                     float minX = x * size, minZ = z * size;
                     BattlementRules.CrenelCenters(BattlementStyle.Crenellated, settings, size, crenelBuffer);
                     for (int face = 0; face < 4; face++)
                     {
-                        if ((faces & (1 << face)) == 0) continue;
+                        if ((faces & (1 << face)) == 0 || (gunPorts & (1 << face)) != 0) continue;
                         // 면을 따라 재는 축의 시작·끝 쪽 옆면(0·2면은 서·동, 1·3면은 남·북).
                         int startSide = face % 2 == 0 ? 3 : 2, endSide = face % 2 == 0 ? 1 : 0;
                         foreach (float along in crenelBuffer)
@@ -282,29 +283,39 @@ namespace ProjectNeo.Walls
                     hash = hash * 31 + faces;
                 }
             if (any == 0) return 0;
-            hash = hash * 31 + (int)StyleFor(placement);
+            hash = hash * 31 + (int)style;
+            hash = hash * 31 + GunPortFaces(placement);
             return hash == 0 ? 1 : hash;
         }
 
         /// <summary>
-        /// 그 조각에 쓸 모양. 수성 무기가 올라간 조각은 성가퀴 대신 받침만 남겨 포구를 만든다(SIEGE-10, 사용자 결정 2026-11-20).
-        /// 그래서 포탄이 솟은 부분을 뚫고 나가 보이지 않는다.
+        /// 성가퀴(Lv2)일 때 수성 무기가 향한 면(비트). 그 면은 받침만 남겨 포구를 만든다(SIEGE-10, 사용자 결정 2026-11-20;
+        /// SIEGE-11에서 무기가 향한 면으로 좁힘). 그래서 포탄이 솟은 부분을 뚫고 나가 보이지 않고, 옆면은 성가퀴로 남는다.
         /// </summary>
-        BattlementStyle StyleFor(BuildPlacement placement) =>
-            style == BattlementStyle.Crenellated && world.Mounts != null && world.Mounts.HasWeaponOn(placement.Id)
-                ? BattlementStyle.Parapet : style;
+        int GunPortFaces(BuildPlacement placement) =>
+            style == BattlementStyle.Crenellated && world.Mounts != null ? world.Mounts.FacingFaces(placement) : 0;
 
-        /// <summary>그 칸 맨 위 조각이 수성 무기 때문에 포구(받침만)로 서 있는지. 검증용.</summary>
+        /// <summary>그 조각의 그 면에 쓸 모양.</summary>
+        BattlementStyle StyleFor(BuildPlacement placement, int face) =>
+            (GunPortFaces(placement) & (1 << face)) != 0 ? BattlementStyle.Parapet : style;
+
+        /// <summary>그 칸 맨 위 조각의 성가퀴 면 가운데 하나라도 수성 무기 때문에 포구(받침만)로 서 있는지. 검증용.</summary>
         public bool IsGunPortAt(Vector2Int cell)
         {
             BuildPlacement top = world != null && world.Layout != null ? world.Layout.Top(cell) : null;
-            return top != null && style == BattlementStyle.Crenellated && StyleFor(top) != style;
+            return top != null && (GunPortFaces(top) & FacesAt(cell)) != 0;
+        }
+
+        /// <summary>그 칸 맨 위 조각의 그 면(<see cref="BattlementRules.Directions"/> 순번)이 포구인지. 검증용.</summary>
+        public bool IsGunPortAt(Vector2Int cell, int face)
+        {
+            BuildPlacement top = world != null && world.Layout != null ? world.Layout.Top(cell) : null;
+            return top != null && face >= 0 && face < 4 && (GunPortFaces(top) & FacesAt(cell) & (1 << face)) != 0;
         }
 
         GameObject Build(PlacedStructure structure)
         {
             BuildPlacement placement = structure.Placement;
-            BattlementStyle pieceStyle = StyleFor(placement);
             Material material = settings.Material != null ? settings.Material : WallMaterial(structure);
             var root = new GameObject(RootName);
             root.transform.SetParent(structure.transform, false);
@@ -323,7 +334,7 @@ namespace ProjectNeo.Walls
                     for (int face = 0; face < 4; face++)
                     {
                         if ((faces & (1 << face)) == 0) continue;
-                        BattlementRules.Segments(pieceStyle, settings, size, segments);
+                        BattlementRules.Segments(StyleFor(placement, face), settings, size, segments);
                         foreach (BattlementSegment segment in segments)
                             AddSegment(root.transform, material, cell, face, segment, size, surface, thickness);
                     }

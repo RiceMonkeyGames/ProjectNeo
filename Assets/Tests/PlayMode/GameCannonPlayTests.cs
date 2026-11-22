@@ -44,17 +44,17 @@ namespace ProjectNeo.Tests
             GameSession.Reset(); Time.captureDeltaTime = capture;
         }
 
-        // 적이 오는 바깥쪽을 향하도록 가장 바깥 성벽 위에 실제 대포를 단다.
+        // 적이 오는 바깥쪽을 향하도록 가장 바깥 성벽 앞에 보루를 짓고 실제 대포를 단다(SIEGE-11: 무기는 보루에만).
         PlacedSiegeWeapon MountFacingOutward()
         {
             SiegeWeaponDefinition cannon = economy.Table.Weapons.Select(entry => entry.weapon)
                 .First(definition => definition != null && definition.Id == "cannon");
             Vector3 outward = world.transform.TransformDirection(
                 new Vector3(battle.Settings.Outward.x, 0f, battle.Settings.Outward.y)).normalized;
-            PlacedStructure support = world.Structures
-                .Where(piece => piece.Placement.Definition.Kind == BuildPieceKind.Wall && !world.Layout.IsCovered(piece.Placement)
-                    && world.CheckMount(cannon, piece, "top") == MountIssue.None)
-                .OrderByDescending(piece => Vector3.Dot(piece.transform.position, outward)).First();
+            PlacedStructure support = BastionTestSupport.PlaceInFrontOfOutermostWall(world,
+                BastionTestSupport.Definition(SceneManager.GetActiveScene()), battle.Settings.Outward,
+                wall => !world.Layout.IsCovered(wall.Placement));
+            Assert.AreEqual(MountIssue.None, world.CheckMount(cannon, support, "top"));
             Assert.IsTrue(support.TryGetMountPose("top", out Pose top));
             int rotation = Enumerable.Range(0, 4).OrderByDescending(r =>
                 Vector3.Dot(ConstructionWorld.RotateMountPose(top, r).rotation * Vector3.forward, outward)).First();
@@ -121,15 +121,18 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(op.Settings.ColorFor(op.AimState), reticle.ReticleColor);
             Assert.IsNotEmpty(reticle.LabelText);
 
-            // 설치 방향 옆 60도로 시점을 돌리면 자동 사격 범위(±45도) 밖까지 시점과 포신이 따라간다.
-            view.SetOrientation(yaw + 60f, 10f);
+            // 보루 대포(SIEGE-11)는 자동 ±90도, 직접 조준 ±135도다. 설치 방향 옆 110도로 시점을 돌리면
+            // 자동 사격 범위 밖까지 시점과 포신이 따라가고, 160도로 돌리면 ±135도에서 멈춘다.
+            Assert.AreEqual(90f, cannon.Settings.AimHalfAngle, "보루 대포 자동 사격 범위");
+            Assert.AreEqual(135f, cannon.Settings.ManualAimHalfAngle, "보루 대포 직접 조준 범위");
+            view.SetOrientation(yaw + 110f, 10f);
             op.ApplyLook(Vector2.zero);
-            Assert.AreEqual(0f, Mathf.DeltaAngle(yaw + 60f, view.Yaw), 0.01f);
-            for (int i = 0; i < 60 && cannon.Swivel < 59.9f; i++) yield return null;
-            Assert.AreEqual(60f, cannon.Swivel, 0.1f);
-            view.SetOrientation(yaw + 150f, 10f);
+            Assert.AreEqual(0f, Mathf.DeltaAngle(yaw + 110f, view.Yaw), 0.01f);
+            for (int i = 0; i < 60 && cannon.Swivel < 109.9f; i++) yield return null;
+            Assert.AreEqual(110f, cannon.Swivel, 0.1f);
+            view.SetOrientation(yaw + 160f, 10f);
             op.ApplyLook(Vector2.zero);
-            Assert.AreEqual(0f, Mathf.DeltaAngle(yaw + 90f, view.Yaw), 0.01f, "시점은 ±90도에서 멈춘다.");
+            Assert.AreEqual(0f, Mathf.DeltaAngle(yaw + 135f, view.Yaw), 0.01f, "시점은 ±135도에서 멈춘다.");
 
             Assert.IsTrue(cannon.FireWithVelocity(cannon.BarrelFacing * 20f + Vector3.up * 5f));
             yield return null; yield return null;

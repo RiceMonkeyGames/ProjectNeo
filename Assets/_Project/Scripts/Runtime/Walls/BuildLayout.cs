@@ -9,6 +9,12 @@ namespace ProjectNeo.Walls
         MissingLanding = 4, UnitInTheWay = 5, NoPiece = 6, UnevenSupport = 7,
         /// <summary>받치는 조각이 아직 짓는 중이다(SIEGE-08).</summary>
         UnfinishedSupport = 8,
+        /// <summary>보루는 성 바깥 빈 칸에, 같은 층·같은 높이의 성벽에 붙여 지어야 한다(SIEGE-11).</summary>
+        BastionNeedsWall = 9,
+        /// <summary>사다리가 서는 칸이다(SIEGE-11).</summary>
+        LadderLane = 10,
+        /// <summary>보루 위에는 보루만, 보루는 보루 위에만 쌓는다(SIEGE-11).</summary>
+        BastionStack = 11,
     }
 
     public sealed class BuildPlacement

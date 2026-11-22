@@ -431,7 +431,10 @@ namespace ProjectNeo.Tests
             var hud = scene.GetRootGameObjects().Select(root => root.GetComponent<ProjectNeo.UI.ConstructionHud>())
                 .Single(value => value != null);
             SiegeWeaponDefinition cannon = hud.Weapons[0];
-            var support = world.Structures.First(piece => piece.Placement.Definition.Kind == BuildPieceKind.Wall);
+            var plainWall = world.Structures.First(piece => piece.Placement.Definition.Kind == BuildPieceKind.Wall);
+            // 수성 무기는 보루에만 놓는다(SIEGE-11). 보루를 먼저 짓고 길찾기 메시가 다 만들어진 뒤부터 잰다.
+            var support = BastionTestSupport.PlaceBesideWalls(world, BastionTestSupport.Definition(scene), 1)[0];
+            yield return WaitForNavigation(world);
             var ramp = world.Structures.First(piece => piece.Placement.Definition.Kind == BuildPieceKind.Stairs);
             Assert.IsTrue(support.TryGetMountPose("top", out Pose top));
             int pieces = world.Layout.Placements.Count;
@@ -443,6 +446,9 @@ namespace ProjectNeo.Tests
             Assert.IsFalse(controller.Confirm());
             controller.UpdateWeaponPreview(ramp, ramp.transform.position);
             Assert.AreEqual(MountIssue.NoMountPoint, controller.MountIssue);
+            Assert.IsFalse(controller.Confirm());
+            controller.UpdateWeaponPreview(plainWall, plainWall.transform.position);
+            Assert.AreEqual(MountIssue.NoMountPoint, controller.MountIssue, "성벽에는 설치 자리가 없다.");
             Assert.IsFalse(controller.Confirm());
             Assert.AreEqual(0, world.Weapons.Count);
 
@@ -472,8 +478,7 @@ namespace ProjectNeo.Tests
             var hud = scene.GetRootGameObjects().Select(root => root.GetComponent<ProjectNeo.UI.ConstructionHud>())
                 .Single(value => value != null);
             SiegeWeaponDefinition cannon = hud.Weapons[0];
-            var support = world.Structures.First(piece => piece.Placement.Definition.Kind == BuildPieceKind.Wall
-                && !world.Layout.IsCovered(piece.Placement));
+            var support = BastionTestSupport.PlaceBesideWalls(world, BastionTestSupport.Definition(scene), 1)[0];
             Assert.IsTrue(support.TryGetMountPose("top", out Pose top));
 
             controller.SelectWeapon(cannon);
@@ -505,8 +510,8 @@ namespace ProjectNeo.Tests
             SiegeWeaponDefinition definition = SiegeWeaponDefinition.Create("test", "test", Vector3.one, template);
             try
             {
-                PlacedStructure[] walls = world.Structures
-                    .Where(piece => piece.Placement.Definition.Kind == BuildPieceKind.Wall).Take(2).ToArray();
+                // 수성 무기는 보루에만 놓는다(SIEGE-11).
+                PlacedStructure[] walls = BastionTestSupport.PlaceBesideWalls(world, BastionTestSupport.Definition(scene), 2);
                 Assert.IsTrue(world.TryMount(definition, walls[0], "top", out var doomed));
                 Assert.IsTrue(world.TryMount(definition, walls[1], "top", out var kept));
                 var doomedModule = doomed.GetComponent<RecordingSiegeWeaponModule>();
@@ -553,7 +558,7 @@ namespace ProjectNeo.Tests
             SiegeWeaponDefinition definition = SiegeWeaponDefinition.Create("test", "test", Vector3.one, template, 150f);
             try
             {
-                PlacedStructure wall = world.Structures.First(piece => piece.Placement.Definition.Kind == BuildPieceKind.Wall);
+                PlacedStructure wall = BastionTestSupport.PlaceBesideWalls(world, BastionTestSupport.Definition(scene), 1)[0];
                 float wallHealth = wall.Health.Current;
                 int supportId = wall.Placement.Id;
                 Assert.IsTrue(world.TryMount(definition, wall, "top", out var weapon));

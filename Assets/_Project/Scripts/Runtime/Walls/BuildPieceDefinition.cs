@@ -4,7 +4,8 @@ using UnityEngine;
 
 namespace ProjectNeo.Walls
 {
-    public enum BuildPieceKind { Wall = 0, Stairs = 1, Gate = 2 }
+    /// <summary>값은 저장·에셋에 남으므로 바꾸지 않는다. 보루(SIEGE-11)는 성벽 밖으로 튀어나온 수성 무기 자리다.</summary>
+    public enum BuildPieceKind { Wall = 0, Stairs = 1, Gate = 2, Bastion = 3 }
 
     [Serializable]
     public struct BuildMountPoint

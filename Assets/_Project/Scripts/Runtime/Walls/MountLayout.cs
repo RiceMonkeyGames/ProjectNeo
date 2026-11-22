@@ -71,6 +71,26 @@ namespace ProjectNeo.Walls
             return false;
         }
 
+        /// <summary>
+        /// 그 조각에 놓인 무기들이 향한 격자 면(비트 i = <see cref="BattlementRules.Directions"/>[i]). 조각 회전, 설치 지점 방향,
+        /// 설치할 때 R로 더 돌린 횟수를 합친 정면이다. 포구(SIEGE-11)는 이 면에만 낸다.
+        /// </summary>
+        public int FacingFaces(BuildPlacement support)
+        {
+            if (support == null) return 0;
+            int mask = 0;
+            foreach (MountedWeapon weapon in mounted.Values)
+            {
+                if (weapon.SupportId != support.Id) continue;
+                float yaw = 0f;
+                foreach (BuildMountPoint point in support.Definition.MountPoints)
+                    if (point.id == weapon.MountId) { yaw = point.localEulerAngles.y; break; }
+                int steps = support.Rotation + UnityEngine.Mathf.RoundToInt(yaw / 90f) + weapon.Rotation;
+                mask |= 1 << MountedWeapon.NormalizeRotation(steps);
+            }
+            return mask;
+        }
+
         public bool Remove(int id)
         {
             if (!mounted.TryGetValue(id, out var weapon)) return false;

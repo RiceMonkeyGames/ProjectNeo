@@ -54,7 +54,11 @@ namespace ProjectNeo.Siege
             State.Toppled += OnToppled;
             State.ClimberDislodged += OnClimberDislodged;
             push = settings.PushLadder.Clone();
+            // 꺼진 채(준비 단계) 있어도 자리는 막는다. 사다리가 서는 칸에는 보루를 짓지 않는다(SIEGE-11).
+            if (world != null) { reservedLane = cell + outward; world.ReserveLadderLane(reservedLane.Value); }
         }
+
+        Vector2Int? reservedLane;
 
         void OnEnable() { push.Enable(); active.Add(this); }
         void OnDisable()
@@ -68,6 +72,8 @@ namespace ProjectNeo.Siege
         }
         void OnDestroy()
         {
+            if (reservedLane.HasValue && world != null) world.ReleaseLadderLane(reservedLane.Value);
+            reservedLane = null;
             ClearAiPushHandles();
             if (State != null)
             {

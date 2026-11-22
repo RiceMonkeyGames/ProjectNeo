@@ -54,11 +54,15 @@ namespace ProjectNeo.Tests
             template.AddComponent<CannonModule>().Configure(settings, null);
             SiegeWeaponDefinition definition = Own(SiegeWeaponDefinition.Create("test_cannon", "test_cannon",
                 new Vector3(1.2f, 1.1f, 1.8f), template, 150f));
-            // 정면 70m 안에 다른 성 조각이 없는 성벽과 방향을 고른다. 포탄과 허수아비가 성벽에 막히지 않게 한다.
-            Physics.SyncTransforms();
-            foreach (PlacedStructure support in world.Structures.Where(piece => piece.Placement.Definition.Kind == BuildPieceKind.Wall
-                && !world.Layout.IsCovered(piece.Placement)).ToArray())
+            // 수성 무기는 보루에만 놓는다(SIEGE-11). 성벽 옆에 보루를 하나씩 지어 보며,
+            // 정면 70m 안에 다른 성 조각이 없는 보루와 방향을 고른다. 포탄과 허수아비가 성벽에 막히지 않게 한다.
+            BuildPieceDefinition bastion = BastionTestSupport.Definition(scene);
+            foreach (PlacedStructure wall in world.Structures.Where(piece => piece.Placement.Definition.Kind == BuildPieceKind.Wall
+                && piece.Placement.Level == 0).ToArray())
             {
+                PlacedStructure support = BastionTestSupport.PlaceBeside(world, bastion, wall, out _, Vector2Int.up);
+                if (support == null) continue;
+                Physics.SyncTransforms();
                 if (!support.TryGetMountPose("top", out Pose top)) continue;
                 for (int rotation = 0; rotation < 4; rotation++)
                 {
@@ -71,7 +75,7 @@ namespace ProjectNeo.Tests
                     return weapon.GetComponent<CannonModule>();
                 }
             }
-            Assert.Fail("정면이 트인 성벽이 없다.");
+            Assert.Fail("정면이 트인 보루가 없다.");
             return null;
         }
 
