@@ -12,6 +12,7 @@ namespace ProjectNeo.Flow
     /// 방어 시설 레벨의 성가퀴 모양을 성 전체에 적용하고(SIEGE-10), 건설 모드 패널의 성가퀴 업그레이드 버튼을 다룬다.
     /// 레벨은 업그레이드·런 되살리기·새 런으로 바뀌므로 매 프레임 지금 런의 값을 맞춘다(같으면 아무 일도 하지 않는다).
     /// 런에 방어 시설이 아직 없으면 시작 모양을 쓴다. 업그레이드는 시설 업그레이드와 같은 무료 행동이다(준비 시계를 쓰지 않는다).
+    /// 준비 단계에 들어설 때 성 바깥 판정을 다시 한다(전투 중에는 성가퀴 면을 고정한다).
     /// </summary>
     public sealed class GameBattlements : MonoBehaviour
     {
@@ -66,8 +67,15 @@ namespace ProjectNeo.Flow
 
         public void TryUpgradeFromButton() => TryUpgrade();
 
+        GamePhase? lastPhase;
+
         void Update()
         {
+            // 준비 단계에 들어서면 전투 중 무너진 자리까지 반영해 성 바깥을 다시 판정한다(BUG-battlement-inner-faces).
+            GamePhase? phase = GameSession.Flow != null ? GameSession.Flow.Phase : (GamePhase?)null;
+            if (phase == GamePhase.Preparation && lastPhase.HasValue && lastPhase != GamePhase.Preparation && battlements != null)
+                battlements.RecomputeOutside();
+            lastPhase = phase;
             Apply();
             RefreshButton();
         }
