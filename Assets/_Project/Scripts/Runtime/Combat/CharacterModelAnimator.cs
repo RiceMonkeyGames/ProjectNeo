@@ -84,6 +84,8 @@ namespace ProjectNeo.Combat
         bool sampleAimNextFrame;
         int baseState;
         bool dead;
+        int detailPhase;
+        static int nextDetailPhase;
 
         /// <summary>
         /// 웅크린 자세를 직접 켠다. 전투 몸통이 웅크렸으면(<see cref="CharacterActor.IsCrouched"/>, COMBAT-10 성가퀴 뒤 재장전) 이 값과 관계없이 웅크린다.
@@ -112,6 +114,7 @@ namespace ProjectNeo.Combat
 
         void Awake()
         {
+            detailPhase = nextDetailPhase++;
             agent = actor.GetComponent<NavMeshAgent>();
             ai = actor.GetComponent<UnitCombatAI>();
             cues = actor.GetComponent<IAnimationCueSource>();
@@ -176,16 +179,19 @@ namespace ProjectNeo.Combat
             bool holdsDrawnBow = cues != null && cues.HoldsDrawnBow;
             bool engaged = CharacterAnimationRules.IsEngaged(Time.time - lastAttackTime, profile.EngagedSeconds, holdsDrawnBow);
             UpdateBase(engaged);
+            int stride = ai != null ? AILodRules.AnimatorDetailStride(ai.LodTier, ai.InViewCone) : 1;
+            bool stepDetail = stride <= 1 || ((Time.frameCount + detailPhase) % stride == 0);
             CharacterActor target = AimTarget();
-            UpdateAim(target, deltaTime);
+            if (stepDetail) UpdateAim(target, deltaTime * stride);
             if (bow != null)
             {
                 bool keepDrawn = CharacterAnimationRules.KeepsBowDrawn(engaged, velocity.magnitude, profile.BowLowerSpeed, holdsDrawnBow);
                 if (bow.Tick(deltaTime, keepDrawn)) PlayBowPhase();
                 animator.SetFloat(ActionSpeed, bow.PhaseSpeed);
-                UpdateBowStance(target, velocity.magnitude, deltaTime);
+                if (stepDetail) UpdateBowStance(target, velocity.magnitude, deltaTime * stride);
             }
-            if (sheathRule != null) UpdateSheath(target, engaged, deltaTime);
+            if (sheathRule != null && (stepDetail || Time.time >= weaponSwapAt))
+                UpdateSheath(target, engaged, stepDetail ? deltaTime * stride : 0f);
             if (actionEndsAt > float.NegativeInfinity && Time.time >= actionEndsAt)
             {
                 actionEndsAt = float.NegativeInfinity;
@@ -269,6 +275,7 @@ namespace ProjectNeo.Combat
         void LateUpdate()
         {
             if (bow == null || dead || !animator.enabled || bowHand == null || stringHand == null) return;
+            if (ai != null && ai.LodTier == AILodTier.Lod2 && !ai.InViewCone && !sampleAimNextFrame) return;
             if (bow.Phase == BowDrawPhase.Holding || sampleAimNextFrame)
             {
                 sampleAimNextFrame = false;

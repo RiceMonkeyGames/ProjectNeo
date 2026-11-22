@@ -80,6 +80,11 @@ namespace ProjectNeo.Combat
         [SerializeField, Min(1)] int decisionStaggerBuckets = 8;
         // 2D 공간 해시 그리드 칸 크기(m, PERF-ai-spatial-grid).
         [SerializeField, Min(1f)] float spatialCellSize = 8f;
+        // 대규모 전투 3단계 AI LOD(PERF-ai-lod).
+        [SerializeField] bool enableAiLod = true;
+        [SerializeField, Min(1f)] float lod0Distance = 25f;
+        [SerializeField, Min(2f)] float lod1Distance = 60f;
+        [SerializeField, Min(0.05f)] float lodEvaluationInterval = 0.5f;
         public bool RangedThreatPriority => rangedThreatPriority;
         public float RangedMeleeThreatRadius => rangedMeleeThreatRadius;
         public float RangedFallbackDistance => rangedFallbackDistance;
@@ -91,6 +96,10 @@ namespace ProjectNeo.Combat
         public int MaxPathQueriesPerFrame => Mathf.Max(0, maxPathQueriesPerFrame);
         public int DecisionStaggerBuckets => Mathf.Max(1, decisionStaggerBuckets);
         public float SpatialCellSize => Mathf.Max(1f, spatialCellSize);
+        public bool EnableAiLod => enableAiLod;
+        public float Lod0Distance => Mathf.Max(1f, lod0Distance);
+        public float Lod1Distance => Mathf.Max(Lod0Distance, lod1Distance);
+        public float LodEvaluationInterval => Mathf.Max(0.05f, lodEvaluationInterval);
 
         /// <summary>위협 종류의 거리 배율. 우선순위를 끄면 언제나 1이다.</summary>
         public float ThreatDistanceFactor(TargetThreat threat) => rangedThreatPriority
@@ -118,7 +127,9 @@ namespace ProjectNeo.Combat
             float rangedMeleeThreatRadius = 3f, float rangedFallbackDistance = 3f, bool holdFacingRestore = true,
             float ladderClimberDistanceFactor = 0.5f, float siegeBreakerDistanceFactor = 0.6f,
             float rangedThreatDistanceFactor = 0.75f, int maxPathCandidatesPerTick = 4,
-            int maxPathQueriesPerFrame = 0, int decisionStaggerBuckets = 8, float spatialCellSize = 8f)
+            int maxPathQueriesPerFrame = 0, int decisionStaggerBuckets = 8, float spatialCellSize = 8f,
+            bool enableAiLod = true, float lod0Distance = 25f, float lod1Distance = 60f,
+            float lodEvaluationInterval = 0.5f)
         {
             var value = CreateInstance<UnitAISettings>();
             value.meleeSlots = meleeSlots;
@@ -139,6 +150,10 @@ namespace ProjectNeo.Combat
             value.maxPathQueriesPerFrame = Mathf.Max(0, maxPathQueriesPerFrame);
             value.decisionStaggerBuckets = Mathf.Max(1, decisionStaggerBuckets);
             value.spatialCellSize = Mathf.Max(1f, spatialCellSize);
+            value.enableAiLod = enableAiLod;
+            value.lod0Distance = Mathf.Max(1f, lod0Distance);
+            value.lod1Distance = Mathf.Max(value.lod0Distance, lod1Distance);
+            value.lodEvaluationInterval = Mathf.Max(0.05f, lodEvaluationInterval);
             return value;
         }
     }
