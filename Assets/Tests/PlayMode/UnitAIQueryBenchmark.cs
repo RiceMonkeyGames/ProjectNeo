@@ -83,6 +83,7 @@ namespace ProjectNeo.Tests
         [UnityTearDown]
         public IEnumerator TearDown()
         {
+            AILodContext.ClearViewOverride();
             Time.captureDeltaTime = previousCapture;
             QualitySettings.vSyncCount = previousVSync;
             Application.targetFrameRate = previousTargetRate;
@@ -167,6 +168,8 @@ namespace ProjectNeo.Tests
         void Spawn(int perTeam, string scenario)
         {
             UnitCombatAI.Scheduler.ResetStats();
+            // 1인칭 플레이어가 아군 전열 중앙(origin - 15m z)에서 적 쪽(+z)을 바라보는 시점을 기준으로 AI LOD를 측정한다(PERF-ai-lod).
+            AILodContext.SetViewOverride(origin + new Vector3(0f, 1.7f, -15f), Vector3.forward, topDown: false);
             unitRoot = new GameObject("BenchmarkUnits");
             MethodInfo updateMethod = typeof(UnitCombatAI).GetMethod("Update", BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.IsNotNull(updateMethod, "AI Update method changed; update the benchmark adapter.");

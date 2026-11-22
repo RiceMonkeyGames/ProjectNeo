@@ -40,6 +40,10 @@ namespace ProjectNeo.Combat
         readonly System.Collections.Generic.List<CharacterActor> spatialCandidates =
             new System.Collections.Generic.List<CharacterActor>(64);
         public static readonly AIDecisionScheduler Scheduler = new AIDecisionScheduler();
+        // 대규모 전투 3단계 AI LOD(PERF-ai-lod).
+        AILodTier lodTier = AILodTier.Lod0;
+        bool inViewCone = true;
+        float lodCheckRemaining;
         // 자리 방향(COMBAT-14). 대형이 바라볼 방향이나 자리를 받은 때의 방향(도). 없으면 돌지 않는다.
         float? postFacing;
         // 근접 위협 후퇴(COMBAT-14).
@@ -48,6 +52,10 @@ namespace ProjectNeo.Combat
         float fallbackCooldownRemaining;
         float threatRecheckRemaining;
         public CharacterActor Target { get; private set; }
+        /// <summary>지금 유닛의 AI LOD 등급(PERF-ai-lod).</summary>
+        public AILodTier LodTier => lodTier;
+        /// <summary>유닛이 카메라 시야 원뿔 안에 있는지(PERF-ai-lod).</summary>
+        public bool InViewCone => inViewCone;
         /// <summary>자리를 지킬 때 돌아볼 방향(y축 각도, 도). 없으면 null(COMBAT-14).</summary>
         public float? HoldFacing => postFacing;
         /// <summary>근접 적을 피해 짧게 물러나는 중인지(COMBAT-14, 검증용).</summary>
@@ -152,21 +160,67 @@ namespace ProjectNeo.Combat
 
         float NextDecisionInterval()
         {
-            float interval = settings.DecisionInterval;
+            float baseInterval = settings.DecisionInterval * AILodRules.IntervalMultiplier(lodTier);
             if (staggerIndex < 0 && settings != null && settings.DecisionStaggerBuckets > 1)
             {
                 // 첫 1명은 원래 판단 주기를 지키고, 같은 장면에 이어서 생성되는 유닛들만 버킷별로 판단 시점을 나눈다.
                 staggerIndex = CharacterActor.ActiveActors.Count <= 2 ? 0 : nextStaggerIndex++;
-                float offset = AIDecisionScheduler.InitialOffset(staggerIndex, settings.DecisionStaggerBuckets, interval);
+                float offset = AIDecisionScheduler.InitialOffset(staggerIndex, settings.DecisionStaggerBuckets, baseInterval);
                 if (offset > 0f) return offset;
             }
-            return interval;
+            return baseInterval;
+        }
+
+        int CurrentCandidateLimit() => AILodRules.PathCandidateLimit(lodTier,
+            settings != null ? settings.MaxPathCandidatesPerTick : 4);
+
+        void UpdateLodTier()
+        {
+            if (settings == null || !settings.EnableAiLod)
+            {
+                lodTier = AILodTier.Lod0;
+                inViewCone = true;
+                return;
+            }
+            lodCheckRemaining -= Time.deltaTime;
+            if (lodCheckRemaining > 0f) return;
+            lodCheckRemaining = settings.LodEvaluationInterval;
+
+            if (!AILodContext.TrySampleView(transform.position, out float sqrDist, out bool inView, out bool topDown))
+            {
+                lodTier = AILodTier.Lod0;
+                inViewCone = true;
+                return;
+            }
+            inViewCone = inView;
+            bool highPriority = actor.Character != null || (Target != null && Target.Character != null);
+            AILodTier next = AILodRules.Evaluate(true, sqrDist, settings.Lod0Distance, settings.Lod1Distance,
+                inView, highPriority, Target != null, topDown);
+            if (next != lodTier)
+            {
+                lodTier = next;
+                ApplyLodAvoidance();
+            }
+        }
+
+        void ApplyLodAvoidance()
+        {
+            if (agent == null || !agent.enabled) return;
+            agent.obstacleAvoidanceType = lodTier switch
+            {
+                AILodTier.Lod0 => ObstacleAvoidanceType.HighQualityObstacleAvoidance,
+                AILodTier.Lod1 => ObstacleAvoidanceType.MedQualityObstacleAvoidance,
+                _ => Directive == UnitDirective.Hold && Target == null
+                    ? ObstacleAvoidanceType.NoObstacleAvoidance
+                    : ObstacleAvoidanceType.LowQualityObstacleAvoidance,
+            };
         }
 
         void Update()
         {
             if (actor.Health != null && !actor.Health.IsDead && ProjectNeo.Siege.LadderTraveller.HandleAI(this)) return;
             if (actor.Health == null || actor.Health.IsDead || !agent.enabled || !agent.isOnNavMesh) return;
+            UpdateLodTier();
             agent.speed = actor.Stats.GetValue(StatType.MoveSpeed);
             agent.acceleration = settings.Acceleration;
             agent.angularSpeed = settings.TurnSpeed;
@@ -199,7 +253,7 @@ namespace ProjectNeo.Combat
                 coverCheckRemaining -= Time.deltaTime;
                 if (coverCheckRemaining <= 0f)
                 {
-                    coverCheckRemaining = settings.DecisionInterval;
+                    coverCheckRemaining = settings.DecisionInterval * AILodRules.IntervalMultiplier(lodTier);
                     behindCover = CombatPhysics.IsBehindOwnCover(actor, profile.CoverSearchRadius);
                 }
             }
@@ -523,7 +577,8 @@ namespace ProjectNeo.Combat
                 && MachicolationRules.ShouldRelease(opening.isActiveAndEnabled, opening.HasEnemyBelow(actor)))
                 ReleaseOpening();
             if (opening != null && !opening.isActiveAndEnabled) ReleaseOpening();
-            if (opening == null && refreshed) ClaimOpening();
+            // 원경(LOD 2)에서 대기 중인 유닛은 새 마치콜레이션 구멍 길찾기를 생략한다(PERF-ai-lod).
+            if (opening == null && refreshed && lodTier != AILodTier.Lod2) ClaimOpening();
             if (opening == null) return false;
             if (opening.IsAtStand(transform.position))
             {
@@ -628,7 +683,7 @@ namespace ProjectNeo.Combat
         // 공간 해시 그리드로 주변 적만 조회한 뒤 상위 K명에게만 길찾기를 시험한다(PERF-ai-query-budget, PERF-ai-spatial-grid).
         CharacterActor FindTargetNearPost()
         {
-            topCandidates.Reset(settings != null ? settings.MaxPathCandidatesPerTick : 4);
+            topCandidates.Reset(CurrentCandidateLimit());
             CombatSpatialIndex.QueryEnemies(actor.Team, HoldPost, HoldChaseRadius, spatialCandidates);
             for (int i = 0; i < spatialCandidates.Count; i++)
             {
@@ -776,13 +831,14 @@ namespace ProjectNeo.Combat
         // 근접 유닛은 대상 둘레의 자리로 가고(COMBAT-12), 쓸 자리가 없으면 예전처럼 중심으로 간다.
         void ApplyApproachPath(bool holdLimited)
         {
-            if (settings.MeleeSlots && actor.Profile.AttackKind == AttackKind.Melee && Target != null
-                && TryPathToSlot(holdLimited)) return;
+            int maxSlotTries = AILodRules.MeleeSlotTries(lodTier, SlotPathTries);
+            if (maxSlotTries > 0 && settings.MeleeSlots && actor.Profile.AttackKind == AttackKind.Melee && Target != null
+                && TryPathToSlot(holdLimited, maxSlotTries)) return;
             meleeSlotBoard.Release(this);
             agent.SetPath(path);
         }
 
-        bool TryPathToSlot(bool holdLimited)
+        bool TryPathToSlot(bool holdLimited, int maxSlotTries)
         {
             Vector3 center = CombatPhysics.ReachPoint(Target);
             float inner = MeleeRingRules.InnerRadius(Target.Profile.Radius, actor.Profile.Radius, settings.MeleeSlotGap,
@@ -800,7 +856,7 @@ namespace ProjectNeo.Combat
                 MeleeRingRules.OrderByDistance(transform.position, center, radius, count, slotOrder);
                 foreach (int index in slotOrder)
                 {
-                    if (tries >= SlotPathTries) break;
+                    if (tries >= maxSlotTries) break;
                     if (held && heldRing == ring && heldIndex == index) continue;
                     if (meleeSlotBoard.IsTaken(Target, ring, index, this, ClaimStillValid)) continue;
                     tries++;
@@ -822,7 +878,17 @@ namespace ProjectNeo.Combat
             var filter = new NavMeshQueryFilter { agentTypeID = agent.agentTypeID, areaMask = agent.areaMask };
             if (!NavMesh.SamplePosition(point, out NavMeshHit hit, settings.MeleeSlotSampleDistance, filter)
                 || Mathf.Abs(hit.position.y - center.y) > settings.MeleeSlotLevelTolerance) return false;
+            if (!AILodRules.UsesFullMeleeSlotPath(lodTier))
+            {
+                // 중경(LOD 1)에서는 대상까지의 경로(path)가 이미 확인되었으므로 추가 CalculatePath 없이 자리를 배정한다(PERF-ai-lod).
+                if (holdLimited && settings.HoldMaxDescent > 0f && hit.position.y < HoldPost.y - settings.HoldMaxDescent)
+                    return false;
+                meleeSlotBoard.Take(this, Target, ring, index);
+                agent.SetDestination(hit.position);
+                return true;
+            }
             if (slotPath == null) slotPath = new NavMeshPath();
+            Scheduler.RecordPathQuery(Time.frameCount);
             if (!agent.CalculatePath(hit.position, slotPath) || slotPath.status != NavMeshPathStatus.PathComplete) return false;
             if (holdLimited && settings.HoldMaxDescent > 0f
                 && !HoldDescentRule.StaysAbove(slotPath.corners, HoldPost.y - settings.HoldMaxDescent)) return false;
@@ -837,6 +903,11 @@ namespace ProjectNeo.Combat
             if (actor.Health == null || actor.Health.IsDead || actor.IsOnLadder) return;
             if (!agent.enabled || !agent.isOnNavMesh || Directive == UnitDirective.Move) return;
             if (!actor.IsEnemy(attacker) || !CombatPhysics.CanTarget(actor, attacker)) return;
+            if (attacker.Character != null && lodTier != AILodTier.Lod0)
+            {
+                lodTier = AILodTier.Lod0;
+                ApplyLodAvoidance();
+            }
 
             bool holdMode = Directive == UnitDirective.Hold;
             bool chases = holdMode && HoldChaseRadius > 0f;
@@ -939,7 +1010,7 @@ namespace ProjectNeo.Combat
         CharacterActor FindTarget()
         {
             float detection = settings.DetectionRange * settings.DetectionRange;
-            topCandidates.Reset(settings != null ? settings.MaxPathCandidatesPerTick : 4);
+            topCandidates.Reset(CurrentCandidateLimit());
             CombatSpatialIndex.QueryEnemies(actor.Team, transform.position, settings.DetectionRange, spatialCandidates);
             for (int i = 0; i < spatialCandidates.Count; i++)
             {

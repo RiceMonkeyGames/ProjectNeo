@@ -446,5 +446,36 @@ namespace ProjectNeo.Tests
             // 첫 후보(가장 가까운 적)가 도달 가능하므로 FindTarget 1회 + 경로 적용(CanReach) 1회 이하로 끝나야 한다.
             Assert.LessOrEqual(UnitCombatAI.Scheduler.TotalQueries, 3, "상위 후보 정렬로 불필요한 길찾기 호출을 건너뛰어야 한다.");
         }
+
+        [UnityTest]
+        public IEnumerator AILod_DowngradesFarUnitToLod2_AndPromotesNearUnitToLod0()
+        {
+            // Ground NavMesh는 origin 주변 40x40(-20~+20)이므로 카메라는 -46m에 두고 유닛을 -25m(안) 대신 -18m(28m)와 +18m(64m)가 아니라,
+            // 카메라를 (0, 0, -45)에 두면 (0, 0, -18)은 27m, 카메라를 (-18, 0, -18)에 두고 대각선이나 카메라를 (-45, 0, 0)에 두면:
+            // Ground는 (-20~+20, -20~+20), Island는 (+28~+32, -2~+2)에도 NavMesh가 있다!
+            // 카메라는 (-18, 0, 0)에 두고 +x 방향을 보면:
+            // nearActor(-8, 0, 0) = 10m (<=25m, Lod0), farActor(Island: 30, 0, 0) = 48m, 혹은 카메라는 (-35, 0, 0)에 두면
+            // nearActor(-18, 0, 0) = 17m (<=25m, Lod0), farActor(Island: 30, 0, 0) = 65m (>60m, Lod2)!
+            AILodContext.SetViewOverride(origin + new Vector3(-35f, 0f, 0f), Vector3.right, topDown: false);
+            try
+            {
+                var nearActor = Unit("NearAI", CombatTeam.Allied, new Vector3(-18f, 0f, 0f), ai: true);
+                var farActor = Unit("FarAI", CombatTeam.Allied, new Vector3(30f, 0f, 0f), ai: true);
+                var nearAI = nearActor.GetComponent<UnitCombatAI>();
+                var farAI = farActor.GetComponent<UnitCombatAI>();
+                yield return Frames(3);
+
+                Assert.AreEqual(AILodTier.Lod0, nearAI.LodTier, "카메라 전방 25m 이내 유닛은 LOD 0이어야 한다.");
+                Assert.AreEqual(AILodTier.Lod2, farAI.LodTier, "카메라 60m 밖 유닛은 LOD 2여야 한다.");
+                Assert.AreEqual(ObstacleAvoidanceType.HighQualityObstacleAvoidance,
+                    nearActor.GetComponent<NavMeshAgent>().obstacleAvoidanceType);
+                Assert.AreEqual(ObstacleAvoidanceType.LowQualityObstacleAvoidance,
+                    farActor.GetComponent<NavMeshAgent>().obstacleAvoidanceType);
+            }
+            finally
+            {
+                AILodContext.ClearViewOverride();
+            }
+        }
     }
 }
