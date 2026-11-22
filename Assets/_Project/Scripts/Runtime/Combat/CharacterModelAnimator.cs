@@ -282,11 +282,19 @@ namespace ProjectNeo.Combat
             animator.transform.localRotation = Quaternion.Euler(0f, modelYaw, 0f);
         }
 
+        // 활은 화살이 실제로 떠날 방향(포물선 발사 각, COMBAT-09)으로 기울인다(COMBAT-11). 대상까지의 직선이 아니다.
+        // 화살과 같은 계산(CharacterActor 사격: AimPoint에서 대상 AimPoint로)이다. 사격마다 다른 조준 분산은 넣지 않는다.
         void UpdateAim(CharacterActor target, float deltaTime)
         {
-            float pitch = target != null
-                ? CharacterAnimationRules.AimPitch(actor.AimPoint, target.AimPoint, profile.AimPitchRange)
-                : 0f;
+            float pitch = 0f;
+            if (bow != null && target != null)
+            {
+                CombatProfile combat = actor.Profile;
+                Vector3 launch = ArrowBallistics.LaunchVelocity(actor.AimPoint, target.AimPoint,
+                    combat.ProjectileSpeed, combat.ProjectileGravity);
+                pitch = CharacterAnimationRules.BowPitchBlend(CharacterAnimationRules.PitchDegrees(launch),
+                    profile.BowPitchDown, profile.BowPitchMiddle, profile.BowPitchUp);
+            }
             animator.SetFloat(AimPitch, pitch, AimDamping, deltaTime);
         }
 

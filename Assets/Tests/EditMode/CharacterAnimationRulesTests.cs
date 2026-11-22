@@ -107,14 +107,38 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
-        public void AimPitch_MapsAngleToMinusOneToOne()
+        public void PitchDegrees_MeasuresElevationOfDirection()
         {
-            Vector3 from = Vector3.zero;
-            Assert.AreEqual(0f, CharacterAnimationRules.AimPitch(from, new Vector3(10f, 0f, 0f), 40f), 0.001f);
-            Assert.AreEqual(1f, CharacterAnimationRules.AimPitch(from, new Vector3(1f, 10f, 0f), 40f), 0.001f);
-            Assert.AreEqual(-1f, CharacterAnimationRules.AimPitch(from, new Vector3(0f, -10f, 1f), 40f), 0.001f);
-            Assert.AreEqual(0.5f, CharacterAnimationRules.AimPitch(from, Quaternion.Euler(-20f, 0f, 0f) * Vector3.forward, 40f), 0.001f);
-            Assert.AreEqual(-1f, CharacterAnimationRules.AimPitch(from, Vector3.down, 40f), 0.001f, "바로 아래도 끝값이다.");
+            Assert.AreEqual(0f, CharacterAnimationRules.PitchDegrees(new Vector3(10f, 0f, 0f)), 0.001f);
+            Assert.AreEqual(20f, CharacterAnimationRules.PitchDegrees(Quaternion.Euler(-20f, 30f, 0f) * Vector3.forward), 0.001f);
+            Assert.AreEqual(-90f, CharacterAnimationRules.PitchDegrees(Vector3.down), 0.01f, "바로 아래는 -90도다.");
+            Assert.AreEqual(0f, CharacterAnimationRules.PitchDegrees(Vector3.zero), "길이가 없으면 0이다.");
+        }
+
+        [Test]
+        public void BowPitchBlend_MapsEachSideByItsOwnClipAngle()
+        {
+            // 측정한 클립 각도: 아래 -48.5, 정면 -3.8, 위 41.5.
+            Assert.AreEqual(0f, CharacterAnimationRules.BowPitchBlend(-3.8f, -48.5f, -3.8f, 41.5f), 0.001f, "정면 클립 각도면 0이다.");
+            Assert.AreEqual(1f, CharacterAnimationRules.BowPitchBlend(41.5f, -48.5f, -3.8f, 41.5f), 0.001f);
+            Assert.AreEqual(-1f, CharacterAnimationRules.BowPitchBlend(-48.5f, -48.5f, -3.8f, 41.5f), 0.001f);
+            Assert.AreEqual(0.5f, CharacterAnimationRules.BowPitchBlend(18.85f, -48.5f, -3.8f, 41.5f), 0.001f, "위쪽은 위 구간으로 나눈다.");
+            Assert.AreEqual(-0.5f, CharacterAnimationRules.BowPitchBlend(-26.15f, -48.5f, -3.8f, 41.5f), 0.001f, "아래쪽은 아래 구간으로 나눈다.");
+            Assert.AreEqual(0.0839f, CharacterAnimationRules.BowPitchBlend(0f, -48.5f, -3.8f, 41.5f), 0.001f,
+                "수평으로 쏠 때는 정면 클립보다 조금 든다.");
+            Assert.AreEqual(1f, CharacterAnimationRules.BowPitchBlend(80f, -48.5f, -3.8f, 41.5f), "범위 밖은 끝값이다.");
+            Assert.AreEqual(-1f, CharacterAnimationRules.BowPitchBlend(-90f, -48.5f, -3.8f, 41.5f));
+            Assert.AreEqual(0f, CharacterAnimationRules.BowPitchBlend(30f, 0f, 0f, 0f), "클립 각도가 같으면 섞지 않는다.");
+        }
+
+        [Test]
+        public void BowPitch_FollowsArrowLaunchAngle_NotTheStraightLine()
+        {
+            // COMBAT-11: 같은 높이 16m 대상. 직선은 수평이지만 화살은 위로 떠나므로 활도 든다.
+            Vector3 launch = ArrowBallistics.LaunchVelocity(Vector3.zero, new Vector3(0f, 0f, 16f), 18f, 9.81f);
+            float launchDegrees = CharacterAnimationRules.PitchDegrees(launch);
+            Assert.Greater(launchDegrees, 10f, "포물선 발사 각은 직선(0도)보다 위다.");
+            Assert.Greater(CharacterAnimationRules.BowPitchBlend(launchDegrees, -48.5f, -3.8f, 41.5f), 0.3f);
         }
 
         [Test]
@@ -216,13 +240,16 @@ namespace ProjectNeo.Tests
         public void Profile_Create_ClampsAndExposesMeleeTimes()
         {
             var profile = CharacterAnimationProfile.Create(meleeContactSeconds: new[] { 0.4f, 0.5f },
-                meleeClipSeconds: new[] { 1.1f }, deathCount: -2, aimPitchRange: 200f);
+                meleeClipSeconds: new[] { 1.1f }, deathCount: -2);
             try
             {
                 Assert.AreEqual(1, profile.MeleeCount, "짝이 맞는 개수만 쓴다.");
                 Assert.AreEqual(0.4f, profile.MeleeContactSeconds(0));
                 Assert.AreEqual(0, profile.DeathCount);
-                Assert.AreEqual(90f, profile.AimPitchRange);
+                profile.SetBowPitch(10f, 50f, -100f);
+                Assert.AreEqual(30f, profile.BowPitchMiddle, "정면 각도는 ±30도로 자른다.");
+                Assert.AreEqual(10f, profile.BowPitchDown, "아래 각도는 정면보다 높을 수 없다.");
+                Assert.AreEqual(30f, profile.BowPitchUp, "위 각도는 정면보다 낮을 수 없다.");
             }
             finally { Object.DestroyImmediate(profile); }
         }
