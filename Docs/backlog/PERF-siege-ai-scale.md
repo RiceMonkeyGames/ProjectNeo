@@ -1,9 +1,9 @@
 ---
 id: PERF-siege-ai-scale
 title: Squad-Level Idle Sleep, Siege Reachability Cache & Archer Search Budget
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: 신용준
+branch: feature/perf-siege-ai-scale
 area: PERF
 depends_on: [PERF-ai-query-budget, PERF-ai-spatial-grid]
 created: 2026-11-22
