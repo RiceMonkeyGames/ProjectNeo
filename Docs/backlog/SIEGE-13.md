@@ -1,9 +1,9 @@
 ---
 id: SIEGE-13
 title: Synty-Scale Battlements, Sloped Stair Battlements & 6m Main Gate
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: youngho
+branch: feature/siege-13
 area: SIEGE
 depends_on: [Q-01, ART-06]
 created: 2026-11-22
