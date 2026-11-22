@@ -1,9 +1,9 @@
 ---
 id: PERF-ai-spatial-grid
 title: 2D Spatial Hash Grid for Fast AI Proximity & Target Queries
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: 신용준
+branch: feature/perf-ai-spatial-grid
 area: PERF
 depends_on: [PERF-ai-query-budget]
 created: 2026-11-22
