@@ -15,6 +15,8 @@ namespace ProjectNeo.Walls
         LadderLane = 10,
         /// <summary>보루 위에는 보루만, 보루는 보루 위에만 쌓는다(SIEGE-11).</summary>
         BastionStack = 11,
+        /// <summary>이웃 성벽이 앞뒤보다 낮은 골짜기(2층-1층-2층)가 된다(SIEGE-14, <see cref="BuildGridDefinition.ForbidValleys"/>).</summary>
+        Valley = 12,
     }
 
     public sealed class BuildPlacement
@@ -132,7 +134,82 @@ namespace ProjectNeo.Walls
             if (uneven) return PlacementIssue.UnevenSupport;
             if (definition.Kind == BuildPieceKind.Gate && common > 0) return PlacementIssue.ReservedGate;
             level = common; elevation = commonElevation;
+            if (grid.ForbidValleys && ValleyFill(definition, cell, rotation, level, elevation) == 0) return PlacementIssue.Valley;
             return PlacementIssue.None;
+        }
+
+        // ── 골짜기 규칙(SIEGE-14). 성벽류(성벽·보루·성문) 맨 위 높이만 본다. 빈 칸·계단은 높이 0(골짜기가 아니다). ──
+
+        const float ValleyTolerance = 0.01f;
+
+        static bool WallLike(BuildPlacement placement) => placement != null
+            && (placement.Definition.Kind == BuildPieceKind.Wall || placement.Definition.Kind == BuildPieceKind.Bastion
+                || placement.Definition.Kind == BuildPieceKind.Gate);
+
+        /// <summary>그 칸 맨 위 성벽류의 윗면 높이. 비었거나 맨 위가 계단이면 0.</summary>
+        public float WallSurface(Vector2Int cell)
+        {
+            BuildPlacement top = Top(cell);
+            return WallLike(top) ? top.Elevation + top.Definition.Height : 0f;
+        }
+
+        float Surface(Vector2Int cell, Vector2Int overrideCell, float overrideHeight) =>
+            cell == overrideCell ? overrideHeight : WallSurface(cell);
+
+        // 그 칸이 같은 축 양쪽 이웃보다 모두 낮은 골짜기인지(그 칸 높이만 바꿔 본다).
+        bool IsValley(Vector2Int cell, Vector2Int overrideCell, float overrideHeight)
+        {
+            float height = Surface(cell, overrideCell, overrideHeight);
+            if (height <= ValleyTolerance) return false;
+            for (int axis = 0; axis < 2; axis++)
+            {
+                Vector2Int step = axis == 0 ? Vector2Int.right : Vector2Int.up;
+                if (Surface(cell + step, overrideCell, overrideHeight) > height + ValleyTolerance
+                    && Surface(cell - step, overrideCell, overrideHeight) > height + ValleyTolerance) return true;
+            }
+            return false;
+        }
+
+        static readonly Vector2Int[] Around = { Vector2Int.up, Vector2Int.right, Vector2Int.down, Vector2Int.left };
+
+        /// <summary>
+        /// 그 자리에 몇 개를 한 번에 쌓아야 골짜기가 생기지 않는지. 1이면 평소대로, 2 이상이면 양옆 높이까지 이어 쌓는다
+        /// (무너진 2층 성벽 자리는 2층을 다 다시 짓는다). 어떻게 쌓아도 이웃이 골짜기가 되거나 층 제한을 넘으면 0.
+        /// 골짜기 규칙을 쓰지 않거나 한 칸짜리 성벽·보루가 아니면 늘 1.
+        /// </summary>
+        public int ValleyFill(BuildPieceDefinition definition, Vector2Int cell, int rotation)
+        {
+            if (Check(definition, cell, rotation, false, out int level, out float elevation) != PlacementIssue.None) return 0;
+            return ValleyFill(definition, cell, rotation, level, elevation);
+        }
+
+        int ValleyFill(BuildPieceDefinition definition, Vector2Int cell, int rotation, int level, float elevation)
+        {
+            if (!grid.ForbidValleys || definition.Kind == BuildPieceKind.Stairs || definition.Kind == BuildPieceKind.Gate
+                || RotatedSize(definition.Footprint, rotation) != Vector2Int.one) return 1;
+            for (int count = 1; level + count <= grid.MaxLevels; count++)
+            {
+                float height = elevation + definition.Height * count;
+                // 높이를 올리면 이웃 골짜기는 더 깊어질 뿐이라, 이웃이 골짜기가 되면 더 쌓아도 소용없다.
+                foreach (Vector2Int step in Around)
+                    if (IsValley(cell + step, cell, height)) return 0;
+                if (!IsValley(cell, cell, height)) return count;
+            }
+            return 0;
+        }
+
+        /// <summary>그 조각을 빼면(그 칸이 조각 높이만큼 낮아지면) 골짜기가 생기는지. 골짜기 규칙을 쓰지 않으면 false.</summary>
+        public bool RemovalMakesValley(BuildPlacement placement)
+        {
+            if (!grid.ForbidValleys || placement == null || !WallLike(placement)) return false;
+            for (int x = 0; x < placement.Size.x; x++)
+                for (int z = 0; z < placement.Size.y; z++)
+                {
+                    Vector2Int cell = placement.Cell + new Vector2Int(x, z);
+                    float lowered = Mathf.Max(0f, WallSurface(cell) - placement.Definition.Height);
+                    if (IsValley(cell, cell, lowered)) return true;
+                }
+            return false;
         }
 
         /// <summary>계단의 높은 쪽이 같은 층·같은 높이의 조각에 닿아 있는지.</summary>

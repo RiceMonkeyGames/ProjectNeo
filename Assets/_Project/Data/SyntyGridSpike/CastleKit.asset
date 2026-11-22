@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bdda1995205b1864dba63404c59ad329, type: 3}
+  m_Name: CastleKit
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Walls.CastleKitSettings
+  prefabs:
+  - {fileID: 5150767114214317795, guid: 1262d22619910d0468897408a57cc2c3, type: 3}
+  - {fileID: 7070550995205714598, guid: 2646d0f5b3feda14ebf497274d8c53e1, type: 3}
+  - {fileID: 7576169021920766913, guid: 4ab6d6c940db3af4ab85088af682fdbe, type: 3}
+  - {fileID: 9150879929494146024, guid: 26b8a323a4985654391347516dda576b, type: 3}
+  - {fileID: 8730775975212883289, guid: 1a307452a76a0b543bb064c4dcc4d9d6, type: 3}
+  - {fileID: 7338949594200680189, guid: ddab3806a2299c842a2d37c2a2cbeff0, type: 3}
+  - {fileID: 3713611182541129440, guid: 05b1d2dea5937d34e957b36d56b2196c, type: 3}
+  - {fileID: 6796513730417467173, guid: 933b159b3cffd9845b53af84face25af, type: 3}
+  - {fileID: 5169552812962305210, guid: 41b58744588d1a945b5b2c0d90c97231, type: 3}
+  - {fileID: 370611906073166869, guid: 784fa9223a946e549bf11da39143bac9, type: 3}
+  - {fileID: 7858186501394289498, guid: 2b29c67660c60c247a5658bd0120ea7b, type: 3}
+  - {fileID: 8251612362872161367, guid: 1da3c80ac2308984d8aa2432d7a09551, type: 3}
+  - {fileID: 8477555204002393745, guid: 0d45d875aa991a2468de8e291b33fcb3, type: 3}
+  - {fileID: 872991909360019865, guid: c48927f47867c794492eb2fe1162defc, type: 3}
+  - {fileID: 1860570738629015115, guid: c4caa52780156df4cb5c93c3db160ec3, type: 3}
+  - {fileID: 1278372791104710907, guid: b6ad36bd44b5ce84aa6b59c981ee06f0, type: 3}
+  - {fileID: 5037527076984866104, guid: f9f765e9b830d714cbfcf42e604c5f28, type: 3}
+  - {fileID: 4259915327818862788, guid: 3ba04580f9a2d484d92b0ac2ded32ba2, type: 3}
+  - {fileID: 6246285128858098233, guid: 4af712edb7b324a40a37c90cc65b2cdb, type: 3}
+  - {fileID: 1609216946649379173, guid: 88095f1e4c519a042b5733fc85be572c, type: 3}
+  - {fileID: 1568963276300411296, guid: 2fe7624050d0f234c8a1a15c7e4b0af6, type: 3}
+  moduleSize: 5
+  accentSpacingCells: 2
+  stairWidth: 2.16
+  innerReliefDrop: 2.75
+  breachHalfWidth: 0.7
+  cornerStairStretch: 1.12

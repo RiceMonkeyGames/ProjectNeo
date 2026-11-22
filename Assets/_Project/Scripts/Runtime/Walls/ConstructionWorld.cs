@@ -36,6 +36,8 @@ namespace ProjectNeo.Walls
         public IReadOnlyCollection<PlacedSiegeWeapon> Weapons => weapons.Values;
         public event Action<PlacedSiegeWeapon, SiegeWeaponRemoval> WeaponRemoved;
         public BuildGridDefinition Grid => grid;
+        /// <summary>길찾기 메시가 모으는 물체의 뿌리(조각 몸통이 놓이는 곳). 길찾기에 넣을 외형 충돌체도 여기 아래에 둔다.</summary>
+        public Transform GeometryRoot => geometry;
         /// <summary>런 시작 배치(기본 성). 성가퀴의 늘 안쪽 판정에 쓴다(BUG-battlement-inner-faces).</summary>
         public IReadOnlyList<InitialBuildPiece> InitialPieces => initialPieces ?? Array.Empty<InitialBuildPiece>();
         public IReadOnlyCollection<PlacedStructure> Structures => structures.Values;
@@ -147,8 +149,15 @@ namespace ProjectNeo.Walls
         {
             body = null;
             if (CheckPlacement(definition, cell, rotation) != PlacementIssue.None) return false;
-            if (!Layout.TryPlace(definition, cell, rotation, out var placement)) return false;
-            body = CreateBody(placement);
+            // 골짜기 규칙(SIEGE-14): 골짜기가 될 자리면 양옆 높이까지 한 번에 쌓는다. 규칙을 쓰지 않으면 늘 1개.
+            int count = Mathf.Max(1, Layout.ValleyFill(definition, cell, rotation));
+            for (int i = 0; i < count; i++)
+            {
+                if (!Layout.TryPlace(definition, cell, rotation, out var stacked)) break;
+                body = CreateBody(stacked);
+                if (i < count - 1) LiftOverlappingUnits(body);
+            }
+            if (body == null) return false;
             rebuildPending = true;
             LayoutRevision++;
             LiftOverlappingUnits(body);
@@ -357,6 +366,9 @@ namespace ProjectNeo.Walls
         public void Collapse(PlacedStructure structure)
         {
             if (structure == null || !structures.ContainsKey(structure.Placement.Id)) return;
+            // 골짜기 규칙(SIEGE-14): 위층이 한 층 내려앉아 골짜기가 남지 않도록, 그 칸의 위층까지 함께 무너뜨린다.
+            // 그래서 무너진 2층 성벽 자리는 2층을 다 다시 지어야 한다.
+            if (grid.ForbidValleys) CollapseAbove(structure.Placement);
             DestroyBody(structure);
             Layout.Remove(structure.Placement.Id, true);
             // 위에 쌓인 조각은 한 층 내려앉는다. 한쪽만 받쳐져 내려앉을 수 없는 조각은 함께 부서진다.
@@ -374,6 +386,29 @@ namespace ProjectNeo.Walls
             }
             rebuildPending = true;
             Changed?.Invoke();
+        }
+
+        // 그 조각이 차지한 칸들의 위층 조각을 위에서부터 부순다(배치에서도 뺀다).
+        void CollapseAbove(BuildPlacement placement)
+        {
+            var above = new List<BuildPlacement>();
+            for (int x = 0; x < placement.Size.x; x++)
+                for (int z = 0; z < placement.Size.y; z++)
+                {
+                    Vector2Int cell = placement.Cell + new Vector2Int(x, z);
+                    for (int level = Layout.ColumnHeight(cell) - 1; level > placement.Level; level--)
+                    {
+                        BuildPlacement piece = Layout.At(cell, level);
+                        if (piece != null && !above.Contains(piece)) above.Add(piece);
+                    }
+                }
+            above.Sort((a, b) => b.Level.CompareTo(a.Level));
+            foreach (BuildPlacement piece in above)
+            {
+                if (!structures.TryGetValue(piece.Id, out PlacedStructure body)) continue;
+                DestroyBody(body);
+                Layout.Remove(piece.Id, true);
+            }
         }
 
         // 몸통과 그 위의 수성 무기를 없앤다. 배치 모델에서 빼는 것은 부르는 쪽이 한다.
@@ -395,6 +430,8 @@ namespace ProjectNeo.Walls
             if (!IsLive(structure) || structure.Placement.IsFixed) return false;
             BuildPlacement placement = structure.Placement;
             if (Layout.IsCovered(placement)) return false;
+            // 골짜기 규칙(SIEGE-14): 빼면 2층-1층-2층 골짜기가 되는 조각은 철거하지 않는다.
+            if (Layout.RemovalMakesValley(placement)) return false;
             foreach (MountedWeapon mount in Mounts.Mounted)
                 if (mount.SupportId == placement.Id) return false;
             float height = placement.Definition.Height + Mathf.Max(0f, clearance);
