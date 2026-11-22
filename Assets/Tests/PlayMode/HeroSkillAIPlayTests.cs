@@ -114,7 +114,98 @@ namespace ProjectNeo.Tests
 
             brain.TargetSource = () => null;
             brain.GetComponent<SkillCaster>().ResetCooldowns();
-            Assert.AreEqual(-1, brain.Think(), "no target, no cast");
+            enemy.transform.position = origin + new Vector3(8f, 0f, 0f);
+            Assert.AreEqual(-1, brain.Think(), "no target and no enemy within skill range, no cast");
+        }
+
+        [UnityTest]
+        public IEnumerator TargetUnit_FindsNearestEnemyInSkillRange_WhenTargetMissingOrOutOfReach()
+        {
+            SkillDefinition slam = Track(SkillDefinition.Create("slam", 5f, SkillTargetMode.TargetUnit, 3f, 0f, SkillEffect.Damage(10f)));
+            CharacterActor hero = Unit("Hero", CombatTeam.Allied, Vector3.zero);
+            CharacterActor far = Unit("Far", CombatTeam.Hostile, new Vector3(9f, 0f, 0f));
+            CharacterActor close = Unit("Close", CombatTeam.Hostile, new Vector3(0f, 0f, 2.5f));
+            CharacterActor closer = Unit("Closer", CombatTeam.Hostile, new Vector3(-2f, 0f, 0f));
+            yield return null;
+            HeroSkillAI brain = Brain(hero, null, slam);
+
+            Assert.AreEqual(0, brain.Think(), "no current target (e.g. melee hero on Hold): looks within skill range");
+            Assert.Less(closer.Health.Current, 100f, "the nearest enemy in range");
+            Assert.AreEqual(100f, close.Health.Current);
+
+            brain.GetComponent<SkillCaster>().ResetCooldowns();
+            closer.transform.position = origin + new Vector3(-20f, 0f, 0f);
+            brain.TargetSource = () => far;
+            Assert.AreEqual(0, brain.Think(), "current target out of skill range: falls back to an enemy in range");
+            Assert.Less(close.Health.Current, 100f);
+            Assert.AreEqual(100f, far.Health.Current);
+        }
+
+        [UnityTest]
+        public IEnumerator AimPointArea_AimsAtBestClusterInsteadOfCurrentTarget()
+        {
+            SkillDefinition meteor = Track(SkillDefinition.Create("meteor", 5f, SkillTargetMode.AimPoint, 12f, 2f, SkillEffect.Damage(10f)));
+            CharacterActor hero = Unit("Hero", CombatTeam.Allied, Vector3.zero);
+            CharacterActor lone = Unit("Lone", CombatTeam.Hostile, new Vector3(3f, 0f, 0f));
+            CharacterActor a = Unit("A", CombatTeam.Hostile, new Vector3(0f, 0f, 9f));
+            CharacterActor b = Unit("B", CombatTeam.Hostile, new Vector3(1f, 0f, 9f));
+            CharacterActor c = Unit("C", CombatTeam.Hostile, new Vector3(0f, 0f, 10f));
+            yield return null;
+            HeroSkillAI brain = Brain(hero, lone, meteor);
+
+            Assert.AreEqual(0, brain.Think());
+            Assert.AreEqual(100f, lone.Health.Current, 1e-3f, "the current target alone is not the best spot");
+            Assert.Less(a.Health.Current, 100f);
+            Assert.Less(b.Health.Current, 100f);
+            Assert.Less(c.Health.Current, 100f);
+
+            brain.GetComponent<SkillCaster>().ResetCooldowns();
+            brain.TargetSource = () => null;
+            a.transform.position = origin + new Vector3(0f, 0f, 30f);
+            b.transform.position = origin + new Vector3(1f, 0f, 30f);
+            c.transform.position = origin + new Vector3(0f, 0f, 31f);
+            Assert.AreEqual(-1, brain.Think(), "clump moved out of skill range and the lone enemy is below the 2-enemy minimum");
+        }
+
+        sealed class MoraleContext : ISkillContext
+        {
+            public readonly Dictionary<CharacterActor, int> Squads = new Dictionary<CharacterActor, int>();
+            public readonly Dictionary<int, float> Ratios = new Dictionary<int, float>();
+            public int Raised;
+
+            public int SquadOf(CharacterActor actor) => actor != null && Squads.TryGetValue(actor, out int squad) ? squad : -1;
+
+            public void CollectSquad(int squad, List<CharacterActor> into)
+            {
+                foreach (KeyValuePair<CharacterActor, int> pair in Squads)
+                    if (pair.Value == squad && !into.Contains(pair.Key)) into.Add(pair.Key);
+            }
+
+            public float AddMorale(int squad, float amount) { Raised++; return amount; }
+
+            public bool TryGetMoraleRatio(int squad, out float ratio) => Ratios.TryGetValue(squad, out ratio);
+        }
+
+        [UnityTest]
+        public IEnumerator MoraleOnly_WaitsUntilSquadMoraleIsAtOrBelowThreshold()
+        {
+            SkillDefinition rally = Track(SkillDefinition.Create("rally", 5f, SkillTargetMode.OwnSquad, 0f, 0f, SkillEffect.MoraleGain(15f)));
+            CharacterActor hero = Unit("Hero", CombatTeam.Allied, Vector3.zero);
+            CharacterActor member = Unit("Member", CombatTeam.Allied, new Vector3(1f, 0f, 0f));
+            Unit("Enemy", CombatTeam.Hostile, new Vector3(5f, 0f, 0f));
+            yield return null;
+            HeroSkillAI brain = Brain(hero, null, rally);
+            var context = new MoraleContext();
+            context.Squads[hero] = 0;
+            context.Squads[member] = 0;
+            brain.GetComponent<SkillCaster>().UseContext(context);
+
+            Assert.AreEqual(-1, brain.Think(), "squad not in battle (no morale ratio): nothing to raise");
+            context.Ratios[0] = 0.9f;
+            Assert.AreEqual(-1, brain.Think(), "90% is above the 75% default threshold");
+            context.Ratios[0] = 0.75f;
+            Assert.AreEqual(0, brain.Think(), "engaged with no current target (nearest enemy within 10 m) and morale at 75%");
+            Assert.AreEqual(1, context.Raised);
         }
 
         [UnityTest]

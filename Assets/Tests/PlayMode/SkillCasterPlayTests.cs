@@ -42,6 +42,12 @@ namespace ProjectNeo.Tests
                 MoraleCalls.Add((squad, amount));
                 return amount;
             }
+
+            public bool TryGetMoraleRatio(int squad, out float ratio)
+            {
+                ratio = 1f;
+                return false;
+            }
         }
 
         sealed class FakeAction : IInterruptibleAction

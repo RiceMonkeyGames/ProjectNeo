@@ -6,14 +6,19 @@ using UnityEngine;
 namespace ProjectNeo.Skills
 {
     /// <summary>
-    /// 영웅 AI 자동 시전(Q-63, COMBAT-06). <see cref="Auto"/>가 켜져 있으면 정해진 간격마다 준비된 칸을 앞에서부터 보고
+    /// 영웅 AI 자동 시전(Q-63, COMBAT-06, COMBAT-13). <see cref="Auto"/>가 켜져 있으면 정해진 간격마다 준비된 칸을 앞에서부터 보고
     /// <see cref="SkillAutoRules"/>에 맞는 첫 스킬 하나를 쓴다. 이동·공격 판단(<see cref="UnitCombatAI"/>)은 읽기만 하고 바꾸지 않는다.
+    /// 현재 대상이 없거나 스킬 사거리 밖이면 스킬 사거리 안에서 가장 가까운 적을 직접 찾는다(COMBAT-13).
     /// 끄면 플레이어의 직접 명령(Alt + 스킬 키)으로만 쓴다.
     /// </summary>
     [RequireComponent(typeof(SkillCaster))]
     public sealed class HeroSkillAI : MonoBehaviour
     {
         readonly List<CharacterActor> scratch = new List<CharacterActor>();
+        readonly List<Vector3> candidates = new List<Vector3>();
+        readonly List<Vector3> enemyPoints = new List<Vector3>();
+        readonly List<float> enemyBodies = new List<float>();
+        readonly HashSet<int> squadsSeen = new HashSet<int>();
         SkillCaster caster;
         UnitCombatAI ai;
         SkillAutoSettings settings;
@@ -59,7 +64,7 @@ namespace ProjectNeo.Skills
         /// <summary>한 번 판단한다. 쓴 칸 번호, 쓰지 않았으면 -1.</summary>
         public int Think()
         {
-            if (caster == null || !caster.CanAct) return -1;
+            if (caster == null || !caster.CanAct || settings == null) return -1;
             SkillSlots slots = caster.Slots;
             for (int i = 0; i < slots.Count; i++)
             {
@@ -81,11 +86,7 @@ namespace ProjectNeo.Skills
             {
                 case SkillAutoIntent.Offense: return ChooseOffense(skill, self, target, ref aim);
                 case SkillAutoIntent.Heal: return ChooseHeal(skill, self, ref aim);
-                default:
-                    if (!SkillAutoRules.ShouldSupport(target != null, target != null ? Distance(self, target) : 0f, settings))
-                        return false;
-                    if (skill.TargetMode == SkillTargetMode.TargetUnit) aim = SkillAim.AtUnit(self);
-                    return true;
+                default: return ChooseSupport(skill, self, target, ref aim);
             }
         }
 
@@ -94,12 +95,14 @@ namespace ProjectNeo.Skills
             switch (skill.TargetMode)
             {
                 case SkillTargetMode.TargetUnit:
-                    if (target == null || !SkillTargeting.InUnitRange(self, target, skill.Range)) return false;
-                    aim = SkillAim.AtUnit(target);
+                    CharacterActor unit = SkillTargeting.InUnitRange(self, target, skill.Range)
+                        ? target : NearestEnemy(self, skill.Range, true);
+                    if (unit == null) return false;
+                    aim = SkillAim.AtUnit(unit);
                     return true;
                 case SkillTargetMode.AimPoint:
-                    if (target == null || Distance(self, target) > skill.Range) return false;
-                    aim = SkillAim.At(target.transform.position);
+                    if (!TryClusterAim(skill, self, target, out Vector3 point)) return false;
+                    aim = SkillAim.At(point);
                     break;
                 case SkillTargetMode.Self:
                     break;
@@ -108,6 +111,55 @@ namespace ProjectNeo.Skills
             }
             SkillTargeting.Collect(self, skill, aim, true, caster.Context, scratch);
             return SkillAutoRules.ShouldUseArea(scratch.Count, settings);
+        }
+
+        // 사거리 안 적 위치를 후보로, 반경 안에 적이 가장 많이 드는 곳(COMBAT-13). 같으면 현재 대상(없으면 자신)에 가까운 곳.
+        bool TryClusterAim(SkillDefinition skill, CharacterActor self, CharacterActor target, out Vector3 point)
+        {
+            point = self.transform.position;
+            candidates.Clear(); enemyPoints.Clear(); enemyBodies.Clear();
+            foreach (CharacterActor actor in CharacterActor.ActiveActors)
+            {
+                if (!self.IsEnemy(actor)) continue;
+                Vector3 position = actor.transform.position;
+                enemyPoints.Add(position);
+                enemyBodies.Add(actor.Profile != null ? actor.Profile.Radius : 0f);
+                if (FlatDistance(self.transform.position, position) <= skill.Range) candidates.Add(position);
+            }
+            Vector3 prefer = target != null ? target.transform.position : self.transform.position;
+            int best = SkillAutoRules.BestClusterCenter(candidates, enemyPoints, enemyBodies, skill.Radius, prefer, out _);
+            if (best < 0) return false;
+            point = candidates[best];
+            return true;
+        }
+
+        bool ChooseSupport(SkillDefinition skill, CharacterActor self, CharacterActor target, ref SkillAim aim)
+        {
+            CharacterActor engaged = target != null && Distance(self, target) <= settings.EngageDistance
+                ? target : NearestEnemy(self, settings.EngageDistance, false);
+            if (!SkillAutoRules.ShouldSupport(engaged != null, engaged != null ? Distance(self, engaged) : 0f, settings))
+                return false;
+            if (skill.TargetMode == SkillTargetMode.TargetUnit) aim = SkillAim.AtUnit(self);
+            return !SkillAutoRules.IsMoraleOnly(skill) || MoraleIsLow(skill, self, aim);
+        }
+
+        // 사기만 올리는 스킬: 대상 분대 중 사기가 오를 수 있는 분대의 가장 낮은 비율이 기준 이하인지(COMBAT-13).
+        bool MoraleIsLow(SkillDefinition skill, CharacterActor self, SkillAim aim)
+        {
+            ISkillContext context = caster.Context;
+            if (context == null) return false;
+            SkillTargeting.Collect(self, skill, aim, false, context, scratch);
+            squadsSeen.Clear();
+            bool found = false;
+            float lowest = 1f;
+            foreach (CharacterActor ally in scratch)
+            {
+                int squad = context.SquadOf(ally);
+                if (squad < 0 || !squadsSeen.Add(squad) || !context.TryGetMoraleRatio(squad, out float ratio)) continue;
+                found = true;
+                lowest = Mathf.Min(lowest, ratio);
+            }
+            return found && SkillAutoRules.ShouldRaiseMorale(lowest, settings);
         }
 
         bool ChooseHeal(SkillDefinition skill, CharacterActor self, ref SkillAim aim)
@@ -138,9 +190,32 @@ namespace ProjectNeo.Skills
             return best;
         }
 
+        // 거리 안에서 가장 가까운 적. withBody면 대상 몸 반경만큼 더 멀어도 된다(TargetUnit 사거리 판정과 같다).
+        static CharacterActor NearestEnemy(CharacterActor self, float range, bool withBody)
+        {
+            CharacterActor best = null;
+            float bestDistance = float.PositiveInfinity;
+            foreach (CharacterActor actor in CharacterActor.ActiveActors)
+            {
+                if (!self.IsEnemy(actor)) continue;
+                float distance = Distance(self, actor);
+                float reach = range + (withBody && actor.Profile != null ? actor.Profile.Radius : 0f);
+                if (distance > reach || distance >= bestDistance) continue;
+                best = actor;
+                bestDistance = distance;
+            }
+            return best;
+        }
+
         static float Ratio(CharacterActor actor) =>
             SkillAutoRules.HealthRatio(actor.Health.Current, actor.Health.Maximum);
 
         static float Distance(CharacterActor a, CharacterActor b) => Vector3.Distance(a.transform.position, b.transform.position);
+
+        static float FlatDistance(Vector3 a, Vector3 b)
+        {
+            a.y = 0f; b.y = 0f;
+            return Vector3.Distance(a, b);
+        }
     }
 }

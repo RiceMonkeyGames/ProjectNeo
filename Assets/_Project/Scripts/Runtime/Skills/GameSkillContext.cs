@@ -38,6 +38,15 @@ namespace ProjectNeo.Skills
 
         public float AddMorale(int squad, float amount) => morale != null ? morale.AddMorale(squad, amount) : 0f;
 
+        public bool TryGetMoraleRatio(int squad, out float ratio)
+        {
+            ratio = 1f;
+            BattleSquadMorale battle = morale != null ? morale.BattleOf(squad) : null;
+            if (battle == null || battle.IsRouted) return false;
+            ratio = SkillAutoRules.MoraleRatio(battle.Morale.Value, battle.Morale.Max);
+            return true;
+        }
+
         static void AddAlive(UnitCombatAI unit, List<CharacterActor> into)
         {
             if (unit == null) return;

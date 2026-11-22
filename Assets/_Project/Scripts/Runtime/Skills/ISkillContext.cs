@@ -17,5 +17,10 @@ namespace ProjectNeo.Skills
 
         /// <summary>전투 중인 분대 사기를 올리고 실제로 오른 양을 돌려준다.</summary>
         float AddMorale(int squad, float amount);
+
+        /// <summary>
+        /// 전투 중인 분대의 사기 비율(0~1, 현재 / 최대). 전투 밖이거나 도망 중이라 사기가 오르지 않는 분대면 false(COMBAT-13).
+        /// </summary>
+        bool TryGetMoraleRatio(int squad, out float ratio);
     }
 }
