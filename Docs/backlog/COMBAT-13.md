@@ -1,9 +1,9 @@
 ---
 id: COMBAT-13
 title: Hero Auto-Skill Targeting & Condition Improvements
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: SeongminHwang
+branch: feature/combat-13
 area: COMBAT
 depends_on: []
 created: 2026-11-22
