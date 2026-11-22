@@ -195,6 +195,9 @@ namespace ProjectNeo.Flow
                 PerkWindow = gameObject.AddComponent<GamePerkWindow>();
                 PerkWindow.Configure(FindAnyObjectByType<GamePhaseView>(), perkTrees);
             }
+            // 준비 단계 Esc 메뉴(FLOW-04). Game.unity를 고치지 않고 실행 중에 붙인다.
+            PauseMenu = gameObject.AddComponent<GamePauseMenu>();
+            PauseMenu.Configure(FindAnyObjectByType<GamePhaseView>());
             // 보스 체력바(SIEGE-09). Game.unity를 고치지 않고 실행 중에 붙인다.
             BossHud = gameObject.AddComponent<ProjectNeo.UI.BossHealthHud>();
             BossHud.Configure(this);
@@ -231,6 +234,8 @@ namespace ProjectNeo.Flow
         public GameConsumables Consumables { get; private set; }
         /// <summary>퍽 창(META-09). 퍽 트리가 없으면 null.</summary>
         public GamePerkWindow PerkWindow { get; private set; }
+        /// <summary>준비 단계 Esc 메뉴(FLOW-04).</summary>
+        public GamePauseMenu PauseMenu { get; private set; }
         void OnEnable() { flow.PhaseChanged += OnPhaseChanged; GameSession.Quitting += SaveRunOnQuit; }
         void OnDisable() { flow.PhaseChanged -= OnPhaseChanged; GameSession.Quitting -= SaveRunOnQuit; }
         void Start() => OnPhaseChanged(flow.Phase);
