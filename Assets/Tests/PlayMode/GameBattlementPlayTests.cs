@@ -134,6 +134,45 @@ namespace ProjectNeo.Tests
             Assert.IsNotNull(Battlement(lower), "위 칸을 철거하면 다시 아래 칸에 선다.");
         }
 
+        System.Collections.Generic.Dictionary<Vector2Int, int> AllFaces() =>
+            world.Structures.Select(p => p.Placement.Cell).Distinct().ToDictionary(cell => cell, cell => battlements.FacesAt(cell));
+
+        // BUG-battlement-inner-faces: 성벽 고리 모서리 두 칸이 무너진 성을 저장·불러와도 성가퀴 면이 같고, 안뜰 쪽 면에는 서지 않는다.
+        [UnityTest]
+        public IEnumerator GappedDefaultRing_KeepsTheSameFaces_AfterPreparationAndRestore()
+        {
+            yield return null;
+            int north = world.Structures.Where(p => p.Placement.Definition.Kind == BuildPieceKind.Wall).Max(p => p.Placement.Cell.y);
+            int west = world.Structures.Where(p => p.Placement.Definition.Kind == BuildPieceKind.Wall).Min(p => p.Placement.Cell.x);
+            int south = world.Structures.Where(p => p.Placement.Definition.Kind == BuildPieceKind.Wall).Min(p => p.Placement.Cell.y);
+            foreach (int x in new[] { west, west + 1 })
+                world.Collapse(world.Structures.First(p => p.Placement.Cell == new Vector2Int(x, north)));
+            yield return null;
+            Assert.IsNull(world.Layout.Top(new Vector2Int(west, north)), "북서쪽 모서리에 두 칸짜리 틈이 났다.");
+
+            // 준비 단계에 들어설 때 다시 판정한다.
+            battlements.RecomputeOutside();
+            var prepared = AllFaces();
+            const int East = 1 << 1, South = 1 << 2, West = 1 << 3;
+            Assert.AreEqual(West, prepared[new Vector2Int(west, north - 1)], "틈 옆 서쪽 성벽: 바깥 면에만, 틈을 향한 끝 면은 비운다");
+            Assert.AreEqual(North, prepared[new Vector2Int(west + 2, north)], "틈 옆 북쪽 성벽: 바깥 면에만, 틈을 향한 끝 면은 비운다");
+            Assert.AreEqual(West, prepared[new Vector2Int(west, (north + south) / 2)], "서쪽 성벽 가운데는 바깥(서) 면에만");
+            Assert.AreEqual(South, prepared[new Vector2Int(west + 8, south)], "남쪽 성벽은 바깥(남) 면에만");
+            Assert.AreEqual(0, prepared[new Vector2Int(west, north - 1)] & East, "안뜰 쪽 면은 비어 있다");
+
+            // 저장된 성 되살리기와 같은 순서로 모두 지우고 아래층부터 다시 놓는다.
+            var saved = world.Structures.Select(p => p.Placement).OrderBy(p => p.Level)
+                .Select(p => (p.Definition, p.Cell, p.Rotation, p.IsFixed)).ToList();
+            world.ClearForRestore();
+            foreach (var piece in saved)
+                Assert.IsTrue(world.TryPlaceRestored(piece.Definition, piece.Cell, piece.Rotation, piece.IsFixed, out _), piece.Cell.ToString());
+            yield return null;
+            var restored = AllFaces();
+            Assert.AreEqual(prepared.Count, restored.Count);
+            foreach (var entry in prepared)
+                Assert.AreEqual(entry.Value, restored[entry.Key], "불러온 뒤에도 같은 면: " + entry.Key);
+        }
+
         CharacterActor Unit(string name, CombatTeam team, Vector3 position, AttackKind kind)
         {
             var definition = SoldierDefinition.Create(name, new Cost(0),
