@@ -1,9 +1,9 @@
 ---
 id: BUG-battlement-inner-faces
 title: Battlements Appear on Inner Wall Faces After Loading a Save
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: youngho
+branch: fix/bug-battlement-inner-faces
 area: BUG
 depends_on: []
 created: 2026-11-22
