@@ -35,5 +35,5 @@ A siege defense roguelike where players prepare heroes, minions, weapons, and ca
 
 ## Art Style & Future Additions
 
-- **Art Style**: Low-poly aesthetic using Synty assets (specific packs undecided). Placeholder graphics initially; grid scale, cell footprints, heights, and visual references are decoupled into data assets.
+- **Art Style**: Low-poly aesthetic using Synty assets (packs per role decided in Q-01, see [Decisions-Resolved](../plan/Decisions-Resolved.md); applied assets in [ArtAssets](../codemap/ArtAssets.md)). Placeholder graphics initially; grid scale, cell footprints, heights, and visual references are decoupled into data assets.
 - **Future Additions (post-core)**: Foraging / Expeditions outside walls, Hero Loyalty, Difficulty Modes.

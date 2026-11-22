@@ -23,4 +23,4 @@ Registered 2026-11-22 from the user's decisions during ART-06 (split because the
 
 Candidate approach (user idea, 2026-11-22): slice `SM_Bld_Castle_Battlements_01` / `_03` in an editor tool into one repeat module (one merlon + one crenel, plus end caps) and tile the modules along each face at the game's pattern (crenel at every edge middle, half crenels at the ends), so the pattern never breaks across cells. This fixes horizontal alignment without stretching; vertical proportions still depend on the cover-height decision (Synty merlon top 1.38m vs current 2.2m means about 1.6x vertical stretch unless the rule changes).
 
-Open before start: Q-01 piece-spec decision (cell size, tier height, cover heights), whether default walls become 2 stacked tiers or a taller single piece.
+Q-01 resolved (2026-11-22): 3m cells and 3m tiers stay; battlements use the slice-and-tile approach above; default walls become 2 stacked tiers (6m) with the 6m gate. Still open at start: cover heights (keep 1.1m / 2.2m with stretched meshes, or move toward Synty proportions); decide with the user and the teammate.
