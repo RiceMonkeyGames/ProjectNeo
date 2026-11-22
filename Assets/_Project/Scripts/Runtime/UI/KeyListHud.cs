@@ -104,7 +104,7 @@ namespace ProjectNeo.UI
             hints.Add(new KeyHint(interaction.BattleStartKey, "길게 누르기 - 전투 시작"));
             if (battle != null && battle.RunLink.State != null && battle.RunLink.State.PrepTime != null)
                 hints.Add(new KeyHint(interaction.WaitKey, $"길게 누르기 - {battle.RunLink.State.PrepTime.WaitHours:0.#}시간 기다리기"));
-            hints.Add(new KeyHint(interaction.KeyListKey, "키 안내 닫기"));
+            // 여닫는 H 키는 오른쪽 아래 안내 줄에 늘 보이므로 목록에는 넣지 않는다(UI-06 A안 피드백).
             return hints;
         }
     }

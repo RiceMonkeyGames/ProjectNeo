@@ -17,6 +17,16 @@ namespace ProjectNeo.UI
             return ascension > 0 ? text + $" · 승천 {ascension}" : text;
         }
 
+        /// <summary>왼쪽 위 깃발 옆 큰 제목(UI-06 A안). 예: "스테이지 2".</summary>
+        public static string StageTitle(int stage) => $"스테이지 {stage}";
+
+        /// <summary>전투 시작 판의 길게 누르기 게이지(UI-06 A안). 전투 시작이 차고 있으면 그것을, 아니면 기다리기를 보여 준다.</summary>
+        public static float HoldRatio(float startProgress, float waitProgress, out bool waiting)
+        {
+            waiting = startProgress <= 0f && waitProgress > 0f;
+            return Math.Max(0f, Math.Min(1f, waiting ? waitProgress : startProgress));
+        }
+
         /// <summary>위 자원 바 오른쪽 줄. 골드 다음에 재료를 들어온 순서대로 적는다. 0개인 재료는 뺀다.</summary>
         public static string Resources(int gold, IEnumerable<KeyValuePair<string, int>> materials)
         {
@@ -27,6 +37,23 @@ namespace ProjectNeo.UI
             {
                 if (material.Value <= 0 || string.IsNullOrEmpty(material.Key)) continue;
                 text.Append("   ").Append(material.Key).Append(' ').Append(material.Value);
+            }
+            return text.ToString();
+        }
+
+        /// <summary>동전 아이콘 옆 골드 숫자(UI-06 A안). 천 단위 쉼표. 예: "1,250".</summary>
+        public static string Gold(int gold) => gold.ToString("#,0", System.Globalization.CultureInfo.InvariantCulture);
+
+        /// <summary>골드 옆 재료 줄(UI-06 A안). 들어온 순서대로, 0개인 재료는 뺀다. 재료가 없으면 빈 글.</summary>
+        public static string Materials(IEnumerable<KeyValuePair<string, int>> materials)
+        {
+            var text = new StringBuilder();
+            if (materials == null) return string.Empty;
+            foreach (KeyValuePair<string, int> material in materials)
+            {
+                if (material.Value <= 0 || string.IsNullOrEmpty(material.Key)) continue;
+                if (text.Length > 0) text.Append("   ");
+                text.Append(material.Key).Append(' ').Append(material.Value);
             }
             return text.ToString();
         }

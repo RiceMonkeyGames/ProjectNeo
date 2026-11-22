@@ -3,6 +3,7 @@ using ProjectNeo.Siege;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 namespace ProjectNeo.UI
 {
@@ -29,7 +30,25 @@ namespace ProjectNeo.UI
         [SerializeField] CannonOperator cannonOperator;
         [Tooltip("조준점 바로 아래 상호작용 안내(UI-06). 비어 있으면 예전처럼 아래 안내 줄에 키 목록과 함께 적는다.")]
         [SerializeField] TMP_Text contextPrompt;
+        [Header("Battle-start plate (UI-06 layout A)")]
+        [Tooltip("아래 안내 판 안의 길게 누르기 게이지 채움. 비어 있으면 글의 %만 보여 준다.")]
+        [SerializeField] RectTransform holdFill;
+        [SerializeField] Image holdFillImage;
+        [SerializeField] Color startHoldColor = new Color(0.96f, 0.8f, 0.45f, 1f);
+        [SerializeField] Color waitHoldColor = new Color(0.35f, 0.7f, 0.94f, 1f);
+        [Tooltip("켜면 1인칭 탐색 중 아래 안내 판을 가운데 좁은 판으로 띄운다(짧은 안내일 때만).")]
+        [SerializeField] bool compactExplorationPlate;
         CannonReticleView cannonReticle;
+
+        /// <summary>길게 누르기 게이지 채움 비율(0~1). 게이지가 없으면 0.</summary>
+        public float HoldRatio => holdFill != null ? holdFill.anchorMax.x : 0f;
+
+        /// <summary>아래 안내 판 안의 길게 누르기 게이지와 가운데 좁은 판 배치를 켠다(UI-06 A안).</summary>
+        public void ConfigureHoldGauge(RectTransform fill, Image fillImage, Color start, Color wait)
+        {
+            holdFill = fill; holdFillImage = fillImage; startHoldColor = start; waitHoldColor = wait;
+            compactExplorationPlate = true;
+        }
         /// <summary>조준점 아래 상호작용 안내 글. 보이지 않으면 빈 글.</summary>
         public string ContextPrompt => contextPrompt != null && contextPrompt.transform.parent.gameObject.activeSelf ? contextPrompt.text : string.Empty;
         public void ConfigureContextPrompt(TMP_Text prompt) => contextPrompt = prompt;
@@ -158,14 +177,17 @@ namespace ProjectNeo.UI
             }
             if (!preparation) return;
             // 건설 도구가 있는 왼쪽 공간을 비우고, 탐색 중에는 아래 중앙에 안내한다.
-            var prompt = (RectTransform)interactionHint.transform.parent;
-            prompt.anchorMin = new Vector2(phaseView.IsBuildView ? 0.32f : 0.15f, 0f);
-            prompt.anchorMax = new Vector2(phaseView.IsBuildView ? 0.98f : 0.85f, 0f);
-            prompt.pivot = new Vector2(0.5f, 0f);
-            prompt.anchoredPosition = new Vector2(0f, 16f);
             // 짧은 안내(UI-06): 탐색 중 아래 줄은 전투 시작·기다리기와 경고만 담고, 키 목록은 H 창(KeyListHud)으로 옮겼다.
             // 예전 씬(조준점 아래 안내 없음)은 PREP-05처럼 키 목록과 부대 키 줄까지 담는다.
             bool shortHints = contextPrompt != null;
+            // A안(UI-06): 탐색 중 짧은 안내는 화면 아래 가운데 좁은 판(전투 시작 판)에 띄운다.
+            bool compact = compactExplorationPlate && shortHints && phaseView.IsExplorationView;
+            var prompt = (RectTransform)interactionHint.transform.parent;
+            prompt.anchorMin = new Vector2(phaseView.IsBuildView ? 0.32f : compact ? 0.3f : 0.15f, 0f);
+            prompt.anchorMax = new Vector2(phaseView.IsBuildView ? 0.98f : compact ? 0.7f : 0.85f, 0f);
+            prompt.pivot = new Vector2(0.5f, 0f);
+            prompt.anchoredPosition = new Vector2(0f, compact ? 30f : 16f);
+            ShowHoldGauge(phaseView.IsExplorationView && battle != null);
             bool tall = phaseView.IsPlacementView || phaseView.IsExplorationView && !shortHints;
             prompt.sizeDelta = new Vector2(-32f, tall ? 96f : 64f);
             interactionHint.text = phaseView.IsBuildView
@@ -205,6 +227,17 @@ namespace ProjectNeo.UI
                 string gateMessage = battle.PrepGate != null ? battle.PrepGate.Message : "";
                 if (gateMessage.Length > 0) interactionHint.text += "\n" + gateMessage;
             }
+        }
+
+        void ShowHoldGauge(bool visible)
+        {
+            if (holdFill == null || holdFill.parent == null) return;
+            GameObject track = holdFill.parent.gameObject;
+            if (track.activeSelf != visible) track.SetActive(visible);
+            if (!visible) return;
+            float ratio = PrepHudText.HoldRatio(interaction.BattleStartProgress, interaction.WaitProgress, out bool waiting);
+            holdFill.anchorMax = new Vector2(ratio, 1f);
+            if (holdFillImage != null) holdFillImage.color = waiting ? waitHoldColor : startHoldColor;
         }
 
         static string Join(string first, string second) => first.Length == 0 ? second : first + "\n" + second;
