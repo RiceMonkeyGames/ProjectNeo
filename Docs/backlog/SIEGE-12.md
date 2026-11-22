@@ -1,9 +1,9 @@
 ---
 id: SIEGE-12
 title: Machicolations: Shooting Down at the Wall Base
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: SeongminHwang
+branch: feature/siege-12
 area: SIEGE
 depends_on: []
 created: 2026-11-21
