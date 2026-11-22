@@ -17,4 +17,5 @@ MonoBehaviour:
   merlonHeight: 2.2
   merlonWidth: 0.75
   crenelWidth: 0.75
-  material: {fileID: 2100000, guid: a4e7e850213ab7c4bb3d78475e723bf3, type: 2}
+  material: {fileID: 2100000, guid: 9be37df60cdbe8343a3e1412619384bf, type: 2}
+  textureTileMeters: 3.0471153
