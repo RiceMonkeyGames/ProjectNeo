@@ -22,7 +22,6 @@ Last Updated: 2026-11-20 21:07:07 (KST)
 | Q-15 | Supported input devices, settings, languages, accessibility | M2 framework, M5 UI | Undecided. Avoid arbitrary additions. |
 | Q-58 | Morale tuning values and prep-phase morale recovery facility | Morale balance | Undecided. Registered 2026-11-18 from OpenQuestions. |
 | Q-59 | Max building tiers, stair constraints, partial foundation collapse | Construction rules | Undecided. Registered 2026-11-18 from OpenQuestions. |
-| Q-60 | AI improvement pass scope and priorities (enemy side owned by teammate) | AI quality tasks | Undecided. Registered 2026-11-18 from OpenQuestions. |
 | Q-61 | M4 content scale (hero/enemy/item/stage counts, target play time) | M4 production tasks | Undecided. Registered 2026-11-18 from Milestones. |
 
 Q-41 shared ladder interaction rules were approved on 2026-11-13 and moved to [Decisions-Resolved](Decisions-Resolved.md). The user subsequently confirmed shared-code edits and tap F boarding / hold F toppling. Runtime implementation is tracked as SIEGE-04.
