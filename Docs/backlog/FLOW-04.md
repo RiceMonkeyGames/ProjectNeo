@@ -1,9 +1,9 @@
 ---
 id: FLOW-04
 title: Save and Return to Title During Preparation
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: SeongminHwang
+branch: feature/flow-04
 area: FLOW
 depends_on: []
 created: 2026-11-21
