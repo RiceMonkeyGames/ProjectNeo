@@ -1,9 +1,9 @@
 ---
 id: PERF-ai-query-budget
 title: AI Decision Tick Staggering, Top-K Path Filtering & LoS Caching
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: 신용준
+branch: feature/perf-ai-query-budget
 area: PERF
 depends_on: []
 created: 2026-11-22
