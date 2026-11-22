@@ -28,4 +28,11 @@ Agent defaults (open to revision after playtest): a bastion must touch a `Wall` 
 - Full suite (`unity-verify-local.ps1 -Mode all -SkipDotnet`): EditMode **698/698**, PlayMode **305/305**. Code rules check passed (0 violations). Dotnet precheck skipped because Unity had not yet regenerated the csproj for the new files.
 - Issues found during verification: (1) a manned-arc test still expected ±90°; updated to ±135°. (2) A cannon-attack test waited with Unity's overloaded `!= null`, so a destroyed cannon ended the wait after one frame; it now waits on the real reference. (3) A one-tier bastion dropped beside a two-tier wall is a walkway island that NavMesh culls as too small; the test now also breaks the upper wall and checks the top becomes walkable, and the build preview warns about this case.
 - `git diff --check` reports trailing spaces only in Unity-serialized scene YAML (`m_Name: ` and empty event arguments of the new button); left as Unity writes them.
-- Not verified: manual play in the Game scene and standalone builds.
+- Not verified at the first commit: manual play in the Game scene and standalone builds.
+
+## Integration with develop (2026-11-22)
+
+- Merged `origin/develop` into the branch (`7721cc0`), bringing in SIEGE-12 machicolations, COMBAT-12, BUG-battlement-inner-faces and Q-01. Code and scenes (`Game.unity`, `SiegePrototype.unity`, `CastleBattlements`, `ConstructionWorld`) merged automatically; doc conflicts in `Decisions-Resolved`, the `WallsAndSiege` design and codemap were resolved by keeping both sides, with the SIEGE-11 per-face gun-port rule replacing the old whole-piece gun-port sentence.
+- After the merge: full suite EditMode **723/723**, PlayMode **314/314** (168.05s). `Game.unity` check: `GateMachicolations` (with settings) and `CastleBattlements` present, no missing scripts, bastion data in the scene.
+- User manual check (2026-11-22): confirmed in play.
+- Not verified: standalone build. `Scenes/MachicolationVerification.unity` was copied from `SiegePrototype.unity` before the bastion button was added; re-run `ProjectNeo/Setup/Create Machicolation Verification Scene` if the button is needed there.
