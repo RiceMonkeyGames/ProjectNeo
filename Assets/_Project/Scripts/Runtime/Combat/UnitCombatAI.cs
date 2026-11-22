@@ -33,7 +33,18 @@ namespace ProjectNeo.Combat
         bool behindCover;
         ShotOpening opening;
         RangedBlockAction blockAction = RangedBlockAction.Attack;
+        // 자리 방향(COMBAT-14). 대형이 바라볼 방향이나 자리를 받은 때의 방향(도). 없으면 돌지 않는다.
+        float? postFacing;
+        // 근접 위협 후퇴(COMBAT-14).
+        bool fallingBack;
+        float fallbackRemaining;
+        float fallbackCooldownRemaining;
+        float threatRecheckRemaining;
         public CharacterActor Target { get; private set; }
+        /// <summary>자리를 지킬 때 돌아볼 방향(y축 각도, 도). 없으면 null(COMBAT-14).</summary>
+        public float? HoldFacing => postFacing;
+        /// <summary>근접 적을 피해 짧게 물러나는 중인지(COMBAT-14, 검증용).</summary>
+        public bool IsFallingBack => fallingBack;
         // 지시를 받지 않은 유닛(적, 관전 전투)은 기존처럼 알아서 싸운다.
         public UnitDirective Directive { get; private set; } = UnitDirective.Engage;
         public Vector3 MoveDestination { get; private set; }
@@ -74,6 +85,10 @@ namespace ProjectNeo.Combat
             ReleaseOpening();
             meleeSlotBoard.Release(this);
             blockAction = RangedBlockAction.Attack;
+            fallingBack = false;
+            // 방향은 부대 대형 방향을 함께 받은 지시(SetDirective(지시, 목적지, 방향))만 지킨다(COMBAT-14).
+            // 공성 적 판단처럼 중지 중에 스스로 방향을 돌리는 쪽과 다투지 않게 여기서는 비운다.
+            postFacing = null;
             if (directive == UnitDirective.Hold) HoldPost = transform.position;
         }
 
@@ -86,6 +101,17 @@ namespace ProjectNeo.Combat
             HasAdvancePoint = directive == UnitDirective.Engage;
             destinationPending = directive != UnitDirective.Hold;
             advanceRepathRemaining = 0f;
+        }
+
+        /// <summary>
+        /// 목적지와 그곳에서 바라볼 방향(대형 방향, y축 각도)을 함께 준다(COMBAT-14). 이동이 끝나 자리를 지키거나
+        /// 그 자리에서 중지하면, 싸울 대상이 없을 때 이 방향으로 돌아선다.
+        /// </summary>
+        public void SetDirective(UnitDirective directive, Vector3 destination, float facing)
+        {
+            if (GetComponent<ProjectNeo.Siege.LadderTraveller>()?.Defer(directive, true, destination, facing) == true) return;
+            SetDirective(directive, destination);
+            postFacing = facing;
         }
 
         void Awake()
@@ -110,6 +136,8 @@ namespace ProjectNeo.Combat
             agent.angularSpeed = settings.TurnSpeed;
             decisionRemaining -= Time.deltaTime;
             targetLockRemaining = Mathf.Max(0f, targetLockRemaining - Time.deltaTime);
+            fallbackCooldownRemaining = Mathf.Max(0f, fallbackCooldownRemaining - Time.deltaTime);
+            threatRecheckRemaining = Mathf.Max(0f, threatRecheckRemaining - Time.deltaTime);
             switch (Directive)
             {
                 case UnitDirective.Move: UpdateMove(); break;
@@ -245,6 +273,7 @@ namespace ProjectNeo.Combat
         void UpdateHold()
         {
             agent.stoppingDistance = 0f;
+            if (ContinueFallback()) return;
             bool chases = HoldChaseRadius > 0f;
             bool refreshed = false;
             // 기존 대상의 무효화는 즉시 처리하되, 대상이 없는 동안에도 탐색 주기를 지킨다.
@@ -266,6 +295,8 @@ namespace ProjectNeo.Combat
                     if (Target != null) targetLockRemaining = settings.TargetSwitchCooldown;
                 }
             }
+            if (UpdateMeleeThreat(refreshed, true)) return;
+            if (refreshed && Target != null) TryUpgradeThreatTarget();
             if (Target != null && CanStrikeFromHere(Target))
             {
                 agent.isStopped = true;
@@ -310,9 +341,140 @@ namespace ProjectNeo.Combat
                 if (agent.hasPath) agent.ResetPath();
                 agent.isStopped = true;
                 agent.updateRotation = false;
+                RestorePostFacing();
                 return;
             }
             if (refreshed || !agent.hasPath) agent.SetDestination(HoldPost);
+        }
+
+        // 싸울 대상 없이 자리에 서 있으면 대형 방향으로 돌아선다(COMBAT-14).
+        void RestorePostFacing()
+        {
+            if (!settings.HoldFacingRestore || !postFacing.HasValue || actor.IsAttacking) return;
+            float yaw = transform.eulerAngles.y;
+            if (!HoldFacingRules.NeedsTurn(yaw, postFacing.Value)) return;
+            transform.rotation = Quaternion.Euler(0f,
+                HoldFacingRules.Step(yaw, postFacing.Value, settings.TurnSpeed * Time.deltaTime), 0f);
+        }
+
+        // ── 근접 위협 대응과 위협 우선순위(COMBAT-14) ─────────────────
+
+        bool IsRangedUnit => actor.Profile.AttackKind == AttackKind.Projectile;
+
+        // 위협 우선순위를 쓰는 원거리 유닛이면 대상의 위협 배율, 아니면 1.
+        float ThreatFactorOf(CharacterActor other) =>
+            IsRangedUnit && settings.RangedThreatPriority ? settings.ThreatDistanceFactor(other.Threat) : 1f;
+
+        bool IsMeleeThreat(CharacterActor other) => other != null && other.Profile != null
+            && RangedMeleeThreatRules.IsMeleeThreat(IsRangedUnit, other.Profile.AttackKind == AttackKind.Melee,
+                SqrDistanceTo(other), settings.RangedMeleeThreatRadius);
+
+        // 원거리 유닛: 위협 반경 안의 근접 적을 바로 대상으로 삼고, 물러날 공간이 있으면 짧게 물러난다.
+        // 물러나는 동안 true를 돌려준다(이번 프레임의 나머지 판단을 건너뛴다).
+        bool UpdateMeleeThreat(bool refreshed, bool holding)
+        {
+            if (!IsRangedUnit || suppressRetaliation || settings.RangedMeleeThreatRadius <= 0f) return false;
+            if (!refreshed || fallingBack) return false;
+            CharacterActor threat = FindMeleeThreat();
+            if (threat == null) return false;
+            if (!ReferenceEquals(threat, Target)) SwitchTarget(threat, false);
+            if (TryBeginFallback(threat, holding)) return true;
+            // 물러날 곳을 못 찾았으면 잠시 뒤에 다시 찾는다(판단 주기마다 길찾기를 하지 않게).
+            if (settings.RangedFallbackDistance > 0f && fallbackCooldownRemaining <= 0f)
+                fallbackCooldownRemaining = settings.DecisionInterval * 2f;
+            return false;
+        }
+
+        // 진행 중인 후퇴를 이어 간다. 판단 주기의 대상 갱신(접근 경로 적용)보다 먼저 불러야 후퇴 경로를 덮어쓰지 않는다.
+        // 후퇴 중이면 true(이번 프레임의 나머지 판단을 건너뛴다).
+        bool ContinueFallback()
+        {
+            if (!fallingBack) return false;
+            if (!IsRangedUnit || suppressRetaliation || settings.RangedMeleeThreatRadius <= 0f)
+            {
+                EndFallback();
+                return false;
+            }
+            fallbackRemaining -= Time.deltaTime;
+            bool arrived = !agent.pathPending && agent.remainingDistance <= settings.ArrivalDistance;
+            if (fallbackRemaining > 0f && agent.hasPath && !arrived)
+            {
+                agent.stoppingDistance = 0f;
+                agent.isStopped = false;
+                agent.updateRotation = true;
+                return true;
+            }
+            EndFallback();
+            // 후퇴를 마치면 바로 대상과 경로를 다시 본다.
+            decisionRemaining = 0f;
+            return false;
+        }
+
+        CharacterActor FindMeleeThreat()
+        {
+            CharacterActor nearest = null;
+            float nearestDistance = float.PositiveInfinity;
+            foreach (CharacterActor candidate in CharacterActor.ActiveActors)
+            {
+                if (candidate.Team == actor.Team || !IsMeleeThreat(candidate)) continue;
+                float distance = SqrDistanceTo(candidate);
+                if (distance >= nearestDistance || !actor.IsEnemy(candidate) || !CombatPhysics.CanTarget(actor, candidate)
+                    || !CanStrikeFromHere(candidate)) continue;
+                nearestDistance = distance;
+                nearest = candidate;
+            }
+            return nearest;
+        }
+
+        bool TryBeginFallback(CharacterActor threat, bool holding)
+        {
+            if (settings.RangedFallbackDistance <= 0f || fallbackCooldownRemaining > 0f || actor.IsAttacking
+                || actor.IsOnLadder) return false;
+            Vector3 self = transform.position;
+            Vector3 threatPosition = threat.transform.position;
+            Vector3 point = RangedMeleeThreatRules.FallbackPoint(self, threatPosition, -transform.forward,
+                settings.RangedFallbackDistance);
+            var filter = new NavMeshQueryFilter { agentTypeID = agent.agentTypeID, areaMask = agent.areaMask };
+            if (!NavMesh.SamplePosition(point, out NavMeshHit hit, 1f, filter)) return false;
+            if (!RangedMeleeThreatRules.AllowsFallback(self, hit.position, settings.MeleeSlotLevelTolerance, holding,
+                    HoldPost, settings.RangedFallbackHoldLeash)) return false;
+            // 위협에서 실제로 더 멀어지는 지점만 쓴다.
+            Vector3 before = self - threatPosition, after = hit.position - threatPosition;
+            before.y = 0f; after.y = 0f;
+            if (after.sqrMagnitude <= before.sqrMagnitude) return false;
+            if (!agent.CalculatePath(hit.position, path) || path.status != NavMeshPathStatus.PathComplete) return false;
+            if (!RangedMeleeThreatRules.IsShortPath(CalculatePathLength(path), Vector3.Distance(self, hit.position), 2f))
+                return false;
+            float floor = (holding ? HoldPost.y : self.y) - settings.HoldMaxDescent;
+            if (settings.HoldMaxDescent > 0f && !HoldDescentRule.StaysAbove(path.corners, floor)) return false;
+            agent.stoppingDistance = 0f;
+            agent.SetPath(path);
+            agent.isStopped = false;
+            agent.updateRotation = true;
+            fallingBack = true;
+            fallbackRemaining = settings.RangedFallbackMaxSeconds;
+            returningToPost = false;
+            return true;
+        }
+
+        void EndFallback()
+        {
+            fallingBack = false;
+            fallbackCooldownRemaining = settings.RangedFallbackCooldown;
+            if (agent.enabled && agent.isOnNavMesh && agent.hasPath) agent.ResetPath();
+        }
+
+        // 원거리 유닛이 쏘고 있는 대상보다 위협 배율이 확실히 작은(더 위협적인) 대상이 지금 자리에서 쏠 수 있으면 바꾼다.
+        // 대상 유지 시간이 지난 뒤에만, 그리고 TargetSwitchCooldown마다 한 번만 찾는다. 붙은 근접 적은 놓지 않는다.
+        void TryUpgradeThreatTarget()
+        {
+            if (!IsRangedUnit || !settings.RangedThreatPriority || suppressRetaliation || Target == null
+                || targetLockRemaining > 0f || threatRecheckRemaining > 0f || IsMeleeThreat(Target)) return;
+            threatRecheckRemaining = settings.TargetSwitchCooldown;
+            float current = ThreatFactorOf(Target);
+            if (current <= RangedTargetPriorityRules.MinimumFactor) return;
+            CharacterActor better = FindTargetInReach(current);
+            if (better != null && !ReferenceEquals(better, Target)) SwitchTarget(better, false);
         }
 
         // 마치콜레이션(SIEGE-12): 중지 중인 원거리 유닛이 쏠 대상이 없을 때, 근처 빈 구멍 아래에 적이 있으면 그 구멍으로 가서 선다.
@@ -433,7 +595,8 @@ namespace ProjectNeo.Combat
             {
                 if (candidate.Team == actor.Team || !IsNearPost(candidate) || !actor.IsEnemy(candidate)
                     || !CombatPhysics.CanTarget(actor, candidate)) continue;
-                float distance = (candidate.transform.position - transform.position).sqrMagnitude;
+                float distance = RangedTargetPriorityRules.Score((candidate.transform.position - transform.position).sqrMagnitude,
+                    1f, ThreatFactorOf(candidate));
                 if (distance >= nearestDistance || !CanReachInHold(candidate)) continue;
                 nearestDistance = distance;
                 nearest = candidate;
@@ -444,6 +607,7 @@ namespace ProjectNeo.Combat
         void UpdateEngage()
         {
             agent.stoppingDistance = actor.Stats.GetValue(StatType.AttackRange) * settings.StoppingRangeRatio;
+            if (ContinueFallback()) return;
             if (!ReferenceEquals(Target, null) && (!actor.IsEnemy(Target) || !CombatPhysics.CanTarget(actor, Target)))
             {
                 Target = null;
@@ -473,6 +637,8 @@ namespace ProjectNeo.Combat
                     if (Target != null && CanReach(Target)) ApplyApproachPath(false);
                 }
             }
+            if (UpdateMeleeThreat(refreshed, false)) return;
+            if (refreshed && Target != null) TryUpgradeThreatTarget();
             if (Target == null)
             {
                 Advance();
@@ -623,12 +789,11 @@ namespace ProjectNeo.Combat
             return CanStrikeFromHere(candidate) || PriorityOf(candidate) < PriorityOf(current);
         }
 
-        // 대상 비교 값: 제곱 거리에 선호 배율을 곱한다. 배율이 없으면 제곱 거리 그대로다.
-        float PriorityOf(CharacterActor other)
-        {
-            float distance = SqrDistanceTo(other);
-            return TargetDistanceScale != null ? distance * TargetDistanceScale(other) : distance;
-        }
+        // 대상 비교 값: 제곱 거리에 보스 선호 배율과 원거리 위협 배율(COMBAT-14)을 곱한다. 둘 다 없으면 제곱 거리 그대로다.
+        float PriorityOf(CharacterActor other) => ScoreOf(other, SqrDistanceTo(other));
+
+        float ScoreOf(CharacterActor other, float sqrDistance) => RangedTargetPriorityRules.Score(sqrDistance,
+            TargetDistanceScale != null ? TargetDistanceScale(other) : 1f, ThreatFactorOf(other));
 
         void SwitchTarget(CharacterActor next, bool isHoldRetaliation)
         {
@@ -664,10 +829,13 @@ namespace ProjectNeo.Combat
         bool CanStrikeFromHere(CharacterActor target) => actor.IsEnemy(target)
             && CombatPhysics.IsInRange(actor, target) && CombatPhysics.HasClearShot(actor, target);
 
-        CharacterActor FindTargetInReach()
+        // 지금 자리에서 쏠/칠 수 있는 적 중 점수(거리 × 원거리 위협 배율)가 가장 낮은 적. 보스 선호 배율은 쓰지 않는다(예전과 같게).
+        // belowFactor를 주면 위협 배율이 그보다 확실히 작은 적만 본다(COMBAT-14 더 위협적인 대상 찾기).
+        CharacterActor FindTargetInReach(float belowFactor = float.PositiveInfinity)
         {
             CharacterActor nearest = null;
             float nearestDistance = float.PositiveInfinity;
+            bool onlyHigher = !float.IsPositiveInfinity(belowFactor);
             Vector3 position = transform.position;
             Vector3 aim = actor.AimPoint;
             // 높은 곳 보너스까지 더한 가장 긴 사거리로 거른다. 실제 사거리는 뒤의 정밀 판정이 대상별로 다시 잰다.
@@ -679,7 +847,9 @@ namespace ProjectNeo.Combat
                 // 큰/오프셋 콜라이더는 통과시키고 기존 정밀 판정과 시야 검사를 그대로 적용한다.
                 // 공중 대상의 근접 사거리는 몸통이 아니라 바닥 투영점 기준이므로 이 예비 검사를 건너뛴다.
                 if (candidate.Airborne == null && candidate.Body.bounds.SqrDistance(aim) > range * range) continue;
-                float distance = (candidate.transform.position - position).sqrMagnitude;
+                float factor = ThreatFactorOf(candidate);
+                if (onlyHigher && !RangedTargetPriorityRules.IsHigherThreat(belowFactor, factor)) continue;
+                float distance = RangedTargetPriorityRules.Score((candidate.transform.position - position).sqrMagnitude, 1f, factor);
                 if (distance >= nearestDistance || !CanStrikeFromHere(candidate)) continue;
                 nearestDistance = distance;
                 nearest = candidate;
@@ -696,8 +866,8 @@ namespace ProjectNeo.Combat
             {
                 if (candidate.Team == actor.Team) continue;
                 float distance = (candidate.transform.position - transform.position).sqrMagnitude;
-                // 선호 배율이 없으면 score는 거리 그대로라 예전과 같은 대상을 고른다.
-                float score = TargetDistanceScale != null ? distance * TargetDistanceScale(candidate) : distance;
+                // 선호·위협 배율이 없으면 score는 거리 그대로라 예전과 같은 대상을 고른다.
+                float score = ScoreOf(candidate, distance);
                 if (distance >= detection || score >= best || !actor.IsEnemy(candidate)
                     || !CombatPhysics.CanTarget(actor, candidate) || !CanReach(candidate)) continue;
                 best = score;
@@ -708,6 +878,7 @@ namespace ProjectNeo.Combat
 
         void OnDied()
         {
+            fallingBack = false;
             ReleaseOpening();
             meleeSlotBoard.Release(this);
             Target = null;
@@ -720,6 +891,7 @@ namespace ProjectNeo.Combat
             GetComponent<ProjectNeo.Siege.LadderTraveller>()?.Interrupt();
             actor.Died -= OnDied;
             actor.HitReceivedFrom -= OnHitReceived;
+            fallingBack = false;
             ReleaseOpening();
             meleeSlotBoard.Release(this);
             Target = null;

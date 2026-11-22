@@ -22,7 +22,7 @@ namespace ProjectNeo.Siege
     /// 이동과 공격 자체는 UnitCombatAI의 지시(Engage·Hold·Move)로 실행한다.
     /// </summary>
     [RequireComponent(typeof(UnitCombatAI), typeof(CharacterActor), typeof(NavMeshAgent))]
-    public sealed class SiegeAttackerBrain : SiegeAttacker, IAnimationCueSource
+    public sealed class SiegeAttackerBrain : SiegeAttacker, IAnimationCueSource, ITargetThreatSource
     {
         enum Mode { Deciding, Assault, ToLadder, Raising, Climbing, Falling, ToGate, Shooting, Retreating, ToWall, ToCannon }
 
@@ -67,6 +67,16 @@ namespace ProjectNeo.Siege
         CharacterActor IAnimationCueSource.AimTarget => null;
         bool IAnimationCueSource.HoldsDrawnBow => IsArcherFiring || IsArcherWaiting;
         public bool IsClimbing => mode == Mode.Climbing;
+        /// <summary>
+        /// 원거리 유닛의 위협 우선순위에 쓰는 종류(COMBAT-14). 사다리를 세우거나 오르면 사다리 위협,
+        /// 성문·성벽·수성 무기를 부수러 가거나 부수면 공성 위협이다.
+        /// </summary>
+        public TargetThreat Threat => mode switch
+        {
+            Mode.Raising or Mode.Climbing => TargetThreat.LadderClimber,
+            Mode.ToGate or Mode.ToWall or Mode.ToCannon => TargetThreat.SiegeBreaker,
+            _ => TargetThreat.None,
+        };
         public override bool IsAssaulting => mode == Mode.Assault;
         /// <summary>지금 부수러 가는 수성 무기. 없으면 null.</summary>
         public PlacedSiegeWeapon CannonTarget => mode == Mode.ToCannon ? cannon : null;
@@ -101,6 +111,7 @@ namespace ProjectNeo.Siege
         void Awake()
         {
             Actor = GetComponent<CharacterActor>();
+            Actor.ThreatSource = this;
             ai = GetComponent<UnitCombatAI>();
             agent = GetComponent<NavMeshAgent>();
             fall = GetComponent<UnitFallController>();

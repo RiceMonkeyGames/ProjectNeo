@@ -20,6 +20,7 @@ namespace ProjectNeo.Siege
         bool ascending, queuedPlayer, deferred, deferredPoint, agentWasEnabled, motorWasEnabled, tapBoardEligible;
         UnitDirective nextDirective;
         Vector3 nextPoint;
+        float? nextFacing;
         NavMeshPath path;
         public bool IsTraversing { get; private set; }
         public string PlayerHint { get; private set; } = "";
@@ -67,10 +68,11 @@ namespace ProjectNeo.Siege
             interruptNoticeTimer = 1.5f;
         }
 
-        public bool Defer(UnitDirective directive, bool point, Vector3 destination)
+        // facing: 부대 대형이 바라볼 방향(COMBAT-14). 사다리를 다 내려온 뒤 지시와 함께 넘긴다.
+        public bool Defer(UnitDirective directive, bool point, Vector3 destination, float? facing = null)
         {
             if (!IsTraversing) { CancelWaiting(); retry = 0f; return false; }
-            deferred = true; nextDirective = directive; deferredPoint = point; nextPoint = destination;
+            deferred = true; nextDirective = directive; deferredPoint = point; nextPoint = destination; nextFacing = facing;
             return true;
         }
         public void CancelWaiting()
@@ -258,7 +260,9 @@ namespace ProjectNeo.Siege
             if (deferred && ai != null)
             {
                 deferred = false;
-                if (deferredPoint) ai.SetDirective(nextDirective, nextPoint); else ai.SetDirective(nextDirective);
+                if (deferredPoint && nextFacing.HasValue) ai.SetDirective(nextDirective, nextPoint, nextFacing.Value);
+                else if (deferredPoint) ai.SetDirective(nextDirective, nextPoint);
+                else ai.SetDirective(nextDirective);
             }
         }
         public void OnToppled() { if (IsTraversing) Drop(); else CancelWaiting(); }

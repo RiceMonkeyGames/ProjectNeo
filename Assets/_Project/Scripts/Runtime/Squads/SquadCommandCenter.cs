@@ -480,7 +480,11 @@ namespace ProjectNeo.Squads
             {
                 UnitDirective toward = order.Kind == SquadOrderKind.Move ? UnitDirective.Move : UnitDirective.Engage;
                 PlanSlots(index, order.Destination, order.Facing, order.FrontAnchored, alive.Count, slotBuffer);
-                for (int i = 0; i < alive.Count; i++) alive[i].SetDirective(toward, slotBuffer[i]);
+                // 이동은 대형 방향을 함께 넘겨 도착해 자리를 지킬 때 그 방향으로 돌아서게 한다(COMBAT-14).
+                // 공격(Engage)은 자리를 지키지 않으므로 방향을 쓰지 않는다.
+                for (int i = 0; i < alive.Count; i++)
+                    if (toward == UnitDirective.Move) alive[i].SetDirective(toward, slotBuffer[i], order.Facing);
+                    else alive[i].SetDirective(toward, slotBuffer[i]);
                 return;
             }
             UnitDirective directive = order.Kind == SquadOrderKind.Attack ? UnitDirective.Engage : UnitDirective.Hold;
@@ -567,7 +571,7 @@ namespace ProjectNeo.Squads
                 Vector3 slot = slotBuffer[assigned[i]];
                 // 제자리인 부대원은 싸우던 대상을 잃지 않도록 다시 지시하지 않는다.
                 if (hasPostBuffer[i] && (postBuffer[i] - slot).sqrMagnitude <= keep * keep) continue;
-                alive[i].SetDirective(UnitDirective.Hold, slot);
+                alive[i].SetDirective(UnitDirective.Hold, slot, order.Facing);
             }
         }
 

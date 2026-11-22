@@ -47,6 +47,12 @@ namespace ProjectNeo.Combat
             // 웅크린 채 사다리에 오르지 않는다(COMBAT-10). 사다리 중에는 AI의 웅크리기 판단이 돌지 않는다.
             SetCrouched(false);
         }
+        /// <summary>지금 하는 일로 위협 종류를 알려 주는 판단(COMBAT-14). 공성 적의 판단이 스스로 등록한다. 없으면 null.</summary>
+        public ITargetThreatSource ThreatSource { get; set; }
+        /// <summary>원거리 유닛이 대상을 고를 때 보는 위협 종류(COMBAT-14).</summary>
+        public TargetThreat Threat => RangedTargetPriorityRules.Classify(IsOnLadder,
+            ThreatSource != null ? ThreatSource.Threat : TargetThreat.None,
+            profile != null && profile.AttackKind == AttackKind.Projectile);
         public static IReadOnlyList<CharacterActor> ActiveActors => activeActors;
         /// <summary>원거리 탄퍼짐에 쓰는 난수(COMBAT-09). 테스트는 고정 난수로 바꿔 끼운다.</summary>
         public static Core.IRandomSource ShotRandom { get; set; } = new Core.SeededRandom(Environment.TickCount);
