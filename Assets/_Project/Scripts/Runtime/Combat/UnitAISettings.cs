@@ -53,6 +53,38 @@ namespace ProjectNeo.Combat
         // 자리를 길찾기 메시에 맞출 때 찾는 거리와, 대상과 허용하는 높이 차(m). 다른 층의 자리는 쓰지 않는다.
         [SerializeField, Min(0.05f)] float meleeSlotSampleDistance = 0.5f;
         [SerializeField, Min(0.05f)] float meleeSlotLevelTolerance = 1f;
+        // 원거리 위협 우선순위(COMBAT-14). 위협 종류별 거리 배율(1 이하): 0.5면 그 대상을 절반 거리에 있는 것처럼 본다.
+        // 임시 값이며 플레이 후 조정한다. 끄면 예전처럼 거리만으로 고른다.
+        [SerializeField] bool rangedThreatPriority = true;
+        [SerializeField, Range(0.05f, 1f)] float ladderClimberDistanceFactor = 0.5f;
+        [SerializeField, Range(0.05f, 1f)] float siegeBreakerDistanceFactor = 0.6f;
+        [SerializeField, Range(0.05f, 1f)] float rangedThreatDistanceFactor = 0.75f;
+        // 근접 위협 대응(COMBAT-14). 원거리 유닛은 이 반경 안의 근접 적을 바로 대상으로 삼는다. 0이면 대응하지 않는다.
+        [SerializeField, Min(0f)] float rangedMeleeThreatRadius = 3f;
+        // 짧은 후퇴 거리(m). 0이면 물러나지 않고 대상만 바꾼다.
+        [SerializeField, Min(0f)] float rangedFallbackDistance = 3f;
+        // 후퇴를 마친 뒤 다시 물러나기까지 기다리는 시간(초). 이 사이에 쏜다.
+        [SerializeField, Min(0f)] float rangedFallbackCooldown = 3f;
+        // 한 번 물러나는 최대 시간(초). 막혀서 못 가도 이 시간이 지나면 다시 쏜다.
+        [SerializeField, Min(0.1f)] float rangedFallbackMaxSeconds = 1.5f;
+        // 자리를 지키는 중 후퇴 지점이 자리에서 수평으로 이 거리 안이어야 한다.
+        [SerializeField, Min(0f)] float rangedFallbackHoldLeash = 4f;
+        // 자리 방향 복귀(COMBAT-14). 끄면 자리에 돌아와도 마지막으로 보던 방향을 그대로 본다.
+        [SerializeField] bool holdFacingRestore = true;
+        public bool RangedThreatPriority => rangedThreatPriority;
+        public float RangedMeleeThreatRadius => rangedMeleeThreatRadius;
+        public float RangedFallbackDistance => rangedFallbackDistance;
+        public float RangedFallbackCooldown => rangedFallbackCooldown;
+        public float RangedFallbackMaxSeconds => rangedFallbackMaxSeconds;
+        public float RangedFallbackHoldLeash => rangedFallbackHoldLeash;
+        public bool HoldFacingRestore => holdFacingRestore;
+
+        /// <summary>위협 종류의 거리 배율. 우선순위를 끄면 언제나 1이다.</summary>
+        public float ThreatDistanceFactor(TargetThreat threat) => rangedThreatPriority
+            ? RangedTargetPriorityRules.DistanceFactor(threat, ladderClimberDistanceFactor, siegeBreakerDistanceFactor,
+                rangedThreatDistanceFactor)
+            : 1f;
+
         public bool MeleeSlots => meleeSlots;
         public float MeleeSlotGap => meleeSlotGap;
         public float MeleeSlotSpacing => meleeSlotSpacing;
@@ -69,10 +101,20 @@ namespace ProjectNeo.Combat
 
         public static UnitAISettings Create(float detectionRange = 60f, float holdEngageRadius = 6f,
             float holdRangedChaseExtra = 6f, float holdRetaliationRadius = 15f, float targetSwitchCooldown = 1.5f,
-            float holdMaxDescent = 1.5f, bool meleeSlots = true)
+            float holdMaxDescent = 1.5f, bool meleeSlots = true, bool rangedThreatPriority = true,
+            float rangedMeleeThreatRadius = 3f, float rangedFallbackDistance = 3f, bool holdFacingRestore = true,
+            float ladderClimberDistanceFactor = 0.5f, float siegeBreakerDistanceFactor = 0.6f,
+            float rangedThreatDistanceFactor = 0.75f)
         {
             var value = CreateInstance<UnitAISettings>();
             value.meleeSlots = meleeSlots;
+            value.rangedThreatPriority = rangedThreatPriority;
+            value.rangedMeleeThreatRadius = Mathf.Max(0f, rangedMeleeThreatRadius);
+            value.rangedFallbackDistance = Mathf.Max(0f, rangedFallbackDistance);
+            value.holdFacingRestore = holdFacingRestore;
+            value.ladderClimberDistanceFactor = Mathf.Clamp(ladderClimberDistanceFactor, RangedTargetPriorityRules.MinimumFactor, 1f);
+            value.siegeBreakerDistanceFactor = Mathf.Clamp(siegeBreakerDistanceFactor, RangedTargetPriorityRules.MinimumFactor, 1f);
+            value.rangedThreatDistanceFactor = Mathf.Clamp(rangedThreatDistanceFactor, RangedTargetPriorityRules.MinimumFactor, 1f);
             value.detectionRange = Mathf.Max(0f, detectionRange);
             value.holdEngageRadius = Mathf.Max(0f, holdEngageRadius);
             value.holdRangedChaseExtra = Mathf.Max(0f, holdRangedChaseExtra);
