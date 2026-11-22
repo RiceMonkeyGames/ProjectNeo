@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 650205a75826ad245a040d7e73d9a6a6, type: 3}
+  m_Name: AllyAI200
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Combat.UnitAISettings
+  decisionInterval: 0.25
+  detectionRange: 90
+  turnSpeed: 540
+  acceleration: 24
+  stoppingRangeRatio: 0.8
+  arrivalDistance: 0.35
+  destinationRecoveryDistance: 4
+  holdEngageRadius: 6
+  holdRangedChaseExtra: 6
+  moveStallDistance: 1.5
+  moveStallSeconds: 0.5
+  moveStallProgress: 0.1
+  holdReturnDistance: 1
+  holdRetaliationRadius: 15
+  holdMaxDescent: 1.5
+  targetSwitchCooldown: 1.5
+  meleeSlots: 1
+  meleeSlotGap: 0.15
+  meleeSlotSpacing: 0.9
+  meleeOuterRingOffset: 1
+  meleeSlotSampleDistance: 0.5
+  meleeSlotLevelTolerance: 1
+  rangedThreatPriority: 1
+  ladderClimberDistanceFactor: 0.5
+  siegeBreakerDistanceFactor: 0.6
+  rangedThreatDistanceFactor: 0.75
+  rangedMeleeThreatRadius: 3
+  rangedFallbackDistance: 3
+  rangedFallbackCooldown: 3
+  rangedFallbackMaxSeconds: 1.5
+  rangedFallbackHoldLeash: 4
+  holdFacingRestore: 1
+  maxPathCandidatesPerTick: 4
+  maxPathQueriesPerFrame: 0
+  decisionStaggerBuckets: 8
+  spatialCellSize: 8
+  enableAiLod: 1
+  lod0Distance: 25
+  lod1Distance: 60
+  lodEvaluationInterval: 0.5

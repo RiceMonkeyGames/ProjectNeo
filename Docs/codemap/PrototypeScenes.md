@@ -54,6 +54,11 @@ Last Updated: 2026-11-21 01:49:40 (KST)
 - The single wall line counts as "outside" on both sides, so the gate gets openings on its north and south faces (4); only the north ones see enemies.
 - Check: Play, start the battle, watch the gate top. When the gate breakers reach the gate, the nearest archers walk to the two north openings (dark marks on the walkway), shoot straight down, and return to their posts after the last breaker dies. Agent run 2026-11-22: two archers claimed both openings, all 3 breakers died, all four archers were back on their posts.
 
+## PERF-ai-lod 200v200 Verification (`LargeBattleVerification.unity`)
+
+- Created by `Editor/LargeBattleVerificationSetup` (menu `ProjectNeo/Setup/Create 200v200 AI LOD Verification Scene`; re-running rebuilds it). Spawns 10 allied squads x 20 units (120 melee, 80 ranged) + 1st-person player against 200 hostile units (120 melee, 80 ranged) on a 180m x 180m arena with `Data/LargeBattleVerification/` assets (`SquadConfig200.asset`, `Command200.asset`, `AllyAI200.asset`, `EnemyAI200.asset`, `Navigation200.asset`).
+- Includes `LargeBattleDebugHud` showing live FPS, team counts, `Lod0`/`Lod1`/`Lod2`/squad-sleep counts, per-frame `CalculatePath` queries, colored foot discs, and hotkeys (`M` engage all, `H` hold all, `Tab` 1st-person/top-down toggle, `V` rings toggle, `L` LOD toggle). Auto-starts in full `Engage` on Play.
+
 ## B-4 Construction Foundation (`ConstructionPrototype.unity`)
 
 - `Assets/_Project/Scenes/ConstructionPrototype.unity`: 45 deg azimuth, 30 deg pitch orthographic camera, walls, stairs, fixed gate, test units, UI controls.
