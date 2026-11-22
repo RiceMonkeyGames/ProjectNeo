@@ -658,8 +658,17 @@ namespace ProjectNeo.Combat
                 || (ReferenceEquals(target, retaliatingTarget) && IsWithinRetaliationLeash(target)));
 
         /// <summary>중지 중에 자리에서 이 거리 안의 적을 쫓는다. 0이면 쫓지 않는다.</summary>
-        public float HoldChaseRadius => actor.Profile.AttackKind == AttackKind.Melee ? settings.HoldEngageRadius
+        public float HoldChaseRadius => suppressHoldChase ? 0f
+            : actor.Profile.AttackKind == AttackKind.Melee ? settings.HoldEngageRadius
             : settings.HoldRangedChaseExtra > 0f ? actor.Stats.GetValue(StatType.AttackRange) + settings.HoldRangedChaseExtra : 0f;
+
+        bool suppressHoldChase;
+        /// <summary>
+        /// 중지 중에 자리 주변 적을 쫓지 않고 그 자리에서 닿는 적만 친다(SIEGE-15). 성 밖에서 지원 사격하는 적 궁수가
+        /// 가려진 수비병을 쫓아 뚫린 곳으로 들어가지 않게 한다.
+        /// </summary>
+        public void SetHoldChaseSuppressed(bool suppressed) => suppressHoldChase = suppressed;
+        public bool IsHoldChaseSuppressed => suppressHoldChase;
 
         bool IsNearPost(CharacterActor target) =>
             (target.transform.position - HoldPost).sqrMagnitude <= HoldChaseRadius * HoldChaseRadius;

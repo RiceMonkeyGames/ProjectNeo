@@ -45,10 +45,26 @@ namespace ProjectNeo.Siege
         bool attackerStaggerApplied;
         Mode mode = Mode.Deciding;
 
+        // 성 안팎 판정(SIEGE-15). 모든 공격자가 같은 성을 보므로 함께 쓴다.
+        static readonly CastleFootprint footprint = new CastleFootprint();
+        static ConstructionWorld footprintWorld;
+        // 근접 반경 때문에 돌격 중인지(풀림 반경을 쓴다), 궁수가 돌파구로 들어가기로 했는지(SIEGE-15).
+        bool leashAssault;
+        bool archerCommitted;
+        // 궁수가 쏠 대상 없이 지낸 시작 시각과, 이 공격자가 돌파구가 열린 것을 처음 본 시각. 없으면 -1.
+        float archerIdleSince = -1f;
+        float breachSeenSince = -1f;
+        // 궁수가 마지막으로 쏠 수 있던 수비병. 재장전하느라 웅크리면 잠깐 기다려 준다(SIEGE-15).
+        CharacterActor lastShotTarget;
+        // 판단을 바로 다시 하게 만드는 길찾기·사다리 변화(SIEGE-15, AI LOD로 판단 주기가 길어졌을 때).
+        int seenNavigationRevision = -1;
+        int seenLadderMask = -1;
+
         public static void ResetStaggerCounter()
         {
             nextAttackerStagger = 0;
             ReachabilityCache.Invalidate();
+            footprintWorld = null;
         }
         SiegeLadder ladder;
         PlacedStructure gate;
@@ -90,6 +106,11 @@ namespace ProjectNeo.Siege
             _ => TargetThreat.None,
         };
         public override bool IsAssaulting => mode == Mode.Assault;
+        /// <summary>
+        /// 돌격 중이거나, 돌파구가 열린 것을 보고 바깥에서 지원 사격하는 궁수(SIEGE-15). 공성 수단을 잃었는지(후퇴) 볼 때 쓴다.
+        /// </summary>
+        public override bool HasEntryRoute => IsAssaulting
+            || (role == SiegeAttackerRole.Archer && mode == Mode.Shooting && breachSeenSince >= 0f);
         /// <summary>지금 부수러 가는 수성 무기. 없으면 null.</summary>
         public PlacedSiegeWeapon CannonTarget => mode == Mode.ToCannon ? cannon : null;
         public override bool HasDecided => mode != Mode.Deciding;
@@ -132,11 +153,17 @@ namespace ProjectNeo.Siege
             wallBreaker?.Bind(world);
         }
 
-        void OnEnable() => Actor.Died += OnDied;
+        void OnEnable()
+        {
+            Actor.Died += OnDied;
+            Actor.HitReceivedFrom += OnHitReceived;
+        }
 
         void OnDisable()
         {
             Actor.Died -= OnDied;
+            Actor.HitReceivedFrom -= OnHitReceived;
+            ai?.SetHoldChaseSuppressed(false);
             LeaveLadder();
             wallBreaker?.Clear();
             cannon = null;
@@ -159,9 +186,11 @@ namespace ProjectNeo.Siege
             think -= Time.deltaTime;
             if (mode == Mode.ToWall && wallBreaker != null && wallBreaker.TargetInvalidated) think = 0f;
             if (mode == Mode.ToGate && (gate == null || gate.Health == null || gate.Health.IsDead)) think = 0f;
+            WakeOnSiegeChange();
             if (think <= 0f)
             {
-                float interval = settings.AttackerDecisionInterval;
+                // AI LOD(PERF-ai-lod)에 맞춰 먼 적은 공성 판단도 드물게 한다(SIEGE-15). 큰 변화는 WakeOnSiegeChange가 바로 깨운다.
+                float interval = settings.AttackerDecisionInterval * AILodRules.IntervalMultiplier(ai.LodTier);
                 if (!attackerStaggerApplied)
                 {
                     attackerStaggerApplied = true;
@@ -179,12 +208,34 @@ namespace ProjectNeo.Siege
             else if (mode == Mode.Raising && ladder != null) Face(-ladder.OutwardWorld);
         }
 
+        // 길찾기 메시가 바뀌거나(성문·성벽 파괴) 사다리가 서거나 쓰러지면 판단 주기를 기다리지 않고 다시 판단한다(SIEGE-15).
+        void WakeOnSiegeChange()
+        {
+            if (world == null) return;
+            int navigation = world.NavigationRevision;
+            int ladderMask = CurrentLadderMask();
+            if (navigation == seenNavigationRevision && ladderMask == seenLadderMask) return;
+            bool first = seenNavigationRevision < 0;
+            seenNavigationRevision = navigation;
+            seenLadderMask = ladderMask;
+            if (!first) think = 0f;
+        }
+
+        // 맞으면 AI LOD로 길어진 판단 주기를 기본 주기까지 줄여, 근접 반경 안의 아군에게 늦지 않게 반응한다(SIEGE-15).
+        // 화살 한 발마다 판단하지는 않는다(대규모 전투 비용).
+        void OnHitReceived(CharacterActor attacker)
+        {
+            if (attacker != null && mode != Mode.Climbing && settings != null)
+                think = Mathf.Min(think, settings.AttackerDecisionInterval);
+        }
+
         void Decide()
         {
             // 지형을 반영하는 동안에는 길 판단이 틀릴 수 있으므로 하던 일을 계속한다.
             if (world.IsRebuilding || world.RebuildPending) return;
-            if (AnyReachableEnemy(out CharacterActor nearest))
+            if (EvaluateAssault(out CharacterActor nearest, out bool viaLeash))
             {
+                leashAssault = viaLeash;
                 if (mode != Mode.Assault)
                 {
                     LeaveLadder();
@@ -192,6 +243,7 @@ namespace ProjectNeo.Siege
                     cannon = null;
                     wallBreaker?.Clear();
                     ai.SetRetaliationSuppressed(false);
+                    ai.SetHoldChaseSuppressed(false);
                     mode = Mode.Assault;
                     ai.SetDirective(UnitDirective.Engage, nearest.transform.position);
                 }
@@ -199,6 +251,14 @@ namespace ProjectNeo.Siege
                 // 닿는 아군 쪽으로 계속 나아간다. 성문이 부서진 채 시작한 다음 스테이지에서 먼 들판의 적이 서 있던 문제.
                 else if (ai.Target == null) ai.SetDirective(UnitDirective.Engage, nearest.transform.position);
                 return;
+            }
+            leashAssault = false;
+            // 근접 반경의 아군이 멀어졌고 돌파구도 없으면 공성 임무로 돌아간다(SIEGE-15).
+            // 돌격 때의 교전(Engage) 지시가 남아 계속 쫓지 않게 먼저 멈춘다. 아래 역할 판단이 새 지시를 준다.
+            if (mode == Mode.Assault)
+            {
+                mode = Mode.Deciding;
+                ai.SetDirective(UnitDirective.Hold);
             }
             // 걸어서 닿는 아군이 없을 때만 대포를 노린다(Q-21). 궁수는 기존 사격을 유지한다.
             if (role != SiegeAttackerRole.Archer && DecideCannon())
@@ -230,7 +290,21 @@ namespace ProjectNeo.Siege
             }
         }
 
-        public override bool CanReachAnyEnemy() => AnyReachableEnemy(out _);
+        /// <summary>
+        /// 돌격 판단과 같은 기준으로 닿는 아군이 있는지(SIEGE-15). 성 안·성벽 위면 걸어서 닿는 아무 아군, 성 밖 땅이면
+        /// 돌파구나 근접 반경 안의 성 밖 아군만 센다. 그래서 멀리 나온 아군 하나 때문에 후퇴도 돌격도 하지 않는 일이 없다.
+        /// </summary>
+        public override bool CanReachAnyEnemy()
+        {
+            CastleFootprint castle = Footprint();
+            if (castle == null || !castle.HasCastle) return AnyReachableEnemy(out _);
+            Vector3 here = transform.position;
+            if (castle.IsInsideCastle(CellOf(here)) || HeightAboveGround(here) >= WallTopMinimumHeight)
+                return AnyReachableEnemy(out _);
+            float leash = SiegeAssaultRules.LeashRadius(mode == Mode.Assault && leashAssault,
+                settings.AssaultLeashRadius, settings.AssaultLeashReleaseRadius);
+            return TryReachableSortie(castle, here, leash, out _) || TryReachableBreach(castle, here, out _);
+        }
 
         /// <summary>판단을 멈추고 걸어서 출구로 간다. 길이 없으면 제자리에 선다.</summary>
         public override Vector3 BeginExit(Vector3 exit, float searchRadius)
@@ -242,6 +316,168 @@ namespace ProjectNeo.Siege
             enabled = false;
             ai.SetDirective(UnitDirective.Move, target);
             return target;
+        }
+
+        CastleFootprint Footprint()
+        {
+            if (world == null || world.Layout == null) return null;
+            if (footprintWorld != world)
+            {
+                footprintWorld = world;
+                footprint.Invalidate();
+            }
+            footprint.Refresh(world.Layout, world.Grid, world.LayoutRevision, outward);
+            return footprint;
+        }
+
+        Vector2Int CellOf(Vector3 position) => world.Layout.WorldToCell(world.LocalPoint(position));
+
+        float HeightAboveGround(Vector3 position) => position.y - world.transform.position.y;
+
+        bool IsBreachTarget(CastleFootprint castle, CharacterActor candidate)
+        {
+            Vector3 position = candidate.transform.position;
+            return SiegeAssaultRules.IsBreachTarget(castle.IsWithinCastle(CellOf(position)),
+                HeightAboveGround(position), WallTopMinimumHeight);
+        }
+
+        /// <summary>
+        /// 돌격할지와 그 대상(SIEGE-15). 성 안이나 성벽 위에 이미 있으면 걸어서 닿는 아무 아군에게나 돌격한다.
+        /// 성 밖 땅이면 근접 반경 안의 걸어서 닿는 아군, 또는 돌파구(성 안·성벽 위 아군에게 닿는 길)가 있을 때만 돌격한다.
+        /// <paramref name="viaLeash"/>는 근접 반경 때문에 돌격하는지다.
+        /// </summary>
+        bool EvaluateAssault(out CharacterActor target, out bool viaLeash)
+        {
+            target = null;
+            viaLeash = false;
+            CastleFootprint castle = Footprint();
+            if (castle == null || !castle.HasCastle) return AnyReachableEnemy(out target);
+            Vector3 here = transform.position;
+            bool inside = castle.IsInsideCastle(CellOf(here)) || HeightAboveGround(here) >= WallTopMinimumHeight;
+            if (inside)
+            {
+                archerCommitted = false;
+                return AnyReachableEnemy(out target);
+            }
+
+            float leash = SiegeAssaultRules.LeashRadius(mode == Mode.Assault && leashAssault,
+                settings.AssaultLeashRadius, settings.AssaultLeashReleaseRadius);
+            if (TryReachableSortie(castle, here, leash, out target))
+            {
+                viaLeash = true;
+                return true;
+            }
+
+            float now = Time.time;
+            bool breach = TryReachableBreach(castle, here, out CharacterActor breachTarget);
+            if (!breach)
+            {
+                breachSeenSince = -1f;
+                archerCommitted = false;
+                return false;
+            }
+            if (breachSeenSince < 0f) breachSeenSince = now;
+            // 궁수가 쏠 대상 없이 지낸 시간은 돌파구가 열린 뒤부터만 센다.
+            float idle = archerIdleSince < 0f ? 0f : now - Mathf.Max(archerIdleSince, breachSeenSince);
+            if (!SiegeAssaultRules.ShouldAssault(role, false, false, true, false, archerCommitted, idle,
+                    settings.ArcherBreachAdvanceDelay))
+                return false;
+            if (role == SiegeAttackerRole.Archer) archerCommitted = true;
+            target = breachTarget;
+            return true;
+        }
+
+        /// <summary>
+        /// 근접 반경 안에서 걸어서 닿는, 성 밖 땅의 아군(성 밖으로 나온 아군). 돌파구 대상 아군은 <see cref="TryReachableBreach"/>가 본다.
+        /// 길찾기는 가까운 몇 명만 한다(AI LOD 등급에 따라 4·2·1명).
+        /// </summary>
+        bool TryReachableSortie(CastleFootprint castle, Vector3 here, float radius, out CharacterActor target)
+        {
+            target = null;
+            if (radius <= 0f) return false;
+            CombatSpatialIndex.QueryEnemies(Actor.Team, here, radius, spatialCandidates);
+            if (spatialCandidates.Count == 0) return false;
+            reachableCandidates.Reset(AILodRules.PathCandidateLimit(ai.LodTier, 4));
+            float sqrRadius = radius * radius;
+            for (int i = 0; i < spatialCandidates.Count; i++)
+            {
+                CharacterActor candidate = spatialCandidates[i];
+                if (!Actor.IsEnemy(candidate) || IsBreachTarget(castle, candidate)) continue;
+                float distance = (candidate.transform.position - here).sqrMagnitude;
+                if (distance > sqrRadius || distance >= reachableCandidates.WorstScore) continue;
+                reachableCandidates.TryAdd(candidate, distance);
+            }
+            for (int i = 0; i < reachableCandidates.Count; i++)
+            {
+                CharacterActor candidate = reachableCandidates[i];
+                UnitCombatAI.Scheduler.RecordPathQuery(Time.frameCount);
+                if (agent.CalculatePath(candidate.transform.position, path) && path.status == NavMeshPathStatus.PathComplete)
+                {
+                    target = candidate;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// 걸어서 닿는 돌파구 대상 아군(성 안·성벽 위) 중 가장 가까운 것. 가까운 상위 후보부터 길을 구하고,
+        /// '돌파구 없음' 결과는 길찾기 메시·사다리·아군 변화가 없는 동안 성 밖 공격자끼리 함께 쓴다(PERF-siege-ai-scale).
+        /// </summary>
+        bool TryReachableBreach(CastleFootprint castle, Vector3 here, out CharacterActor target)
+        {
+            target = null;
+            int navRev = world.NavigationRevision;
+            int ladderMask = CurrentLadderMask();
+            int actorRev = CharacterActor.RegistryRevision;
+            float now = Time.time;
+            float ttl = settings.ReachabilityCacheTtl;
+            if (ttl > 0f && ReachabilityCache.HasValidNoBreach(navRev, ladderMask, actorRev, now)) return false;
+
+            var enemies = CombatSpatialIndex.AllEnemiesOf(Actor.Team);
+            reachableCandidates.Reset(AILodRules.PathCandidateLimit(ai.LodTier, 4));
+            int breachTargets = 0;
+            for (int i = 0; i < enemies.Count; i++)
+            {
+                CharacterActor candidate = enemies[i];
+                if (!Actor.IsEnemy(candidate) || !IsBreachTarget(castle, candidate)) continue;
+                breachTargets++;
+                float distance = (candidate.transform.position - here).sqrMagnitude;
+                if (distance >= reachableCandidates.WorstScore) continue;
+                reachableCandidates.TryAdd(candidate, distance);
+            }
+            for (int i = 0; i < reachableCandidates.Count; i++)
+            {
+                CharacterActor candidate = reachableCandidates[i];
+                UnitCombatAI.Scheduler.RecordPathQuery(Time.frameCount);
+                if (agent.CalculatePath(candidate.transform.position, path) && path.status == NavMeshPathStatus.PathComplete)
+                {
+                    target = candidate;
+                    return true;
+                }
+            }
+            // 가까운 후보가 모두 막혔으면 나머지 중 닿는 것을 찾는다(예: 가까운 성벽 위 수비병은 막혔지만 무너진 틈 안쪽 수비병에게는 닿음).
+            if (reachableCandidates.Count < breachTargets)
+            {
+                float floor = reachableCandidates.WorstScore;
+                float best = float.PositiveInfinity;
+                for (int i = 0; i < enemies.Count; i++)
+                {
+                    CharacterActor candidate = enemies[i];
+                    if (!Actor.IsEnemy(candidate) || !IsBreachTarget(castle, candidate)) continue;
+                    float distance = (candidate.transform.position - here).sqrMagnitude;
+                    if (distance < floor || distance >= best) continue;
+                    bool alreadyChecked = false;
+                    for (int k = 0; k < reachableCandidates.Count; k++)
+                        if (ReferenceEquals(reachableCandidates[k], candidate)) { alreadyChecked = true; break; }
+                    if (alreadyChecked) continue;
+                    UnitCombatAI.Scheduler.RecordPathQuery(Time.frameCount);
+                    if (agent.CalculatePath(candidate.transform.position, path)
+                        && path.status == NavMeshPathStatus.PathComplete) { target = candidate; best = distance; }
+                }
+            }
+            if (target == null && ttl > 0f) ReachabilityCache.RecordNoBreach(navRev, ladderMask, actorRev, now, ttl);
+            return target != null;
         }
 
         int CurrentLadderMask()
@@ -655,35 +891,64 @@ namespace ProjectNeo.Siege
         void DecideArcher()
         {
             cover ??= settings.CreateArcherCoverPlan();
+            float now = Time.time;
             // 돌격·후퇴 등 다른 일을 하다 돌아왔으면 자리 판단을 처음부터 한다.
-            if (mode != Mode.Shooting) cover.Clear();
+            if (mode != Mode.Shooting)
+            {
+                cover.Clear();
+                archerIdleSince = -1f;
+                lastShotTarget = null;
+            }
             mode = Mode.Shooting;
             archerHasShot = false;
+            // 바깥에서 지원 사격하는 동안은 가려진 수비병을 쫓아 들어가지 않는다(SIEGE-15).
+            ai.SetHoldChaseSuppressed(true);
+            // 지금 자리에서 쏠 수 있는 적이 있으면 그대로 서서 쏜다. 사선 검사는 사거리 안의 가까운 몇 명만 한다(AI LOD 등급에 따라 4·2·1명).
             CharacterActor nearest = null;
             float nearestDistance = float.PositiveInfinity;
+            reachableCandidates.Reset(AILodRules.PathCandidateLimit(ai.LodTier, 4));
             foreach (CharacterActor candidate in CharacterActor.ActiveActors)
             {
                 if (!Actor.IsEnemy(candidate)) continue;
-                // 지금 자리에서 쏠 수 있는 적이 있으면 그대로 서서 쏜다.
-                if (CombatPhysics.IsInRange(Actor, candidate) && CombatPhysics.HasClearShot(Actor, candidate))
+                float distance = (candidate.transform.position - transform.position).sqrMagnitude;
+                if (distance < nearestDistance) { nearestDistance = distance; nearest = candidate; }
+                if (distance < reachableCandidates.WorstScore && CombatPhysics.IsInRange(Actor, candidate))
+                    reachableCandidates.TryAdd(candidate, distance);
+            }
+            for (int i = 0; i < reachableCandidates.Count; i++)
+            {
+                CharacterActor candidate = reachableCandidates[i];
+                if (!CombatPhysics.HasClearShot(Actor, candidate)) continue;
+                cover.Shooting();
+                archerHasShot = true;
+                archerIdleSince = -1f;
+                lastShotTarget = candidate;
+                if (ai.Directive != UnitDirective.Hold) ai.SetDirective(UnitDirective.Hold);
+                return;
+            }
+            // 마지막으로 쏘던 수비병이 재장전하느라 성가퀴 뒤에 웅크렸으면(COMBAT-10) 자리를 옮기지 않고 잠깐 겨눈 채 기다린다.
+            if (TargetDucked(lastShotTarget))
+            {
+                if (cover.TargetDucked(now))
                 {
-                    cover.Shooting();
-                    archerHasShot = true;
+                    archerIdleSince = -1f;
                     if (ai.Directive != UnitDirective.Hold) ai.SetDirective(UnitDirective.Hold);
                     return;
                 }
-                float distance = (candidate.transform.position - transform.position).sqrMagnitude;
-                if (distance >= nearestDistance) continue;
-                nearestDistance = distance;
-                nearest = candidate;
             }
+            else
+            {
+                cover.NoDuckedTarget();
+                lastShotTarget = null;
+            }
+            if (archerIdleSince < 0f) archerIdleSince = now;
             if (nearest == null) return;
-            // 가장 가까운 적을 사거리 안에 두는 성 바깥쪽 정면 자리.
+            // 가장 가까운 적을 사거리 안에 두는, 그 대상이 선 성벽 면의 바깥쪽 자리(SIEGE-15: 옆 성벽·보루도 정면에서 쏜다).
+            Vector3 normal = ApproachNormal(nearest);
             float range = Actor.Stats.GetValue(StatType.AttackRange) * settings.ArcherApproachRatio;
-            Vector3 point = nearest.transform.position + OutwardWorld * range;
+            Vector3 point = nearest.transform.position + normal * range;
             point.y = world.transform.position.y;
             if (!NavMesh.SamplePosition(point, out NavMeshHit hit, 4f, NavMesh.AllAreas)) return;
-            float now = Time.time;
 
             // 아직 사거리 밖이면 다가간다. 가려진 시간은 사거리 안에서만 잰다.
             if (!cover.HasSpot && !CombatPhysics.IsInRange(Actor, nearest))
@@ -700,10 +965,11 @@ namespace ProjectNeo.Siege
             }
             // 사거리 안에서 가려진 채 충분히 기다렸으면 옆 자리를 한 번 찾는다(성가퀴 솟은 부분 뒤의 수비병 등).
             // 한 프레임에 너무 많은 궁수가 동시에 옆자리 탐색(Raycast 다발)을 하지 않도록 프레임 예산을 확인한다(PERF-siege-ai-scale).
-            if (cover.ShouldSearch(now)
+            // 멀리 있는 궁수(AI LOD 2)는 옆자리 탐색을 하지 않고 정면 자리에서 기다린다(SIEGE-15).
+            if (cover.ShouldSearch(now) && ai.LodTier != AILodTier.Lod2
                 && ReachabilityCache.TryConsumeArcherSearchToken(Time.frameCount, settings.MaxArcherRepositionSearchesPerFrame))
             {
-                bool found = TryFindFiringPosition(hit.position, out Vector3 spot);
+                bool found = TryFindFiringPosition(hit.position, normal, out Vector3 spot);
                 cover.SearchResult(now, found);
                 if (found)
                 {
@@ -726,10 +992,10 @@ namespace ProjectNeo.Siege
         /// <summary>
         /// 정면 자리에서 성벽과 나란히 가까운 쪽부터 비켜선 후보 자리를 시험해, 사거리 안의 적이 하나라도 보이는 첫 자리를 고른다.
         /// </summary>
-        bool TryFindFiringPosition(Vector3 front, out Vector3 position)
+        bool TryFindFiringPosition(Vector3 front, Vector3 normal, out Vector3 position)
         {
             position = front;
-            Vector3 along = Vector3.Cross(Vector3.up, OutwardWorld).normalized;
+            Vector3 along = Vector3.Cross(Vector3.up, normal).normalized;
             for (int step = 1; step <= settings.ArcherSideStepCount; step++)
                 for (int side = -1; side <= 1; side += 2)
                 {
@@ -742,6 +1008,32 @@ namespace ProjectNeo.Siege
                     return true;
                 }
             return false;
+        }
+
+        /// <summary>
+        /// 마지막으로 쏘던 수비병이 살아 있고, 사거리 안에서 재장전하느라 웅크렸는지(COMBAT-10, SIEGE-15).
+        /// </summary>
+        bool TargetDucked(CharacterActor target) =>
+            target != null && target.isActiveAndEnabled && target.Health != null && !target.Health.IsDead
+            && Actor.IsEnemy(target) && target.IsCrouched && CombatPhysics.IsInRange(Actor, target);
+
+        /// <summary>
+        /// 궁수가 설 방향(대상에서 바깥쪽, 월드 단위 벡터). 대상 칸의 바깥으로 열린 면 중 궁수 쪽을 가장 많이 향한 면의 법선,
+        /// 없으면 성 중심에서 대상 쪽(궁수 쪽일 때만), 아니면 대상에서 궁수 쪽(SIEGE-15).
+        /// </summary>
+        Vector3 ApproachNormal(CharacterActor target)
+        {
+            CastleFootprint castle = Footprint();
+            if (castle == null) return OutwardWorld;
+            Vector3 targetLocal = world.LocalPoint(target.transform.position);
+            Vector3 archerLocal = world.LocalPoint(transform.position);
+            int faces = castle.OutwardFaceMask(world.Layout, world.Layout.WorldToCell(targetLocal));
+            Vector2 direction = ArcherApproachRules.ApproachDirection(faces,
+                new Vector2(targetLocal.x, targetLocal.z), new Vector2(archerLocal.x, archerLocal.z),
+                castle.Center, castle.HasCastle, new Vector2(outward.x, outward.y));
+            Vector3 normal = world.transform.TransformDirection(new Vector3(direction.x, 0f, direction.y));
+            normal.y = 0f;
+            return normal.sqrMagnitude > 0.0001f ? normal.normalized : OutwardWorld;
         }
 
         bool CanShootFrom(Vector3 standPoint)

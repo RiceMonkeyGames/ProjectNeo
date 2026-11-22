@@ -17,6 +17,11 @@ namespace ProjectNeo.Siege
         public abstract bool HasDecided { get; }
         /// <summary>아군과 직접 싸우는 중인지.</summary>
         public abstract bool IsAssaulting { get; }
+        /// <summary>
+        /// 성 안으로 들어갈 길을 쓰고 있는지. 돌격 중이거나, 돌파구를 보고 바깥에서 지원하는 중이다(SIEGE-15 궁수).
+        /// 공성 수단을 잃었는지(후퇴) 볼 때 쓴다. 기본은 <see cref="IsAssaulting"/>과 같다.
+        /// </summary>
+        public virtual bool HasEntryRoute => IsAssaulting;
         public abstract bool IsRetreating { get; }
         /// <summary>후퇴해 전장을 떠났다. 승패에서는 죽은 적과 같이 남은 적 수에서 뺀다.</summary>
         public bool Fled { get; protected set; }
