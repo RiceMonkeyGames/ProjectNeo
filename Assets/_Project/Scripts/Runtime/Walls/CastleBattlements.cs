@@ -23,6 +23,8 @@ namespace ProjectNeo.Walls
             public GameObject Root;
             public int Signature;
             public bool UnderConstruction;
+            /// <summary>이 성가퀴만 쓰는 외형 메쉬(성 좌표 UV, ART-06). 성가퀴를 걷을 때 함께 지운다.</summary>
+            public readonly List<Mesh> Meshes = new List<Mesh>();
         }
 
         readonly Dictionary<PlacedStructure, Built> built = new Dictionary<PlacedStructure, Built>();
@@ -251,13 +253,16 @@ namespace ProjectNeo.Walls
                 if (signature == entry.Signature && (entry.Root != null) == (signature != 0)) continue;
                 changed |= Discard(entry);
                 entry.Signature = signature;
-                if (signature != 0) { entry.Root = Build(structure); changed = true; }
+                if (signature != 0) { entry.Root = Build(structure, entry); changed = true; }
             }
             if (changed && requestNavigation) world.RequestNavigationRebuild();
         }
 
         static bool Discard(Built entry)
         {
+            // 조각이 먼저 파괴돼 뿌리가 이미 없어도 메쉬는 남으므로 먼저 지운다.
+            foreach (Mesh mesh in entry.Meshes) if (mesh != null) Destroy(mesh);
+            entry.Meshes.Clear();
             if (entry.Root == null) return false;
             // 파괴는 프레임 끝이라, 그 전에 길찾기 수집과 충돌에서 바로 빠지도록 끈다.
             entry.Root.SetActive(false);
@@ -313,7 +318,7 @@ namespace ProjectNeo.Walls
             return top != null && face >= 0 && face < 4 && (GunPortFaces(top) & FacesAt(cell) & (1 << face)) != 0;
         }
 
-        GameObject Build(PlacedStructure structure)
+        GameObject Build(PlacedStructure structure, Built entry)
         {
             BuildPlacement placement = structure.Placement;
             Material material = settings.Material != null ? settings.Material : WallMaterial(structure);
@@ -336,14 +341,14 @@ namespace ProjectNeo.Walls
                         if ((faces & (1 << face)) == 0) continue;
                         BattlementRules.Segments(StyleFor(placement, face), settings, size, segments);
                         foreach (BattlementSegment segment in segments)
-                            AddSegment(root.transform, material, cell, face, segment, size, surface, thickness);
+                            AddSegment(root.transform, material, cell, face, segment, size, surface, thickness, entry);
                     }
                 }
             return root;
         }
 
         void AddSegment(Transform root, Material material, Vector2Int cell, int face, BattlementSegment segment,
-            float size, float surface, float thickness)
+            float size, float surface, float thickness, Built entry)
         {
             float minX = cell.x * size, minZ = cell.y * size;
             float along = segment.Start + segment.Length * 0.5f;
@@ -371,7 +376,15 @@ namespace ProjectNeo.Walls
 
             var visual = new GameObject("Visual");
             visual.transform.SetParent(part.transform, false);
-            visual.AddComponent<MeshFilter>().sharedMesh = Cube();
+            // 돌 텍스처가 조각 크기에 따라 늘어나지 않게, 반복 길이가 있으면 성 좌표에 맞춘 UV 상자를 쓴다(ART-06).
+            // 난간과 솟은 부분, 모서리의 두 면은 같은 평면에서 겹치므로, 위치 기준 UV라야 무늬가 같아 깜빡이지 않는다.
+            Mesh mesh = Cube();
+            if (settings.TextureTileMeters > 0f)
+            {
+                mesh = TiledBoxMesh.Build(dimensions, settings.TextureTileMeters, local);
+                entry.Meshes.Add(mesh);
+            }
+            visual.AddComponent<MeshFilter>().sharedMesh = mesh;
             var renderer = visual.AddComponent<MeshRenderer>();
             if (material != null) renderer.sharedMaterial = material;
         }
@@ -394,8 +407,7 @@ namespace ProjectNeo.Walls
         void OnDestroy()
         {
             Unsubscribe();
-            foreach (Built entry in built.Values)
-                if (entry.Root != null) Destroy(entry.Root);
+            foreach (Built entry in built.Values) Discard(entry);
             built.Clear();
         }
     }
