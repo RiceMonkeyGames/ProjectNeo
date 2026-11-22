@@ -1,9 +1,9 @@
 ---
 id: COMBAT-14
 title: Ranged Target Priority, Melee-Threat Response & Hold Facing Restore
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: SeongminHwang
+branch: feature/combat-14
 area: COMBAT
 depends_on: []
 created: 2026-11-22
