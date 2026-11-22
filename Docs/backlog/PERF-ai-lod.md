@@ -1,9 +1,9 @@
 ---
 id: PERF-ai-lod
 title: 3-Tier Distance & Visibility AI LOD for 200v200 Battles
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: 신용준
+branch: feature/perf-ai-lod
 area: PERF
 depends_on: [PERF-ai-query-budget, PERF-ai-spatial-grid]
 created: 2026-11-22
