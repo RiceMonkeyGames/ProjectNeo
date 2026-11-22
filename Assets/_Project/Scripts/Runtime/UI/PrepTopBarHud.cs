@@ -17,6 +17,10 @@ namespace ProjectNeo.UI
         [SerializeField] GameObject content;
         [SerializeField] TMP_Text stageLabel;
         [SerializeField] TMP_Text resourcesLabel;
+        [Tooltip("깃발 옆 큰 제목(UI-06 A안, \"스테이지 N\"). 비어 있으면 단계 줄만 쓴다.")]
+        [SerializeField] TMP_Text stageTitle;
+        [Tooltip("동전 아이콘 옆 골드 숫자(UI-06 A안). 있으면 자원 줄에는 재료만 적는다.")]
+        [SerializeField] TMP_Text goldLabel;
         [Tooltip("준비 중에는 숨기는 기존 단계 상자(GameFlowHud Panel).")]
         [SerializeField] GameObject phaseBox;
         [Tooltip("열려 있는 동안 자원 바를 숨기는 화면(부대 편성 창).")]
@@ -36,6 +40,16 @@ namespace ProjectNeo.UI
             phaseBox = phasePanel; hideWhileOpen = hidden ?? new GameObject[0];
         }
 
+        public string StageTitleText => stageTitle != null ? stageTitle.text : string.Empty;
+
+        /// <summary>깃발 옆 큰 제목을 붙인다(UI-06 A안).</summary>
+        public void ConfigureTitle(TMP_Text title) => stageTitle = title;
+
+        public string GoldText => goldLabel != null ? goldLabel.text : string.Empty;
+
+        /// <summary>골드 숫자를 따로 보여 준다(UI-06 A안). 자원 줄에는 재료만 남는다.</summary>
+        public void ConfigureGold(TMP_Text gold) => goldLabel = gold;
+
         bool Covered()
         {
             foreach (GameObject window in hideWhileOpen)
@@ -54,11 +68,16 @@ namespace ProjectNeo.UI
             if (content.activeSelf != show) content.SetActive(show);
             if (!show) return;
             if (stageLabel != null) stageLabel.text = PrepHudText.StageLine(flow.Run.StageNumber, flow.Run.AscensionLevel);
+            if (stageTitle != null) stageTitle.text = PrepHudText.StageTitle(flow.Run.StageNumber);
             if (resourcesLabel == null) return;
             materials.Clear();
             foreach (KeyValuePair<MaterialDefinition, int> entry in state.Wallet.Materials)
                 if (entry.Key != null) materials.Add(new KeyValuePair<string, int>(entry.Key.DisplayName, entry.Value));
-            resourcesLabel.text = PrepHudText.Resources(state.Wallet.Gold, materials);
+            if (goldLabel == null) { resourcesLabel.text = PrepHudText.Resources(state.Wallet.Gold, materials); return; }
+            goldLabel.text = PrepHudText.Gold(state.Wallet.Gold);
+            string materialLine = PrepHudText.Materials(materials);
+            resourcesLabel.text = materialLine;
+            if (resourcesLabel.gameObject.activeSelf != materialLine.Length > 0) resourcesLabel.gameObject.SetActive(materialLine.Length > 0);
         }
 
         void OnDisable()

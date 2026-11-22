@@ -70,7 +70,8 @@ namespace ProjectNeo.Tests
             Assert.IsTrue(bar.IsShowing);
             Assert.IsFalse(hud.transform.Find("Panel").gameObject.activeSelf, "준비 중에는 단계 상자 대신 자원 바가 보인다.");
             StringAssert.StartsWith("준비 · 스테이지 1", bar.StageText);
-            StringAssert.StartsWith($"골드 {state.Wallet.Gold}", bar.ResourcesText);
+            Assert.AreEqual(PrepHudText.Gold(state.Wallet.Gold), bar.GoldText, "골드는 동전 아이콘 옆 숫자로 따로 보인다.");
+            Assert.AreEqual("스테이지 1", bar.StageTitleText);
 
             Assert.IsTrue(cards.IsShowing);
             Assert.IsFalse(list.ListVisible, "준비 중에는 분대 카드가 시험용 분대 목록을 대신한다.");
@@ -124,8 +125,10 @@ namespace ProjectNeo.Tests
                 yield return null;
                 Assert.IsTrue(keys.IsShowing, "H를 누르면 전체 키 목록이 열린다.");
                 foreach (string line in new[] { "WASD - 이동", $"{interaction.InteractKey} - 상호작용", $"{interaction.EquipmentKey} - 장비",
-                    $"{interaction.EnemyPreviewKey} - 적 정보", "부대 선택", $"{interaction.KeyListKey} - 키 안내 닫기" })
+                    $"{interaction.EnemyPreviewKey} - 적 정보", "부대 선택" })
                     StringAssert.Contains(line, keys.Body);
+                StringAssert.DoesNotContain($"{interaction.KeyListKey} - ", keys.Body, "H는 아래 안내 줄에 있으므로 목록에서 뺀다.");
+                Assert.AreEqual($"{interaction.KeyListKey} 키 안내 닫기", keys.HintText);
                 Assert.IsTrue(interaction.CanStartBattle, "목록은 화면을 막지 않는다.");
 
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.H));

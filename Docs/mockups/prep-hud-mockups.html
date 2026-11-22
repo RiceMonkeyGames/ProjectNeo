@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>준비 HUD 시안</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Grenze:wght@500;600;700&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1F2B2E; --navy:#16222b; --navy2:#1d2f3c; --panel:rgba(20,30,38,.84);
+  --gold:#E3BB71; --gold-d:#a4783f; --gold-dd:#6e4e25; --parch:#F4C66C; --cream:#F2EAD8;
+  --muted:#A9B8C2; --danger:#D98A7A; --red:#c9363a; --red2:#e0534f; --blue:#2f8fd6; --blue2:#59b6f0;
+  --green:#4fae6a; --amber:#e0a63a;
+  --f:'Grenze','Noto Sans KR',serif; --k:'Noto Sans KR',sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#0c1216;color:var(--cream);font-family:var(--k)}
+.top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 16px;background:#111a20;border-bottom:1px solid #2a3a44}
+.top h1{font:700 18px var(--f);color:var(--gold);margin:0 12px 0 0;letter-spacing:.5px}
+.tab{font:700 14px var(--k);color:var(--muted);background:#18242c;border:1px solid #33444f;border-radius:6px;padding:7px 12px;cursor:pointer}
+.tab.on{color:var(--ink);background:var(--parch);border-color:var(--gold)}
+.ctl{font:500 13px var(--k);color:var(--cream);background:#1b2a33;border:1px solid #3a4c58;border-radius:6px;padding:6px 10px;cursor:pointer}
+.ctl:hover{border-color:var(--gold)}
+.sep{width:1px;height:22px;background:#2f3f49;margin:0 4px}
+.desc{padding:8px 16px 0;color:var(--muted);font-size:13px;line-height:1.6;max-width:1400px}
+.desc b{color:var(--gold)}
+.wrap{padding:10px 16px 16px}
+.viewport{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;border:1px solid #2a3a44;border-radius:6px;background:#000}
+.stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0}
+
+/* ---------- scene backdrop (stand-in for the game view) ---------- */
+.scene{position:absolute;inset:0}
+.scene svg{width:100%;height:100%;display:block}
+
+/* ---------- shared pieces ---------- */
+.abs{position:absolute}
+.gold{color:var(--gold)}
+.title{font:700 64px var(--f);color:var(--gold);text-shadow:0 3px 0 rgba(0,0,0,.45),0 0 18px rgba(0,0,0,.35);letter-spacing:1px}
+.sub{font:700 22px var(--k);color:var(--cream);text-shadow:0 2px 3px rgba(0,0,0,.7)}
+.txt{font:700 20px var(--k);color:var(--cream);text-shadow:0 2px 3px rgba(0,0,0,.75)}
+.num{font-family:var(--f);font-weight:700}
+.frame{background:var(--panel);border:2px solid var(--gold-d);box-shadow:inset 0 0 0 3px rgba(0,0,0,.35),inset 0 0 0 4px rgba(227,187,113,.25),0 6px 18px rgba(0,0,0,.45)}
+.frame.corner:not(.abs){position:relative}
+.frame.corner::before,.frame.corner::after{content:"";position:absolute;width:14px;height:14px;background:var(--gold);transform:rotate(45deg);top:-8px;left:calc(50% - 7px);box-shadow:0 0 0 2px var(--ink)}
+.frame.corner::after{top:auto;bottom:-8px}
+.chip{display:inline-flex;align-items:center;gap:10px;padding:6px 16px;background:linear-gradient(#22343f,#172530);border:2px solid var(--gold-d);clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 50%,calc(100% - 12px) 100%,12px 100%,0 50%)}
+.key{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:30px;padding:0 6px;background:linear-gradient(#f7d98f,#e6b45a);color:var(--ink);font:900 17px var(--k);border-radius:3px;box-shadow:inset 0 -3px 0 rgba(0,0,0,.25),0 0 0 2px var(--gold-dd)}
+.key.sm{min-width:24px;height:24px;font-size:14px}
+.diamond{width:44px;height:44px;transform:rotate(45deg);background:linear-gradient(135deg,#2a4a66,#152634);border:3px solid var(--gold);box-shadow:0 0 0 2px var(--ink),0 3px 8px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center}
+.diamond > *{transform:rotate(-45deg)}
+.bar{position:relative;height:22px;background:#0d151b;border:2px solid var(--gold-d);clip-path:polygon(0 0,calc(100% - 14px) 0,100% 50%,calc(100% - 14px) 100%,0 100%);box-shadow:inset 0 2px 4px rgba(0,0,0,.6)}
+.bar > i{position:absolute;left:0;top:0;bottom:0;display:block;transition:width .25s}
+.bar > i::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(115deg,rgba(255,255,255,.18) 0 6px,transparent 6px 30px)}
+.bar .lab{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:700 15px var(--f);color:#fff;text-shadow:0 1px 2px #000}
+.fill-red{background:linear-gradient(#e85a55,#a92a2e)}
+.fill-blue{background:linear-gradient(#63bdf5,#2273b8)}
+.fill-gold{background:linear-gradient(#f6d384,#c38a33)}
+.fill-green{background:linear-gradient(#78d08f,#2f8d4c)}
+.fill-amber{background:linear-gradient(#f3c158,#b9781d)}
+.m-low{background:linear-gradient(#e85a55,#a92a2e)} .m-normal{background:linear-gradient(#63bdf5,#2273b8)} .m-high{background:linear-gradient(#f6d384,#c38a33)}
+.crosshair{position:absolute;left:960px;top:540px;transform:translate(-50%,-50%)}
+.prompt{position:absolute;left:960px;top:600px;transform:translateX(-50%);display:flex;align-items:center;gap:12px;padding:8px 22px 8px 10px;background:rgba(18,27,34,.86);border:2px solid var(--gold-d)}
+.prompt .txt{font-size:21px}
+.list-row{display:flex;align-items:center;gap:12px;font:700 20px var(--k);color:var(--cream);text-shadow:0 2px 3px rgba(0,0,0,.75)}
+.hourglass{width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.fade{transition:opacity .2s}
+.hidden{opacity:0;pointer-events:none}
+.note{position:absolute;padding:4px 10px;font:500 13px var(--k);color:#0c1216;background:#f4c66c;border-radius:3px;opacity:.0}
+.show-notes .note{opacity:.92}
+.legend{margin-top:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:6px 18px;font-size:13px;color:var(--muted)}
+.legend b{color:var(--cream)}
+@media (max-width:700px){.top h1{width:100%}}
+</style>
+</head>
+<body>
+<div class="top">
+  <h1>준비 HUD 시안 · Fantasy Warrior</h1>
+  <button class="tab on" data-opt="A">A · 모험가형</button>
+  <button class="tab" data-opt="B">B · 지휘관형</button>
+  <button class="tab" data-opt="C">C · 미니멀형</button>
+  <span class="sep"></span>
+  <button class="ctl" id="bV">V 적 정보</button>
+  <button class="ctl" id="bH">H 키 안내</button>
+  <button class="ctl" id="bF">F 상호작용 대상</button>
+  <button class="ctl" id="bSel">F1~F4 분대 선택</button>
+  <button class="ctl" id="bMor">사기 붕괴 보기</button>
+  <button class="ctl" id="bClock">시간 줄이기</button>
+  <button class="ctl" id="bNote">구역 이름 보기</button>
+</div>
+<div class="desc" id="desc"></div>
+<div class="wrap">
+  <div class="viewport" id="vp">
+    <div class="stage" id="stage">
+      <div class="scene" id="scene"></div>
+      <div id="hud"></div>
+    </div>
+  </div>
+  <div class="legend">
+    <div><b>V</b> 적 정보 창 열고 닫기</div>
+    <div><b>H</b> 전체 키 안내 열고 닫기</div>
+    <div><b>B 길게</b> 전투 시작 게이지 · <b>T 길게</b> 시간 기다리기</div>
+    <div><b>F1~F4</b> 분대 선택 · <b>`</b> 전체 선택</div>
+    <div><b>F</b> 조준점 아래 상호작용 안내 켜고 끄기</div>
+    <div>배경은 게임 화면 대신 그린 자리표시예요. 실제 구현은 Synty 스프라이트를 써요.</div>
+  </div>
+</div>
+
+<script>
+/* ---------------- state (mirrors what the real HUD reads) ---------------- */
+const S = {
+  opt:'A', stage:2, ascension:1,
+  clock:{remaining:7, budget:12},
+  gold:1250, materials:[['목재',40],['석재',25],['철',6]],
+  hp:{cur:87,max:120},
+  squads:[
+    {name:'1분대 · 창병',alive:8,cap:10,morale:120,max:150,state:'정상'},
+    {name:'2분대 · 궁수',alive:6,cap:8,morale:74,max:150,state:'정상'},
+    {name:'3분대 · 방패병',alive:10,cap:10,morale:138,max:150,state:'정상'},
+    {name:'4분대 · 기병',alive:3,cap:6,morale:52,max:150,state:'정상'},
+  ],
+  breaking:40, high:120,
+  selected:[0], previewOpen:false, keyListOpen:false, target:true,
+  startHold:0, waitHold:0, waitHours:2, message:'1분대 선택',
+  enemies:[['고블린 창병',12],['고블린 궁수',6],['오크 전사',4],['?',5]],
+  notes:false,
+};
+const KEYS=[['WASD','이동'],['F','상호작용'],['I','장비'],['O','부대 편성'],['P','부대 배치 화면'],['V','적 정보'],
+  ['F1~F4 · `','부대 선택 · 전체 선택'],['1','부대 이동'],['2','부대 공격'],['3','부대 정지'],
+  ['B','길게 누르기 - 전투 시작'],['T','길게 누르기 - 2시간 기다리기'],['H','키 안내 닫기']];
+
+const band = m => m.morale<=S.breaking?'low':(m.morale>=S.high?'high':'normal');
+const pct = (v,m) => Math.max(0,Math.min(100,m>0?v/m*100:0));
+const stageLine = () => `준비 · 스테이지 ${S.stage}` + (S.ascension>0?` · 승천 ${S.ascension}`:'');
+const clockText = () => `준비 시간 ${S.clock.remaining}시간 남음 / ${S.clock.budget}시간` + (S.clock.remaining<=0?' - 시간 없음':'');
+const moraleLine = m => `사기 ${m.morale}` + (m.state!=='정상'?` · ${m.state}`:'');
+const isSel = i => S.selected.includes(i);
+const fmt = n => n.toLocaleString('en-US');
+
+/* ---------------- small SVG pieces ---------------- */
+const coin = (s=30)=>`<svg width="${s}" height="${s}" viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" fill="#e9b949" stroke="#7a5218" stroke-width="3"/><circle cx="16" cy="16" r="7.5" fill="none" stroke="#7a5218" stroke-width="2.2"/><path d="M16 10v12M12 16h8" stroke="#7a5218" stroke-width="2"/></svg>`;
+const matIcon = (n,s=28)=>{
+  if(n==='목재') return `<svg width="${s}" height="${s}" viewBox="0 0 32 32"><rect x="4" y="9" width="24" height="7" rx="3.5" fill="#b7793d" stroke="#4d2f12" stroke-width="2"/><rect x="4" y="18" width="24" height="7" rx="3.5" fill="#a66a30" stroke="#4d2f12" stroke-width="2"/><circle cx="25" cy="12.5" r="2" fill="#e3b77e"/><circle cx="25" cy="21.5" r="2" fill="#e3b77e"/></svg>`;
+  if(n==='석재') return `<svg width="${s}" height="${s}" viewBox="0 0 32 32"><path d="M5 22 9 11l9-4 9 7-2 10-12 2z" fill="#9aa6ad" stroke="#38434a" stroke-width="2"/><path d="M9 11l5 6 4-10M14 17l-1 9M14 17l11-3" stroke="#38434a" stroke-width="1.5" fill="none"/></svg>`;
+  return `<svg width="${s}" height="${s}" viewBox="0 0 32 32"><path d="M4 20h24l-3-8H7z" fill="#7e8f9c" stroke="#2b343a" stroke-width="2"/><path d="M4 20h24v4H4z" fill="#5d6c77" stroke="#2b343a" stroke-width="2"/></svg>`;
+};
+const crest = (i,s=70)=>{
+  const c=['#2f6fb0','#3a8a4f','#a8402f','#7a4fa6'][i];
+  const glyph=['<path d="M32 14v34M24 22l8-8 8 8" stroke="#f2ead8" stroke-width="4" fill="none" stroke-linecap="round"/>',
+    '<path d="M22 46c14-6 20-18 20-32M22 14c2 14 8 26 20 32M18 30h28" stroke="#f2ead8" stroke-width="3.5" fill="none" stroke-linecap="round"/>',
+    '<path d="M32 15 45 20v10c0 9-6 15-13 18-7-3-13-9-13-18V20z" fill="none" stroke="#f2ead8" stroke-width="4"/>',
+    '<path d="M18 44 30 18l8 10 8-6-6 22z" fill="none" stroke="#f2ead8" stroke-width="3.5" stroke-linejoin="round"/>'][i];
+  return `<svg width="${s}" height="${s}" viewBox="0 0 64 64"><defs><linearGradient id="cg${i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c}"/><stop offset="1" stop-color="#101a22"/></linearGradient></defs><rect x="2" y="2" width="60" height="60" fill="url(#cg${i})"/><path d="M2 2 32 20 62 2M2 62 32 44 62 62" stroke="rgba(255,255,255,.08)" stroke-width="3" fill="none"/>${glyph}</svg>`;
+};
+const enemyIcon = (n,s=34)=>{
+  if(n==='?') return `<svg width="${s}" height="${s}" viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" fill="#2a3640" stroke="#a4783f" stroke-width="2"/><text x="16" y="22" text-anchor="middle" font-family="Grenze" font-weight="700" font-size="18" fill="#E3BB71">?</text></svg>`;
+  const col = n.includes('오크')?'#6f8d3a':'#8aa24a';
+  return `<svg width="${s}" height="${s}" viewBox="0 0 32 32"><path d="M5 12 9 4l3 6h8l3-6 4 8v8c0 6-5 9-11 9S5 26 5 20z" fill="${col}" stroke="#2b3317" stroke-width="2"/><circle cx="12" cy="17" r="2" fill="#f4d35e"/><circle cx="20" cy="17" r="2" fill="#f4d35e"/><path d="M12 23h8" stroke="#2b3317" stroke-width="2"/></svg>`;
+};
+const skull = (s=40)=>`<svg width="${s}" height="${s}" viewBox="0 0 48 48"><path d="M8 12 4 4l10 5M40 12l4-8-10 5" stroke="#d8dde0" stroke-width="3" fill="none"/><path d="M24 8c-9 0-15 6-15 14 0 5 3 8 5 9v6h20v-6c2-1 5-4 5-9 0-8-6-14-15-14z" fill="#d8dde0" stroke="#30383d" stroke-width="2"/><circle cx="18" cy="23" r="4" fill="#9b2124"/><circle cx="30" cy="23" r="4" fill="#9b2124"/></svg>`;
+const hourglassSvg = (s=34)=>`<svg width="${s}" height="${s}" viewBox="0 0 32 32"><path d="M9 4h14M9 28h14M10 4c0 8 12 8 12 12s-12 4-12 12M22 4c0 8-12 8-12 12s12 4 12 12" stroke="#E3BB71" stroke-width="2.4" fill="none"/><path d="M13 25h6l-3-4z" fill="#E3BB71"/></svg>`;
+const ring = (p,s=64,c='#E3BB71',inner='')=>{
+  const r=s/2-5, C=2*Math.PI*r;
+  return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}"><circle cx="${s/2}" cy="${s/2}" r="${r}" fill="rgba(13,21,27,.85)" stroke="#5a4222" stroke-width="5"/><circle cx="${s/2}" cy="${s/2}" r="${r}" fill="none" stroke="${c}" stroke-width="5" stroke-dasharray="${C*p} ${C}" transform="rotate(-90 ${s/2} ${s/2})" stroke-linecap="butt"/></svg>${inner}`;
+};
+const crossDot = `<svg width="46" height="46" viewBox="0 0 46 46"><circle cx="23" cy="23" r="15" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="2.5" stroke-dasharray="20 4.5"/><circle cx="23" cy="23" r="2.6" fill="#fff"/></svg>`;
+const crossBrackets = `<svg width="46" height="46" viewBox="0 0 46 46" fill="none" stroke="#fff" stroke-width="3"><path d="M4 14V4h10M32 4h10v10M42 32v10H32M14 42H4V32"/></svg>`;
+const pennant = `<svg width="110" height="200" viewBox="0 0 110 200"><path d="M55 4 70 22 92 18 80 38 55 48 30 38 18 18 40 22z" fill="#cfd6e0" stroke="#5c6774" stroke-width="2"/><path d="M22 48h66v104L55 186 22 152z" fill="#2c4f86" stroke="#E3BB71" stroke-width="5"/><path d="M30 56h50v90L55 172 30 146z" fill="none" stroke="rgba(227,187,113,.45)" stroke-width="2"/><path d="M55 74 67 96 55 130 43 96z" fill="#E3BB71"/><circle cx="55" cy="40" r="14" fill="#9aa6b2" stroke="#3c4650" stroke-width="2"/><circle cx="50" cy="38" r="2.4" fill="#f4d35e"/><circle cx="60" cy="38" r="2.4" fill="#f4d35e"/></svg>`;
+const flourishH = (w=460)=>`<svg width="${w}" height="40" viewBox="0 0 460 40"><path d="M10 20h170M280 20h170" stroke="#a4783f" stroke-width="3"/><path d="M230 4 246 20 230 36 214 20z" fill="#2a4a66" stroke="#E3BB71" stroke-width="3"/><path d="M180 20c12-14 26-14 34 0M280 20c-12-14-26-14-34 0" stroke="#E3BB71" stroke-width="3" fill="none"/><path d="M0 20 10 14 10 26zM460 20 450 14 450 26z" fill="#E3BB71"/></svg>`;
+
+/* ---------------- backdrop (placeholder game view) ---------------- */
+document.getElementById('scene').innerHTML = `
+<svg viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+ <defs>
+  <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3f8fd8"/><stop offset=".55" stop-color="#a6d3ee"/><stop offset="1" stop-color="#e9e2c8"/></linearGradient>
+  <linearGradient id="grass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8cb64a"/><stop offset="1" stop-color="#4c7a2a"/></linearGradient>
+  <linearGradient id="stone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c7bda8"/><stop offset="1" stop-color="#8f8572"/></linearGradient>
+ </defs>
+ <rect width="1920" height="1080" fill="url(#sky)"/>
+ <g fill="#fff" opacity=".8"><ellipse cx="380" cy="190" rx="170" ry="26"/><ellipse cx="1350" cy="140" rx="220" ry="30"/><ellipse cx="1620" cy="260" rx="140" ry="20"/></g>
+ <path d="M0 560 220 360 420 520 640 330 860 520 1060 380 1300 540 1520 350 1740 500 1920 400V700H0z" fill="#8ca7bd"/>
+ <path d="M220 360 260 410 200 420zM640 330 690 390 610 395zM1520 350 1570 410 1490 415z" fill="#fff"/>
+ <path d="M0 640 300 560 640 620 980 560 1340 620 1680 560 1920 610V1080H0z" fill="#6f9a3a"/>
+ <!-- castle wall ahead -->
+ <g>
+  <rect x="520" y="440" width="880" height="230" fill="url(#stone)" stroke="#5f5646" stroke-width="3"/>
+  <g fill="url(#stone)" stroke="#5f5646" stroke-width="3">
+   ${Array.from({length:15},(_,i)=>`<rect x="${520+i*60}" y="410" width="36" height="34"/>`).join('')}
+  </g>
+  <rect x="440" y="330" width="130" height="340" fill="url(#stone)" stroke="#5f5646" stroke-width="3"/>
+  <rect x="1350" y="330" width="130" height="340" fill="url(#stone)" stroke="#5f5646" stroke-width="3"/>
+  <path d="M430 330 505 240 580 330zM1340 330 1415 240 1490 330z" fill="#3e5f86" stroke="#26384f" stroke-width="3"/>
+  <path d="M880 670V560c0-50 160-50 160 0V670z" fill="#4a3424" stroke="#2b1d12" stroke-width="4"/>
+  <path d="M505 240V200l40 12-40 12" fill="#c33" stroke="#611" stroke-width="2"/>
+  <g stroke="#7c7262" stroke-width="2" opacity=".55">${Array.from({length:8},(_,r)=>`<path d="M520 ${470+r*26}h880"/>`).join('')}</g>
+ </g>
+ <path d="M0 760 400 700 960 740 1500 690 1920 740V1080H0z" fill="url(#grass)"/>
+ <path d="M760 1080 900 760h120l140 320z" fill="#c9a56e" opacity=".85"/>
+ <g fill="#3f6a22">${Array.from({length:40},(_,i)=>{const x=(i*97)%1920,y=820+(i*53)%240;return `<path d="M${x} ${y} l8 -34 l8 34z"/>`}).join('')}</g>
+ <!-- first-person weapon -->
+ <path d="M1500 1080 1610 700 1650 706 1600 1080z" fill="#b9c3c9" stroke="#59646b" stroke-width="4"/>
+ <path d="M1520 900h170l-10 34h-170z" fill="#6b4a2a" stroke="#2e1f10" stroke-width="4"/>
+</svg>`;
+
+/* ---------------- shared widgets ---------------- */
+function keyListPanel(x,y,w){
+  return `<div class="abs frame corner fade ${S.keyListOpen?'':'hidden'}" style="left:${x}px;top:${y}px;width:${w}px;padding:26px 30px 24px">
+    <div style="font:700 30px var(--f);color:var(--gold);margin-bottom:6px;text-align:center">키 안내</div>
+    <div style="height:2px;background:linear-gradient(90deg,transparent,var(--gold-d),transparent);margin-bottom:14px"></div>
+    ${KEYS.map(([k,a])=>`<div class="list-row" style="font-size:18px;margin:5px 0"><span class="key sm" style="min-width:${k.length>2?64:26}px">${k}</span><span>${a}</span></div>`).join('')}
+  </div>`;
+}
+function prompt(){
+  return `<div class="prompt fade ${S.target?'':'hidden'}"><span class="key">F</span><span class="txt">상점 - 사용</span></div>`;
+}
+function holdText(){
+  const s = S.startHold>0?` · ${Math.floor(S.startHold*100)}%`:'';
+  return `B 길게 누르기 - 전투 시작${s}`;
+}
+function waitText(){
+  const s = S.waitHold>0?` · ${Math.floor(S.waitHold*100)}%`:'';
+  return `T 길게 누르기 - ${S.waitHours}시간 기다리기${s}`;
+}
+function noteAt(x,y,t){return `<div class="note" style="left:${x}px;top:${y}px">${t}</div>`}
+
+/* ================= OPTION A : 모험가형 (06 Adventure01) ================= */
+function renderA(){
+  const sq = S.squads.map((m,i)=>`
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+      <div style="position:relative;width:96px;height:104px;border:3px solid ${isSel(i)?'#f6d384':'#a4783f'};box-shadow:0 0 0 2px #1F2B2E${isSel(i)?',0 0 18px rgba(246,211,132,.75)':''};background:#101a22">
+        ${crest(i,90)}
+        <div style="position:absolute;left:-3px;right:-3px;bottom:-3px;height:30px;background:linear-gradient(#b4302f,#7d1c1f);border-top:2px solid #E3BB71;display:flex;align-items:center;justify-content:center" class="num"><span style="font-size:20px;color:#fff;text-shadow:0 1px 2px #000">${m.alive}/${m.cap}</span></div>
+        <div style="position:absolute;left:-12px;top:40px;width:14px;height:14px;transform:rotate(45deg);background:#E3BB71;box-shadow:0 0 0 2px #1F2B2E"></div>
+        <div class="num" style="position:absolute;right:-2px;top:-2px;background:#1F2B2E;border:2px solid #a4783f;color:#E3BB71;font-size:15px;padding:0 6px">F${i+1}</div>
+      </div>
+      <div style="width:250px">
+        <div class="txt" style="font-size:19px;color:${isSel(i)?'#f6d384':'#F2EAD8'}">${m.name}</div>
+        <div class="bar" style="height:18px;margin-top:6px;width:240px"><i class="m-${band(m)}" style="width:${pct(m.morale,m.max)}%"></i></div>
+        <div class="txt" style="font-size:16px;margin-top:4px;color:${band(m)==='low'?'#ff9b8a':'#A9B8C2'}">${moraleLine(m)}</div>
+      </div>
+    </div>`).join('');
+  return `
+  ${noteAt(30,20,'단계 배너')}${noteAt(700,20,'준비 시간 리본')}${noteAt(1560,20,'자원')}${noteAt(30,300,'분대 카드')}${noteAt(1440,250,'적 정보 (V)')}${noteAt(240,890,'플레이어 HP')}${noteAt(860,880,'전투 시작 판')}${noteAt(1700,960,'키 안내 (H)')}
+  <div class="abs" style="left:40px;top:14px">${pennant}</div>
+  <div class="abs" style="left:160px;top:36px">
+    <div class="title">스테이지 ${S.stage}</div>
+    <div class="sub" style="margin-top:2px;color:#E3BB71">${stageLine()}</div>
+  </div>
+
+  <!-- prep clock as compass ribbon -->
+  <div class="abs" style="left:620px;top:30px;width:680px">
+    <svg class="abs" style="left:300px;top:-26px" width="80" height="40" viewBox="0 0 80 40"><path d="M10 34c10-18 20-24 30-24s20 6 30 24" stroke="#E3BB71" stroke-width="4" fill="none"/><path d="M40 0 50 14 40 28 30 14z" fill="#2f8fd6" stroke="#E3BB71" stroke-width="3"/></svg>
+    <div style="position:relative;height:60px;background:linear-gradient(#2d4b5c,#1a2d39);border:3px solid #a4783f;box-shadow:inset 0 0 0 2px rgba(0,0,0,.4),0 4px 12px rgba(0,0,0,.5);clip-path:polygon(28px 0,calc(100% - 28px) 0,100% 50%,calc(100% - 28px) 100%,28px 100%,0 50%)">
+      <div style="position:absolute;left:30px;right:30px;bottom:9px;height:10px;background:#0d151b">
+        <div style="height:100%;width:${pct(S.clock.remaining,S.clock.budget)}%;background:linear-gradient(90deg,#f6d384,#c38a33);transition:width .25s"></div>
+      </div>
+      <div style="position:absolute;left:0;right:0;top:6px;text-align:center;font:700 22px var(--k);color:${S.clock.remaining<=0?'#ff9b8a':'#F2EAD8'};text-shadow:0 2px 2px #000">${clockText()}</div>
+    </div>
+  </div>
+
+  <!-- resources chip (like the time chip) -->
+  <div class="abs" style="right:40px;top:40px">
+    <div class="chip" style="padding:8px 26px">${coin(30)}<span class="num" style="font-size:28px;color:#f6d384">${fmt(S.gold)}</span>
+      ${S.materials.filter(m=>m[1]>0).map(([n,v])=>`<span style="width:1px;height:26px;background:#a4783f"></span>${matIcon(n)}<span class="num" style="font-size:24px">${v}</span>`).join('')}
+    </div>
+  </div>
+
+  <!-- enemy preview -->
+  <div class="abs frame corner fade ${S.previewOpen?'':'hidden'}" style="right:40px;top:120px;width:420px;padding:20px 26px 22px">
+    <div style="display:flex;align-items:center;gap:12px;justify-content:center">${skull(40)}<span style="font:700 28px var(--f);color:var(--gold)">다음 전투 - 적</span></div>
+    <div style="height:2px;background:linear-gradient(90deg,transparent,var(--gold-d),transparent);margin:10px 0 12px"></div>
+    ${S.enemies.map(([n,c])=>`<div class="list-row" style="margin:8px 0">${enemyIcon(n)}<span style="flex:1">${n}</span><span class="num" style="font-size:26px;color:#E3BB71">× ${c}</span></div>`).join('')}
+  </div>
+
+  <!-- squad column -->
+  <div class="abs" style="left:46px;top:250px">${sq}
+    <div class="txt" style="font-size:17px;color:#E3BB71;margin-top:4px;max-width:380px">${S.message}</div>
+  </div>
+
+  <!-- HP -->
+  <div class="abs" style="left:240px;top:930px;width:420px">
+    <div style="display:flex;align-items:center;gap:6px">
+      <div class="diamond" style="width:40px;height:40px"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 21 3 12a5 5 0 0 1 9-6 5 5 0 0 1 9 6z" fill="#e0534f"/></svg></div>
+      <div class="bar" style="flex:1;height:28px"><i class="fill-red" style="width:${pct(S.hp.cur,S.hp.max)}%"></i><span class="lab" style="font-size:18px">HP ${S.hp.cur} / ${S.hp.max}</span></div>
+    </div>
+  </div>
+
+  <div class="crosshair">${crossDot}</div>
+  ${prompt()}
+
+  <!-- start plate (like +80 XP plate) -->
+  <div class="abs" style="left:960px;top:880px;transform:translateX(-50%);text-align:center">
+    <div style="position:relative;width:520px;padding:14px 20px 26px;background:linear-gradient(rgba(36,62,92,.92),rgba(20,34,50,.92));border:3px solid #a4783f;clip-path:polygon(0 0,100% 0,100% 70%,94% 100%,6% 100%,0 70%)">
+      <div class="txt" style="font-size:22px">${holdText()}</div>
+      <div style="height:10px;margin:8px 30px 0;background:#0d151b;border:1px solid #6e4e25"><div style="height:100%;width:${S.startHold*100}%;background:linear-gradient(90deg,#f6d384,#e0a63a)"></div></div>
+      <div class="txt" style="font-size:16px;color:#A9B8C2;margin-top:8px">${waitText()}</div>
+      ${S.waitHold>0?`<div style="height:6px;margin:6px 60px 0;background:#0d151b"><div style="height:100%;width:${S.waitHold*100}%;background:#59b6f0"></div></div>`:''}
+    </div>
+    <svg width="120" height="40" viewBox="0 0 120 40" style="margin-top:-18px"><path d="M10 6c20 0 30 20 50 30 20-10 30-30 50-30" stroke="#E3BB71" stroke-width="4" fill="none"/><path d="M60 12 70 24 60 36 50 24z" fill="#2f8fd6" stroke="#E3BB71" stroke-width="3"/></svg>
+  </div>
+
+  <div class="abs chip" style="right:40px;bottom:40px"><span class="key sm">H</span><span class="txt" style="font-size:18px">${S.keyListOpen?'키 안내 닫기':'키 안내'}</span></div>
+  ${keyListPanel(1460,450,420)}
+  `;
+}
+
+/* ================= OPTION B : 지휘관형 (08 ActionRPG01) ================= */
+function renderB(){
+  const sq = S.squads.map((m,i)=>`
+    <div style="width:118px;margin-right:16px">
+      <div style="position:relative;height:118px;border:4px solid ${isSel(i)?'#f6d384':'#b8894a'};border-radius:6px;box-shadow:0 0 0 2px #1F2B2E${isSel(i)?',0 0 20px rgba(246,211,132,.85)':''};overflow:hidden;background:#101a22">
+        ${crest(i,110)}
+        <div class="num" style="position:absolute;left:0;right:0;bottom:4px;text-align:center;font-size:24px;color:#fff;text-shadow:0 2px 2px #000,0 0 6px #000">${m.alive}/${m.cap}</div>
+        <div class="num" style="position:absolute;left:4px;top:3px;font-size:16px;color:#E3BB71;text-shadow:0 1px 2px #000">F${i+1}</div>
+      </div>
+      <div class="bar" style="height:14px;margin-top:8px;clip-path:none;border-width:2px"><i class="m-${band(m)}" style="width:${pct(m.morale,m.max)}%"></i></div>
+      <div class="txt" style="font-size:14px;margin-top:3px;text-align:center;color:${band(m)==='low'?'#ff9b8a':'#A9B8C2'}">${moraleLine(m)}</div>
+    </div>`).join('');
+  const notices = [S.message, ...S.squads.filter(m=>m.state!=='정상').map(m=>`${m.name.split(' ')[0]} 사기 붕괴: ${m.state.replace('붕괴: ','')}`)];
+  const slots=[['F','상호작용'],['I','장비'],['O','편성'],['P','배치'],['V','적 정보'],['H','키 안내']];
+  const slotIcon = k=>({
+    F:'<path d="M14 30c0-8 4-14 10-14s10 6 10 14M18 18l-4-8M30 18l4-8" stroke="#cfe8ff" stroke-width="3" fill="none"/><circle cx="24" cy="32" r="5" fill="#cfe8ff"/>',
+    I:'<path d="M16 12h16l2 8-4 18H18l-4-18z" fill="none" stroke="#cfe8ff" stroke-width="3"/><path d="M20 20h8" stroke="#cfe8ff" stroke-width="3"/>',
+    O:'<circle cx="17" cy="18" r="5" fill="#cfe8ff"/><circle cx="31" cy="18" r="5" fill="#cfe8ff"/><path d="M8 36c1-7 5-10 9-10s8 3 9 10M22 36c1-7 5-10 9-10s8 3 9 10" stroke="#cfe8ff" stroke-width="3" fill="none"/>',
+    P:'<path d="M24 8v28M24 8l12 6-12 6" stroke="#cfe8ff" stroke-width="3" fill="#cfe8ff"/><path d="M12 38h24" stroke="#cfe8ff" stroke-width="3"/>',
+    V:'<path d="M8 24s6-10 16-10 16 10 16 10-6 10-16 10S8 24 8 24z" fill="none" stroke="#cfe8ff" stroke-width="3"/><circle cx="24" cy="24" r="5" fill="#cfe8ff"/>',
+    H:'<path d="M18 18a6 6 0 1 1 8 6c-2 1-2 2-2 5" stroke="#cfe8ff" stroke-width="3.5" fill="none" stroke-linecap="round"/><circle cx="24" cy="35" r="2.6" fill="#cfe8ff"/>',
+  })[k];
+  return `
+  ${noteAt(40,10,'분대 카드')}${noteAt(620,12,'준비 시간 (큰 바)')}${noteAt(40,300,'알림 줄')}${noteAt(1560,12,'적 정보 (V)')}${noteAt(560,830,'HP + 키 바')}${noteAt(1580,880,'전투 시작 / 기다리기')}
+  <div class="abs" style="left:40px;top:36px;display:flex">${sq}</div>
+
+  <div class="abs" style="left:40px;top:330px;width:340px">
+    ${notices.map(t=>`<div class="frame" style="padding:8px 16px;margin-bottom:10px;border-width:2px"><span class="txt" style="font-size:18px">${t}</span></div>`).join('')}
+  </div>
+
+  <!-- big top bar: prep time, boss-bar style -->
+  <div class="abs" style="left:660px;top:30px;width:720px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end">
+      <span style="font:700 30px var(--f);color:#F2EAD8;text-shadow:0 2px 3px #000">${stageLine()}</span>
+      <span class="txt" style="font-size:21px;color:${S.clock.remaining<=0?'#ff9b8a':'#F2EAD8'}">${S.clock.remaining<=0?'시간 없음':`${S.clock.remaining} / ${S.clock.budget}시간`}</span>
+    </div>
+    <div style="position:relative;margin-top:8px">
+      <div class="bar" style="height:26px;clip-path:polygon(14px 0,calc(100% - 14px) 0,100% 50%,calc(100% - 14px) 100%,14px 100%,0 50%)"><i class="fill-gold" style="width:${pct(S.clock.remaining,S.clock.budget)}%"></i></div>
+    </div>
+    <div class="txt" style="font-size:17px;margin-top:6px;color:#A9B8C2;display:flex;align-items:center;justify-content:center;gap:6px">${hourglassSvg(24)}준비 시간</div>
+  </div>
+
+  <!-- resources: under the bar, right -->
+  <div class="abs" style="right:40px;top:40px;display:flex;gap:10px">
+    <div class="chip">${coin(28)}<span class="num" style="font-size:26px;color:#f6d384">${fmt(S.gold)}</span></div>
+    ${S.materials.filter(m=>m[1]>0).map(([n,v])=>`<div class="chip">${matIcon(n,26)}<span class="num" style="font-size:24px">${v}</span></div>`).join('')}
+  </div>
+
+  <!-- enemy preview: crest frame top right -->
+  <div class="abs fade ${S.previewOpen?'':'hidden'}" style="right:40px;top:120px;width:400px">
+    <div style="position:relative;padding:44px 26px 22px;background:radial-gradient(ellipse at 50% 0,#2a4152,#152230 70%);border:4px solid #b8894a;border-radius:12px 12px 40px 40px;box-shadow:0 0 0 2px #1F2B2E,0 8px 20px rgba(0,0,0,.5)">
+      <div style="position:absolute;left:50%;top:-30px;transform:translateX(-50%)">${skull(62)}</div>
+      <div style="font:700 28px var(--f);color:var(--gold);text-align:center">다음 전투 - 적</div>
+      <div style="height:2px;background:linear-gradient(90deg,transparent,var(--gold-d),transparent);margin:10px 0"></div>
+      ${S.enemies.map(([n,c])=>`<div class="list-row" style="margin:9px 0">${enemyIcon(n,32)}<span style="flex:1">${n}</span><span style="background:#1F2B2E;border:2px solid #a4783f;padding:0 10px" class="num"><span style="font-size:22px;color:#E3BB71">${c}</span></span></div>`).join('')}
+    </div>
+  </div>
+
+  <div class="crosshair">${crossDot}</div>
+  ${prompt()}
+
+  <!-- bottom: HP + action bar of keys -->
+  <div class="abs" style="left:960px;top:870px;transform:translateX(-50%);width:820px">
+    <div style="position:relative;margin:0 60px 10px">
+      <div class="bar" style="height:24px;clip-path:polygon(14px 0,calc(100% - 14px) 0,100% 50%,calc(100% - 14px) 100%,14px 100%,0 50%)"><i class="fill-red" style="width:${pct(S.hp.cur,S.hp.max)}%"></i><span class="lab" style="font-size:18px">${S.hp.cur} / ${S.hp.max}</span></div>
+    </div>
+    <div style="display:flex;justify-content:center;gap:10px;padding:12px 26px;background:linear-gradient(#3b2a17,#21170c);border:4px solid #c9a058;border-radius:46px;box-shadow:0 0 0 2px #1F2B2E,0 8px 18px rgba(0,0,0,.5)">
+      ${slots.map(([k,a])=>`<div style="text-align:center;width:104px">
+        <div style="margin:0 auto;width:72px;height:72px;border-radius:50%;background:radial-gradient(circle at 50% 35%,#2f7fc4,#123b63);border:4px solid #E3BB71;box-shadow:0 0 0 2px #1F2B2E;display:flex;align-items:center;justify-content:center"><svg width="44" height="44" viewBox="0 0 48 48">${slotIcon(k)}</svg></div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:6px"><span class="key sm">${k}</span><span class="txt" style="font-size:15px">${a}</span></div>
+      </div>`).join('')}
+    </div>
+  </div>
+
+  <!-- start / wait: bottom-right, like AUTOSAVING -->
+  <div class="abs" style="right:44px;bottom:110px;display:flex;align-items:center;gap:14px">
+    <div style="position:relative;width:72px;height:72px">${ring(S.startHold,72)}<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><span class="key">B</span></div></div>
+    <div><div class="txt" style="font:700 26px var(--k)">전투 시작</div><div class="txt" style="font-size:16px;color:#A9B8C2">길게 누르기${S.startHold>0?` · ${Math.floor(S.startHold*100)}%`:''}</div></div>
+  </div>
+  <div class="abs" style="right:44px;bottom:30px;display:flex;align-items:center;gap:14px">
+    <div style="position:relative;width:56px;height:56px">${ring(S.waitHold,56,'#59b6f0')}<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><span class="key sm">T</span></div></div>
+    <div class="txt" style="font-size:18px">${S.waitHours}시간 기다리기${S.waitHold>0?` · ${Math.floor(S.waitHold*100)}%`:''}</div>
+  </div>
+  ${keyListPanel(40,450,420)}
+  `;
+}
+
+/* ================= OPTION C : 미니멀형 (09 Survival01) ================= */
+function renderC(){
+  const dia = (i,m)=>`
+    <div style="position:relative;width:96px;text-align:center">
+      <div style="margin:10px auto 0;width:74px;height:74px;transform:rotate(45deg);border:4px solid ${isSel(i)?'#f6d384':'#b8894a'};box-shadow:0 0 0 2px #1F2B2E${isSel(i)?',0 0 18px rgba(246,211,132,.85)':''};overflow:hidden;background:#101a22">
+        <div style="transform:rotate(-45deg) scale(1.42);transform-origin:50% 50%;width:74px;height:74px">${crest(i,74)}</div>
+      </div>
+      <div class="num" style="position:relative;margin-top:14px;font-size:20px;color:#fff;text-shadow:0 2px 2px #000">${m.alive}/${m.cap}</div>
+      <div style="height:6px;margin:2px 10px 0;background:#0d151b;border:1px solid #6e4e25"><div class="m-${band(m)}" style="height:100%;width:${pct(m.morale,m.max)}%"></div></div>
+      <div style="margin:6px auto 0;width:30px;height:22px;background:#2a3e55;border:2px solid #7b9cc2;font:700 13px var(--f);color:#dfe9f5;display:flex;align-items:center;justify-content:center">F${i+1}</div>
+    </div>`;
+  const selM = S.squads[S.selected[0]];
+  return `
+  ${noteAt(70,20,'단계 + 적 정보 (V)')}${noteAt(680,20,'준비 시간')}${noteAt(1600,20,'자원')}${noteAt(60,640,'플레이어 + 분대')}${noteAt(1600,880,'전투 시작')}
+  <!-- header list (stage, then enemy preview inline like NEW QUESTS) -->
+  <div class="abs" style="left:70px;top:44px;width:520px">
+    <div style="display:flex;align-items:center;gap:14px"><svg width="30" height="30" viewBox="0 0 30 30"><path d="M15 2 28 15 15 28 2 15z" fill="none" stroke="#E3BB71" stroke-width="3"/><path d="M15 9 21 15 15 21 9 15z" fill="#E3BB71"/></svg>
+      <span style="font:700 38px var(--f);color:var(--gold);text-shadow:0 2px 3px rgba(0,0,0,.6)">${stageLine()}</span></div>
+    <div style="height:3px;margin:8px 0 10px;background:linear-gradient(90deg,#E3BB71 0 70%,transparent)"></div>
+    <div class="fade ${S.previewOpen?'':'hidden'}">
+      <div class="txt" style="font-size:21px;color:#E3BB71;margin-bottom:4px">다음 전투 - 적</div>
+      ${S.enemies.map(([n,c])=>`<div class="list-row" style="margin:6px 0 6px 6px"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M8 1 15 8 8 15 1 8z" fill="none" stroke="#d98a3a" stroke-width="2"/></svg><span>${n} × ${c}</span></div>`).join('')}
+    </div>
+  </div>
+
+  <!-- clock: arrow-ended bar -->
+  <div class="abs" style="left:660px;top:40px;width:600px">
+    <div style="display:flex;align-items:center">
+      <svg width="50" height="46" viewBox="0 0 50 46"><path d="M50 8 18 8 2 23 18 38 50 38z" fill="#c9733a" stroke="#5a2e12" stroke-width="3"/><path d="M40 14 26 23 40 32" stroke="#F2EAD8" stroke-width="3" fill="none"/></svg>
+      <div style="flex:1;position:relative;height:38px;background:linear-gradient(#2a5a7c,#1a3b55);border-top:3px solid #c9a058;border-bottom:3px solid #c9a058">
+        <div style="position:absolute;left:8px;right:8px;bottom:5px;height:7px;background:#0d151b"><div style="height:100%;width:${pct(S.clock.remaining,S.clock.budget)}%;background:linear-gradient(90deg,#f6d384,#c38a33)"></div></div>
+        <div style="position:absolute;left:0;right:0;top:2px;text-align:center;font:700 19px var(--k);color:${S.clock.remaining<=0?'#ff9b8a':'#F2EAD8'};text-shadow:0 1px 2px #000">${clockText()}</div>
+      </div>
+      <svg width="50" height="46" viewBox="0 0 50 46"><path d="M0 8 32 8 48 23 32 38 0 38z" fill="#c9733a" stroke="#5a2e12" stroke-width="3"/><path d="M10 14 24 23 10 32" stroke="#F2EAD8" stroke-width="3" fill="none"/></svg>
+    </div>
+  </div>
+
+  <div class="abs" style="right:60px;top:46px;text-align:right">
+    <div class="list-row" style="justify-content:flex-end">${coin(26)}<span class="num" style="font-size:26px;color:#f6d384">${fmt(S.gold)}</span></div>
+    ${S.materials.filter(m=>m[1]>0).map(([n,v])=>`<div class="list-row" style="justify-content:flex-end;margin-top:4px;font-size:18px">${n}<span class="num" style="font-size:22px;min-width:40px">${v}</span>${matIcon(n,24)}</div>`).join('')}
+  </div>
+
+  <div class="crosshair">${crossBrackets}</div>
+  ${prompt()}
+
+  <!-- bottom-left cluster -->
+  <div class="abs" style="left:70px;top:690px">
+    <div style="display:flex;align-items:flex-start;gap:26px">
+      <div style="text-align:center">
+        <div style="margin:22px auto 0;width:120px;height:120px;transform:rotate(45deg);border:5px solid #E3BB71;box-shadow:0 0 0 3px #1F2B2E,0 0 0 7px #a4783f;background:linear-gradient(135deg,#2e5a85,#132538);display:flex;align-items:center;justify-content:center">
+          <div style="transform:rotate(-45deg);font:700 60px var(--f);color:#fff;text-shadow:0 3px 0 #0b1a28">${S.stage}</div>
+        </div>
+        <div class="txt" style="margin-top:26px;font-size:14px;color:#A9B8C2">스테이지</div>
+      </div>
+      <div style="padding-top:18px;width:360px">
+        <div class="txt" style="font-size:17px;margin-bottom:4px">HP</div>
+        <div class="bar" style="height:24px"><i class="fill-red" style="width:${pct(S.hp.cur,S.hp.max)}%"></i><span class="lab" style="font-size:17px">${S.hp.cur} / ${S.hp.max}</span></div>
+        <div class="txt" style="font-size:17px;margin:12px 0 4px">${selM.name} · ${moraleLine(selM)}</div>
+        <div class="bar" style="height:18px"><i class="m-${band(selM)}" style="width:${pct(selM.morale,selM.max)}%"></i></div>
+        <div class="txt" style="font-size:16px;color:#E3BB71;margin-top:10px">${S.message}</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;margin-top:10px;margin-left:4px">${S.squads.map((m,i)=>dia(i,m)).join('')}</div>
+  </div>
+
+  <!-- start / wait bottom right -->
+  <div class="abs" style="right:60px;bottom:60px;text-align:right">
+    <div style="display:flex;align-items:center;gap:14px;justify-content:flex-end">
+      <div><div class="txt" style="font-size:26px">전투 시작${S.startHold>0?` · ${Math.floor(S.startHold*100)}%`:''}</div><div class="txt" style="font-size:16px;color:#A9B8C2"><span class="key sm">B</span> 길게 누르기</div></div>
+      <div style="position:relative;width:76px;height:76px">${ring(S.startHold,76)}<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">${hourglassSvg(34)}</div></div>
+    </div>
+    <div class="txt" style="font-size:16px;color:#A9B8C2;margin-top:10px"><span class="key sm">T</span> 길게 - ${S.waitHours}시간 기다리기${S.waitHold>0?` · ${Math.floor(S.waitHold*100)}%`:''} &nbsp; <span class="key sm">H</span> 키 안내</div>
+  </div>
+  ${keyListPanel(1460,230,420)}
+  `;
+}
+
+const DESC = {
+  A:'<b>A · 모험가형</b> — 데모 06(Adventure01)을 따라요. 왼쪽 위 깃발 배너에 단계, 그 아래 세로로 분대 카드(초상 + 인원 판 + 사기 바)를 둬요. 위 가운데 나침반 리본이 준비 시간이고, 아래 가운데 판에 전투 시작 게이지를 둬요. 정보가 가장 친절하게 보이지만 화면을 많이 써요.',
+  B:'<b>B · 지휘관형</b> — 데모 08(ActionRPG01)을 따라요. 위 왼쪽에 분대 초상을 가로로 늘어놓고, 위 가운데 큰 바(보스 바 모양)로 준비 시간을 보여 줘요. 아래 가운데 둥근 키 바에 HP와 주요 키를 모아서, 키 안내를 따로 열지 않아도 돼요. 전투 HUD(보스 바, 지휘 바)와 모양을 맞추기 쉬워요.',
+  C:'<b>C · 미니멀형</b> — 데모 09(Survival01)를 따라요. 왼쪽 아래 한 덩어리(스테이지 다이아몬드, HP, 선택한 분대 사기, 분대 다이아몬드)에 모으고, 나머지는 글 위주로 가볍게 둬요. 1인칭 시야를 가장 덜 가려요. 대신 분대마다 사기 수치는 작게 보여요.',
+};
+
+/* ---------------- render / scale ---------------- */
+function render(){
+  document.getElementById('hud').innerHTML = ({A:renderA,B:renderB,C:renderC})[S.opt]();
+  document.getElementById('desc').innerHTML = DESC[S.opt];
+  document.getElementById('stage').classList.toggle('show-notes',S.notes);
+}
+function fit(){
+  const vp=document.getElementById('vp'); const s=vp.clientWidth/1920;
+  document.getElementById('stage').style.transform=`scale(${s})`;
+}
+window.addEventListener('resize',fit);
+
+/* ---------------- controls ---------------- */
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));b.classList.add('on');S.opt=b.dataset.opt;render();});
+const toggleV=()=>{S.previewOpen=!S.previewOpen;render();};
+const toggleH=()=>{S.keyListOpen=!S.keyListOpen;render();};
+const select=i=>{S.selected=[i];S.message=`${i+1}분대 선택`;render();};
+document.getElementById('bV').onclick=toggleV;
+document.getElementById('bH').onclick=toggleH;
+document.getElementById('bF').onclick=()=>{S.target=!S.target;render();};
+document.getElementById('bSel').onclick=()=>select((S.selected[0]+1)%4);
+document.getElementById('bMor').onclick=()=>{
+  const m=S.squads[3]; if(m.state==='정상'){m.morale=28;m.state='붕괴: 공포';S.message='4분대 사기 붕괴: 공포';} else {m.morale=52;m.state='정상';S.message='4분대 사기 회복';}
+  render();};
+document.getElementById('bClock').onclick=()=>{S.clock.remaining=S.clock.remaining<=0?7:Math.max(0,S.clock.remaining-2);render();};
+document.getElementById('bNote').onclick=()=>{S.notes=!S.notes;render();};
+
+let hold=null;
+function startHold(kind){
+  if(hold) return;
+  hold=setInterval(()=>{
+    if(kind==='B'){S.startHold=Math.min(1,S.startHold+0.025); if(S.startHold>=1){S.message='전투 시작!';}}
+    else {S.waitHold=Math.min(1,S.waitHold+0.04); if(S.waitHold>=1){S.clock.remaining=Math.max(0,S.clock.remaining-S.waitHours);S.waitHold=0;stopHold();}}
+    render();
+  },40);
+}
+function stopHold(){clearInterval(hold);hold=null;if(S.startHold<1)S.startHold=0;S.waitHold=0;render();}
+window.addEventListener('keydown',e=>{
+  if(e.repeat && !['b','t'].includes(e.key.toLowerCase())) return;
+  const k=e.key.toLowerCase();
+  if(k==='v') toggleV();
+  else if(k==='h') toggleH();
+  else if(k==='f'){S.target=!S.target;render();}
+  else if(k==='b') startHold('B');
+  else if(k==='t') startHold('T');
+  else if(k==='`'){S.selected=[0,1,2,3];S.message='전체 선택';render();}
+  else if(/^f[1-4]$/.test(k)){e.preventDefault();select(+k[1]-1);}
+});
+window.addEventListener('keyup',e=>{const k=e.key.toLowerCase(); if(k==='b'||k==='t'){stopHold(); if(S.startHold>=1){setTimeout(()=>{S.startHold=0;render();},900);}}});
+
+render(); fit();
+</script>
+</body>
+</html>

@@ -14,6 +14,24 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
+        public void StageTitle_ShowsStageNumber()
+        {
+            Assert.AreEqual("스테이지 2", PrepHudText.StageTitle(2));
+        }
+
+        [Test]
+        public void HoldRatio_PrefersBattleStartThenWait()
+        {
+            Assert.AreEqual(0.4f, PrepHudText.HoldRatio(0.4f, 0.7f, out bool waiting), 1e-5f);
+            Assert.IsFalse(waiting);
+            Assert.AreEqual(0.7f, PrepHudText.HoldRatio(0f, 0.7f, out waiting), 1e-5f);
+            Assert.IsTrue(waiting);
+            Assert.AreEqual(0f, PrepHudText.HoldRatio(0f, 0f, out waiting));
+            Assert.IsFalse(waiting);
+            Assert.AreEqual(1f, PrepHudText.HoldRatio(1.5f, 0f, out _));
+        }
+
+        [Test]
         public void Resources_ListsGoldThenMaterialsInOrder_SkipsEmpty()
         {
             var materials = new List<KeyValuePair<string, int>>
@@ -24,6 +42,21 @@ namespace ProjectNeo.Tests
             };
             Assert.AreEqual("골드 340   목재 12   석재 5", PrepHudText.Resources(340, materials));
             Assert.AreEqual("골드 0", PrepHudText.Resources(0, null));
+        }
+
+        [Test]
+        public void Gold_UsesThousandsSeparator_MaterialsSkipEmpty()
+        {
+            Assert.AreEqual("1,250", PrepHudText.Gold(1250));
+            Assert.AreEqual("0", PrepHudText.Gold(0));
+            var materials = new List<KeyValuePair<string, int>>
+            {
+                new KeyValuePair<string, int>("목재", 12),
+                new KeyValuePair<string, int>("철", 0),
+                new KeyValuePair<string, int>("석재", 5),
+            };
+            Assert.AreEqual("목재 12   석재 5", PrepHudText.Materials(materials));
+            Assert.AreEqual(string.Empty, PrepHudText.Materials(null));
         }
 
         [Test]

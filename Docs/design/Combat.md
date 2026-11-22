@@ -33,7 +33,7 @@ Last Updated: 2026-11-21 20:58:37 (KST)
 
 ## Player Health HUD
 
-- UI-03 (user decision, 2026-11-17): display a health bar and current/maximum HP numbers in the bottom-right corner during preparation and battle gameplay. Reflect damage, potion healing and maximum-HP changes immediately. Use existing health rules; do not change combat balance.
+- UI-03 (user decision, 2026-11-17): display a health bar and current/maximum HP numbers during preparation and battle gameplay (bottom-right at first; moved to the bottom-left by the UI-06 layout A on 2026-11-22). Reflect damage, potion healing and maximum-HP changes immediately. Use existing health rules; do not change combat balance.
 
 ## Basic Combat Rules
 

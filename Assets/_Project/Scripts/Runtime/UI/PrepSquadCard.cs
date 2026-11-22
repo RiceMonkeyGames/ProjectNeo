@@ -21,10 +21,17 @@ namespace ProjectNeo.UI
         public string MoraleText => morale != null ? morale.text : string.Empty;
         public float HeadcountRatio => headcountFill != null ? headcountFill.anchorMax.x : 0f;
         public float MoraleRatio => moraleFill != null ? moraleFill.anchorMax.x : 0f;
+        [Tooltip("선택된 동안만 켜는 외곽선(UI-06 A안). 비어 있으면 바탕·테두리 색으로만 구분한다.")]
+        [SerializeField] GameObject selectionOutline;
+
         public bool Selected { get; private set; }
+        public bool OutlineShowing => selectionOutline != null && selectionOutline.activeSelf;
 
         /// <summary>테두리 그림(선택 시 색이 바뀐다). 스프라이트 없는 단색 모양이면 비워 둔다.</summary>
         public void ConfigureFrame(Image border) => frame = border;
+
+        /// <summary>선택된 동안만 켜는 외곽선을 붙인다.</summary>
+        public void ConfigureSelectionOutline(GameObject outline) => selectionOutline = outline;
 
         public void Configure(Image panel, TMP_Text name, TMP_Text people, RectTransform peopleFill,
             TMP_Text moraleLabel, RectTransform moraleBar, Image moraleBarImage)
@@ -37,6 +44,7 @@ namespace ProjectNeo.UI
             MoraleBand band, string state, bool selected)
         {
             Selected = selected;
+            if (selectionOutline != null && selectionOutline.activeSelf != selected) selectionOutline.SetActive(selected);
             if (title != null) title.text = name;
             if (headcount != null) headcount.text = PrepHudText.Headcount(alive, capacity);
             SetFill(headcountFill, PrepHudText.Ratio(alive, capacity));
