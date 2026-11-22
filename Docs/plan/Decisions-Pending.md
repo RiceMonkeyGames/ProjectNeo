@@ -16,7 +16,6 @@ Last Updated: 2026-11-20 21:07:07 (KST)
 
 | ID | Decision Topic | Needed By / Blocking | Current Status |
 |---|---|---|---|
-| Q-01 | Synty pack and finalized piece specifications | Production art integration | Undecided. Generic modular architecture approved; dimensions in assets. |
 | Q-10 | Final troop headcount, baseline gear, performance budget | Art integration, M6 | Undecided. B-1 500-unit test is not a production guarantee. |
 | Q-11 | Command keys, combat HUD, prep UI layout | B-5.3, M2 UI | Partial: F1–F10 in Siege prototype; default F1–F4, `, 1, 2, 3. Overall UI style and staging decided 2026-11-20 (UI-05 to UI-08, [Decisions-Resolved](Decisions-Resolved.md)); battle HUD layout and command keys still undecided (needed by UI-08). |
 | Q-14 | Release platforms, distribution channels, launch dates, scale | M4 scope, M7 delivery | Undecided. Focus on core completion criteria first. |

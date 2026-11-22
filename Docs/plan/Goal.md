@@ -33,7 +33,7 @@ First-time players must intuitively grasp the game flow via in-game guidance, pl
 
 | Item | Decision & Implementation Impact |
 |---|---|
-| Art Style | Low-poly Synty assets (pack undecided); decouple grid, footprints, heights, and visuals into data assets. |
+| Art Style | Low-poly Synty assets (packs per role decided in Q-01, 2026-11-22); decouple grid, footprints, heights, and visuals into data assets. |
 | Combat Perspective | 3D First-Person (2026-11-11); ortho camera reserved for construction. Profile performance early. |
 | Castle & Map | Single castle per run; free grid placement with dynamic NavMesh rebuilds. |
 | Grunt Recruitment | Barracks dual function (Training + Recruitment); rescued prisoners act as supplemental reinforcements. |
