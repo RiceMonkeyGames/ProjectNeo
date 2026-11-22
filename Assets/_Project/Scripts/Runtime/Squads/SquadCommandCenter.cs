@@ -31,6 +31,11 @@ namespace ProjectNeo.Squads
         readonly Dictionary<Squad<UnitCombatAI>, RosterWatch> rosterWatch = new Dictionary<Squad<UnitCombatAI>, RosterWatch>();
         readonly List<Vector3> postBuffer = new List<Vector3>();
         readonly List<bool> hasPostBuffer = new List<bool>();
+        readonly List<Vector3> watchPositions = new List<Vector3>(32);
+        readonly List<float> watchRadii = new List<float>(32);
+        readonly List<CharacterActor> watchEnemies = new List<CharacterActor>(64);
+        float threatWatchRemaining;
+        const float ThreatWatchInterval = 0.25f;
 
         sealed class RosterWatch
         {
@@ -520,6 +525,50 @@ namespace ProjectNeo.Squads
                     foreach (UnitCombatAI member in army.Squads[i].Members)
                         if (IsMoving(member)) { moving = true; break; }
                 if (!moving) Commander.CompleteMove(i);
+            }
+            UpdateSquadThreatWatch();
+        }
+
+        // 중지(Hold) 중인 분대 주변에 적이 한 명도 없으면 분대원 개별 탐색을 쉬게 한다(PERF-siege-ai-scale).
+        void UpdateSquadThreatWatch()
+        {
+            threatWatchRemaining -= Time.deltaTime;
+            if (threatWatchRemaining > 0f) return;
+            threatWatchRemaining = ThreatWatchInterval;
+
+            for (int i = 0; i < army.Squads.Count; i++)
+            {
+                CollectCommandable(i, commandable);
+                if (commandable.Count == 0) continue;
+
+                bool inHold = Commander.OrderOf(i).Kind == SquadOrderKind.Hold;
+                bool anyTarget = false;
+                watchPositions.Clear();
+                watchRadii.Clear();
+                CombatTeam squadTeam = CombatTeam.Allied;
+
+                for (int m = 0; m < commandable.Count; m++)
+                {
+                    UnitCombatAI member = commandable[m];
+                    squadTeam = member.Actor.Team;
+                    if (member.Directive != UnitDirective.Hold || member.Target != null)
+                        anyTarget = true;
+                    watchPositions.Add(member.transform.position);
+                    float attackRange = CombatPhysics.MaximumAttackRange(member.Actor);
+                    float chase = member.HoldChaseRadius;
+                    watchRadii.Add(Mathf.Max(attackRange, chase) + 4f);
+                }
+
+                int enemyCount = 1;
+                if (inHold && !anyTarget && SquadThreatWatch.TryComputeBounds(watchPositions, watchRadii, out Vector3 center, out float radius))
+                {
+                    CombatSpatialIndex.QueryEnemies(squadTeam, center, radius, watchEnemies);
+                    enemyCount = watchEnemies.Count;
+                }
+
+                bool sleep = SquadThreatWatch.CanSleepInHold(inHold, commandable.Count, anyTarget, enemyCount);
+                for (int m = 0; m < commandable.Count; m++)
+                    commandable[m].SetSquadNeighborhoodClear(sleep);
             }
         }
 

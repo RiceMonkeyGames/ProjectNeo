@@ -40,7 +40,16 @@ namespace ProjectNeo.Siege
         readonly TargetCandidateBuffer<CharacterActor> reachableCandidates = new TargetCandidateBuffer<CharacterActor>(4);
         readonly System.Collections.Generic.List<CharacterActor> spatialCandidates =
             new System.Collections.Generic.List<CharacterActor>(64);
+        public static readonly SiegeReachabilityCache ReachabilityCache = new SiegeReachabilityCache();
+        static int nextAttackerStagger;
+        bool attackerStaggerApplied;
         Mode mode = Mode.Deciding;
+
+        public static void ResetStaggerCounter()
+        {
+            nextAttackerStagger = 0;
+            ReachabilityCache.Invalidate();
+        }
         SiegeLadder ladder;
         PlacedStructure gate;
         Collider[] gateBodies;
@@ -152,7 +161,15 @@ namespace ProjectNeo.Siege
             if (mode == Mode.ToGate && (gate == null || gate.Health == null || gate.Health.IsDead)) think = 0f;
             if (think <= 0f)
             {
-                think = settings.AttackerDecisionInterval;
+                float interval = settings.AttackerDecisionInterval;
+                if (!attackerStaggerApplied)
+                {
+                    attackerStaggerApplied = true;
+                    int idx = CharacterActor.ActiveActors.Count <= 2 ? 0 : nextAttackerStagger++;
+                    float offset = AIDecisionScheduler.InitialOffset(idx, 8, interval);
+                    if (offset > 0f) interval = offset;
+                }
+                think = interval;
                 Decide();
             }
             if (mode == Mode.ToCannon && (cannon == null || cannon.IsRemoved)) think = 0f;
@@ -227,11 +244,34 @@ namespace ProjectNeo.Siege
             return target;
         }
 
+        int CurrentLadderMask()
+        {
+            if (ladders == null) return 0;
+            int mask = 0;
+            for (int i = 0; i < ladders.Length && i < 31; i++)
+                if (ladders[i] != null && ladders[i].HasWall && ladders[i].State.Phase == LadderPhase.Up)
+                    mask |= 1 << i;
+            return mask;
+        }
+
         /// <summary>걸어서 닿는 적 중 직선거리로 가장 가까운 것. 먼저 가까운 상위 후보를 추린 뒤 경로를 구한다(PERF-ai-query-budget).</summary>
         bool AnyReachableEnemy(out CharacterActor nearest)
         {
             nearest = null;
             Vector3 here = transform.position;
+            bool onGround = world != null && Mathf.Abs(here.y - world.transform.position.y) < WallTopMinimumHeight;
+            int navRev = world != null ? world.NavigationRevision : 0;
+            int ladderMask = CurrentLadderMask();
+            int actorRev = CharacterActor.RegistryRevision;
+            float now = Time.time;
+            float ttl = settings != null ? settings.ReachabilityCacheTtl : 0f;
+            if (onGround && ttl > 0f && ReachabilityCache.HasValidGroundUnreachable(navRev, ladderMask, actorRev, now))
+            {
+                // 성 안 수비대는 막혀 있더라도 공격자 주변(15m) 성 밖에 나와 있는 아군이 있으면 개별 확인한다.
+                CombatSpatialIndex.QueryEnemies(Actor.Team, here, 15f, spatialCandidates);
+                if (spatialCandidates.Count == 0) return false;
+            }
+
             reachableCandidates.Reset(4);
             var enemies = CombatSpatialIndex.AllEnemiesOf(Actor.Team);
             for (int i = 0; i < enemies.Count; i++)
@@ -271,6 +311,8 @@ namespace ProjectNeo.Siege
                         && path.status == NavMeshPathStatus.PathComplete) { nearest = candidate; best = distance; }
                 }
             }
+            if (onGround && ttl > 0f && nearest == null)
+                ReachabilityCache.RecordGroundResult(navRev, ladderMask, actorRev, now, ttl, false);
             return nearest != null;
         }
 
@@ -657,7 +699,9 @@ namespace ProjectNeo.Siege
                 return;
             }
             // 사거리 안에서 가려진 채 충분히 기다렸으면 옆 자리를 한 번 찾는다(성가퀴 솟은 부분 뒤의 수비병 등).
-            if (cover.ShouldSearch(now))
+            // 한 프레임에 너무 많은 궁수가 동시에 옆자리 탐색(Raycast 다발)을 하지 않도록 프레임 예산을 확인한다(PERF-siege-ai-scale).
+            if (cover.ShouldSearch(now)
+                && ReachabilityCache.TryConsumeArcherSearchToken(Time.frameCount, settings.MaxArcherRepositionSearchesPerFrame))
             {
                 bool found = TryFindFiringPosition(hit.position, out Vector3 spot);
                 cover.SearchResult(now, found);
@@ -705,14 +749,18 @@ namespace ProjectNeo.Siege
             Vector3 aim = standPoint + Vector3.up * (Actor.Profile.Height * 0.5f);
             float maxReach = CombatPhysics.MaximumAttackRange(Actor);
             CombatSpatialIndex.QueryEnemies(Actor.Team, standPoint, maxReach, spatialCandidates);
+            reachableCandidates.Reset(4);
             for (int i = 0; i < spatialCandidates.Count; i++)
             {
                 CharacterActor candidate = spatialCandidates[i];
                 if (!Actor.IsEnemy(candidate) || candidate.Body == null) continue;
                 float reach = CombatPhysics.AttackRange(Actor, candidate);
-                if ((candidate.Body.ClosestPoint(aim) - aim).sqrMagnitude > reach * reach) continue;
-                if (CombatPhysics.HasClearShotFrom(standPoint, Actor, candidate)) return true;
+                float sqrDist = (candidate.Body.ClosestPoint(aim) - aim).sqrMagnitude;
+                if (sqrDist > reach * reach || sqrDist >= reachableCandidates.WorstScore) continue;
+                reachableCandidates.TryAdd(candidate, sqrDist);
             }
+            for (int i = 0; i < reachableCandidates.Count; i++)
+                if (CombatPhysics.HasClearShotFrom(standPoint, Actor, reachableCandidates[i])) return true;
             return false;
         }
 
