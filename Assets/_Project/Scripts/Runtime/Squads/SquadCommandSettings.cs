@@ -23,6 +23,9 @@ namespace ProjectNeo.Squads
         // COMBAT-08 진형. 횡대는 위의 formationSpacing을 쓴다. 예전 에셋에 없는 값은 0으로 읽혀 기본값을 쓴다.
         [SerializeField] InputAction cycleFormation = new InputAction("CycleFormation", InputActionType.Button, "<Keyboard>/g");
         [SerializeField] InputAction dragFormation = new InputAction("DragFormation", InputActionType.Button, "<Mouse>/rightButton");
+        // UI-12 준비 화면 분대 카드 페이지 넘기기. 예전 에셋에 없으면 기본 키([ ])를 쓴다.
+        [SerializeField] InputAction previousPage = new InputAction("PreviousSquadPage", InputActionType.Button, DefaultPreviousPageBinding);
+        [SerializeField] InputAction nextPage = new InputAction("NextSquadPage", InputActionType.Button, DefaultNextPageBinding);
         [SerializeField, Min(0f)] float closeSpacing = DefaultCloseSpacing;
         [SerializeField, Min(0f)] float looseSpacing = DefaultLooseSpacing;
         [SerializeField, Min(0)] int columnFiles = DefaultColumnFiles;
@@ -42,6 +45,16 @@ namespace ProjectNeo.Squads
         public float FormationSpacing => formationSpacing;
 
         public const string DefaultCycleFormationBinding = "<Keyboard>/g";
+        public const string DefaultPreviousPageBinding = "<Keyboard>/leftBracket", DefaultNextPageBinding = "<Keyboard>/rightBracket";
+        static InputAction fallbackPreviousPage, fallbackNextPage;
+
+        /// <summary>분대 카드 이전 페이지 키(UI-12). 비어 있으면 기본 키. 쓰는 쪽에서 복제해 쓴다.</summary>
+        public InputAction PreviousPage => HasBinding(previousPage) ? previousPage
+            : fallbackPreviousPage ??= new InputAction("PreviousSquadPage", InputActionType.Button, DefaultPreviousPageBinding);
+        /// <summary>분대 카드 다음 페이지 키(UI-12). 비어 있으면 기본 키. 쓰는 쪽에서 복제해 쓴다.</summary>
+        public InputAction NextPage => HasBinding(nextPage) ? nextPage
+            : fallbackNextPage ??= new InputAction("NextSquadPage", InputActionType.Button, DefaultNextPageBinding);
+        static bool HasBinding(InputAction action) => action != null && action.bindings.Count > 0;
         public const string DefaultDragFormationBinding = "<Mouse>/rightButton";
         public const float DefaultCloseSpacing = 0.9f, DefaultLooseSpacing = 2.5f;
         public const int DefaultColumnFiles = 2;

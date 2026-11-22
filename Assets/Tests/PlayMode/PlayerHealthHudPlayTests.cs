@@ -55,6 +55,14 @@ namespace ProjectNeo.Tests
         {
             Assert.AreEqual($"HP {Mathf.CeilToInt(player.Health.Current)} / {Mathf.CeilToInt(player.Health.Maximum)}", hud.ValueText);
             Assert.AreEqual(player.Health.Current / player.Health.Maximum, hud.FillRatio, 0.001f);
+            // UI-12 초상화 모양: 큰 숫자와 칸 체력바도 같은 값을 따른다(Game 씬에 Sidebar Layout을 적용했을 때).
+            if (hud.NumberText.Length == 0) return;
+            Assert.AreEqual(PrepHudText.HealthNumber(Mathf.CeilToInt(player.Health.Current), Mathf.CeilToInt(player.Health.Maximum)), hud.NumberText);
+            int count = hud.SegmentCount;
+            Assert.Greater(count, 0);
+            float filled = 0f;
+            for (int i = 0; i < count; i++) filled += hud.SegmentFill(i);
+            Assert.AreEqual(player.Health.Current / player.Health.Maximum, filled / count, 0.001f, "칸을 모두 더한 채움이 체력 비율과 같다.");
         }
 
         IEnumerator StartBattle()

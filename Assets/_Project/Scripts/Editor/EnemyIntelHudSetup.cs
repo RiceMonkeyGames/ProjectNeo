@@ -15,12 +15,12 @@ namespace ProjectNeo.Editor
     /// </summary>
     public static class EnemyIntelHudSetup
     {
-        const string PanelName = "EnemyIntel";
+        internal const string PanelName = "EnemyIntel";
         // 기준 해상도(1280×720) 기준 왼쪽 여백과 폭. 왼쪽 위 부대 목록(SquadCommandHUD/SquadsBacking, 위 8 + 높이 252 = 260, PREP-09)
         // 바로 아래에 둔다. 왼쪽 가운데의 건설 도구 상자는 건설 화면에서만 보이고, 그때 이 창은 숨는다.
         // UI-06부터 이 자리는 전투 중 자리이고, 준비 미리보기는 PrepHudSetup이 오른쪽 위로 옮긴다(EnemyIntelHud.ConfigurePlacement).
         internal static readonly Vector2 Offset = new Vector2(16f, -272f);
-        const float Width = 240f;
+        internal const float Width = 240f;
 
         [MenuItem("ProjectNeo/Setup/Add Enemy Intel HUD (C-5)")]
         public static void Apply()

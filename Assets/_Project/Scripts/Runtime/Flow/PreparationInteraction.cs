@@ -36,6 +36,11 @@ namespace ProjectNeo.Flow
         public string BattleStartKey => startBattle != null ? startBattle.GetBindingDisplayString() : string.Empty;
         public bool CanStartBattle => battle != null && battle.CanStart && phaseView.IsExplorationView
             && Cursor.lockState == CursorLockMode.Locked;
+        float blockedStartRemaining;
+        /// <summary>전투를 시작할 수 없을 때 시작 키를 눌러, 이유를 잠깐 보여 줄 때인가(UI-12).</summary>
+        public bool ShowingBlockedStart => blockedStartRemaining > 0f;
+        /// <summary>마지막으로 막힌 시작 키를 눌렀을 때 커서가 잠겨 있었는가. false면 화면을 클릭하라고 알린다.</summary>
+        public bool BlockedStartCursorLocked { get; private set; }
         public PreparationStation Target { get; private set; }
         public string InteractKey => interact.GetBindingDisplayString();
         public string CloseKey => close.GetBindingDisplayString();
@@ -83,7 +88,7 @@ namespace ProjectNeo.Flow
         {
             interact?.Disable(); close?.Disable(); equipment?.Disable(); organization?.Disable(); startBattle?.Disable();
             squadPlacement?.Disable(); wait?.Disable(); enemyPreview?.Disable(); keyList?.Disable();
-            Target = null; CancelBattleStart(); CancelWait();
+            Target = null; CancelBattleStart(); CancelWait(); blockedStartRemaining = 0f;
         }
         void OnDestroy()
         {
@@ -116,7 +121,17 @@ namespace ProjectNeo.Flow
 
         void UpdateBattleStart()
         {
-            if (!CanStartBattle || !startBattle.IsPressed()) { CancelBattleStart(); return; }
+            if (!CanStartBattle)
+            {
+                // UI-12: 막힌 동안 누르면 그때만 이유를 잠깐 띄운다(다시 누르면 시간을 처음부터 센다).
+                if (phaseView.IsExplorationView && battle != null && startBattle.WasPressedThisFrame())
+                {
+                    BlockedStartCursorLocked = Cursor.lockState == CursorLockMode.Locked;
+                    blockedStartRemaining = settings.BlockedStartNoticeSeconds;
+                }
+                CancelBattleStart(); return;
+            }
+            if (!startBattle.IsPressed()) { CancelBattleStart(); return; }
             // A key held through a modal, focus loss or phase transition must be released and pressed again.
             if (startBattle.WasPressedThisFrame()) holdingBattleStart = true;
             if (!holdingBattleStart) return;
@@ -151,6 +166,7 @@ namespace ProjectNeo.Flow
 
         void Update()
         {
+            if (blockedStartRemaining > 0f) blockedStartRemaining -= Time.unscaledDeltaTime;
             if (phaseView.IsBuildView)
             {
                 CancelBattleStart(); CancelWait();

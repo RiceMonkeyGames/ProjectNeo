@@ -44,9 +44,8 @@ namespace ProjectNeo.Editor
             arrow.preserveAspect = true;
             Place(arrow.rectTransform, new Vector2(1f, 0.5f), new Vector2(-46f, 2f), new Vector2(20f, 20f));
 
-            // Inside the frame like the sample (its Bottom bar lifts the link above the frame line).
-            Place(quit, new Vector2(1f, 0f), new Vector2(-80f, 72f), new Vector2(120f, 28f), new Vector2(1f, 0f));
-            TMP_Text quitLabel = TextButton(quit, "게임종료", font, 20f, Gold);
+            // Bottom-right corner inside the frame, same gap to the frame lines as the other Title corners.
+            TMP_Text quitLabel = CornerLink(quit, "게임종료", font, Gold);
 
             logo.SetSiblingIndex(1);
             start.SetSiblingIndex(2);

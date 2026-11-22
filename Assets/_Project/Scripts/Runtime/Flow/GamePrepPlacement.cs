@@ -208,7 +208,14 @@ namespace ProjectNeo.Flow
             if (!placing) return;
             for (int i = 0; i < selectSquad.Length; i++)
                 if (selectSquad[i].WasPressedThisFrame()) SelectSquadForPlacement(i);
-            if (selectAll.WasPressedThisFrame()) { center.Commander.SelectAll(); Message = ""; }
+            if (selectAll.WasPressedThisFrame())
+            {
+                // 모두 골라져 있으면 전체 선택 키로 푼다(UI-12, 1인칭 지휘와 같다).
+                SquadCommander commander = center.Commander;
+                if (commander.SquadCount > 0 && commander.SelectedCount == commander.SquadCount) commander.ClearSelection();
+                else commander.SelectAll();
+                Message = "";
+            }
             if (Mouse.current == null || topDownCamera == null) return;
             Vector2 pointer = Mouse.current.position.ReadValue();
             Ray ray = topDownCamera.ScreenPointToRay(pointer);
@@ -290,8 +297,16 @@ namespace ProjectNeo.Flow
             return forward.sqrMagnitude > 1e-6f ? forward : Vector3.forward;
         }
 
+        /// <summary>
+        /// 배치할 부대를 고른다. 1인칭 지휘(SquadCommandInput)와 같이, 그 부대만 골라 둔 채 같은 키를 다시 누르면 선택을 푼다(UI-12).
+        /// </summary>
         public bool SelectSquadForPlacement(int squad)
         {
+            if (center.Commander.IsSelected(squad) && center.Commander.SelectedCount == 1)
+            {
+                center.Commander.ClearSelection(); Message = "선택을 해제했습니다.";
+                return false;
+            }
             bool selected = center.Commander.Select(squad);
             Message = selected ? "" : $"{squad + 1}부대가 없습니다.";
             return selected;

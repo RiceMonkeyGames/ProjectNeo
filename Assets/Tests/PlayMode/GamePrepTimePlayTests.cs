@@ -39,6 +39,18 @@ namespace ProjectNeo.Tests
         }
 
         static void Kill(CharacterActor actor) => actor.ReceiveDamage(actor.Health.Current + 1f);
+        // UI-12 모래시계 모양: 숫자와 칸 게이지도 남은 시간을 따른다(Game 씬에 Sidebar Layout을 적용했을 때).
+        static void AssertHourglass(PrepClockHud clockHud, RunState state)
+        {
+            if (clockHud.NumberText.Length == 0) return;
+            Assert.AreEqual(PrepHudText.ClockNumber(state.Clock.Remaining, state.Clock.Budget), clockHud.NumberText);
+            int count = clockHud.SegmentCount;
+            Assert.Greater(count, 0);
+            float filled = 0f;
+            for (int i = 0; i < count; i++) filled += clockHud.SegmentFill(i);
+            Assert.AreEqual(state.Clock.Remaining / state.Clock.Budget, filled / count, 0.001f, "칸을 모두 더한 채움이 남은 시간 비율과 같다.");
+        }
+
         static Rect Bounds(RectTransform target)
         {
             var corners = new Vector3[4];
@@ -111,6 +123,7 @@ namespace ProjectNeo.Tests
                 yield return null; yield return null;
                 Assert.AreEqual(0f, interaction.WaitProgress);
                 Assert.AreEqual(GamePhase.Preparation, GameSession.Flow.Phase, "기다리기는 전투를 시작하지 않는다.");
+                AssertHourglass(clockHud, state);
 
                 // 시간을 다 쓰면 기다리기가 막히고 안내가 사라지며 시계에 표시된다. 전투 시작은 그대로 된다.
                 while (interaction.TryWait()) { }

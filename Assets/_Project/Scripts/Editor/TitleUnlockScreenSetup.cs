@@ -72,7 +72,8 @@ namespace ProjectNeo.Editor
             labels.Add(Nameplate(visual, title.rectTransform, "해금", noto));
 
             TMP_Text points = NewLabel(root, "Label_UnlockPoints", "보유 해금 포인트  0", noto, 20f, Cream, TextAlignmentOptions.MidlineRight);
-            Place(points.rectTransform, Vector2.one, new Vector2(-70f, -62f), new Vector2(320f, 30f), new Vector2(1f, 0.5f));
+            // Top-right corner: same gap to the frame lines as the bottom corners.
+            Place(points.rectTransform, Vector2.one, new Vector2(-CornerX, -CornerY), new Vector2(320f, CornerHeight), Vector2.one);
             labels.Add(points);
 
             // Left: one button per catalog track.

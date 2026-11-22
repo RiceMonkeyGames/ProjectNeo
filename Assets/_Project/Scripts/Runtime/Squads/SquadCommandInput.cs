@@ -153,14 +153,32 @@ namespace ProjectNeo.Squads
             return true;
         }
 
+        /// <summary>
+        /// 부대 하나를 고른다. 그 부대만 골라 둔 상태에서 같은 키를 다시 누르면 선택을 푼다(UI-12, 사용자 결정 2026-11-22).
+        /// 골라졌으면 true, 풀었거나 없는 부대면 false.
+        /// </summary>
         public bool SelectSquad(int index)
         {
-            bool selected = center.Commander.Select(index);
+            SquadCommander commander = center.Commander;
+            if (commander.IsSelected(index) && commander.SelectedCount == 1)
+            {
+                commander.ClearSelection();
+                Message = "";
+                return false;
+            }
+            bool selected = commander.Select(index);
             Message = selected ? "" : $"{index + 1}부대가 없습니다.";
             return selected;
         }
 
-        public void SelectAll() { center.Commander.SelectAll(); Message = ""; }
+        /// <summary>모든 부대를 고른다. 이미 모두 골라져 있으면 선택을 푼다(UI-12, 사용자 결정 2026-11-22).</summary>
+        public void SelectAll()
+        {
+            SquadCommander commander = center.Commander;
+            if (commander.SquadCount > 0 && commander.SelectedCount == commander.SquadCount) commander.ClearSelection();
+            else commander.SelectAll();
+            Message = "";
+        }
 
         public bool OrderMove()
         {
