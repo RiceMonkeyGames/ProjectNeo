@@ -106,11 +106,19 @@ namespace ProjectNeo.Combat
         public bool Passes(Collider collider, Vector3 contact) =>
             MachicolationRules.PassesThrough(IsExempt(collider), Contains(contact), true);
 
+        readonly List<CharacterActor> spatialCandidates = new List<CharacterActor>(16);
+
         /// <summary>구멍 아래(땅 쪽)에 <paramref name="viewer"/>의 적이 서 있는지.</summary>
         public bool HasEnemyBelow(CharacterActor viewer)
         {
-            foreach (CharacterActor candidate in CharacterActor.ActiveActors)
+            float maxZ = Mathf.Max(Mathf.Abs(shaft.Inner), Mathf.Abs(shaft.Outer));
+            float queryRadius = Mathf.Sqrt(shaft.HalfWidth * shaft.HalfWidth + maxZ * maxZ) + 1.5f;
+            CombatSpatialIndex.QueryEnemies(viewer.Team, transform.position, queryRadius, spatialCandidates);
+            for (int i = 0; i < spatialCandidates.Count; i++)
+            {
+                CharacterActor candidate = spatialCandidates[i];
                 if (viewer.IsEnemy(candidate) && shaft.IsBelow(ToLocal(candidate.transform.position), 1.5f)) return true;
+            }
             return false;
         }
 
@@ -124,9 +132,13 @@ namespace ProjectNeo.Combat
             bool claimantActive = claimant != null && claimant.isActiveAndEnabled && claimant.Actor != null
                 && claimant.Actor.Health != null && !claimant.Actor.Health.IsDead;
             if (!MachicolationRules.IsClaimFree(claimant != null, claimant == unit, claimantActive)) return false;
-            foreach (CharacterActor other in CharacterActor.ActiveActors)
+            CombatSpatialIndex.QueryTeam(team, transform.position, standRadius + 1f, spatialCandidates);
+            for (int i = 0; i < spatialCandidates.Count; i++)
+            {
+                CharacterActor other = spatialCandidates[i];
                 if (other != unit.Actor && other.Health != null && !other.Health.IsDead
                     && other.gameObject.scene == gameObject.scene && IsAtStand(other.transform.position)) return false;
+            }
             return true;
         }
 

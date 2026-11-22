@@ -37,6 +37,8 @@ namespace ProjectNeo.Combat
         bool hasClearShotCached = true;
         bool clearShotDirty = true;
         readonly TargetCandidateBuffer<CharacterActor> topCandidates = new TargetCandidateBuffer<CharacterActor>(4);
+        readonly System.Collections.Generic.List<CharacterActor> spatialCandidates =
+            new System.Collections.Generic.List<CharacterActor>(64);
         public static readonly AIDecisionScheduler Scheduler = new AIDecisionScheduler();
         // 자리 방향(COMBAT-14). 대형이 바라볼 방향이나 자리를 받은 때의 방향(도). 없으면 돌지 않는다.
         float? postFacing;
@@ -448,9 +450,11 @@ namespace ProjectNeo.Combat
         {
             CharacterActor nearest = null;
             float nearestDistance = float.PositiveInfinity;
-            foreach (CharacterActor candidate in CharacterActor.ActiveActors)
+            CombatSpatialIndex.QueryEnemies(actor.Team, transform.position, settings.RangedMeleeThreatRadius, spatialCandidates);
+            for (int i = 0; i < spatialCandidates.Count; i++)
             {
-                if (candidate.Team == actor.Team || !IsMeleeThreat(candidate)) continue;
+                CharacterActor candidate = spatialCandidates[i];
+                if (!IsMeleeThreat(candidate)) continue;
                 float distance = SqrDistanceTo(candidate);
                 if (distance >= nearestDistance || !actor.IsEnemy(candidate) || !CombatPhysics.CanTarget(actor, candidate)
                     || !CanStrikeFromHere(candidate)) continue;
@@ -621,13 +625,15 @@ namespace ProjectNeo.Combat
         }
 
         // 자리 반경 안에서 걸어서 닿는 적 중 지금 위치에서 가장 가까운 적.
-        // 상위 K명만 먼저 점수 순으로 추린 뒤 길찾기를 시험한다(PERF-ai-query-budget).
+        // 공간 해시 그리드로 주변 적만 조회한 뒤 상위 K명에게만 길찾기를 시험한다(PERF-ai-query-budget, PERF-ai-spatial-grid).
         CharacterActor FindTargetNearPost()
         {
             topCandidates.Reset(settings != null ? settings.MaxPathCandidatesPerTick : 4);
-            foreach (CharacterActor candidate in CharacterActor.ActiveActors)
+            CombatSpatialIndex.QueryEnemies(actor.Team, HoldPost, HoldChaseRadius, spatialCandidates);
+            for (int i = 0; i < spatialCandidates.Count; i++)
             {
-                if (candidate.Team == actor.Team || !IsNearPost(candidate) || !actor.IsEnemy(candidate)
+                CharacterActor candidate = spatialCandidates[i];
+                if (!IsNearPost(candidate) || !actor.IsEnemy(candidate)
                     || !CombatPhysics.CanTarget(actor, candidate)) continue;
                 float distance = RangedTargetPriorityRules.Score((candidate.transform.position - transform.position).sqrMagnitude,
                     1f, ThreatFactorOf(candidate));
@@ -911,9 +917,11 @@ namespace ProjectNeo.Combat
             Vector3 aim = actor.AimPoint;
             // 높은 곳 보너스까지 더한 가장 긴 사거리로 거른다. 실제 사거리는 뒤의 정밀 판정이 대상별로 다시 잰다.
             float range = CombatPhysics.MaximumAttackRange(actor);
-            foreach (CharacterActor candidate in CharacterActor.ActiveActors)
+            CombatSpatialIndex.QueryEnemies(actor.Team, position, range, spatialCandidates);
+            for (int i = 0; i < spatialCandidates.Count; i++)
             {
-                if (candidate.Team == actor.Team || candidate.Body == null) continue;
+                CharacterActor candidate = spatialCandidates[i];
+                if (candidate.Body == null) continue;
                 // AABB는 실제 콜라이더를 포함하므로 범위 밖 후보만 안전하게 제외한다.
                 // 큰/오프셋 콜라이더는 통과시키고 기존 정밀 판정과 시야 검사를 그대로 적용한다.
                 // 공중 대상의 근접 사거리는 몸통이 아니라 바닥 투영점 기준이므로 이 예비 검사를 건너뛴다.
@@ -932,9 +940,10 @@ namespace ProjectNeo.Combat
         {
             float detection = settings.DetectionRange * settings.DetectionRange;
             topCandidates.Reset(settings != null ? settings.MaxPathCandidatesPerTick : 4);
-            foreach (CharacterActor candidate in CharacterActor.ActiveActors)
+            CombatSpatialIndex.QueryEnemies(actor.Team, transform.position, settings.DetectionRange, spatialCandidates);
+            for (int i = 0; i < spatialCandidates.Count; i++)
             {
-                if (candidate.Team == actor.Team) continue;
+                CharacterActor candidate = spatialCandidates[i];
                 float distance = (candidate.transform.position - transform.position).sqrMagnitude;
                 if (distance >= detection) continue;
                 // 선호·위협 배율이 없으면 score는 거리 그대로라 예전과 같은 대상을 고른다.
@@ -954,17 +963,17 @@ namespace ProjectNeo.Combat
                 float floor = topCandidates.WorstScore;
                 CharacterActor fallback = null;
                 float best = float.PositiveInfinity;
-                foreach (CharacterActor candidate in CharacterActor.ActiveActors)
+                for (int i = 0; i < spatialCandidates.Count; i++)
                 {
-                    if (candidate.Team == actor.Team) continue;
+                    CharacterActor candidate = spatialCandidates[i];
                     float distance = (candidate.transform.position - transform.position).sqrMagnitude;
                     if (distance >= detection) continue;
                     float score = ScoreOf(candidate, distance);
                     if (score < floor || score >= best || !actor.IsEnemy(candidate)
                         || !CombatPhysics.CanTarget(actor, candidate)) continue;
                     bool alreadyChecked = false;
-                    for (int i = 0; i < topCandidates.Count; i++)
-                        if (ReferenceEquals(topCandidates[i], candidate)) { alreadyChecked = true; break; }
+                    for (int k = 0; k < topCandidates.Count; k++)
+                        if (ReferenceEquals(topCandidates[k], candidate)) { alreadyChecked = true; break; }
                     if (alreadyChecked || !CanReach(candidate)) continue;
                     best = score;
                     fallback = candidate;
