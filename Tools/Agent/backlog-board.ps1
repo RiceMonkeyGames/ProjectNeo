@@ -196,7 +196,7 @@ try {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ProjectNeo — Backlog</title>
+<title>ProjectNeo &mdash; Backlog</title>
 <style>
   :root {
     --bg: #0b0d12;
@@ -505,7 +505,7 @@ try {
     align-items: center;
     gap: 10px;
   }
-  .menu-btn {
+  .btn.menu-btn {
     display: none;
     padding: 6px 9px;
   }
@@ -706,8 +706,8 @@ try {
   /* Kanban Board */
   .board {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(275px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
+    gap: 12px;
     align-items: start;
   }
   .col {
@@ -1101,7 +1101,7 @@ try {
     }
     .sidebar.open { transform: translateX(0); }
     .sb-backdrop.open { display: block; }
-    .menu-btn { display: inline-flex; }
+    .btn.menu-btn { display: inline-flex; }
     .kpi-row { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
     .col { max-height: none; }
   }
@@ -1120,7 +1120,7 @@ try {
         </div>
       </div>
       <div class="sb-branch" title="Current Git branch">
-        <span style="color:var(--cyan);">⎇</span>
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--cyan);flex-shrink:0;"><circle cx="4" cy="3.5" r="1.8"/><circle cx="4" cy="12.5" r="1.8"/><circle cx="12" cy="5.5" r="1.8"/><path d="M4 5.3v5.4M12 7.3c0 2.7-2.2 3.4-8 3.4"/></svg>
         <span id="metaBranch">branch</span>
       </div>
     </div>
@@ -1129,15 +1129,15 @@ try {
       <div class="sb-section">
         <div class="sb-label">Views</div>
         <button class="nav-item active" data-sb-view="kanban">
-          <span class="nav-left"><span>▦</span><span class="nav-text">Kanban Board</span></span>
+          <span class="nav-left"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="flex-shrink:0;"><rect x="2" y="2.5" width="3.5" height="11" rx="1"/><rect x="6.25" y="2.5" width="3.5" height="7.5" rx="1"/><rect x="10.5" y="2.5" width="3.5" height="9.5" rx="1"/></svg><span class="nav-text">Kanban Board</span></span>
           <span class="nav-count" id="sbCountActive">0</span>
         </button>
         <button class="nav-item" data-sb-view="table">
-          <span class="nav-left"><span>☰</span><span class="nav-text">Table View</span></span>
+          <span class="nav-left"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="flex-shrink:0;"><path d="M2.5 4h11M2.5 8h11M2.5 12h11"/></svg><span class="nav-text">Table View</span></span>
           <span class="nav-count" id="sbCountTable">0</span>
         </button>
         <button class="nav-item" data-sb-view="history" id="sbViewHistory">
-          <span class="nav-left"><span>✓</span><span class="nav-text">Completed History</span></span>
+          <span class="nav-left"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="flex-shrink:0;"><path d="M3 8.5l3.2 3.2L13 4.8"/></svg><span class="nav-text">Completed History</span></span>
           <span class="nav-count" id="sbCountHistory">0</span>
         </button>
       </div>
@@ -1169,20 +1169,20 @@ try {
 
     <div class="sb-foot">
       <span class="sb-updated" id="metaGen" title="Snapshot timestamp">updated</span>
-      <button class="btn icon-only" id="btnTheme" title="Toggle Dark / Light theme">◐</button>
+      <button class="btn icon-only" id="btnTheme" title="Toggle Dark / Light theme"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.5"/><path d="M8 2.5a5.5 5.5 0 0 1 0 11z" fill="currentColor"/></svg></button>
     </div>
   </aside>
 
   <div class="main">
     <header class="topbar">
-      <button class="btn menu-btn" id="btnMenu">☰</button>
+      <button class="btn menu-btn" id="btnMenu" title="Toggle menu"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2.5 4h11M2.5 8h11M2.5 12h11"/></svg></button>
       <div class="topbar-title">
         <span id="viewHeading">Kanban Board</span>
         <span class="topbar-count" id="countNote"></span>
       </div>
 
       <div class="search-wrap">
-        <span class="search-ico">⌕</span>
+        <span class="search-ico"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="display:block;"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg></span>
         <input type="search" id="qSearch" placeholder="Search ID, title, assignee, branch, scope...">
         <span class="kbd-hint">/</span>
       </div>
@@ -1292,7 +1292,7 @@ const DATA = __BACKLOG_JSON__;
     const n = String(name || 'Unassigned').trim();
     const cls = small ? 'avatar sm' : 'avatar';
     if (!n || n.toLowerCase() === 'unassigned') {
-      return '<span class="' + cls + ' unassigned">—</span>';
+      return '<span class="' + cls + ' unassigned">&mdash;</span>';
     }
     const ch = Array.from(n)[0].toUpperCase();
     return '<span class="' + cls + '" style="background:' + hashColor(n) + '">' + esc(ch) + '</span>';
@@ -1544,7 +1544,7 @@ const DATA = __BACKLOG_JSON__;
     chips.forEach(c => {
       const el = document.createElement('span');
       el.className = 'filter-chip';
-      el.innerHTML = '<span>' + esc(c.label) + '</span><button title="Remove">×</button>';
+      el.innerHTML = '<span>' + esc(c.label) + '</span><button title="Remove">&times;</button>';
       el.querySelector('button').addEventListener('click', () => { c.clear(); render(); });
       wrap.appendChild(el);
     });
@@ -1674,9 +1674,9 @@ const DATA = __BACKLOG_JSON__;
           const invalidBadge = t.valid === false ? '<span class="badge invalid">INVALID</span>' : '';
           const deps = toArray(t.dependsOn);
           const depsHtml = deps.length > 0
-            ? '<div class="card-deps">' + deps.map(d => '<span class="mini-dep ' + esc(d.state) + '">↳ ' + esc(d.id) + '</span>').join('') + '</div>'
+            ? '<div class="card-deps">' + deps.map(d => '<span class="mini-dep ' + esc(d.state) + '">&#8627; ' + esc(d.id) + '</span>').join('') + '</div>'
             : '';
-          const branchHtml = t.branch ? '<div class="branch-tag" title="' + esc(t.branch) + '">⎇ ' + esc(t.branch) + '</div>' : '';
+          const branchHtml = t.branch ? '<div class="branch-tag" title="' + esc(t.branch) + '">branch: ' + esc(t.branch) + '</div>' : '';
 
           card.innerHTML =
             '<div class="card-top">' +
@@ -1719,7 +1719,7 @@ const DATA = __BACKLOG_JSON__;
     ];
     let html = '<table><thead><tr>';
     cols.forEach(c => {
-      const arrow = state.sortKey === c.k ? (state.sortDir === 1 ? ' ▲' : ' ▼') : '';
+      const arrow = state.sortKey === c.k ? (state.sortDir === 1 ? ' &#9650;' : ' &#9660;') : '';
       html += '<th data-sort="' + c.k + '">' + esc(c.label) + arrow + '</th>';
     });
     html += '</tr></thead><tbody>';
@@ -1727,7 +1727,7 @@ const DATA = __BACKLOG_JSON__;
       const deps = toArray(t.dependsOn);
       const blocked = t.blockedByDep ? ' <span class="badge blocked">BLOCKED</span>' : '';
       const depStr = deps.length
-        ? '<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;">' + deps.map(d => '<span class="mini-dep ' + esc(d.state) + '">↳ ' + esc(d.id) + '</span>').join('') + '</div>'
+        ? '<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;">' + deps.map(d => '<span class="mini-dep ' + esc(d.state) + '">&#8627; ' + esc(d.id) + '</span>').join('') + '</div>'
         : '';
       html += '<tr data-idx="' + idx + '">' +
         '<td class="mono" style="color:var(--accent);font-weight:700;white-space:nowrap;">' + esc(t.id) + '</td>' +
@@ -1735,7 +1735,7 @@ const DATA = __BACKLOG_JSON__;
         '<td><span class="badge area area-' + esc(t.area) + '">' + esc(t.area) + '</span></td>' +
         '<td style="white-space:nowrap;"><span class="assignee-pill">' + avatarHtml(t.assignee, true) + '<span>' + esc(t.assignee || 'Unassigned') + '</span></span></td>' +
         '<td><div style="font-weight:600;">' + esc(t.title) + '</div>' + depStr + '</td>' +
-        '<td class="mono" style="color:var(--cyan);">' + esc(t.branch || '—') + '</td>' +
+        '<td class="mono" style="color:var(--cyan);">' + esc(t.branch || '\u2014') + '</td>' +
         '<td class="mono" style="white-space:nowrap;color:var(--muted);">' + esc(t.created || '-') + ' (' + esc(ageLabel(t)) + ')</td>' +
       '</tr>';
     });
