@@ -87,6 +87,65 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(North, Faces(2, 5), "the face toward the taller neighbour is closed by its wall");
         }
 
+        // BUG-battlement-inner-faces: 기본 성 고리에 틈이 나도 안뜰은 늘 안쪽이다.
+        readonly HashSet<Vector2Int> enclosed = new HashSet<Vector2Int>();
+
+        void RemoveAt(int x, int z) => Assert.IsTrue(layout.Remove(layout.Top(new Vector2Int(x, z)).Id, true), $"remove {x},{z}");
+
+        int FacesKeepingInside(int x, int z)
+        {
+            BattlementRules.CollectOutside(layout, grid, outside, enclosed);
+            return BattlementRules.Faces(layout, grid, outside, new Vector2Int(x, z));
+        }
+
+        [Test]
+        public void Enclosed_IsTheStartFootprint_RingAndCourtyard()
+        {
+            Ring();
+            Place(stairs, 3, 4);
+            BattlementRules.CollectEnclosed(layout, grid, enclosed);
+            Assert.AreEqual(25, enclosed.Count, "the 5x5 ring with its courtyard");
+            Assert.IsTrue(enclosed.Contains(new Vector2Int(3, 3)));
+            Assert.IsTrue(enclosed.Contains(new Vector2Int(3, 4)), "a stair cell inside the ring");
+            Assert.IsTrue(enclosed.Contains(new Vector2Int(3, 5)), "ring cells too");
+            Assert.IsFalse(enclosed.Contains(new Vector2Int(0, 0)));
+            Assert.IsFalse(enclosed.Contains(new Vector2Int(3, 6)));
+        }
+
+        [Test]
+        public void GappedRing_WithoutStartCourtyard_LeaksBattlementsOntoInnerFaces()
+        {
+            Ring();
+            RemoveAt(1, 5); RemoveAt(2, 5);
+            Assert.AreEqual(East | West, Faces(1, 3), "plain flood fill: the gap lets the outside into the courtyard");
+        }
+
+        [Test]
+        public void GappedRing_KeepsTheStartCourtyardInside()
+        {
+            Ring();
+            BattlementRules.CollectEnclosed(layout, grid, enclosed);
+            RemoveAt(1, 5); RemoveAt(2, 5);
+            Assert.AreEqual(West, FacesKeepingInside(1, 4), "no battlement on the end facing the gap, none on the courtyard side");
+            Assert.AreEqual(West, FacesKeepingInside(1, 3));
+            Assert.AreEqual(North, FacesKeepingInside(3, 5), "the other end next to the gap stays open too");
+            Assert.AreEqual(South, FacesKeepingInside(3, 1));
+            Assert.IsFalse(outside.Contains(new Vector2Int(2, 5)), "a fallen ring cell is not outside");
+            Assert.IsFalse(outside.Contains(new Vector2Int(2, 4)), "the courtyard behind the gap is not");
+            Assert.IsFalse(outside.Contains(new Vector2Int(3, 3)));
+        }
+
+        [Test]
+        public void StartCourtyard_DoesNotChangeAClosedRing_AndExtensionsFollowTheNormalRule()
+        {
+            Ring();
+            BattlementRules.CollectEnclosed(layout, grid, enclosed);
+            Place(wall, 3, 6); // 고리 바깥에 붙인 확장 칸.
+            Assert.AreEqual(Faces(3, 1), FacesKeepingInside(3, 1));
+            Assert.AreEqual(Faces(1, 3), FacesKeepingInside(1, 3));
+            Assert.AreEqual(North | East | West, FacesKeepingInside(3, 6));
+        }
+
         [Test]
         public void StairsGetNone_AndAStairTopAtTheSameHeightLeavesTheFaceOpen()
         {
