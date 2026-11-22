@@ -82,10 +82,18 @@ namespace ProjectNeo.Combat
         }
 
         static bool IsClear(Vector3 origin, Collider footing, float footingFloor, ShotOpening opening,
-            CharacterActor attacker, CharacterActor target, Vector3 point)
+            CharacterActor attacker, CharacterActor target, Vector3 point) =>
+            ClassifyLine(origin, footing, footingFloor, opening, attacker, target, point, out _) == ShotBlock.Clear;
+
+        // 선 하나를 무엇이 막는지. 구조물이 하나라도 막으면 구조물, 아니면 가장 가까운 막는 적을 돌려준다.
+        static ShotBlock ClassifyLine(Vector3 origin, Collider footing, float footingFloor, ShotOpening opening,
+            CharacterActor attacker, CharacterActor target, Vector3 point, out CharacterActor blocker)
         {
+            blocker = null;
             Vector3 offset = point - origin;
-            if (offset.sqrMagnitude < 1e-6f) return true;
+            if (offset.sqrMagnitude < 1e-6f) return ShotBlock.Clear;
+            bool structure = false;
+            float nearest = float.PositiveInfinity;
             foreach (RaycastHit hit in Physics.RaycastAll(origin, offset.normalized, offset.magnitude,
                 ~0, QueryTriggerInteraction.Ignore))
             {
@@ -96,9 +104,34 @@ namespace ProjectNeo.Combat
                 var actor = hit.collider.GetComponentInParent<CharacterActor>();
                 if (actor == target || actor == attacker) continue;
                 if (actor != null && (actor.Team == attacker.Team || actor.Health == null || actor.Health.IsDead)) continue;
-                return false;
+                if (actor == null) { structure = true; continue; }
+                if (hit.distance < nearest) { nearest = hit.distance; blocker = actor; }
             }
-            return true;
+            if (structure) { blocker = null; return ShotBlock.Structure; }
+            return blocker != null ? ShotBlock.LivingEnemy : ShotBlock.Clear;
+        }
+
+        /// <summary>
+        /// 대상까지의 사선을 무엇이 막는지(COMBAT-12). 몸 가운데와 위쪽 몸통 두 선을 보고
+        /// <see cref="RangedOcclusionRules.Combine"/>으로 합친다. 적이 막으면 <paramref name="blocker"/>는 가장 가까운 막는 적이다
+        /// (적만 막는 선 중 몸 가운데 선을 먼저 쓴다).
+        /// </summary>
+        public static ShotBlock ClassifyShot(CharacterActor attacker, CharacterActor target, out CharacterActor blocker)
+        {
+            Collider footing = attacker.Profile.AttackKind == AttackKind.Projectile ? GroundUnder(attacker) : null;
+            float floor = footing != null ? FootingFloor(attacker) : 0f;
+            ShotOpening opening = ShotOpening.At(attacker);
+            Vector3 origin = attacker.AimPoint;
+            ShotBlock center = ClassifyLine(origin, footing, floor, opening, attacker, target, target.AimPoint,
+                out CharacterActor centerBlocker);
+            Vector3 upperPoint = target.transform.position + Vector3.up * (target.CurrentHeight * target.Profile.UpperAimRatio);
+            CharacterActor upperBlocker = null;
+            ShotBlock upper = center == ShotBlock.Clear ? ShotBlock.Clear
+                : ClassifyLine(origin, footing, floor, opening, attacker, target, upperPoint, out upperBlocker);
+            ShotBlock result = RangedOcclusionRules.Combine(center, upper);
+            blocker = result != ShotBlock.LivingEnemy ? null
+                : center == ShotBlock.LivingEnemy ? centerBlocker : upperBlocker;
+            return result;
         }
 
         // 선(from → to)이 발밑 물체를 빠져나가는 점이 허용 깊이(footingFloor) 위인지. RaycastAll은 들어가는 점만 주므로
