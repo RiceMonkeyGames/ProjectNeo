@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5e5828a795bc0b04c954c50a469945c4, type: 3}
+  m_Name: Camera
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Walls.BuildCameraSettings
+  pitch: 30
+  initialYaw: 45
+  orthographicSize: 34
+  distance: 80
+  rotationStep: 90
+  transitionDuration: 0.3
+  navigationEnabled: 0
+  initialFocus: {x: 0.5, y: 0.5}
+  dragSensitivity: 1
+  zoomFraction: 0.15
+  minZoom: 20
+  maxZoom: 200
+  minimumGridLinePixels: 1.5

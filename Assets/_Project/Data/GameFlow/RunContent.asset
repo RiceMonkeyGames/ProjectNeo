@@ -49,12 +49,22 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 9bec35695a6f5a848b88ce14e4da5884, type: 2}
   - {fileID: 11400000, guid: c1c038f7a168fe347bc9a0582b3d05bf, type: 2}
   - {fileID: 11400000, guid: aac3647309965694ebd130dc919fcbf7, type: 2}
+  - {fileID: 11400000, guid: 09be25efe3fc48640b58897dce998fc2, type: 2}
+  - {fileID: 11400000, guid: 953dab19ee53567499f83ed9194e409e, type: 2}
+  - {fileID: 11400000, guid: 3e8e750cf38308a41a2e36ecc6ee5a8d, type: 2}
+  - {fileID: 11400000, guid: 4695340436207e74ea2ee59e0b0cdc6c, type: 2}
+  - {fileID: 11400000, guid: 67b582854151fb14dab06c9f4c9f2183, type: 2}
   pieceIds:
   - dc1e88579bbb29f428e498188dcd48e4
   - 808c026c839abdb4aa59f6e639e1c812
   - 9bec35695a6f5a848b88ce14e4da5884
   - c1c038f7a168fe347bc9a0582b3d05bf
   - aac3647309965694ebd130dc919fcbf7
+  - 09be25efe3fc48640b58897dce998fc2
+  - 953dab19ee53567499f83ed9194e409e
+  - 3e8e750cf38308a41a2e36ecc6ee5a8d
+  - 4695340436207e74ea2ee59e0b0cdc6c
+  - 67b582854151fb14dab06c9f4c9f2183
   weapons:
   - {fileID: 11400000, guid: dcd5362db7ff6a84db2f93ac232125a8, type: 2}
   perks:

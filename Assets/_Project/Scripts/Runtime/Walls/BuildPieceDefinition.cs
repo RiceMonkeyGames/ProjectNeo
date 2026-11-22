@@ -4,8 +4,11 @@ using UnityEngine;
 
 namespace ProjectNeo.Walls
 {
-    /// <summary>값은 저장·에셋에 남으므로 바꾸지 않는다. 보루(SIEGE-11)는 성벽 밖으로 튀어나온 수성 무기 자리다.</summary>
-    public enum BuildPieceKind { Wall = 0, Stairs = 1, Gate = 2, Bastion = 3 }
+    /// <summary>
+    /// 값은 저장·에셋에 남으므로 바꾸지 않는다. 보루(SIEGE-11)는 성벽 밖으로 튀어나온 수성 무기 자리다.
+    /// 망루(SIEGE-14, 2×2)는 보루보다 비싸고 강한 바깥 조각으로, 지붕에 선 아군 원거리 유닛이 강해진다.
+    /// </summary>
+    public enum BuildPieceKind { Wall = 0, Stairs = 1, Gate = 2, Bastion = 3, Tower = 4 }
 
     [Serializable]
     public struct BuildMountPoint
@@ -27,6 +30,8 @@ namespace ProjectNeo.Walls
         [SerializeField, Min(1f)] float maxHealth = 100f;
         [SerializeField] GameObject prefab;
         [SerializeField] List<BuildMountPoint> mountPoints = new List<BuildMountPoint>();
+        [Tooltip("맨 위 윗면에 선 아군 원거리 공격자에게 붙는 스탯 수정값(망루). 내려오면 뗀다. 비우면 효과 없음.")]
+        [SerializeField] List<ProjectNeo.Stats.StatModifier> occupantModifiers = new List<ProjectNeo.Stats.StatModifier>();
         public BuildPieceKind Kind => kind;
         public string DisplayName => displayName;
         public Vector2Int Footprint => footprint;
@@ -36,6 +41,11 @@ namespace ProjectNeo.Walls
         public GameObject Prefab => prefab;
         // 바닥 칸과 별개의 설치 지점. 향후 수성 무기는 지지 조각 ID + 지점 ID로 연결한다.
         public IReadOnlyList<BuildMountPoint> MountPoints => mountPoints;
+        public IReadOnlyList<ProjectNeo.Stats.StatModifier> OccupantModifiers => occupantModifiers;
+
+        /// <summary>윗면에 선 아군 원거리 공격자의 수정값을 정한다(에디터 설정·시험용).</summary>
+        public void SetOccupantModifiers(params ProjectNeo.Stats.StatModifier[] modifiers) =>
+            occupantModifiers = new List<ProjectNeo.Stats.StatModifier>(modifiers);
 
         public static BuildPieceDefinition Create(BuildPieceKind kind, string name, Vector2Int footprint,
             float height = 3f, float maxHealth = 100f, GameObject prefab = null, params BuildMountPoint[] mountPoints)
