@@ -26,7 +26,15 @@ namespace ProjectNeo.Walls
             cell.x >= 0 && cell.y >= 0 && cell.x < grid.Width && cell.y < grid.Depth;
 
         /// <summary>격자 가장자리에서 빈 칸(조각이 없는 칸)만 따라 닿을 수 있는 칸을 모은다.</summary>
-        public static void CollectOutside(BuildLayout layout, BuildGridDefinition grid, HashSet<Vector2Int> outside)
+        public static void CollectOutside(BuildLayout layout, BuildGridDefinition grid, HashSet<Vector2Int> outside) =>
+            CollectOutside(layout, grid, outside, null);
+
+        /// <summary>
+        /// 격자 가장자리에서 빈 칸만 따라 닿을 수 있는 칸을 모은다. <paramref name="alwaysInside"/>의 칸은 비어 있어도
+        /// 바깥이 되지 않고 지나갈 수도 없다(BUG-battlement-inner-faces: 기본 성 안뜰은 성벽에 틈이 나도 늘 안쪽).
+        /// </summary>
+        public static void CollectOutside(BuildLayout layout, BuildGridDefinition grid, HashSet<Vector2Int> outside,
+            ICollection<Vector2Int> alwaysInside)
         {
             outside.Clear();
             var open = new Queue<Vector2Int>();
@@ -35,7 +43,7 @@ namespace ProjectNeo.Walls
                 {
                     if (x != 0 && z != 0 && x != grid.Width - 1 && z != grid.Depth - 1) continue;
                     var cell = new Vector2Int(x, z);
-                    if (layout.ColumnHeight(cell) == 0 && outside.Add(cell)) open.Enqueue(cell);
+                    if (IsOpen(layout, alwaysInside, cell) && outside.Add(cell)) open.Enqueue(cell);
                 }
             while (open.Count > 0)
             {
@@ -43,9 +51,30 @@ namespace ProjectNeo.Walls
                 foreach (Vector2Int direction in Directions)
                 {
                     Vector2Int next = cell + direction;
-                    if (InGrid(grid, next) && layout.ColumnHeight(next) == 0 && outside.Add(next)) open.Enqueue(next);
+                    if (InGrid(grid, next) && IsOpen(layout, alwaysInside, next) && outside.Add(next)) open.Enqueue(next);
                 }
             }
+        }
+
+        static bool IsOpen(BuildLayout layout, ICollection<Vector2Int> alwaysInside, Vector2Int cell) =>
+            layout.ColumnHeight(cell) == 0 && (alwaysInside == null || !alwaysInside.Contains(cell));
+
+        /// <summary>
+        /// 기본 성(런 시작 배치) <paramref name="startLayout"/>의 바닥 전체를 모은다. 바깥에서 닿지 않는 칸, 곧 성벽 고리 칸과
+        /// 그 안뜰이다. 고리 칸이 무너져 비어도 바깥이 아니므로, 틈으로 안뜰까지 바깥이 번지지 않고
+        /// 틈 양옆 성벽의 끝 면(틈을 향한 면)에도 성가퀴가 서지 않는다.
+        /// </summary>
+        public static void CollectEnclosed(BuildLayout startLayout, BuildGridDefinition grid, HashSet<Vector2Int> inside)
+        {
+            inside.Clear();
+            var reached = new HashSet<Vector2Int>();
+            CollectOutside(startLayout, grid, reached);
+            for (int x = 0; x < grid.Width; x++)
+                for (int z = 0; z < grid.Depth; z++)
+                {
+                    var cell = new Vector2Int(x, z);
+                    if (!reached.Contains(cell)) inside.Add(cell);
+                }
         }
 
         /// <summary>격자 밖이거나 바깥에 속한 칸인지.</summary>

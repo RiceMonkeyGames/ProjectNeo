@@ -36,12 +36,15 @@ namespace ProjectNeo.Walls
         public IReadOnlyCollection<PlacedSiegeWeapon> Weapons => weapons.Values;
         public event Action<PlacedSiegeWeapon, SiegeWeaponRemoval> WeaponRemoved;
         public BuildGridDefinition Grid => grid;
+        /// <summary>런 시작 배치(기본 성). 성가퀴의 늘 안쪽 판정에 쓴다(BUG-battlement-inner-faces).</summary>
+        public IReadOnlyList<InitialBuildPiece> InitialPieces => initialPieces ?? Array.Empty<InitialBuildPiece>();
         public IReadOnlyCollection<PlacedStructure> Structures => structures.Values;
         public bool IsRebuilding { get; private set; }
         public bool RebuildPending => rebuildPending;
         public int NavigationRevision { get; private set; }
         /// <summary>
         /// 준비 중 직접 바꾼 배치(놓기·철거·되살리기)마다 오른다. 전투 중 무너짐·성문 파괴로는 오르지 않는다(SIEGE-10 성 바깥 판정 기준).
+        /// 전투 중 무너짐은 준비 단계에 들어설 때 <see cref="CastleBattlements.RecomputeOutside"/>로 반영한다.
         /// </summary>
         public int LayoutRevision { get; private set; }
         public event Action<PlacedStructure> PieceCollapsing;

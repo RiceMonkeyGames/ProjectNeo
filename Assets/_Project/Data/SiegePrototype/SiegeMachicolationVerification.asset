@@ -1,0 +1,127 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 457a1368d8e27b44c844f420636b3d58, type: 3}
+  m_Name: SiegeMachicolationVerification
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Siege.SiegeSettings
+  allySquads:
+  - unitPrefab: {fileID: 1580047652266255285, guid: 45375a83b76cc6340b53463ab6fa029c, type: 3}
+    count: 4
+  enemyGroups:
+  - unitPrefab: {fileID: 1786433762328342860, guid: c378e8883465b87419682e8417179d72, type: 3}
+    count: 0
+  - unitPrefab: {fileID: 3311207010470909413, guid: 6336293aee1c1264089c9649769650a6, type: 3}
+    count: 3
+  - unitPrefab: {fileID: 1786433762328342860, guid: c378e8883465b87419682e8417179d72, type: 3}
+    count: 0
+  - unitPrefab: {fileID: 1594135828907872887, guid: 74ac65c8d1c47724d836fe77800d4b3a, type: 3}
+    count: 0
+  - unitPrefab: {fileID: 1594135828907872887, guid: 74ac65c8d1c47724d836fe77800d4b3a, type: 3}
+    count: 0
+  - unitPrefab: {fileID: 1594135828907872887, guid: 74ac65c8d1c47724d836fe77800d4b3a, type: 3}
+    count: 0
+  - unitPrefab: {fileID: 3276109497482159700, guid: def97a7de831ff349a9a555089d5b0ef, type: 3}
+    count: 0
+  - unitPrefab: {fileID: 7517096732457025389, guid: a4246cb22c7768840aae61bb4b280916, type: 3}
+    count: 0
+  startingBudget: 40
+  pieceCosts:
+  - piece: {fileID: 11400000, guid: c1c038f7a168fe347bc9a0582b3d05bf, type: 2}
+    cost: 2
+  - piece: {fileID: 11400000, guid: 9bec35695a6f5a848b88ce14e4da5884, type: 2}
+    cost: 3
+  weaponCosts:
+  - weapon: {fileID: 11400000, guid: dcd5362db7ff6a84db2f93ac232125a8, type: 2}
+    cost: 6
+  ladderRaiseSeconds: 3
+  ladderPushSeconds: 2
+  ladderPushHoldSeconds: 3
+  ladderOccupiedPushMultiplier: 1.5
+  ladderTwoPusherBonus: 0.5
+  ladderThreePlusPusherBonus: 0.75
+  ladderClimbSeconds: 2.5
+  ladderTapSeconds: 0.25
+  ladderUseRadius: 3.5
+  ladderPushRadius: 2.5
+  ladderBlockRadius: 3
+  ladderHeightTolerance: 1
+  ladderBaseOffset: 1.2
+  ladderTopInset: 1
+  ladderCrowdPenalty: 4
+  ladderFallClearance: 0.55
+  ladderFallOutwardSpeed: 3.5
+  ladderPushPoise: 10
+  ladderPushInterruptCooldown: 0.3
+  attackerDecisionInterval: 0.5
+  gateStandOffset: -0.3
+  gateSpread: 3
+  archerApproachRatio: 0.7
+  archerRepositionDelay: 3
+  archerSideStep: 3
+  archerSideStepCount: 3
+  archerSearchCooldown: 10
+  archerSpotCommitSeconds: 5
+  retreatEdgeMargin: 1.5
+  retreatTimeout: 20
+  pushLadder:
+    m_Name: PushLadder
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 42ab863a-ae06-4780-843f-59251c9fa9d1
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 0dbd112c-2c94-40f1-89e5-83cf542449ef
+      m_Path: <Keyboard>/f
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: PushLadder
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  switchView:
+    m_Name: SwitchView
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 85f72c7d-613b-4c48-9cfc-463d8ef30467
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: f311cc4b-3819-4b9c-ad10-c21327583ecf
+      m_Path: <Keyboard>/tab
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: SwitchView
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  restart:
+    m_Name: Restart
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 80470c6f-4cfa-4014-bdf2-fa5099b2fa01
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: c5125255-1345-430a-949d-1dcf876be1e3
+      m_Path: <Keyboard>/r
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Restart
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0

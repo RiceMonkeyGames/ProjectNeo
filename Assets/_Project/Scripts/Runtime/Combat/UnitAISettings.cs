@@ -42,6 +42,23 @@ namespace ProjectNeo.Combat
         // 타겟 전환 후 최소 유지 시간. 여러 적에게 동시에 맞을 때 핑퐁 현상을 막는다.
         [SerializeField, Min(0f)] float targetSwitchCooldown = 1.5f;
         public float TargetSwitchCooldown => targetSwitchCooldown;
+        // 근접 접근 자리(COMBAT-12). 끄면 예전처럼 대상 중심으로 간다. 임시 값이며 플레이 후 조정한다.
+        [SerializeField] bool meleeSlots = true;
+        // 공격자와 대상 몸 사이의 틈(m).
+        [SerializeField, Min(0f)] float meleeSlotGap = 0.15f;
+        // 링 위 자리 간격(m, 호 길이). 몸 지름(0.8m)보다 조금 넓게.
+        [SerializeField, Min(0.1f)] float meleeSlotSpacing = 0.9f;
+        // 바깥(대기) 링이 안쪽 링에서 더 나간 거리(m).
+        [SerializeField, Min(0f)] float meleeOuterRingOffset = 1f;
+        // 자리를 길찾기 메시에 맞출 때 찾는 거리와, 대상과 허용하는 높이 차(m). 다른 층의 자리는 쓰지 않는다.
+        [SerializeField, Min(0.05f)] float meleeSlotSampleDistance = 0.5f;
+        [SerializeField, Min(0.05f)] float meleeSlotLevelTolerance = 1f;
+        public bool MeleeSlots => meleeSlots;
+        public float MeleeSlotGap => meleeSlotGap;
+        public float MeleeSlotSpacing => meleeSlotSpacing;
+        public float MeleeOuterRingOffset => meleeOuterRingOffset;
+        public float MeleeSlotSampleDistance => meleeSlotSampleDistance;
+        public float MeleeSlotLevelTolerance => meleeSlotLevelTolerance;
         public float MoveStallDistance => moveStallDistance;
         public float MoveStallSeconds => moveStallSeconds;
         public float MoveStallProgress => moveStallProgress;
@@ -52,9 +69,10 @@ namespace ProjectNeo.Combat
 
         public static UnitAISettings Create(float detectionRange = 60f, float holdEngageRadius = 6f,
             float holdRangedChaseExtra = 6f, float holdRetaliationRadius = 15f, float targetSwitchCooldown = 1.5f,
-            float holdMaxDescent = 1.5f)
+            float holdMaxDescent = 1.5f, bool meleeSlots = true)
         {
             var value = CreateInstance<UnitAISettings>();
+            value.meleeSlots = meleeSlots;
             value.detectionRange = Mathf.Max(0f, detectionRange);
             value.holdEngageRadius = Mathf.Max(0f, holdEngageRadius);
             value.holdRangedChaseExtra = Mathf.Max(0f, holdRangedChaseExtra);

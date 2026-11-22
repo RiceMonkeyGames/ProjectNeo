@@ -3973,6 +3973,7 @@ GameObject:
   - component: {fileID: 340332243}
   - component: {fileID: 340332242}
   - component: {fileID: 340332244}
+  - component: {fileID: 340332245}
   m_Layer: 0
   m_Name: ConstructionWorld
   m_TagString: Untagged
@@ -4533,6 +4534,20 @@ MonoBehaviour:
   world: {fileID: 340332242}
   settings: {fileID: 11400000, guid: 2fc676d28649318488e42f87bea20ae5, type: 2}
   style: 1
+--- !u!114 &340332245
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 340332241}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07a440ebe3e22234b95c410fe2807d11, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Walls.GateMachicolations
+  world: {fileID: 340332242}
+  settings: {fileID: 11400000, guid: cadf752613a51c94685c6af8c751af47, type: 2}
 --- !u!1 &345218128
 GameObject:
   m_ObjectHideFlags: 0

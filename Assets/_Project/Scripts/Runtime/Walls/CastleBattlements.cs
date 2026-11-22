@@ -8,7 +8,8 @@ namespace ProjectNeo.Walls
     /// 성벽 맨 위 칸에 성가퀴를 자동으로 세운다(SIEGE-10). 조각을 쌓거나 빼거나 무너질 때마다 다시 맞춘다.
     /// 성가퀴는 받치는 조각의 자식이라 그 조각과 함께 움직이고 사라진다(따로 부서지지 않는다).
     /// 충돌체는 아군 사격을 통과시키는 <see cref="ShotCover"/>이며, 길찾기 메시에는 벽처럼 반영된다.
-    /// 성 바깥 판정은 준비 중 직접 바꾼 배치(<see cref="ConstructionWorld.LayoutRevision"/>)가 바뀔 때만 다시 계산한다.
+    /// 성 바깥 판정은 준비 중 직접 바꾼 배치(<see cref="ConstructionWorld.LayoutRevision"/>)가 바뀔 때와
+    /// 준비 단계에 들어설 때(<see cref="RecomputeOutside"/>)만 다시 계산한다. 기본 성 안뜰은 늘 안쪽이다.
     /// </summary>
     public sealed class CastleBattlements : MonoBehaviour
     {
@@ -34,6 +35,8 @@ namespace ProjectNeo.Walls
         readonly List<PlacedStructure> stale = new List<PlacedStructure>();
         readonly HashSet<PlacedStructure> live = new HashSet<PlacedStructure>();
         static Mesh cube;
+        readonly HashSet<Vector2Int> enclosed = new HashSet<Vector2Int>();
+        bool enclosedReady;
         int outsideRevision = -1;
         bool dirty = true;
 
@@ -217,8 +220,32 @@ namespace ProjectNeo.Walls
         void EnsureOutside()
         {
             if (outsideRevision == world.LayoutRevision) return;
-            BattlementRules.CollectOutside(world.Layout, world.Grid, outside);
+            EnsureEnclosed();
+            BattlementRules.CollectOutside(world.Layout, world.Grid, outside, enclosed);
             outsideRevision = world.LayoutRevision;
+        }
+
+        // 기본 성(런 시작 배치)이 둘러싼 안뜰. 성벽에 틈이 나도 늘 안쪽이다(BUG-battlement-inner-faces).
+        void EnsureEnclosed()
+        {
+            if (enclosedReady) return;
+            enclosedReady = true;
+            var start = new BuildLayout(world.Grid);
+            foreach (InitialBuildPiece seed in world.InitialPieces)
+                if (seed.definition != null) start.TryPlace(seed.definition, seed.cell, seed.rotation, out _, seed.fixedGate);
+            BattlementRules.CollectEnclosed(start, world.Grid, enclosed);
+        }
+
+        /// <summary>
+        /// 전투 중 무너짐까지 반영해 성 바깥을 다시 판정하고 성가퀴를 맞춘다. 준비 단계에 들어설 때 부른다.
+        /// 전투 중에는 성가퀴 면을 고정해 두고, 저장을 불러온 뒤와 같은 결과를 준비 단계에서 보게 한다.
+        /// </summary>
+        public void RecomputeOutside()
+        {
+            if (world == null || world.Layout == null) return;
+            outsideRevision = -1;
+            dirty = true;
+            Refresh();
         }
 
         /// <summary>모든 조각의 성가퀴를 지금 배치와 모양에 맞춘다. 바뀐 것이 있으면 길찾기 메시를 다시 만들게 한다.</summary>

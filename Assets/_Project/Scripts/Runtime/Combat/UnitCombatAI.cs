@@ -31,6 +31,8 @@ namespace ProjectNeo.Combat
         bool suppressRetaliation;
         float coverCheckRemaining;
         bool behindCover;
+        ShotOpening opening;
+        RangedBlockAction blockAction = RangedBlockAction.Attack;
         public CharacterActor Target { get; private set; }
         // 지시를 받지 않은 유닛(적, 관전 전투)은 기존처럼 알아서 싸운다.
         public UnitDirective Directive { get; private set; } = UnitDirective.Engage;
@@ -69,6 +71,9 @@ namespace ProjectNeo.Combat
             decisionRemaining = 0f;
             stall.Reset();
             returningToPost = false;
+            ReleaseOpening();
+            meleeSlotBoard.Release(this);
+            blockAction = RangedBlockAction.Attack;
             if (directive == UnitDirective.Hold) HoldPost = transform.position;
         }
 
@@ -278,7 +283,7 @@ namespace ProjectNeo.Combat
                 // 움직이는 적을 따라가도록 판단 주기마다 경로를 다시 구한다. 길이 끊겼으면 놓아준다.
                 if (refreshed)
                 {
-                    if (CanReachInHold(Target)) agent.SetPath(path);
+                    if (CanReachInHold(Target)) ApplyApproachPath(true);
                     else
                     {
                         Target = null;
@@ -287,6 +292,7 @@ namespace ProjectNeo.Combat
                 }
                 if (Target != null) return;
             }
+            if (UpdateOpening(refreshed)) return;
             // 자리로 돌아가기. 여유 거리(HoldReturnDistance)보다 멀리 밀려났을 때만 출발하고, 출발하면 도착 거리까지 붙는다.
             // 자리가 다른 유닛에 막혀 더 못 가면 거기서 멈춘다. 살짝 밀린 정도로 자리 다툼을 하지 않는다.
             Vector3 offset = HoldPost - transform.position;
@@ -308,6 +314,76 @@ namespace ProjectNeo.Combat
             }
             if (refreshed || !agent.hasPath) agent.SetDestination(HoldPost);
         }
+
+        // 마치콜레이션(SIEGE-12): 중지 중인 원거리 유닛이 쏠 대상이 없을 때, 근처 빈 구멍 아래에 적이 있으면 그 구멍으로 가서 선다.
+        // 서면 아래 적이 보여 위의 공격 분기에서 쏜다. 아래에 적이 없어지면 구멍을 놓고 자리로 돌아간다.
+        bool UpdateOpening(bool refreshed)
+        {
+            if (opening != null && refreshed
+                && MachicolationRules.ShouldRelease(opening.isActiveAndEnabled, opening.HasEnemyBelow(actor)))
+                ReleaseOpening();
+            if (opening != null && !opening.isActiveAndEnabled) ReleaseOpening();
+            if (opening == null && refreshed) ClaimOpening();
+            if (opening == null) return false;
+            if (opening.IsAtStand(transform.position))
+            {
+                if (agent.hasPath) agent.ResetPath();
+                agent.isStopped = true;
+                agent.updateRotation = false;
+                returningToPost = false;
+                return true;
+            }
+            agent.updateRotation = true;
+            agent.isStopped = actor.IsAttacking;
+            if (refreshed || !agent.hasPath) agent.SetDestination(opening.StandPoint);
+            return true;
+        }
+
+        readonly System.Collections.Generic.List<MachicolationCandidate> openingCandidates =
+            new System.Collections.Generic.List<MachicolationCandidate>();
+        readonly System.Collections.Generic.List<int> openingOrder = new System.Collections.Generic.List<int>();
+        const float OpeningLevelTolerance = 1.5f;
+
+        void ClaimOpening()
+        {
+            var all = ShotOpening.Active;
+            if (all.Count == 0) return;
+            openingCandidates.Clear();
+            float radius = 0f;
+            foreach (ShotOpening candidate in all)
+            {
+                bool usable = candidate.CanBeUsedBy(actor);
+                Vector3 offset = candidate.StandPoint - HoldPost;
+                bool sameLevel = Mathf.Abs(offset.y) <= OpeningLevelTolerance;
+                offset.y = 0f;
+                radius = Mathf.Max(radius, candidate.SearchRadius);
+                // 반경 밖이거나 쓸 수 없는 구멍은 아래 적을 세지 않는다(비싼 검사를 줄인다).
+                bool near = usable && sameLevel && offset.sqrMagnitude <= candidate.SearchRadius * candidate.SearchRadius;
+                openingCandidates.Add(new MachicolationCandidate(offset.sqrMagnitude, sameLevel,
+                    near && candidate.IsFreeFor(this), near && candidate.HasEnemyBelow(actor)));
+            }
+            MachicolationRules.Rank(openingCandidates, radius, openingOrder);
+            foreach (int index in openingOrder)
+            {
+                ShotOpening candidate = all[index];
+                if (!agent.CalculatePath(candidate.StandPoint, path) || path.status != NavMeshPathStatus.PathComplete
+                    || (settings.HoldMaxDescent > 0f
+                        && !HoldDescentRule.StaysAbove(path.corners, HoldPost.y - settings.HoldMaxDescent))) continue;
+                opening = candidate;
+                opening.Claim(this);
+                agent.SetPath(path);
+                return;
+            }
+        }
+
+        void ReleaseOpening()
+        {
+            if (opening != null) opening.Release(this);
+            opening = null;
+        }
+
+        /// <summary>지금 쓰러 가거나 쓰고 있는 마치콜레이션 구멍(SIEGE-12). 없으면 null.</summary>
+        public ShotOpening Opening => opening;
 
         bool HasArrivedAtPost(float away)
         {
@@ -373,9 +449,11 @@ namespace ProjectNeo.Combat
                 Target = null;
                 decisionRemaining = 0f;
             }
+            bool refreshed = false;
             if (decisionRemaining <= 0f)
             {
                 decisionRemaining = settings.DecisionInterval;
+                refreshed = true;
                 if (Target != null && CanReach(Target))
                 {
                     if (!suppressRetaliation && targetLockRemaining <= 0f && !CanStrikeFromHere(Target))
@@ -385,14 +463,14 @@ namespace ProjectNeo.Combat
                             && (CanStrikeFromHere(closer) || PriorityOf(closer) < PriorityOf(Target)))
                             SwitchTarget(closer, false);
                     }
-                    if (CanReach(Target)) agent.SetPath(path);
+                    if (CanReach(Target)) ApplyApproachPath(false);
                 }
                 else
                 {
                     Target = FindTarget();
                     if (Target != null) targetLockRemaining = settings.TargetSwitchCooldown;
                     // 대상을 고르는 동안 path가 바뀔 수 있으므로 선택된 대상의 경로를 다시 얻는다.
-                    if (Target != null && CanReach(Target)) agent.SetPath(path);
+                    if (Target != null && CanReach(Target)) ApplyApproachPath(false);
                 }
             }
             if (Target == null)
@@ -406,10 +484,110 @@ namespace ProjectNeo.Combat
             bool inRange = CombatPhysics.IsInRange(actor, Target);
             if (inRange) Face(Target);
             bool canAttack = actor.CanAttack(Target);
-            if (!CombatPhysics.HasClearShot(actor, Target)) agent.stoppingDistance = 0f;
-            agent.isStopped = canAttack || actor.IsAttacking;
+            if (!CombatPhysics.HasClearShot(actor, Target)) HandleBlockedShot(refreshed);
+            else blockAction = RangedBlockAction.Attack;
+            // 근접 자리를 맡은 유닛은 닿는 거리에 들어와도 자리까지 간다(COMBAT-12). 가는 길에도 닿으면 친다(치는 동안은 멈춘다).
+            bool toSlot = IsWalkingToMeleeSlot();
+            if (toSlot) agent.stoppingDistance = 0f;
+            agent.isStopped = (canAttack && !toSlot) || actor.IsAttacking;
             agent.updateRotation = !inRange;
             if (canAttack) actor.TryAttack(Target);
+        }
+
+        // 교전 중 사선이 막혔을 때(COMBAT-12). 원거리는 무엇이 막는지 판단 주기마다 보고, 막은 적으로 바꾸거나
+        // 사거리를 지켜 기다린다. 구조물이 막았을 때와 근접 유닛은 예전처럼 다가간다(정지 거리 0).
+        void HandleBlockedShot(bool refreshed)
+        {
+            if (actor.Profile.AttackKind != AttackKind.Projectile)
+            {
+                agent.stoppingDistance = 0f;
+                return;
+            }
+            if (refreshed || blockAction == RangedBlockAction.Attack)
+            {
+                ShotBlock block = CombatPhysics.ClassifyShot(actor, Target, out CharacterActor blocker);
+                blockAction = RangedOcclusionRules.Decide(block, blocker != null && CanStrikeFromHere(blocker));
+                if (blockAction == RangedBlockAction.SwitchToBlocker)
+                {
+                    SwitchTarget(blocker, false);
+                    blockAction = RangedBlockAction.Attack;
+                    return;
+                }
+            }
+            if (blockAction == RangedBlockAction.CloseIn) agent.stoppingDistance = 0f;
+        }
+
+        /// <summary>지금 사선 막힘에 따라 하고 있는 일(COMBAT-12, 검증용).</summary>
+        public RangedBlockAction BlockAction => blockAction;
+
+        static readonly MeleeSlotBoard<UnitCombatAI> meleeSlotBoard = new MeleeSlotBoard<UnitCombatAI>();
+        static readonly System.Func<UnitCombatAI, object, bool> ClaimStillValid = (unit, target) =>
+            unit != null && unit.isActiveAndEnabled && ReferenceEquals(unit.Target, target)
+            && unit.actor != null && unit.actor.Health != null && !unit.actor.Health.IsDead;
+        readonly System.Collections.Generic.List<int> slotOrder = new System.Collections.Generic.List<int>();
+        NavMeshPath slotPath;
+        const int SlotPathTries = 3;
+
+        /// <summary>근접 자리 표에서 이 유닛이 지금 대상에 맡은 자리(링, 번호). 없으면 false(검증용).</summary>
+        public bool TryGetMeleeSlot(out int ring, out int index) => meleeSlotBoard.TryGet(this, Target, out ring, out index);
+
+        // 대상에게 가는 길을 적용한다. path에는 대상 중심까지의 길이 이미 들어 있다(CanReach/CanReachInHold).
+        // 근접 유닛은 대상 둘레의 자리로 가고(COMBAT-12), 쓸 자리가 없으면 예전처럼 중심으로 간다.
+        void ApplyApproachPath(bool holdLimited)
+        {
+            if (settings.MeleeSlots && actor.Profile.AttackKind == AttackKind.Melee && Target != null
+                && TryPathToSlot(holdLimited)) return;
+            meleeSlotBoard.Release(this);
+            agent.SetPath(path);
+        }
+
+        bool TryPathToSlot(bool holdLimited)
+        {
+            Vector3 center = CombatPhysics.ReachPoint(Target);
+            float inner = MeleeRingRules.InnerRadius(Target.Profile.Radius, actor.Profile.Radius, settings.MeleeSlotGap,
+                actor.Stats.GetValue(StatType.AttackRange));
+            bool held = meleeSlotBoard.TryGet(this, Target, out int heldRing, out int heldIndex);
+            // 판단 주기마다 링 하나에 길찾기는 몇 번만 한다(여러 근접 유닛이 동시에 판단해도 부담이 작게).
+            for (int ring = MeleeRingRules.InnerRing; ring <= MeleeRingRules.OuterRing; ring++)
+            {
+                int tries = 0;
+                float radius = MeleeRingRules.RingRadius(ring, inner, settings.MeleeOuterRingOffset);
+                int count = MeleeRingRules.SlotCount(radius, settings.MeleeSlotSpacing);
+                // 맡은 안쪽 자리는 그대로 쓴다. 바깥 자리를 맡았으면 안쪽 자리가 났는지 먼저 본다.
+                if (held && heldRing == ring && heldIndex < count && TrySlot(center, radius, ring, heldIndex, count, holdLimited))
+                    return true;
+                MeleeRingRules.OrderByDistance(transform.position, center, radius, count, slotOrder);
+                foreach (int index in slotOrder)
+                {
+                    if (tries >= SlotPathTries) break;
+                    if (held && heldRing == ring && heldIndex == index) continue;
+                    if (meleeSlotBoard.IsTaken(Target, ring, index, this, ClaimStillValid)) continue;
+                    tries++;
+                    if (TrySlot(center, radius, ring, index, count, holdLimited)) return true;
+                }
+            }
+            return false;
+        }
+
+        // 맡은 근접 자리로 아직 가는 중인지. 길이 없거나 도착 거리 안이면 아니다.
+        bool IsWalkingToMeleeSlot() =>
+            settings.MeleeSlots && actor.Profile.AttackKind == AttackKind.Melee
+            && meleeSlotBoard.TryGet(this, Target, out _, out _)
+            && agent.hasPath && !agent.pathPending && agent.remainingDistance > settings.ArrivalDistance;
+
+        bool TrySlot(Vector3 center, float radius, int ring, int index, int count, bool holdLimited)
+        {
+            Vector3 point = center + MeleeRingRules.SlotOffset(radius, index, count);
+            var filter = new NavMeshQueryFilter { agentTypeID = agent.agentTypeID, areaMask = agent.areaMask };
+            if (!NavMesh.SamplePosition(point, out NavMeshHit hit, settings.MeleeSlotSampleDistance, filter)
+                || Mathf.Abs(hit.position.y - center.y) > settings.MeleeSlotLevelTolerance) return false;
+            if (slotPath == null) slotPath = new NavMeshPath();
+            if (!agent.CalculatePath(hit.position, slotPath) || slotPath.status != NavMeshPathStatus.PathComplete) return false;
+            if (holdLimited && settings.HoldMaxDescent > 0f
+                && !HoldDescentRule.StaysAbove(slotPath.corners, HoldPost.y - settings.HoldMaxDescent)) return false;
+            meleeSlotBoard.Take(this, Target, ring, index);
+            agent.SetPath(slotPath);
+            return true;
         }
 
         void OnHitReceived(CharacterActor attacker)
@@ -530,6 +708,8 @@ namespace ProjectNeo.Combat
 
         void OnDied()
         {
+            ReleaseOpening();
+            meleeSlotBoard.Release(this);
             Target = null;
             retaliatingTarget = null;
             agent.enabled = false;
@@ -540,6 +720,8 @@ namespace ProjectNeo.Combat
             GetComponent<ProjectNeo.Siege.LadderTraveller>()?.Interrupt();
             actor.Died -= OnDied;
             actor.HitReceivedFrom -= OnHitReceived;
+            ReleaseOpening();
+            meleeSlotBoard.Release(this);
             Target = null;
             retaliatingTarget = null;
             if (agent.enabled && agent.isOnNavMesh)

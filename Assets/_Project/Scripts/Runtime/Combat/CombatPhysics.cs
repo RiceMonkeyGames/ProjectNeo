@@ -57,8 +57,9 @@ namespace ProjectNeo.Combat
         public static bool TryGetShotPoint(CharacterActor attacker, CharacterActor target, out Vector3 point)
         {
             Collider footing = attacker.Profile.AttackKind == AttackKind.Projectile ? GroundUnder(attacker) : null;
+            // 마치콜레이션 사격 자리에 섰으면 구멍 통로 안에서 성문 조각을 지나 아래로 쏠 수 있다(SIEGE-12).
             return TryGetShotPoint(attacker.AimPoint, footing, footing != null ? FootingFloor(attacker) : 0f,
-                attacker, target, out point);
+                ShotOpening.At(attacker), attacker, target, out point);
         }
 
         /// <summary>
@@ -66,37 +67,71 @@ namespace ProjectNeo.Combat
         /// 사거리는 보지 않는다.
         /// </summary>
         public static bool HasClearShotFrom(Vector3 standPoint, CharacterActor attacker, CharacterActor target) =>
-            TryGetShotPoint(standPoint + Vector3.up * (attacker.Profile.Height * 0.5f), null, 0f, attacker, target, out _);
+            TryGetShotPoint(standPoint + Vector3.up * (attacker.Profile.Height * 0.5f), null, 0f, null, attacker, target, out _);
 
-        static bool TryGetShotPoint(Vector3 origin, Collider footing, float footingFloor, CharacterActor attacker,
-            CharacterActor target, out Vector3 point)
+        static bool TryGetShotPoint(Vector3 origin, Collider footing, float footingFloor, ShotOpening opening,
+            CharacterActor attacker, CharacterActor target, out Vector3 point)
         {
             point = target.AimPoint;
-            if (IsClear(origin, footing, footingFloor, attacker, target, point)) return true;
+            if (IsClear(origin, footing, footingFloor, opening, attacker, target, point)) return true;
             // 웅크린 대상은 낮아진 키로 잰다(COMBAT-10). 받침 뒤에 웅크리면 위쪽 몸통도 가려진다.
             Vector3 upper = target.transform.position + Vector3.up * (target.CurrentHeight * target.Profile.UpperAimRatio);
-            if (!IsClear(origin, footing, footingFloor, attacker, target, upper)) return false;
+            if (!IsClear(origin, footing, footingFloor, opening, attacker, target, upper)) return false;
             point = upper;
             return true;
         }
 
-        static bool IsClear(Vector3 origin, Collider footing, float footingFloor, CharacterActor attacker,
-            CharacterActor target, Vector3 point)
+        static bool IsClear(Vector3 origin, Collider footing, float footingFloor, ShotOpening opening,
+            CharacterActor attacker, CharacterActor target, Vector3 point) =>
+            ClassifyLine(origin, footing, footingFloor, opening, attacker, target, point, out _) == ShotBlock.Clear;
+
+        // 선 하나를 무엇이 막는지. 구조물이 하나라도 막으면 구조물, 아니면 가장 가까운 막는 적을 돌려준다.
+        static ShotBlock ClassifyLine(Vector3 origin, Collider footing, float footingFloor, ShotOpening opening,
+            CharacterActor attacker, CharacterActor target, Vector3 point, out CharacterActor blocker)
         {
+            blocker = null;
             Vector3 offset = point - origin;
-            if (offset.sqrMagnitude < 1e-6f) return true;
+            if (offset.sqrMagnitude < 1e-6f) return ShotBlock.Clear;
+            bool structure = false;
+            float nearest = float.PositiveInfinity;
             foreach (RaycastHit hit in Physics.RaycastAll(origin, offset.normalized, offset.magnitude,
                 ~0, QueryTriggerInteraction.Ignore))
             {
+                if (opening != null && PassesOpening(opening, hit, point, origin)) continue;
                 if (hit.collider == footing && GrazesFooting(footing, footingFloor, point, origin)) continue;
                 if (hit.collider.gameObject.scene != attacker.gameObject.scene
                     || ShotCover.Passes(hit.collider, attacker.Team)) continue;
                 var actor = hit.collider.GetComponentInParent<CharacterActor>();
                 if (actor == target || actor == attacker) continue;
                 if (actor != null && (actor.Team == attacker.Team || actor.Health == null || actor.Health.IsDead)) continue;
-                return false;
+                if (actor == null) { structure = true; continue; }
+                if (hit.distance < nearest) { nearest = hit.distance; blocker = actor; }
             }
-            return true;
+            if (structure) { blocker = null; return ShotBlock.Structure; }
+            return blocker != null ? ShotBlock.LivingEnemy : ShotBlock.Clear;
+        }
+
+        /// <summary>
+        /// 대상까지의 사선을 무엇이 막는지(COMBAT-12). 몸 가운데와 위쪽 몸통 두 선을 보고
+        /// <see cref="RangedOcclusionRules.Combine"/>으로 합친다. 적이 막으면 <paramref name="blocker"/>는 가장 가까운 막는 적이다
+        /// (적만 막는 선 중 몸 가운데 선을 먼저 쓴다).
+        /// </summary>
+        public static ShotBlock ClassifyShot(CharacterActor attacker, CharacterActor target, out CharacterActor blocker)
+        {
+            Collider footing = attacker.Profile.AttackKind == AttackKind.Projectile ? GroundUnder(attacker) : null;
+            float floor = footing != null ? FootingFloor(attacker) : 0f;
+            ShotOpening opening = ShotOpening.At(attacker);
+            Vector3 origin = attacker.AimPoint;
+            ShotBlock center = ClassifyLine(origin, footing, floor, opening, attacker, target, target.AimPoint,
+                out CharacterActor centerBlocker);
+            Vector3 upperPoint = target.transform.position + Vector3.up * (target.CurrentHeight * target.Profile.UpperAimRatio);
+            CharacterActor upperBlocker = null;
+            ShotBlock upper = center == ShotBlock.Clear ? ShotBlock.Clear
+                : ClassifyLine(origin, footing, floor, opening, attacker, target, upperPoint, out upperBlocker);
+            ShotBlock result = RangedOcclusionRules.Combine(center, upper);
+            blocker = result != ShotBlock.LivingEnemy ? null
+                : center == ShotBlock.LivingEnemy ? centerBlocker : upperBlocker;
+            return result;
         }
 
         // 선(from → to)이 발밑 물체를 빠져나가는 점이 허용 깊이(footingFloor) 위인지. RaycastAll은 들어가는 점만 주므로
@@ -106,6 +141,16 @@ namespace ProjectNeo.Combat
             Vector3 back = from - to;
             return footing.Raycast(new Ray(to, back.normalized), out RaycastHit exit, back.magnitude)
                 && exit.point.y >= footingFloor;
+        }
+
+        // 선이 그 충돌체에 들어가는 점과 나오는 점이 모두 구멍 통로 안인지(SIEGE-12). 나오는 점은 대상 쪽에서 거꾸로 쏴 찾는다.
+        // 대상 쪽 끝이 충돌체 안이면 나오지 못한 것이라 막힌다.
+        static bool PassesOpening(ShotOpening opening, RaycastHit hit, Vector3 to, Vector3 from)
+        {
+            if (!opening.IsExempt(hit.collider)) return false;
+            Vector3 back = from - to;
+            return hit.collider.Raycast(new Ray(to, back.normalized), out RaycastHit exit, back.magnitude)
+                && opening.Passes(hit.collider, hit.point, exit.point);
         }
 
         /// <summary>
