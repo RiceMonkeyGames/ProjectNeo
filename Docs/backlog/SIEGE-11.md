@@ -1,9 +1,9 @@
 ---
 id: SIEGE-11
 title: Siege Weapon Bastions (Bannerlord-style)
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: SeongminHwang
+branch: feature/siege-11
 area: SIEGE
 depends_on: [SIEGE-02, SIEGE-10]
 created: 2026-11-20
