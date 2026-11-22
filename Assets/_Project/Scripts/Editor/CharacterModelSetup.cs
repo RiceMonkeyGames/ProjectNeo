@@ -621,12 +621,12 @@ namespace ProjectNeo.Editor
         }
 
         /// <summary>Built-in 머티리얼의 텍스처·색을 옮긴 URP Lit 복사본을 만들거나 다시 쓴다.</summary>
-        internal static Material ToUrp(Material source, Dictionary<Material, Material> converted)
+        internal static Material ToUrp(Material source, Dictionary<Material, Material> converted, string folder = MaterialFolder)
         {
             if (source == null || source.shader.name.StartsWith("Universal Render Pipeline", StringComparison.Ordinal)) return source;
             if (converted.TryGetValue(source, out Material cached)) return cached;
-            EnsureFolder(MaterialFolder);
-            string path = MaterialFolder + "/" + source.name + "_URP.mat";
+            EnsureFolder(folder);
+            string path = folder + "/" + source.name + "_URP.mat";
             var material = AssetDatabase.LoadAssetAtPath<Material>(path);
             bool created = material == null;
             if (created) material = new Material(Shader.Find("Universal Render Pipeline/Lit"));

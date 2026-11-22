@@ -13,6 +13,8 @@ namespace ProjectNeo.Walls
         [SerializeField, Min(0.1f)] float merlonWidth = 0.75f;
         [SerializeField, Min(0.1f)] float crenelWidth = 0.75f;
         [SerializeField] Material material;
+        // 0이면 기본 상자 메쉬(텍스처가 조각마다 늘어남). 0보다 크면 이 길이(m)마다 텍스처가 한 번 반복된다(ART-06, 외형 전용).
+        [SerializeField, Min(0f)] float textureTileMeters;
 
         /// <summary>성벽 안쪽으로 차지하는 두께.</summary>
         public float Thickness => thickness;
@@ -25,11 +27,14 @@ namespace ProjectNeo.Walls
         public float CrenelWidth => crenelWidth;
         /// <summary>비어 있으면 받치는 성벽의 재질을 쓴다.</summary>
         public Material Material => material;
+        /// <summary>텍스처 반복 길이(m). 0이면 반복하지 않는다(기본 상자).</summary>
+        public float TextureTileMeters => textureTileMeters;
 
         public static BattlementSettings Create(float thickness = 0.4f, float parapetHeight = 1.1f, float merlonHeight = 2.2f,
-            float merlonWidth = 0.75f, float crenelWidth = 0.75f, Material material = null)
+            float merlonWidth = 0.75f, float crenelWidth = 0.75f, Material material = null, float textureTileMeters = 0f)
         {
             var value = CreateInstance<BattlementSettings>();
+            value.textureTileMeters = Mathf.Max(0f, textureTileMeters);
             value.thickness = Mathf.Max(0.05f, thickness);
             value.parapetHeight = Mathf.Max(0.1f, parapetHeight);
             value.merlonHeight = Mathf.Max(0.1f, merlonHeight);
