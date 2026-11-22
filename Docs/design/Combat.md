@@ -9,7 +9,7 @@ Last Updated: 2026-11-21 20:58:37 (KST)
 - Default perspective is **3D first-person** (confirmed 2026-11-11): direct player control combined with squad commanding.
 - Prototype combat uses WASD movement, mouse look, and left-click frontal melee attack (jump, guard, directional attacks are follow-ups).
 - Player forms squads and assigns heroes as captains. No separate commands are given directly to individual heroes. Squads without captains obey identical orders.
-- **Controls** (subject to playtest tuning): F1–F4 select squads, backtick (`` ` ``) selects all, `1` Move, `2` Attack, `3` Hold.
+- **Controls** (subject to playtest tuning): F1–F4 select squads, backtick (`` ` ``) selects all, `1` Move, `2` Attack, `3` Hold. Pressing the select key of the only selected squad again clears the selection, and pressing backtick while every squad is selected clears it too (UI-12, user 2026-11-22; first-person command in preparation and battle, and the prep placement screen).
 - **Command Behaviors**:
   - **Move**: Disregards enemies and marches to screen-center target; transitions to Hold upon arrival.
   - **Hold** (revised 2026-11-12, Bannerlord style): Defends guard post (where Hold was issued or Move finished).

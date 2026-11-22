@@ -40,6 +40,8 @@ namespace ProjectNeo.UI
         [SerializeField] Color moraleLow = new Color(0.85f, 0.25f, 0.2f, 1f);
         [SerializeField] Color moraleNormal = new Color(0.55f, 0.78f, 0.4f, 1f);
         [SerializeField] Color moraleHigh = new Color(0.98f, 0.82f, 0.35f, 1f);
+        [Tooltip("UI-12 준비 화면 분대 패널 한 페이지의 카드 수. 더 많으면 [ ] 키로 넘긴다. 0이면 기본값.")]
+        [SerializeField, Min(0)] int squadCardsPerPage = DefaultSquadCardsPerPage;
 
         public Color Panel => panel;
         public Color PanelSelected => panelSelected;
@@ -65,6 +67,9 @@ namespace ProjectNeo.UI
 
         public Color MoraleFill(MoraleBand band) => band == MoraleBand.Low ? moraleLow
             : band == MoraleBand.High ? moraleHigh : moraleNormal;
+
+        public const int DefaultSquadCardsPerPage = 5;
+        public int SquadCardsPerPage => squadCardsPerPage > 0 ? squadCardsPerPage : DefaultSquadCardsPerPage;
 
         public static HudStyle Create() => CreateInstance<HudStyle>();
     }

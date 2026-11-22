@@ -32,6 +32,21 @@ namespace ProjectNeo.Editor
         static T Load<T>(string path) where T : UnityEngine.Object =>
             AssetDatabase.LoadAssetAtPath<T>(path) ?? throw new InvalidOperationException("Missing asset: " + path);
 
+        /// <summary>
+        /// Inset of the Title backdrop's gold tracery frame from every screen edge (user 2026-11-22: same margin top, bottom,
+        /// left and right; the sample lifted the bottom line for its bottom bar).
+        /// </summary>
+        public const float FrameInset = 60f * Scale;
+
+        /// <summary>
+        /// Corner links and labels of the Title screens (뒤로, 초기화, 게임종료, unlock points) sit this far from the frame
+        /// lines, the same horizontally and vertically (user 2026-11-22). <see cref="CornerX"/> is from the screen edge to the
+        /// visible edge (arrow or text end); <see cref="CornerY"/> is from the screen edge to the 28-high caption box, whose
+        /// 20pt glyphs start about 6 inside it (tuned on captures).
+        /// </summary>
+        public const float CornerGap = 32f, CornerX = FrameInset + CornerGap, CornerY = FrameInset + CornerGap - 6f;
+        public const float CornerHeight = 28f;
+
         /// <summary>Sample "Background01": painted backdrop, tracery frame inset from the edges, curlicue gems top and bottom.</summary>
         public static void Backdrop(RectTransform visual)
         {
@@ -39,7 +54,7 @@ namespace ProjectNeo.Editor
             Stretch(backdrop.rectTransform, Vector2.zero, Vector2.zero);
 
             var frame = Node(visual, "Frame");
-            Stretch(frame, new Vector2(60f, 90f + 30f) * Scale, new Vector2(-60f, -90f + 30f) * Scale);
+            Stretch(frame, new Vector2(FrameInset, FrameInset), new Vector2(-FrameInset, -FrameInset));
             var tracery = Image(frame, "SPR_Frame_Simple", "SPR_HUD_FantasyWarrior_Tracery_FrameDetail01",
                 new Color32(0xA4, 0x78, 0x3F, 0x74), 1.5f * 3f);
             Stretch(tracery.rectTransform, Vector2.zero, Vector2.zero);
@@ -165,7 +180,8 @@ namespace ProjectNeo.Editor
         /// <summary>The Title screens' 뒤로: gold caption with a reversed arrow, bottom-left inside the frame (UI-10 slot window).</summary>
         public static TMP_Text BackLink(RectTransform back, TMP_FontAsset font)
         {
-            Place(back, new Vector2(0f, 0f), new Vector2(70f, 72f), new Vector2(110f, 28f), new Vector2(0f, 0f));
+            // The arrow's visible left edge is about 6 inside the button (tuned on captures).
+            Place(back, new Vector2(0f, 0f), new Vector2(CornerX - 6f, CornerY), new Vector2(110f, CornerHeight), new Vector2(0f, 0f));
             TMP_Text label = TextButton(back, "뒤로", font, 20f, Gold);
             label.rectTransform.offsetMin = new Vector2(24f, 0f);
             label.alignment = TextAlignmentOptions.MidlineLeft;
@@ -173,6 +189,15 @@ namespace ProjectNeo.Editor
             arrow.preserveAspect = true;
             Place(arrow.rectTransform, new Vector2(0f, 0.5f), new Vector2(10f, 1f), new Vector2(16f, 16f));
             arrow.rectTransform.localEulerAngles = new Vector3(0f, 0f, 180f);
+            return label;
+        }
+
+        /// <summary>Bottom-right corner link (게임종료, 초기화): right-aligned caption, its end on the corner line.</summary>
+        public static TMP_Text CornerLink(RectTransform button, string caption, TMP_FontAsset font, Color color)
+        {
+            Place(button, new Vector2(1f, 0f), new Vector2(-CornerX, CornerY), new Vector2(120f, CornerHeight), new Vector2(1f, 0f));
+            TMP_Text label = TextButton(button, caption, font, 20f, color);
+            label.alignment = TextAlignmentOptions.MidlineRight;
             return label;
         }
 

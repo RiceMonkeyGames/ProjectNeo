@@ -59,20 +59,11 @@ namespace ProjectNeo.Editor
             TMP_Text freshLabel = ParchmentButton(fresh, "새 게임", noto, 22f);
 
             var back = (RectTransform)Child(panel, "Button_Back");
-            Place(back, new Vector2(0f, 0f), new Vector2(70f, 72f), new Vector2(110f, 28f), new Vector2(0f, 0f));
-            TMP_Text backLabel = TextButton(back, "뒤로", noto, 20f, Gold);
-            backLabel.rectTransform.offsetMin = new Vector2(24f, 0f);
-            backLabel.alignment = TextAlignmentOptions.MidlineLeft;
-            var arrow = Image(back, "ICON", "SPR_HUD_FantasyWarrior_Arrow02", Gold, 1f);
-            arrow.preserveAspect = true;
-            Place(arrow.rectTransform, new Vector2(0f, 0.5f), new Vector2(10f, 1f), new Vector2(16f, 16f));
-            arrow.rectTransform.localEulerAngles = new Vector3(0f, 0f, 180f);
+            TMP_Text backLabel = BackLink(back, noto);
 
             // 초기화 deletes the selected slot on the first click (user, UI-10); the result shows in the status line.
             var reset = (RectTransform)Child(panel, "Button_Delete slot");
-            Place(reset, new Vector2(1f, 0f), new Vector2(-80f, 72f), new Vector2(120f, 28f), new Vector2(1f, 0f));
-            TMP_Text resetLabel = TextButton(reset, "초기화", noto, 20f, Danger);
-            resetLabel.alignment = TextAlignmentOptions.MidlineRight;
+            TMP_Text resetLabel = CornerLink(reset, "초기화", noto, Danger);
 
             screen.ConfigureSlots(details, resetLabel, statusLabel);
             screen.ConfigureSlotHighlights(highlights);

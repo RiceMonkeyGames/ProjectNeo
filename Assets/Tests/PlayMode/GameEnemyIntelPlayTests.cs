@@ -101,8 +101,20 @@ namespace ProjectNeo.Tests
             Assert.IsTrue(hud.IsShowing);
             Assert.AreEqual(EnemyIntelHud.PreviewTitle, hud.Title);
             Assert.AreEqual($"{ladderName} × 2\n? × 1", hud.Body);
-            // UI-06: 준비 미리보기는 오른쪽 위(자원 바 아래), 왼쪽은 분대 카드가 쓴다.
-            AssertNoOverlap(hud, "PrepSquadCards", "PrepTopBar");
+            // UI-12 초상화 줄(사이드바 모양을 적용했을 때): 줄마다 이름과 "× 수".
+            if (hud.RowCount > 0)
+            {
+                Assert.AreEqual(2, hud.RowCount);
+                Assert.AreEqual(ladderName, hud.RowView(0).NameText);
+                Assert.AreEqual(EnemyIntelRowView.Count(2), hud.RowView(0).CountText);
+                Assert.AreEqual(EnemyIntelRow.HiddenLabel, hud.RowView(1).NameText);
+                Assert.AreEqual(EnemyIntelRowView.Count(1), hud.RowView(1).CountText);
+            }
+            // UI-06: 준비 미리보기는 오른쪽 위(자원 바 아래), 왼쪽은 분대 카드가 쓴다. UI-12 사이드바에서는 자원 바가 보이지 않는
+            // 전체 폭 띠이고 창이 골드 칩 바로 아래(띠 안)에 오므로, 보이는 판(머리판·골드 칩)과 겹치지 않는지 본다.
+            bool sidebar = Object.FindObjectsByType<RectTransform>(FindObjectsInactive.Include).Any(r => r.name == "Sidebar_Header");
+            if (sidebar) AssertNoOverlap(hud, "PrepSquadCards", "Sidebar_Header", "ResourceChip");
+            else AssertNoOverlap(hud, "PrepSquadCards", "PrepTopBar");
             hud.TogglePreview();
             yield return null;
             Assert.IsFalse(hud.IsShowing);

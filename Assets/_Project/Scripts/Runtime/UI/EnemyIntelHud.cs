@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using ProjectNeo.Flow;
 using ProjectNeo.Stages;
 using TMPro;
@@ -12,7 +13,8 @@ namespace ProjectNeo.UI
     /// </summary>
     public sealed class EnemyIntelHud : MonoBehaviour
     {
-        public const string PreviewTitle = "다음 전투 - 적";
+        /// <summary>준비 중 미리보기 제목(UI-12 사용자 결정, 예전 "다음 전투 - 적").</summary>
+        public const string PreviewTitle = "적 정보";
         public const string BattleTitle = "남은 적";
 
         [SerializeField] GameBattleController battle;
@@ -29,6 +31,11 @@ namespace ProjectNeo.UI
         [SerializeField] Vector2 battleCorner = new Vector2(0f, 1f);
         [SerializeField] Vector2 battleOffset;
 
+        [Header("Portrait rows (UI-12)")]
+        [Tooltip("초상화 + 이름 + \"× 수\" 한 줄 견본. 숨겨 두고 줄마다 복제한다. 비어 있으면 여러 줄 글(body)만 쓴다.")]
+        [SerializeField] EnemyIntelRowView rowTemplate;
+        readonly List<EnemyIntelRowView> rowViews = new List<EnemyIntelRowView>();
+
         EnemyIntel shown;
         int shownVersion = -1;
         GamePhase shownPhase;
@@ -39,6 +46,23 @@ namespace ProjectNeo.UI
         public bool IsShowing => content != null && content.activeSelf;
         public string Title => title != null ? title.text : string.Empty;
         public string Body => body != null ? body.text : string.Empty;
+        /// <summary>지금 보이는 초상화 줄 수(UI-12). 줄 견본이 없으면 0.</summary>
+        public int RowCount { get { int n = 0; foreach (EnemyIntelRowView v in rowViews) if (v.gameObject.activeSelf) n++; return n; } }
+        public EnemyIntelRowView RowView(int index) => rowViews[index];
+
+        /// <summary>초상화 줄 모양을 붙인다(UI-12). null이면 떼고 여러 줄 글로 돌아간다. 여러 줄 글(Body)은 그대로 계산한다.</summary>
+        public void ConfigureRows(EnemyIntelRowView template)
+        {
+            rowTemplate = template;
+            foreach (EnemyIntelRowView old in rowViews)
+                if (old != null)
+                {
+                    if (Application.isPlaying) Destroy(old.gameObject);
+                    else DestroyImmediate(old.gameObject);
+                }
+            rowViews.Clear();
+            shown = null;
+        }
 
         public void Configure(GameBattleController controller, GamePhaseView view, PreparationInteraction input,
             GameObject panel, TMP_Text heading, TMP_Text lines)
@@ -49,6 +73,8 @@ namespace ProjectNeo.UI
             if (isActiveAndEnabled) Listen();
         }
 
+        [SerializeField] float previewScale = 1f;
+
         /// <summary>준비 미리보기와 전투 중 창 자리(UI-06). corner는 화면 모서리(앵커·피벗), offset은 그 모서리에서의 거리.</summary>
         public void ConfigurePlacement(Vector2 previewAt, Vector2 previewShift, Vector2 battleAt, Vector2 battleShift)
         {
@@ -57,11 +83,15 @@ namespace ProjectNeo.UI
             battleCorner = battleAt; battleOffset = battleShift;
         }
 
+        /// <summary>준비 미리보기 창 크기 배율(UI-12 준비 HUD 0.8배). 전투 중 창은 늘 1배다.</summary>
+        public void ConfigurePreviewScale(float scale) => previewScale = scale > 0f ? scale : 1f;
+
         void Place(GamePhase phase)
         {
             if (!placeByPhase) return;
             var rect = (RectTransform)content.transform;
             bool fighting = phase == GamePhase.Battle;
+            rect.localScale = Vector3.one * (fighting ? 1f : previewScale);
             Vector2 corner = fighting ? battleCorner : previewCorner;
             rect.anchorMin = rect.anchorMax = rect.pivot = corner;
             rect.anchoredPosition = fighting ? battleOffset : previewOffset;
@@ -106,6 +136,27 @@ namespace ProjectNeo.UI
             shown = intel; shownVersion = intel.Version; shownPhase = phase;
             if (title != null) title.text = phase == GamePhase.Battle ? $"{BattleTitle} {intel.TotalRemaining}" : PreviewTitle;
             body.text = intel.Describe();
+            ShowRows(intel.Rows());
+        }
+
+        // 초상화 줄(UI-12): 줄마다 견본을 복제해 쓰고, 남는 줄은 숨긴다. 적이 없으면 여러 줄 글("적 없음")을 대신 보인다.
+        void ShowRows(IReadOnlyList<EnemyIntelRow> rows)
+        {
+            if (rowTemplate == null) return;
+            if (body.gameObject.activeSelf != (rows.Count == 0)) body.gameObject.SetActive(rows.Count == 0);
+            while (rowViews.Count < rows.Count)
+            {
+                EnemyIntelRowView view = Instantiate(rowTemplate, rowTemplate.transform.parent, false);
+                view.name = "IntelRow" + (rowViews.Count + 1);
+                view.transform.SetSiblingIndex(rowTemplate.transform.GetSiblingIndex() + 1 + rowViews.Count);
+                rowViews.Add(view);
+            }
+            for (int i = 0; i < rowViews.Count; i++)
+            {
+                bool used = i < rows.Count;
+                if (rowViews[i].gameObject.activeSelf != used) rowViews[i].gameObject.SetActive(used);
+                if (used) rowViews[i].Show(rows[i]);
+            }
         }
     }
 }

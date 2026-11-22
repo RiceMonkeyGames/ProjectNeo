@@ -50,6 +50,7 @@ namespace ProjectNeo.Editor
             if (intel != null)
             {
                 intel.ConfigurePlacement(new Vector2(1f, 1f), IntelAt, new Vector2(0f, 1f), EnemyIntelHudSetup.Offset);
+                UndoSidebarIntel(hud, intel);
                 EditorUtility.SetDirty(intel);
             }
             KeyList(hud);
@@ -92,11 +93,28 @@ namespace ProjectNeo.Editor
             return material;
         }
 
-        static void Outline(TMP_Text label)
+        internal static void Outline(TMP_Text label)
         {
             var serialized = new SerializedObject(label);
             serialized.FindProperty("m_sharedMaterial").objectReferenceValue = outlined;
             serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        // Undo the UI-12 sidebar enemy panel (portrait rows, gold plate, chip width) so layout A alone gives the old one back.
+        static void UndoSidebarIntel(GameFlowHud hud, EnemyIntelHud intel)
+        {
+            intel.ConfigureRows(null);
+            var panel = (RectTransform)hud.transform.Find(EnemyIntelHudSetup.PanelName);
+            if (panel == null) return;
+            for (int i = panel.childCount - 1; i >= 0; i--)
+            {
+                string child = panel.GetChild(i).name;
+                if (child == "Visual" || child.StartsWith("IntelRow", StringComparison.Ordinal))
+                    UnityEngine.Object.DestroyImmediate(panel.GetChild(i).gameObject);
+            }
+            Transform body = panel.Find("Rows");
+            if (body != null) body.gameObject.SetActive(true);
+            panel.sizeDelta = new Vector2(EnemyIntelHudSetup.Width, panel.sizeDelta.y);
         }
 
         // Full key list: right side above the "H 키 안내" line (feedback 2026-11-22: not in the middle of the view).
@@ -104,6 +122,12 @@ namespace ProjectNeo.Editor
         {
             var panel = (RectTransform)hud.transform.Find(PrepHudSetup.KeyListName);
             if (panel == null) return;
+            // Undo the UI-12 on-screen guide (PrepHudSidebarLayout) so layout A alone gives the old text list again.
+            for (int i = panel.childCount - 1; i >= 0; i--)
+                if (panel.GetChild(i).name.StartsWith("KeyRow", StringComparison.Ordinal))
+                    UnityEngine.Object.DestroyImmediate(panel.GetChild(i).gameObject);
+            var keys = hud.GetComponent<KeyListHud>();
+            if (keys != null) { keys.ConfigureRows(null); EditorUtility.SetDirty(keys); }
             panel.anchorMin = panel.anchorMax = panel.pivot = new Vector2(1f, 0f);
             panel.anchoredPosition = new Vector2(-24f, 48f);
         }
@@ -136,8 +160,12 @@ namespace ProjectNeo.Editor
             Outline(stage);
             stage.raycastTarget = false;
             FW.Place(stage.rectTransform, new Vector2(0f, 1f), new Vector2(96f, -50f), new Vector2(360f, 22f), new Vector2(0f, 1f));
+            stage.gameObject.SetActive(true); // the UI-12 sidebar hides it
+            Transform ascension = bar.Find(PrepHudSidebarLayout.AscensionName);
+            if (ascension != null) UnityEngine.Object.DestroyImmediate(ascension.gameObject);
             var controller = hud.GetComponent<PrepTopBarHud>();
             controller.ConfigureTitle(title);
+            controller.ConfigureAscension(null);
 
             Ribbon(bar, noto, style.TimeFill);
             ResourceChip(bar, noto, FW.Grenze, controller);
@@ -173,6 +201,20 @@ namespace ProjectNeo.Editor
             var track = (RectTransform)line.Find("Track");
             FW.Place(track, new Vector2(0.5f, 0f), new Vector2(0f, 4f), new Vector2(360f, 5f), new Vector2(0.5f, 0f));
             Gauge(track, timeFill);
+            // Undo the UI-12 sidebar hourglass row so layout A alone gives the old one-line clock back.
+            text.gameObject.SetActive(true);
+            track.gameObject.SetActive(true);
+            foreach (string sidebar in new[] { PrepHudSidebarLayout.NumberName, PrepHudSidebarLayout.SegmentsName })
+            {
+                Transform part = line.Find(sidebar);
+                if (part != null) UnityEngine.Object.DestroyImmediate(part.gameObject);
+            }
+            var clock = line.GetComponentInParent<GameFlowHud>() != null ? line.GetComponentInParent<GameFlowHud>().GetComponent<PrepClockHud>() : null;
+            if (clock != null)
+            {
+                clock.ConfigureHourglassLayout(null, null, 1f);
+                EditorUtility.SetDirty(clock);
+            }
         }
 
         // Gold as the sample reward currency plate (10_..._Misc01 Award_Currency): dark parchment plate, gold coin icon,
@@ -316,7 +358,11 @@ namespace ProjectNeo.Editor
                     Transform child = previous.Find(wired);
                     if (child != null) child.SetParent(panel, false);
                 }
-            foreach (string name in new[] { "BarFrame", "Box", "IconBox" })
+            // Undo the UI-12 portrait layout (PrepHudSidebarLayout) so layout A alone shows the heart bar again.
+            var healthHud = hud.GetComponent<PlayerHealthHud>();
+            if (healthHud != null) { healthHud.ConfigurePortraitLayout(null, null, 10f); EditorUtility.SetDirty(healthHud); }
+            foreach (string name in new[] { "BarFrame", "Box", "IconBox", PrepHudSidebarLayout.PortraitName,
+                PrepHudSidebarLayout.NumberName, PrepHudSidebarLayout.SegmentsName })
             {
                 Transform old = panel.Find(name);
                 if (old != null) UnityEngine.Object.DestroyImmediate(old.gameObject);
@@ -364,6 +410,13 @@ namespace ProjectNeo.Editor
         // Sample XP log item as the battle-start plate: blue vertical gradient, Curlicue02 hanging below, hold gauge inside.
         static void StartPlate(GameFlowHud hud, TMP_FontAsset noto)
         {
+            // Undo the UI-12 crosshair hold ring (PrepHudSidebarLayout) so layout A alone shows the plate again.
+            foreach (string ring in new[] { PrepHudSidebarLayout.HoldRingName, PrepHudSidebarLayout.NoticeName })
+            {
+                Transform old = hud.transform.Find(ring);
+                if (old != null) UnityEngine.Object.DestroyImmediate(old.gameObject);
+            }
+            hud.ConfigureHoldRing(null, null, null);
             var prompt = (RectTransform)hud.transform.Find("InteractionPrompt");
             if (prompt == null) return;
             Bare(prompt);
@@ -403,7 +456,7 @@ namespace ProjectNeo.Editor
         // ---------------------------------------------------------------- helpers
 
         // Gauge in the sample slider look: Bar_Diamond01 track that masks a Bar_Horizontal05 fill. Returns the fill.
-        static Image Gauge(RectTransform track, Color fillColor)
+        internal static Image Gauge(RectTransform track, Color fillColor)
         {
             var image = Get<Image>(track.gameObject);
             image.sprite = FW.Sprite(BarTrack);
@@ -437,7 +490,7 @@ namespace ProjectNeo.Editor
 
         static void Fill(Image image) => FW.Stretch(image.rectTransform, Vector2.zero, Vector2.zero);
 
-        static TMP_Text Label(Transform parent, string name, string text, TMP_FontAsset font, float size, Color color,
+        internal static TMP_Text Label(Transform parent, string name, string text, TMP_FontAsset font, float size, Color color,
             TextAlignmentOptions alignment)
         {
             Transform old = parent.Find(name);

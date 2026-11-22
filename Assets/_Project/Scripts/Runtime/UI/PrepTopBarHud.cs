@@ -42,6 +42,13 @@ namespace ProjectNeo.UI
 
         public string StageTitleText => stageTitle != null ? stageTitle.text : string.Empty;
 
+        [Tooltip("제목 오른쪽의 승천 표시(UI-12). 승천 0이면 숨긴다. 비어 있으면 쓰지 않는다.")]
+        [SerializeField] TMP_Text ascensionLabel;
+        public string AscensionText => ascensionLabel != null && ascensionLabel.gameObject.activeSelf ? ascensionLabel.text : string.Empty;
+
+        /// <summary>제목 오른쪽 승천 표시를 붙인다(UI-12 사이드바). null이면 뗀다.</summary>
+        public void ConfigureAscension(TMP_Text label) => ascensionLabel = label;
+
         /// <summary>깃발 옆 큰 제목을 붙인다(UI-06 A안).</summary>
         public void ConfigureTitle(TMP_Text title) => stageTitle = title;
 
@@ -69,6 +76,12 @@ namespace ProjectNeo.UI
             if (!show) return;
             if (stageLabel != null) stageLabel.text = PrepHudText.StageLine(flow.Run.StageNumber, flow.Run.AscensionLevel);
             if (stageTitle != null) stageTitle.text = PrepHudText.StageTitle(flow.Run.StageNumber);
+            if (ascensionLabel != null)
+            {
+                string tag = PrepHudText.AscensionTag(flow.Run.AscensionLevel);
+                ascensionLabel.text = tag;
+                if (ascensionLabel.gameObject.activeSelf != tag.Length > 0) ascensionLabel.gameObject.SetActive(tag.Length > 0);
+            }
             if (resourcesLabel == null) return;
             materials.Clear();
             foreach (KeyValuePair<MaterialDefinition, int> entry in state.Wallet.Materials)

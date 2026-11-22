@@ -38,7 +38,26 @@ namespace ProjectNeo.UI
         [SerializeField] Color waitHoldColor = new Color(0.35f, 0.7f, 0.94f, 1f);
         [Tooltip("켜면 1인칭 탐색 중 아래 안내 판을 가운데 좁은 판으로 띄운다(짧은 안내일 때만).")]
         [SerializeField] bool compactExplorationPlate;
+        [Header("Crosshair hold ring (UI-12)")]
+        [Tooltip("조준점 둘레 원형 게이지(Filled Radial). 있으면 1인칭 탐색 중 아래 판을 숨기고, B·T를 누르는 동안만 이 링이 찬다.")]
+        [SerializeField] Image holdRing;
+        [Tooltip("링 아래 글(\"전투 시작 62%\").")]
+        [SerializeField] TMP_Text holdRingLabel;
+        [Tooltip("아래 가운데 경고 한 줄(막힌 전투 시작 알림, 미완료 작업, 성문). 비어 있으면 숨긴다.")]
+        [SerializeField] TMP_Text noticeLine;
         CannonReticleView cannonReticle;
+
+        /// <summary>조준점 링을 붙인다(UI-12 조준점 링 안). 이후 1인칭 탐색 중에는 아래 안내 판 대신 링과 경고 한 줄을 쓴다.</summary>
+        public void ConfigureHoldRing(Image ring, TMP_Text label, TMP_Text notice)
+        {
+            holdRing = ring; holdRingLabel = label; noticeLine = notice;
+        }
+        public bool HoldRingShowing => holdRing != null && holdRing.transform.parent.gameObject.activeSelf;
+        public float HoldRingRatio => holdRing != null ? holdRing.fillAmount : 0f;
+        public string HoldRingText => holdRingLabel != null ? holdRingLabel.text : string.Empty;
+        public string NoticeText => noticeLine != null && noticeLine.gameObject.activeSelf ? noticeLine.text : string.Empty;
+        /// <summary>아래 안내 판이 보이는가.</summary>
+        public bool InteractionPlateShowing => interactionHint != null && interactionHint.transform.parent.gameObject.activeSelf;
 
         /// <summary>길게 누르기 게이지 채움 비율(0~1). 게이지가 없으면 0.</summary>
         public float HoldRatio => holdFill != null ? holdFill.anchorMax.x : 0f;
@@ -111,7 +130,10 @@ namespace ProjectNeo.UI
             bool rewarding = flow.Phase == GamePhase.Reward && rewards != null && rewards.LastReward != null;
             bool runEnded = flow.Phase == GamePhase.RunResult && rewards != null && rewards.RunEndUnlockPoints >= 0;
             bool ending = flow.Phase == GamePhase.Ending && battle != null;
-            interactionHint.transform.parent.gameObject.SetActive(preparation);
+            // UI-12 조준점 링: 1인칭 탐색 중에는 아래 판을 숨긴다(글은 그대로 만들어 둔다). 다른 화면에서는 판을 쓴다.
+            bool ringExploration = holdRing != null && contextPrompt != null && preparation && phaseView.IsExplorationView && battle != null;
+            interactionHint.transform.parent.gameObject.SetActive(preparation && !ringExploration);
+            if (!ringExploration) ShowRing(false, string.Empty);
             ShowContextPrompt(preparation && phaseView.IsExplorationView && interaction.Target != null);
             if (battleStatus != null) battleStatus.transform.parent.gameObject.SetActive(fighting || rewarding || runEnded || ending);
             if (ending)
@@ -204,9 +226,10 @@ namespace ProjectNeo.UI
                 contextPrompt.text = PrepHudText.ContextPrompt(interaction.InteractKey, interaction.Target.Prompt);
             if (phaseView.IsExplorationView && battle != null)
             {
-                string startHint = interaction.CanStartBattle
-                    ? $"{interaction.BattleStartKey} 길게 누르기 - 전투 시작"
-                    : "전장 준비 중";
+                // UI-12: 막혀 있어도 시작 줄은 그대로 두고, 이유는 키를 눌렀을 때만 잠깐 알린다.
+                string startHint = $"{interaction.BattleStartKey} 길게 누르기 - 전투 시작";
+                string blockedStart = interaction.ShowingBlockedStart
+                    ? PrepHudText.BlockedStart(interaction.BlockedStartCursorLocked) : string.Empty;
                 if (interaction.BattleStartProgress > 0f) startHint += $" · {Mathf.FloorToInt(interaction.BattleStartProgress * 100f)}%";
                 // 준비 시간(PREP-06): 기다릴 시간이 남아 있으면 같은 줄에 기다리기 키를 붙인다.
                 if (interaction.CanWait)
@@ -226,7 +249,36 @@ namespace ProjectNeo.UI
                 if (squadHint.Length > 0) interactionHint.text += "\n" + squadHint;
                 string gateMessage = battle.PrepGate != null ? battle.PrepGate.Message : "";
                 if (gateMessage.Length > 0) interactionHint.text += "\n" + gateMessage;
+                if (holdRing != null && shortHints)
+                    ShowRing(true, PrepHudText.Notice(blockedStart, workWarning, gateMessage));
+                else if (blockedStart.Length > 0) interactionHint.text += "\n" + blockedStart;
             }
+        }
+
+        // UI-12 조준점 링: B·T를 누르는 동안만 링과 글을 켜고, 경고 한 줄은 내용이 있을 때만 보인다.
+        void ShowRing(bool exploring, string notice)
+        {
+            if (holdRing == null) return;
+            bool waiting = false;
+            float ratio = exploring ? PrepHudText.HoldRatio(interaction.BattleStartProgress, interaction.WaitProgress, out waiting) : 0f;
+            bool holding = ratio > 0f;
+            GameObject ring = holdRing.transform.parent.gameObject;
+            if (ring.activeSelf != holding) ring.SetActive(holding);
+            if (holding)
+            {
+                holdRing.fillAmount = ratio;
+                holdRing.color = waiting ? waitHoldColor : startHoldColor;
+                if (holdRingLabel != null)
+                {
+                    float hours = battle != null && battle.RunLink.State != null && battle.RunLink.State.PrepTime != null
+                        ? battle.RunLink.State.PrepTime.WaitHours : 0f;
+                    holdRingLabel.text = PrepHudText.HoldRingLabel(waiting, ratio, hours);
+                }
+            }
+            if (noticeLine == null) return;
+            bool showNotice = exploring && notice.Length > 0;
+            if (noticeLine.gameObject.activeSelf != showNotice) noticeLine.gameObject.SetActive(showNotice);
+            if (showNotice) noticeLine.text = notice;
         }
 
         void ShowHoldGauge(bool visible)
