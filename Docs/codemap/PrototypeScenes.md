@@ -48,6 +48,12 @@ Last Updated: 2026-11-21 01:49:40 (KST)
 - Squads spawned at runtime per `Siege.asset` (`Ally Squads`, `Enemy Groups`), capped at 4 × 10; `SiegeDirector` holds positions/spacing. UI troop buttons scale dynamically; F1–F10 hotkeys via `Command.asset`; labels show composition (`Squad 1 · Melee`).
 - Default setup: Allies (4 melee, 4 melee, 4 archer); Enemies (8 `enemy_ladder` w/ brown plank, 4 `enemy_gate_breaker` w/ black pack, 4 `enemy_archer` in `Prefabs/SiegePrototype/`). Player spawns behind gate. Upward damage modifier via `CombatProfile` (`upwardShotDamageRatio`, `upwardShotMinimumRise`).
 
+## SIEGE-12 Machicolation Verification (`MachicolationVerification.unity`)
+
+- Created by `Editor/MachicolationVerificationSetup` (menu `ProjectNeo/Setup/Create Machicolation Verification Scene`; re-running rebuilds it). Copies `SiegePrototype.unity`, closes the gaps at cells 4, 11, 12, adds `GateMachicolations` to the `ConstructionWorld` object and uses `Data/SiegePrototype/SiegeMachicolationVerification.asset` (one `allied_ranged` squad of 4, `enemy_gate_breaker` × 3, everything else 0). The archer squad starts in Hold on the wall top at cell 10 (east of the gate, 6–9m from the openings). `SiegePrototype.unity` and `Siege.asset` are unchanged.
+- The single wall line counts as "outside" on both sides, so the gate gets openings on its north and south faces (4); only the north ones see enemies.
+- Check: Play, start the battle, watch the gate top. When the gate breakers reach the gate, the nearest archers walk to the two north openings (dark marks on the walkway), shoot straight down, and return to their posts after the last breaker dies. Agent run 2026-11-22: two archers claimed both openings, all 3 breakers died, all four archers were back on their posts.
+
 ## B-4 Construction Foundation (`ConstructionPrototype.unity`)
 
 - `Assets/_Project/Scenes/ConstructionPrototype.unity`: 45 deg azimuth, 30 deg pitch orthographic camera, walls, stairs, fixed gate, test units, UI controls.

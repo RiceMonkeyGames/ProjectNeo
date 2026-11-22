@@ -10,7 +10,7 @@ Allied archers on the wall right above the gate hit gate breakers by shooting st
 
 - First choice: block the footing fully. Full verification showed large dead zones under tall walls (about 1.5 times the wall height in front of a mid-wall archer) and three BUG-wall-archer-los high-ground tests failed.
 - Final choice: edge grazing. A shot may pass through the shooter's footing only down to `CombatProfile.footingClearance` below the feet. The agent set 0.3m so that a mid-wall archer on a 3m gate cannot hit gate breakers within about 1m of the gate (1m would still let the upper body be hit).
-- Near-vertical shots at the wall base stay blocked; a dedicated feature is registered as [SIEGE-12](../../backlog/SIEGE-12.md).
+- Near-vertical shots at the wall base stay blocked; a dedicated feature is registered as [SIEGE-12](../SIEGE/SIEGE-12.md).
 
 ## Changes
 
