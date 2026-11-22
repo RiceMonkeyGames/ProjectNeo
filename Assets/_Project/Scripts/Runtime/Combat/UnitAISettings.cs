@@ -71,6 +71,13 @@ namespace ProjectNeo.Combat
         [SerializeField, Min(0f)] float rangedFallbackHoldLeash = 4f;
         // 자리 방향 복귀(COMBAT-14). 끄면 자리에 돌아와도 마지막으로 보던 방향을 그대로 본다.
         [SerializeField] bool holdFacingRestore = true;
+        // 대규모 전투 탐색 최적화(PERF-ai-query-budget).
+        // 판단 주기마다 점수 순으로 먼저 추린 뒤 실제로 NavMesh.CalculatePath를 시험할 최대 후보 수.
+        [SerializeField, Min(1)] int maxPathCandidatesPerTick = 4;
+        // 한 프레임에 전체 AI가 수행할 수 있는 최대 길찾기(CalculatePath) 횟수. 0이면 제한하지 않는다.
+        [SerializeField, Min(0)] int maxPathQueriesPerFrame = 0;
+        // 동시에 켜지거나 부대 지시를 받을 때 판단 주기를 나눌 버킷 수. 1 이하면 나누지 않는다.
+        [SerializeField, Min(1)] int decisionStaggerBuckets = 8;
         public bool RangedThreatPriority => rangedThreatPriority;
         public float RangedMeleeThreatRadius => rangedMeleeThreatRadius;
         public float RangedFallbackDistance => rangedFallbackDistance;
@@ -78,6 +85,9 @@ namespace ProjectNeo.Combat
         public float RangedFallbackMaxSeconds => rangedFallbackMaxSeconds;
         public float RangedFallbackHoldLeash => rangedFallbackHoldLeash;
         public bool HoldFacingRestore => holdFacingRestore;
+        public int MaxPathCandidatesPerTick => Mathf.Max(1, maxPathCandidatesPerTick);
+        public int MaxPathQueriesPerFrame => Mathf.Max(0, maxPathQueriesPerFrame);
+        public int DecisionStaggerBuckets => Mathf.Max(1, decisionStaggerBuckets);
 
         /// <summary>위협 종류의 거리 배율. 우선순위를 끄면 언제나 1이다.</summary>
         public float ThreatDistanceFactor(TargetThreat threat) => rangedThreatPriority
@@ -104,7 +114,8 @@ namespace ProjectNeo.Combat
             float holdMaxDescent = 1.5f, bool meleeSlots = true, bool rangedThreatPriority = true,
             float rangedMeleeThreatRadius = 3f, float rangedFallbackDistance = 3f, bool holdFacingRestore = true,
             float ladderClimberDistanceFactor = 0.5f, float siegeBreakerDistanceFactor = 0.6f,
-            float rangedThreatDistanceFactor = 0.75f)
+            float rangedThreatDistanceFactor = 0.75f, int maxPathCandidatesPerTick = 4,
+            int maxPathQueriesPerFrame = 0, int decisionStaggerBuckets = 8)
         {
             var value = CreateInstance<UnitAISettings>();
             value.meleeSlots = meleeSlots;
@@ -121,6 +132,9 @@ namespace ProjectNeo.Combat
             value.holdRetaliationRadius = Mathf.Max(0f, holdRetaliationRadius);
             value.targetSwitchCooldown = Mathf.Max(0f, targetSwitchCooldown);
             value.holdMaxDescent = Mathf.Max(0f, holdMaxDescent);
+            value.maxPathCandidatesPerTick = Mathf.Max(1, maxPathCandidatesPerTick);
+            value.maxPathQueriesPerFrame = Mathf.Max(0, maxPathQueriesPerFrame);
+            value.decisionStaggerBuckets = Mathf.Max(1, decisionStaggerBuckets);
             return value;
         }
     }

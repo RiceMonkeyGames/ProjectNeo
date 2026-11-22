@@ -483,14 +483,29 @@ namespace ProjectNeo.Squads
                 // 이동은 대형 방향을 함께 넘겨 도착해 자리를 지킬 때 그 방향으로 돌아서게 한다(COMBAT-14).
                 // 공격(Engage)은 자리를 지키지 않으므로 방향을 쓰지 않는다.
                 for (int i = 0; i < alive.Count; i++)
+                {
                     if (toward == UnitDirective.Move) alive[i].SetDirective(toward, slotBuffer[i], order.Facing);
-                    else alive[i].SetDirective(toward, slotBuffer[i]);
+                    else
+                    {
+                        alive[i].SetDirective(toward, slotBuffer[i]);
+                        if (alive.Count > 1)
+                            alive[i].SetDecisionOffset(AIDecisionScheduler.InitialOffset(i, 8, alive[i].DecisionInterval));
+                    }
+                }
                 return;
             }
             UnitDirective directive = order.Kind == SquadOrderKind.Attack ? UnitDirective.Engage : UnitDirective.Hold;
-            foreach (UnitCombatAI member in alive)
+            for (int i = 0; i < alive.Count; i++)
+            {
+                UnitCombatAI member = alive[i];
                 // 이동이 끝나 이미 자리를 지키는 유닛은 다시 건드리지 않는다.
-                if (directive != UnitDirective.Hold || member.Directive != UnitDirective.Hold) member.SetDirective(directive);
+                if (directive != UnitDirective.Hold || member.Directive != UnitDirective.Hold)
+                {
+                    member.SetDirective(directive);
+                    if (alive.Count > 1)
+                        member.SetDecisionOffset(AIDecisionScheduler.InitialOffset(i, 8, member.DecisionInterval));
+                }
+            }
         }
 
         void Update()

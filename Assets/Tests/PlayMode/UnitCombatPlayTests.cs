@@ -428,5 +428,23 @@ namespace ProjectNeo.Tests
             yield return Frames(3);
             Assert.IsNull(ai.Target, "공성 임무 등 반격 억제 상태에서는 피격당해도 타겟을 바꾸지 않아야 한다.");
         }
+
+        [UnityTest]
+        public IEnumerator FindTarget_SortsTopKCandidates_AvoidingRedundantPathQueries()
+        {
+            var actor = Unit("Seeker", CombatTeam.Allied, Vector3.zero, ai: true);
+            actor.Stats.SetBase(StatType.MoveSpeed, 0f);
+            // 먼 적부터 가까운 적 순으로 10명을 생성한다. 예전에는 순회할 때마다 더 가까우므로 10번 모두 CalculatePath를 호출했다.
+            CharacterActor nearest = null;
+            for (int i = 10; i >= 1; i--)
+                nearest = Unit("Enemy_" + i, CombatTeam.Hostile, new Vector3(0f, 0f, i * 2f));
+            UnitCombatAI.Scheduler.ResetStats();
+            var ai = actor.GetComponent<UnitCombatAI>();
+            ai.SetDirective(UnitDirective.Engage);
+            yield return null;
+            Assert.AreSame(nearest, ai.Target, "가장 가까운 도달 가능 적을 선택해야 한다.");
+            // 첫 후보(가장 가까운 적)가 도달 가능하므로 FindTarget 1회 + 경로 적용(CanReach) 1회 이하로 끝나야 한다.
+            Assert.LessOrEqual(UnitCombatAI.Scheduler.TotalQueries, 3, "상위 후보 정렬로 불필요한 길찾기 호출을 건너뛰어야 한다.");
+        }
     }
 }

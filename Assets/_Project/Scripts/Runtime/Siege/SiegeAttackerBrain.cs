@@ -37,6 +37,7 @@ namespace ProjectNeo.Siege
         UnitFallController fall;
         NavMeshPath path;
         WallBreakerAttack wallBreaker;
+        readonly TargetCandidateBuffer<CharacterActor> reachableCandidates = new TargetCandidateBuffer<CharacterActor>(4);
         Mode mode = Mode.Deciding;
         SiegeLadder ladder;
         PlacedStructure gate;
@@ -224,19 +225,46 @@ namespace ProjectNeo.Siege
             return target;
         }
 
-        /// <summary>걸어서 닿는 적 중 직선거리로 가장 가까운 것. 더 가까운 후보만 경로를 구한다.</summary>
+        /// <summary>걸어서 닿는 적 중 직선거리로 가장 가까운 것. 먼저 가까운 상위 후보를 추린 뒤 경로를 구한다(PERF-ai-query-budget).</summary>
         bool AnyReachableEnemy(out CharacterActor nearest)
         {
             nearest = null;
-            float best = float.PositiveInfinity;
             Vector3 here = transform.position;
+            reachableCandidates.Reset(4);
             foreach (CharacterActor candidate in CharacterActor.ActiveActors)
             {
                 if (!Actor.IsEnemy(candidate)) continue;
                 float distance = (candidate.transform.position - here).sqrMagnitude;
-                if (distance >= best) continue;
-                if (agent.CalculatePath(candidate.transform.position, path)
-                    && path.status == NavMeshPathStatus.PathComplete) { nearest = candidate; best = distance; }
+                if (distance >= reachableCandidates.WorstScore) continue;
+                reachableCandidates.TryAdd(candidate, distance);
+            }
+            for (int i = 0; i < reachableCandidates.Count; i++)
+            {
+                CharacterActor candidate = reachableCandidates[i];
+                UnitCombatAI.Scheduler.RecordPathQuery(Time.frameCount);
+                if (agent.CalculatePath(candidate.transform.position, path) && path.status == NavMeshPathStatus.PathComplete)
+                {
+                    nearest = candidate;
+                    return true;
+                }
+            }
+            if (reachableCandidates.Count == reachableCandidates.Capacity)
+            {
+                float floor = reachableCandidates.WorstScore;
+                float best = float.PositiveInfinity;
+                foreach (CharacterActor candidate in CharacterActor.ActiveActors)
+                {
+                    if (!Actor.IsEnemy(candidate)) continue;
+                    float distance = (candidate.transform.position - here).sqrMagnitude;
+                    if (distance < floor || distance >= best) continue;
+                    bool alreadyChecked = false;
+                    for (int i = 0; i < reachableCandidates.Count; i++)
+                        if (ReferenceEquals(reachableCandidates[i], candidate)) { alreadyChecked = true; break; }
+                    if (alreadyChecked) continue;
+                    UnitCombatAI.Scheduler.RecordPathQuery(Time.frameCount);
+                    if (agent.CalculatePath(candidate.transform.position, path)
+                        && path.status == NavMeshPathStatus.PathComplete) { nearest = candidate; best = distance; }
+                }
             }
             return nearest != null;
         }
