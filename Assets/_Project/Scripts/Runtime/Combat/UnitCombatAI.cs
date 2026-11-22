@@ -33,6 +33,11 @@ namespace ProjectNeo.Combat
         bool behindCover;
         ShotOpening opening;
         RangedBlockAction blockAction = RangedBlockAction.Attack;
+        // 사선 캐시(PERF-ai-query-budget): 판단 주기마다, 대상이 바뀔 때, 또는 실제 공격 직전에만 갱신한다.
+        bool hasClearShotCached = true;
+        bool clearShotDirty = true;
+        readonly TargetCandidateBuffer<CharacterActor> topCandidates = new TargetCandidateBuffer<CharacterActor>(4);
+        public static readonly AIDecisionScheduler Scheduler = new AIDecisionScheduler();
         // 자리 방향(COMBAT-14). 대형이 바라볼 방향이나 자리를 받은 때의 방향(도). 없으면 돌지 않는다.
         float? postFacing;
         // 근접 위협 후퇴(COMBAT-14).
@@ -69,6 +74,15 @@ namespace ProjectNeo.Combat
         /// <summary>중지 상태에서 지키는 자리. 중지를 받은 곳이나 이동이 끝난 곳이다.</summary>
         public Vector3 HoldPost { get; private set; }
 
+        /// <summary>
+        /// 동시에 켜지거나 부대 지시를 받은 여러 유닛의 판단 주기를 여러 프레임으로 나눈다(PERF-ai-query-budget).
+        /// </summary>
+        public void SetDecisionOffset(float offsetSeconds)
+        {
+            staggerIndex = 0;
+            decisionRemaining = Mathf.Max(0f, offsetSeconds);
+        }
+
         public void SetDirective(UnitDirective directive)
         {
             if (GetComponent<ProjectNeo.Siege.LadderTraveller>()?.Defer(directive, false, default) == true) return;
@@ -85,6 +99,8 @@ namespace ProjectNeo.Combat
             ReleaseOpening();
             meleeSlotBoard.Release(this);
             blockAction = RangedBlockAction.Attack;
+            hasClearShotCached = true;
+            clearShotDirty = true;
             fallingBack = false;
             // 방향은 부대 대형 방향을 함께 받은 지시(SetDirective(지시, 목적지, 방향))만 지킨다(COMBAT-14).
             // 공성 적 판단처럼 중지 중에 스스로 방향을 돌리는 쪽과 다투지 않게 여기서는 비운다.
@@ -125,6 +141,24 @@ namespace ProjectNeo.Combat
         {
             actor.Died += OnDied;
             actor.HitReceivedFrom += OnHitReceived;
+        }
+
+        static int nextStaggerIndex;
+        int staggerIndex = -1;
+
+        public static void ResetStaggerCounter() => nextStaggerIndex = 0;
+
+        float NextDecisionInterval()
+        {
+            float interval = settings.DecisionInterval;
+            if (staggerIndex < 0 && settings != null && settings.DecisionStaggerBuckets > 1)
+            {
+                // 첫 1명은 원래 판단 주기를 지키고, 같은 장면에 이어서 생성되는 유닛들만 버킷별로 판단 시점을 나눈다.
+                staggerIndex = CharacterActor.ActiveActors.Count <= 2 ? 0 : nextStaggerIndex++;
+                float offset = AIDecisionScheduler.InitialOffset(staggerIndex, settings.DecisionStaggerBuckets, interval);
+                if (offset > 0f) return offset;
+            }
+            return interval;
         }
 
         void Update()
@@ -182,7 +216,7 @@ namespace ProjectNeo.Combat
             if (destinationPending || advancePathRetryPending || decisionRemaining <= 0f)
             {
                 // 지형이 바뀌어도 따라가도록 판단 주기마다 경로를 다시 구한다.
-                decisionRemaining = settings.DecisionInterval;
+                decisionRemaining = NextDecisionInterval();
                 destinationPending = false;
                 // 길이 전혀 없으면 지금 자리에서 멈춘다. 일부만 이어진 길은 갈 수 있는 데까지 간다.
                 if (SetAdvancePath()) return;
@@ -286,7 +320,7 @@ namespace ProjectNeo.Combat
             }
             if (decisionRemaining <= 0f)
             {
-                decisionRemaining = settings.DecisionInterval;
+                decisionRemaining = NextDecisionInterval();
                 refreshed = true;
                 if (Target == null)
                 {
@@ -587,21 +621,25 @@ namespace ProjectNeo.Combat
         }
 
         // 자리 반경 안에서 걸어서 닿는 적 중 지금 위치에서 가장 가까운 적.
+        // 상위 K명만 먼저 점수 순으로 추린 뒤 길찾기를 시험한다(PERF-ai-query-budget).
         CharacterActor FindTargetNearPost()
         {
-            CharacterActor nearest = null;
-            float nearestDistance = float.PositiveInfinity;
+            topCandidates.Reset(settings != null ? settings.MaxPathCandidatesPerTick : 4);
             foreach (CharacterActor candidate in CharacterActor.ActiveActors)
             {
                 if (candidate.Team == actor.Team || !IsNearPost(candidate) || !actor.IsEnemy(candidate)
                     || !CombatPhysics.CanTarget(actor, candidate)) continue;
                 float distance = RangedTargetPriorityRules.Score((candidate.transform.position - transform.position).sqrMagnitude,
                     1f, ThreatFactorOf(candidate));
-                if (distance >= nearestDistance || !CanReachInHold(candidate)) continue;
-                nearestDistance = distance;
-                nearest = candidate;
+                if (distance >= topCandidates.WorstScore) continue;
+                topCandidates.TryAdd(candidate, distance);
             }
-            return nearest;
+            for (int i = 0; i < topCandidates.Count; i++)
+            {
+                CharacterActor candidate = topCandidates[i];
+                if (CanReachInHold(candidate)) return candidate;
+            }
+            return null;
         }
 
         void UpdateEngage()
@@ -611,30 +649,41 @@ namespace ProjectNeo.Combat
             if (!ReferenceEquals(Target, null) && (!actor.IsEnemy(Target) || !CombatPhysics.CanTarget(actor, Target)))
             {
                 Target = null;
+                clearShotDirty = true;
                 decisionRemaining = 0f;
             }
             bool refreshed = false;
             if (decisionRemaining <= 0f)
             {
-                decisionRemaining = settings.DecisionInterval;
-                refreshed = true;
-                if (Target != null && CanReach(Target))
+                if (Target == null && settings != null && settings.MaxPathQueriesPerFrame > 0
+                    && !Scheduler.HasPathBudget(Time.frameCount, settings.MaxPathQueriesPerFrame))
                 {
-                    if (!suppressRetaliation && targetLockRemaining <= 0f && !CanStrikeFromHere(Target))
-                    {
-                        CharacterActor closer = FindTarget();
-                        if (closer != null && !ReferenceEquals(closer, Target)
-                            && (CanStrikeFromHere(closer) || PriorityOf(closer) < PriorityOf(Target)))
-                            SwitchTarget(closer, false);
-                    }
-                    if (CanReach(Target)) ApplyApproachPath(false);
+                    decisionRemaining = 0f;
                 }
                 else
                 {
-                    Target = FindTarget();
-                    if (Target != null) targetLockRemaining = settings.TargetSwitchCooldown;
-                    // 대상을 고르는 동안 path가 바뀔 수 있으므로 선택된 대상의 경로를 다시 얻는다.
-                    if (Target != null && CanReach(Target)) ApplyApproachPath(false);
+                    decisionRemaining = NextDecisionInterval();
+                    refreshed = true;
+                    clearShotDirty = true;
+                    if (Target != null && CanReach(Target))
+                    {
+                        if (!suppressRetaliation && targetLockRemaining <= 0f && !CanStrikeFromHere(Target))
+                        {
+                            CharacterActor closer = FindTarget();
+                            if (closer != null && !ReferenceEquals(closer, Target)
+                                && (CanStrikeFromHere(closer) || PriorityOf(closer) < PriorityOf(Target)))
+                                SwitchTarget(closer, false);
+                        }
+                        if (CanReach(Target)) ApplyApproachPath(false);
+                    }
+                    else
+                    {
+                        Target = FindTarget();
+                        clearShotDirty = true;
+                        if (Target != null) targetLockRemaining = settings.TargetSwitchCooldown;
+                        // 대상을 고르는 동안 path가 바뀔 수 있으므로 선택된 대상의 경로를 다시 얻는다.
+                        if (Target != null && CanReach(Target)) ApplyApproachPath(false);
+                    }
                 }
             }
             if (UpdateMeleeThreat(refreshed, false)) return;
@@ -650,12 +699,32 @@ namespace ProjectNeo.Combat
             bool inRange = CombatPhysics.IsInRange(actor, Target);
             if (inRange) Face(Target);
             bool canAttack = actor.CanAttack(Target);
-            if (!CombatPhysics.HasClearShot(actor, Target)) HandleBlockedShot(refreshed);
+            // 판단 주기마다, 대상이 바뀔 때, 또는 실제로 공격할 준비가 되었을 때만 사선(Raycast)을 다시 검사한다(PERF-ai-query-budget).
+            if (refreshed || clearShotDirty || canAttack)
+            {
+                hasClearShotCached = CombatPhysics.HasClearShot(actor, Target);
+                clearShotDirty = false;
+            }
+            if (!hasClearShotCached)
+            {
+                HandleBlockedShot(refreshed);
+                // 막은 적으로 대상을 바꿨으면 새 대상 기준으로 사거리와 사선을 바로 다시 반영한다.
+                if (clearShotDirty && Target != null)
+                {
+                    inRange = CombatPhysics.IsInRange(actor, Target);
+                    if (inRange) Face(Target);
+                    canAttack = actor.CanAttack(Target);
+                    hasClearShotCached = CombatPhysics.HasClearShot(actor, Target);
+                    clearShotDirty = false;
+                }
+            }
             else blockAction = RangedBlockAction.Attack;
             // 근접 자리를 맡은 유닛은 닿는 거리에 들어와도 자리까지 간다(COMBAT-12). 가는 길에도 닿으면 친다(치는 동안은 멈춘다).
+            // 원거리 유닛이 사거리 안에서 사선이 뚫려 있으면 재장전 동안에도 걸어 들어가지 않고 제자리에서 쏜다.
             bool toSlot = IsWalkingToMeleeSlot();
             if (toSlot) agent.stoppingDistance = 0f;
-            agent.isStopped = (canAttack && !toSlot) || actor.IsAttacking;
+            bool holdRangedRange = IsRangedUnit && inRange && hasClearShotCached;
+            agent.isStopped = ((canAttack || holdRangedRange) && !toSlot) || actor.IsAttacking;
             agent.updateRotation = !inRange;
             if (canAttack) actor.TryAttack(Target);
         }
@@ -801,6 +870,7 @@ namespace ProjectNeo.Combat
             retaliatingTarget = isHoldRetaliation ? next : null;
             targetLockRemaining = settings.TargetSwitchCooldown;
             returningToPost = false;
+            clearShotDirty = true;
         }
 
         float SqrDistanceTo(CharacterActor other) => (other.transform.position - transform.position).sqrMagnitude;
@@ -817,6 +887,7 @@ namespace ProjectNeo.Combat
         // 공중 대상은 몸통 아래 바닥 투영점까지의 길을 찾는다.
         bool CanReach(CharacterActor target)
         {
+            Scheduler.RecordPathQuery(Time.frameCount);
             return agent.CalculatePath(CombatPhysics.ReachPoint(target), path) && path.status == NavMeshPathStatus.PathComplete;
         }
 
@@ -859,21 +930,48 @@ namespace ProjectNeo.Combat
 
         CharacterActor FindTarget()
         {
-            CharacterActor nearest = null;
             float detection = settings.DetectionRange * settings.DetectionRange;
-            float best = float.PositiveInfinity;
+            topCandidates.Reset(settings != null ? settings.MaxPathCandidatesPerTick : 4);
             foreach (CharacterActor candidate in CharacterActor.ActiveActors)
             {
                 if (candidate.Team == actor.Team) continue;
                 float distance = (candidate.transform.position - transform.position).sqrMagnitude;
+                if (distance >= detection) continue;
                 // 선호·위협 배율이 없으면 score는 거리 그대로라 예전과 같은 대상을 고른다.
                 float score = ScoreOf(candidate, distance);
-                if (distance >= detection || score >= best || !actor.IsEnemy(candidate)
-                    || !CombatPhysics.CanTarget(actor, candidate) || !CanReach(candidate)) continue;
-                best = score;
-                nearest = candidate;
+                if (score >= topCandidates.WorstScore || !actor.IsEnemy(candidate)
+                    || !CombatPhysics.CanTarget(actor, candidate)) continue;
+                topCandidates.TryAdd(candidate, score);
             }
-            return nearest;
+            for (int i = 0; i < topCandidates.Count; i++)
+            {
+                CharacterActor candidate = topCandidates[i];
+                if (CanReach(candidate)) return candidate;
+            }
+            // 상위 K명 모두가 섬이나 끊긴 벽 너머에 있을 때는 나머지 후보 중 가장 점수가 좋은 도달 가능 대상을 찾는다.
+            if (topCandidates.Count == topCandidates.Capacity)
+            {
+                float floor = topCandidates.WorstScore;
+                CharacterActor fallback = null;
+                float best = float.PositiveInfinity;
+                foreach (CharacterActor candidate in CharacterActor.ActiveActors)
+                {
+                    if (candidate.Team == actor.Team) continue;
+                    float distance = (candidate.transform.position - transform.position).sqrMagnitude;
+                    if (distance >= detection) continue;
+                    float score = ScoreOf(candidate, distance);
+                    if (score < floor || score >= best || !actor.IsEnemy(candidate)
+                        || !CombatPhysics.CanTarget(actor, candidate)) continue;
+                    bool alreadyChecked = false;
+                    for (int i = 0; i < topCandidates.Count; i++)
+                        if (ReferenceEquals(topCandidates[i], candidate)) { alreadyChecked = true; break; }
+                    if (alreadyChecked || !CanReach(candidate)) continue;
+                    best = score;
+                    fallback = candidate;
+                }
+                return fallback;
+            }
+            return null;
         }
 
         void OnDied()

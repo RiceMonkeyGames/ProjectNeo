@@ -108,7 +108,7 @@ namespace ProjectNeo.Tests
             report.AppendLine($"CPU={SystemInfo.processorType} logicalCores={SystemInfo.processorCount} editor={Application.isEditor}");
             report.AppendLine($"warmup={WarmupFrames} measure={MeasureFrames} captureDelta=1/30 decisionInterval={settings.DecisionInterval}");
             report.AppendLine("AI-only ms excludes engine NavMesh steering, physics, rendering and frame waiting; no performance pass threshold.");
-            report.AppendLine("case,perTeam,AI_mean_ms,AI_p50_ms,AI_p95_ms,AI_max_ms,wall_mean_ms,mean_targets,mean_movers,mean_Move_directives");
+            report.AppendLine("case,perTeam,AI_mean_ms,AI_p50_ms,AI_p95_ms,AI_max_ms,wall_mean_ms,mean_targets,mean_movers,mean_Move_directives,mean_path_queries");
             string output = Path.Combine(Directory.GetCurrentDirectory(), "Logs", "benchmark_nav_query.csv");
             Directory.CreateDirectory(Path.GetDirectoryName(output));
             foreach (int count in new[] { 50, 200 })
@@ -119,21 +119,24 @@ namespace ProjectNeo.Tests
                 foreach (UnitCombatAI unit in units)
                     Assert.IsTrue(unit.GetComponent<NavMeshAgent>().isOnNavMesh, unit.name);
                 var samples = new double[MeasureFrames];
-                double wallSum = 0, targets = 0, movers = 0, moveDirectives = 0;
+                double wallSum = 0, targets = 0, movers = 0, moveDirectives = 0, pathQueries = 0;
                 var wall = new Stopwatch();
                 var cpu = new Stopwatch();
                 for (int frame = 0; frame < WarmupFrames + MeasureFrames; frame++)
                 {
+                    int queriesBefore = UnitCombatAI.Scheduler.TotalQueries;
                     wall.Restart();
                     cpu.Restart();
                     foreach (Action update in updates) update();
                     cpu.Stop();
                     double elapsed = cpu.Elapsed.TotalMilliseconds;
+                    int queriesDelta = UnitCombatAI.Scheduler.TotalQueries - queriesBefore;
                     yield return null;
                     wall.Stop();
                     if (frame < WarmupFrames) continue;
                     samples[frame - WarmupFrames] = elapsed;
                     wallSum += wall.Elapsed.TotalMilliseconds;
+                    pathQueries += queriesDelta;
                     foreach (UnitCombatAI unit in units)
                     {
                         if (unit.Target != null) targets++;
@@ -146,10 +149,11 @@ namespace ProjectNeo.Tests
                 foreach (double sample in samples) sum += sample;
                 Array.Sort(samples);
                 report.AppendLine(string.Format(CultureInfo.InvariantCulture,
-                    "{0},{1},{2:F3},{3:F3},{4:F3},{5:F3},{6:F3},{7:F1},{8:F1},{9:F1}",
+                    "{0},{1},{2:F3},{3:F3},{4:F3},{5:F3},{6:F3},{7:F1},{8:F1},{9:F1},{10:F1}",
                     scenario, count, sum / MeasureFrames, samples[MeasureFrames / 2],
                     samples[(int)Math.Ceiling(MeasureFrames * 0.95) - 1], samples[MeasureFrames - 1],
-                    wallSum / MeasureFrames, targets / MeasureFrames, movers / MeasureFrames, moveDirectives / MeasureFrames));
+                    wallSum / MeasureFrames, targets / MeasureFrames, movers / MeasureFrames, moveDirectives / MeasureFrames,
+                    pathQueries / MeasureFrames));
                 File.WriteAllText(output, report.ToString());
                 Object.Destroy(unitRoot);
                 units.Clear();
@@ -162,6 +166,7 @@ namespace ProjectNeo.Tests
 
         void Spawn(int perTeam, string scenario)
         {
+            UnitCombatAI.Scheduler.ResetStats();
             unitRoot = new GameObject("BenchmarkUnits");
             MethodInfo updateMethod = typeof(UnitCombatAI).GetMethod("Update", BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.IsNotNull(updateMethod, "AI Update method changed; update the benchmark adapter.");
