@@ -1,9 +1,9 @@
 ---
 id: COMBAT-12
 title: Ranged Engage Occlusion Fix & Melee Engagement Spread
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: SeongminHwang
+branch: feature/combat-12
 area: COMBAT
 depends_on: []
 created: 2026-11-22
