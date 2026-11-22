@@ -22,6 +22,7 @@ namespace ProjectNeo.Combat
         float launchHeight;
         Collider footing;
         float footingFloor;
+        ShotOpening opening;
 
         public void Launch(CharacterActor source, float attackPower, Vector3 launchVelocity)
         {
@@ -30,6 +31,8 @@ namespace ProjectNeo.Combat
             // 쏜 유닛이 딛고 선 물체는 모서리를 스치는 깊이까지만 지난다. 사선 검사(CombatPhysics.HasClearShot)와 같은 기준이다.
             footing = CombatPhysics.GroundUnder(source);
             footingFloor = CombatPhysics.FootingFloor(source);
+            // 마치콜레이션 사격 자리에서 쏜 화살은 구멍 통로 안에서 성문 조각을 지난다(SIEGE-12).
+            opening = ShotOpening.At(source);
             team = source.Team;
             profile = source.Profile;
             attack = attackPower;
@@ -48,7 +51,7 @@ namespace ProjectNeo.Combat
             Vector3 origin = transform.position;
             // SphereCast는 시작점에 이미 겹친 충돌체를 놓칠 수 있어 별도로 검사한다.
             foreach (Collider overlap in Physics.OverlapSphere(origin, profile.ProjectileRadius, ~0, QueryTriggerInteraction.Ignore))
-                if (TryImpact(overlap, origin.y)) return;
+                if (TryImpact(overlap, origin)) return;
 
             elapsed += delta;
             Vector3 next = ArrowBallistics.Evaluate(start, velocity, gravity, elapsed);
@@ -62,13 +65,13 @@ namespace ProjectNeo.Combat
                     distance, ~0, QueryTriggerInteraction.Ignore))
                 {
                     // 닿을 때 화살 중심 높이로 잰다. 사선 검사의 선과 같은 기준이고, 시작부터 겹친 경우(hit.point = 0)도 맞게 잰다.
-                    if (ShouldIgnore(hit.collider, origin.y + direction.y * hit.distance)) continue;
+                    if (ShouldIgnore(hit.collider, origin + direction * hit.distance)) continue;
                     if (!nearest.HasValue || hit.distance < nearest.Value.distance) nearest = hit;
                 }
                 if (nearest.HasValue)
                 {
                     transform.position = origin + direction * nearest.Value.distance;
-                    TryImpact(nearest.Value.collider, transform.position.y);
+                    TryImpact(nearest.Value.collider, transform.position);
                     return;
                 }
             }
@@ -82,19 +85,21 @@ namespace ProjectNeo.Combat
             if (heading.sqrMagnitude > 0.0001f) transform.rotation = Quaternion.LookRotation(heading);
         }
 
-        // contactHeight: 닿은 높이. 발밑 물체는 허용 깊이(footingFloor) 위에서만 지난다(BUG-wall-archer-shoots-through-footing).
-        bool ShouldIgnore(Collider collider, float contactHeight)
+        // contact: 닿은 지점(화살 중심). 발밑 물체는 허용 깊이(footingFloor) 위에서만 지난다(BUG-wall-archer-shoots-through-footing).
+        // 마치콜레이션에서 쏜 화살은 통로 안에서 성문 조각을 지난다(SIEGE-12).
+        bool ShouldIgnore(Collider collider, Vector3 contact)
         {
             if (collider.gameObject.scene != gameObject.scene || ShotCover.Passes(collider, team)
-                || (collider == footing && contactHeight >= footingFloor)) return true;
+                || (opening != null && opening.Passes(collider, contact))
+                || (collider == footing && contact.y >= footingFloor)) return true;
             var actor = collider.GetComponentInParent<CharacterActor>();
             return actor != null && (actor == owner || actor.Team == team
                 || actor.Health == null || actor.Health.IsDead);
         }
 
-        bool TryImpact(Collider collider, float contactHeight)
+        bool TryImpact(Collider collider, Vector3 contact)
         {
-            if (ShouldIgnore(collider, contactHeight)) return false;
+            if (ShouldIgnore(collider, contact)) return false;
             var target = collider.GetComponentInParent<CharacterActor>();
             // 위로 쏠 때의 감소는 성벽 위를 노릴 때만이다. 공중 대상은 언제나 온전한 피해를 받는다(Q-43).
             if (target != null)

@@ -31,6 +31,7 @@ namespace ProjectNeo.Combat
         bool suppressRetaliation;
         float coverCheckRemaining;
         bool behindCover;
+        ShotOpening opening;
         public CharacterActor Target { get; private set; }
         // 지시를 받지 않은 유닛(적, 관전 전투)은 기존처럼 알아서 싸운다.
         public UnitDirective Directive { get; private set; } = UnitDirective.Engage;
@@ -69,6 +70,7 @@ namespace ProjectNeo.Combat
             decisionRemaining = 0f;
             stall.Reset();
             returningToPost = false;
+            ReleaseOpening();
             if (directive == UnitDirective.Hold) HoldPost = transform.position;
         }
 
@@ -287,6 +289,7 @@ namespace ProjectNeo.Combat
                 }
                 if (Target != null) return;
             }
+            if (UpdateOpening(refreshed)) return;
             // 자리로 돌아가기. 여유 거리(HoldReturnDistance)보다 멀리 밀려났을 때만 출발하고, 출발하면 도착 거리까지 붙는다.
             // 자리가 다른 유닛에 막혀 더 못 가면 거기서 멈춘다. 살짝 밀린 정도로 자리 다툼을 하지 않는다.
             Vector3 offset = HoldPost - transform.position;
@@ -308,6 +311,76 @@ namespace ProjectNeo.Combat
             }
             if (refreshed || !agent.hasPath) agent.SetDestination(HoldPost);
         }
+
+        // 마치콜레이션(SIEGE-12): 중지 중인 원거리 유닛이 쏠 대상이 없을 때, 근처 빈 구멍 아래에 적이 있으면 그 구멍으로 가서 선다.
+        // 서면 아래 적이 보여 위의 공격 분기에서 쏜다. 아래에 적이 없어지면 구멍을 놓고 자리로 돌아간다.
+        bool UpdateOpening(bool refreshed)
+        {
+            if (opening != null && refreshed
+                && MachicolationRules.ShouldRelease(opening.isActiveAndEnabled, opening.HasEnemyBelow(actor)))
+                ReleaseOpening();
+            if (opening != null && !opening.isActiveAndEnabled) ReleaseOpening();
+            if (opening == null && refreshed) ClaimOpening();
+            if (opening == null) return false;
+            if (opening.IsAtStand(transform.position))
+            {
+                if (agent.hasPath) agent.ResetPath();
+                agent.isStopped = true;
+                agent.updateRotation = false;
+                returningToPost = false;
+                return true;
+            }
+            agent.updateRotation = true;
+            agent.isStopped = actor.IsAttacking;
+            if (refreshed || !agent.hasPath) agent.SetDestination(opening.StandPoint);
+            return true;
+        }
+
+        readonly System.Collections.Generic.List<MachicolationCandidate> openingCandidates =
+            new System.Collections.Generic.List<MachicolationCandidate>();
+        readonly System.Collections.Generic.List<int> openingOrder = new System.Collections.Generic.List<int>();
+        const float OpeningLevelTolerance = 1.5f;
+
+        void ClaimOpening()
+        {
+            var all = ShotOpening.Active;
+            if (all.Count == 0) return;
+            openingCandidates.Clear();
+            float radius = 0f;
+            foreach (ShotOpening candidate in all)
+            {
+                bool usable = candidate.CanBeUsedBy(actor);
+                Vector3 offset = candidate.StandPoint - HoldPost;
+                bool sameLevel = Mathf.Abs(offset.y) <= OpeningLevelTolerance;
+                offset.y = 0f;
+                radius = Mathf.Max(radius, candidate.SearchRadius);
+                // 반경 밖이거나 쓸 수 없는 구멍은 아래 적을 세지 않는다(비싼 검사를 줄인다).
+                bool near = usable && sameLevel && offset.sqrMagnitude <= candidate.SearchRadius * candidate.SearchRadius;
+                openingCandidates.Add(new MachicolationCandidate(offset.sqrMagnitude, sameLevel,
+                    near && candidate.IsFreeFor(this), near && candidate.HasEnemyBelow(actor)));
+            }
+            MachicolationRules.Rank(openingCandidates, radius, openingOrder);
+            foreach (int index in openingOrder)
+            {
+                ShotOpening candidate = all[index];
+                if (!agent.CalculatePath(candidate.StandPoint, path) || path.status != NavMeshPathStatus.PathComplete
+                    || (settings.HoldMaxDescent > 0f
+                        && !HoldDescentRule.StaysAbove(path.corners, HoldPost.y - settings.HoldMaxDescent))) continue;
+                opening = candidate;
+                opening.Claim(this);
+                agent.SetPath(path);
+                return;
+            }
+        }
+
+        void ReleaseOpening()
+        {
+            if (opening != null) opening.Release(this);
+            opening = null;
+        }
+
+        /// <summary>지금 쓰러 가거나 쓰고 있는 마치콜레이션 구멍(SIEGE-12). 없으면 null.</summary>
+        public ShotOpening Opening => opening;
 
         bool HasArrivedAtPost(float away)
         {
@@ -530,6 +603,7 @@ namespace ProjectNeo.Combat
 
         void OnDied()
         {
+            ReleaseOpening();
             Target = null;
             retaliatingTarget = null;
             agent.enabled = false;
@@ -540,6 +614,7 @@ namespace ProjectNeo.Combat
             GetComponent<ProjectNeo.Siege.LadderTraveller>()?.Interrupt();
             actor.Died -= OnDied;
             actor.HitReceivedFrom -= OnHitReceived;
+            ReleaseOpening();
             Target = null;
             retaliatingTarget = null;
             if (agent.enabled && agent.isOnNavMesh)

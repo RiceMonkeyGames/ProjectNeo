@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2fc3054e8e2a8b64e80064feb7dc6c39, type: 3}
+  m_Name: Machicolations
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Walls.MachicolationSettings
+  standInset: 0.85
+  standRadius: 0.6
+  shaftWidth: 3
+  shaftInward: 1.2
+  shaftOutward: 2
+  searchRadius: 12
+  overhangDepth: 0.6
+  overhangHeight: 0.5
+  overhangWidth: 2.4
+  material: {fileID: 0}
+  holeMaterial: {fileID: 2100000, guid: 9ce35696644c9e1418349c2158766b67, type: 2}
+  attacks:
+  - {fileID: 11400000, guid: f0600fc140cd7254c9520f87ac6bf0c5, type: 2}
