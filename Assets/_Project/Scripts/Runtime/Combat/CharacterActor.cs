@@ -54,6 +54,8 @@ namespace ProjectNeo.Combat
             ThreatSource != null ? ThreatSource.Threat : TargetThreat.None,
             profile != null && profile.AttackKind == AttackKind.Projectile);
         public static IReadOnlyList<CharacterActor> ActiveActors => activeActors;
+        /// <summary>활성 유닛 목록이 바뀌거나 위치가 바뀔 때 증가하는 변경 번호(PERF-ai-spatial-grid).</summary>
+        public static int RegistryRevision { get; private set; }
         /// <summary>원거리 탄퍼짐에 쓰는 난수(COMBAT-09). 테스트는 고정 난수로 바꿔 끼운다.</summary>
         public static Core.IRandomSource ShotRandom { get; set; } = new Core.SeededRandom(Environment.TickCount);
         public event Action AttackStarted;
@@ -85,7 +87,11 @@ namespace ProjectNeo.Combat
             team = combatTeam;
         }
 
-        public void SetTeam(CombatTeam combatTeam) => team = combatTeam;
+        public void SetTeam(CombatTeam combatTeam)
+        {
+            team = combatTeam;
+            RegistryRevision++;
+        }
 
         /// <summary>
         /// 웅크리거나 일어난다(COMBAT-10). 캡슐 판정 몸통을 발을 고정한 채 키 비율만큼 줄이고 되돌린다.
@@ -125,12 +131,16 @@ namespace ProjectNeo.Combat
 
         void OnEnable()
         {
-            if (Health != null && !Health.IsDead && !activeActors.Contains(this)) activeActors.Add(this);
+            if (Health != null && !Health.IsDead && !activeActors.Contains(this))
+            {
+                activeActors.Add(this);
+                RegistryRevision++;
+            }
         }
 
         void OnDisable()
         {
-            activeActors.Remove(this);
+            if (activeActors.Remove(this)) RegistryRevision++;
             pendingImpact = false;
             SetCrouched(false);
         }
@@ -242,7 +252,7 @@ namespace ProjectNeo.Combat
         {
             pendingImpact = false;
             SetCrouched(false);
-            activeActors.Remove(this);
+            if (activeActors.Remove(this)) RegistryRevision++;
             foreach (Collider body in GetComponents<Collider>()) body.enabled = false;
             Died?.Invoke();
         }

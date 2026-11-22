@@ -118,8 +118,10 @@ namespace ProjectNeo.Skills
         {
             point = self.transform.position;
             candidates.Clear(); enemyPoints.Clear(); enemyBodies.Clear();
-            foreach (CharacterActor actor in CharacterActor.ActiveActors)
+            CombatSpatialIndex.QueryEnemies(self.Team, self.transform.position, skill.Range + skill.Radius, scratch);
+            for (int i = 0; i < scratch.Count; i++)
             {
+                CharacterActor actor = scratch[i];
                 if (!self.IsEnemy(actor)) continue;
                 Vector3 position = actor.transform.position;
                 enemyPoints.Add(position);
@@ -181,8 +183,10 @@ namespace ProjectNeo.Skills
         {
             CharacterActor best = null;
             float bestRatio = float.PositiveInfinity;
-            foreach (CharacterActor actor in CharacterActor.ActiveActors)
+            CombatSpatialIndex.QueryTeam(self.Team, self.transform.position, range, scratch);
+            for (int i = 0; i < scratch.Count; i++)
             {
+                CharacterActor actor = scratch[i];
                 if (!SkillTargeting.IsAlly(self, actor) || Distance(self, actor) > range) continue;
                 float ratio = Ratio(actor);
                 if (ratio < bestRatio) { best = actor; bestRatio = ratio; }
@@ -191,12 +195,14 @@ namespace ProjectNeo.Skills
         }
 
         // 거리 안에서 가장 가까운 적. withBody면 대상 몸 반경만큼 더 멀어도 된다(TargetUnit 사거리 판정과 같다).
-        static CharacterActor NearestEnemy(CharacterActor self, float range, bool withBody)
+        CharacterActor NearestEnemy(CharacterActor self, float range, bool withBody)
         {
             CharacterActor best = null;
             float bestDistance = float.PositiveInfinity;
-            foreach (CharacterActor actor in CharacterActor.ActiveActors)
+            CombatSpatialIndex.QueryEnemies(self.Team, self.transform.position, range, scratch);
+            for (int i = 0; i < scratch.Count; i++)
             {
+                CharacterActor actor = scratch[i];
                 if (!self.IsEnemy(actor)) continue;
                 float distance = Distance(self, actor);
                 float reach = range + (withBody && actor.Profile != null ? actor.Profile.Radius : 0f);

@@ -38,6 +38,8 @@ namespace ProjectNeo.Siege
         NavMeshPath path;
         WallBreakerAttack wallBreaker;
         readonly TargetCandidateBuffer<CharacterActor> reachableCandidates = new TargetCandidateBuffer<CharacterActor>(4);
+        readonly System.Collections.Generic.List<CharacterActor> spatialCandidates =
+            new System.Collections.Generic.List<CharacterActor>(64);
         Mode mode = Mode.Deciding;
         SiegeLadder ladder;
         PlacedStructure gate;
@@ -231,8 +233,10 @@ namespace ProjectNeo.Siege
             nearest = null;
             Vector3 here = transform.position;
             reachableCandidates.Reset(4);
-            foreach (CharacterActor candidate in CharacterActor.ActiveActors)
+            var enemies = CombatSpatialIndex.AllEnemiesOf(Actor.Team);
+            for (int i = 0; i < enemies.Count; i++)
             {
+                CharacterActor candidate = enemies[i];
                 if (!Actor.IsEnemy(candidate)) continue;
                 float distance = (candidate.transform.position - here).sqrMagnitude;
                 if (distance >= reachableCandidates.WorstScore) continue;
@@ -252,14 +256,15 @@ namespace ProjectNeo.Siege
             {
                 float floor = reachableCandidates.WorstScore;
                 float best = float.PositiveInfinity;
-                foreach (CharacterActor candidate in CharacterActor.ActiveActors)
+                for (int i = 0; i < enemies.Count; i++)
                 {
+                    CharacterActor candidate = enemies[i];
                     if (!Actor.IsEnemy(candidate)) continue;
                     float distance = (candidate.transform.position - here).sqrMagnitude;
                     if (distance < floor || distance >= best) continue;
                     bool alreadyChecked = false;
-                    for (int i = 0; i < reachableCandidates.Count; i++)
-                        if (ReferenceEquals(reachableCandidates[i], candidate)) { alreadyChecked = true; break; }
+                    for (int k = 0; k < reachableCandidates.Count; k++)
+                        if (ReferenceEquals(reachableCandidates[k], candidate)) { alreadyChecked = true; break; }
                     if (alreadyChecked) continue;
                     UnitCombatAI.Scheduler.RecordPathQuery(Time.frameCount);
                     if (agent.CalculatePath(candidate.transform.position, path)
@@ -698,8 +703,11 @@ namespace ProjectNeo.Siege
         bool CanShootFrom(Vector3 standPoint)
         {
             Vector3 aim = standPoint + Vector3.up * (Actor.Profile.Height * 0.5f);
-            foreach (CharacterActor candidate in CharacterActor.ActiveActors)
+            float maxReach = CombatPhysics.MaximumAttackRange(Actor);
+            CombatSpatialIndex.QueryEnemies(Actor.Team, standPoint, maxReach, spatialCandidates);
+            for (int i = 0; i < spatialCandidates.Count; i++)
             {
+                CharacterActor candidate = spatialCandidates[i];
                 if (!Actor.IsEnemy(candidate) || candidate.Body == null) continue;
                 float reach = CombatPhysics.AttackRange(Actor, candidate);
                 if ((candidate.Body.ClosestPoint(aim) - aim).sqrMagnitude > reach * reach) continue;

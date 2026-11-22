@@ -78,6 +78,8 @@ namespace ProjectNeo.Combat
         [SerializeField, Min(0)] int maxPathQueriesPerFrame = 0;
         // 동시에 켜지거나 부대 지시를 받을 때 판단 주기를 나눌 버킷 수. 1 이하면 나누지 않는다.
         [SerializeField, Min(1)] int decisionStaggerBuckets = 8;
+        // 2D 공간 해시 그리드 칸 크기(m, PERF-ai-spatial-grid).
+        [SerializeField, Min(1f)] float spatialCellSize = 8f;
         public bool RangedThreatPriority => rangedThreatPriority;
         public float RangedMeleeThreatRadius => rangedMeleeThreatRadius;
         public float RangedFallbackDistance => rangedFallbackDistance;
@@ -88,6 +90,7 @@ namespace ProjectNeo.Combat
         public int MaxPathCandidatesPerTick => Mathf.Max(1, maxPathCandidatesPerTick);
         public int MaxPathQueriesPerFrame => Mathf.Max(0, maxPathQueriesPerFrame);
         public int DecisionStaggerBuckets => Mathf.Max(1, decisionStaggerBuckets);
+        public float SpatialCellSize => Mathf.Max(1f, spatialCellSize);
 
         /// <summary>위협 종류의 거리 배율. 우선순위를 끄면 언제나 1이다.</summary>
         public float ThreatDistanceFactor(TargetThreat threat) => rangedThreatPriority
@@ -115,7 +118,7 @@ namespace ProjectNeo.Combat
             float rangedMeleeThreatRadius = 3f, float rangedFallbackDistance = 3f, bool holdFacingRestore = true,
             float ladderClimberDistanceFactor = 0.5f, float siegeBreakerDistanceFactor = 0.6f,
             float rangedThreatDistanceFactor = 0.75f, int maxPathCandidatesPerTick = 4,
-            int maxPathQueriesPerFrame = 0, int decisionStaggerBuckets = 8)
+            int maxPathQueriesPerFrame = 0, int decisionStaggerBuckets = 8, float spatialCellSize = 8f)
         {
             var value = CreateInstance<UnitAISettings>();
             value.meleeSlots = meleeSlots;
@@ -135,6 +138,7 @@ namespace ProjectNeo.Combat
             value.maxPathCandidatesPerTick = Mathf.Max(1, maxPathCandidatesPerTick);
             value.maxPathQueriesPerFrame = Mathf.Max(0, maxPathQueriesPerFrame);
             value.decisionStaggerBuckets = Mathf.Max(1, decisionStaggerBuckets);
+            value.spatialCellSize = Mathf.Max(1f, spatialCellSize);
             return value;
         }
     }
