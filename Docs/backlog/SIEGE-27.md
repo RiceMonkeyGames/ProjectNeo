@@ -1,9 +1,9 @@
 ---
 id: SIEGE-27
 title: Interior Stair Rooms for Steps to Three-Storey Walls
-status: Waiting
+status: In Progress
 assignee: youngho
-branch:
+branch: feature/siege-27
 area: SIEGE
 depends_on: []
 created: 2026-11-23
