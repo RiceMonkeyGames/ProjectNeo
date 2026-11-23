@@ -47,6 +47,27 @@ namespace ProjectNeo.Combat
         public Vector3 Origin => origin;
         public bool HasValidField { get; private set; }
 
+        /// <summary>
+        /// 지상 기준 높이를 계산한다(BUG-ai-core-defects). 성벽 위 수비병이 섞여 평균 높이가 들리지 않도록
+        /// 유효한 최소 높이를 지면 기준으로 삼는다. 값이 없으면 0.
+        /// </summary>
+        public static float ComputeGroundElevation(IReadOnlyList<float> elevations)
+        {
+            if (elevations == null || elevations.Count == 0) return 0f;
+            float min = float.PositiveInfinity;
+            for (int i = 0; i < elevations.Count; i++)
+            {
+                float y = elevations[i];
+                if (float.IsNaN(y) || float.IsInfinity(y)) continue;
+                if (y < min) min = y;
+            }
+            return float.IsPositiveInfinity(min) ? 0f : min;
+        }
+
+        /// <summary>높이가 지상 Flow Field 대역 안에 있는지(성벽 위·고지대 유닛 제외).</summary>
+        public static bool IsWithinGroundBand(float elevation, float groundElevation, float tolerance = 1.5f) =>
+            Mathf.Abs(elevation - groundElevation) <= tolerance;
+
         public void ClearAll()
         {
             Array.Clear(blocked, 0, blocked.Length);

@@ -19,6 +19,7 @@ namespace ProjectNeo.Combat
         static FlowFieldGrid toHostileField;
         static FlowFieldGrid toAlliedField;
         static readonly List<Vector3> seedBuffer = new List<Vector3>(MaxGoalSeedsPerField);
+        static readonly List<float> elevationBuffer = new List<float>(64);
         static Scene activeScene;
         static float nextRebuildTime = -1f;
         static Scene obstaclesBuiltScene;
@@ -26,6 +27,7 @@ namespace ProjectNeo.Combat
 
         public static FlowFieldGrid ToHostileField => toHostileField;
         public static FlowFieldGrid ToAlliedField => toAlliedField;
+        public static float GroundElevation => groundElevation;
         public static int FlowStepCount { get; private set; }
 
         public static void ResetStats()
@@ -65,6 +67,15 @@ namespace ProjectNeo.Combat
                 CreateGridsForActiveBattlefield(actors);
                 obstaclesBuiltScene = default;
             }
+            else
+            {
+                float detectedGround = SampleGroundElevation(actors);
+                if (detectedGround < groundElevation - 1.2f)
+                {
+                    CreateGridsForActiveBattlefield(actors);
+                    obstaclesBuiltScene = default;
+                }
+            }
 
             if (obstaclesBuiltScene != currentScene)
             {
@@ -82,12 +93,30 @@ namespace ProjectNeo.Combat
             nextRebuildTime = now + RebuildIntervalSeconds;
         }
 
+        static float SampleGroundElevation(IReadOnlyList<CharacterActor> actors)
+        {
+            elevationBuffer.Clear();
+            for (int i = 0; i < actors.Count; i++)
+            {
+                CharacterActor actor = actors[i];
+                if (actor == null || actor.Health == null || actor.Health.IsDead || actor.Airborne != null) continue;
+                elevationBuffer.Add(actor.transform.position.y);
+            }
+            if (elevationBuffer.Count == 0)
+            {
+                for (int i = 0; i < actors.Count; i++)
+                {
+                    CharacterActor actor = actors[i];
+                    if (actor != null) elevationBuffer.Add(actor.transform.position.y);
+                }
+            }
+            return FlowFieldGrid.ComputeGroundElevation(elevationBuffer);
+        }
+
         static void CreateGridsForActiveBattlefield(IReadOnlyList<CharacterActor> actors)
         {
             Vector3 min = new Vector3(float.PositiveInfinity, 0f, float.PositiveInfinity);
             Vector3 max = new Vector3(float.NegativeInfinity, 0f, float.NegativeInfinity);
-            float ySum = 0f;
-            int count = 0;
 
             for (int i = 0; i < actors.Count; i++)
             {
@@ -98,11 +127,9 @@ namespace ProjectNeo.Combat
                 if (p.z < min.z) min.z = p.z;
                 if (p.x > max.x) max.x = p.x;
                 if (p.z > max.z) max.z = p.z;
-                ySum += p.y;
-                count++;
             }
 
-            groundElevation = count > 0 ? ySum / count : 0f;
+            groundElevation = SampleGroundElevation(actors);
             const float margin = 36f;
             Vector3 origin = new Vector3(
                 Mathf.Floor((min.x - margin) / DefaultCellSize) * DefaultCellSize,
@@ -157,11 +184,19 @@ namespace ProjectNeo.Combat
                 if (actor == null || actor.Health == null || actor.Health.IsDead) continue;
                 Vector3 pos = actor.transform.position;
                 // 지상층(높이 차 1.5m 안)에 있는 유닛을 우선 시드로 넣는다.
-                if (Mathf.Abs(pos.y - groundElevation) <= 1.5f)
+                if (FlowFieldGrid.IsWithinGroundBand(pos.y, groundElevation, 1.5f))
                     seeds.Add(pos);
             }
-            if (seeds.Count == 0 && teamActors[0] != null)
-                seeds.Add(teamActors[0].transform.position);
+            if (seeds.Count == 0)
+            {
+                for (int i = 0; i < teamActors.Count; i++)
+                {
+                    CharacterActor actor = teamActors[i];
+                    if (actor == null || actor.Health == null || actor.Health.IsDead) continue;
+                    seeds.Add(actor.transform.position);
+                    break;
+                }
+            }
         }
 
         /// <summary>

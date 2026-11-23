@@ -15,5 +15,12 @@ namespace ProjectNeo.Combat
                 if (corners[i].y < floorY) return false;
             return true;
         }
+
+        /// <summary>
+        /// 후보의 도달 목표 높이가 자리 허용 바닥(<paramref name="floorY"/>)보다 확연히 아래인지 사전에 거른다(BUG-ai-core-defects).
+        /// NavMesh 스냅 오차를 감안해 작은 여유(<paramref name="tolerance"/>)를 둔다.
+        /// </summary>
+        public static bool EndpointMayStayAbove(float targetY, float floorY, float tolerance = 0.25f) =>
+            targetY >= floorY - tolerance;
     }
 }

@@ -69,5 +69,23 @@ namespace ProjectNeo.Tests
             Assert.IsTrue(grid.TrySampleDirection(new Vector3(8.5f, 0f, 2.5f), out Vector3 eastFlow));
             Assert.Greater(eastFlow.x, 0.5f, "동쪽 시드에 가까운 유닛은 동쪽(+x)으로 흘러야 한다.");
         }
+
+        [Test]
+        public void ComputeGroundElevation_UsesMinimumElevation_IgnoringWallTopDefenders()
+        {
+            var mixed = new[] { 6f, 6f, 6f, 3f, 0f, 0.05f, float.NaN };
+            Assert.AreEqual(0f, FlowFieldGrid.ComputeGroundElevation(mixed), 1e-5f);
+            Assert.AreEqual(0f, FlowFieldGrid.ComputeGroundElevation(new float[0]), 1e-5f);
+            Assert.AreEqual(0f, FlowFieldGrid.ComputeGroundElevation(null), 1e-5f);
+        }
+
+        [Test]
+        public void IsWithinGroundBand_DistinguishesGroundAndWallTop()
+        {
+            Assert.IsTrue(FlowFieldGrid.IsWithinGroundBand(0.2f, 0f, 1.5f));
+            Assert.IsTrue(FlowFieldGrid.IsWithinGroundBand(1.5f, 0f, 1.5f));
+            Assert.IsFalse(FlowFieldGrid.IsWithinGroundBand(3.0f, 0f, 1.5f));
+            Assert.IsFalse(FlowFieldGrid.IsWithinGroundBand(6.0f, 0f, 1.5f));
+        }
     }
 }

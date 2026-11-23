@@ -423,7 +423,7 @@ namespace ProjectNeo.Combat
                 }
                 if (Target != null) return;
             }
-            if (!squadNeighborhoodClear && UpdateOpening(refreshed)) return;
+            if ((!squadNeighborhoodClear || opening != null) && UpdateOpening(refreshed)) return;
             // 자리로 돌아가기. 여유 거리(HoldReturnDistance)보다 멀리 밀려났을 때만 출발하고, 출발하면 도착 거리까지 붙는다.
             // 자리가 다른 유닛에 막혀 더 못 가면 거기서 멈춘다. 살짝 밀린 정도로 자리 다툼을 하지 않는다.
             Vector3 offset = HoldPost - transform.position;
@@ -587,8 +587,8 @@ namespace ProjectNeo.Combat
                 && MachicolationRules.ShouldRelease(opening.isActiveAndEnabled, opening.HasEnemyBelow(actor)))
                 ReleaseOpening();
             if (opening != null && !opening.isActiveAndEnabled) ReleaseOpening();
-            // 원경(LOD 2)에서 대기 중인 유닛은 새 마치콜레이션 구멍 길찾기를 생략한다(PERF-ai-lod).
-            if (opening == null && refreshed && lodTier != AILodTier.Lod2) ClaimOpening();
+            // 원경(LOD 2)이거나 분대 슬립 상태에서는 새 마치콜레이션 구멍 길찾기를 생략한다(PERF-ai-lod, BUG-ai-core-defects).
+            if (opening == null && refreshed && !squadNeighborhoodClear && lodTier != AILodTier.Lod2) ClaimOpening();
             if (opening == null) return false;
             if (opening.IsAtStand(transform.position))
             {
@@ -700,15 +700,20 @@ namespace ProjectNeo.Combat
 
         // 자리 반경 안에서 걸어서 닿는 적 중 지금 위치에서 가장 가까운 적.
         // 공간 해시 그리드로 주변 적만 조회한 뒤 상위 K명에게만 길찾기를 시험한다(PERF-ai-query-budget, PERF-ai-spatial-grid).
+        // 성벽 아래 적처럼 허용 하강 높이 밖 후보는 사전에 거르고, 상위 K 전원이 막혔으면 잔여 후보에서 도달 가능한 적을 찾는다(BUG-ai-core-defects).
         CharacterActor FindTargetNearPost()
         {
             topCandidates.Reset(CurrentCandidateLimit());
             CombatSpatialIndex.QueryEnemies(actor.Team, HoldPost, HoldChaseRadius, spatialCandidates);
+            bool limitDescent = settings.HoldMaxDescent > 0f;
+            float floorY = HoldPost.y - settings.HoldMaxDescent;
             for (int i = 0; i < spatialCandidates.Count; i++)
             {
                 CharacterActor candidate = spatialCandidates[i];
                 if (!IsNearPost(candidate) || !actor.IsEnemy(candidate)
                     || !CombatPhysics.CanTarget(actor, candidate)) continue;
+                if (limitDescent && !HoldDescentRule.EndpointMayStayAbove(CombatPhysics.ReachPoint(candidate).y, floorY))
+                    continue;
                 float distance = RangedTargetPriorityRules.Score((candidate.transform.position - transform.position).sqrMagnitude,
                     1f, ThreatFactorOf(candidate));
                 if (distance >= topCandidates.WorstScore) continue;
@@ -718,6 +723,30 @@ namespace ProjectNeo.Combat
             {
                 CharacterActor candidate = topCandidates[i];
                 if (CanReachInHold(candidate)) return candidate;
+            }
+            if (topCandidates.Count == topCandidates.Capacity)
+            {
+                float scoreFloor = topCandidates.WorstScore;
+                CharacterActor fallback = null;
+                float best = float.PositiveInfinity;
+                for (int i = 0; i < spatialCandidates.Count; i++)
+                {
+                    CharacterActor candidate = spatialCandidates[i];
+                    if (!IsNearPost(candidate) || !actor.IsEnemy(candidate)
+                        || !CombatPhysics.CanTarget(actor, candidate)) continue;
+                    if (limitDescent && !HoldDescentRule.EndpointMayStayAbove(CombatPhysics.ReachPoint(candidate).y, floorY))
+                        continue;
+                    float score = RangedTargetPriorityRules.Score((candidate.transform.position - transform.position).sqrMagnitude,
+                        1f, ThreatFactorOf(candidate));
+                    if (score < scoreFloor || score >= best) continue;
+                    bool alreadyChecked = false;
+                    for (int k = 0; k < topCandidates.Count; k++)
+                        if (ReferenceEquals(topCandidates[k], candidate)) { alreadyChecked = true; break; }
+                    if (alreadyChecked || !CanReachInHold(candidate)) continue;
+                    best = score;
+                    fallback = candidate;
+                }
+                return fallback;
             }
             return null;
         }
@@ -829,7 +858,8 @@ namespace ProjectNeo.Combat
         // 적과 가까워지거나(FlowFieldMinDistance 안) 다층 고저차가 있으면 false를 돌려줘 기존 정밀 NavMesh 경로로 넘긴다.
         bool TryUpdateFlowFieldEngage()
         {
-            if (settings == null || !settings.EnableFlowField || actor.Character != null) return false;
+            if (settings == null || !settings.EnableFlowField || actor.Character != null
+                || lodTier != AILodTier.Lod2 || TargetDistanceScale != null) return false;
             if (CharacterActor.ActiveActors.Count < 24) return false;
             Vector3 selfPos = transform.position;
             float minDist = Mathf.Max(settings.FlowFieldMinDistance, CombatPhysics.MaximumAttackRange(actor) + 4f);
@@ -849,9 +879,11 @@ namespace ProjectNeo.Combat
                     return false;
             }
 
-            if (Target == null)
+            CharacterActor flowTarget = Target;
+            bool pickedNewTarget = false;
+            if (flowTarget == null)
             {
-                // CalculatePath 없이 가장 가까운 적 하나를 임시 타겟으로 잡는다.
+                // CalculatePath 없이 가장 가까운 적 하나를 임시 타겟으로 고른다.
                 System.Collections.Generic.IReadOnlyList<CharacterActor> enemies = CombatSpatialIndex.AllEnemiesOf(actor.Team);
                 CharacterActor best = null;
                 float bestSqr = settings.DetectionRange * settings.DetectionRange;
@@ -859,20 +891,31 @@ namespace ProjectNeo.Combat
                 {
                     CharacterActor candidate = enemies[i];
                     if (!actor.IsEnemy(candidate) || !CombatPhysics.CanTarget(actor, candidate)) continue;
+                    // 지상 Flow Field 임시 대상은 같은 층(높이 차 1.5m 안) 적만 고른다(BUG-ai-core-defects).
+                    if (Mathf.Abs(candidate.transform.position.y - selfPos.y) > 1.5f) continue;
                     float sqr = (candidate.transform.position - selfPos).sqrMagnitude;
                     if (sqr < bestSqr) { bestSqr = sqr; best = candidate; }
                 }
                 if (best == null) return false;
-                Target = best;
-                targetLockRemaining = settings.TargetSwitchCooldown;
+                flowTarget = best;
+                pickedNewTarget = true;
             }
 
             // 대상과 층 높이가 크게 다르면(성벽 위 수비병 등) NavMesh 길찾기에 맡긴다.
-            if (Mathf.Abs(Target.transform.position.y - selfPos.y) > 1.5f) return false;
+            if (Mathf.Abs(flowTarget.transform.position.y - selfPos.y) > 1.5f) return false;
 
             if (!BattleFlowFieldService.TryGetFlowDirection(actor.Team, selfPos, out Vector3 flowDir))
                 return false;
+            // 성벽 위 등 지상 Flow Field 대역 밖 유닛은 정밀 NavMesh 길찾기에 맡긴다(BUG-ai-core-defects).
+            if (!FlowFieldGrid.IsWithinGroundBand(selfPos.y, BattleFlowFieldService.GroundElevation, 1.5f)
+                || !FlowFieldGrid.IsWithinGroundBand(flowTarget.transform.position.y, BattleFlowFieldService.GroundElevation, 1.5f))
+                return false;
 
+            if (pickedNewTarget)
+            {
+                Target = flowTarget;
+                targetLockRemaining = settings.TargetSwitchCooldown;
+            }
             meleeSlotBoard.Release(this);
             if (agent.hasPath) agent.ResetPath();
             flowDirectionCached = flowDir;

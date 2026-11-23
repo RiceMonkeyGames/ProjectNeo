@@ -33,5 +33,15 @@ namespace ProjectNeo.Tests
             Assert.IsTrue(HoldDescentRule.StaysAbove(new Vector3[0], 7.5f));
             Assert.IsTrue(HoldDescentRule.StaysAbove(null, 7.5f));
         }
+
+        [Test]
+        public void EndpointMayStayAbove_RejectsLowerLevelTargets_AndAllowsSameLevelWithinTolerance()
+        {
+            // Wall top at 3m, HoldMaxDescent 1.5m -> floorY = 1.5m.
+            Assert.IsFalse(HoldDescentRule.EndpointMayStayAbove(0f, 1.5f), "ground enemy below 3m wall");
+            Assert.IsFalse(HoldDescentRule.EndpointMayStayAbove(1.0f, 1.5f), "clearly below floorY");
+            Assert.IsTrue(HoldDescentRule.EndpointMayStayAbove(1.3f, 1.5f), "within default 0.25m tolerance");
+            Assert.IsTrue(HoldDescentRule.EndpointMayStayAbove(3.0f, 1.5f), "same wall-top level");
+        }
     }
 }
