@@ -11,6 +11,7 @@ namespace ProjectNeo.Siege
     /// 나는 적 하나의 판단(B-6.3, Q-43). 길찾기 없이 성벽을 넘어 날아가 고른 아군 옆에 떠서 공격한다.
     /// 목표 선택·이동·공격 자리는 FlyerSettings의 부품이 정하고, 이 부품은 순서와 상태만 다룬다.
     /// 공격은 몸통(CharacterActor)의 기존 공격 속도·선딜레이·근접/원거리 처리를 그대로 쓴다.
+    /// 성벽 위 아군이 없으면 설치된 대포도 노리고(SIEGE-16), 같은 대상을 쫓는 비행 적끼리는 다른 자리에 뜬다.
     /// </summary>
     [RequireComponent(typeof(CharacterActor), typeof(AirborneBody))]
     public sealed class FlyerBrain : SiegeAttacker, IAnimationCueSource
@@ -24,8 +25,15 @@ namespace ProjectNeo.Siege
         [SerializeField] Vector2Int outward = new Vector2Int(0, 1);
         readonly List<CharacterActor> targets = new List<CharacterActor>();
         readonly List<FlyerTargetCandidate> candidates = new List<FlyerTargetCandidate>();
+        readonly List<PlacedSiegeWeapon> weaponTargets = new List<PlacedSiegeWeapon>();
+        readonly List<Vector3> occupied = new List<Vector3>();
+        // 같은 대상 둘레의 자리를 나누려고 켜진 비행 적을 모두 기억한다(SIEGE-16).
+        static readonly List<FlyerBrain> Active = new List<FlyerBrain>();
+        static readonly Collider[] Overlaps = new Collider[16];
         AirborneBody body;
         Func<Vector3, float?> surfaceAt;
+        Func<Vector3, bool> clearForActor;
+        Func<Vector3, bool> clearForWeapon;
         Mode mode = Mode.Deciding;
         Vector3 destination;
         float cruiseHeight;
@@ -34,12 +42,18 @@ namespace ProjectNeo.Siege
         float retreatRemaining;
         float corpseSpeed;
         bool corpseLanded;
-        CharacterActor hoverTarget;
+        // 지금 자리를 구해 둔 대상(아군 또는 대포)과 그때의 발 위치, 처음 다가온 방향.
+        object hoverTarget;
         Vector3 hoverFeet;
+        Vector3 approach;
         const float HoverRefreshDistance = 0.3f;
 
         /// <summary>지금 노리는 아군. 없으면 null.</summary>
         public CharacterActor Target { get; private set; }
+        /// <summary>지금 노리는 수성 무기(SIEGE-16). 아군을 노리거나 아무것도 노리지 않으면 null.</summary>
+        public PlacedSiegeWeapon WeaponTarget { get; private set; }
+        /// <summary>대상을 쫓으며 그 둘레에 공격 자리를 잡아 두었는지. 다른 비행 적이 이 자리를 피한다.</summary>
+        public bool HasHoverPoint => mode == Mode.Pursuing && hoverTarget != null;
         // 애니메이션 신호(ART-04): 쫓는 대상을 겨눈다. 활을 당긴 채 기다리는 자세는 쓰지 않는다.
         CharacterActor IAnimationCueSource.AimTarget => Target;
         bool IAnimationCueSource.HoldsDrawnBow => false;
@@ -52,10 +66,12 @@ namespace ProjectNeo.Siege
         public float CruiseHeight => cruiseHeight;
         public override SiegeAttackerRole Role => SiegeAttackerRole.Flyer;
         public override bool HasDecided => mode != Mode.Deciding;
-        public override bool IsAssaulting => mode == Mode.Pursuing && Target != null;
+        public override bool IsAssaulting => mode == Mode.Pursuing && PursuitKey != null;
         public override bool IsRetreating => (retreatRequested || mode == Mode.Exiting) && !Fled;
         public override bool UsesFallController => false;
         public override bool IsMidAction => false;
+        // 쫓는 대상 하나. 아군이 먼저이고, 없으면 대포다.
+        object PursuitKey => Target != null ? (object)Target : WeaponTarget != null ? WeaponTarget : null;
 
         public void Configure(FlyerSettings flyerSettings, SiegeSettings siegeSettings, Vector2Int outwardDirection)
         {
@@ -78,16 +94,35 @@ namespace ProjectNeo.Siege
 
         public override bool CanReachAnyEnemy()
         {
-            // 성벽에 막히지 않으므로 살아 있는 아군이 있으면 닿는다.
+            // 성벽에 막히지 않으므로 지붕 아래에 있지 않은 살아 있는 아군이 있으면 닿는다.
             foreach (CharacterActor candidate in CharacterActor.ActiveActors)
-                if (Actor.IsEnemy(candidate)) return true;
+                if (Actor.IsEnemy(candidate) && !IsSheltered(candidate)) return true;
+            return false;
+        }
+
+        /// <summary>
+        /// 아군 머리 위 <see cref="FlyerSettings.RoofProbeDistance"/> 안에 성 조각 같은 지붕이 있는지(SIEGE-16).
+        /// 유닛 몸통과 트리거, 다른 씬의 물체는 지붕으로 치지 않는다.
+        /// </summary>
+        public bool IsSheltered(CharacterActor ally)
+        {
+            if (ally == null || flyer == null || flyer.RoofProbeDistance <= 0f) return false;
+            float head = ally.Profile != null ? ally.Profile.Height : 2f;
+            Vector3 start = ally.transform.position + Vector3.up * (head + 0.05f);
+            foreach (RaycastHit hit in Physics.RaycastAll(start, Vector3.up, flyer.RoofProbeDistance, ~0,
+                         QueryTriggerInteraction.Ignore))
+            {
+                if (hit.collider.gameObject.scene != ally.gameObject.scene
+                    || hit.collider.GetComponentInParent<CharacterActor>() != null) continue;
+                return true;
+            }
             return false;
         }
 
         public override Vector3 BeginExit(Vector3 exit, float searchRadius)
         {
             retreatRequested = false;
-            Target = null;
+            ClearTarget();
             mode = Mode.Exiting;
             if (world != null && flyer != null) cruiseHeight = ComputeCruiseHeight();
             destination = new Vector3(exit.x, Mathf.Max(cruiseHeight, exit.y), exit.z);
@@ -99,14 +134,27 @@ namespace ProjectNeo.Siege
             Actor = GetComponent<CharacterActor>();
             body = GetComponent<AirborneBody>();
             surfaceAt = SurfaceNear;
+            clearForActor = point => BodyFits(point) && Target != null && CombatPhysics.HasClearShotFrom(point, Actor, Target);
+            clearForWeapon = BodyFits;
         }
 
-        void OnEnable() => Actor.Died += OnDied;
+        void OnEnable()
+        {
+            Actor.Died += OnDied;
+            if (!Active.Contains(this)) Active.Add(this);
+        }
 
         void OnDisable()
         {
             Actor.Died -= OnDied;
+            Active.Remove(this);
+            ClearTarget();
+        }
+
+        void ClearTarget()
+        {
             Target = null;
+            WeaponTarget = null;
             hoverTarget = null;
         }
 
@@ -121,12 +169,13 @@ namespace ProjectNeo.Siege
             think -= Time.deltaTime;
             // 대상이 죽거나 사라지면 판단 주기를 기다리지 않고 바로 다시 고른다.
             if (!ReferenceEquals(Target, null) && !Actor.IsEnemy(Target)) think = 0f;
+            if (!ReferenceEquals(WeaponTarget, null) && !IsLiveWeapon(WeaponTarget)) think = 0f;
             if (think <= 0f)
             {
                 think = settings.AttackerDecisionInterval;
                 Decide();
             }
-            if (mode == Mode.Pursuing && Target != null) Pursue();
+            if (mode == Mode.Pursuing && PursuitKey != null) Pursue();
             else Fly(destination, true);
         }
 
@@ -135,10 +184,12 @@ namespace ProjectNeo.Siege
             cruiseHeight = ComputeCruiseHeight();
             targets.Clear();
             candidates.Clear();
+            weaponTargets.Clear();
             float ground = world.transform.position.y;
             foreach (CharacterActor candidate in CharacterActor.ActiveActors)
             {
-                if (!Actor.IsEnemy(candidate)) continue;
+                // 지붕 아래 아군(계단방·탑 안·성문 통로)은 날아서 닿지 않으므로 고르지 않는다.
+                if (!Actor.IsEnemy(candidate) || IsSheltered(candidate)) continue;
                 // 같은 거리일 때는 활성 목록에 먼저 들어온 아군을 고른다.
                 candidates.Add(new FlyerTargetCandidate(targets.Count,
                     (candidate.transform.position - transform.position).sqrMagnitude,
@@ -146,42 +197,116 @@ namespace ProjectNeo.Siege
                     PriorityTarget != null && PriorityTarget(candidate)));
                 targets.Add(candidate);
             }
+            // 대포는 아군 뒤에 붙인다. 인덱스가 아군 수 이상이면 대포다(SIEGE-16).
+            if (flyer.TargetsSiegeWeapons)
+                foreach (PlacedSiegeWeapon placed in world.Weapons)
+                {
+                    if (!IsLiveWeapon(placed)) continue;
+                    candidates.Add(FlyerTargetCandidate.SiegeWeapon(candidates.Count,
+                        (placed.transform.position - transform.position).sqrMagnitude));
+                    weaponTargets.Add(placed);
+                }
             // 먼저 노릴 대상 규칙이 있으면(SIEGE-09 결투형 보스) 그 대상을 먼저 고르고, 없으면 원래 전략을 쓴다.
             int index = PriorityTarget != null
                 ? FlyerPriorityTargeting.Select(candidates, flyer.TargetStrategy)
                 : flyer.TargetStrategy != null ? flyer.TargetStrategy.Select(candidates) : -1;
-            if (index < 0 || index >= targets.Count)
+            if (index < 0 || index >= targets.Count + weaponTargets.Count)
             {
-                // 노릴 아군이 없으면 성 안마당 위 높은 곳에서 기다린다.
-                Target = null;
+                // 노릴 대상이 없으면 성 안마당 위 높은 곳에서 기다린다.
+                ClearTarget();
                 mode = Mode.Holding;
                 destination = HoldPoint();
                 return;
             }
-            if (targets[index] != Target) hoverTarget = null;
-            Target = targets[index];
+            CharacterActor actor = index < targets.Count ? targets[index] : null;
+            PlacedSiegeWeapon weapon = actor == null ? weaponTargets[index - targets.Count] : null;
+            if (actor != Target || weapon != WeaponTarget) hoverTarget = null;
+            Target = actor;
+            WeaponTarget = weapon;
             mode = Mode.Pursuing;
         }
 
+        static bool IsLiveWeapon(PlacedSiegeWeapon weapon) => weapon != null && !weapon.IsRemoved
+            && weapon.Definition != null && weapon.Health != null && !weapon.Health.IsDead;
+
         void Pursue()
         {
-            // 발판 검사가 들어가므로 대상이 조금이라도 움직였거나 새로 고른 때만 자리를 다시 구한다.
-            Vector3 feet = Target.transform.position;
-            if (Target != hoverTarget || (feet - hoverFeet).sqrMagnitude > HoverRefreshDistance * HoverRefreshDistance)
+            object key = PursuitKey;
+            Vector3 feet = Target != null ? Target.transform.position : WeaponTarget.transform.position;
+            // 발판·시야 검사가 들어가므로 대상이 조금이라도 움직였거나 새로 고른 때만 자리를 다시 구한다.
+            if (!ReferenceEquals(key, hoverTarget)
+                || (feet - hoverFeet).sqrMagnitude > HoverRefreshDistance * HoverRefreshDistance)
             {
-                hoverTarget = Target;
+                if (!ReferenceEquals(key, hoverTarget))
+                {
+                    // 다가온 방향은 대상을 고를 때 한 번만 정한다. 다시 구할 때 자기 자리를 기준으로 삼아 조금씩 돌지 않게 한다.
+                    approach = transform.position - feet;
+                    approach.y = 0f;
+                    approach = approach.sqrMagnitude > 0.0001f ? approach.normalized : transform.forward;
+                }
+                hoverTarget = key;
                 hoverFeet = feet;
-                float range = Actor.Stats.GetValue(StatType.AttackRange);
-                destination = flyer.Engagement != null
-                    ? flyer.Engagement.HoverPoint(transform.position, feet, range,
-                        Actor.Profile.Radius, Target.Profile.Radius, surfaceAt)
-                    : feet;
+                destination = ComputeHoverPoint(key, feet);
             }
+            if (Target != null) StrikeActor();
+            else StrikeWeapon();
+        }
+
+        Vector3 ComputeHoverPoint(object key, Vector3 feet)
+        {
+            if (flyer.Engagement == null) return feet;
+            // 같은 대상을 쫓으며 이미 자리를 잡은 다른 비행 적의 자리는 피한다(SIEGE-16).
+            occupied.Clear();
+            foreach (FlyerBrain other in Active)
+                if (other != this && other.HasHoverPoint && ReferenceEquals(other.hoverTarget, key)
+                    && other.Actor.Health != null && !other.Actor.Health.IsDead)
+                    occupied.Add(other.destination);
+            float targetRadius = Target != null ? Target.Profile.Radius
+                : Mathf.Max(WeaponTarget.Definition.Size.x, WeaponTarget.Definition.Size.z) * 0.5f;
+            var query = new FlyerHoverQuery(feet + approach, feet, Actor.Stats.GetValue(StatType.AttackRange),
+                Actor.Profile.Radius, targetRadius, surfaceAt, occupied, flyer.HoverSeparation,
+                Target != null ? clearForActor : clearForWeapon);
+            return flyer.Engagement.HoverPoint(query);
+        }
+
+        void StrikeActor()
+        {
             bool inRange = CombatPhysics.IsInRange(Actor, Target);
             Fly(destination, !inRange);
             if (!inRange) return;
             Face(Target.transform.position - transform.position);
             if (Actor.CanAttack(Target)) Actor.TryAttack(Target);
+        }
+
+        // 대포에는 충돌체가 없어 무기 크기로 닿는지 잰다. 걷는 적과 같은 규칙이고 방어력은 없다(SIEGE-02).
+        void StrikeWeapon()
+        {
+            PlacedSiegeWeapon weapon = WeaponTarget;
+            bool inReach = SiegeWeaponStrikeRules.InReach(transform.position, weapon.transform.position,
+                weapon.Definition.Size, Actor.Stats.GetValue(StatType.AttackRange));
+            Fly(destination, !inReach);
+            if (!inReach) return;
+            Face(weapon.transform.position - transform.position);
+            if (!Actor.TryAttack()) return;
+            weapon.ReceiveDamage(BossUnit.StructureDamage(Actor,
+                DamageRules.Calculate(Actor.Stats.GetValue(StatType.Attack), 0f, Actor.Profile.MinimumDamage)));
+        }
+
+        // 이 자리(발 위치)에 비행 적 몸통이 성 조각 등에 박히지 않고 들어가는지. 유닛 몸통과 트리거는 따지지 않는다.
+        bool BodyFits(Vector3 point)
+        {
+            float radius = Mathf.Max(0.05f, Actor.Profile.Radius * 0.9f);
+            float height = Mathf.Max(radius * 2f, Actor.Profile.Height);
+            Vector3 bottom = point + Vector3.up * (radius + 0.05f), top = point + Vector3.up * (height - radius);
+            int count = Physics.OverlapCapsuleNonAlloc(bottom, top, radius, Overlaps, ~0, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < count; i++)
+            {
+                Collider hit = Overlaps[i];
+                if (hit == null || hit.gameObject.scene != gameObject.scene
+                    || hit.GetComponentInParent<CharacterActor>() != null) continue;
+                return false;
+            }
+            return true;
         }
 
         void Fly(Vector3 point, bool faceMotion)
@@ -198,7 +323,7 @@ namespace ProjectNeo.Siege
         {
             if (mode != Mode.Retreating)
             {
-                Target = null;
+                ClearTarget();
                 mode = Mode.Retreating;
                 retreatRemaining = settings.RetreatTimeout;
                 cruiseHeight = ComputeCruiseHeight();
@@ -298,7 +423,7 @@ namespace ProjectNeo.Siege
 
         void OnDied()
         {
-            Target = null;
+            ClearTarget();
             corpseSpeed = 0f;
             corpseLanded = false;
             body.SetState(transform.position, false, false);

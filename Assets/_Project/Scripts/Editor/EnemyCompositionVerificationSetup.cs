@@ -32,7 +32,8 @@ namespace ProjectNeo.Editor
             var hover = Save(HoverBesideEngagement.Create(hoverHeight: 3f, standoffRatio: 0.1f), Data + "FlyerHighHoverVerification.asset");
             var variantSettings = Save(FlyerSettings.Create(baseSettings.TargetStrategy, baseSettings.Movement, hover,
                 baseSettings.CruiseClearance, baseSettings.MeleeExposureAltitude, baseSettings.WallTopMinimumHeight,
-                baseSettings.GroundProbeDistance, baseSettings.CorpseFallAcceleration, baseSettings.HoldInset),
+                baseSettings.GroundProbeDistance, baseSettings.CorpseFallAcceleration, baseSettings.HoldInset,
+                baseSettings.TargetsSiegeWeapons, baseSettings.HoverSeparation, baseSettings.RoofProbeDistance),
                 Data + "FlyerHighArcherVerification.asset");
             GameObject instance = UnityEngine.Object.Instantiate(baseFlyer);
             GameObject variant;
