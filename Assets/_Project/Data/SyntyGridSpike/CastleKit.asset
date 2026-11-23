@@ -13,33 +13,38 @@ MonoBehaviour:
   m_Name: CastleKit
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Walls.CastleKitSettings
   prefabs:
-  - {fileID: 1216795141214969055, guid: 1262d22619910d0468897408a57cc2c3, type: 3}
-  - {fileID: 2929369765666873017, guid: 2646d0f5b3feda14ebf497274d8c53e1, type: 3}
-  - {fileID: 2035014408989600219, guid: 4ab6d6c940db3af4ab85088af682fdbe, type: 3}
-  - {fileID: 7270537852240411895, guid: 26b8a323a4985654391347516dda576b, type: 3}
-  - {fileID: 5053728845505190480, guid: 1a307452a76a0b543bb064c4dcc4d9d6, type: 3}
-  - {fileID: 5287668099527469451, guid: ddab3806a2299c842a2d37c2a2cbeff0, type: 3}
-  - {fileID: 2040035098829408397, guid: 05b1d2dea5937d34e957b36d56b2196c, type: 3}
-  - {fileID: 7400410788131349955, guid: 933b159b3cffd9845b53af84face25af, type: 3}
-  - {fileID: 503466753552307345, guid: 41b58744588d1a945b5b2c0d90c97231, type: 3}
-  - {fileID: 2761693369997567394, guid: 784fa9223a946e549bf11da39143bac9, type: 3}
-  - {fileID: 4211414235006316129, guid: 2b29c67660c60c247a5658bd0120ea7b, type: 3}
-  - {fileID: 9046046644884630649, guid: 1da3c80ac2308984d8aa2432d7a09551, type: 3}
-  - {fileID: 2561148466136117195, guid: 0d45d875aa991a2468de8e291b33fcb3, type: 3}
-  - {fileID: 4577708376542505930, guid: c48927f47867c794492eb2fe1162defc, type: 3}
-  - {fileID: 3014466059785179553, guid: c4caa52780156df4cb5c93c3db160ec3, type: 3}
-  - {fileID: 6621539955422779826, guid: b6ad36bd44b5ce84aa6b59c981ee06f0, type: 3}
-  - {fileID: 7626176042079010583, guid: f9f765e9b830d714cbfcf42e604c5f28, type: 3}
-  - {fileID: 1007330987463086063, guid: 3ba04580f9a2d484d92b0ac2ded32ba2, type: 3}
-  - {fileID: 2365614873394203348, guid: 4af712edb7b324a40a37c90cc65b2cdb, type: 3}
-  - {fileID: 4079095884576274210, guid: 88095f1e4c519a042b5733fc85be572c, type: 3}
-  - {fileID: 2108843479695140945, guid: 2fe7624050d0f234c8a1a15c7e4b0af6, type: 3}
-  - {fileID: 6036718012918193781, guid: de035b8f5eef4db44bd58fb04f3a4906, type: 3}
-  - {fileID: 5647355235050373786, guid: bd787d362e02cad41bf285e01d32de67, type: 3}
-  - {fileID: 3074523140108153866, guid: 5817a79b61a86d64daca131652a4734e, type: 3}
-  - {fileID: 3999742275881809791, guid: 3a7d167e9b4986d4787561b4600e8949, type: 3}
-  - {fileID: 7333391708743535762, guid: 49566626a7ec38e479baba657e3d98af, type: 3}
-  - {fileID: 8516156147841077364, guid: a7e69c480b5c1f3468b262a26a1ba436, type: 3}
+  - {fileID: 8757677494844624935, guid: 1262d22619910d0468897408a57cc2c3, type: 3}
+  - {fileID: 8706771679133809461, guid: 2646d0f5b3feda14ebf497274d8c53e1, type: 3}
+  - {fileID: 4772183742376503394, guid: 4ab6d6c940db3af4ab85088af682fdbe, type: 3}
+  - {fileID: 1166354009069470739, guid: 26b8a323a4985654391347516dda576b, type: 3}
+  - {fileID: 4077501443403880241, guid: 1a307452a76a0b543bb064c4dcc4d9d6, type: 3}
+  - {fileID: 6531377402229008252, guid: ddab3806a2299c842a2d37c2a2cbeff0, type: 3}
+  - {fileID: 8487852540849376037, guid: 05b1d2dea5937d34e957b36d56b2196c, type: 3}
+  - {fileID: 1072333282339141154, guid: 933b159b3cffd9845b53af84face25af, type: 3}
+  - {fileID: 8080947340787861505, guid: 41b58744588d1a945b5b2c0d90c97231, type: 3}
+  - {fileID: 8229019860926485624, guid: 784fa9223a946e549bf11da39143bac9, type: 3}
+  - {fileID: 8764975523979770485, guid: 2b29c67660c60c247a5658bd0120ea7b, type: 3}
+  - {fileID: 7684058658611245539, guid: 1da3c80ac2308984d8aa2432d7a09551, type: 3}
+  - {fileID: 5112053594357530940, guid: 0d45d875aa991a2468de8e291b33fcb3, type: 3}
+  - {fileID: 295499420583682909, guid: c48927f47867c794492eb2fe1162defc, type: 3}
+  - {fileID: 7455194071524638348, guid: c4caa52780156df4cb5c93c3db160ec3, type: 3}
+  - {fileID: 4715045378977017454, guid: b6ad36bd44b5ce84aa6b59c981ee06f0, type: 3}
+  - {fileID: 4205741514140362150, guid: f9f765e9b830d714cbfcf42e604c5f28, type: 3}
+  - {fileID: 1881738772184304148, guid: 3ba04580f9a2d484d92b0ac2ded32ba2, type: 3}
+  - {fileID: 2776248685817739372, guid: 4af712edb7b324a40a37c90cc65b2cdb, type: 3}
+  - {fileID: 3523457196172508057, guid: 88095f1e4c519a042b5733fc85be572c, type: 3}
+  - {fileID: 964969425564012100, guid: 2fe7624050d0f234c8a1a15c7e4b0af6, type: 3}
+  - {fileID: 6596656028214820508, guid: de035b8f5eef4db44bd58fb04f3a4906, type: 3}
+  - {fileID: 5716927281932218515, guid: bd787d362e02cad41bf285e01d32de67, type: 3}
+  - {fileID: 3970766738029777399, guid: 5817a79b61a86d64daca131652a4734e, type: 3}
+  - {fileID: 2881805592725133148, guid: 3a7d167e9b4986d4787561b4600e8949, type: 3}
+  - {fileID: 8680267304244537863, guid: 49566626a7ec38e479baba657e3d98af, type: 3}
+  - {fileID: 2613260624184000137, guid: a7e69c480b5c1f3468b262a26a1ba436, type: 3}
+  - {fileID: 2786549376590133662, guid: 02304dcaac14f2f488b178eccc5e5a97, type: 3}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 7985089933305702276, guid: 47a878a8610ed2042b9bc17e859307ea, type: 3}
+  - {fileID: 4570207006342321440, guid: 8e312c304c678114bb31c8d329e44371, type: 3}
   moduleSize: 5
   accentSpacingCells: 2
   stairWidth: 2.16
@@ -49,3 +54,13 @@ MonoBehaviour:
   towerOverhang: 0.5
   towerCapOffset: 0.3
   towerCapScale: 1.2
+  roomWallInset: 0.31
+  roomLandingDepth: 1
+  roomSlabThickness: 0.2
+  roomRampThickness: 0.15
+  roomHoleOverhang: 0.6
+  roomFlightWidth: 1.46
+  stairPostNear: {x: 0.05, y: 0.06}
+  stairPostFar: {x: 0.07, y: -1.97}
+  roomPostHeight: 2.5
+  roomPostThickness: 0.95

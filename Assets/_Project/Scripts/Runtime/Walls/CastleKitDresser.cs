@@ -69,6 +69,13 @@ namespace ProjectNeo.Walls
         readonly Dictionary<Vector2Int, int> breaches = new Dictionary<Vector2Int, int>();
         // 무너진 보루 칸. 돌무더기만 깔고 뒤의 성벽은 온전하게 둔다.
         readonly HashSet<Vector2Int> rubble = new HashSet<Vector2Int>();
+        // 무너진 성벽 칸 → 무너지기 전 윗면 높이. 그 칸을 향한 계단 방 문을 트인 문으로 남긴다(SIEGE-27).
+        readonly Dictionary<Vector2Int, float> fallenTops = new Dictionary<Vector2Int, float>();
+        readonly Dictionary<Vector2Int, StairRoom> rooms = new Dictionary<Vector2Int, StairRoom>();
+        // 계단 방 층이라 상자 충돌을 끈 조각.
+        // 값: 0 꽉 찬 층, 1 방 층, 2 이상 지붕 판을 둔 맨 윗 방 층(계단 짜임별).
+        readonly Dictionary<PlacedStructure, int> hollowRooms = new Dictionary<PlacedStructure, int>();
+        readonly List<PlacedStructure> goneStructures = new List<PlacedStructure>();
         // 조각마다 짓는 중·문 열림 상태. 바뀌면 다시 맞춘다.
         readonly Dictionary<PlacedStructure, int> watched = new Dictionary<PlacedStructure, int>();
         Transform container;
@@ -77,6 +84,7 @@ namespace ProjectNeo.Walls
         public IReadOnlyList<CastleKitPlacement> Placements => placements;
         public IReadOnlyDictionary<Vector2Int, int> Breaches => breaches;
         public IReadOnlyCollection<Vector2Int> Rubble => rubble;
+        public IReadOnlyDictionary<Vector2Int, StairRoom> Rooms => rooms;
         public Transform Container => container;
         public int BuiltCellCount
         {
@@ -130,6 +138,9 @@ namespace ProjectNeo.Walls
                     // 보루는 성벽 바깥에 덧붙은 조각이라 성벽 틈(V자)이 아니라 돌무더기만 남긴다.
                     if (bastion) { rubble.Add(cell); continue; }
                     breaches[cell] = breaches.TryGetValue(cell, out int level) ? Mathf.Min(level, placement.Level) : placement.Level;
+                    // 위층부터 함께 무너지므로 가장 높은 층의 윗면이 무너지기 전 통로 높이다.
+                    float top = placement.Elevation + placement.Definition.Height;
+                    fallenTops[cell] = fallenTops.TryGetValue(cell, out float known) ? Mathf.Max(known, top) : top;
                 }
             dirty = true;
         }
@@ -233,7 +244,7 @@ namespace ProjectNeo.Walls
                 watched[structure] = State(structure);
                 if (structure.IsUnderConstruction) unfinished.Add(structure.Placement.Id);
             }
-            CastleKitRules.Collect(world.Layout, world.Grid, outside, unfinished, breaches, settings, placements, rubble);
+            CastleKitRules.Collect(world.Layout, world.Grid, outside, unfinished, breaches, settings, placements, rubble, fallenTops, rooms);
             Group();
 
             bool navigation = false;
@@ -277,6 +288,10 @@ namespace ProjectNeo.Walls
             stale.Clear();
             foreach (Vector2Int cell in rubble) if (world.Layout.Top(cell) != null) stale.Add(cell);
             foreach (Vector2Int cell in stale) rubble.Remove(cell);
+            stale.Clear();
+            foreach (KeyValuePair<Vector2Int, float> entry in fallenTops)
+                if (!breaches.ContainsKey(entry.Key) || world.Layout.WallSurface(entry.Key) >= entry.Value - 0.01f) stale.Add(entry.Key);
+            foreach (Vector2Int cell in stale) fallenTops.Remove(cell);
         }
 
         void Group()
@@ -296,6 +311,10 @@ namespace ProjectNeo.Walls
         bool UpdateStructures()
         {
             bool changed = false;
+            // 없어진 조각은 계단 방 기록에서 뺀다.
+            goneStructures.Clear();
+            foreach (PlacedStructure structure in hollowRooms.Keys) if (structure == null) goneStructures.Add(structure);
+            foreach (PlacedStructure structure in goneStructures) hollowRooms.Remove(structure);
             foreach (PlacedStructure structure in world.Structures)
             {
                 if (structure == null || structure.Placement == null) continue;
@@ -305,8 +324,48 @@ namespace ProjectNeo.Walls
                 if (visual != null)
                     foreach (Renderer renderer in visual.GetComponentsInChildren<Renderer>(true)) renderer.enabled = !dressed;
                 if (placement.Definition.Kind == BuildPieceKind.Tower) changed |= UpdateTowerRoom(structure, dressed);
+                else if (placement.Definition.Kind == BuildPieceKind.Wall) changed |= UpdateStairRoom(structure);
             }
             return changed;
+        }
+
+        /// <summary>
+        /// 계단 방 층(SIEGE-27)이면 조각 상자 충돌을 끈다. 벽·바닥·층참·경사는 킷 충돌체(벽판, <see cref="CastleKitPiece.RoomCollider"/>)가 맡는다.
+        /// 방이 아니게 되면(이웃이 바뀜, 짓는 중) 상자를 되살린다. 바뀌면 true(길찾기 메시를 다시 만든다).
+        /// </summary>
+        bool UpdateStairRoom(PlacedStructure structure)
+        {
+            BuildPlacement placement = structure.Placement;
+            bool hollow = rooms.TryGetValue(placement.Cell, out StairRoom room) && room.Contains(placement.Level);
+            bool roof = hollow && placement.Level == room.TopLevel;
+            int key = !hollow ? 0 : !roof ? 1 : 2 + room.FootFace * 4 + room.FirstFlightFace;
+            Transform hollowTop = structure.transform.Find(HollowTopName);
+            hollowRooms.TryGetValue(structure, out int current);
+            if (current == key && roof == (hollowTop != null)) return false;
+            hollowRooms[structure] = key;
+            foreach (Collider collider in structure.GetComponents<Collider>())
+                if (!collider.isTrigger && collider != structure.DoorCollider) collider.enabled = !hollow;
+            if (hollowTop != null) { hollowTop.SetParent(null); Destroy(hollowTop.gameObject); }
+            if (!roof) return true;
+
+            // 건설 화면에서 맨 윗층을 가리켜 고를 수 있게 지붕 판을 조각 아래에도 둔다(망루와 같다). 계단 구멍은 비운다.
+            var slab = new GameObject(HollowTopName);
+            slab.layer = structure.gameObject.layer;
+            slab.transform.SetParent(structure.transform, false);
+            float size = world.Grid.CellSize, scale = size / settings.ModuleSize;
+            StairWell well = StairWell.Create(placement.Cell, size, placement.Elevation, placement.Definition.Height, room.FootFace,
+                room.FirstFlightFace, settings.RoomWallInset * scale, settings.RoomLandingDepth * scale, settings.RoomHoleOverhang * scale,
+                settings.RoomFlightWidth * scale);
+            var ceiling = new List<Rect>();
+            well.CeilingAreas(ceiling);
+            float thickness = Mathf.Min(0.5f, 0.25f / Mathf.Max(0.1f, placement.Definition.Height));
+            foreach (Rect area in ceiling)
+            {
+                Vector3 a = Normalized(structure, new Vector3(area.xMin, 0f, area.yMin));
+                Vector3 b = Normalized(structure, new Vector3(area.xMax, 0f, area.yMax));
+                AddSlab(slab, Mathf.Min(a.x, b.x), Mathf.Max(a.x, b.x), Mathf.Min(a.z, b.z), Mathf.Max(a.z, b.z), thickness);
+            }
+            return true;
         }
 
         const string HollowTopName = "HollowTop";
@@ -378,6 +437,9 @@ namespace ProjectNeo.Walls
                     hash = hash * 31 + Mathf.RoundToInt(placement.Yaw);
                     hash = hash * 31 + (placement.MirrorZ ? 1 : 0);
                     hash = hash * 31 + Mathf.RoundToInt(placement.ScaleY * 100f);
+                    hash = hash * 31 + Mathf.RoundToInt(placement.StretchX * 100f);
+                    hash = hash * 31 + Mathf.RoundToInt(placement.StretchZ * 100f);
+                    hash = hash * 31 + Mathf.RoundToInt(placement.Tilt);
                 }
                 return hash;
             }
@@ -403,20 +465,57 @@ namespace ProjectNeo.Walls
             float scale = world.Grid.CellSize / settings.ModuleSize;
             foreach (CastleKitPlacement placement in list)
             {
+                if (placement.Piece == CastleKitPiece.RoomCollider)
+                {
+                    AddRoomCollider(root.transform, placement);
+                    hasColliders = true;
+                    continue;
+                }
+                if (placement.Piece == CastleKitPiece.RoomLink)
+                {
+                    AddRoomLink(root.transform, placement);
+                    continue;
+                }
                 GameObject prefab = settings.Prefab(placement.Piece);
                 if (prefab == null) continue;
                 GameObject piece = Instantiate(prefab, root.transform);
                 piece.name = placement.Piece.ToString();
                 piece.transform.localPosition = placement.Position;
                 piece.transform.localRotation = Quaternion.Euler(0f, placement.Yaw, 0f);
-                float stretch = placement.Piece == CastleKitPiece.CornerStairs ? settings.CornerStairStretch : 1f;
+                bool corner = placement.Piece == CastleKitPiece.CornerStairs || placement.Piece == CastleKitPiece.CornerStairsOpen;
+                float stretch = corner ? settings.CornerStairStretch : 1f;
                 bool ruin = placement.Piece == CastleKitPiece.BrokenTop || placement.Piece == CastleKitPiece.RubbleTop;
                 float stretchX = ruin ? settings.BreachHalfWidth : stretch;
                 float uniform = placement.Piece == CastleKitPiece.TowerCap ? settings.TowerCapScale : 1f;
-                piece.transform.localScale = uniform * new Vector3(scale * stretchX, scale * placement.ScaleY, (placement.MirrorZ ? -scale : scale) * stretch);
+                piece.transform.localScale = uniform * new Vector3(scale * stretchX * placement.StretchX, scale * placement.ScaleY,
+                    (placement.MirrorZ ? -scale : scale) * stretch * placement.StretchZ);
                 hasColliders |= piece.GetComponentInChildren<Collider>(true) != null;
             }
             return root;
+        }
+
+        // 계단 방의 바닥·층참·경사 판. 칸 루트는 늘리지 않으므로 자기 크기로 늘려도 비틀리지 않는다.
+        static void AddRoomCollider(Transform parent, CastleKitPlacement placement)
+        {
+            var box = new GameObject(CastleKitPiece.RoomCollider.ToString(), typeof(BoxCollider));
+            box.transform.SetParent(parent, false);
+            box.transform.localPosition = placement.Position;
+            box.transform.localRotation = Quaternion.Euler(0f, placement.Yaw, 0f) * Quaternion.Euler(0f, 0f, placement.Tilt);
+            box.transform.localScale = new Vector3(placement.StretchX, placement.ScaleY, placement.StretchZ);
+        }
+
+        // 계단 방의 꺾이는 곳을 가로지르는 양방향 길찾기 연결. 길찾기 메시를 다시 만들어도 끝점이 새 메시에 다시 붙는다.
+        static void AddRoomLink(Transform parent, CastleKitPlacement placement)
+        {
+            var owner = new GameObject(CastleKitPiece.RoomLink.ToString());
+            owner.transform.SetParent(parent, false);
+            owner.transform.localPosition = placement.Position;
+            owner.transform.localRotation = Quaternion.Euler(0f, placement.Yaw, 0f);
+            var link = owner.AddComponent<Unity.AI.Navigation.NavMeshLink>();
+            link.startPoint = new Vector3(-placement.StretchX * 0.5f, 0f, 0f);
+            link.endPoint = new Vector3(placement.StretchX * 0.5f, 0f, 0f);
+            link.width = placement.StretchZ;
+            link.bidirectional = true;
         }
 
         // 걷어 낸 칸에 충돌체가 있었으면 true(길찾기 메시를 다시 만들어야 한다).

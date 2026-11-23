@@ -15,8 +15,13 @@ namespace ProjectNeo.Walls
         public readonly float Yaw;
         public readonly bool MirrorZ;
         public readonly float ScaleY;
+        /// <summary>로컬 x·z 배율(SIEGE-27: 계단 방의 반 층 계단, 구멍 둘레 바닥 조각). 기본 1.</summary>
+        public readonly float StretchX, StretchZ;
+        /// <summary>요(yaw) 다음에 로컬 z축으로 기울이는 각도(°). <see cref="CastleKitPiece.RoomCollider"/> 경사에만 쓴다.</summary>
+        public readonly float Tilt;
 
-        public CastleKitPlacement(CastleKitPiece piece, Vector2Int cell, Vector3 position, float yaw, bool mirrorZ = false, float scaleY = 1f)
+        public CastleKitPlacement(CastleKitPiece piece, Vector2Int cell, Vector3 position, float yaw, bool mirrorZ = false, float scaleY = 1f,
+            float stretchX = 1f, float stretchZ = 1f, float tilt = 0f)
         {
             Piece = piece;
             Cell = cell;
@@ -24,6 +29,9 @@ namespace ProjectNeo.Walls
             Yaw = yaw;
             MirrorZ = mirrorZ;
             ScaleY = scaleY;
+            StretchX = stretchX;
+            StretchZ = stretchZ;
+            Tilt = tilt;
         }
     }
 }
