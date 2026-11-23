@@ -60,13 +60,19 @@ namespace ProjectNeo.Tests
 
         static Transform Battlement(PlacedStructure structure) => structure.transform.Find("Battlement");
 
+        // 7.5m 면 하나의 솟은 부분 수(1.5m 주기, 가운데는 빈틈): 가운데 넷과 양 끝 반쪽 둘.
+        const int MerlonsPerFace = 6;
+
         [UnityTest]
         public IEnumerator DefaultCastle_HasParapetsOnOuterFacesOnly_WithShotCoverForAlliesOnly()
         {
             Assert.IsNotNull(battlements, "Game 씬 성에 자동 성가퀴가 붙어 있어야 한다.");
             yield return null;
             Assert.AreEqual(BattlementStyle.Parapet, battlements.Style, "새 런은 방어 시설 1레벨 = 낮은 난간이다.");
-            Assert.Greater(battlements.BuiltCount, 100, "성벽 고리의 맨 위 칸 대부분에 선다.");
+            int ringCells = world.Structures.Where(p => p.Placement.Definition.Kind != BuildPieceKind.Stairs)
+                .Select(p => p.Placement.Cell).Distinct().Count();
+            Assert.AreEqual(48, ringCells, "7.5m 칸 13칸 성벽 고리(SIEGE-18).");
+            Assert.AreEqual(ringCells, battlements.BuiltCount, "성벽 고리의 맨 위 칸마다 선다.");
 
             PlacedStructure wall = NorthWallWithoutLadder();
             Assert.AreEqual(North, battlements.FacesAt(wall.Placement.Cell), "북쪽 성벽은 바깥(북) 면에만 선다.");
@@ -106,7 +112,7 @@ namespace ProjectNeo.Tests
             root = Battlement(wall);
             Collider[] parts = root.GetComponentsInChildren<Collider>();
             Assert.AreEqual(1, parts.Count(part => part.name == "Parapet"), "받침은 사다리 자리에서도 이어진다.");
-            Assert.AreEqual(2, parts.Count(part => part.name == "Merlon"));
+            Assert.AreEqual(MerlonsPerFace, parts.Count(part => part.name == "Merlon"));
             Assert.AreEqual(top + battlements.Settings.ParapetHeight, ladder.EdgePoint.y, 0.01f, "사다리는 빈틈의 받침에 걸린다.");
             Vector3 edge = ladder.EdgePoint;
             foreach (Collider merlon in parts.Where(part => part.name == "Merlon"))
@@ -208,8 +214,9 @@ namespace ProjectNeo.Tests
             yield return null;
             PlacedStructure wall = NorthWallWithoutLadder();
             float size = world.Grid.CellSize;
-            // 걷는 면 가운데에 선 수비병. 몸 가운데(1m)는 0.8m 난간에 가려지고 상체는 보인다.
-            CharacterActor defender = Unit("Defender", CombatTeam.Allied, WallTop(wall, size * 0.5f, size * 0.5f), AttackKind.Melee);
+            // 난간 바로 뒤(바깥 면에서 1m)에 선 수비병. 몸 가운데(1m)는 난간에 가려지고 상체는 보인다.
+            // 7.5m 통로 한가운데는 5m 성벽 발치 가까이에서 보이지 않으므로(SIEGE-18, 사격 자리는 SIEGE-20) 가장자리에 세운다.
+            CharacterActor defender = Unit("Defender", CombatTeam.Allied, WallTop(wall, size * 0.5f, 1f), AttackKind.Melee);
             Vector3 ground = WallTop(wall, size * 0.5f, -12f);
             ground.y = world.transform.position.y;
             CharacterActor archer = Unit("EnemyArcher", CombatTeam.Hostile, ground, AttackKind.Projectile);
@@ -264,7 +271,7 @@ namespace ProjectNeo.Tests
             Vector2Int cell = support.Placement.Cell;
             Assert.AreEqual((1 << 0) | (1 << 1) | (1 << 3), battlements.FacesAt(cell), "보루는 북·동·서 바깥 면에 성가퀴가 선다.");
             Assert.AreEqual(0, battlements.FacesAt(wall.Placement.Cell) & 1, "보루와 맞닿은 성벽 면은 열린다.");
-            Assert.AreEqual(6, Battlement(support).GetComponentsInChildren<Collider>().Count(part => part.name == "Merlon"));
+            Assert.AreEqual(MerlonsPerFace * 3, Battlement(support).GetComponentsInChildren<Collider>().Count(part => part.name == "Merlon"));
 
             Assert.AreEqual(MountIssue.None, world.CheckMount(cannon, support, "top"));
             Assert.IsTrue(world.TryMount(cannon, support, "top", out PlacedSiegeWeapon weapon));
@@ -273,12 +280,12 @@ namespace ProjectNeo.Tests
             Assert.IsFalse(battlements.IsGunPortAt(cell, 1));
             Assert.IsFalse(battlements.IsGunPortAt(cell, 3));
             Collider[] parts = Battlement(support).GetComponentsInChildren<Collider>();
-            Assert.AreEqual(4, parts.Count(part => part.name == "Merlon"), "포구 면만 솟은 부분이 없고 옆면은 남는다.");
+            Assert.AreEqual(MerlonsPerFace * 2, parts.Count(part => part.name == "Merlon"), "포구 면만 솟은 부분이 없고 옆면은 남는다.");
             Assert.AreEqual(3, parts.Count(part => part.name == "Parapet"), "세 면 모두 받침은 남는다.");
 
             Assert.IsTrue(world.RemoveWeapon(weapon));
             Assert.IsFalse(battlements.IsGunPortAt(cell));
-            Assert.AreEqual(6, Battlement(support).GetComponentsInChildren<Collider>().Count(part => part.name == "Merlon"),
+            Assert.AreEqual(MerlonsPerFace * 3, Battlement(support).GetComponentsInChildren<Collider>().Count(part => part.name == "Merlon"),
                 "대포를 치우면 성가퀴가 돌아온다.");
         }
 
@@ -308,7 +315,7 @@ namespace ProjectNeo.Tests
             Assert.IsNotNull(root);
             Collider[] parts = root.GetComponentsInChildren<Collider>();
             Assert.AreEqual(1, parts.Count(part => part.name == "Parapet"), "빈틈 아래 받침");
-            Assert.AreEqual(2, parts.Count(part => part.name == "Merlon"), "솟은 부분 두 개, 가운데와 양 끝은 빈틈");
+            Assert.AreEqual(MerlonsPerFace, parts.Count(part => part.name == "Merlon"), "1.5m 주기로 솟은 부분, 가운데는 빈틈");
             for (int i = 0; i < 600 && (world.IsRebuilding || world.RebuildPending); i++) yield return null;
             Assert.IsFalse(world.RebuildPending, "모양이 바뀌면 길찾기 메시를 다시 만든다.");
         }

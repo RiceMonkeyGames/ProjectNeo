@@ -410,7 +410,8 @@ namespace ProjectNeo.Tests
         {
             var gate = world.Structures.Single(piece => piece.Placement.Definition.Kind == BuildPieceKind.Gate);
             var wall = world.Structures.First(piece => piece.Placement.Definition.Kind == BuildPieceKind.Wall).Placement.Definition;
-            Assert.IsTrue(world.TryPlace(wall, gate.Placement.Cell, 0, out PlacedStructure left));
+            // 기본 성문은 고정 성벽 한 층을 얹은 2층 문루다(SIEGE-18). 옆 칸도 2층으로 올린다.
+            PlacedStructure left = world.Structures.Single(piece => piece.Placement.Cell == gate.Placement.Cell && piece.Placement.Level == 1);
             Assert.IsTrue(world.TryPlace(wall, gate.Placement.Cell + Vector2Int.right, 0, out PlacedStructure right));
             yield return Navigation();
             Assert.IsTrue(battle.TryStartBattle());
