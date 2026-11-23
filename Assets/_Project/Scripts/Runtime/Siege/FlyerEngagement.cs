@@ -11,7 +11,11 @@ namespace ProjectNeo.Siege
     {
         /// <param name="targetFeet">대상의 발 위치.</param>
         /// <param name="surfaceAt">대상 높이 근처에서 그 점 아래 발판의 높이. 발판이 없으면 null.</param>
-        public abstract Vector3 HoverPoint(Vector3 flyer, Vector3 targetFeet, float attackRange, float flyerRadius,
-            float targetRadius, Func<Vector3, float?> surfaceAt);
+        public Vector3 HoverPoint(Vector3 flyer, Vector3 targetFeet, float attackRange, float flyerRadius,
+            float targetRadius, Func<Vector3, float?> surfaceAt) =>
+            HoverPoint(new FlyerHoverQuery(flyer, targetFeet, attackRange, flyerRadius, targetRadius, surfaceAt));
+
+        /// <summary>다른 비행 적 자리와 겹치지 않고(SIEGE-16) 몸이 들어가며 대상이 보이는 자리를 고른다.</summary>
+        public abstract Vector3 HoverPoint(in FlyerHoverQuery query);
     }
 }

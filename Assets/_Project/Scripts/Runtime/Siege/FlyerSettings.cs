@@ -24,6 +24,10 @@ namespace ProjectNeo.Siege
         [SerializeField, Min(0f)] float holdInset = 6f;
         // 죽으면 이 가속도로 떨어진다. 외형 처리일 뿐 낙하 피해는 없다.
         [SerializeField, Min(0.1f)] float corpseFallAcceleration = 9.81f;
+        // 켜면 성벽 위 아군이 없을 때 설치된 수성 무기(대포)를 노릴 후보에 넣는다(SIEGE-16). 순서는 대상 전략이 정한다.
+        [SerializeField] bool targetsSiegeWeapons = true;
+        // 같은 대상을 쫓는 비행 적끼리 공격 자리를 이만큼 이상 떨어뜨린다(SIEGE-16). 몸통 지름보다 작으면 지름을 쓴다.
+        [SerializeField, Min(0f)] float hoverSeparation = 1.2f;
         public FlyerTargetStrategy TargetStrategy => targetStrategy;
         public FlyerMovement Movement => movement;
         public FlyerEngagement Engagement => engagement;
@@ -33,11 +37,13 @@ namespace ProjectNeo.Siege
         public float GroundProbeDistance => groundProbeDistance;
         public float HoldInset => holdInset;
         public float CorpseFallAcceleration => corpseFallAcceleration;
+        public bool TargetsSiegeWeapons => targetsSiegeWeapons;
+        public float HoverSeparation => hoverSeparation;
 
         public static FlyerSettings Create(FlyerTargetStrategy targetStrategy, FlyerMovement movement,
             FlyerEngagement engagement, float cruiseClearance = 3f, float meleeExposureAltitude = 1.5f,
             float wallTopMinimumHeight = 1f, float groundProbeDistance = 60f, float corpseFallAcceleration = 9.81f,
-            float holdInset = 6f)
+            float holdInset = 6f, bool targetsSiegeWeapons = true, float hoverSeparation = 1.2f)
         {
             var value = CreateInstance<FlyerSettings>();
             value.targetStrategy = targetStrategy;
@@ -49,6 +55,8 @@ namespace ProjectNeo.Siege
             value.groundProbeDistance = Mathf.Max(0.1f, groundProbeDistance);
             value.corpseFallAcceleration = Mathf.Max(0.1f, corpseFallAcceleration);
             value.holdInset = Mathf.Max(0f, holdInset);
+            value.targetsSiegeWeapons = targetsSiegeWeapons;
+            value.hoverSeparation = Mathf.Max(0f, hoverSeparation);
             return value;
         }
     }
