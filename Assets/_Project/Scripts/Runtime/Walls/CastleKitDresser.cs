@@ -23,8 +23,17 @@ namespace ProjectNeo.Walls
         // 성문 위층이 없을 때(무너짐 등)만 쓰는 대체 연출: 올린 쇠창살이 문틀 윗부분에 남는 높이 비율(위 통로를 뚫지 않게 접힌다).
         [SerializeField, Range(0.05f, 1f)] float raisedPortcullisFraction = 0.18f;
         [SerializeField, Range(0f, 150f)] float openDoorAngle = 100f;
+        // 칸이 킷 모듈보다 넓을 때 면을 덮는 방식(SIEGE-35 시험). 바꾸면 모두 다시 꾸민다.
+        [SerializeField] CastleKitLook look = CastleKitLook.Stretch;
 
         float portcullisBlend = 1f;
+
+        /// <summary>칸이 모듈보다 넓을 때 늘릴지 짜맞출지(SIEGE-35). 바꾸면 다음 프레임에 다시 꾸민다.</summary>
+        public CastleKitLook Look
+        {
+            get => look;
+            set { if (look == value) return; look = value; dirty = true; }
+        }
         float doorBlend;
 
         sealed class GatePart
@@ -244,7 +253,7 @@ namespace ProjectNeo.Walls
                 watched[structure] = State(structure);
                 if (structure.IsUnderConstruction) unfinished.Add(structure.Placement.Id);
             }
-            CastleKitRules.Collect(world.Layout, world.Grid, outside, unfinished, breaches, settings, placements, rubble, fallenTops, rooms);
+            CastleKitRules.Collect(world.Layout, world.Grid, outside, unfinished, breaches, settings, placements, rubble, fallenTops, rooms, look);
             Group();
 
             bool navigation = false;
@@ -352,10 +361,9 @@ namespace ProjectNeo.Walls
             var slab = new GameObject(HollowTopName);
             slab.layer = structure.gameObject.layer;
             slab.transform.SetParent(structure.transform, false);
-            float size = world.Grid.CellSize, scale = size / settings.ModuleSize;
-            StairWell well = StairWell.Create(placement.Cell, size, placement.Elevation, placement.Definition.Height, room.FootFace,
-                room.FirstFlightFace, settings.RoomWallInset * scale, settings.RoomLandingDepth * scale, settings.RoomHoleOverhang * scale,
-                settings.RoomFlightWidth * scale);
+            StairWell well = StairWell.Create(placement.Cell, world.Grid.CellSize, placement.Elevation, placement.Definition.Height,
+                room.FootFace, room.FirstFlightFace, settings.RoomWallInset, settings.RoomLandingDepth, settings.RoomHoleOverhang,
+                settings.RoomFlightWidth);
             var ceiling = new List<Rect>();
             well.CeilingAreas(ceiling);
             float thickness = Mathf.Min(0.5f, 0.25f / Mathf.Max(0.1f, placement.Definition.Height));
@@ -462,7 +470,7 @@ namespace ProjectNeo.Walls
             hasColliders = false;
             var root = new GameObject($"{RootName} {cell.x},{cell.y}");
             root.transform.SetParent(EnsureContainer(), false);
-            float scale = world.Grid.CellSize / settings.ModuleSize;
+            // 조각은 모듈 크기 그대로다. 칸에 맞춘 늘림은 규칙이 자리마다 준다(SIEGE-35).
             foreach (CastleKitPlacement placement in list)
             {
                 if (placement.Piece == CastleKitPiece.RoomCollider)
@@ -487,8 +495,8 @@ namespace ProjectNeo.Walls
                 bool ruin = placement.Piece == CastleKitPiece.BrokenTop || placement.Piece == CastleKitPiece.RubbleTop;
                 float stretchX = ruin ? settings.BreachHalfWidth : stretch;
                 float uniform = placement.Piece == CastleKitPiece.TowerCap ? settings.TowerCapScale : 1f;
-                piece.transform.localScale = uniform * new Vector3(scale * stretchX * placement.StretchX, scale * placement.ScaleY,
-                    (placement.MirrorZ ? -scale : scale) * stretch * placement.StretchZ);
+                piece.transform.localScale = uniform * new Vector3(stretchX * placement.StretchX, placement.ScaleY,
+                    (placement.MirrorZ ? -1f : 1f) * stretch * placement.StretchZ);
                 hasColliders |= piece.GetComponentInChildren<Collider>(true) != null;
             }
             return root;

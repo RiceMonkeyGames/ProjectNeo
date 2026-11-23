@@ -16,15 +16,21 @@ namespace ProjectNeo.Editor
     /// SIEGE-14 시험: 5m 격자 + PolygonFantasyKingdom 성 킷. 성벽 지휘 프로토타입 씬을 복사해 격자·조각 정의만 5m로 바꾸고
     /// 성벽 칸을 킷 조각으로 꾸민다(<see cref="CastleKitDresser"/>). Game 씬과 공용 규칙 값은 건드리지 않는다.
     /// 다시 실행하면 시험 씬을 새로 만든다.
+    /// SIEGE-35: 같은 성을 7.5m 칸(층 높이 5m 그대로)으로 만든 별도 씬도 만든다(<see cref="Create75"/>). 두 씬은 킷 프리팹을 함께 쓰고
+    /// 데이터 폴더(격자·조각 정의·킷 설정)만 따로 둔다.
     /// </summary>
     public static class SyntyGridSpikeSetup
     {
         public const string ScenePath = "Assets/_Project/Scenes/SyntyGridSpike.unity";
-        const string Data = "Assets/_Project/Data/SyntyGridSpike";
+        public const string Grid75ScenePath = "Assets/_Project/Scenes/SyntyGrid75Spike.unity";
         const string Prefabs = "Assets/_Project/Prefabs/SyntyGridSpike";
         const string KitFolder = "Assets/_Project/Prefabs/CastleKit";
         const string Castle = "Assets/ThirdParty/PolygonFantasyKingdom/Prefabs/Castle/";
-        const float Cell = 5f;
+        // 층 높이(조각 높이)는 늘 킷 모듈과 같은 5m다. 칸 폭(Cell)만 씬마다 다르다(SIEGE-35).
+        const float Storey = 5f;
+        // 지금 만드는 씬의 데이터 폴더와 칸 폭(Build가 정한다).
+        static string Data = "Assets/_Project/Data/SyntyGridSpike";
+        static float Cell = 5f;
         const float StairsHealth = 50f;
         const float TowerHealth = 400f;
         const float TowerRangedBonus = 0.2f;
@@ -75,15 +81,29 @@ namespace ProjectNeo.Editor
             (CastleKitPiece.RoomPost, "House/SM_Bld_House_WoodBeam_01", Body.None),
             // 계단 방 문으로만 들어오는 모서리의 꺾임 계단: 외형만, 옆으로 올라타도록 충돌은 경사 판이 맡는다.
             (CastleKitPiece.CornerStairsOpen, "SM_Bld_Stairs_Wood_Corner_01", Body.None),
+            // 7.5m 칸 짜맞춤(SIEGE-35): 계단 방·망루 방 벽과 문 양옆의 반 모듈 벽판(조각 상자 대신 충돌을 맡는다).
+            (CastleKitPiece.RoomPanelHalf, "SM_Bld_Castle_Wall_Cut_01", Body.Solid),
         };
         const string KeysHint = "시험 키  P: 쇠창살 올림/내림 · O: 성문 열기/닫기 · B: 성문 부수기/고치기 · K: 조준한 성벽·계단·망루 무너뜨리기";
+        // 7.5m 칸 계단 방(SIEGE-35, 모듈 기준 m): 층참을 넓히고(꺾는 곳 1m → 2m) 계단 한 줄을 모델 폭 그대로 둔다(가운데 통로 약 2.6m).
+        const float Grid75LandingDepth = 2f;
+        const float Grid75FlightWidth = 2.16f;
 
         [MenuItem("ProjectNeo/Setup/Create Synty Grid Spike (SIEGE-14)")]
-        public static void Create()
+        public static void Create() => Build(ScenePath, "Assets/_Project/Data/SyntyGridSpike", 5f, KeysHint);
+
+        /// <summary>SIEGE-35: 같은 성을 7.5m × 7.5m 칸, 5m 층 높이로. L 키로 늘림 ↔ 짜맞춤을 바꿔 본다.</summary>
+        [MenuItem("ProjectNeo/Setup/Create 7.5m Grid Spike (SIEGE-35)")]
+        public static void Create75() => Build(Grid75ScenePath, "Assets/_Project/Data/SyntyGrid75Spike", 7.5f,
+            KeysHint + " · L: 늘림/짜맞춤");
+
+        static void Build(string scenePath, string data, float cell, string hint)
         {
             if (EditorSceneManager.GetActiveScene().isDirty) throw new InvalidOperationException("Save the active scene first.");
             if (AssetDatabase.LoadAssetAtPath<SceneAsset>(WallCommandSetup.ScenePath) == null)
                 throw new InvalidOperationException("Run Create Wall Command Prototype first.");
+            Data = data;
+            Cell = cell;
             CombatPrototypeSetup.EnsureFolder(Data);
             CombatPrototypeSetup.EnsureFolder(Prefabs);
             CombatPrototypeSetup.EnsureFolder(KitFolder);
@@ -91,21 +111,21 @@ namespace ProjectNeo.Editor
             CreateKit();
             Replace(BuildGridDefinition.Create(16, 14, Cell, 3, forbidValleys: true, groundStairsOnly: true), Data + "/Grid.asset");
             Material stone = CombatPrototypeSetup.MaterialAsset("ConstructionStone", new Color(0.58f, 0.66f, 0.75f));
-            Replace(BuildPieceDefinition.Create(BuildPieceKind.Wall, "성벽", Vector2Int.one, Cell,
+            Replace(BuildPieceDefinition.Create(BuildPieceKind.Wall, "성벽", Vector2Int.one, Storey,
                 prefab: KitStructurePrefab("KitWall", stone)), Data + "/Wall.asset");
             // 계단은 성벽(체력 100)보다 쉽게 무너진다(사용자 결정 2026-11-23, 임시 값 50). 무너진 성벽 뒤에 남아 틈을 막으므로,
             // 적이 부수고 들어올 수 있게 약하게 둔다. 적이 계단을 공격 대상으로 고르는 규칙은 Game 통합 때 팀원과 맞춘다.
-            Replace(BuildPieceDefinition.Create(BuildPieceKind.Stairs, "계단", Vector2Int.one, Cell, StairsHealth,
-                Required<GameObject>("Assets/_Project/Prefabs/ConstructionPrototype/Stairs.prefab")), Data + "/Stairs.asset");
-            Replace(BuildPieceDefinition.Create(BuildPieceKind.Gate, "메인 성문", Vector2Int.one, Cell, 300f,
+            Replace(BuildPieceDefinition.Create(BuildPieceKind.Stairs, "계단", Vector2Int.one, Storey, StairsHealth,
+                StairsPrefab()), Data + "/Stairs.asset");
+            Replace(BuildPieceDefinition.Create(BuildPieceKind.Gate, "메인 성문", Vector2Int.one, Storey, 300f,
                 Required<GameObject>("Assets/_Project/Prefabs/ConstructionPrototype/MainGate.prefab")), Data + "/Gate.asset");
-            // 보루(SIEGE-11)도 5m 한 칸. 프리팹·설치 자리(윗면 가운데)는 3m 보루와 같다.
+            // 보루(SIEGE-11)도 한 칸. 프리팹·설치 자리(윗면 가운데)는 3m 보루와 같다.
             BuildPieceDefinition source = BastionSetup.CreateBastion();
-            Replace(BuildPieceDefinition.Create(BuildPieceKind.Bastion, "보루", Vector2Int.one, Cell, BastionSetup.MaxHealth,
+            Replace(BuildPieceDefinition.Create(BuildPieceKind.Bastion, "보루", Vector2Int.one, Storey, BastionSetup.MaxHealth,
                 source.Prefab, new BuildMountPoint("top", Vector3.up)), Data + "/Bastion.asset");
             // 망루(사용자 결정 2026-11-23): 2×2, 층마다 한 칸 높이, 지붕 칸마다 무기 자리 하나, 지붕 위 아군 원거리 사거리·공격력 +20%.
             // 체력은 임시 값(보루 150보다 강하게). 값은 에셋에서 바꾼다.
-            var tower = BuildPieceDefinition.Create(BuildPieceKind.Tower, "망루", new Vector2Int(2, 2), Cell, TowerHealth,
+            var tower = BuildPieceDefinition.Create(BuildPieceKind.Tower, "망루", new Vector2Int(2, 2), Storey, TowerHealth,
                 KitStructurePrefab("KitTower", CombatPrototypeSetup.MaterialAsset("ConstructionTower", new Color(0.62f, 0.58f, 0.5f))),
                 new BuildMountPoint("roof_sw", new Vector3(-TowerMount, 1f, -TowerMount)), new BuildMountPoint("roof_se", new Vector3(TowerMount, 1f, -TowerMount)),
                 new BuildMountPoint("roof_nw", new Vector3(-TowerMount, 1f, TowerMount)), new BuildMountPoint("roof_ne", new Vector3(TowerMount, 1f, TowerMount)));
@@ -114,16 +134,18 @@ namespace ProjectNeo.Editor
             Replace(tower, Data + "/Tower.asset");
             var camera = BuildCameraSettings.Create();
             var serializedCamera = new SerializedObject(camera);
-            serializedCamera.FindProperty("orthographicSize").floatValue = 34f;
-            serializedCamera.FindProperty("distance").floatValue = 80f;
-            serializedCamera.FindProperty("maxZoom").floatValue = 200f;
+            // 성이 칸 폭만큼 넓어지므로 건설 화면도 같은 비율로 넓힌다.
+            float view = Cell / 5f;
+            serializedCamera.FindProperty("orthographicSize").floatValue = 34f * view;
+            serializedCamera.FindProperty("distance").floatValue = 80f * view;
+            serializedCamera.FindProperty("maxZoom").floatValue = 200f * view;
             serializedCamera.ApplyModifiedPropertiesWithoutUndo();
             Replace(camera, Data + "/Camera.asset");
             AssetDatabase.SaveAssets();
 
-            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath) != null) AssetDatabase.DeleteAsset(ScenePath);
-            if (!AssetDatabase.CopyAsset(WallCommandSetup.ScenePath, ScenePath)) throw new InvalidOperationException("Scene copy failed.");
-            Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(scenePath) != null) AssetDatabase.DeleteAsset(scenePath);
+            if (!AssetDatabase.CopyAsset(WallCommandSetup.ScenePath, scenePath)) throw new InvalidOperationException("Scene copy failed.");
+            Scene scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
             // 씬을 열면 앞서 만든 에셋 참조가 끊기므로 경로로 다시 읽는다(BattlementSetup과 같다).
             var kit = Required<CastleKitSettings>(Data + "/CastleKit.asset");
             var grid = Required<BuildGridDefinition>(Data + "/Grid.asset");
@@ -159,8 +181,8 @@ namespace ProjectNeo.Editor
             world.gameObject.AddComponent<TowerOccupantBuff>().Configure(world);
             EditorUtility.SetDirty(dresser);
             world.gameObject.AddComponent<CastleKitTestKeys>().Configure(world, dresser);
-            AddHint(Find<ProjectNeo.UI.SquadCommandHud>(scene).transform);
-            AddHint(hud.transform);
+            AddHint(Find<ProjectNeo.UI.SquadCommandHud>(scene).transform, hint);
+            AddHint(hud.transform, hint);
 
             // 1인칭 플레이어를 계단 앞 안뜰에 둔다(계단 칸 (5, 7)의 한 칸 아래).
             GameObject player = scene.GetRootGameObjects().First(root => root.name == "Player");
@@ -207,7 +229,7 @@ namespace ProjectNeo.Editor
         }
 
         // 화면 아래 가운데에 시험 키 안내(1인칭·건설 화면 모두).
-        static void AddHint(Transform canvas)
+        static void AddHint(Transform canvas, string hint)
         {
             var root = new GameObject("SpikeKeysHint", typeof(RectTransform), typeof(TMPro.TextMeshProUGUI));
             root.transform.SetParent(canvas, false);
@@ -217,7 +239,7 @@ namespace ProjectNeo.Editor
             rect.sizeDelta = new Vector2(1100f, 32f);
             var label = root.GetComponent<TMPro.TextMeshProUGUI>();
             label.font = Required<TMPro.TMP_FontAsset>("Assets/_Project/Art/Fonts/NotoSansKR SDF.asset");
-            label.text = KeysHint;
+            label.text = hint;
             label.fontSize = 18f;
             label.alignment = TMPro.TextAlignmentOptions.Bottom;
             label.raycastTarget = false;
@@ -248,12 +270,18 @@ namespace ProjectNeo.Editor
         static void CreateKit()
         {
             var converted = new Dictionary<Material, Material>();
-            // 시험 전용 폴더라 매번 새로 만든다(조각 이름이 바뀌어도 옛 프리팹이 남지 않게).
-            AssetDatabase.DeleteAsset(KitFolder);
+            // 킷 프리팹은 5m·7.5m 시험 씬이 함께 쓰므로 폴더를 지우지 않고 같은 경로에 덮어쓴다(GUID가 유지돼 다른 씬 참조가 끊기지 않는다).
             CombatPrototypeSetup.EnsureFolder(KitFolder);
             var kit = Replace(CastleKitSettings.Create(), Data + "/CastleKit.asset");
             foreach ((CastleKitPiece piece, string model, Body body) in Kit)
                 kit.SetPrefab(piece, KitCopy(model, piece.ToString(), body, converted));
+            if (Cell > Storey)
+            {
+                var serializedKit = new SerializedObject(kit);
+                serializedKit.FindProperty("roomLandingDepth").floatValue = Grid75LandingDepth;
+                serializedKit.FindProperty("roomFlightWidth").floatValue = Grid75FlightWidth;
+                serializedKit.ApplyModifiedPropertiesWithoutUndo();
+            }
             EditorUtility.SetDirty(kit);
         }
 
@@ -350,6 +378,37 @@ namespace ProjectNeo.Editor
             }
             converted[source] = material;
             return material;
+        }
+
+        /// <summary>
+        /// 설치형 계단. 칸이 모듈(5m)과 같으면 프로토타입 계단 그대로다. 칸이 더 넓으면(7.5m) 칸 폭으로 늘어난 계단이 너무 넓어
+        /// (사용자 요청 2026-11-23) 폭만 모듈 크기로 줄인 복사본을 쓴다. 칸 가운데에 두고, 오르는 길이는 위 성벽에 닿도록 칸 전체 그대로다.
+        /// 조각 루트는 칸 크기로 늘어나므로 정규화 공간에서 폭 방향(로컬 x)을 모듈 ÷ 칸으로 줄인다: 외형은 Visual 배율, 충돌은 좁힌 경사 메시.
+        /// </summary>
+        static GameObject StairsPrefab()
+        {
+            var source = Required<GameObject>(CastleWallArtSetup.StairsPath);
+            if (Cell <= Storey) return source;
+            float ratio = Storey / Cell;
+            var ramp = source.GetComponent<MeshCollider>().sharedMesh;
+            var narrow = Object.Instantiate(ramp);
+            narrow.name = ramp.name + "_Narrow";
+            Vector3[] vertices = narrow.vertices;
+            for (int i = 0; i < vertices.Length; i++) vertices[i].x *= ratio;
+            narrow.vertices = vertices;
+            narrow.RecalculateBounds();
+            narrow = Replace(narrow, Data + "/StairsRampNarrow.asset");
+            GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(source);
+            try
+            {
+                PrefabUtility.UnpackPrefabInstance(instance, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
+                instance.name = "Stairs";
+                instance.GetComponent<MeshCollider>().sharedMesh = narrow;
+                Transform visual = instance.transform.Find("Visual");
+                visual.localScale = new Vector3(ratio, 1f, 1f);
+                return PrefabUtility.SaveAsPrefabAsset(instance, Prefabs + "/StairsNarrow.prefab");
+            }
+            finally { Object.DestroyImmediate(instance); }
         }
 
         // 충돌은 단위 상자(칸 크기로 늘어남), 외형은 짓는 중에만 보이는 임시 상자. 다 지으면 킷 조각이 대신 보인다.

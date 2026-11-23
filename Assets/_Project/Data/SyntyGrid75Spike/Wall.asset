@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f497a56af5aa4054dba015fe81196793, type: 3}
+  m_Name: Wall
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Walls.BuildPieceDefinition
+  kind: 0
+  displayName: "\uC131\uBCBD"
+  footprint: {x: 1, y: 1}
+  height: 5
+  maxHealth: 100
+  prefab: {fileID: 1391201567461355385, guid: 1f68a6a7148ed4b4a89e674bb8e3fbd0, type: 3}
+  mountPoints: []
+  occupantModifiers: []
