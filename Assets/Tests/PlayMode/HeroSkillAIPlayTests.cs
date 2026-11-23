@@ -245,6 +245,112 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
+        public IEnumerator Urgency_HealBeatsEarlierBuffSlot_COMBAT18()
+        {
+            SkillDefinition cry = Track(SkillDefinition.Create("cry", 5f, SkillTargetMode.Self, 0f, 0f,
+                SkillEffect.Buff(StatModifier.Percent(StatType.Attack, 0.5f), 5f)));
+            SkillDefinition mend = Track(SkillDefinition.Create("mend", 5f, SkillTargetMode.TargetUnit, 10f, 0f, SkillEffect.Heal(30f)));
+            CharacterActor hero = Unit("Hero", CombatTeam.Allied, Vector3.zero);
+            CharacterActor ally = Unit("Ally", CombatTeam.Allied, new Vector3(0f, 0f, 3f));
+            CharacterActor enemy = Unit("Enemy", CombatTeam.Hostile, new Vector3(4f, 0f, 0f));
+            yield return null;
+            HeroSkillAI brain = Brain(hero, enemy, cry, mend);
+
+            ally.Health.TakeDamage(30f);
+            Assert.AreEqual(0, brain.Think(), "ally at 70% needs no heal: the slot-0 buff is used");
+            brain.GetComponent<SkillCaster>().ResetCooldowns();
+            ally.Health.TakeDamage(20f);
+            Assert.AreEqual(1, brain.Think(), "ally at 50%: a heal outranks a general buff even in a later slot");
+            Assert.AreEqual(80f, ally.Health.Current, 1e-3f);
+        }
+
+        [UnityTest]
+        public IEnumerator Urgency_HighValueAreaBeatsPlainHeal_CriticalHealBeatsBoth_COMBAT18()
+        {
+            SkillDefinition mend = Track(SkillDefinition.Create("mend", 5f, SkillTargetMode.TargetUnit, 10f, 0f, SkillEffect.Heal(10f)));
+            SkillDefinition whirl = Track(SkillDefinition.Create("whirl", 5f, SkillTargetMode.Self, 0f, 3f, SkillEffect.Damage(5f)));
+            CharacterActor hero = Unit("Hero", CombatTeam.Allied, Vector3.zero);
+            CharacterActor ally = Unit("Ally", CombatTeam.Allied, new Vector3(0f, 0f, -6f));
+            CharacterActor first = Unit("E1", CombatTeam.Hostile, new Vector3(2f, 0f, 0f));
+            Unit("E2", CombatTeam.Hostile, new Vector3(-2f, 0f, 0f));
+            Unit("E3", CombatTeam.Hostile, new Vector3(0f, 0f, 2f));
+            Unit("E4", CombatTeam.Hostile, new Vector3(1.5f, 0f, 1.5f));
+            yield return null;
+            HeroSkillAI brain = Brain(hero, first, mend, whirl);
+
+            ally.Health.TakeDamage(50f);
+            Assert.AreEqual(1, brain.Think(), "4 enemies in the whirl (high-value area) outrank a 50% heal in slot 0");
+            Assert.AreEqual(50f, ally.Health.Current, 1e-3f);
+
+            brain.GetComponent<SkillCaster>().ResetCooldowns();
+            ally.Health.TakeDamage(25f);
+            Assert.AreEqual(0, brain.Think(), "ally at 25% is critical: the heal goes first");
+            Assert.AreEqual(35f, ally.Health.Current, 1e-3f);
+        }
+
+        [UnityTest]
+        public IEnumerator Stagger_PrefersHighValueTargetOverCurrentTarget_COMBAT18()
+        {
+            SkillDefinition bash = Track(SkillDefinition.Create("bash", 5f, SkillTargetMode.TargetUnit, 3f, 0f,
+                SkillEffect.Damage(10f), SkillEffect.Stagger(50f)));
+            CharacterActor hero = Unit("Hero", CombatTeam.Allied, Vector3.zero);
+            CharacterActor grunt = Unit("Grunt", CombatTeam.Hostile, new Vector3(1.5f, 0f, 0f));
+            CharacterActor boss = Unit("Boss", CombatTeam.Hostile, new Vector3(0f, 0f, 2.5f));
+            boss.IsBoss = true;
+            yield return null;
+            HeroSkillAI brain = Brain(hero, grunt, bash);
+
+            Assert.AreEqual(0, brain.Think());
+            Assert.Less(boss.Health.Current, 100f, "the boss in range is staggered instead of the nearer current target");
+            Assert.AreEqual(100f, grunt.Health.Current, 1e-3f);
+
+            brain.GetComponent<SkillCaster>().ResetCooldowns();
+            boss.transform.position = origin + new Vector3(0f, 0f, 8f);
+            yield return null;
+            Assert.AreEqual(0, brain.Think(), "boss out of range: falls back to the current target");
+            Assert.Less(grunt.Health.Current, 100f);
+        }
+
+        [UnityTest]
+        public IEnumerator AimPointHeal_CoversWoundedClusterOverSingleWorst_COMBAT18()
+        {
+            SkillDefinition rain = Track(SkillDefinition.Create("rain", 5f, SkillTargetMode.AimPoint, 10f, 1.5f, SkillEffect.Heal(10f)));
+            CharacterActor hero = Unit("Hero", CombatTeam.Allied, Vector3.zero);
+            CharacterActor lone = Unit("Lone", CombatTeam.Allied, new Vector3(-6f, 0f, 0f));
+            CharacterActor a = Unit("A", CombatTeam.Allied, new Vector3(6f, 0f, 0f));
+            CharacterActor b = Unit("B", CombatTeam.Allied, new Vector3(6.8f, 0f, 0f));
+            CharacterActor c = Unit("C", CombatTeam.Allied, new Vector3(6f, 0f, 0.8f));
+            yield return null;
+            HeroSkillAI brain = Brain(hero, null, rain);
+            lone.Health.TakeDamage(65f);
+            a.Health.TakeDamage(50f);
+            b.Health.TakeDamage(50f);
+            c.Health.TakeDamage(50f);
+
+            Assert.AreEqual(0, brain.Think());
+            Assert.AreEqual(35f, lone.Health.Current, 1e-3f, "the single worst ally loses to three wounded allies together");
+            Assert.AreEqual(60f, a.Health.Current, 1e-3f);
+            Assert.AreEqual(60f, b.Health.Current, 1e-3f);
+            Assert.AreEqual(60f, c.Health.Current, 1e-3f);
+        }
+
+        [UnityTest]
+        public IEnumerator Support_MeleeHeroOnWallIgnoresEnemiesBelow_COMBAT18()
+        {
+            SkillDefinition cry = Track(SkillDefinition.Create("cry", 5f, SkillTargetMode.Self, 0f, 0f,
+                SkillEffect.Buff(StatModifier.Percent(StatType.Attack, 0.5f), 5f)));
+            CharacterActor hero = Unit("Hero", CombatTeam.Allied, new Vector3(0f, 6f, 0f));
+            CharacterActor below = Unit("Below", CombatTeam.Hostile, new Vector3(3f, 0f, 0f));
+            yield return null;
+            HeroSkillAI brain = Brain(hero, below, cry);
+
+            Assert.AreEqual(-1, brain.Think(), "enemy 6 m below the wall is within 10 m straight-line but unreachable for melee");
+            below.transform.position = origin + new Vector3(3f, 6f, 0f);
+            yield return null;
+            Assert.AreEqual(0, brain.Think(), "the enemy climbed onto the wall top: engaged");
+        }
+
+        [UnityTest]
         public IEnumerator Update_CastsOnlyWhenAutoOnAndGateOpen()
         {
             SkillDefinition cry = Track(SkillDefinition.Create("cry", 30f, SkillTargetMode.Self, 0f, 0f,

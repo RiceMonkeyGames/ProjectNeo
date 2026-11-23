@@ -295,5 +295,109 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(0, SkillAutoRules.BestClusterCenter(enemies, enemies, bodies, 0f, Vector3.zero, out hits));
             Assert.AreEqual(0, hits, "zero radius catches no one");
         }
+
+        [Test]
+        public void AutoRules_UrgencyOrderAndTiers_COMBAT18()
+        {
+            Assert.Greater(SkillAutoUrgency.CriticalHeal, SkillAutoUrgency.MoraleStabilize);
+            Assert.Greater(SkillAutoUrgency.MoraleStabilize, SkillAutoUrgency.HighValueOffense);
+            Assert.Greater(SkillAutoUrgency.HighValueOffense, SkillAutoUrgency.Heal, "user decision 2026-11-23: plain heal below high-value offense");
+            Assert.Greater(SkillAutoUrgency.Heal, SkillAutoUrgency.General);
+            Assert.AreEqual(0, (int)SkillAutoUrgency.None);
+            Assert.AreEqual(5, (int)SkillAutoUrgency.CriticalHeal);
+
+            SkillAutoSettings defaults = Track(SkillAutoSettings.Create());
+            Assert.AreEqual(0.3f, defaults.CriticalHealBelowRatio, 1e-4f);
+            Assert.AreEqual(4, defaults.HighValueEnemiesInArea);
+            Assert.AreEqual(2.5f, defaults.MeleeEngageMaxHeight, 1e-4f);
+
+            Assert.AreEqual(SkillAutoUrgency.None, SkillAutoRules.HealUrgency(0.61f, defaults));
+            Assert.AreEqual(SkillAutoUrgency.Heal, SkillAutoRules.HealUrgency(0.6f, defaults));
+            Assert.AreEqual(SkillAutoUrgency.Heal, SkillAutoRules.HealUrgency(0.31f, defaults));
+            Assert.AreEqual(SkillAutoUrgency.CriticalHeal, SkillAutoRules.HealUrgency(0.3f, defaults));
+            Assert.AreEqual(SkillAutoUrgency.None, SkillAutoRules.HealUrgency(0f, null));
+
+            Assert.AreEqual(SkillAutoUrgency.None, SkillAutoRules.AreaOffenseUrgency(1, false, defaults));
+            Assert.AreEqual(SkillAutoUrgency.General, SkillAutoRules.AreaOffenseUrgency(3, false, defaults));
+            Assert.AreEqual(SkillAutoUrgency.HighValueOffense, SkillAutoRules.AreaOffenseUrgency(4, false, defaults));
+            Assert.AreEqual(SkillAutoUrgency.HighValueOffense, SkillAutoRules.AreaOffenseUrgency(1, true, defaults),
+                "staggering a boss is worth it below the area minimum");
+            Assert.AreEqual(SkillAutoUrgency.None, SkillAutoRules.AreaOffenseUrgency(9, true, null));
+            Assert.AreEqual(SkillAutoUrgency.General, SkillAutoRules.UnitOffenseUrgency(false));
+            Assert.AreEqual(SkillAutoUrgency.HighValueOffense, SkillAutoRules.UnitOffenseUrgency(true));
+
+            Assert.AreEqual(SkillAutoUrgency.None, SkillAutoRules.SupportUrgency(false, false, true), "not engaged");
+            Assert.AreEqual(SkillAutoUrgency.General, SkillAutoRules.SupportUrgency(true, false, false));
+            Assert.AreEqual(SkillAutoUrgency.None, SkillAutoRules.SupportUrgency(true, true, false), "morale-only skill waits for low morale");
+            Assert.AreEqual(SkillAutoUrgency.MoraleStabilize, SkillAutoRules.SupportUrgency(true, true, true));
+            Assert.AreEqual(SkillAutoUrgency.MoraleStabilize, SkillAutoRules.SupportUrgency(true, false, true));
+
+            SkillAutoSettings clamped = Track(SkillAutoSettings.Create(criticalHealBelowRatio: 2f, highValueEnemiesInArea: 0,
+                meleeEngageMaxHeight: -1f));
+            Assert.AreEqual(1f, clamped.CriticalHealBelowRatio);
+            Assert.AreEqual(1, clamped.HighValueEnemiesInArea);
+            Assert.AreEqual(0f, clamped.MeleeEngageMaxHeight);
+        }
+
+        [Test]
+        public void AutoRules_MostUrgent_HighestThenEarliestSlot_COMBAT18()
+        {
+            var order = new List<SkillAutoUrgency> { SkillAutoUrgency.General, SkillAutoUrgency.CriticalHeal, SkillAutoUrgency.Heal };
+            Assert.AreEqual(1, SkillAutoRules.MostUrgent(order), "slot order no longer wins over urgency");
+            var tie = new List<SkillAutoUrgency> { SkillAutoUrgency.None, SkillAutoUrgency.General, SkillAutoUrgency.General };
+            Assert.AreEqual(1, SkillAutoRules.MostUrgent(tie), "same tier: earlier slot");
+            Assert.AreEqual(-1, SkillAutoRules.MostUrgent(new List<SkillAutoUrgency> { SkillAutoUrgency.None }));
+            Assert.AreEqual(-1, SkillAutoRules.MostUrgent(null));
+        }
+
+        [Test]
+        public void AutoRules_EffectFlagsAndEngageHeight_COMBAT18()
+        {
+            SkillDefinition bash = Track(SkillDefinition.Create("bash", 1f, SkillTargetMode.TargetUnit, 2f, 0f,
+                SkillEffect.Damage(5f), SkillEffect.Stagger(50f)));
+            SkillDefinition rousing = Track(SkillDefinition.Create("rousing", 1f, SkillTargetMode.OwnSquad, 0f, 0f,
+                SkillEffect.MoraleGain(10f), SkillEffect.Buff(StatModifier.Percent(StatType.Attack, 0.1f), 5f)));
+            Assert.IsTrue(SkillAutoRules.HasStagger(bash));
+            Assert.IsFalse(SkillAutoRules.HasStagger(rousing));
+            Assert.IsTrue(SkillAutoRules.HasMoraleGain(rousing));
+            Assert.IsFalse(SkillAutoRules.HasMoraleGain(bash));
+            Assert.IsFalse(SkillAutoRules.HasStagger(null));
+
+            SkillAutoSettings defaults = Track(SkillAutoSettings.Create());
+            Assert.IsTrue(SkillAutoRules.WithinEngageHeight(true, 2.5f, defaults));
+            Assert.IsFalse(SkillAutoRules.WithinEngageHeight(true, -6f, defaults), "melee hero on a 6 m wall vs enemy below");
+            Assert.IsTrue(SkillAutoRules.WithinEngageHeight(false, -6f, defaults), "ranged heroes shoot down from the wall");
+            Assert.IsTrue(SkillAutoRules.WithinEngageHeight(true, -6f, Track(SkillAutoSettings.Create(meleeEngageMaxHeight: 0f))),
+                "0 turns the height check off");
+            Assert.IsFalse(SkillAutoRules.WithinEngageHeight(false, 0f, null));
+        }
+
+        [Test]
+        public void AutoRules_BestHealCenter_WeightsMissingHealth_COMBAT18()
+        {
+            // 가장 많이 다친 외톨이(0,0,0 · 20%)와, 덜 다친 세 명 무리(10,0,0 근처 · 50%씩). 반경 2.
+            var allies = new List<Vector3>
+            {
+                new Vector3(0f, 0f, 0f), new Vector3(10f, 0f, 0f), new Vector3(11f, 0f, 0f), new Vector3(10f, 0f, 1f),
+            };
+            var ratios = new List<float> { 0.2f, 0.5f, 0.5f, 0.5f };
+            int best = SkillAutoRules.BestHealCenter(allies, allies, null, ratios, 2f, allies[0], out float missing);
+            Assert.AreEqual(1, best, "three 50% allies (1.5 missing) beat one 20% ally (0.8 missing)");
+            Assert.AreEqual(1.5f, missing, 1e-4f);
+
+            // 무리가 덜 다치면 가장 많이 다친 외톨이를 덮는다.
+            var light = new List<float> { 0.2f, 0.9f, 0.9f, 0.9f };
+            Assert.AreEqual(0, SkillAutoRules.BestHealCenter(allies, allies, null, light, 2f, allies[0], out missing));
+            Assert.AreEqual(0.8f, missing, 1e-4f);
+
+            // 다치지 않은 아군은 무게가 0이다. 같으면 선호 지점(가장 많이 다친 아군)에 가까운 후보.
+            var twins = new List<Vector3> { new Vector3(-5f, 0f, 0f), new Vector3(5f, 0f, 0f) };
+            var even = new List<float> { 0.4f, 0.4f };
+            Assert.AreEqual(1, SkillAutoRules.BestHealCenter(twins, twins, null, even, 1f, twins[1], out _));
+            Assert.AreEqual(0, SkillAutoRules.BestHealCenter(twins, twins, null, even, 1f, twins[0], out _));
+
+            Assert.AreEqual(-1, SkillAutoRules.BestHealCenter(new List<Vector3>(), allies, null, ratios, 2f, Vector3.zero, out missing));
+            Assert.AreEqual(0f, missing);
+        }
     }
 }
