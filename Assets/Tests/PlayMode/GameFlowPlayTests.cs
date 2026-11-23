@@ -450,7 +450,7 @@ namespace ProjectNeo.Tests
             float height = gate.Placement.Definition.Height;
             Vector3 wallTop = gate.transform.position + new Vector3(-9f, height, 0f);
             Vector3 outside = gate.transform.position + new Vector3(0f, 0f, 12f);
-            Assert.IsTrue(NavMesh.SamplePosition(inside, out NavMeshHit from, 1f, NavMesh.AllAreas));
+            Assert.IsTrue(NavMesh.SamplePosition(inside, out NavMeshHit from, 1f, NavMesh.AllAreas), "안뜰 시작 자리 " + inside);
             Assert.IsTrue(NavMesh.SamplePosition(wallTop, out NavMeshHit top, 0.5f, NavMesh.AllAreas), "성벽 위가 걸을 수 있어야 한다.");
             Assert.IsTrue(NavMesh.SamplePosition(outside, out NavMeshHit field, 0.5f, NavMesh.AllAreas), "성 밖 들판이 있어야 한다.");
             Assert.Less(Mathf.Abs(field.position.y), 0.5f);
@@ -464,21 +464,23 @@ namespace ProjectNeo.Tests
             var player = Object.FindAnyObjectByType<PlayerInputController>(FindObjectsInactive.Include);
             Vector3 playerLocal = world.LocalPoint(player.transform.position);
             Assert.AreEqual(0f, playerLocal.y, 0.1f, "플레이어는 안뜰 바닥에서 시작한다.");
-            Assert.Greater(playerLocal.x, 25f * world.Grid.CellSize);
-            Assert.Less(playerLocal.x, 55f * world.Grid.CellSize);
-            Assert.Greater(playerLocal.z, 29f * world.Grid.CellSize);
-            Assert.Less(playerLocal.z, 59f * world.Grid.CellSize);
+            // 7.5m 칸의 성벽 고리 x 10~22, z 11~23(SIEGE-18) 안쪽 안뜰.
+            Assert.Greater(playerLocal.x, 11f * world.Grid.CellSize);
+            Assert.Less(playerLocal.x, 22f * world.Grid.CellSize);
+            Assert.Greater(playerLocal.z, 12f * world.Grid.CellSize);
+            Assert.Less(playerLocal.z, 23f * world.Grid.CellSize);
             var perimeter = world.Layout.Placements.Where(piece => piece.Definition.Kind != BuildPieceKind.Stairs).ToArray();
-            Assert.AreEqual(96f, (perimeter.Max(piece => piece.Cell.x + piece.Size.x) - perimeter.Min(piece => piece.Cell.x)) * world.Grid.CellSize);
-            Assert.AreEqual(96f, (perimeter.Max(piece => piece.Cell.y + piece.Size.y) - perimeter.Min(piece => piece.Cell.y)) * world.Grid.CellSize);
+            Assert.AreEqual(97.5f, (perimeter.Max(piece => piece.Cell.x + piece.Size.x) - perimeter.Min(piece => piece.Cell.x)) * world.Grid.CellSize);
+            Assert.AreEqual(97.5f, (perimeter.Max(piece => piece.Cell.y + piece.Size.y) - perimeter.Min(piece => piece.Cell.y)) * world.Grid.CellSize);
             Assert.AreEqual(120f, (world.Grid.Depth - perimeter.Max(piece => piece.Cell.y + piece.Size.y)) * world.Grid.CellSize);
             // 새 건물에 도달할 수 있고 건물 충돌체를 가로지르지 않는 안뜰 동선이다.
             foreach (string name in new[] { "Tavern", "Shop", "Training", "Smithy", "Construction" })
             {
                 var building = facilities.Find(name);
                 var bounds = building.GetComponent<BoxCollider>().bounds;
-                Vector3 entrance = new Vector3(bounds.center.x, 0f, bounds.min.z - 2f);
-                Assert.IsTrue(NavMesh.SamplePosition(entrance, out NavMeshHit door, 0.5f, NavMesh.AllAreas));
+                // 건물 남쪽 앞 1m. 훈련장과 남쪽 성벽 안쪽 면 사이는 2.5m라(SIEGE-18) 2m 앞은 성벽 쪽 길찾기 여백에 든다.
+                Vector3 entrance = new Vector3(bounds.center.x, 0f, bounds.min.z - 1f);
+                Assert.IsTrue(NavMesh.SamplePosition(entrance, out NavMeshHit door, 0.5f, NavMesh.AllAreas), name + " 입구 " + entrance);
                 NavMesh.CalculatePath(from.position, door.position, NavMesh.AllAreas, path);
                 Assert.AreEqual(NavMeshPathStatus.PathComplete, path.status, name + " 앞까지 갈 수 있어야 한다.");
             }

@@ -13,7 +13,7 @@ using UnityEngine.TestTools;
 
 namespace ProjectNeo.Tests
 {
-    /// <summary>게임 씬에서 층 쌓기를 확인한다. 2층 성벽과 2단 계단의 길, 미리보기 높이, 아래가 부서질 때 내려앉기.</summary>
+    /// <summary>게임 씬에서 층 쌓기를 확인한다. 땅 계단과 자동 계단으로 이어지는 2·3층 길, 미리보기 높이, 아래가 부서질 때 내려앉기.</summary>
     public class StackedConstructionPlayTests
     {
         static int cleanupCount;
@@ -56,26 +56,30 @@ namespace ProjectNeo.Tests
             yield return null;
         }
 
+        // 기본 성(GameFlowSetup.DefaultSeeds): 7.5m 칸, 성벽 고리 x 10~22, z 11~23, 성문 (16, 23), 사다리 줄 x 12·14·18·20.
+        static readonly Vector2Int NorthWestCorner = new Vector2Int(10, 23);
+
         PlacedStructure Lower(Vector2Int cell) => world.Structures.Single(piece => piece.Placement.Cell == cell && piece.Placement.Level == 0);
 
         static readonly int[] StairRotations = { 0, 1, 2, 3 };
 
+        // 성 밖 북서쪽 들판의 빈 칸(성벽 고리 x 10~22, z 11~23 바깥, 사다리 줄과 떨어진 곳).
+        static readonly Vector2Int OpenFieldCell = new Vector2Int(5, 31);
+
         [UnityTest]
-        public IEnumerator OneCellStairs_PlayerAndUnitAscendAndDescendTwoTiers(
+        public IEnumerator OneCellGroundStairs_PlayerAndUnitAscendAndDescend(
             [ValueSource(nameof(StairRotations))] int rotation)
         {
             Assert.AreEqual(Vector2Int.one, stairs.Footprint);
-            Assert.AreEqual(3f, stairs.Height);
-            var cell = new Vector2Int(32, 45);
+            Assert.AreEqual(wall.Height, stairs.Height, "계단 한 단이 성벽 한 층(5m)을 오른다.");
+            var cell = OpenFieldCell;
             Vector2Int direction = BuildLayout.Landings(Vector2Int.one, cell, rotation).Single() - cell;
             Assert.IsTrue(world.TryPlace(stairs, cell, rotation, out var groundStair));
-            Assert.IsTrue(world.TryPlace(wall, cell + direction, 0, out _));
-            Assert.IsTrue(world.TryPlace(wall, cell + direction * 2, 0, out _));
-            Assert.IsTrue(world.TryPlace(stairs, cell + direction * 2, rotation, out var upperStair));
-            Assert.IsTrue(world.TryPlace(wall, cell + direction * 3, 0, out _));
-            Assert.IsTrue(world.TryPlace(wall, cell + direction * 3, 0, out var upperWall));
-            Assert.IsTrue(world.Layout.HasLanding(upperStair.Placement));
-            Assert.AreEqual(PlacementIssue.Occupied, world.CheckPlacement(wall, cell, 0));
+            Assert.IsTrue(world.TryPlace(wall, cell + direction, 0, out var upperWall));
+            Assert.IsTrue(world.Layout.HasLanding(groundStair.Placement));
+            Assert.AreEqual(PlacementIssue.Occupied, world.CheckPlacement(wall, cell, 0), "계단 위에는 쌓지 않는다.");
+            Assert.AreEqual(PlacementIssue.StairsGroundOnly, world.CheckPlacement(stairs, cell + direction, rotation),
+                "Game 격자에서 계단은 땅 위에만 놓는다(SIEGE-27).");
             yield return WaitForNavigation();
 
             Vector3 ground = world.WorldCenter(wall, cell - direction, 0);
@@ -131,7 +135,7 @@ namespace ProjectNeo.Tests
         [UnityTest]
         public IEnumerator 적층_성벽은_맨_위부터_철거하고_점유와_길찾기를_갱신한다()
         {
-            var cell = new Vector2Int(24, 59);
+            var cell = NorthWestCorner;
             PlacedStructure lower = Lower(cell);
             Assert.IsTrue(world.TryPlace(wall, cell, 0, out PlacedStructure upper));
             yield return WaitForNavigation();
@@ -193,20 +197,16 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
-        public IEnumerator 성문_위에_성벽을_설치하고_성문을_부수면_아치와_위_성벽이_유지되고_아래_통로가_열린다()
+        public IEnumerator 성문_위_성벽은_성문을_부숴도_아치와_함께_유지되고_아래_통로가_열린다()
         {
             var player = Object.FindAnyObjectByType<ProjectNeo.Characters.PlayerInputController>();
             Assert.AreEqual(0f, world.LocalPoint(player.transform.position).y, 0.1f, "플레이어는 성문 위 대신 안뜰에서 시작한다.");
             PlacedStructure gate = world.Structures.Single(piece => piece.Placement.Definition.Kind == BuildPieceKind.Gate);
             Vector2Int cell = gate.Placement.Cell;
-            var controller = Object.FindAnyObjectByType<PlacementController>(FindObjectsInactive.Include);
-            controller.Select(wall);
-            controller.UpdatePreview(world.transform.TransformPoint(world.Layout.Center(cell, Vector2Int.one)));
-            Assert.AreEqual(PlacementIssue.None, controller.Issue);
-            Assert.AreEqual(1, controller.PreviewLevel);
-            Assert.AreEqual(gate.Placement.Definition.Height, controller.PreviewElevation, 0.001f);
-            Assert.IsTrue(controller.Confirm());
+            // 기본 성의 성문은 고정 성벽 한 층을 얹은 2층 문루다(SIEGE-18).
             PlacedStructure upper = world.Structures.Single(piece => piece.Placement.Cell == cell && piece.Placement.Level == 1);
+            Assert.AreEqual(BuildPieceKind.Wall, upper.Placement.Definition.Kind);
+            Assert.IsTrue(upper.Placement.IsFixed);
             float groundY = gate.transform.position.y;
             Assert.AreEqual(groundY + gate.Placement.Definition.Height, upper.transform.position.y, 0.001f);
             yield return WaitForNavigation();
@@ -237,46 +237,52 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
-        public IEnumerator 이층_성벽과_이단_계단을_놓으면_안뜰에서_이층_위까지_길이_이어진다()
+        public IEnumerator 성벽을_2층과_3층으로_올리면_안뜰에서_자동_계단으로_맨_위까지_길이_이어진다()
         {
-            // 북쪽 성벽의 서쪽 모서리 (24,59)에 2층을 올리고, (25,59) 위에 서쪽으로 오르는 1칸 계단을 놓는다.
-            // 땅의 계단은 (27,59) 윗면으로 올라오고, (26,59)의 평평한 성벽을 지나 2단 계단에 닿는다.
-            var corner = new Vector2Int(24, 59);
+            // 서쪽 성벽 가운데 칸을 올린다. 땅 계단은 북쪽 성벽 (13,22)에만 있으므로, 1층 통로를 따라 와서
+            // 1↔2층은 자동 바깥 계단으로, 3층은 계단실로 오른다(SIEGE-27).
+            var cell = new Vector2Int(10, 17);
             var controller = Object.FindAnyObjectByType<PlacementController>(FindObjectsInactive.Include);
             controller.Select(wall);
-            controller.UpdatePreview(world.WorldCenter(wall, corner, 0));
+            controller.UpdatePreview(world.WorldCenter(wall, cell, 0));
             Assert.AreEqual(PlacementIssue.None, controller.Issue);
             Assert.AreEqual(1, controller.PreviewLevel);
             Assert.AreEqual(wall.Height, controller.PreviewElevation, 0.001f);
             Assert.IsTrue(controller.Confirm());
             Assert.IsTrue(GameSession.Flow.Run.State.TryWait(), "놓은 조각을 완성해 위에 쌓을 수 있게 한다(SIEGE-08).");
-            PlacedStructure upperWall = world.Structures.Single(piece => piece.Placement.Cell == corner && piece.Placement.Level == 1);
-            Assert.AreEqual(Lower(corner).transform.position.y + wall.Height, upperWall.transform.position.y, 0.001f);
-
-            Assert.IsTrue(world.TryPlace(stairs, new Vector2Int(25, 59), 3, out PlacedStructure upperStairs));
-            Assert.AreEqual(1, upperStairs.Placement.Level);
-            Assert.IsTrue(world.Layout.HasLanding(upperStairs.Placement));
+            PlacedStructure second = world.Structures.Single(piece => piece.Placement.Cell == cell && piece.Placement.Level == 1);
+            Assert.AreEqual(Lower(cell).transform.position.y + wall.Height, second.transform.position.y, 0.001f);
             yield return WaitForNavigation();
 
             Vector3 start = Object.FindAnyObjectByType<SquadCommandCenter>().Squads[0].Members[0].transform.position;
-            Vector3 secondFloor = upperWall.transform.position + Vector3.up * wall.Height;
             Assert.IsTrue(NavMesh.SamplePosition(start, out NavMeshHit from, 1f, NavMesh.AllAreas));
-            Assert.IsTrue(NavMesh.SamplePosition(secondFloor, out NavMeshHit top, 0.5f, NavMesh.AllAreas), "2층 윗면이 걸을 수 있어야 한다.");
-            Assert.AreEqual(secondFloor.y, top.position.y, 0.5f);
-            var path = new NavMeshPath();
-            NavMesh.CalculatePath(from.position, top.position, NavMesh.AllAreas, path);
-            Assert.AreEqual(NavMeshPathStatus.PathComplete, path.status, "땅 계단과 2단 계단을 이어 2층에 닿아야 한다.");
+            AssertReachable(from.position, second, "2층");
 
-            // 최대 3층까지만 쌓인다.
-            Assert.IsTrue(world.TryPlace(wall, corner, 0, out _));
-            Assert.AreEqual(PlacementIssue.Occupied, world.CheckPlacement(wall, corner, 0));
+            Assert.IsTrue(world.TryPlace(wall, cell, 0, out PlacedStructure third));
+            Assert.AreEqual(2, third.Placement.Level);
+            yield return WaitForNavigation();
+            AssertReachable(from.position, third, "3층");
+
+            // 성벽은 3층(15m)까지만 쌓인다(Q-59).
+            Assert.AreEqual(PlacementIssue.StoreyCap, world.CheckPlacement(wall, cell, 0));
+        }
+
+        void AssertReachable(Vector3 from, PlacedStructure piece, string label)
+        {
+            Vector3 floor = piece.transform.position + Vector3.up * piece.Placement.Definition.Height;
+            Assert.IsTrue(NavMesh.SamplePosition(floor, out NavMeshHit top, 1f, NavMesh.AllAreas), label + " 윗면이 걸을 수 있어야 한다.");
+            Assert.AreEqual(floor.y, top.position.y, 0.5f, label);
+            var path = new NavMeshPath();
+            NavMesh.CalculatePath(from, top.position, NavMesh.AllAreas, path);
+            Assert.AreEqual(NavMeshPathStatus.PathComplete, path.status, "안뜰에서 땅 계단과 자동 계단을 이어 " + label + "에 닿아야 한다.");
         }
 
         [UnityTest]
-        public IEnumerator 아래_보루가_부서지면_위_보루와_그_위의_무기가_한_층_내려앉는다()
+        public IEnumerator 아래_보루가_부서지면_위_보루와_그_위의_무기가_함께_무너진다()
         {
             // 2층 성벽 앞에 2층 보루를 쌓는다(SIEGE-11: 쌓은 층도 그 층의 성벽과 맞닿아야 하고, 무기는 보루에만 놓는다).
-            var wallCell = new Vector2Int(45, 59);
+            // 사다리 줄(x 12·14·18·20)과 성문을 피한 북쪽 성벽 칸.
+            var wallCell = new Vector2Int(11, 23);
             Lower(wallCell);
             Assert.IsTrue(world.TryPlace(wall, wallCell, 0, out PlacedStructure upperWall), "2층 성벽: " + world.CheckPlacement(wall, wallCell, 0));
             BuildPieceDefinition bastion = BastionTestSupport.Definition(SceneManager.GetActiveScene());
@@ -290,29 +296,17 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(MountIssue.Occupied, world.CheckMount(cannon, lower, "top"), "덮인 보루에는 무기를 놓을 수 없다.");
             Assert.IsTrue(world.TryMount(cannon, upper, "top", out PlacedSiegeWeapon weapon), "위 보루 무기: " + world.CheckMount(cannon, upper, "top"));
             Assert.AreEqual(PlacementIssue.Occupied, world.CheckPlacement(bastion, cell, 0), "무기가 놓인 보루 위에는 쌓을 수 없다.");
-            float groundY = lower.transform.position.y;
-            float weaponHeight = weapon.transform.position.y - upper.transform.position.y;
-            upper.ReceiveDamage(30f);
-            float upperHealth = upper.Health.Current;
             yield return WaitForNavigation();
 
+            // Game 격자는 골짜기를 막으므로(SIEGE-14) 위층이 한 층 내려앉지 않고 그 칸의 위층이 함께 무너진다.
             lower.ReceiveDamage(lower.Health.Current);
-            Assert.AreEqual(0, upper.Placement.Level);
-            Assert.AreEqual(groundY, upper.transform.position.y, 0.001f);
-            Assert.AreSame(upper.Placement, world.Layout.At(cell));
-            Assert.AreEqual(upperHealth, upper.Health.Current, "내려앉아도 체력은 그대로다.");
-            Assert.IsTrue(world.Weapons.Contains(weapon), "위에 놓인 무기는 조각과 함께 내려온다.");
-            Assert.AreEqual(groundY + weaponHeight, weapon.transform.position.y, 0.001f);
-            Assert.AreEqual(1, world.Structures.Count(piece => piece.Placement.Cell == cell));
+            Assert.IsFalse(world.Structures.Contains(upper), "위 보루도 함께 무너진다.");
+            Assert.IsFalse(world.Weapons.Contains(weapon), "위에 놓인 무기도 함께 없어진다.");
+            Assert.IsNull(world.Layout.Top(cell));
+            Assert.AreEqual(0, world.Structures.Count(piece => piece.Placement.Cell == cell));
+            Assert.AreEqual(1, upperWall.Placement.Level, "옆 2층 성벽은 그대로다.");
             yield return WaitForNavigation();
-
-            Vector3 newTop = upper.transform.position + Vector3.up * bastion.Height;
-            // 옆 성벽이 아직 2층이면 내려앉은 보루 윗면은 통로와 끊긴 작은 섬이라 길찾기 메시에 남지 않는다.
-            // 위 성벽도 부서져 높이가 같아지면 보루 윗면이 통로와 이어져 다시 길이 된다.
-            upperWall.ReceiveDamage(upperWall.Health.Current);
-            yield return WaitForNavigation();
-            Assert.IsTrue(NavMesh.SamplePosition(newTop, out NavMeshHit hit, 0.5f, NavMesh.AllAreas), "내려앉은 보루 윗면 길찾기");
-            Assert.AreEqual(newTop.y, hit.position.y, 0.5f, "내려앉은 보루 윗면이 다시 길이 된다.");
+            Assert.AreEqual(PlacementIssue.None, world.CheckPlacement(bastion, cell, 0), "무너진 보루 자리에 다시 지을 수 있다.");
         }
     }
 }
