@@ -1,9 +1,9 @@
 ---
 id: SIEGE-19
 title: Castle Kit Dressing in the Game Scene
-status: Waiting for Prerequisite
+status: In Progress
 assignee: youngho
-branch:
+branch: feature/siege-19
 area: SIEGE
 depends_on: [SIEGE-18]
 created: 2026-11-23
