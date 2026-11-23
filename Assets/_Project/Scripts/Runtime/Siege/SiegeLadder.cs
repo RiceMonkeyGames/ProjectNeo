@@ -33,6 +33,7 @@ namespace ProjectNeo.Siege
         public ConstructionWorld World => world;
         public CharacterActor Occupant => traffic.Occupant;
         public IReadOnlyList<CharacterActor> Waiting => traffic.Waiting;
+        public IReadOnlyList<CharacterActor> Approaching => traffic.Approaching;
         InputAction push;
         float wallHeight = 3f;
         int supportId;
@@ -234,6 +235,16 @@ namespace ProjectNeo.Siege
             return false;
         }
 
+        public void Reserve(CharacterActor actor)
+        {
+            if (Alive(actor)) traffic.Reserve(actor);
+        }
+
+        public void Unreserve(CharacterActor actor) => traffic.Unreserve(actor);
+
+        /// <summary>이 사다리를 점유·대기·접근 예약 중인 인원(<paramref name="actor"/> 본인 제외, BUG-ai-core-defects).</summary>
+        public int PlannedCrowdExcluding(CharacterActor actor) => traffic.PlannedLoad(actor);
+
         public void Leave(CharacterActor actor)
         {
             bool occupied = traffic.Occupant == actor;
@@ -267,6 +278,10 @@ namespace ProjectNeo.Siege
 
         void CleanTraffic()
         {
+            removedRequests.Clear();
+            foreach (var actor in traffic.Approaching)
+                if (!Alive(actor)) removedRequests.Add(actor);
+            foreach (var actor in removedRequests) traffic.Unreserve(actor);
             removedRequests.Clear();
             foreach (var actor in traffic.Waiting)
                 if (!Alive(actor) || (!IsNear(actor, false) && !IsNear(actor, true))) removedRequests.Add(actor);
