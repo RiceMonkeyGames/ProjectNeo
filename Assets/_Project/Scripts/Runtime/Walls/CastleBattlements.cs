@@ -18,6 +18,8 @@ namespace ProjectNeo.Walls
         [SerializeField] ConstructionWorld world;
         [SerializeField] BattlementSettings settings;
         [SerializeField] BattlementStyle style = BattlementStyle.Parapet;
+        // false면 상자 외형을 만들지 않고 충돌체·엄폐만 둔다. Game은 성 킷 흉벽이 외형을 맡는다(SIEGE-19, 사용자 결정 2026-11-23).
+        [SerializeField] bool showVisuals = true;
 
         sealed class Built
         {
@@ -41,6 +43,13 @@ namespace ProjectNeo.Walls
         bool dirty = true;
 
         public BattlementStyle Style => style;
+
+        /// <summary>상자 외형을 보일지. 끄면 충돌체·엄폐 규칙은 그대로이고 외형만 없다(SIEGE-19). 바꾸면 다시 세운다.</summary>
+        public bool ShowVisuals
+        {
+            get => showVisuals;
+            set { if (showVisuals == value) return; showVisuals = value; dirty = true; }
+        }
         public BattlementSettings Settings => settings;
         /// <summary>지금 성가퀴가 서 있는 조각 수(검증용).</summary>
         public int BuiltCount
@@ -317,6 +326,7 @@ namespace ProjectNeo.Walls
             if (any == 0) return 0;
             hash = hash * 31 + (int)style;
             hash = hash * 31 + GunPortFaces(placement);
+            hash = hash * 31 + (showVisuals ? 1 : 0);
             return hash == 0 ? 1 : hash;
         }
 
@@ -400,6 +410,7 @@ namespace ProjectNeo.Walls
                 dimensions.y / Mathf.Max(1e-4f, lossy.y), dimensions.z / Mathf.Max(1e-4f, lossy.z));
             part.AddComponent<BoxCollider>();
             part.AddComponent<ShotCover>().Configure(CombatTeam.Allied);
+            if (!showVisuals) return;
 
             var visual = new GameObject("Visual");
             visual.transform.SetParent(part.transform, false);

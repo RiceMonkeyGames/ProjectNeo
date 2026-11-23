@@ -7182,6 +7182,8 @@ GameObject:
   - component: {fileID: 340332242}
   - component: {fileID: 340332244}
   - component: {fileID: 340332245}
+  - component: {fileID: 340332246}
+  - component: {fileID: 340332247}
   m_Layer: 0
   m_Name: ConstructionWorld
   m_TagString: Untagged
@@ -7446,6 +7448,7 @@ MonoBehaviour:
   world: {fileID: 340332242}
   settings: {fileID: 11400000, guid: 2fc676d28649318488e42f87bea20ae5, type: 2}
   style: 1
+  showVisuals: 0
 --- !u!114 &340332245
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7460,6 +7463,40 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Walls.GateMachicolations
   world: {fileID: 340332242}
   settings: {fileID: 11400000, guid: cadf752613a51c94685c6af8c751af47, type: 2}
+--- !u!114 &340332246
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 340332241}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6de048c64583602479cd3004cfdec628, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Walls.CastleKitDresser
+  world: {fileID: 340332242}
+  settings: {fileID: 11400000, guid: 75a9e464446dc0e40a4c288ae3f05b71, type: 2}
+  portcullisRaised: 1
+  gateMotionSeconds: 1.5
+  portcullisLift: 4.6
+  raisedPortcullisFraction: 0.18
+  openDoorAngle: 100
+  look: 0
+  battlementColliders: 0
+--- !u!114 &340332247
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 340332241}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f90e2b92c6191fc44b7a5ee58cce644c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Flow.GameDevKeys
+  goldStep: 1000
 --- !u!1 &344669065
 GameObject:
   m_ObjectHideFlags: 0

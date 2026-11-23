@@ -83,6 +83,8 @@ namespace ProjectNeo.Editor
             (CastleKitPiece.CornerStairsOpen, "SM_Bld_Stairs_Wood_Corner_01", Body.None),
             // 7.5m 칸 짜맞춤(SIEGE-35): 계단 방·망루 방 벽과 문 양옆의 반 모듈 벽판(조각 상자 대신 충돌을 맡는다).
             (CastleKitPiece.RoomPanelHalf, "SM_Bld_Castle_Wall_Cut_01", Body.Solid),
+            // 성 바깥 모서리 내닫이 망루(SIEGE-19): 외형 전용.
+            (CastleKitPiece.CornerTurret, "SM_Bld_Castle_Wall_Tower_M_01", Body.None),
         };
         const string KeysHint = "시험 키  P: 쇠창살 올림/내림 · O: 성문 열기/닫기 · B: 성문 부수기/고치기 · K: 조준한 성벽·계단·망루 무너뜨리기";
         // 7.5m 칸 계단 방(SIEGE-35, 모듈 기준 m): 층참을 넓히고(꺾는 곳 1m → 2m) 계단 한 줄을 모델 폭 그대로 둔다(가운데 통로 약 2.6m).
@@ -269,12 +271,8 @@ namespace ProjectNeo.Editor
 
         static void CreateKit()
         {
-            var converted = new Dictionary<Material, Material>();
-            // 킷 프리팹은 5m·7.5m 시험 씬이 함께 쓰므로 폴더를 지우지 않고 같은 경로에 덮어쓴다(GUID가 유지돼 다른 씬 참조가 끊기지 않는다).
-            CombatPrototypeSetup.EnsureFolder(KitFolder);
             var kit = Replace(CastleKitSettings.Create(), Data + "/CastleKit.asset");
-            foreach ((CastleKitPiece piece, string model, Body body) in Kit)
-                kit.SetPrefab(piece, KitCopy(model, piece.ToString(), body, converted));
+            SaveKitPrefabs(kit);
             if (Cell > Storey)
             {
                 var serializedKit = new SerializedObject(kit);
@@ -282,6 +280,19 @@ namespace ProjectNeo.Editor
                 serializedKit.FindProperty("roomFlightWidth").floatValue = Grid75FlightWidth;
                 serializedKit.ApplyModifiedPropertiesWithoutUndo();
             }
+            EditorUtility.SetDirty(kit);
+        }
+
+        /// <summary>
+        /// 킷 조각 프리팹(<c>Prefabs/CastleKit</c>)을 모두 다시 만들어 <paramref name="kit"/>에 넣는다. 5m·7.5m 시험 씬과 Game이 함께 쓰므로
+        /// 폴더를 지우지 않고 같은 경로에 덮어쓴다(GUID가 유지돼 다른 씬 참조가 끊기지 않는다). Game 킷 설정(SIEGE-19)도 쓴다.
+        /// </summary>
+        internal static void SaveKitPrefabs(CastleKitSettings kit)
+        {
+            var converted = new Dictionary<Material, Material>();
+            CombatPrototypeSetup.EnsureFolder(KitFolder);
+            foreach ((CastleKitPiece piece, string model, Body body) in Kit)
+                kit.SetPrefab(piece, KitCopy(model, piece.ToString(), body, converted));
             EditorUtility.SetDirty(kit);
         }
 
@@ -442,9 +453,23 @@ namespace ProjectNeo.Editor
             finally { Object.DestroyImmediate(root); }
         }
 
+        /// <summary>
+        /// 같은 종류의 에셋이 이미 있으면 그 자리에서 내용만 바꿔(GUID 유지) 그 에셋을 돌려준다. 없으면 새로 만든다.
+        /// 지우고 다시 만들면 GUID가 바뀌어 저장 콘텐츠 목록(<c>RunContent.asset</c>) 등이 매번 바뀐다(SIEGE-19).
+        /// </summary>
         static T Replace<T>(T value, string path) where T : Object
         {
-            if (AssetDatabase.LoadAssetAtPath<Object>(path) != null) AssetDatabase.DeleteAsset(path);
+            Object existing = AssetDatabase.LoadAssetAtPath<Object>(path);
+            if (existing is T same && existing.GetType() == value.GetType())
+            {
+                string name = same.name;
+                EditorUtility.CopySerialized(value, same);
+                same.name = name;
+                EditorUtility.SetDirty(same);
+                Object.DestroyImmediate(value);
+                return same;
+            }
+            if (existing != null) AssetDatabase.DeleteAsset(path);
             AssetDatabase.CreateAsset(value, path);
             return value;
         }

@@ -1,9 +1,9 @@
 ---
 id: QA-castle-kit-tests
 title: Game Tests on the 5m Castle Grid
-status: Waiting for Prerequisite
+status: In Progress
 assignee: youngho
-branch:
+branch: feature/qa-castle-kit-tests
 area: QA
 depends_on: [SIEGE-18]
 created: 2026-11-23

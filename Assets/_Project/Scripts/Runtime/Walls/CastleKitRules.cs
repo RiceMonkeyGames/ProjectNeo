@@ -369,7 +369,33 @@ namespace ProjectNeo.Walls
                 FacePieces(CastleKitPiece.Battlement, CastleKitPiece.BattlementHalf, cell, face, size, top, result,
                     joints: caps, level: placement.Level);
             }
+            if (placement.Definition.Kind == BuildPieceKind.Wall) AddCornerTurrets(layout, grid, outside, placement, cell, size, top, result);
         }
+
+        /// <summary>내닫이 망루의 기준점이 성벽 윗면보다 낮은 거리(m, 모델 Wall_Tower_M_01: 몸통이 윗면 아래, 지붕이 윗면 위).</summary>
+        public const float CornerTurretDrop = 2.5f;
+
+        /// <summary>
+        /// 성 바깥 모서리(볼록)의 내닫이 망루(SIEGE-19, 사용자 결정 2026-11-23). 맨 윗층 성벽 칸의 이웃한 두 면이 모두 성 바깥을 보고
+        /// 그 층에 이어진 조각이 없으면, 두 면이 만나는 꼭짓점 윗부분에 하나 둔다. 층이 높아져도 맨 위에만 둔다. 외형 전용이다.
+        /// </summary>
+        static void AddCornerTurrets(BuildLayout layout, BuildGridDefinition grid, ICollection<Vector2Int> outside, BuildPlacement placement,
+            Vector2Int cell, float size, float top, List<CastleKitPlacement> result)
+        {
+            for (int face = 0; face < 4; face++)
+            {
+                int next = (face + 1) % 4;
+                Vector2Int a = BattlementRules.Directions[face], b = BattlementRules.Directions[next];
+                if (!OpenOutside(layout, grid, outside, cell + a, placement.Level) || !OpenOutside(layout, grid, outside, cell + b, placement.Level)) continue;
+                Vector2 corner = (new Vector2(cell.x + 0.5f, cell.y + 0.5f) + 0.5f * (Vector2)(a + b)) * size;
+                result.Add(new CastleKitPlacement(CastleKitPiece.CornerTurret, cell, new Vector3(corner.x, top - CornerTurretDrop, corner.y),
+                    FaceYaw(face)));
+            }
+        }
+
+        // 그 칸이 성 바깥이고 그 층에 조각이 없는지.
+        static bool OpenOutside(BuildLayout layout, BuildGridDefinition grid, ICollection<Vector2Int> outside, Vector2Int next, int level) =>
+            BattlementRules.IsOutside(grid, outside, next) && layout.At(next, level) == null;
 
         static float TopOf(BuildLayout layout, ICollection<int> unfinished, Vector2Int cell, out BuildPlacement top)
         {
