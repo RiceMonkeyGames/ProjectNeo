@@ -90,6 +90,7 @@ namespace ProjectNeo.Siege
             traffic.Clear();
             sharedRaiser = null;
             ClearAiPushHandles();
+            LadderDefenseDirector.Release(this);
         }
         void OnDestroy()
         {
@@ -129,6 +130,8 @@ namespace ProjectNeo.Siege
             traffic.Clear(); sharedRaiser = null;
             ClearAiPushHandles();
             crowd.Clear(); raiser = null; climber = null; supportId = 0; PlayerCanPush = false;
+            hostileAtTop = false;
+            LadderDefenseDirector.Release(this);
         }
 
         void ClearAiPushHandles()
@@ -336,8 +339,68 @@ namespace ProjectNeo.Siege
             if (!Alive(sharedRaiser) || !IsNear(sharedRaiser, false)) sharedRaiser = null;
             int pushers = 0; bool blocked = false;
             if (State.Phase == LadderPhase.Up) FindPushers(out pushers, out blocked);
+            hostileAtTop = blocked;
             State.Tick(Time.deltaTime, raiser != null || sharedRaiser != null, pushers, blocked);
             if (State.Phase == LadderPhase.Up) { raiser = null; sharedRaiser = null; }
+            LadderDefenseDirector.Tick(this);
+        }
+
+        // ── 성벽 위 사다리 방어(SIEGE-31) ─────────────────
+
+        // 지난 갱신에서 올라온 적이 밀기를 막고 있었는지.
+        bool hostileAtTop;
+
+        /// <summary>아군이 밀러 올 만한 사다리인지: 세워져 있고(넘어가는 중이 아님) 받치는 성벽이 있다.</summary>
+        public bool IsDefendable => isActiveAndEnabled && world != null && State != null
+            && State.Phase == LadderPhase.Up && !State.IsSettling && HasWall;
+
+        /// <summary>
+        /// 남는 수비병이 출구를 둘러쌀 때인지: 오르는 적이 사다리 높이의 기준 비율 이상 올라왔거나, 올라온 적이 밀기를 막고 있다.
+        /// </summary>
+        public bool NeedsChokepoint
+        {
+            get
+            {
+                CharacterActor occupant = traffic.Occupant;
+                bool hostileClimbing = Alive(occupant) && occupant.Team == CombatTeam.Hostile;
+                float fraction = hostileClimbing
+                    ? LadderDefenseRules.ClimbFraction(occupant.transform.position.y, BasePoint.y, EdgePoint.y) : 0f;
+                return LadderDefenseRules.NeedsChokepoint(hostileClimbing, fraction,
+                    settings.LadderChokepointClimbFraction, hostileAtTop);
+            }
+        }
+
+        /// <summary>배정 계산용 자리를 채운다. NavMesh 위 같은 높이에 있는 밀기 자리·길목 자리만 넣는다.</summary>
+        public void FillDefenseSite(LadderDefenseSite site)
+        {
+            Vector3 top = TopPoint;
+            Vector3 outwardWorld = OutwardWorld;
+            site.Reset(top, NeedsChokepoint);
+            for (int i = 0; i < settings.LadderDefenseMaxPushers; i++)
+            {
+                Vector3 spot = LadderDefenseRules.PushSpot(top, outwardWorld, i, settings.LadderPushSpotSpacing);
+                if (TrySampleWallTop(spot, out Vector3 sampled)
+                    && HoldDutyRules.IsNear(sampled, top, settings.LadderPushRadius, settings.LadderHeightTolerance))
+                    site.PushSpots.Add(sampled);
+            }
+            int slots = settings.LadderChokepointSlots;
+            for (int i = 0; i < slots; i++)
+            {
+                Vector3 slot = LadderDefenseRules.ChokepointSlot(top, outwardWorld, settings.LadderChokepointRadius, slots, i);
+                if (TrySampleWallTop(slot, out Vector3 sampled)) site.ChokeSpots.Add(sampled);
+            }
+        }
+
+        const float DefenseSpotSampleDistance = 0.75f;
+
+        static bool TrySampleWallTop(Vector3 point, out Vector3 sampled)
+        {
+            sampled = point;
+            if (!UnityEngine.AI.NavMesh.SamplePosition(point, out UnityEngine.AI.NavMeshHit hit, DefenseSpotSampleDistance,
+                    UnityEngine.AI.NavMesh.AllAreas)
+                || Mathf.Abs(hit.position.y - point.y) > DefenseSpotSampleDistance) return false;
+            sampled = hit.position;
+            return true;
         }
 
         void TickAiPushHandles(float deltaTime)
@@ -408,7 +471,15 @@ namespace ProjectNeo.Siege
                 if (!IsAtTop(actor, top, settings.LadderPushRadius)) continue;
                 PusherParts parts = PartsOf(actor);
                 if (parts.IsPlayer) continue;
-                if (parts.Ai == null || parts.Ai.Target != null || actor.IsAttacking || friendlyUse) continue;
+                if (parts.Ai == null || friendlyUse) continue;
+                // 성벽 아래처럼 닿지 않거나 먼 대상 때문에 밀기를 멈추지 않는다(SIEGE-31). 출구 둘레 적과 싸우거나 공격 중이면 빠진다.
+                CharacterActor aiTarget = parts.Ai.Target;
+                bool ranged = actor.Profile != null && actor.Profile.AttackKind == AttackKind.Projectile;
+                bool targetAtExit = aiTarget != null && HoldDutyRules.IsNear(aiTarget.transform.position, top,
+                    settings.LadderBlockRadius, settings.LadderHeightTolerance);
+                bool holding = parts.Ai.Directive == UnitDirective.Hold;
+                if (!LadderDefenseRules.CountsAsAiPusher(actor.IsAttacking, aiTarget != null, ranged, holding, targetAtExit))
+                    continue;
                 if (!aiPushHandles.TryGetValue(actor, out var handle))
                 {
                     handle = new LadderPushInterruptHandle(actor);
@@ -434,6 +505,8 @@ namespace ProjectNeo.Siege
 
         void OnToppled(bool hadClimber)
         {
+            hostileAtTop = false;
+            LadderDefenseDirector.Release(this);
             ReleaseOccupant(false);
             traffic.Clear(); sharedRaiser = null;
             raiser = null;

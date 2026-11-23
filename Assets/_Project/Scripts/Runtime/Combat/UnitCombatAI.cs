@@ -381,6 +381,7 @@ namespace ProjectNeo.Combat
         {
             agent.stoppingDistance = 0f;
             if (ContinueFallback()) return;
+            if (hasHoldDuty) { UpdateHoldDuty(); return; }
             bool chases = HoldChaseRadius > 0f;
             bool refreshed = false;
             // 기존 대상의 무효화는 즉시 처리하되, 대상이 없는 동안에도 탐색 주기를 지킨다.
@@ -455,6 +456,159 @@ namespace ProjectNeo.Combat
                 return;
             }
             if (refreshed || !agent.hasPath) agent.SetDestination(HoldPost);
+        }
+
+        // ── 중지 임무(SIEGE-31: 성벽 위 사다리 밀기·출구 길목) ─────────────────
+
+        HoldDuty holdDuty;
+        bool hasHoldDuty;
+        bool dutyReturning;
+        const float DutySampleDistance = 0.75f;
+        const float DutySamePlaceTolerance = 0.1f;
+
+        /// <summary>자리 대신 맡은 임무가 있는지(SIEGE-31).</summary>
+        public bool HasHoldDuty => hasHoldDuty;
+        /// <summary>지금 맡은 임무. <see cref="HasHoldDuty"/>가 false면 의미 없다.</summary>
+        public HoldDuty CurrentHoldDuty => holdDuty;
+
+        /// <summary>
+        /// 중지 중인 유닛에게 임무를 준다. 지킬 자리(<see cref="HoldPost"/>)는 바꾸지 않으므로 임무가 끝나면 그 자리로 돌아간다.
+        /// 임무 자리가 NavMesh 위에 없거나, 걸어서 닿지 않거나, 허용 하강 높이 밑으로 내려가는 길이면 거절한다.
+        /// 같은 자리의 임무를 다시 주면 길을 새로 찾지 않는다. 새 지시를 받거나 죽거나 꺼지면 임무는 사라진다.
+        /// </summary>
+        public bool TrySetHoldDuty(HoldDuty duty)
+        {
+            if (Directive != UnitDirective.Hold || actor.IsOnLadder || actor.Health == null || actor.Health.IsDead
+                || !agent.enabled || !agent.isOnNavMesh) return false;
+            if (hasHoldDuty && holdDuty.SamePlace(duty, DutySamePlaceTolerance)) return true;
+            var filter = new NavMeshQueryFilter { agentTypeID = agent.agentTypeID, areaMask = agent.areaMask };
+            if (!NavMesh.SamplePosition(duty.Point, out NavMeshHit hit, DutySampleDistance, filter)
+                || Mathf.Abs(hit.position.y - duty.Point.y) > DutySampleDistance) return false;
+            Scheduler.RecordPathQuery(Time.frameCount);
+            if (!agent.CalculatePath(hit.position, path) || path.status != NavMeshPathStatus.PathComplete) return false;
+            if (settings.HoldMaxDescent > 0f
+                && !HoldDescentRule.StaysAbove(path.corners, HoldPost.y - settings.HoldMaxDescent)) return false;
+            holdDuty = new HoldDuty(hit.position, duty.FacePoint, duty.Focus, duty.TargetRadius, duty.HeightTolerance);
+            hasHoldDuty = true;
+            ReleaseOpening();
+            if (!ReferenceEquals(Target, null) && !IsDutyTarget(Target)) Target = null;
+            retaliatingTarget = null;
+            returningToPost = false;
+            dutyReturning = true;
+            stall.Reset();
+            decisionRemaining = 0f;
+            agent.SetPath(path);
+            agent.isStopped = actor.IsAttacking;
+            return true;
+        }
+
+        /// <summary>임무를 끝낸다. 유닛은 평소 중지 행동으로 돌아가 자리로 돌아간다.</summary>
+        public void ClearHoldDuty()
+        {
+            if (!hasHoldDuty) return;
+            hasHoldDuty = false;
+            dutyReturning = false;
+            retaliatingTarget = null;
+            stall.Reset();
+            decisionRemaining = 0f;
+        }
+
+        bool IsDutyTarget(CharacterActor other) => hasHoldDuty && other != null && actor.IsEnemy(other)
+            && !other.IsOnLadder && CombatPhysics.CanTarget(actor, other) && holdDuty.Covers(other.transform.position);
+
+        // 임무 중 행동: 맡은 곳 둘레에 올라온 적만 상대하고, 없으면 임무 자리에 서서 맡은 곳을 바라본다.
+        // 그 밖의 적(성벽 아래, 멀리서 쏘는 적)은 대상으로 삼지 않는다.
+        void UpdateHoldDuty()
+        {
+            bool refreshed = false;
+            if (!ReferenceEquals(Target, null) && !IsDutyTarget(Target))
+            {
+                Target = null;
+                retaliatingTarget = null;
+                decisionRemaining = 0f;
+            }
+            if (decisionRemaining <= 0f)
+            {
+                decisionRemaining = NextDecisionInterval();
+                refreshed = true;
+                if (Target == null)
+                {
+                    Target = FindDutyTarget();
+                    if (Target != null) targetLockRemaining = settings.TargetSwitchCooldown;
+                }
+            }
+            if (Target != null && CanStrikeFromHere(Target))
+            {
+                agent.isStopped = true;
+                agent.updateRotation = false;
+                Face(Target);
+                if (actor.CanAttack(Target)) actor.TryAttack(Target);
+                dutyReturning = true;
+                return;
+            }
+            agent.updateRotation = true;
+            agent.isStopped = actor.IsAttacking;
+            if (Target != null)
+            {
+                stall.Reset();
+                if (refreshed)
+                {
+                    if (CanReachInHold(Target)) ApplyApproachPath(true);
+                    else Target = null;
+                }
+                if (Target != null) { dutyReturning = true; return; }
+            }
+            // 임무 자리로 가기. 평소 자리 돌아가기와 같은 여유 거리·막힘 기준을 쓴다.
+            Vector3 offset = holdDuty.Point - transform.position;
+            offset.y = 0f;
+            float away = offset.magnitude;
+            if (!dutyReturning && away > settings.HoldReturnDistance)
+            {
+                dutyReturning = true;
+                stall.Reset();
+            }
+            if (dutyReturning && (HoldDutyRules.HasArrived(transform.position, holdDuty.Point, settings.ArrivalDistance)
+                || HasArrivedAtPost(away)))
+                dutyReturning = false;
+            if (!dutyReturning)
+            {
+                if (agent.hasPath) agent.ResetPath();
+                agent.isStopped = true;
+                agent.updateRotation = false;
+                FacePoint(holdDuty.FacePoint);
+                return;
+            }
+            if (refreshed || !agent.hasPath) agent.SetDestination(holdDuty.Point);
+        }
+
+        // 맡은 곳 둘레의 적 중 가장 가까운 적. 지금 자리에서 닿거나 걸어서 닿는(허용 하강 높이 안) 적만 고른다.
+        CharacterActor FindDutyTarget()
+        {
+            topCandidates.Reset(CurrentCandidateLimit());
+            CombatSpatialIndex.QueryEnemies(actor.Team, holdDuty.Focus, holdDuty.TargetRadius, spatialCandidates);
+            for (int i = 0; i < spatialCandidates.Count; i++)
+            {
+                CharacterActor candidate = spatialCandidates[i];
+                if (!IsDutyTarget(candidate)) continue;
+                float distance = SqrDistanceTo(candidate);
+                if (distance >= topCandidates.WorstScore) continue;
+                topCandidates.TryAdd(candidate, distance);
+            }
+            for (int i = 0; i < topCandidates.Count; i++)
+            {
+                CharacterActor candidate = topCandidates[i];
+                if (CanStrikeFromHere(candidate) || CanReachInHold(candidate)) return candidate;
+            }
+            return null;
+        }
+
+        void FacePoint(Vector3 point)
+        {
+            Vector3 direction = point - transform.position;
+            direction.y = 0f;
+            if (direction.sqrMagnitude > 0.0001f)
+                transform.rotation = Quaternion.RotateTowards(transform.rotation,
+                    Quaternion.LookRotation(direction), settings.TurnSpeed * Time.deltaTime);
         }
 
         // ── 크레넬 자리 옮기기(COMBAT-17) ─────────────────
@@ -761,6 +915,8 @@ namespace ProjectNeo.Combat
         {
             fallback.Cancel();
             ReleaseOpening();
+            hasHoldDuty = false;
+            dutyReturning = false;
             meleeSlotBoard.Release(this);
             flowField.Stop();
             Target = null;
@@ -1241,6 +1397,8 @@ namespace ProjectNeo.Combat
             if (actor.Health == null || actor.Health.IsDead || actor.IsOnLadder) return;
             if (!agent.enabled || !agent.isOnNavMesh || Directive == UnitDirective.Move) return;
             if (!actor.IsEnemy(attacker) || !CombatPhysics.CanTarget(actor, attacker)) return;
+            // 임무 중에는 맡은 곳 둘레의 적이 아니면 반격하지 않는다(SIEGE-31: 성벽 아래 궁수에 맞아도 계속 민다).
+            if (hasHoldDuty && !IsDutyTarget(attacker)) return;
             if (attacker.Character != null && lodTier != AILodTier.Lod0)
             {
                 lodTier = AILodTier.Lod0;

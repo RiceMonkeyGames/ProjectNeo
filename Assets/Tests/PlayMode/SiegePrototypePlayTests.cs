@@ -1079,5 +1079,152 @@ namespace ProjectNeo.Tests
             while (!archer.IsArcherFiring && frames++ < 60) { defender.Health.RestoreFull(); yield return null; }
             Assert.IsTrue(archer.IsArcherFiring, "일어선 수비병을 다시 쏘지 않았다.");
         }
+
+        // ── SIEGE-31 성벽 위 사다리 방어 ─────────────────
+
+        // 근접 분대만 남기고(다른 유닛은 끄고 치운다) 근접 수비병을 주어진 성벽 칸 위에 중지시킨다.
+        UnitCombatAI[] HoldMeleeOnWall(params int[] cells)
+        {
+            var melee = center.Squads.SelectMany(squad => squad.Members)
+                .Where(member => member.Actor.Profile.AttackKind == AttackKind.Melee).ToArray();
+            foreach (var unit in center.Squads.SelectMany(squad => squad.Members).Except(melee))
+            {
+                unit.enabled = false;
+                unit.GetComponent<NavMeshAgent>().Warp(WallTop(0));
+            }
+            for (int i = 0; i < melee.Length; i++)
+            {
+                Vector3 post = WallTop(cells[i % cells.Length]) + Vector3.right * (0.9f * (i / cells.Length) - 0.9f);
+                Assert.IsTrue(melee[i].GetComponent<NavMeshAgent>().Warp(post));
+                melee[i].SetDirective(UnitDirective.Hold, post);
+            }
+            return melee;
+        }
+
+        static void RaiseLadder(SiegeLadder ladder)
+        {
+            ladder.State.Tick(0.1f, true, false, false);
+            ladder.State.Tick(ladder.Settings.LadderRaiseSeconds, true, false, false);
+            Assert.AreEqual(LadderPhase.Up, ladder.State.Phase);
+        }
+
+        static int CountRole(UnitCombatAI[] units, SiegeLadder ladder, LadderDutyRole role) => units.Count(unit =>
+            LadderDefenseDirector.TryGetDuty(unit, out SiegeLadder duty, out LadderDutyRole held) && duty == ladder && held == role);
+
+        [UnityTest]
+        public IEnumerator LadderDefense_HoldMeleeWalkToNearbyLadder_PushItDown_AndReturnToPosts()
+        {
+            yield return CloseWalls();
+            SiegeLadder ladder = ladders[1];
+            int x = ladder.Cell.x;
+            // 옆 칸(약 8m)은 감지 반경(12m) 안, 두 칸 옆(약 15m)은 밖이다.
+            UnitCombatAI[] melee = HoldMeleeOnWall(x + 1, x - 2);
+            UnitCombatAI[] near = melee.Where((_, i) => i % 2 == 0).ToArray();
+            UnitCombatAI[] far = melee.Where((_, i) => i % 2 == 1).ToArray();
+            yield return null;
+            RaiseLadder(ladder);
+
+            int frames = 0, maxPushers = 0;
+            bool farServed = false;
+            while (ladder.State.ToppleCount == 0 && frames++ < 450)
+            {
+                maxPushers = Mathf.Max(maxPushers, CountRole(near, ladder, LadderDutyRole.Push));
+                farServed |= far.Any(unit => unit.HasHoldDuty);
+                yield return null;
+            }
+            Assert.Greater(ladder.State.ToppleCount, 0, "옆 칸에서 중지한 근접 수비병이 사다리를 밀어 넘기지 못했다.");
+            Assert.AreEqual(Mathf.Min(3, near.Length), maxPushers, "가까운 순서로 최대 3명이 밀러 가야 한다.");
+            Assert.IsFalse(farServed, "감지 반경 밖에 자리가 있는 수비병은 사다리를 맡지 않는다.");
+            Assert.IsTrue(melee.All(unit => !unit.HasHoldDuty), "사다리가 쓰러지면 임무가 끝나야 한다.");
+
+            frames = 0;
+            while (frames++ < 300 && near.Any(unit => Flat(unit.transform.position - unit.HoldPost) > 1.2f))
+                yield return null;
+            Assert.IsTrue(near.All(unit => Flat(unit.transform.position - unit.HoldPost) <= 1.2f),
+                "임무가 끝난 수비병이 원래 자리로 돌아가지 않았다.");
+        }
+
+        [UnityTest]
+        public IEnumerator LadderDefense_HitFromEnemyBelowWall_DoesNotPullPusherOffTheLadder()
+        {
+            yield return CloseWalls();
+            SiegeLadder ladder = ladders[1];
+            UnitCombatAI[] melee = HoldMeleeOnWall(ladder.Cell.x + 1);
+            yield return null;
+            RaiseLadder(ladder);
+            CharacterActor archer = PlaceStillEnemy(SiegeAttackerRole.Archer, ladder.BasePoint + ladder.OutwardWorld * 4f);
+
+            int frames = 0;
+            UnitCombatAI pusher = null;
+            while (pusher == null && frames++ < 120)
+            {
+                pusher = melee.FirstOrDefault(unit => CountRole(new[] { unit }, ladder, LadderDutyRole.Push) == 1);
+                yield return null;
+            }
+            Assert.IsNotNull(pusher, "밀기 임무를 받은 수비병이 없다.");
+            pusher.Actor.ReceiveDamage(1f, archer);
+            yield return null;
+            Assert.IsNull(pusher.Target, "성벽 아래 궁수에게 맞아도 대상으로 삼지 않아야 한다.");
+            Assert.IsTrue(pusher.HasHoldDuty, "피격 때문에 사다리 임무를 놓았다.");
+
+            frames = 0;
+            while (ladder.State.ToppleCount == 0 && frames++ < 450)
+            {
+                pusher.Actor.Health.RestoreFull();
+                yield return null;
+            }
+            Assert.Greater(ladder.State.ToppleCount, 0, "성벽 아래 적이 있어도 사다리를 끝까지 밀어야 한다.");
+        }
+
+        [UnityTest]
+        public IEnumerator LadderDefense_EnemyAtTop_SurplusDefendersRingTheUpperExit()
+        {
+            yield return CloseWalls();
+            SiegeLadder ladder = ladders[1];
+            int x = ladder.Cell.x;
+            UnitCombatAI[] melee = HoldMeleeOnWall(x + 1, x - 1);
+            Assert.GreaterOrEqual(melee.Length, 5, "길목 확인에는 근접 수비병이 4명보다 많아야 한다.");
+            yield return null;
+            RaiseLadder(ladder);
+
+            // 밀기 임무부터 받게 한 뒤, 올라온 적을 위쪽 끝에 세워 밀기를 막는다.
+            int frames = 0;
+            while (CountRole(melee, ladder, LadderDutyRole.Push) == 0 && frames++ < 60) yield return null;
+            Assert.AreEqual(0, CountRole(melee, ladder, LadderDutyRole.Chokepoint), "오르는 적이 없을 때는 길목을 만들지 않는다.");
+            CharacterActor intruder = PlaceStillEnemy(SiegeAttackerRole.Ladder, ladder.TopPoint);
+
+            frames = 0;
+            while (CountRole(melee, ladder, LadderDutyRole.Chokepoint) == 0 && frames++ < 60)
+            {
+                intruder.Health.RestoreFull();
+                yield return null;
+            }
+            int choke = CountRole(melee, ladder, LadderDutyRole.Chokepoint);
+            Assert.AreEqual(Mathf.Min(5, melee.Length - 3), choke, "밀기 3명을 뺀 남는 수비병이 길목 자리(최대 5)를 맡아야 한다.");
+            Vector3 inward = -ladder.OutwardWorld;
+            foreach (UnitCombatAI unit in melee.Where(unit => CountRole(new[] { unit }, ladder, LadderDutyRole.Chokepoint) == 1))
+            {
+                Vector3 offset = unit.CurrentHoldDuty.Point - ladder.TopPoint;
+                offset.y = 0f;
+                Assert.That(offset.magnitude, Is.EqualTo(ladder.Settings.LadderChokepointRadius).Within(0.8f),
+                    "길목 자리는 출구 둘레 반원 위에 있어야 한다.");
+                Assert.GreaterOrEqual(Vector3.Dot(offset, inward), -0.8f, "길목 자리는 출구 안쪽에 있어야 한다.");
+            }
+
+            // 올라온 적이 사라지면 길목은 풀리고 수비병은 다시 민다.
+            intruder.gameObject.SetActive(false);
+            frames = 0;
+            while (CountRole(melee, ladder, LadderDutyRole.Chokepoint) > 0 && frames++ < 60) yield return null;
+            Assert.AreEqual(0, CountRole(melee, ladder, LadderDutyRole.Chokepoint), "막던 적이 없어졌는데 길목이 풀리지 않았다.");
+            frames = 0;
+            while (ladder.State.ToppleCount == 0 && frames++ < 450) yield return null;
+            Assert.Greater(ladder.State.ToppleCount, 0, "길목이 풀린 뒤 사다리를 밀어 넘기지 못했다.");
+        }
+
+        static float Flat(Vector3 offset)
+        {
+            offset.y = 0f;
+            return offset.magnitude;
+        }
     }
 }
