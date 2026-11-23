@@ -1,7 +1,14 @@
 param(
     [string]$OutPath = '',
     [switch]$NoOpen,
-    [switch]$NoHistory
+    [switch]$NoHistory,
+    [switch]$NoFetch,
+    [switch]$Serve,
+    [switch]$Static,
+    [switch]$ServeWorker,
+    [switch]$Foreground,
+    [int]$Port = 41735,
+    [int]$IdleMinutes = 60
 )
 
 $ErrorActionPreference = 'Stop'
@@ -23,43 +30,27 @@ function Parse-DependsOn {
     return $result.ToArray()
 }
 
-function Read-TaskBody {
-    param([string]$Path)
-    $allLines = @(Get-Content -LiteralPath $Path -Encoding UTF8)
-    if ($allLines.Count -eq 0) { return '' }
+function Extract-BodyFromLines {
+    param([string[]]$AllLines)
+    if (-not $AllLines -or $AllLines.Count -eq 0) { return '' }
     $startIdx = 0
-    if ($allLines[0].Trim() -eq '---') {
-        for ($i = 1; $i -lt $allLines.Count; $i++) {
-            if ($allLines[$i].Trim() -eq '---') {
+    if ($AllLines[0].Trim() -eq '---') {
+        for ($i = 1; $i -lt $AllLines.Count; $i++) {
+            if ($AllLines[$i].Trim() -eq '---') {
                 $startIdx = $i + 1
                 break
             }
         }
     }
-    if ($startIdx -ge $allLines.Count) { return '' }
-    return (($allLines[$startIdx..($allLines.Count - 1)]) -join "`n").Trim()
+    if ($startIdx -ge $AllLines.Count) { return '' }
+    return (($AllLines[$startIdx..($AllLines.Count - 1)]) -join "`n").Trim()
 }
 
-function Read-FirstLine {
-    param([string]$Path)
-    $sr = $null
-    try {
-        $sr = New-Object System.IO.StreamReader($Path, [System.Text.Encoding]::UTF8)
-        $line = $sr.ReadLine()
-        if ($null -eq $line) { return '' }
-        return $line.Trim()
-    } finally {
-        if ($sr) { $sr.Dispose() }
-    }
-}
-
-function Get-LegacyArchiveIds {
-    param([string]$Root)
+function Get-LegacyArchiveIdsFromText {
+    param([string]$Text)
     $set = New-Object System.Collections.Generic.HashSet[string] ([System.StringComparer]::OrdinalIgnoreCase)
-    $archivePath = Join-Path $Root 'Docs\archive\Backlog-Done.md'
-    if (-not (Test-Path -LiteralPath $archivePath -PathType Leaf)) { return $set }
-    $lines = Get-Content -LiteralPath $archivePath -Encoding UTF8
-    foreach ($ln in $lines) {
+    if (-not $Text) { return $set }
+    foreach ($ln in ($Text -split "`r?`n")) {
         if ($ln -match '^\|\s*`?([A-Za-z0-9-]+)`?\s*\|') {
             [void]$set.Add($Matches[1])
         }
@@ -67,67 +58,216 @@ function Get-LegacyArchiveIds {
     return $set
 }
 
-$root = Get-ProjectNeoRoot -FallbackDir (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
-Push-Location $root
-try {
-    if (-not $OutPath) {
-        $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) 'ProjectNeo'
-        $OutPath = Join-Path $tempDir 'backlog-board.html'
-    }
-    $outFull = [System.IO.Path]::GetFullPath($OutPath)
-    $outDir = Split-Path -Parent $outFull
-    if ($outDir -and -not (Test-Path -LiteralPath $outDir -PathType Container)) {
-        [void](New-Item -ItemType Directory -Path $outDir -Force)
-    }
-
-    $kstNow = Get-KstTimestamp
-    $today = (Get-Date).Date
-    $branchRes = Invoke-StdoutOnly -FilePath 'git' -Arguments @('branch', '--show-current')
-    $currentBranch = if ($branchRes.ExitCode -eq 0 -and $branchRes.StdOut) { $branchRes.StdOut.Trim() } else { 'DETACHED' }
-
-    $activeTasks = @(Get-ActiveBacklogTasks -Root $root)
-    $activeIdSet = New-Object System.Collections.Generic.HashSet[string] ([System.StringComparer]::OrdinalIgnoreCase)
-    foreach ($t in $activeTasks) {
-        if ($t.Id) { [void]$activeIdSet.Add($t.Id) }
+function Resolve-DevelopSource {
+    param(
+        [string]$Root,
+        [switch]$SkipFetch
+    )
+    $fetchStatus = 'skipped'
+    if (-not $SkipFetch) {
+        $fetchRes = Invoke-StdoutOnly -FilePath 'git' -Arguments @('-C', $Root, 'fetch', '--quiet', 'origin', 'develop')
+        if ($fetchRes.ExitCode -eq 0) {
+            $fetchStatus = 'ok'
+        } else {
+            $fetchStatus = 'offline'
+        }
     }
 
-    $historyIdSet = New-Object System.Collections.Generic.HashSet[string] ([System.StringComparer]::OrdinalIgnoreCase)
-    $historyItems = New-Object System.Collections.Generic.List[object]
-    $histRoot = Join-Path $root 'Docs\history'
-    if (Test-Path -LiteralPath $histRoot -PathType Container) {
-        $rootPrefix = $root.TrimEnd('\') + '\'
-        $histFiles = @(Get-ChildItem -LiteralPath $histRoot -Recurse -File -Filter '*.md' |
-            Where-Object { $_.Name -ine 'README.md' } |
-            Sort-Object Name)
-        foreach ($hf in $histFiles) {
-            $hid = [System.IO.Path]::GetFileNameWithoutExtension($hf.Name)
-            [void]$historyIdSet.Add($hid)
-            if (-not $NoHistory) {
-                $area = (Split-Path (Split-Path $hf.FullName -Parent) -Leaf).ToUpperInvariant()
-                $rel = ($hf.FullName.Substring($rootPrefix.Length) -replace '\\', '/')
-                $firstLine = Read-FirstLine -Path $hf.FullName
-                $hDate = ''
-                $hTitle = $firstLine -replace '^#+\s*', ''
-                if ($hTitle -match '^[^|]+\|\s*(\d{4}-\d{2}-\d{2})\s*\|\s*(.+)$') {
-                    $hDate = $Matches[1]
-                    $hTitle = $Matches[2].Trim()
-                }
-                [void]$historyItems.Add([PSCustomObject]@{
-                    id           = $hid
-                    area         = $area
-                    date         = $hDate
-                    title        = $hTitle
-                    relativePath = $rel
-                    fullPath     = ($hf.FullName -replace '\\', '/')
-                })
+    $candidates = @('origin/develop', 'develop', 'HEAD')
+    foreach ($ref in $candidates) {
+        $rev = Invoke-StdoutOnly -FilePath 'git' -Arguments @('-C', $Root, 'rev-parse', '--verify', '--short', $ref)
+        if ($rev.ExitCode -eq 0 -and $rev.StdOut) {
+            return [PSCustomObject]@{
+                Ref         = $ref
+                ShortSha    = $rev.StdOut.Trim()
+                FetchStatus = $fetchStatus
             }
         }
     }
 
-    $legacyDoneSet = Get-LegacyArchiveIds -Root $root
+    return [PSCustomObject]@{
+        Ref         = 'HEAD'
+        ShortSha    = 'unknown'
+        FetchStatus = $fetchStatus
+    }
+}
+
+function Read-GitBlobBatch {
+    param(
+        [string]$Root,
+        [string]$Ref,
+        [string[]]$Paths
+    )
+    $map = @{}
+    if (-not $Paths -or $Paths.Count -eq 0) { return $map }
+
+    $utf8 = New-Object System.Text.UTF8Encoding($false)
+    $chunkSize = 32
+    for ($offset = 0; $offset -lt $Paths.Count; $offset += $chunkSize) {
+        $end = [Math]::Min($offset + $chunkSize - 1, $Paths.Count - 1)
+        $chunk = @($Paths[$offset..$end])
+
+        $psi = New-Object System.Diagnostics.ProcessStartInfo
+        $psi.FileName = 'git'
+        $psi.Arguments = 'cat-file --batch'
+        $psi.WorkingDirectory = $Root
+        $psi.RedirectStandardInput = $true
+        $psi.RedirectStandardOutput = $true
+        $psi.RedirectStandardError = $true
+        $psi.UseShellExecute = $false
+        $psi.CreateNoWindow = $true
+
+        $proc = New-Object System.Diagnostics.Process
+        $proc.StartInfo = $psi
+        [void]$proc.Start()
+
+        $sb = New-Object System.Text.StringBuilder
+        foreach ($p in $chunk) {
+            [void]$sb.Append($Ref).Append(':').Append($p).Append("`n")
+        }
+        $inBytes = $utf8.GetBytes($sb.ToString())
+        $proc.StandardInput.BaseStream.Write($inBytes, 0, $inBytes.Length)
+        $proc.StandardInput.BaseStream.Flush()
+        $proc.StandardInput.Close()
+
+        $outStream = $proc.StandardOutput.BaseStream
+        foreach ($p in $chunk) {
+            $hdrBytes = New-Object System.Collections.Generic.List[byte]
+            while ($true) {
+                $b = $outStream.ReadByte()
+                if ($b -lt 0 -or $b -eq 10) { break }
+                if ($b -ne 13) { [void]$hdrBytes.Add([byte]$b) }
+            }
+            if ($hdrBytes.Count -eq 0) { continue }
+            $hdr = $utf8.GetString($hdrBytes.ToArray())
+            if ($hdr.EndsWith(' missing')) { continue }
+            $parts = $hdr -split ' '
+            if ($parts.Count -lt 3) { continue }
+            $size = 0
+            if (-not [int]::TryParse($parts[$parts.Count - 1], [ref]$size)) { continue }
+
+            $buf = New-Object byte[] $size
+            $readTotal = 0
+            while ($readTotal -lt $size) {
+                $n = $outStream.Read($buf, $readTotal, $size - $readTotal)
+                if ($n -le 0) { break }
+                $readTotal += $n
+            }
+            # Consume trailing LF written by git cat-file --batch
+            [void]$outStream.ReadByte()
+
+            $text = $utf8.GetString($buf, 0, $readTotal)
+            if ($text.Length -gt 0 -and [int]$text[0] -eq 0xFEFF) {
+                $text = $text.Substring(1)
+            }
+            $map[$p] = $text
+        }
+
+        $proc.WaitForExit()
+        $proc.Dispose()
+    }
+    return $map
+}
+
+function Build-BoardPayload {
+    param(
+        [string]$Root,
+        [switch]$SkipHistory,
+        [switch]$SkipFetch,
+        [bool]$LiveMode = $false
+    )
+    $kstNow = Get-KstTimestamp
+    $today = (Get-Date).Date
+
+    $localBranchRes = Invoke-StdoutOnly -FilePath 'git' -Arguments @('-C', $Root, 'branch', '--show-current')
+    $localBranch = if ($localBranchRes.ExitCode -eq 0 -and $localBranchRes.StdOut) { $localBranchRes.StdOut.Trim() } else { 'DETACHED' }
+
+    $src = Resolve-DevelopSource -Root $Root -SkipFetch:$SkipFetch
+    $targetRef = $src.Ref
+
+    $lsArgs = @('-C', $Root, '-c', 'core.quotepath=false', 'ls-tree', '-r', '--name-only', $targetRef, '--', 'Docs/backlog', 'Docs/history', 'Docs/archive/Backlog-Done.md')
+    $lsRes = Invoke-StdoutOnly -FilePath 'git' -Arguments $lsArgs
+    $allGitPaths = @()
+    if ($lsRes.ExitCode -eq 0 -and $lsRes.StdOut) {
+        $allGitPaths = @($lsRes.StdOut -split "`r?`n" | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+    }
+
+    $backlogPaths = @($allGitPaths | Where-Object {
+        $_ -match '^Docs/backlog/[^/]+\.md$' -and $_ -inotmatch '/README\.md$'
+    } | Sort-Object)
+
+    $historyPaths = @($allGitPaths | Where-Object {
+        $_ -match '^Docs/history/.+\.md$' -and $_ -inotmatch '/README\.md$'
+    } | Sort-Object)
+
+    $hasArchive = ($allGitPaths -contains 'Docs/archive/Backlog-Done.md')
+
+    $pathsToRead = New-Object System.Collections.Generic.List[string]
+    foreach ($p in $backlogPaths) { [void]$pathsToRead.Add($p) }
+    if (-not $SkipHistory) {
+        foreach ($p in $historyPaths) { [void]$pathsToRead.Add($p) }
+    }
+    if ($hasArchive) { [void]$pathsToRead.Add('Docs/archive/Backlog-Done.md') }
+
+    $blobs = Read-GitBlobBatch -Root $Root -Ref $targetRef -Paths ($pathsToRead.ToArray())
+
+    $activeRaw = New-Object System.Collections.Generic.List[object]
+    $activeIdSet = New-Object System.Collections.Generic.HashSet[string] ([System.StringComparer]::OrdinalIgnoreCase)
+
+    foreach ($rel in $backlogPaths) {
+        $content = if ($blobs.ContainsKey($rel)) { $blobs[$rel] } else { '' }
+        $lines = @($content -split "`r?`n")
+        $topLimit = [Math]::Min($lines.Count, 16)
+        $topLines = if ($topLimit -gt 0) { @($lines[0..($topLimit - 1)]) } else { @() }
+        $fullFsPath = Join-Path $Root ($rel -replace '/', '\')
+        $fm = Read-TaskFrontmatterFromLines -Lines $topLines -FilePath $fullFsPath -RelativePath $rel
+        if ($fm.Id) { [void]$activeIdSet.Add($fm.Id) }
+        [void]$activeRaw.Add([PSCustomObject]@{
+            Meta     = $fm
+            Body     = Extract-BodyFromLines -AllLines $lines
+            FullPath = ($fullFsPath -replace '\\', '/')
+        })
+    }
+
+    $historyIdSet = New-Object System.Collections.Generic.HashSet[string] ([System.StringComparer]::OrdinalIgnoreCase)
+    $historyItems = New-Object System.Collections.Generic.List[object]
+    foreach ($rel in $historyPaths) {
+        $fileName = $rel.Substring($rel.LastIndexOf('/') + 1)
+        $hid = [System.IO.Path]::GetFileNameWithoutExtension($fileName)
+        [void]$historyIdSet.Add($hid)
+        if (-not $SkipHistory) {
+            $segs = $rel -split '/'
+            $area = if ($segs.Count -ge 4) { $segs[$segs.Count - 2].ToUpperInvariant() } else { 'LEGACY' }
+            $content = if ($blobs.ContainsKey($rel)) { $blobs[$rel] } else { '' }
+            $firstLine = ''
+            if ($content) {
+                $nlIdx = $content.IndexOf("`n")
+                $firstLine = if ($nlIdx -ge 0) { $content.Substring(0, $nlIdx).Trim() } else { $content.Trim() }
+            }
+            $hDate = ''
+            $hTitle = $firstLine -replace '^#+\s*', ''
+            if ($hTitle -match '^[^|]+\|\s*(\d{4}-\d{2}-\d{2})\s*\|\s*(.+)$') {
+                $hDate = $Matches[1]
+                $hTitle = $Matches[2].Trim()
+            }
+            $fullFsPath = (Join-Path $Root ($rel -replace '/', '\')) -replace '\\', '/'
+            [void]$historyItems.Add([PSCustomObject]@{
+                id           = $hid
+                area         = $area
+                date         = $hDate
+                title        = $hTitle
+                relativePath = $rel
+                fullPath     = $fullFsPath
+            })
+        }
+    }
+
+    $archiveText = if ($blobs.ContainsKey('Docs/archive/Backlog-Done.md')) { $blobs['Docs/archive/Backlog-Done.md'] } else { '' }
+    $legacyDoneSet = Get-LegacyArchiveIdsFromText -Text $archiveText
 
     $taskItems = New-Object System.Collections.Generic.List[object]
-    foreach ($t in $activeTasks) {
+    foreach ($entry in $activeRaw) {
+        $t = $entry.Meta
         $depsRaw = @(Parse-DependsOn -Raw $t.DependsOn)
         $depsResolved = New-Object System.Collections.Generic.List[object]
         $hasActiveDep = $false
@@ -155,11 +295,6 @@ try {
             }
         }
 
-        $bodyText = ''
-        if ($t.FilePath -and (Test-Path -LiteralPath $t.FilePath -PathType Leaf)) {
-            $bodyText = Read-TaskBody -Path $t.FilePath
-        }
-
         [void]$taskItems.Add([PSCustomObject]@{
             id           = $t.Id
             title        = $t.Title
@@ -173,24 +308,29 @@ try {
             blockedByDep = $hasActiveDep
             valid        = $t.Valid
             relativePath = $t.RelativePath
-            fullPath     = ($t.FilePath -replace '\\', '/')
-            body         = $bodyText
+            fullPath     = $entry.FullPath
+            body         = $entry.Body
         })
     }
 
-    $payload = [PSCustomObject]@{
+    return [PSCustomObject]@{
         generatedAt   = $kstNow
-        currentBranch = $currentBranch
-        repoRoot      = ($root -replace '\\', '/')
+        sourceRef     = $src.Ref
+        sourceSha     = $src.ShortSha
+        fetchStatus   = $src.FetchStatus
+        localBranch   = $localBranch
+        currentBranch = $src.Ref
+        liveMode      = $LiveMode
+        repoRoot      = ($Root -replace '\\', '/')
         activeCount   = $taskItems.Count
         historyCount  = $historyItems.Count
         tasks         = @($taskItems.ToArray())
         history       = @($historyItems.ToArray())
     }
+}
 
-    $json = ($payload | ConvertTo-Json -Depth 6 -Compress) -replace '</', '<\/'
-
-    $htmlTemplate = @'
+function Get-BoardHtmlTemplate {
+    return @'
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -270,15 +410,14 @@ try {
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Custom subtle scrollbars */
   ::-webkit-scrollbar { width: 7px; height: 7px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; }
 
-  .app {
-    display: flex;
-    min-height: 100vh;
-  }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .spinning { animation: spin 0.75s linear infinite; }
+
+  .app { display: flex; min-height: 100vh; }
 
   /* Left Sidebar */
   .sidebar {
@@ -299,601 +438,252 @@ try {
     padding: 15px 14px 12px;
     border-bottom: 1px solid var(--border);
   }
-  .brand {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-  }
+  .brand { display: flex; align-items: center; gap: 9px; }
   .brand-logo {
-    width: 26px;
-    height: 26px;
-    border-radius: 7px;
+    width: 26px; height: 26px; border-radius: 7px;
     background: linear-gradient(135deg, var(--accent), var(--purple));
-    display: grid;
-    place-items: center;
-    color: #fff;
-    font-weight: 800;
-    font-size: 13px;
-    letter-spacing: -0.02em;
-    flex-shrink: 0;
+    display: grid; place-items: center; color: #fff;
+    font-weight: 800; font-size: 13px; letter-spacing: -0.02em; flex-shrink: 0;
   }
-  .brand-name {
-    font-size: 14px;
-    font-weight: 700;
-    letter-spacing: -0.015em;
-  }
+  .brand-name { font-size: 14px; font-weight: 700; letter-spacing: -0.015em; }
   .brand-sub {
-    font-size: 11px;
-    color: var(--muted);
-    font-family: var(--font-mono);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: 11px; color: var(--muted); font-family: var(--font-mono);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .sb-branch {
-    margin-top: 9px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 8px;
-    border-radius: 6px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--text-2);
-    overflow: hidden;
+    margin-top: 9px; display: flex; align-items: center; gap: 6px;
+    padding: 4px 8px; border-radius: 6px;
+    background: var(--surface); border: 1px solid var(--border);
+    font-family: var(--font-mono); font-size: 11px; color: var(--text-2); overflow: hidden;
   }
   .sb-branch span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-  .sb-scroll {
-    flex: 1;
-    overflow-y: auto;
-    padding: 10px 10px 14px;
+  .sb-local-note {
+    margin-top: 5px; font-family: var(--font-mono); font-size: 10.5px; color: var(--muted);
+    padding: 0 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
+
+  .sb-scroll { flex: 1; overflow-y: auto; padding: 10px 10px 14px; }
   .sb-section { margin-bottom: 16px; }
   .sb-section:last-child { margin-bottom: 0; }
   .sb-label {
-    font-size: 10.5px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--muted);
-    padding: 4px 8px 6px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--muted); padding: 4px 8px 6px;
+    display: flex; align-items: center; justify-content: space-between;
   }
   .sb-clear {
-    font-size: 10.5px;
-    color: var(--accent);
-    cursor: pointer;
-    text-transform: none;
-    letter-spacing: 0;
-    font-weight: 600;
+    font-size: 10.5px; color: var(--accent); cursor: pointer;
+    text-transform: none; letter-spacing: 0; font-weight: 600;
   }
   .sb-clear:hover { text-decoration: underline; }
 
   .nav-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    width: 100%;
-    padding: 6px 8px;
-    margin-bottom: 2px;
-    border: 1px solid transparent;
-    border-radius: var(--radius-sm);
-    background: transparent;
-    color: var(--text-2);
-    font: inherit;
-    font-size: 12.5px;
-    font-weight: 500;
-    text-align: left;
-    cursor: pointer;
-    transition: background 0.12s, color 0.12s, border-color 0.12s;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    width: 100%; padding: 6px 8px; margin-bottom: 2px;
+    border: 1px solid transparent; border-radius: var(--radius-sm);
+    background: transparent; color: var(--text-2);
+    font: inherit; font-size: 12.5px; font-weight: 500; text-align: left;
+    cursor: pointer; transition: background 0.12s, color 0.12s, border-color 0.12s;
   }
-  .nav-item:hover {
-    background: var(--surface-hover);
-    color: var(--text);
-  }
+  .nav-item:hover { background: var(--surface-hover); color: var(--text); }
   .nav-item.active {
-    background: var(--accent-soft);
-    border-color: rgba(110, 142, 251, 0.25);
-    color: var(--accent);
-    font-weight: 600;
+    background: var(--accent-soft); border-color: rgba(110, 142, 251, 0.25);
+    color: var(--accent); font-weight: 600;
   }
-  .nav-left {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-width: 0;
-  }
-  .nav-text {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
+  .nav-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .nav-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .nav-count {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--muted);
-    background: var(--surface-2);
-    padding: 1px 6px;
-    border-radius: 999px;
-    flex-shrink: 0;
+    font-family: var(--font-mono); font-size: 11px; color: var(--muted);
+    background: var(--surface-2); padding: 1px 6px; border-radius: 999px; flex-shrink: 0;
   }
-  .nav-item.active .nav-count {
-    background: rgba(110, 142, 251, 0.2);
-    color: var(--accent);
-  }
-  .nav-subcount {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    flex-shrink: 0;
-  }
+  .nav-item.active .nav-count { background: rgba(110, 142, 251, 0.2); color: var(--accent); }
+  .nav-subcount { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; }
   .inprog-pill {
-    font-family: var(--font-mono);
-    font-size: 10.5px;
-    font-weight: 600;
-    color: var(--accent);
-    background: var(--accent-soft);
-    padding: 1px 5px;
-    border-radius: 999px;
+    font-family: var(--font-mono); font-size: 10.5px; font-weight: 600;
+    color: var(--accent); background: var(--accent-soft); padding: 1px 5px; border-radius: 999px;
   }
 
-  .dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    display: inline-block;
-  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
   .avatar {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    display: inline-grid;
-    place-items: center;
-    font-size: 10px;
-    font-weight: 700;
-    flex-shrink: 0;
-    color: #fff;
+    width: 20px; height: 20px; border-radius: 50%; display: inline-grid; place-items: center;
+    font-size: 10px; font-weight: 700; flex-shrink: 0; color: #fff;
   }
   .avatar.sm { width: 18px; height: 18px; font-size: 9.5px; }
   .avatar.unassigned {
-    background: var(--surface-2) !important;
-    color: var(--muted);
+    background: var(--surface-2) !important; color: var(--muted);
     border: 1px dashed var(--border-strong);
   }
 
   .sb-foot {
-    padding: 10px 12px;
-    border-top: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 6px;
+    padding: 10px 12px; border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; gap: 6px;
   }
+  .sb-foot-left { display: flex; align-items: center; gap: 6px; min-width: 0; }
   .sb-updated {
-    font-size: 10.5px;
-    color: var(--muted);
-    font-family: var(--font-mono);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    font-size: 10.5px; color: var(--muted); font-family: var(--font-mono);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
+  .sb-foot-actions { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
 
   /* Main Area */
-  .main {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-  }
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
   .topbar {
-    position: sticky;
-    top: 0;
-    z-index: 20;
+    position: sticky; top: 0; z-index: 20;
     background: color-mix(in srgb, var(--bg) 88%, transparent);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border);
-    padding: 11px 22px;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px;
-  }
-  .btn.menu-btn {
-    display: none;
-    padding: 6px 9px;
+    padding: 11px 22px; display: flex; flex-wrap: wrap; align-items: center; gap: 9px;
   }
   .topbar-title {
-    font-size: 15px;
-    font-weight: 700;
-    letter-spacing: -0.015em;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    font-size: 15px; font-weight: 700; letter-spacing: -0.015em;
+    display: flex; align-items: center; gap: 8px;
   }
-  .topbar-count {
-    font-family: var(--font-mono);
-    font-size: 11.5px;
-    color: var(--muted);
-    font-weight: 500;
-  }
-  .search-wrap {
-    position: relative;
-    flex: 1 1 240px;
-    max-width: 380px;
-    margin-left: auto;
-  }
+  .topbar-count { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); font-weight: 500; }
+  .search-wrap { position: relative; flex: 1 1 220px; max-width: 340px; margin-left: auto; }
   .search-wrap input {
-    width: 100%;
-    padding: 6px 34px 6px 30px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text);
-    font: inherit;
-    font-size: 12.5px;
-    outline: none;
+    width: 100%; padding: 6px 34px 6px 30px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text);
+    font: inherit; font-size: 12.5px; outline: none;
     transition: border-color 0.14s, box-shadow 0.14s;
   }
-  .search-wrap input:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-soft);
-  }
+  .search-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
   .search-ico {
-    position: absolute;
-    left: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--muted);
-    font-size: 12px;
-    pointer-events: none;
+    position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+    color: var(--muted); pointer-events: none;
   }
   .kbd-hint {
-    position: absolute;
-    right: 8px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--muted);
-    border: 1px solid var(--border-strong);
-    border-radius: 4px;
-    padding: 0 5px;
-    pointer-events: none;
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    font-family: var(--font-mono); font-size: 10px; color: var(--muted);
+    border: 1px solid var(--border-strong); border-radius: 4px; padding: 0 5px; pointer-events: none;
   }
 
   .btn {
-    font: inherit;
-    font-size: 12.5px;
-    font-weight: 500;
-    color: var(--text-2);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 6px 10px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+    font: inherit; font-size: 12.5px; font-weight: 500; color: var(--text-2);
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 6px 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
     transition: background 0.12s, border-color 0.12s, color 0.12s;
   }
   .btn:hover { background: var(--surface-hover); border-color: var(--border-strong); color: var(--text); }
+  .btn:disabled { opacity: 0.6; cursor: wait; }
   .btn.active {
-    background: var(--accent-soft);
-    border-color: rgba(110, 142, 251, 0.35);
-    color: var(--accent);
-    font-weight: 600;
+    background: var(--accent-soft); border-color: rgba(110, 142, 251, 0.35);
+    color: var(--accent); font-weight: 600;
   }
-  .btn.primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
-    font-weight: 600;
-  }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
   .btn.primary:hover { filter: brightness(1.08); }
+  .btn.danger-subtle { color: var(--red); }
+  .btn.danger-subtle:hover { background: var(--red-soft); border-color: rgba(249, 107, 107, 0.35); color: var(--red); }
   .btn.icon-only { padding: 6px 8px; }
+  .btn.menu-btn { display: none; padding: 6px 9px; }
 
   .seg {
-    display: inline-flex;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 2px;
-    gap: 2px;
+    display: inline-flex; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 2px; gap: 2px;
   }
-  .seg .btn {
-    border: none;
-    background: transparent;
-    padding: 4px 10px;
-    border-radius: 6px;
-  }
-  .seg .btn.active {
-    background: var(--surface-hover);
-    color: var(--text);
-    box-shadow: var(--shadow-sm);
-  }
+  .seg .btn { border: none; background: transparent; padding: 4px 10px; border-radius: 6px; }
+  .seg .btn.active { background: var(--surface-hover); color: var(--text); box-shadow: var(--shadow-sm); }
 
-  .content {
-    padding: 16px 22px 36px;
-    flex: 1;
-  }
+  .content { padding: 16px 22px 36px; flex: 1; }
 
-  /* Active filter chips bar */
-  .active-filters {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 12px;
-  }
+  .active-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 12px; }
   .filter-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 3px 9px;
-    border-radius: 999px;
-    background: var(--accent-soft);
-    border: 1px solid rgba(110, 142, 251, 0.3);
-    color: var(--accent);
-    font-size: 11.5px;
-    font-weight: 600;
+    display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px;
+    background: var(--accent-soft); border: 1px solid rgba(110, 142, 251, 0.3);
+    color: var(--accent); font-size: 11.5px; font-weight: 600;
   }
   .filter-chip button {
-    border: none;
-    background: transparent;
-    color: inherit;
-    cursor: pointer;
-    padding: 0;
-    font-size: 13px;
-    line-height: 1;
+    border: none; background: transparent; color: inherit; cursor: pointer;
+    padding: 0; font-size: 13px; line-height: 1;
   }
 
-  /* KPI Strip + Progress Bar */
   .summary-panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 12px 14px;
-    margin-bottom: 16px;
-    box-shadow: var(--shadow-sm);
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 12px 14px; margin-bottom: 16px; box-shadow: var(--shadow-sm);
   }
-  .kpi-row {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(110px, 1fr));
-    gap: 8px;
-    margin-bottom: 10px;
-  }
+  .kpi-row { display: grid; grid-template-columns: repeat(5, minmax(110px, 1fr)); gap: 8px; margin-bottom: 10px; }
   .kpi-card {
-    padding: 8px 10px;
-    border-radius: 8px;
-    border: 1px solid transparent;
-    background: var(--surface-2);
-    cursor: pointer;
-    transition: border-color 0.12s, background 0.12s;
+    padding: 8px 10px; border-radius: 8px; border: 1px solid transparent;
+    background: var(--surface-2); cursor: pointer; transition: border-color 0.12s, background 0.12s;
   }
   .kpi-card:hover { background: var(--surface-hover); border-color: var(--border-strong); }
   .kpi-card.selected { border-color: var(--accent); background: var(--accent-soft); }
-  .kpi-top {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11.5px;
-    color: var(--muted);
-    font-weight: 500;
-  }
-  .kpi-val {
-    font-size: 21px;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    margin-top: 2px;
-  }
+  .kpi-top { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); font-weight: 500; }
+  .kpi-val { font-size: 21px; font-weight: 700; letter-spacing: -0.02em; margin-top: 2px; }
   .progress-bar {
-    height: 5px;
-    border-radius: 999px;
-    background: var(--surface-2);
-    overflow: hidden;
-    display: flex;
-    gap: 2px;
+    height: 5px; border-radius: 999px; background: var(--surface-2);
+    overflow: hidden; display: flex; gap: 2px;
   }
   .progress-seg { height: 100%; border-radius: 999px; transition: width 0.25s ease; }
 
-  /* Kanban Board */
   .board {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
-    gap: 12px;
-    align-items: start;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
+    gap: 12px; align-items: start;
   }
   .col {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    display: flex;
-    flex-direction: column;
-    max-height: calc(100vh - 210px);
-    min-height: 200px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    display: flex; flex-direction: column; max-height: calc(100vh - 210px); min-height: 200px;
     box-shadow: var(--shadow-sm);
   }
   .col-head {
-    padding: 11px 13px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    flex-shrink: 0;
+    padding: 11px 13px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-shrink: 0;
   }
-  .col-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12.5px;
-    font-weight: 700;
-    color: var(--text);
-  }
+  .col-title { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; color: var(--text); }
   .col-count {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--muted);
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    padding: 1px 7px;
-    border-radius: 999px;
+    font-family: var(--font-mono); font-size: 11px; color: var(--muted);
+    background: var(--surface-2); border: 1px solid var(--border); padding: 1px 7px; border-radius: 999px;
   }
-  .cards {
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    overflow-y: auto;
-  }
+  .cards { padding: 10px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
   .card {
-    position: relative;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--card-accent, var(--accent));
-    border-radius: 8px;
-    padding: 10px 11px 10px 12px;
-    cursor: pointer;
+    position: relative; background: var(--surface-2); border: 1px solid var(--border);
+    border-left: 3px solid var(--card-accent, var(--accent)); border-radius: 8px;
+    padding: 10px 11px 10px 12px; cursor: pointer;
     transition: background 0.12s, border-color 0.12s, transform 0.12s, box-shadow 0.12s;
   }
   .card:hover {
-    background: var(--surface-hover);
-    border-color: var(--border-strong);
+    background: var(--surface-hover); border-color: var(--border-strong);
     border-left-color: var(--card-accent, var(--accent));
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    transform: translateY(-1px); box-shadow: var(--shadow-md);
   }
-  .card-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 6px;
-    margin-bottom: 5px;
-  }
-  .task-id {
-    font-family: var(--font-mono);
-    font-size: 11.5px;
-    font-weight: 700;
-    color: var(--muted);
-    letter-spacing: -0.01em;
-  }
+  .card-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 5px; }
+  .task-id { font-family: var(--font-mono); font-size: 11.5px; font-weight: 700; color: var(--muted); letter-spacing: -0.01em; }
   .card:hover .task-id { color: var(--accent); }
   .badges { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
-  .badge {
-    font-size: 10.5px;
-    font-weight: 600;
-    padding: 1px 6px;
-    border-radius: 5px;
-    white-space: nowrap;
-  }
+  .badge { font-size: 10.5px; font-weight: 600; padding: 1px 6px; border-radius: 5px; white-space: nowrap; }
   .badge.area { background: var(--accent-soft); color: var(--accent); }
   .badge.area-BUG { background: var(--red-soft); color: var(--red); }
   .badge.area-Q { background: var(--yellow-soft); color: var(--yellow); }
   .badge.area-UI { background: var(--purple-soft); color: var(--purple); }
   .badge.area-TOOL, .badge.area-QA, .badge.area-DOC, .badge.area-PERF { background: var(--cyan-soft); color: var(--cyan); }
   .badge.area-COMBAT, .badge.area-SIEGE, .badge.area-FLOW { background: var(--green-soft); color: var(--green); }
-  .badge.blocked {
-    background: var(--red-soft);
-    color: var(--red);
-    border: 1px solid rgba(249, 107, 107, 0.35);
-  }
+  .badge.blocked { background: var(--red-soft); color: var(--red); border: 1px solid rgba(249, 107, 107, 0.35); }
   .badge.invalid { background: var(--red-soft); color: var(--red); }
 
-  .card-title {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text);
-    line-height: 1.4;
-    margin-bottom: 8px;
-    word-break: break-word;
-  }
-  .card-deps {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    margin-bottom: 8px;
-  }
-  .mini-dep {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    padding: 1px 5px;
-    border-radius: 4px;
-  }
+  .card-title { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.4; margin-bottom: 8px; word-break: break-word; }
+  .card-deps { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+  .mini-dep { font-family: var(--font-mono); font-size: 10px; padding: 1px 5px; border-radius: 4px; }
   .mini-dep.active { background: var(--red-soft); color: var(--red); }
   .mini-dep.done { background: var(--green-soft); color: var(--green); }
   .mini-dep.unknown { background: var(--yellow-soft); color: var(--yellow); }
 
-  .card-foot {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    font-size: 11.5px;
-    color: var(--muted);
-  }
-  .assignee-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    min-width: 0;
-    color: var(--text-2);
-    font-weight: 500;
-  }
-  .assignee-pill span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .age-pill {
-    font-family: var(--font-mono);
-    font-size: 10.5px;
-    color: var(--muted);
-    flex-shrink: 0;
-  }
+  .card-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11.5px; color: var(--muted); }
+  .assignee-pill { display: inline-flex; align-items: center; gap: 6px; min-width: 0; color: var(--text-2); font-weight: 500; }
+  .assignee-pill span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .age-pill { font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); flex-shrink: 0; }
   .branch-tag {
-    margin-top: 7px;
-    padding-top: 6px;
-    border-top: 1px solid var(--border);
-    font-family: var(--font-mono);
-    font-size: 10.5px;
-    color: var(--cyan);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    margin-top: 7px; padding-top: 6px; border-top: 1px solid var(--border);
+    font-family: var(--font-mono); font-size: 10.5px; color: var(--cyan);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
 
-  /* Table View */
   .table-wrap {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow-x: auto;
-    box-shadow: var(--shadow-sm);
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    overflow-x: auto; box-shadow: var(--shadow-sm);
   }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th, td {
-    padding: 10px 13px;
-    text-align: left;
-    border-bottom: 1px solid var(--border);
-    vertical-align: middle;
-  }
+  th, td { padding: 10px 13px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; }
   th {
-    background: var(--surface-2);
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--muted);
-    cursor: pointer;
-    user-select: none;
-    white-space: nowrap;
+    background: var(--surface-2); font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.04em; color: var(--muted); cursor: pointer; user-select: none; white-space: nowrap;
   }
   th:hover { color: var(--text); }
   tbody tr { cursor: pointer; transition: background 0.1s; }
@@ -901,14 +691,8 @@ try {
   tbody tr:hover { background: var(--surface-hover); }
   .mono { font-family: var(--font-mono); font-size: 12px; }
   .status-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 2px 8px;
-    border-radius: 999px;
-    font-size: 11.5px;
-    font-weight: 600;
-    white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: 999px;
+    font-size: 11.5px; font-weight: 600; white-space: nowrap;
   }
   .st-inprog { background: var(--accent-soft); color: var(--accent); }
   .st-wait { background: var(--green-soft); color: var(--green); }
@@ -916,107 +700,37 @@ try {
   .st-decision { background: var(--yellow-soft); color: var(--yellow); }
   .st-prereq { background: var(--purple-soft); color: var(--purple); }
   .st-other { background: var(--surface-2); color: var(--muted); }
+  .empty { text-align: center; color: var(--muted); padding: 30px 12px; font-size: 12.5px; }
 
-  .empty {
-    text-align: center;
-    color: var(--muted);
-    padding: 30px 12px;
-    font-size: 12.5px;
-  }
-
-  /* Modal (Linear / Notion Inspector style) */
+  /* Modal */
   .modal-backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(5, 7, 11, 0.68);
-    backdrop-filter: blur(4px);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 18px;
-    z-index: 100;
+    position: fixed; inset: 0; background: rgba(5, 7, 11, 0.68); backdrop-filter: blur(4px);
+    display: none; align-items: center; justify-content: center; padding: 18px; z-index: 100;
   }
   .modal-backdrop.open { display: flex; }
   .modal {
-    background: var(--surface);
-    border: 1px solid var(--border-strong);
-    border-radius: 13px;
-    max-width: 760px;
-    width: 100%;
-    max-height: 86vh;
-    display: flex;
-    flex-direction: column;
-    box-shadow: var(--shadow-lg);
-    overflow: hidden;
+    background: var(--surface); border: 1px solid var(--border-strong); border-radius: 13px;
+    max-width: 760px; width: 100%; max-height: 86vh; display: flex; flex-direction: column;
+    box-shadow: var(--shadow-lg); overflow: hidden;
   }
   .modal-head {
-    padding: 16px 20px 14px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
+    padding: 16px 20px 14px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
   }
-  .modal-badges {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 6px;
-  }
-  .modal-head h2 {
-    margin: 0;
-    font-size: 17px;
-    font-weight: 700;
-    letter-spacing: -0.015em;
-    line-height: 1.35;
-  }
-  .modal-body {
-    padding: 16px 20px;
-    overflow-y: auto;
-  }
+  .modal-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 6px; }
+  .modal-head h2 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.015em; line-height: 1.35; }
+  .modal-body { padding: 16px 20px; overflow-y: auto; }
   .prop-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 8px 16px;
-    padding: 12px 14px;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: 9px;
-    margin-bottom: 14px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 8px 16px; padding: 12px 14px; background: var(--surface-2);
+    border: 1px solid var(--border); border-radius: 9px; margin-bottom: 14px;
   }
-  .prop-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-width: 0;
-    font-size: 12.5px;
-  }
-  .prop-k {
-    width: 74px;
-    flex-shrink: 0;
-    color: var(--muted);
-    font-size: 11.5px;
-    font-weight: 500;
-  }
-  .prop-v {
-    color: var(--text);
-    font-weight: 600;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
+  .prop-row { display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 12.5px; }
+  .prop-k { width: 74px; flex-shrink: 0; color: var(--muted); font-size: 11.5px; font-weight: 500; }
+  .prop-v { color: var(--text); font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .dep-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-family: var(--font-mono);
-    font-size: 11.5px;
-    padding: 2px 8px;
-    border-radius: 6px;
-    margin: 2px 5px 2px 0;
-    border: 1px solid transparent;
+    display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-mono); font-size: 11.5px;
+    padding: 2px 8px; border-radius: 6px; margin: 2px 5px 2px 0; border: 1px solid transparent;
   }
   .dep-badge.clickable { cursor: pointer; }
   .dep-badge.clickable:hover { border-color: currentColor; }
@@ -1025,80 +739,36 @@ try {
   .dep-unknown { background: var(--yellow-soft); color: var(--yellow); }
 
   .md-body {
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: 9px;
-    padding: 14px 16px;
-    font-size: 13.5px;
-    line-height: 1.65;
-    color: var(--text-2);
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 9px;
+    padding: 14px 16px; font-size: 13.5px; line-height: 1.65; color: var(--text-2);
   }
-  .md-body h1, .md-body h2, .md-body h3 {
-    color: var(--text);
-    margin: 12px 0 6px;
-    font-size: 14px;
-    font-weight: 700;
-  }
+  .md-body h1, .md-body h2, .md-body h3 { color: var(--text); margin: 12px 0 6px; font-size: 14px; font-weight: 700; }
   .md-body h1:first-child, .md-body h2:first-child { margin-top: 0; }
   .md-body ul { margin: 6px 0; padding-left: 20px; }
   .md-body code {
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--text);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    padding: 1px 5px;
-    border-radius: 4px;
+    font-family: var(--font-mono); font-size: 12px; color: var(--text);
+    background: var(--surface); border: 1px solid var(--border); padding: 1px 5px; border-radius: 4px;
   }
   .modal-foot {
-    padding: 12px 20px;
-    border-top: 1px solid var(--border);
-    background: var(--sidebar);
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+    padding: 12px 20px; border-top: 1px solid var(--border); background: var(--sidebar);
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
   }
   .modal-actions { display: flex; flex-wrap: wrap; gap: 7px; }
 
   .toast {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: var(--surface);
-    border: 1px solid var(--accent);
-    color: var(--text);
-    padding: 9px 14px;
-    border-radius: 9px;
-    box-shadow: var(--shadow-md);
-    font-size: 12.5px;
-    font-weight: 600;
-    opacity: 0;
-    transform: translateY(6px);
-    pointer-events: none;
-    transition: opacity 0.18s, transform 0.18s;
-    z-index: 200;
+    position: fixed; bottom: 20px; right: 20px; background: var(--surface);
+    border: 1px solid var(--accent); color: var(--text); padding: 9px 14px;
+    border-radius: 9px; box-shadow: var(--shadow-md); font-size: 12.5px; font-weight: 600;
+    opacity: 0; transform: translateY(6px); pointer-events: none;
+    transition: opacity 0.18s, transform 0.18s; z-index: 200;
   }
   .toast.show { opacity: 1; transform: translateY(0); }
 
-  .sb-backdrop {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 25;
-  }
+  .sb-backdrop { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 25; }
   .hidden { display: none !important; }
 
   @media (max-width: 980px) {
-    .sidebar {
-      position: fixed;
-      left: 0;
-      top: 0;
-      transform: translateX(-100%);
-      box-shadow: var(--shadow-lg);
-    }
+    .sidebar { position: fixed; left: 0; top: 0; transform: translateX(-100%); box-shadow: var(--shadow-lg); }
     .sidebar.open { transform: translateX(0); }
     .sb-backdrop.open { display: block; }
     .btn.menu-btn { display: inline-flex; }
@@ -1119,10 +789,11 @@ try {
           <div class="brand-sub">Backlog Workspace</div>
         </div>
       </div>
-      <div class="sb-branch" title="Current Git branch">
+      <div class="sb-branch" id="metaSourceBox" title="Data source Git ref">
         <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--cyan);flex-shrink:0;"><circle cx="4" cy="3.5" r="1.8"/><circle cx="4" cy="12.5" r="1.8"/><circle cx="12" cy="5.5" r="1.8"/><path d="M4 5.3v5.4M12 7.3c0 2.7-2.2 3.4-8 3.4"/></svg>
-        <span id="metaBranch">branch</span>
+        <span id="metaBranch">origin/develop</span>
       </div>
+      <div class="sb-local-note hidden" id="metaLocalNote"></div>
     </div>
 
     <div class="sb-scroll">
@@ -1168,8 +839,14 @@ try {
     </div>
 
     <div class="sb-foot">
-      <span class="sb-updated" id="metaGen" title="Snapshot timestamp">updated</span>
-      <button class="btn icon-only" id="btnTheme" title="Toggle Dark / Light theme"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.5"/><path d="M8 2.5a5.5 5.5 0 0 1 0 11z" fill="currentColor"/></svg></button>
+      <div class="sb-foot-left">
+        <span class="dot" id="liveDot" style="background:var(--muted);" title="Server status"></span>
+        <span class="sb-updated" id="metaGen" title="Snapshot timestamp">updated</span>
+      </div>
+      <div class="sb-foot-actions">
+        <button class="btn icon-only danger-subtle hidden" id="btnStopServer" title="Stop local board server"><svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><rect x="3.5" y="3.5" width="9" height="9" rx="1.5"/></svg></button>
+        <button class="btn icon-only" id="btnTheme" title="Toggle Dark / Light theme"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.5"/><path d="M8 2.5a5.5 5.5 0 0 1 0 11z" fill="currentColor"/></svg></button>
+      </div>
     </div>
   </aside>
 
@@ -1186,6 +863,11 @@ try {
         <input type="search" id="qSearch" placeholder="Search ID, title, assignee, branch, scope...">
         <span class="kbd-hint">/</span>
       </div>
+
+      <button class="btn" id="btnRefresh" title="Fetch origin/develop and refresh (shortcut: r)">
+        <svg id="refreshIco" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13.5 8a5.5 5.5 0 1 1-1.4-3.65M13.5 2.5v2.7h-2.7"/></svg>
+        <span>Refresh</span>
+      </button>
 
       <button class="btn" id="btnReadyToggle">Ready to Claim</button>
 
@@ -1240,15 +922,18 @@ try {
 <div class="toast" id="toast"></div>
 
 <script>
-const DATA = __BACKLOG_JSON__;
+let DATA = __BACKLOG_JSON__;
 
 (function() {
   function toArray(v) {
     return Array.isArray(v) ? v : (v ? [v] : []);
   }
-  const tasks = toArray(DATA.tasks);
-  const history = toArray(DATA.history);
-  const taskById = new Map(tasks.map(t => [String(t.id).toUpperCase(), t]));
+
+  let tasks = [];
+  let history = [];
+  let taskById = new Map();
+  let isLive = false;
+  let isRefreshing = false;
 
   const STATUS_ORDER = {
     'In Progress': 1,
@@ -1271,6 +956,50 @@ const DATA = __BACKLOG_JSON__;
     sortKey: 'status',
     sortDir: 1
   };
+
+  function hydrateData(nextData) {
+    DATA = nextData || {};
+    tasks = toArray(DATA.tasks);
+    history = toArray(DATA.history);
+    taskById = new Map(tasks.map(t => [String(t.id).toUpperCase(), t]));
+    isLive = Boolean(DATA.liveMode) && window.location.protocol.startsWith('http');
+
+    const ref = DATA.sourceRef || DATA.currentBranch || 'develop';
+    const sha = DATA.sourceSha ? (' @ ' + DATA.sourceSha) : '';
+    const offlineTag = DATA.fetchStatus === 'offline' ? ' (offline)' : '';
+    document.getElementById('metaBranch').textContent = ref + sha + offlineTag;
+
+    const localNote = document.getElementById('metaLocalNote');
+    if (DATA.localBranch && DATA.localBranch !== 'develop') {
+      localNote.textContent = 'working tree: ' + DATA.localBranch;
+      localNote.classList.remove('hidden');
+    } else {
+      localNote.classList.add('hidden');
+    }
+
+    document.getElementById('metaGen').textContent = (DATA.generatedAt || '-').replace(' (KST)', '');
+
+    const liveDot = document.getElementById('liveDot');
+    const stopBtn = document.getElementById('btnStopServer');
+    if (isLive) {
+      liveDot.style.background = DATA.fetchStatus === 'offline' ? 'var(--yellow)' : 'var(--green)';
+      liveDot.title = DATA.fetchStatus === 'offline' ? 'Live server (offline fallback)' : 'Live server connected';
+      stopBtn.classList.remove('hidden');
+    } else {
+      liveDot.style.background = 'var(--muted)';
+      liveDot.title = 'Static snapshot';
+      stopBtn.classList.add('hidden');
+    }
+
+    if (history.length === 0) {
+      document.getElementById('viewHistory').classList.add('hidden');
+      document.getElementById('sbViewHistory').classList.add('hidden');
+      if (state.view === 'history') state.view = 'kanban';
+    } else {
+      document.getElementById('viewHistory').classList.remove('hidden');
+      document.getElementById('sbViewHistory').classList.remove('hidden');
+    }
+  }
 
   function esc(s) {
     return String(s == null ? '' : s)
@@ -1345,7 +1074,7 @@ const DATA = __BACKLOG_JSON__;
     el.textContent = msg;
     el.classList.add('show');
     clearTimeout(toast._t);
-    toast._t = setTimeout(() => el.classList.remove('show'), 1800);
+    toast._t = setTimeout(() => el.classList.remove('show'), 2200);
   }
 
   function copyText(text, label) {
@@ -1414,6 +1143,53 @@ const DATA = __BACKLOG_JSON__;
     render();
   }
 
+  async function refreshBoard() {
+    if (isRefreshing) return;
+    if (!isLive) {
+      toast('Static HTML mode: reloading file...');
+      setTimeout(() => window.location.reload(), 200);
+      return;
+    }
+    isRefreshing = true;
+    const btn = document.getElementById('btnRefresh');
+    const ico = document.getElementById('refreshIco');
+    btn.disabled = true;
+    ico.classList.add('spinning');
+    try {
+      const res = await fetch('/api/refresh?t=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const next = await res.json();
+      hydrateData(next);
+      render();
+      if (currentModalTask) {
+        const updated = taskById.get(String(currentModalTask.id).toUpperCase());
+        if (updated) openModal(updated);
+        else closeModal();
+      }
+      const tag = next.fetchStatus === 'offline' ? 'Offline fallback: ' : 'Refreshed: ';
+      toast(tag + (next.sourceRef || 'develop') + (next.sourceSha ? ' @ ' + next.sourceSha : ''));
+    } catch (err) {
+      document.getElementById('liveDot').style.background = 'var(--red)';
+      toast('Server unreachable. Re-run backlog-board.bat');
+    } finally {
+      isRefreshing = false;
+      btn.disabled = false;
+      ico.classList.remove('spinning');
+    }
+  }
+
+  async function stopServer() {
+    if (!isLive) return;
+    try {
+      await fetch('/api/shutdown', { method: 'POST' });
+    } catch (e) {}
+    isLive = false;
+    document.getElementById('liveDot').style.background = 'var(--red)';
+    document.getElementById('liveDot').title = 'Server stopped';
+    document.getElementById('btnStopServer').classList.add('hidden');
+    toast('Local board server stopped');
+  }
+
   function renderSidebar() {
     document.getElementById('sbCountActive').textContent = tasks.length;
     document.getElementById('sbCountTable').textContent = tasks.length;
@@ -1423,7 +1199,6 @@ const DATA = __BACKLOG_JSON__;
       btn.classList.toggle('active', btn.getAttribute('data-sb-view') === state.view);
     });
 
-    // Status quick filters
     const statusItems = [
       { key: 'In Progress', label: 'In Progress', color: 'var(--accent)', count: tasks.filter(t => t.status === 'In Progress').length },
       { key: '__READY__', label: 'Ready to Claim', color: 'var(--green)', count: tasks.filter(isReady).length },
@@ -1459,7 +1234,6 @@ const DATA = __BACKLOG_JSON__;
     });
     document.getElementById('clearStatus').classList.toggle('hidden', !state.status && !state.readyOnly);
 
-    // Assignees with active workload counts
     const assigneeMap = new Map();
     tasks.forEach(t => {
       const name = (t.assignee || 'Unassigned').trim() || 'Unassigned';
@@ -1497,7 +1271,6 @@ const DATA = __BACKLOG_JSON__;
     });
     document.getElementById('clearAssignee').classList.toggle('hidden', !state.assignee);
 
-    // Areas list (uses history counts when on History tab, active counts otherwise)
     const srcList = state.view === 'history' ? history : tasks;
     const areaMap = new Map();
     srcList.forEach(item => {
@@ -1874,15 +1647,7 @@ const DATA = __BACKLOG_JSON__;
     else renderTable(list);
   }
 
-  // Init metadata
-  document.getElementById('metaBranch').textContent = DATA.currentBranch || '-';
-  document.getElementById('metaGen').textContent = (DATA.generatedAt || '-').replace(' (KST)', '');
-  if (history.length === 0) {
-    document.getElementById('viewHistory').classList.add('hidden');
-    document.getElementById('sbViewHistory').classList.add('hidden');
-  }
-
-  // View switchers
+  // Event wiring
   document.querySelectorAll('[data-sb-view]').forEach(btn => {
     btn.addEventListener('click', () => {
       state.view = btn.getAttribute('data-sb-view');
@@ -1895,6 +1660,8 @@ const DATA = __BACKLOG_JSON__;
   document.getElementById('viewHistory').addEventListener('click', () => { state.view = 'history'; render(); });
 
   document.getElementById('qSearch').addEventListener('input', e => { state.q = e.target.value; render(); });
+  document.getElementById('btnRefresh').addEventListener('click', refreshBoard);
+  document.getElementById('btnStopServer').addEventListener('click', stopServer);
   document.getElementById('btnReadyToggle').addEventListener('click', () => {
     state.readyOnly = !state.readyOnly;
     if (state.readyOnly) state.status = '';
@@ -1905,14 +1672,12 @@ const DATA = __BACKLOG_JSON__;
   document.getElementById('clearAssignee').addEventListener('click', () => { state.assignee = ''; render(); });
   document.getElementById('clearArea').addEventListener('click', () => { state.area = ''; render(); });
 
-  // Mobile sidebar
   document.getElementById('btnMenu').addEventListener('click', () => {
     document.getElementById('sidebar').classList.toggle('open');
     document.getElementById('sbBackdrop').classList.toggle('open');
   });
   document.getElementById('sbBackdrop').addEventListener('click', closeMobileSidebar);
 
-  // Theme
   const savedTheme = localStorage.getItem('projectneo-board-theme') || 'dark';
   if (savedTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
   document.getElementById('btnTheme').addEventListener('click', () => {
@@ -1922,7 +1687,6 @@ const DATA = __BACKLOG_JSON__;
     localStorage.setItem('projectneo-board-theme', next);
   });
 
-  // Modal & keyboard shortcuts
   document.getElementById('mClose').addEventListener('click', closeModal);
   document.getElementById('modalBackdrop').addEventListener('click', e => { if (e.target.id === 'modalBackdrop') closeModal(); });
   document.addEventListener('keydown', e => {
@@ -1934,8 +1698,9 @@ const DATA = __BACKLOG_JSON__;
       else closeMobileSidebar();
       return;
     }
-    if (!inInput && !currentModalTask) {
+    if (!inInput && !currentModalTask && !e.ctrlKey && !e.metaKey && !e.altKey) {
       if (e.key === '/') { e.preventDefault(); document.getElementById('qSearch').focus(); }
+      else if (e.key === 'r' || e.key === 'R') { e.preventDefault(); refreshBoard(); }
       else if (e.key === '1') { state.view = 'kanban'; render(); }
       else if (e.key === '2') { state.view = 'table'; render(); }
       else if (e.key === '3' && history.length > 0) { state.view = 'history'; render(); }
@@ -1959,20 +1724,228 @@ const DATA = __BACKLOG_JSON__;
     copyText(currentModalTask.relativePath, currentModalTask.relativePath);
   });
 
+  hydrateData(DATA);
   render();
 })();
 </script>
 </body>
 </html>
 '@
+}
 
-    $html = $htmlTemplate.Replace('__BACKLOG_JSON__', $json)
+function Render-BoardHtml {
+    param([object]$Payload)
+    $json = ($Payload | ConvertTo-Json -Depth 6 -Compress) -replace '</', '<\/'
+    return (Get-BoardHtmlTemplate).Replace('__BACKLOG_JSON__', $json)
+}
+
+function Test-BoardServerPing {
+    param(
+        [int]$TargetPort,
+        [string]$ExpectedRepo
+    )
+    $url = "http://127.0.0.1:$TargetPort/api/ping"
+    try {
+        $req = [System.Net.HttpWebRequest]::Create($url)
+        $req.Method = 'GET'
+        $req.Timeout = 500
+        $req.ReadWriteTimeout = 500
+        $resp = $req.GetResponse()
+        try {
+            $sr = New-Object System.IO.StreamReader($resp.GetResponseStream(), [System.Text.Encoding]::UTF8)
+            $body = $sr.ReadToEnd()
+            $sr.Dispose()
+            $obj = $body | ConvertFrom-Json
+            if ($obj -and $obj.ok -eq $true) {
+                $same = ($obj.repo -ieq ($ExpectedRepo -replace '\\', '/'))
+                return [PSCustomObject]@{ Running = $true; SameRepo = $same; Pid = $obj.pid }
+            }
+        } finally {
+            $resp.Close()
+        }
+    } catch {
+    }
+    return [PSCustomObject]@{ Running = $false; SameRepo = $false; Pid = 0 }
+}
+
+function Write-HttpResponse {
+    param(
+        [System.Net.HttpListenerResponse]$Response,
+        [int]$StatusCode,
+        [string]$ContentType,
+        [string]$Body
+    )
+    $utf8 = New-Object System.Text.UTF8Encoding($false)
+    $bytes = $utf8.GetBytes($Body)
+    $Response.StatusCode = $StatusCode
+    $Response.ContentType = $ContentType
+    $Response.Headers['Cache-Control'] = 'no-store, no-cache, must-revalidate'
+    $Response.ContentLength64 = $bytes.Length
+    $Response.OutputStream.Write($bytes, 0, $bytes.Length)
+    $Response.OutputStream.Close()
+}
+
+function Start-BoardHttpLoop {
+    param(
+        [string]$Root,
+        [int]$ListenPort,
+        [int]$IdleMin,
+        [switch]$SkipHistory,
+        [switch]$SkipFetch
+    )
+    $listener = New-Object System.Net.HttpListener
+    $listener.Prefixes.Add("http://127.0.0.1:$ListenPort/")
+    $listener.Start()
+
+    $normRepo = ($Root -replace '\\', '/')
+    $lastActivity = Get-Date
+    $running = $true
+    try {
+        $ctxTask = $listener.GetContextAsync()
+        while ($running -and $listener.IsListening) {
+            if (-not $ctxTask.Wait(1000)) {
+                if ($IdleMin -gt 0 -and ((Get-Date) - $lastActivity).TotalMinutes -ge $IdleMin) {
+                    break
+                }
+                continue
+            }
+            $ctx = $ctxTask.GetAwaiter().GetResult()
+            $lastActivity = Get-Date
+            $ctxTask = $listener.GetContextAsync()
+
+            $path = $ctx.Request.Url.AbsolutePath.ToLowerInvariant()
+            try {
+                if ($path -eq '/api/ping') {
+                    $pingJson = ([PSCustomObject]@{ ok = $true; repo = $normRepo; pid = $PID } | ConvertTo-Json -Compress)
+                    Write-HttpResponse -Response $ctx.Response -StatusCode 200 -ContentType 'application/json; charset=utf-8' -Body $pingJson
+                } elseif ($path -eq '/api/shutdown') {
+                    Write-HttpResponse -Response $ctx.Response -StatusCode 200 -ContentType 'application/json; charset=utf-8' -Body '{"ok":true}'
+                    $running = $false
+                } elseif ($path -eq '/api/refresh' -or $path -eq '/api/data') {
+                    $payload = Build-BoardPayload -Root $Root -SkipHistory:$SkipHistory -SkipFetch:$SkipFetch -LiveMode:$true
+                    $json = ($payload | ConvertTo-Json -Depth 6 -Compress)
+                    Write-HttpResponse -Response $ctx.Response -StatusCode 200 -ContentType 'application/json; charset=utf-8' -Body $json
+                } elseif ($path -eq '/' -or $path -eq '/index.html') {
+                    $payload = Build-BoardPayload -Root $Root -SkipHistory:$SkipHistory -SkipFetch:$SkipFetch -LiveMode:$true
+                    $html = Render-BoardHtml -Payload $payload
+                    Write-HttpResponse -Response $ctx.Response -StatusCode 200 -ContentType 'text/html; charset=utf-8' -Body $html
+                } else {
+                    Write-HttpResponse -Response $ctx.Response -StatusCode 404 -ContentType 'text/plain; charset=utf-8' -Body 'Not Found'
+                }
+            } catch {
+                try {
+                    $errJson = ([PSCustomObject]@{ ok = $false; error = $_.Exception.Message } | ConvertTo-Json -Compress)
+                    Write-HttpResponse -Response $ctx.Response -StatusCode 500 -ContentType 'application/json; charset=utf-8' -Body $errJson
+                } catch {
+                }
+            }
+        }
+    } finally {
+        try { $listener.Stop() } catch {}
+        try { $listener.Close() } catch {}
+    }
+}
+
+$root = Get-ProjectNeoRoot -FallbackDir (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+Push-Location $root
+try {
+    if ($ServeWorker) {
+        Start-BoardHttpLoop -Root $root -ListenPort $Port -IdleMin $IdleMinutes -SkipHistory:$NoHistory -SkipFetch:$NoFetch
+        return
+    }
+
+    # Mode selection:
+    # - Explicit -Static or -OutPath => static HTML snapshot
+    # - Explicit -Serve => live localhost server
+    # - Default: static if -NoOpen (backward compatible for hooks/CLI checks), else live server
+    $useStatic = $Static.IsPresent -or ([bool]$OutPath) -or ((-not $Serve.IsPresent) -and $NoOpen.IsPresent)
+
+    if (-not $useStatic) {
+        $chosenPort = $Port
+        $alreadyRunning = $false
+        for ($tryPort = $Port; $tryPort -lt ($Port + 10); $tryPort++) {
+            $ping = Test-BoardServerPing -TargetPort $tryPort -ExpectedRepo $root
+            if ($ping.Running -and $ping.SameRepo) {
+                $chosenPort = $tryPort
+                $alreadyRunning = $true
+                break
+            }
+            if (-not $ping.Running) {
+                $chosenPort = $tryPort
+                break
+            }
+        }
+
+        $url = "http://127.0.0.1:$chosenPort/"
+        if ($Foreground) {
+            Write-Output "BOARD_URL=$url"
+            if (-not $NoOpen) { Start-Process -FilePath $url }
+            Start-BoardHttpLoop -Root $root -ListenPort $chosenPort -IdleMin $IdleMinutes -SkipHistory:$NoHistory -SkipFetch:$NoFetch
+            return
+        }
+
+        if (-not $alreadyRunning) {
+            $workerArgs = New-Object System.Collections.Generic.List[string]
+            [void]$workerArgs.Add('-NoProfile')
+            [void]$workerArgs.Add('-ExecutionPolicy')
+            [void]$workerArgs.Add('Bypass')
+            [void]$workerArgs.Add('-WindowStyle')
+            [void]$workerArgs.Add('Hidden')
+            [void]$workerArgs.Add('-File')
+            [void]$workerArgs.Add("`"$PSCommandPath`"")
+            [void]$workerArgs.Add('-ServeWorker')
+            [void]$workerArgs.Add('-Port')
+            [void]$workerArgs.Add("$chosenPort")
+            [void]$workerArgs.Add('-IdleMinutes')
+            [void]$workerArgs.Add("$IdleMinutes")
+            if ($NoHistory) { [void]$workerArgs.Add('-NoHistory') }
+            if ($NoFetch) { [void]$workerArgs.Add('-NoFetch') }
+
+            $proc = Start-Process -FilePath 'powershell.exe' -ArgumentList ($workerArgs -join ' ') -WorkingDirectory $root -WindowStyle Hidden -PassThru
+            $ready = $false
+            for ($i = 0; $i -lt 50; $i++) {
+                Start-Sleep -Milliseconds 150
+                $p = Test-BoardServerPing -TargetPort $chosenPort -ExpectedRepo $root
+                if ($p.Running -and $p.SameRepo) {
+                    $ready = $true
+                    break
+                }
+                if ($proc.HasExited) { break }
+            }
+            if (-not $ready) {
+                throw "Failed to start local backlog board server on port $chosenPort."
+            }
+        }
+
+        Write-Output "BOARD_URL=$url"
+        Write-Output "SERVER_REUSED=$alreadyRunning"
+        if (-not $NoOpen) {
+            Start-Process -FilePath $url
+        }
+        return
+    }
+
+    # Static HTML snapshot mode (reads from origin/develop -> develop fallback)
+    if (-not $OutPath) {
+        $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) 'ProjectNeo'
+        $OutPath = Join-Path $tempDir 'backlog-board.html'
+    }
+    $outFull = [System.IO.Path]::GetFullPath($OutPath)
+    $outDir = Split-Path -Parent $outFull
+    if ($outDir -and -not (Test-Path -LiteralPath $outDir -PathType Container)) {
+        [void](New-Item -ItemType Directory -Path $outDir -Force)
+    }
+
+    $payload = Build-BoardPayload -Root $root -SkipHistory:$NoHistory -SkipFetch:$NoFetch -LiveMode:$false
+    $html = Render-BoardHtml -Payload $payload
     $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
     [System.IO.File]::WriteAllText($outFull, $html, $utf8NoBom)
 
     Write-Output "BOARD_HTML=$outFull"
-    Write-Output "ACTIVE_TASKS=$($taskItems.Count)"
-    Write-Output "HISTORY_TASKS=$($historyItems.Count)"
+    Write-Output "SOURCE_REF=$($payload.sourceRef)@$($payload.sourceSha)"
+    Write-Output "FETCH_STATUS=$($payload.fetchStatus)"
+    Write-Output "ACTIVE_TASKS=$($payload.activeCount)"
+    Write-Output "HISTORY_TASKS=$($payload.historyCount)"
 
     if (-not $NoOpen) {
         Start-Process -FilePath $outFull
