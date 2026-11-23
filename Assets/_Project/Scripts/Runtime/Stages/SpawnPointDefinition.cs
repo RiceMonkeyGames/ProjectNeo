@@ -11,7 +11,7 @@ namespace ProjectNeo.Stages
     {
         [SerializeField] string displayName = "출현 지점";
         [Tooltip("건설 격자의 칸 좌표(x, z). 무리의 맨 앞줄 가운데가 이 칸에 선다.")]
-        [SerializeField] Vector2 cell = new Vector2(40f, 90f);
+        [SerializeField] Vector2 cell = new Vector2(16f, 36f);
 
         public string DisplayName => displayName;
         public Vector2 Cell => cell;

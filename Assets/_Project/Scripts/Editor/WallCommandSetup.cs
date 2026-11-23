@@ -47,8 +47,9 @@ namespace ProjectNeo.Editor
                 string prefab = squad == 2 ? "allied_ranged" : "allied_melee";
                 var source = Required<GameObject>("Assets/_Project/Prefabs/UnitBattlePrototype/" + prefab + ".prefab");
                 rosters[squad].members = new UnitCombatAI[4];
-                Vector3 origin = squad == 0 ? new Vector3(-7.5f, 0f, -8f)
-                    : squad == 1 ? new Vector3(6f, 0f, -8f) : new Vector3(0f, 0f, -14f);
+                // 7.5m 칸 판(SIEGE-18) 기준 성 안쪽 자리.
+                Vector3 origin = squad == 0 ? new Vector3(-18.75f, 0f, -20f)
+                    : squad == 1 ? new Vector3(15f, 0f, -20f) : new Vector3(0f, 0f, -35f);
                 for (int i = 0; i < 4; i++)
                 {
                     var unit = (GameObject)PrefabUtility.InstantiatePrefab(source);
@@ -66,7 +67,8 @@ namespace ProjectNeo.Editor
             var player = (GameObject)PrefabUtility.InstantiatePrefab(
                 Required<GameObject>("Assets/_Project/Prefabs/CombatPrototype/Player.prefab"));
             player.name = "Player"; player.SetActive(false);
-            player.transform.position = new Vector3(0f, 3f, 4.5f);
+            // 성벽 줄(z 8칸) 가운데 칸 위, 1층 성벽 윗면(5m).
+            player.transform.position = new Vector3(0f, 5f, 11.25f);
             player.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
             var controls = Required<PlayerControlSettings>("Assets/_Project/Data/CombatPrototype/PlayerControls.asset");
             var cameraRoot = new GameObject("FirstPersonCamera");

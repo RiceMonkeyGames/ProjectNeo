@@ -69,6 +69,12 @@ MonoBehaviour:
   archerSideStepCount: 3
   archerSearchCooldown: 10
   archerSpotCommitSeconds: 5
+  maxArcherRepositionSearchesPerFrame: 2
+  reachabilityCacheTtl: 0.5
+  assaultLeashRadius: 8
+  assaultLeashReleaseRadius: 12
+  archerBreachAdvanceDelay: 8
+  archerCrouchTolerance: 4
   retreatEdgeMargin: 1.5
   retreatTimeout: 20
   pushLadder:

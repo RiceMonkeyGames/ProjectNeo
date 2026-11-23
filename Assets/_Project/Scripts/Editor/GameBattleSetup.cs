@@ -20,6 +20,8 @@ namespace ProjectNeo.Editor
         const string Data = "Assets/_Project/Data/GameFlow";
         // 왼쪽 위 부대 목록 높이(기준 1280×720). PREP-09: 부대 10줄 + 지휘 알림·사기 알림 2줄이 최소 글자(14)로 들어가는 높이.
         internal const float SquadListHeight = 236f;
+        // 사다리 자리 간격(칸). 7.5m 칸에서 15m로 3m 칸 시절(5칸)과 같은 거리다(사용자 결정 2026-11-23, SIEGE-18).
+        internal const int LadderSpacing = 2;
         [MenuItem("ProjectNeo/Setup/Connect Battle To Game Scene")]
         public static void Apply()
         {
@@ -53,13 +55,13 @@ namespace ProjectNeo.Editor
             var worldData = new SerializedObject(world);
             var seeds = worldData.FindProperty("initialPieces");
             int north = -1, west = int.MaxValue, east = -1;
-            Vector2Int gateCell = default;
+            Vector2Int gateCell = default, gateSize = Vector2Int.one;
             for (int i = 0; i < seeds.arraySize; i++)
             {
                 var seed = seeds.GetArrayElementAtIndex(i);
                 var piece = (BuildPieceDefinition)seed.FindPropertyRelative("definition").objectReferenceValue;
                 Vector2Int cell = seed.FindPropertyRelative("cell").vector2IntValue;
-                if (piece.Kind == BuildPieceKind.Gate) gateCell = cell;
+                if (piece.Kind == BuildPieceKind.Gate) { gateCell = cell; gateSize = piece.Footprint; }
                 if (piece.Kind != BuildPieceKind.Wall) continue;
                 north = Mathf.Max(north, cell.y); west = Mathf.Min(west, cell.x); east = Mathf.Max(east, cell.x);
             }
@@ -70,9 +72,10 @@ namespace ProjectNeo.Editor
             ladderRoot.SetParent(world.transform, false);
             var ladders = new List<SiegeLadder>();
             var wood = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Art/Placeholder/SiegeLadder.mat");
-            for (int x = west + 2; x <= east - 2; x += 5)
+            // 사다리는 북쪽 줄을 따라 LadderSpacing칸(7.5m 칸에서 15m)마다, 성문 칸은 건너뛴다(SIEGE-18).
+            for (int x = west + 2; x <= east - 2; x += LadderSpacing)
             {
-                if (x >= gateCell.x && x < gateCell.x + 2) continue;
+                if (x >= gateCell.x && x < gateCell.x + gateSize.x) continue;
                 var root = new GameObject("Ladder_" + x);
                 root.transform.SetParent(ladderRoot, false);
                 var ladder = root.AddComponent<SiegeLadder>();
@@ -216,7 +219,8 @@ namespace ProjectNeo.Editor
                 label.rectTransform.sizeDelta = new Vector2(9f, 2f);
                 label.fontSize = 14f; label.alignment = TextAlignmentOptions.Center; label.text = "전투 시작";
             }
-            station.localPosition = new Vector3((gate.x + 3.5f) * world.Grid.CellSize, 0f, (gate.y - 2f) * world.Grid.CellSize);
+            // 성문 안쪽 동쪽, 집결지 옆(7.5m 칸에서 성문 가운데로부터 동쪽 7.5m, 안쪽 15m).
+            station.localPosition = new Vector3((gate.x + 1.5f) * world.Grid.CellSize, 0f, (gate.y - 1.5f) * world.Grid.CellSize);
             var target = station.GetComponent<BattleStartStation>();
             if (target == null) target = station.gameObject.AddComponent<BattleStartStation>();
             target.Configure(view, controller);

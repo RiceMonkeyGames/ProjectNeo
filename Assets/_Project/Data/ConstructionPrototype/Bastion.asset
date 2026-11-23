@@ -15,10 +15,12 @@ MonoBehaviour:
   kind: 3
   displayName: "\uBCF4\uB8E8"
   footprint: {x: 1, y: 1}
-  height: 3
+  height: 5
   maxHealth: 150
+  maxStorey: 3
   prefab: {fileID: 2958240156693826740, guid: 80e7b54c0b6a05447986c57118e0debb, type: 3}
   mountPoints:
   - id: top
     normalizedPosition: {x: 0, y: 1, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
+  occupantModifiers: []

@@ -17,7 +17,8 @@ namespace ProjectNeo.Combat
         // 이동 지시에서 이 거리 안으로 들어오면 도착으로 본다.
         [SerializeField, Min(0.01f)] float arrivalDistance = 0.35f;
         // 목적지 조각이 사라졌을 때 주변의 남은 길을 찾는 거리. 조각 규격에 맞춰 조정한다.
-        [SerializeField, Min(0.1f)] float destinationRecoveryDistance = 4f;
+        // 5m 층(SIEGE-18): 무너진 한 층 성벽 윗면에서 바로 아래 땅(5m)까지 닿아야 한다.
+        [SerializeField, Min(0.1f)] float destinationRecoveryDistance = 6f;
         // 중지(자리 지키기) 중인 근접 유닛이 다가가 싸우는 범위. 자리에서 이 거리 안의 적만 쫓는다. 0이면 쫓지 않는다.
         [SerializeField, Min(0f)] float holdEngageRadius = 6f;
         public float HoldEngageRadius => holdEngageRadius;
