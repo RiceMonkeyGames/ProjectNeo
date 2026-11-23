@@ -37,6 +37,14 @@ namespace ProjectNeo.Characters
         public float HeightRatio => IsCrouching ? motor.height / standingHeight : 1f;
         public float EyeHeight => settings.CameraHeight * HeightRatio;
         public PlayerControlSettings Settings => settings;
+        static readonly System.Collections.Generic.List<PlayerInputController> active =
+            new System.Collections.Generic.List<PlayerInputController>();
+        /// <summary>
+        /// 켜져 있는 플레이어 조작 부품(PERF-ai-alloc-and-split). 공간 격자는 충돌체 경계로 위치를 잡아 순간 이동 직후에는
+        /// 늦을 수 있으므로, 플레이어를 꼭 찾아야 하는 검사(사다리 밀기)는 이 목록을 직접 본다.
+        /// </summary>
+        public static System.Collections.Generic.IReadOnlyList<PlayerInputController> Active => active;
+        public CharacterActor Actor => actor;
         /// <summary>사다리·대포·건설·낙하 등으로 이동이 멈춘 상태(COMBAT-06: 이때는 스킬도 쓰지 않는다).</summary>
         public bool IsMovementSuspended => movementSuspended;
 
@@ -97,6 +105,7 @@ namespace ProjectNeo.Characters
 
         void OnEnable()
         {
+            if (!active.Contains(this)) active.Add(this);
             previousLock = Cursor.lockState;
             previousVisible = Cursor.visible;
             actions.FindActionMap("Player", true).Enable();
@@ -192,6 +201,7 @@ namespace ProjectNeo.Characters
 
         void OnDisable()
         {
+            active.Remove(this);
             GetComponent<ProjectNeo.Siege.LadderTraveller>()?.Interrupt();
             if (actions != null) actions.Disable();
             IsSprinting = false;

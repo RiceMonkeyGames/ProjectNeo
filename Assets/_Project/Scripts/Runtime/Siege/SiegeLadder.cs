@@ -25,6 +25,26 @@ namespace ProjectNeo.Siege
         readonly LadderTraffic<CharacterActor> traffic = new LadderTraffic<CharacterActor>();
         readonly List<CharacterActor> removedRequests = new List<CharacterActor>();
         readonly Dictionary<CharacterActor, LadderPushInterruptHandle> aiPushHandles = new Dictionary<CharacterActor, LadderPushInterruptHandle>();
+        readonly List<CharacterActor> staleHandles = new List<CharacterActor>();
+        // 밀기 후보 검색(PERF-ai-alloc-and-split): 매 프레임 전체 유닛 대신 위쪽 끝 주변 격자 칸만 본다.
+        readonly List<CharacterActor> nearbyActors = new List<CharacterActor>();
+        // 유닛마다 한 번만 찾아 두는 밀기 관련 부품. 꺼지거나 죽은 유닛은 밀기 핸들과 함께 비운다.
+        readonly Dictionary<CharacterActor, PusherParts> pusherParts = new Dictionary<CharacterActor, PusherParts>();
+
+        readonly struct PusherParts
+        {
+            public readonly bool IsPlayer;
+            public readonly LadderTraveller Traveller;
+            public readonly UnitCombatAI Ai;
+            public bool IsComplete => IsPlayer ? Traveller != null : Ai != null;
+
+            public PusherParts(CharacterActor actor)
+            {
+                IsPlayer = actor.GetComponent<PlayerInputController>() != null;
+                Traveller = IsPlayer ? actor.GetComponent<LadderTraveller>() : null;
+                Ai = IsPlayer ? null : actor.GetComponent<UnitCombatAI>();
+            }
+        }
         CharacterActor sharedRaiser;
         CastleBattlements battlements;
         static readonly List<SiegeLadder> active = new List<SiegeLadder>();
@@ -115,6 +135,7 @@ namespace ProjectNeo.Siege
         {
             foreach (var pair in aiPushHandles) pair.Value.Dispose();
             aiPushHandles.Clear();
+            pusherParts.Clear();
         }
         public Vector3 OutwardWorld => world.transform.TransformDirection(new Vector3(outward.x, 0f, outward.y)).normalized;
 
@@ -271,7 +292,9 @@ namespace ProjectNeo.Siege
             get
             {
                 if (Alive(traffic.Occupant) && traffic.Occupant.Team == CombatTeam.Allied) return true;
-                foreach (var actor in traffic.Waiting) if (Alive(actor) && actor.Team == CombatTeam.Allied) return true;
+                IReadOnlyList<CharacterActor> waiting = traffic.Waiting;
+                for (int i = 0; i < waiting.Count; i++)
+                    if (Alive(waiting[i]) && waiting[i].Team == CombatTeam.Allied) return true;
                 return false;
             }
         }
@@ -319,6 +342,7 @@ namespace ProjectNeo.Siege
 
         void TickAiPushHandles(float deltaTime)
         {
+            PruneStalePushers();
             foreach (var pair in aiPushHandles)
             {
                 pair.Value.SetPushing(false, settings.LadderPushPoise, settings.LadderPushInterruptCooldown);
@@ -326,52 +350,86 @@ namespace ProjectNeo.Siege
             }
         }
 
+        // 죽었거나 꺼진(풀로 돌아간) 유닛의 밀기 핸들과 부품 캐시를 놓는다. 두지 않으면 전투가 길수록 계속 쌓인다.
+        void PruneStalePushers()
+        {
+            staleHandles.Clear();
+            foreach (var pair in aiPushHandles)
+                if (!Alive(pair.Key)) staleHandles.Add(pair.Key);
+            foreach (CharacterActor actor in staleHandles)
+            {
+                aiPushHandles[actor].Dispose();
+                aiPushHandles.Remove(actor);
+            }
+            staleHandles.Clear();
+            foreach (var pair in pusherParts)
+                if (!Alive(pair.Key)) staleHandles.Add(pair.Key);
+            foreach (CharacterActor actor in staleHandles) pusherParts.Remove(actor);
+            staleHandles.Clear();
+        }
+
+        // 부품은 생성 뒤에 붙기도 한다(플레이어의 LadderTraveller 등). 필요한 부품이 아직 없으면 다시 찾는다.
+        PusherParts PartsOf(CharacterActor actor)
+        {
+            if (!pusherParts.TryGetValue(actor, out PusherParts parts) || !parts.IsComplete)
+            {
+                parts = new PusherParts(actor);
+                pusherParts[actor] = parts;
+            }
+            return parts;
+        }
+
         /// <summary>위쪽 끝에서 함께 밀 수 있는 아군 수와, 올라온 적 때문에 밀기가 막혔는지 센다.</summary>
         void FindPushers(out int pushers, out bool blocked)
         {
             pushers = 0; blocked = false;
             Vector3 top = TopPoint;
-            foreach (CharacterActor actor in CharacterActor.ActiveActors)
+            bool friendlyUse = FriendlyUse;
+            // 올라온 적이 있으면 아군은 그 적과 싸우느라 밀지 못한다.
+            CombatSpatialIndex.QueryTeam(CombatTeam.Hostile, top, settings.LadderBlockRadius, nearbyActors);
+            for (int i = 0; i < nearbyActors.Count && !blocked; i++)
+                if (IsAtTop(nearbyActors[i], top, settings.LadderBlockRadius)) blocked = true;
+            // 플레이어는 격자 대신 직접 본다. 격자는 충돌체 경계로 자리를 잡아 순간 이동 직후에는 늦을 수 있다.
+            // 인터페이스 목록을 foreach로 돌면 열거자가 매번 할당되므로 번호로 돈다.
+            IReadOnlyList<PlayerInputController> players = PlayerInputController.Active;
+            for (int i = 0; i < players.Count; i++)
             {
-                if (actor.gameObject.scene != gameObject.scene) continue;
-                if (climber != null && actor == climber.Actor) continue;
-                Vector3 offset = actor.transform.position - top;
-                if (Mathf.Abs(offset.y) > settings.LadderHeightTolerance) continue;
-                offset.y = 0f;
-                float distance = offset.magnitude;
-                if (actor.Team == CombatTeam.Hostile)
-                {
-                    // 올라온 적이 있으면 아군은 그 적과 싸우느라 밀지 못한다.
-                    if (distance <= settings.LadderBlockRadius) blocked = true;
-                    continue;
-                }
-                if (distance > settings.LadderPushRadius) continue;
-                if (actor.GetComponent<PlayerInputController>() != null)
-                {
-                    PlayerCanPush = !State.IsSettling;
-                    var traversal = actor.GetComponent<LadderTraveller>();
-                    if (traversal != null && traversal.IsHoldingTopple(this) && !FriendlyUse) pushers++;
-                }
-                else
-                {
-                    var ai = actor.GetComponent<UnitCombatAI>();
-                    if (ai != null && ai.Target == null && !actor.IsAttacking && !FriendlyUse)
-                    {
-                        if (!aiPushHandles.TryGetValue(actor, out var handle))
-                        {
-                            handle = new LadderPushInterruptHandle(actor);
-                            aiPushHandles[actor] = handle;
-                        }
-                        if (!handle.IsOnCooldown)
-                        {
-                            handle.SetPushing(true, settings.LadderPushPoise, settings.LadderPushInterruptCooldown);
-                            pushers++;
-                        }
-                    }
-                }
+                PlayerInputController player = players[i];
+                CharacterActor actor = player != null ? player.Actor : null;
+                if (!Alive(actor) || actor.Team == CombatTeam.Hostile || !IsAtTop(actor, top, settings.LadderPushRadius)) continue;
+                PlayerCanPush = !State.IsSettling;
+                LadderTraveller traveller = PartsOf(actor).Traveller;
+                if (traveller != null && traveller.IsHoldingTopple(this) && !friendlyUse) pushers++;
             }
-            if (blocked) PlayerCanPush = false;
-            if (FriendlyUse) PlayerCanPush = false;
+            CombatSpatialIndex.QueryTeam(CombatTeam.Allied, top, settings.LadderPushRadius, nearbyActors);
+            for (int i = 0; i < nearbyActors.Count; i++)
+            {
+                CharacterActor actor = nearbyActors[i];
+                if (!IsAtTop(actor, top, settings.LadderPushRadius)) continue;
+                PusherParts parts = PartsOf(actor);
+                if (parts.IsPlayer) continue;
+                if (parts.Ai == null || parts.Ai.Target != null || actor.IsAttacking || friendlyUse) continue;
+                if (!aiPushHandles.TryGetValue(actor, out var handle))
+                {
+                    handle = new LadderPushInterruptHandle(actor);
+                    aiPushHandles[actor] = handle;
+                }
+                if (handle.IsOnCooldown) continue;
+                handle.SetPushing(true, settings.LadderPushPoise, settings.LadderPushInterruptCooldown);
+                pushers++;
+            }
+            if (blocked || friendlyUse) PlayerCanPush = false;
+        }
+
+        // 위쪽 끝에서 높이 허용치 안, 수평 반경 안에 서 있는 같은 장면의 유닛인지. 오르는 중인 유닛은 빼고 센다.
+        bool IsAtTop(CharacterActor actor, Vector3 top, float radius)
+        {
+            if (actor == null || actor.gameObject.scene != gameObject.scene) return false;
+            if (climber != null && actor == climber.Actor) return false;
+            Vector3 offset = actor.transform.position - top;
+            if (Mathf.Abs(offset.y) > settings.LadderHeightTolerance) return false;
+            offset.y = 0f;
+            return offset.sqrMagnitude <= radius * radius;
         }
 
         void OnToppled(bool hadClimber)

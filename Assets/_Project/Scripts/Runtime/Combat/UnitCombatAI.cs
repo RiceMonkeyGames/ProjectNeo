@@ -49,15 +49,12 @@ namespace ProjectNeo.Combat
         public void SetSquadNeighborhoodClear(bool clear) => squadNeighborhoodClear = clear;
         public bool IsSquadNeighborhoodClear => squadNeighborhoodClear;
         // 원거리(LOD 2) 하이브리드 Flow Field 이동 중인지(PERF-ai-flow-field).
-        bool usingFlowField;
-        Vector3 flowDirectionCached;
-        public bool IsUsingFlowField => usingFlowField;
+        readonly FlowFieldAdvanceState flowField = new FlowFieldAdvanceState();
+        public bool IsUsingFlowField => flowField.IsActive;
         // 자리 방향(COMBAT-14). 대형이 바라볼 방향이나 자리를 받은 때의 방향(도). 없으면 돌지 않는다.
         float? postFacing;
         // 근접 위협 후퇴(COMBAT-14).
-        bool fallingBack;
-        float fallbackRemaining;
-        float fallbackCooldownRemaining;
+        readonly RangedFallbackState fallback = new RangedFallbackState();
         float threatRecheckRemaining;
         public CharacterActor Target
         {
@@ -65,6 +62,9 @@ namespace ProjectNeo.Combat
             private set
             {
                 if (ReferenceEquals(target, value)) return;
+                // 대상이 바뀌면 이전 대상 둘레에 맡은 근접 자리를 놓는다(PERF-ai-alloc-and-split).
+                // 남겨 두면 다른 유닛의 자리 계산이 그 자리를 찬 것으로 볼지 매번 다시 따져야 한다.
+                if (!ReferenceEquals(target, null)) meleeSlotBoard.Release(this);
                 target = value;
                 spreadRevision++;
             }
@@ -77,7 +77,7 @@ namespace ProjectNeo.Combat
         /// <summary>자리를 지킬 때 돌아볼 방향(y축 각도, 도). 없으면 null(COMBAT-14).</summary>
         public float? HoldFacing => postFacing;
         /// <summary>근접 적을 피해 짧게 물러나는 중인지(COMBAT-14, 검증용).</summary>
-        public bool IsFallingBack => fallingBack;
+        public bool IsFallingBack => fallback.IsActive;
         // 지시를 받지 않은 유닛(적, 관전 전투)은 기존처럼 알아서 싸운다.
         public UnitDirective Directive { get; private set; } = UnitDirective.Engage;
         public Vector3 MoveDestination { get; private set; }
@@ -118,20 +118,12 @@ namespace ProjectNeo.Combat
             HasAdvancePoint = false;
             destinationPending = false;
             advancePathRetryPending = false;
-            Target = null;
-            retaliatingTarget = null;
+            ResetTransientState();
             targetLockRemaining = 0f;
             decisionRemaining = 0f;
             stall.Reset();
             returningToPost = false;
-            ReleaseOpening();
-            meleeSlotBoard.Release(this);
-            blockAction = RangedBlockAction.Attack;
-            hasClearShotCached = true;
-            clearShotDirty = true;
             squadNeighborhoodClear = false;
-            usingFlowField = false;
-            fallingBack = false;
             // 방향은 부대 대형 방향을 함께 받은 지시(SetDirective(지시, 목적지, 방향))만 지킨다(COMBAT-14).
             // 공성 적 판단처럼 중지 중에 스스로 방향을 돌리는 쪽과 다투지 않게 여기서는 비운다.
             postFacing = null;
@@ -251,7 +243,7 @@ namespace ProjectNeo.Combat
             agent.angularSpeed = settings.TurnSpeed;
             decisionRemaining -= Time.deltaTime;
             targetLockRemaining = Mathf.Max(0f, targetLockRemaining - Time.deltaTime);
-            fallbackCooldownRemaining = Mathf.Max(0f, fallbackCooldownRemaining - Time.deltaTime);
+            fallback.TickCooldown(Time.deltaTime);
             threatRecheckRemaining = Mathf.Max(0f, threatRecheckRemaining - Time.deltaTime);
             switch (Directive)
             {
@@ -659,7 +651,7 @@ namespace ProjectNeo.Combat
         bool UpdateMeleeThreat(bool refreshed, bool holding)
         {
             if (!IsRangedUnit || suppressRetaliation || settings.RangedMeleeThreatRadius <= 0f) return false;
-            if (!refreshed || fallingBack) return false;
+            if (!refreshed || fallback.IsActive) return false;
             CharacterActor threat = FindMeleeThreat();
             if (threat == null) return false;
             if (!ReferenceEquals(threat, Target)) SwitchTarget(threat, false);
@@ -670,15 +662,15 @@ namespace ProjectNeo.Combat
         // 후퇴 중이면 true(이번 프레임의 나머지 판단을 건너뛴다).
         bool ContinueFallback()
         {
-            if (!fallingBack) return false;
+            if (!fallback.IsActive) return false;
             if (!IsRangedUnit || suppressRetaliation || settings.RangedMeleeThreatRadius <= 0f)
             {
                 EndFallback();
                 return false;
             }
-            fallbackRemaining -= Time.deltaTime;
+            bool timeLeft = fallback.Advance(Time.deltaTime);
             bool arrived = !agent.pathPending && agent.remainingDistance <= settings.ArrivalDistance;
-            if (fallbackRemaining > 0f && agent.hasPath && !arrived)
+            if (timeLeft && agent.hasPath && !arrived)
             {
                 agent.stoppingDistance = 0f;
                 agent.isStopped = false;
@@ -711,7 +703,7 @@ namespace ProjectNeo.Combat
 
         bool TryBeginFallback(CharacterActor threat, bool holding)
         {
-            if (settings.RangedFallbackDistance <= 0f || fallbackCooldownRemaining > 0f || actor.IsAttacking
+            if (settings.RangedFallbackDistance <= 0f || fallback.IsCoolingDown || actor.IsAttacking
                 || actor.IsOnLadder) return false;
             Vector3 self = transform.position;
             Vector3 threatPosition = threat.transform.position;
@@ -723,7 +715,7 @@ namespace ProjectNeo.Combat
                 if (TryFallbackPath(self, threatPosition, point, holding)) return StartFallback();
             }
             // 어느 쪽에도 물러날 곳이 없으면 RangedFallbackCooldown 동안 서서 쏜다(판단 주기마다 길찾기를 하지 않게).
-            fallbackCooldownRemaining = settings.RangedFallbackCooldown;
+            fallback.StartCooldown(settings.RangedFallbackCooldown);
             return false;
         }
 
@@ -749,17 +741,33 @@ namespace ProjectNeo.Combat
             agent.SetPath(path);
             agent.isStopped = false;
             agent.updateRotation = true;
-            fallingBack = true;
-            fallbackRemaining = settings.RangedFallbackMaxSeconds;
+            fallback.Begin(settings.RangedFallbackMaxSeconds);
             returningToPost = false;
             return true;
         }
 
         void EndFallback()
         {
-            fallingBack = false;
-            fallbackCooldownRemaining = settings.RangedFallbackCooldown;
+            fallback.Finish(settings.RangedFallbackCooldown);
             if (agent.enabled && agent.isOnNavMesh && agent.hasPath) agent.ResetPath();
+        }
+
+        /// <summary>
+        /// 대상과, 대상에 딸린 일시 상태(후퇴·마치콜레이션 구멍·근접 자리·Flow Field 전진·사선 캐시)를 한 번에 비운다
+        /// (PERF-ai-alloc-and-split). 지시 변경·사망·비활성화가 모두 이 한 곳을 써서 일부만 남는 일이 없게 한다.
+        /// 후퇴 대기 시간은 남긴다(곧바로 다시 물러나지 않게).
+        /// </summary>
+        void ResetTransientState()
+        {
+            fallback.Cancel();
+            ReleaseOpening();
+            meleeSlotBoard.Release(this);
+            flowField.Stop();
+            Target = null;
+            retaliatingTarget = null;
+            blockAction = RangedBlockAction.Attack;
+            hasClearShotCached = true;
+            clearShotDirty = true;
         }
 
         // 원거리 유닛이 쏘고 있는 대상보다 위협 배율이 확실히 작은(더 위협적인) 대상이 지금 자리에서 쏠 수 있으면 바꾼다.
@@ -972,7 +980,7 @@ namespace ProjectNeo.Combat
                     clearShotDirty = true;
                     if (!TryUpdateFlowFieldEngage())
                     {
-                        usingFlowField = false;
+                        flowField.Stop();
                         if (Target != null && CanReach(Target))
                         {
                             if (!suppressRetaliation && targetLockRemaining <= 0f && !CanStrikeFromHere(Target))
@@ -996,7 +1004,7 @@ namespace ProjectNeo.Combat
                 }
             }
             if (UpdateMeleeThreat(refreshed, false)) return;
-            if (refreshed && Target != null && !usingFlowField) TryUpgradeThreatTarget();
+            if (refreshed && Target != null && !flowField.IsActive) TryUpgradeThreatTarget();
             if (Target == null)
             {
                 Advance();
@@ -1005,15 +1013,16 @@ namespace ProjectNeo.Combat
             // 적을 쫓느라 경로가 바뀌었으므로, 처리한 뒤에는 지점으로 가는 길을 바로 다시 구한다.
             advanceRepathRemaining = 0f;
             stall.Reset();
-            if (usingFlowField)
+            if (flowField.IsActive)
             {
+                Vector3 flowDirection = flowField.Direction;
                 if (agent.hasPath) agent.ResetPath();
                 agent.isStopped = false;
                 agent.updateRotation = false;
-                agent.velocity = flowDirectionCached * agent.speed;
-                if (flowDirectionCached.sqrMagnitude > 1e-4f)
+                agent.velocity = flowDirection * agent.speed;
+                if (flowDirection.sqrMagnitude > 1e-4f)
                     transform.rotation = Quaternion.RotateTowards(transform.rotation,
-                        Quaternion.LookRotation(flowDirectionCached), settings.TurnSpeed * Time.deltaTime);
+                        Quaternion.LookRotation(flowDirection), settings.TurnSpeed * Time.deltaTime);
                 return;
             }
             bool inRange = CombatPhysics.IsInRange(actor, Target);
@@ -1114,8 +1123,7 @@ namespace ProjectNeo.Combat
             }
             meleeSlotBoard.Release(this);
             if (agent.hasPath) agent.ResetPath();
-            flowDirectionCached = flowDir;
-            usingFlowField = true;
+            flowField.Begin(flowDir);
             return true;
         }
 
@@ -1387,11 +1395,7 @@ namespace ProjectNeo.Combat
 
         void OnDied()
         {
-            fallingBack = false;
-            ReleaseOpening();
-            meleeSlotBoard.Release(this);
-            Target = null;
-            retaliatingTarget = null;
+            ResetTransientState();
             agent.enabled = false;
         }
 
@@ -1401,11 +1405,7 @@ namespace ProjectNeo.Combat
             actor.Died -= OnDied;
             actor.HitReceivedFrom -= OnHitReceived;
             activeUnits.Remove(this);
-            fallingBack = false;
-            ReleaseOpening();
-            meleeSlotBoard.Release(this);
-            Target = null;
-            retaliatingTarget = null;
+            ResetTransientState();
             if (agent.enabled && agent.isOnNavMesh)
             {
                 agent.ResetPath();

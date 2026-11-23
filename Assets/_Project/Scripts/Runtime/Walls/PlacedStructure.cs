@@ -18,6 +18,12 @@ namespace ProjectNeo.Walls
         /// <summary>문짝이 지금 열려 있다(부서졌거나 열어 두었다). 문짝이 없는 조각은 false.</summary>
         public bool IsDoorOpen => doorCollider != null && !doorCollider.enabled;
         public Collider DoorCollider => doorCollider;
+        Collider[] bodies;
+        /// <summary>
+        /// 조각 루트의 충돌체 목록(PERF-ai-alloc-and-split). 처음 물을 때 한 번 찾아 두고 같은 배열을 돌려준다.
+        /// 켜짐 여부는 바뀔 수 있으니 쓰는 쪽이 <see cref="Collider.enabled"/>를 본다. 배열은 고치지 않는다.
+        /// </summary>
+        public Collider[] Bodies => bodies ??= GetComponents<Collider>();
         /// <summary>준비 중 짓고 있는 조각(SIEGE-08). 이 위에는 조각을 쌓거나 무기를 올릴 수 없다.</summary>
         public bool IsUnderConstruction { get; private set; }
         public void SetUnderConstruction(bool value) => IsUnderConstruction = value;
@@ -26,6 +32,8 @@ namespace ProjectNeo.Walls
         {
             doorCollider = collider;
             doorVisual = visual;
+            // 문짝 충돌체가 루트에 새로 붙었을 수 있으니 다음에 다시 찾는다.
+            bodies = null;
         }
 
         public void Initialize(ConstructionWorld owner, BuildPlacement placement)

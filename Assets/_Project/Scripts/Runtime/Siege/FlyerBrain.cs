@@ -30,6 +30,20 @@ namespace ProjectNeo.Siege
         // 같은 대상 둘레의 자리를 나누려고 켜진 비행 적을 모두 기억한다(SIEGE-16).
         static readonly List<FlyerBrain> Active = new List<FlyerBrain>();
         static readonly Collider[] Overlaps = new Collider[16];
+        // 지붕·발판 광선 검사가 매번 배열을 만들지 않게 함께 쓰는 버퍼(PERF-ai-alloc-and-split). 메인 스레드에서만 쓴다.
+        static readonly RaycastHit[] RayHits = new RaycastHit[32];
+        // 같은 아군의 지붕 검사 결과를 여러 비행 적이 잠깐 나눠 쓴다.
+        static readonly ShelterSampleCache<CharacterActor> ShelterCache = new ShelterSampleCache<CharacterActor>();
+        static int nextStaggerIndex;
+        int staggerIndex = -1;
+        // 발밑 높이 캐시. 마지막으로 잰 시각·자리와 그때의 발판 높이.
+        bool groundCached;
+        bool groundFound;
+        float groundHeight;
+        float groundProbeTime = float.NegativeInfinity;
+        Vector3 groundProbePosition;
+        AILodTier lodTier = AILodTier.Lod0;
+        float lodCheckRemaining;
         AirborneBody body;
         Func<Vector3, float?> surfaceAt;
         Func<Vector3, bool> clearForActor;
@@ -64,6 +78,8 @@ namespace ProjectNeo.Siege
         public bool IsHolding => mode == Mode.Holding;
         public Vector3 Destination => destination;
         public float CruiseHeight => cruiseHeight;
+        /// <summary>지금 판단·발밑 검사 빈도를 정하는 AI LOD 등급(PERF-ai-alloc-and-split).</summary>
+        public AILodTier LodTier => lodTier;
         public override SiegeAttackerRole Role => SiegeAttackerRole.Flyer;
         public override bool HasDecided => mode != Mode.Deciding;
         public override bool IsAssaulting => mode == Mode.Pursuing && PursuitKey != null;
@@ -95,9 +111,29 @@ namespace ProjectNeo.Siege
         public override bool CanReachAnyEnemy()
         {
             // 성벽에 막히지 않으므로 지붕 아래에 있지 않은 살아 있는 아군이 있으면 닿는다.
-            foreach (CharacterActor candidate in CharacterActor.ActiveActors)
-                if (Actor.IsEnemy(candidate) && !IsSheltered(candidate)) return true;
+            IReadOnlyList<CharacterActor> actors = CharacterActor.ActiveActors;
+            for (int i = 0; i < actors.Count; i++)
+                if (Actor.IsEnemy(actors[i]) && !IsShelteredCached(actors[i])) return true;
             return false;
+        }
+
+        // 판단·후퇴 검사용. 같은 아군을 최근에 거의 같은 자리에서 쟀으면 그 결과를 다시 쓴다.
+        // 캐시 시간은 판단 주기의 절반을 넘지 않는다. 그래서 한 비행 적의 다음 판단은 늘 새로 재고(지붕이 사라지면 바로 안다),
+        // 같은 판단 창에 모인 여러 비행 적과 후퇴 검사만 결과를 나눠 쓴다.
+        bool IsShelteredCached(CharacterActor ally)
+        {
+            if (ally == null || flyer == null) return false;
+            float now = Time.time;
+            float maxAge = settings != null
+                ? Mathf.Min(flyer.ShelterCacheSeconds, settings.AttackerDecisionInterval * 0.5f)
+                : flyer.ShelterCacheSeconds;
+            Vector3 position = ally.transform.position;
+            ShelterCache.Prune(now, maxAge);
+            if (ShelterCache.TryGet(ally, position, now, maxAge, flyer.ShelterMoveTolerance,
+                    out bool sheltered)) return sheltered;
+            sheltered = IsSheltered(ally);
+            ShelterCache.Store(ally, position, now, sheltered);
+            return sheltered;
         }
 
         /// <summary>
@@ -109,11 +145,13 @@ namespace ProjectNeo.Siege
             if (ally == null || flyer == null || flyer.RoofProbeDistance <= 0f) return false;
             float head = ally.Profile != null ? ally.Profile.Height : 2f;
             Vector3 start = ally.transform.position + Vector3.up * (head + 0.05f);
-            foreach (RaycastHit hit in Physics.RaycastAll(start, Vector3.up, flyer.RoofProbeDistance, ~0,
-                         QueryTriggerInteraction.Ignore))
+            int count = Physics.RaycastNonAlloc(start, Vector3.up, RayHits, flyer.RoofProbeDistance, ~0,
+                QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < count; i++)
             {
-                if (hit.collider.gameObject.scene != ally.gameObject.scene
-                    || hit.collider.GetComponentInParent<CharacterActor>() != null) continue;
+                Collider hit = RayHits[i].collider;
+                if (hit == null || hit.gameObject.scene != ally.gameObject.scene
+                    || hit.GetComponentInParent<CharacterActor>() != null) continue;
                 return true;
             }
             return false;
@@ -149,6 +187,44 @@ namespace ProjectNeo.Siege
             Actor.Died -= OnDied;
             Active.Remove(this);
             ClearTarget();
+            // 풀에서 다시 켜지면 새 자리에서 발밑과 LOD를 처음부터 잰다.
+            groundCached = false;
+            lodTier = AILodTier.Lod0;
+            lodCheckRemaining = 0f;
+            staggerIndex = -1;
+            if (Active.Count == 0) ShelterCache.Clear();
+        }
+
+        /// <summary>판단 분산 순번을 처음으로 되돌린다(테스트·새 전투용).</summary>
+        public static void ResetStaggerCounter() => nextStaggerIndex = 0;
+
+        // 다음 판단까지 기다릴 시간. 첫 판단 뒤 한 번만, 함께 생긴 비행 적들을 묶음별로 어긋나게 한다(지상 유닛과 같은 규칙).
+        float NextDecisionInterval()
+        {
+            // 방금 판단으로 대상을 잡았으면 LOD 등급 갱신을 기다리지 않고 원래 주기를 쓴다.
+            AILodTier tier = PursuitKey != null ? AILodTier.Lod0 : lodTier;
+            float interval = settings.AttackerDecisionInterval * AILodRules.IntervalMultiplier(tier);
+            if (staggerIndex >= 0) return interval;
+            staggerIndex = Active.Count <= 1 ? 0 : nextStaggerIndex++;
+            return interval + AIDecisionScheduler.InitialOffset(staggerIndex, flyer.DecisionStaggerBuckets, interval);
+        }
+
+        // 카메라에서 먼 비행 적은 판단과 발밑 검사를 덜 자주 한다. 대상을 쫓는 중이면(아군·대포) 늘 LOD 0이라
+        // 대상 교체가 늦어지지 않는다. 노릴 대상 없이 기다리는 비행 적만 느려진다.
+        void UpdateLodTier()
+        {
+            // 쫓는 대상이 생기면 다음 평가 시점을 기다리지 않고 바로 LOD 0으로 올린다.
+            if (!flyer.EnableAiLod || Actor.Character != null || PursuitKey != null) { lodTier = AILodTier.Lod0; return; }
+            lodCheckRemaining -= Time.deltaTime;
+            if (lodCheckRemaining > 0f) return;
+            lodCheckRemaining = flyer.LodEvaluationInterval;
+            if (!AILodContext.TrySampleView(transform.position, out float sqrDistance, out bool inView, out bool topDown))
+            {
+                lodTier = AILodTier.Lod0;
+                return;
+            }
+            lodTier = AILodRules.Evaluate(true, sqrDistance, flyer.Lod0Distance, flyer.Lod1Distance, inView,
+                false, false, topDown);
         }
 
         void ClearTarget()
@@ -163,6 +239,7 @@ namespace ProjectNeo.Siege
             if (Actor.Health == null) return;
             if (Actor.Health.IsDead) { UpdateCorpse(); return; }
             if (flyer == null || flyer.Movement == null || world == null || settings == null) return;
+            UpdateLodTier();
             UpdateBody();
             if (mode == Mode.Exiting) { Fly(destination, true); return; }
             if (retreatRequested) { UpdateRetreat(); return; }
@@ -172,8 +249,8 @@ namespace ProjectNeo.Siege
             if (!ReferenceEquals(WeaponTarget, null) && !IsLiveWeapon(WeaponTarget)) think = 0f;
             if (think <= 0f)
             {
-                think = settings.AttackerDecisionInterval;
                 Decide();
+                think = NextDecisionInterval();
             }
             if (mode == Mode.Pursuing && PursuitKey != null) Pursue();
             else Fly(destination, true);
@@ -186,10 +263,13 @@ namespace ProjectNeo.Siege
             candidates.Clear();
             weaponTargets.Clear();
             float ground = world.transform.position.y;
-            foreach (CharacterActor candidate in CharacterActor.ActiveActors)
+            // 인터페이스 목록을 foreach로 돌면 열거자가 할당되므로 번호로 돈다(PERF-ai-alloc-and-split).
+            IReadOnlyList<CharacterActor> actors = CharacterActor.ActiveActors;
+            for (int i = 0; i < actors.Count; i++)
             {
+                CharacterActor candidate = actors[i];
                 // 지붕 아래 아군(계단방·탑 안·성문 통로)은 날아서 닿지 않으므로 고르지 않는다.
-                if (!Actor.IsEnemy(candidate) || IsSheltered(candidate)) continue;
+                if (!Actor.IsEnemy(candidate) || IsShelteredCached(candidate)) continue;
                 // 같은 거리일 때는 활성 목록에 먼저 들어온 아군을 고른다.
                 candidates.Add(new FlyerTargetCandidate(targets.Count,
                     (candidate.transform.position - transform.position).sqrMagnitude,
@@ -387,11 +467,27 @@ namespace ProjectNeo.Siege
             return world.transform.position.y + top + flyer.CruiseClearance;
         }
 
+        // 발밑 발판 높이는 정해진 간격(먼 LOD일수록 길게)이나 수평으로 조금 움직였을 때만 다시 잰다.
+        // 높이 자체는 매 프레임 지금 위치로 계산하므로 오르내림은 바로 반영된다.
         void UpdateBody()
         {
-            bool found = FindGround(transform.position + Vector3.up * 0.1f, flyer.GroundProbeDistance, out Vector3 ground);
-            float altitude = found ? transform.position.y - ground.y : float.PositiveInfinity;
-            body.SetState(found ? ground : transform.position, found, altitude <= flyer.MeleeExposureAltitude);
+            Vector3 position = transform.position;
+            Vector3 moved = position - groundProbePosition;
+            moved.y = 0f;
+            float tolerance = flyer.GroundProbeMoveTolerance;
+            bool belowCachedGround = groundFound && position.y < groundHeight;
+            if (!groundCached || belowCachedGround || moved.sqrMagnitude > tolerance * tolerance
+                || Time.time - groundProbeTime >= flyer.GroundProbeInterval * AILodRules.IntervalMultiplier(lodTier))
+            {
+                groundFound = FindGround(position + Vector3.up * 0.1f, flyer.GroundProbeDistance, out Vector3 hit);
+                groundHeight = hit.y;
+                groundCached = true;
+                groundProbeTime = Time.time;
+                groundProbePosition = position;
+            }
+            float altitude = groundFound ? position.y - groundHeight : float.PositiveInfinity;
+            Vector3 ground = groundFound ? new Vector3(position.x, groundHeight, position.z) : position;
+            body.SetState(ground, groundFound, altitude <= flyer.MeleeExposureAltitude);
         }
 
         // 대상 높이 근처에서 그 점 아래 발판의 높이. 유닛 몸통은 발판으로 치지 않는다.
@@ -405,10 +501,12 @@ namespace ProjectNeo.Siege
         {
             point = default;
             float nearest = float.PositiveInfinity;
-            foreach (RaycastHit hit in Physics.RaycastAll(start, Vector3.down, distance, ~0, QueryTriggerInteraction.Ignore))
+            int count = Physics.RaycastNonAlloc(start, Vector3.down, RayHits, distance, ~0, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < count; i++)
             {
-                if (hit.collider.gameObject.scene != gameObject.scene
-                    || hit.collider.GetComponentInParent<CharacterActor>() != null || hit.distance >= nearest) continue;
+                RaycastHit hit = RayHits[i];
+                if (hit.collider == null || hit.distance >= nearest || hit.collider.gameObject.scene != gameObject.scene
+                    || hit.collider.GetComponentInParent<CharacterActor>() != null) continue;
                 nearest = hit.distance;
                 point = hit.point;
             }

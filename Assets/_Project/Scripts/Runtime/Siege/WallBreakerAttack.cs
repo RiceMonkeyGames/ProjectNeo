@@ -23,7 +23,9 @@ namespace ProjectNeo.Siege
         static readonly System.Comparison<Slot> byScore = (a, b) => a.Score.CompareTo(b.Score);
         readonly List<PlacedStructure> pieces = new List<PlacedStructure>();
         readonly List<WallTargetCandidate> candidates = new List<WallTargetCandidate>();
-        readonly List<Slot> slots = new List<Slot>();
+        // 네 면 자리 후보를 담는 버퍼. 대상마다 새로 만들지 않고 비워서 다시 쓴다(PERF-ai-alloc-and-split).
+        readonly List<Slot> slots = new List<Slot>(InitialSlotCapacity);
+        const int InitialSlotCapacity = 32;
         readonly List<Vector3> claims = new List<Vector3>();
         CharacterActor actor;
         UnitCombatAI ai;
@@ -67,8 +69,8 @@ namespace ProjectNeo.Siege
                 if (piece == null || piece.Health.IsDead || piece.Placement.Level != 0
                     || piece.Placement.Definition.Kind == BuildPieceKind.Stairs) continue;
                 float distance = float.PositiveInfinity;
-                foreach (var body in piece.GetComponents<Collider>())
-                    if (body.enabled) distance = Mathf.Min(distance, (body.ClosestPoint(actor.AimPoint) - actor.AimPoint).sqrMagnitude);
+                foreach (var body in piece.Bodies)
+                    if (body != null && body.enabled) distance = Mathf.Min(distance, (body.ClosestPoint(actor.AimPoint) - actor.AimPoint).sqrMagnitude);
                 pieces.Add(piece);
                 candidates.Add(new WallTargetCandidate(piece.Placement.Id, distance));
             }
@@ -83,7 +85,7 @@ namespace ProjectNeo.Siege
                 {
                     bool changed = Target != piece || (ApproachPoint - point).sqrMagnitude > 0.01f;
                     Target = piece; selected = true;
-                    targetBodies = piece.GetComponents<Collider>();
+                    targetBodies = piece.Bodies;
                     ApproachPoint = point;
                     if (InReach()) Hold();
                     else if (changed || ai.Directive != UnitDirective.Move) ai.SetDirective(UnitDirective.Move, point);
@@ -115,7 +117,7 @@ namespace ProjectNeo.Siege
             AddFace(new Vector3(left, 0f, bottom - margin), Vector3.right, right - left, margin, spacing);
             AddFace(new Vector3(left, 0f, top + margin), Vector3.right, right - left, margin, spacing);
             slots.Sort(byScore);
-            Collider[] bodies = piece.GetComponents<Collider>();
+            Collider[] bodies = piece.Bodies;
             int pathChecks = 0;
             foreach (Slot slot in slots)
             {

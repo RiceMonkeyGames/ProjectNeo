@@ -31,6 +31,19 @@ namespace ProjectNeo.Siege
         // 머리 위 이 거리 안에 성 조각(지붕·천장)이 있는 아군은 날아서 닿지 않으므로 노리지 않는다(SIEGE-16).
         // 성벽 안 계단방·탑 안·성문 통로 안의 아군이 여기에 든다. 0이면 따지지 않는다.
         [SerializeField, Min(0f)] float roofProbeDistance = 6f;
+        // 비용 줄이기(PERF-ai-alloc-and-split). 같이 생긴 비행 적들의 판단 시점을 이만큼의 묶음으로 나눈다. 1이면 나누지 않는다.
+        [SerializeField, Min(1)] int decisionStaggerBuckets = 4;
+        // 발밑 높이를 다시 재는 최소 간격(초)과, 그 사이라도 다시 재는 수평 이동 거리(m).
+        [SerializeField, Min(0f)] float groundProbeInterval = 0.1f;
+        [SerializeField, Min(0.01f)] float groundProbeMoveTolerance = 0.25f;
+        // 대상 후보의 지붕 검사 결과를 다시 쓰는 시간(초)과, 그 사이 대상이 이만큼 움직이면 다시 잰다(m).
+        [SerializeField, Min(0f)] float shelterCacheSeconds = 0.5f;
+        [SerializeField, Min(0.01f)] float shelterMoveTolerance = 0.25f;
+        // 카메라에서 먼 비행 적은 판단과 발밑 검사를 덜 자주 한다(지상 유닛과 같은 AI LOD 규칙).
+        [SerializeField] bool enableAiLod = true;
+        [SerializeField, Min(1f)] float lod0Distance = 25f;
+        [SerializeField, Min(2f)] float lod1Distance = 60f;
+        [SerializeField, Min(0.05f)] float lodEvaluationInterval = 0.5f;
         public FlyerTargetStrategy TargetStrategy => targetStrategy;
         public FlyerMovement Movement => movement;
         public FlyerEngagement Engagement => engagement;
@@ -43,12 +56,23 @@ namespace ProjectNeo.Siege
         public bool TargetsSiegeWeapons => targetsSiegeWeapons;
         public float HoverSeparation => hoverSeparation;
         public float RoofProbeDistance => roofProbeDistance;
+        public int DecisionStaggerBuckets => Mathf.Max(1, decisionStaggerBuckets);
+        public float GroundProbeInterval => Mathf.Max(0f, groundProbeInterval);
+        public float GroundProbeMoveTolerance => Mathf.Max(0.01f, groundProbeMoveTolerance);
+        public float ShelterCacheSeconds => Mathf.Max(0f, shelterCacheSeconds);
+        public float ShelterMoveTolerance => Mathf.Max(0.01f, shelterMoveTolerance);
+        public bool EnableAiLod => enableAiLod;
+        public float Lod0Distance => Mathf.Max(1f, lod0Distance);
+        public float Lod1Distance => Mathf.Max(Lod0Distance, lod1Distance);
+        public float LodEvaluationInterval => Mathf.Max(0.05f, lodEvaluationInterval);
 
         public static FlyerSettings Create(FlyerTargetStrategy targetStrategy, FlyerMovement movement,
             FlyerEngagement engagement, float cruiseClearance = 3f, float meleeExposureAltitude = 1.5f,
             float wallTopMinimumHeight = 1f, float groundProbeDistance = 60f, float corpseFallAcceleration = 9.81f,
             float holdInset = 6f, bool targetsSiegeWeapons = true, float hoverSeparation = 1.2f,
-            float roofProbeDistance = 6f)
+            float roofProbeDistance = 6f, int decisionStaggerBuckets = 4, float groundProbeInterval = 0.1f,
+            float groundProbeMoveTolerance = 0.25f, float shelterCacheSeconds = 0.5f, float shelterMoveTolerance = 0.25f,
+            bool enableAiLod = true, float lod0Distance = 25f, float lod1Distance = 60f, float lodEvaluationInterval = 0.5f)
         {
             var value = CreateInstance<FlyerSettings>();
             value.targetStrategy = targetStrategy;
@@ -63,6 +87,15 @@ namespace ProjectNeo.Siege
             value.targetsSiegeWeapons = targetsSiegeWeapons;
             value.hoverSeparation = Mathf.Max(0f, hoverSeparation);
             value.roofProbeDistance = Mathf.Max(0f, roofProbeDistance);
+            value.decisionStaggerBuckets = Mathf.Max(1, decisionStaggerBuckets);
+            value.groundProbeInterval = Mathf.Max(0f, groundProbeInterval);
+            value.groundProbeMoveTolerance = Mathf.Max(0.01f, groundProbeMoveTolerance);
+            value.shelterCacheSeconds = Mathf.Max(0f, shelterCacheSeconds);
+            value.shelterMoveTolerance = Mathf.Max(0.01f, shelterMoveTolerance);
+            value.enableAiLod = enableAiLod;
+            value.lod0Distance = Mathf.Max(1f, lod0Distance);
+            value.lod1Distance = Mathf.Max(value.lod0Distance, lod1Distance);
+            value.lodEvaluationInterval = Mathf.Max(0.05f, lodEvaluationInterval);
             return value;
         }
     }
