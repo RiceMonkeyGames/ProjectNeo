@@ -393,6 +393,28 @@ namespace ProjectNeo.Siege
 
         const float DefenseSpotSampleDistance = 0.75f;
 
+        int defendersAtTop;
+        int defendersAtTopFrame = -1;
+
+        /// <summary>
+        /// 위쪽 끝 둘레(막힘 반경, 성벽 높이)에 선 살아 있는 아군 수(SIEGE-34 사다리 고르기). 여러 적이 같은 프레임에 물어도 한 번만 센다.
+        /// </summary>
+        public int DefendersAtTop
+        {
+            get
+            {
+                if (defendersAtTopFrame == Time.frameCount) return defendersAtTop;
+                defendersAtTopFrame = Time.frameCount;
+                defendersAtTop = 0;
+                if (world == null || settings == null) return 0;
+                Vector3 top = TopPoint;
+                CombatSpatialIndex.QueryTeam(CombatTeam.Allied, top, settings.LadderBlockRadius, nearbyActors);
+                for (int i = 0; i < nearbyActors.Count; i++)
+                    if (Alive(nearbyActors[i]) && IsAtTop(nearbyActors[i], top, settings.LadderBlockRadius)) defendersAtTop++;
+                return defendersAtTop;
+            }
+        }
+
         static bool TrySampleWallTop(Vector3 point, out Vector3 sampled)
         {
             sampled = point;

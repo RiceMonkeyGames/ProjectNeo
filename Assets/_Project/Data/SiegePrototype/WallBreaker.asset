@@ -12,7 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c63f3c24aff4c3348987141ed37f60a5, type: 3}
   m_Name: WallBreaker
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Siege.WallBreakerSettings
-  targetStrategy: {fileID: 11400000, guid: fccbb4e8b0617b848aa0d0f6252c3392, type: 2}
+  targetStrategy: {fileID: 11400000, guid: 71e70bb4635635a40be4653fef7b9611, type: 2}
   approachClearance: 0.1
   navigationSnapDistance: 1
   verticalSnapTolerance: 0.5
+  slotSpacing: 1.2
+  slotClaimPenalty: 5
+  maxSlotPathChecks: 8

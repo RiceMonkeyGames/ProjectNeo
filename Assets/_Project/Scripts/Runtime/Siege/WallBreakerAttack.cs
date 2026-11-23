@@ -39,6 +39,7 @@ namespace ProjectNeo.Siege
         public bool TargetInvalidated => selected && (Target == null || Target.Health.IsDead);
 
         public void Configure(WallBreakerSettings config) => settings = config;
+        public WallBreakerSettings Settings => settings;
         public void Bind(ConstructionWorld owner) => world = owner;
 
         void Awake()
@@ -72,7 +73,9 @@ namespace ProjectNeo.Siege
                 foreach (var body in piece.Bodies)
                     if (body != null && body.enabled) distance = Mathf.Min(distance, (body.ClosestPoint(actor.AimPoint) - actor.AimPoint).sqrMagnitude);
                 pieces.Add(piece);
-                candidates.Add(new WallTargetCandidate(piece.Placement.Id, distance));
+                float maximum = piece.Health.Maximum;
+                float ratio = maximum > 0f ? piece.Health.Current / maximum : 1f;
+                candidates.Add(new WallTargetCandidate(piece.Placement.Id, distance, ratio, EngagedOn(piece)));
             }
             while (candidates.Count > 0)
             {
@@ -143,6 +146,18 @@ namespace ProjectNeo.Siege
                 int claimed = WallBreakerSpreadRules.CountClaims(point, claims, spacing);
                 slots.Add(new Slot { Point = point, Score = WallBreakerSpreadRules.Score(distance, claimed, settings.SlotClaimPenalty) });
             }
+        }
+
+        // 이 조각에 닿아 치고 있는 다른 파괴병 수(SIEGE-34 집중 돌파).
+        int EngagedOn(PlacedStructure piece)
+        {
+            int count = 0;
+            for (int i = 0; i < active.Count; i++)
+            {
+                WallBreakerAttack other = active[i];
+                if (other != this && other.Target == piece && other.InReach()) count++;
+            }
+            return count;
         }
 
         // 다른 파괴병이 지금 잡고 있는 자리.

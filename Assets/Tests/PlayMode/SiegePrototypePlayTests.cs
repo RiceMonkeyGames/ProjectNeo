@@ -1226,5 +1226,138 @@ namespace ProjectNeo.Tests
             offset.y = 0f;
             return offset.magnitude;
         }
+
+        // ── SIEGE-34 공성 적 역할 협동 ─────────────────
+
+        // 모든 아군을 끄고 성벽 0번 칸 위로 치운 뒤, 주어진 수만큼 꺼진(움직이지 않는) 아군을 돌려준다.
+        CharacterActor[] StillDefenders(int count)
+        {
+            var all = center.Squads.SelectMany(squad => squad.Members).ToArray();
+            foreach (UnitCombatAI unit in all)
+            {
+                unit.enabled = false;
+                Move(unit.Actor, WallTop(0) + Vector3.back * 2f);
+            }
+            Assert.GreaterOrEqual(all.Length, count);
+            return all.Take(count).Select(unit => unit.Actor).ToArray();
+        }
+
+        Vector3 OuterEdge(int x) => world.WorldCenter(wall, new Vector2Int(x, WallRow), 0)
+            + Vector3.forward * (world.Grid.CellSize * 0.5f - 0.6f) + Vector3.up * wall.Height;
+
+        [UnityTest]
+        public IEnumerator EnemyArcher_CoversLadder_SwitchesToDefenderAtRaisedLadderTop()
+        {
+            yield return CloseWalls();
+            SiegeLadder ladder = ladders[1];
+            int x = ladder.Cell.x;
+            CharacterActor[] defenders = StillDefenders(2);
+            CharacterActor atLadder = defenders[0], closer = defenders[1];
+            Move(atLadder, ladder.TopPoint);
+            Move(closer, OuterEdge(x + 1));
+            SiegeAttackerBrain archer = PlaceEnemyArcher(FieldPoint(OuterEdge(x + 1).x,
+                OuterEdge(x + 1).z + 0.6f + 12f));
+            yield return null;
+            float toLadder = (atLadder.transform.position - archer.transform.position).sqrMagnitude;
+            float toCloser = (closer.transform.position - archer.transform.position).sqrMagnitude;
+            Assert.Greater(toLadder, toCloser, "시험 배치: 사다리 수비병이 더 멀어야 한다.");
+            Assert.Less(toLadder * director.Settings.ArcherCoverPriorityFactor, toCloser, "시험 배치: 엄호 배율로는 더 가까워야 한다.");
+            Assert.IsTrue(CombatPhysics.IsInRange(archer.Actor, atLadder) && CombatPhysics.HasClearShot(archer.Actor, atLadder),
+                "시험 배치: 사다리 수비병이 사거리 안에서 보여야 한다.");
+
+            // 사다리가 누워 있으면 가까운 수비병을 쏜다.
+            UnitCombatAI archerAi = archer.GetComponent<UnitCombatAI>();
+            int frames = 0;
+            while (archerAi.Target == null && frames++ < 90) { RestoreAll(defenders); yield return null; }
+            Assert.AreSame(closer, archerAi.Target, "사다리가 누워 있을 때는 가장 가까운 수비병을 쏜다.");
+
+            RaiseLadder(ladder);
+            frames = 0;
+            while (!ReferenceEquals(archerAi.Target, atLadder) && frames++ < 90) { RestoreAll(defenders); yield return null; }
+            Assert.AreSame(atLadder, archerAi.Target, "세워진 사다리 위쪽 끝의 수비병으로 바꿔 쏘지 않았다.");
+        }
+
+        static void RestoreAll(CharacterActor[] actors)
+        {
+            foreach (CharacterActor actor in actors) actor.Health.RestoreFull();
+        }
+
+        [UnityTest]
+        public IEnumerator EnemyArcher_FullyHiddenNearestDefender_SwitchesToAnotherDefender()
+        {
+            yield return CloseWalls();
+            CharacterActor[] defenders = StillDefenders(2);
+            CharacterActor hidden = defenders[0], exposed = defenders[1];
+            const int hiddenCell = 9, exposedCell = 6;
+            Move(hidden, OuterEdge(hiddenCell) + Vector3.back * 0.6f);
+            Move(exposed, OuterEdge(exposedCell));
+            // 가려진 수비병 앞에 성벽 위로 3m 솟은 넓은 벽을 세운다. 옆으로 비켜서도(±9m) 보이지 않는다.
+            var screen = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            screen.name = "TestScreen";
+            SceneManager.MoveGameObjectToScene(screen, scene);
+            screen.transform.position = OuterEdge(hiddenCell) + Vector3.forward * 0.45f + Vector3.up * 1.5f;
+            screen.transform.localScale = new Vector3(world.Grid.CellSize * 3f, 3f, 0.3f);
+            Physics.SyncTransforms();
+
+            SiegeAttackerBrain archer = PlaceEnemyArcher(FieldPoint(OuterEdge(hiddenCell).x, OuterEdge(hiddenCell).z + 12f));
+            yield return null;
+            Assert.IsTrue(CombatPhysics.IsInRange(archer.Actor, hidden), "시험 배치: 가려진 수비병은 사거리 안이어야 한다.");
+            Assert.IsFalse(CombatPhysics.HasClearShot(archer.Actor, hidden), "시험 배치: 가려진 수비병은 보이지 않아야 한다.");
+            Assert.IsFalse(CombatPhysics.IsInRange(archer.Actor, exposed), "시험 배치: 드러난 수비병은 처음에 사거리 밖이어야 한다.");
+
+            // 3초 뒤 첫 찾기, 10초 뒤 두 번째 찾기가 모두 실패하면 가려진 수비병을 빼고 드러난 수비병을 향한다.
+            int frames = 0;
+            while (!archer.IsAvoidingBlockedTarget(hidden) && frames++ < 600) { RestoreAll(defenders); yield return null; }
+            UnitCombatAI debugAi = archer.GetComponent<UnitCombatAI>();
+            Assert.IsTrue(archer.IsAvoidingBlockedTarget(hidden), "가려진 수비병에게 거듭 실패했는데 대상을 바꾸지 않았다. "
+                + $"firing={archer.IsArcherFiring} repositioning={archer.IsArcherRepositioning} waiting={archer.IsArcherWaiting} "
+                + $"target={(debugAi.Target != null ? debugAi.Target.name : "none")} at={archer.transform.position} start={FieldPoint(OuterEdge(hiddenCell).x, OuterEdge(hiddenCell).z + 12f)} "
+                + $"player={Find<ProjectNeo.Characters.PlayerInputController>().transform.position} lod={debugAi.LodTier}");
+            UnitCombatAI archerAi = archer.GetComponent<UnitCombatAI>();
+            frames = 0;
+            while (!(archer.IsArcherFiring && ReferenceEquals(archerAi.Target, exposed)) && frames++ < 600)
+            {
+                RestoreAll(defenders);
+                yield return null;
+            }
+            Assert.IsTrue(archer.IsArcherFiring && ReferenceEquals(archerAi.Target, exposed),
+                "드러난 다른 수비병에게 다가가 쏘지 않았다. "
+                + $"firing={archer.IsArcherFiring} target={(archerAi.Target != null ? archerAi.Target.name : "none")} "
+                + $"at={archer.transform.position} exposed={exposed.transform.position} directive={archerAi.Directive}");
+        }
+
+        [UnityTest]
+        public IEnumerator LadderChoice_EnemyPrefersRaisedLadderWithFewerDefendersAtTheTop()
+        {
+            yield return CloseWalls();
+            SiegeLadder guarded = ladders[1], open = ladders[0];
+            RaiseLadder(guarded);
+            RaiseLadder(open);
+            CharacterActor[] defenders = StillDefenders(2);
+            Move(defenders[0], guarded.TopPoint);
+            Move(defenders[1], guarded.TopPoint + Vector3.right * 1f);
+            yield return null;
+            Assert.AreEqual(2, guarded.DefendersAtTop, "시험 배치: 지킨 사다리 위에 수비병 2명");
+            Assert.AreEqual(0, open.DefendersAtTop);
+
+            // 지킨 사다리가 6m쯤 더 가깝다(수비병 2명 벌점 12m보다 작다).
+            Vector3 between = Vector3.Lerp(guarded.BasePoint, open.BasePoint, 0.42f) + guarded.OutwardWorld * 8f;
+            CharacterActor grunt = PlaceStillEnemy(SiegeAttackerRole.Ladder, FieldPoint(between.x, between.z));
+            float toGuarded = Flat(guarded.BasePoint - grunt.transform.position);
+            float toOpen = Flat(open.BasePoint - grunt.transform.position);
+            Assert.Less(toGuarded, toOpen);
+            Assert.Less(toOpen - toGuarded, 2f * guarded.Settings.LadderDefenderPenalty, "시험 배치: 거리 차가 벌점보다 작아야 한다.");
+            var brain = grunt.GetComponent<SiegeAttackerBrain>();
+            brain.Bind(world, new[] { guarded, open }, Vector2Int.up);
+            brain.enabled = true;
+            int frames = 0;
+            while (open.Crowd == 0 && guarded.Crowd == 0 && frames++ < 90)
+            {
+                RestoreAll(defenders);
+                yield return null;
+            }
+            Assert.AreEqual(1, open.Crowd, "수비병이 없는 세워진 사다리를 골라야 한다.");
+            Assert.AreEqual(0, guarded.Crowd);
+        }
     }
 }

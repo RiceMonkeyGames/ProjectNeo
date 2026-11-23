@@ -16,6 +16,19 @@ namespace ProjectNeo.Siege
             return score;
         }
 
+        /// <summary>
+        /// SIEGE-34: 위 점수에 더해, 이미 세워진 사다리는 <paramref name="raisedBonus"/>미터 깎고,
+        /// 위쪽 끝 둘레의 수비병 한 명마다 <paramref name="defenderPenalty"/>미터를 더한다. 수비가 약한 세워진 사다리를 고른다.
+        /// </summary>
+        public static float Score(float distance, int othersCrowd, bool isCurrent, bool avoided,
+            float crowdPenalty, float avoidPenalty, bool raised, int defendersAtTop, float raisedBonus, float defenderPenalty)
+        {
+            float score = Score(distance, othersCrowd, isCurrent, avoided, crowdPenalty, avoidPenalty);
+            if (raised) score -= raisedBonus;
+            score += (defendersAtTop > 0 ? defendersAtTop : 0) * defenderPenalty;
+            return score;
+        }
+
         /// <summary>아직 확인하지 않은 후보 중 점수가 가장 낮은 것. 남은 후보가 없으면 -1.</summary>
         public static int NextBest(float[] scores, bool[] excluded, int count)
         {

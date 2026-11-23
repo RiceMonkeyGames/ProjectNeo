@@ -138,6 +138,22 @@ namespace ProjectNeo.Siege
         [SerializeField, Min(0f)] float archerBreachAdvanceDelay = 8f;
         // 마지막으로 쏠 수 있던 수비병이 재장전하느라 웅크렸을 때(COMBAT-10) 자리를 옮기지 않고 기다리는 최대 시간.
         [SerializeField, Min(0f)] float archerCrouchTolerance = 4f;
+        // 역할 협동(SIEGE-34): 세워졌거나 세우는 중인 사다리 위쪽 끝 둘레, 또는 마치콜레이션 구멍에 선 수비병은
+        // 제곱 거리에 이 배율을 곱해 먼저 노린다(0.5 = 약 0.7배 거리로 본다). 1이면 끈다.
+        [SerializeField, Range(0.05f, 1f)] float archerCoverPriorityFactor = 0.5f;
+        [SerializeField, Min(0f)] float archerCoverRadius = 4f;
+        // 가장 가까운 수비병이 완전히 가려져 옆 자리 찾기에 연달아 이만큼 실패하면, 그 수비병을 잠시 빼고 다른 수비병을 향한다.
+        [SerializeField, Range(1, 10)] int archerBlockedSearchLimit = 2;
+        [SerializeField, Min(0f)] float archerBlockedAvoidSeconds = 15f;
+        // 이미 세워진 사다리는 이만큼(미터) 가깝게, 위쪽 끝 둘레(막힘 반경)의 수비병 한 명은 이만큼 멀게 친다.
+        [SerializeField, Min(0f)] float ladderRaisedBonus = 8f;
+        [SerializeField, Min(0f)] float ladderDefenderPenalty = 6f;
+        public float ArcherCoverPriorityFactor => archerCoverPriorityFactor;
+        public float ArcherCoverRadius => archerCoverRadius;
+        public int ArcherBlockedSearchLimit => Mathf.Max(1, archerBlockedSearchLimit);
+        public float ArcherBlockedAvoidSeconds => archerBlockedAvoidSeconds;
+        public float LadderRaisedBonus => ladderRaisedBonus;
+        public float LadderDefenderPenalty => ladderDefenderPenalty;
         public float AssaultLeashRadius => assaultLeashRadius;
         public float AssaultLeashReleaseRadius => Mathf.Max(assaultLeashRadius, assaultLeashReleaseRadius);
         public float ArcherBreachAdvanceDelay => archerBreachAdvanceDelay;

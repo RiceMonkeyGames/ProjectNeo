@@ -36,7 +36,7 @@ namespace ProjectNeo.Editor
             var settings = AssetDatabase.LoadAssetAtPath<WallBreakerSettings>(Data + "WallBreaker.asset");
             if (settings == null)
             {
-                settings = WallBreakerSettings.Create(strategy);
+                settings = WallBreakerSettings.Create(LoadOrCreateFocusedBreach());
                 AssetDatabase.CreateAsset(settings, Data + "WallBreaker.asset");
             }
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Prefab);
@@ -63,6 +63,37 @@ namespace ProjectNeo.Editor
                 EditorUtility.SetDirty(siege);
             }
             AssetDatabase.SaveAssets();
+        }
+
+        const string FocusedBreachPath = Data + "FocusedBreach.asset";
+
+        /// <summary>
+        /// 집중 돌파 전략(SIEGE-34)을 만들고, 모든 장면이 함께 쓰는 <c>WallBreaker.asset</c>의 기본 전략으로 건다. 여러 번 실행해도 같다.
+        /// </summary>
+        [MenuItem("ProjectNeo/Setup/Apply Focused Breach Wall Strategy (SIEGE-34)")]
+        public static void ApplyFocusedBreach()
+        {
+            var settings = AssetDatabase.LoadAssetAtPath<WallBreakerSettings>(Data + "WallBreaker.asset");
+            if (settings == null) throw new InvalidOperationException("Run Add Wall Breaker Assets first.");
+            var data = new SerializedObject(settings);
+            var property = data.FindProperty("targetStrategy");
+            var focused = LoadOrCreateFocusedBreach();
+            if (property.objectReferenceValue != focused)
+            {
+                property.objectReferenceValue = focused;
+                data.ApplyModifiedPropertiesWithoutUndo();
+                EditorUtility.SetDirty(settings);
+            }
+            AssetDatabase.SaveAssets();
+        }
+
+        static FocusedBreachWallTargetStrategy LoadOrCreateFocusedBreach()
+        {
+            var focused = AssetDatabase.LoadAssetAtPath<FocusedBreachWallTargetStrategy>(FocusedBreachPath);
+            if (focused != null) return focused;
+            focused = FocusedBreachWallTargetStrategy.Create();
+            AssetDatabase.CreateAsset(focused, FocusedBreachPath);
+            return focused;
         }
     }
 }

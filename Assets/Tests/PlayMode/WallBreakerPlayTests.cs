@@ -109,6 +109,36 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
+        public IEnumerator FocusedBreach_IsTheSharedDefault_AndPicksDamagedWallOverNearest()
+        {
+            var damaged = At(3);
+            damaged.ReceiveDamage(damaged.Health.Maximum * 0.9f);
+            Assert.IsFalse(damaged.Health.IsDead);
+            Spawn(Ground(2, 11f));
+            Assert.IsInstanceOf<FocusedBreachWallTargetStrategy>(attack.Settings.TargetStrategy,
+                "공유 WallBreaker.asset의 기본 전략은 집중 돌파여야 한다(SIEGE-34).");
+            for (int frame = 0; frame < 30 && attack.Target == null; frame++) yield return null;
+            Assert.AreEqual(damaged, attack.Target, "조금 더 멀어도 크게 다친 성벽을 먼저 친다.");
+        }
+
+        [UnityTest]
+        public IEnumerator FocusedBreach_SecondBreakerJoinsTheWallAlreadyUnderAttack()
+        {
+            var first = At(2);
+            Spawn(Ground(2, 11f));
+            WallBreakerAttack firstAttack = attack;
+            float hp = first.Health.Current;
+            for (int frame = 0; frame < 600 && first.Health.Current >= hp; frame++) yield return null;
+            Assert.AreEqual(first, firstAttack.Target);
+            Assert.Less(first.Health.Current, hp, "첫 파괴병이 성벽을 치지 않았다(시험 준비).");
+            // 두 번째 파괴병은 x=4 성벽이 가장 가깝지만, 동료가 치고 있는 x=2 성벽으로 간다.
+            Spawn(Ground(4, 11f));
+            for (int frame = 0; frame < 30 && attack.Target == null; frame++) yield return null;
+            Assert.AreNotSame(firstAttack, attack);
+            Assert.AreEqual(first, attack.Target, "두 번째 파괴병이 이미 공격받는 성벽에 합류하지 않았다.");
+        }
+
+        [UnityTest]
         public IEnumerator Gate_IsValidNearestWallTarget_AndTakesDamage()
         {
             var gate = world.Structures.Single(p => p.Placement.Definition.Kind == BuildPieceKind.Gate);

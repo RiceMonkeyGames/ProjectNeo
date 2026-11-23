@@ -648,7 +648,9 @@ namespace ProjectNeo.Siege
                 bool current = candidate == ladder;
                 ladderScores[i] = LadderChoiceRules.Score(Vector3.Distance(transform.position, candidate.BasePoint),
                     candidate.Crowd - (current ? 1 : 0), current, ladderAvoidUntil[i] > now,
-                    settings.LadderCrowdPenalty, settings.LadderAvoidPenalty);
+                    settings.LadderCrowdPenalty, settings.LadderAvoidPenalty,
+                    candidate.State.Phase == LadderPhase.Up, candidate.DefendersAtTop,
+                    settings.LadderRaisedBonus, settings.LadderDefenderPenalty);
             }
             int key = LadderReachKey();
             int index;
@@ -985,26 +987,46 @@ namespace ProjectNeo.Siege
             // 바깥에서 지원 사격하는 동안은 가려진 수비병을 쫓아 들어가지 않는다(SIEGE-15).
             ai.SetHoldChaseSuppressed(true);
             // 지금 자리에서 쏠 수 있는 적이 있으면 그대로 서서 쏜다. 사선 검사는 사거리 안의 가까운 몇 명만 한다(AI LOD 등급에 따라 4·2·1명).
-            CharacterActor nearest = null;
-            float nearestDistance = float.PositiveInfinity;
+            // SIEGE-34: 주변 적은 공간 격자로만 찾는다. 쏠 대상은 사다리 위쪽 끝·마치콜레이션 구멍의 수비병을 먼저 보고,
+            // 다가갈 대상은 완전히 가려져 옆 자리 찾기에 거듭 실패한 수비병을 잠시 뺀 가장 가까운 적이다.
+            blockedTargets ??= new ArcherBlockedTargetTracker<CharacterActor>(settings.ArcherBlockedSearchLimit,
+                settings.ArcherBlockedAvoidSeconds);
+            GatherArcherCandidates();
+            CharacterActor nearest = null, nearestAny = null;
+            float nearestDistance = float.PositiveInfinity, nearestAnyDistance = float.PositiveInfinity;
             reachableCandidates.Reset(AILodRules.PathCandidateLimit(ai.LodTier, 4));
-            foreach (CharacterActor candidate in CharacterActor.ActiveActors)
+            for (int i = 0; i < spatialCandidates.Count; i++)
             {
+                CharacterActor candidate = spatialCandidates[i];
                 if (!Actor.IsEnemy(candidate)) continue;
                 float distance = (candidate.transform.position - transform.position).sqrMagnitude;
-                if (distance < nearestDistance) { nearestDistance = distance; nearest = candidate; }
-                if (distance < reachableCandidates.WorstScore && CombatPhysics.IsInRange(Actor, candidate))
-                    reachableCandidates.TryAdd(candidate, distance);
+                if (distance < nearestAnyDistance) { nearestAnyDistance = distance; nearestAny = candidate; }
+                if (distance < nearestDistance && !blockedTargets.IsAvoided(candidate, now))
+                {
+                    nearestDistance = distance;
+                    nearest = candidate;
+                }
+                if (!CombatPhysics.IsInRange(Actor, candidate)) continue;
+                float score = ArcherCoverRules.Score(distance, IsCoverTarget(candidate), settings.ArcherCoverPriorityFactor);
+                if (score < reachableCandidates.WorstScore) reachableCandidates.TryAdd(candidate, score);
             }
+            if (nearest == null) nearest = nearestAny;
             for (int i = 0; i < reachableCandidates.Count; i++)
             {
                 CharacterActor candidate = reachableCandidates[i];
                 if (!CombatPhysics.HasClearShot(Actor, candidate)) continue;
                 cover.Shooting();
+                blockedTargets.Reset();
                 archerHasShot = true;
                 archerIdleSince = -1f;
                 lastShotTarget = candidate;
                 if (ai.Directive != UnitDirective.Hold) ai.SetDirective(UnitDirective.Hold);
+                // 엄호할 수비병(사다리 위쪽 끝·마치콜레이션)이 먼저 보이면, 다른 대상을 쏘던 중이어도 그쪽으로 바꾼다(SIEGE-34).
+                // 대상 고르기는 UnitCombatAI가 하므로 직접 바꿔 준다. 이미 엄호 대상을 쏘고 있으면 그대로 둔다.
+                CharacterActor current = ai.Target;
+                if (!ReferenceEquals(current, candidate) && IsCoverTarget(candidate)
+                    && (current == null || !IsCoverTarget(current)))
+                    ai.TrySwitchHoldTarget(candidate);
                 return;
             }
             // 마지막으로 쏘던 수비병이 재장전하느라 성가퀴 뒤에 웅크렸으면(COMBAT-10) 자리를 옮기지 않고 잠깐 겨눈 채 기다린다.
@@ -1047,11 +1069,20 @@ namespace ProjectNeo.Siege
             // 사거리 안에서 가려진 채 충분히 기다렸으면 옆 자리를 한 번 찾는다(성가퀴 솟은 부분 뒤의 수비병 등).
             // 한 프레임에 너무 많은 궁수가 동시에 옆자리 탐색(Raycast 다발)을 하지 않도록 프레임 예산을 확인한다(PERF-siege-ai-scale).
             // 멀리 있는 궁수(AI LOD 2)는 옆자리 탐색을 하지 않고 정면 자리에서 기다린다(SIEGE-15).
-            if (cover.ShouldSearch(now) && ai.LodTier != AILodTier.Lod2
-                && ReachabilityCache.TryConsumeArcherSearchToken(Time.frameCount, settings.MaxArcherRepositionSearchesPerFrame))
+            // 원경 궁수가 찾기를 건너뛴 것은 실패한 찾기로 센다. 그래야 가려진 수비병에게서 벗어날 수 있다(SIEGE-34).
+            bool farSkip = ai.LodTier == AILodTier.Lod2;
+            if (cover.ShouldSearch(now) && (farSkip
+                || ReachabilityCache.TryConsumeArcherSearchToken(Time.frameCount, settings.MaxArcherRepositionSearchesPerFrame)))
             {
-                bool found = TryFindFiringPosition(hit.position, normal, out Vector3 spot);
+                Vector3 spot = default;
+                bool found = !farSkip && TryFindFiringPosition(hit.position, normal, out spot);
                 cover.SearchResult(now, found);
+                // 같은 수비병에게 거듭 실패하면 그 수비병을 잠시 빼고, 다음 판단에서 드러난 다른 수비병을 향한다(SIEGE-34).
+                if (blockedTargets.RecordSearch(nearest, found, now))
+                {
+                    cover.Clear();
+                    think = 0f;
+                }
                 if (found)
                 {
                     coverSpot = spot;
@@ -1062,6 +1093,47 @@ namespace ProjectNeo.Siege
             // 쏠 곳도 옮길 곳도 없으면 좌우로 다니지 않고 제자리에서 겨눈 채 기다린다.
             cover.Wait();
             if (ai.Directive != UnitDirective.Hold) ai.SetDirective(UnitDirective.Hold);
+        }
+
+        ArcherBlockedTargetTracker<CharacterActor> blockedTargets;
+        // 사거리의 몇 배까지 공간 격자로 찾을지. 그 안에 적이 하나도 없을 때만 전체 목록을 본다(멀리서 다가오는 중).
+        const float ArcherSearchRangeMultiplier = 2f;
+
+        /// <summary>검증용: 궁수가 지금 잠시 빼 둔(가려져 다가가지 않는) 수비병인지(SIEGE-34).</summary>
+        public bool IsAvoidingBlockedTarget(CharacterActor target) =>
+            blockedTargets != null && blockedTargets.IsAvoided(target, Time.time);
+
+        void GatherArcherCandidates()
+        {
+            float radius = CombatPhysics.MaximumAttackRange(Actor) * ArcherSearchRangeMultiplier;
+            CombatSpatialIndex.QueryEnemies(Actor.Team, transform.position, radius, spatialCandidates);
+            if (spatialCandidates.Count > 0) return;
+            // 아직 멀리 있다. 다가갈 방향만 정하면 되므로 전체 목록에서 적만 담는다.
+            foreach (CharacterActor candidate in CharacterActor.ActiveActors)
+                if (Actor.IsEnemy(candidate)) spatialCandidates.Add(candidate);
+        }
+
+        // 세워졌거나 세우는 중인 사다리 위쪽 끝 둘레, 또는 마치콜레이션 구멍 자리에 선 수비병인지(SIEGE-34).
+        bool IsCoverTarget(CharacterActor defender)
+        {
+            if (settings.ArcherCoverPriorityFactor >= 1f) return false;
+            Vector3 feet = defender.transform.position;
+            System.Collections.Generic.IReadOnlyList<SiegeLadder> all = SiegeLadder.Active;
+            for (int i = 0; i < all.Count; i++)
+            {
+                SiegeLadder candidate = all[i];
+                if (candidate == null || candidate.State == null || !ArcherCoverRules.IsActiveLadder(candidate.State.Phase)) continue;
+                if (ArcherCoverRules.IsNearLadderTop(feet, candidate.TopPoint, settings.ArcherCoverRadius,
+                        settings.LadderHeightTolerance + 0.5f)) return true;
+            }
+            System.Collections.Generic.IReadOnlyList<ShotOpening> openings = ShotOpening.Active;
+            for (int i = 0; i < openings.Count; i++)
+            {
+                ShotOpening opening = openings[i];
+                if (opening != null && opening.isActiveAndEnabled && opening.Team == defender.Team && opening.IsAtStand(feet))
+                    return true;
+            }
+            return false;
         }
 
         void MoveArcher(Vector3 destination)

@@ -1033,6 +1033,18 @@ namespace ProjectNeo.Combat
         /// 가려진 수비병을 쫓아 뚫린 곳으로 들어가지 않게 한다.
         /// </summary>
         public void SetHoldChaseSuppressed(bool suppressed) => suppressHoldChase = suppressed;
+
+        /// <summary>
+        /// 중지 중에 지금 자리에서 칠 수 있는 대상으로 바로 바꾼다(SIEGE-34: 적 궁수가 사다리·마치콜레이션 수비병을 엄호 사격).
+        /// 이미 그 대상이거나, 중지가 아니거나, 지금 자리에서 닿지 않으면 바꾸지 않고 false.
+        /// </summary>
+        public bool TrySwitchHoldTarget(CharacterActor next)
+        {
+            if (Directive != UnitDirective.Hold || next == null || ReferenceEquals(Target, next)
+                || !CombatPhysics.CanTarget(actor, next) || !CanStrikeFromHere(next)) return false;
+            SwitchTarget(next, false);
+            return true;
+        }
         public bool IsHoldChaseSuppressed => suppressHoldChase;
 
         bool IsNearPost(CharacterActor target) =>
