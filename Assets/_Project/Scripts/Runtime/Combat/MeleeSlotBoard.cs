@@ -22,6 +22,8 @@ namespace ProjectNeo.Combat
         readonly List<TUnit> stale = new List<TUnit>();
 
         public int Count => claims.Count;
+        /// <summary>자리를 맡거나 놓을 때마다 오른다(COMBAT-17 혼잡 수 다시 세기).</summary>
+        public int Revision { get; private set; }
 
         /// <summary>
         /// <paramref name="asker"/>가 아닌 다른 유효한 유닛이 그 자리를 맡았는지. 유효하지 않은 맡음은 지운다.
@@ -47,11 +49,12 @@ namespace ProjectNeo.Combat
         {
             if (unit == null) return;
             claims[unit] = new Claim(target, ring, index);
+            Revision++;
         }
 
         public void Release(TUnit unit)
         {
-            if (unit != null) claims.Remove(unit);
+            if (unit != null && claims.Remove(unit)) Revision++;
         }
 
         /// <summary>그 유닛이 그 대상에서 맡은 자리. 다른 대상의 자리면 false.</summary>
@@ -64,6 +67,28 @@ namespace ProjectNeo.Combat
             return true;
         }
 
-        public void Clear() => claims.Clear();
+        /// <summary>
+        /// 대상마다 그 링에서 유효한 유닛이 맡은 자리 수를 <paramref name="output"/>에 센다(COMBAT-17 근접 혼잡).
+        /// 유효하지 않은 맡음은 지운다.
+        /// </summary>
+        public void CountByTarget(int ring, Func<TUnit, object, bool> stillValid, Dictionary<object, int> output)
+        {
+            output.Clear();
+            stale.Clear();
+            foreach (KeyValuePair<TUnit, Claim> entry in claims)
+            {
+                if (stillValid != null && !stillValid(entry.Key, entry.Value.Target)) { stale.Add(entry.Key); continue; }
+                if (entry.Value.Ring != ring) continue;
+                output.TryGetValue(entry.Value.Target, out int count);
+                output[entry.Value.Target] = count + 1;
+            }
+            foreach (TUnit unit in stale) claims.Remove(unit);
+        }
+
+        public void Clear()
+        {
+            claims.Clear();
+            Revision++;
+        }
     }
 }

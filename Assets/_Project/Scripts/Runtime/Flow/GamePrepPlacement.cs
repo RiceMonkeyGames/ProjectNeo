@@ -59,6 +59,8 @@ namespace ProjectNeo.Flow
             {
                 center.WalkwayWidth = battlements.WalkwayWidthAt;
                 center.CrenelPoints = battlements.CollectCrenelStandPoints;
+                // 막힌 원거리 수비병이 근처 빈 크레넬로 옮긴다(COMBAT-17).
+                UnitCombatAI.CrenelStandPoints = battlements.CollectCrenelStandPoints;
             }
             if (center != null && center.Commander != null)
             {
@@ -85,6 +87,9 @@ namespace ProjectNeo.Flow
             if (center != null && battlements != null
                 && center.CrenelPoints == (System.Action<Vector3, float, List<Vector3>>)battlements.CollectCrenelStandPoints)
                 center.CrenelPoints = null;
+            if (battlements != null && UnitCombatAI.CrenelStandPoints
+                == (System.Action<Vector3, float, List<Vector3>>)battlements.CollectCrenelStandPoints)
+                UnitCombatAI.CrenelStandPoints = null;
             if (subscribed && center != null && center.Commander != null)
             {
                 center.Commander.OrderChanged -= OnOrderChanged;

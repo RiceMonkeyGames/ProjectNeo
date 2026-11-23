@@ -49,6 +49,8 @@ namespace ProjectNeo.Combat
         }
         /// <summary>지금 하는 일로 위협 종류를 알려 주는 판단(COMBAT-14). 공성 적의 판단이 스스로 등록한다. 없으면 null.</summary>
         public ITargetThreatSource ThreatSource { get; set; }
+        /// <summary>보스인지(COMBAT-17). 원거리 유닛은 보스에게 화력을 나누지 않고 계속 집중해서 쏜다. <c>BossUnit</c>이 켠다.</summary>
+        public bool IsBoss { get; set; }
         /// <summary>원거리 유닛이 대상을 고를 때 보는 위협 종류(COMBAT-14).</summary>
         public TargetThreat Threat => RangedTargetPriorityRules.Classify(IsOnLadder,
             ThreatSource != null ? ThreatSource.Threat : TargetThreat.None,
