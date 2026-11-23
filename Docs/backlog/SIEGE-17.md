@@ -1,9 +1,9 @@
 ---
 id: SIEGE-17
 title: Enemy Ladder Reachability Check & Wall-Breaker Approach Spread
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: 신용준
+branch: feature/siege-17
 area: SIEGE
 depends_on: []
 created: 2026-11-22
