@@ -9,6 +9,7 @@ namespace ProjectNeo.Flow
     /// 준비 단계 성문 열기(PREP-05). 성 밖에 남은 플레이어나 아군이 들어올 수 있도록 준비 중에는 성문 앞에서 F로
     /// 열고 닫는다. 전투가 시작되면 열어 둔 성문을 닫고, 문 자리에 서 있던 아군·플레이어를 성 안쪽으로 옮긴다.
     /// 부서진 성문은 이 도구와 상관없이 수리 전까지 열려 있다.
+    /// 성 킷 쇠창살(<see cref="CastleKitDresser"/>)은 전투 중에만 내리고 그 밖에는 올린다(사용자 결정 2026-11-22, 연결 SIEGE-19).
     /// </summary>
     public sealed class GamePrepGate : MonoBehaviour
     {
@@ -30,6 +31,14 @@ namespace ProjectNeo.Flow
             if (world != null) world.Changed += EnsureStations;
             flow.PhaseChanged += OnPhaseChanged;
             EnsureStations();
+            SetPortcullis(flow.Phase);
+        }
+
+        // 전투 중에만 쇠창살을 내린다. 킷 꾸밈이 없는 씬이면 아무것도 하지 않는다.
+        void SetPortcullis(GamePhase phase)
+        {
+            var kit = world != null ? world.GetComponent<CastleKitDresser>() : null;
+            if (kit != null) kit.PortcullisRaised = phase != GamePhase.Battle;
         }
 
         void OnDestroy()
@@ -66,6 +75,7 @@ namespace ProjectNeo.Flow
         void OnPhaseChanged(GamePhase phase)
         {
             Message = "";
+            SetPortcullis(phase);
             if (phase != GamePhase.Battle || world == null) return;
             foreach (PlacedStructure piece in world.Structures)
             {

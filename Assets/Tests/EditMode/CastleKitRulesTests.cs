@@ -292,5 +292,27 @@ namespace ProjectNeo.Tests
             Collect();
             CollectionAssert.IsEmpty(parts);
         }
+
+        [Test]
+        public void RingCorners_GetOneTurretEach_AtTheTopOfTheCorner()
+        {
+            // x 3~5, z 3~5 성벽 고리(가운데 (4, 4)가 안뜰). 바깥 모서리 넷에만 망루가 선다(SIEGE-19).
+            for (int x = 3; x <= 5; x++)
+                for (int z = 3; z <= 5; z++)
+                    if (x != 4 || z != 4) Place(wall, x, z);
+            Collect();
+            List<CastleKitPlacement> turrets = Of(CastleKitPiece.CornerTurret).ToList();
+            Assert.AreEqual(4, turrets.Count, "one per outer corner; inner and straight edges get none");
+            float drop = Cell - CastleKitRules.CornerTurretDrop;
+            foreach (Vector3 corner in new[] { new Vector3(15f, drop, 15f), new Vector3(30f, drop, 15f), new Vector3(15f, drop, 30f), new Vector3(30f, drop, 30f) })
+                Assert.IsTrue(turrets.Any(t => Vector3.Distance(t.Position, corner) < 0.01f), $"turret at {corner}");
+
+            Place(wall, 5, 5);
+            Collect();
+            turrets = Of(CastleKitPiece.CornerTurret).ToList();
+            Assert.AreEqual(4, turrets.Count, "a raised corner keeps one turret");
+            Assert.IsTrue(turrets.Any(t => Vector3.Distance(t.Position, new Vector3(30f, 2f * Cell - CastleKitRules.CornerTurretDrop, 30f)) < 0.01f),
+                "it moves up to the new top");
+        }
     }
 }

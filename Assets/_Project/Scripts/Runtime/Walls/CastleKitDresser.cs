@@ -25,6 +25,15 @@ namespace ProjectNeo.Walls
         [SerializeField, Range(0f, 150f)] float openDoorAngle = 100f;
         // 칸이 킷 모듈보다 넓을 때 면을 덮는 방식(SIEGE-35 시험). 바꾸면 모두 다시 꾸민다.
         [SerializeField] CastleKitLook look = CastleKitLook.Stretch;
+        // false면 흉벽 조각(성가퀴·모서리 기둥)의 충돌체·엄폐를 떼고 외형만 둔다. Game은 CastleBattlements가 충돌·엄폐 규칙을 맡는다
+        // (SIEGE-19, 사용자 결정 2026-11-23; 규칙을 킷 모양에 맞추는 일은 SIEGE-20).
+        [SerializeField] bool battlementColliders = true;
+        // 칸마다 킷 조각을 정적 배칭으로 묶는다(SIEGE-19). 쇠창살·문짝이 움직이는 성문 칸은 묶지 않는다.
+        // 측정(Game 성 48칸, 렌더러 약 420개, 재질 2종): 성 전체 시점 카메라 렌더 CPU 약 1.29ms → 킷 없을 때와 오차 안(1.05~1.31ms).
+        [SerializeField] bool staticBatching = true;
+
+        /// <summary>흉벽 킷 조각이 충돌체·엄폐를 가지는지(SIEGE-19).</summary>
+        public bool BattlementColliders => battlementColliders;
 
         float portcullisBlend = 1f;
 
@@ -63,6 +72,8 @@ namespace ProjectNeo.Walls
             public GameObject Root;
             public int Signature;
             public bool HasColliders;
+            /// <summary>정적 배칭이 만든 합친 메쉬. 칸을 걷을 때 함께 지운다.</summary>
+            public Mesh Combined;
         }
 
         readonly Dictionary<Vector2Int, Built> built = new Dictionary<Vector2Int, Built>();
@@ -105,11 +116,12 @@ namespace ProjectNeo.Walls
             }
         }
 
-        public void Configure(ConstructionWorld owner, CastleKitSettings kitSettings)
+        public void Configure(ConstructionWorld owner, CastleKitSettings kitSettings, bool withBattlementColliders = true)
         {
             Unsubscribe();
             world = owner;
             settings = kitSettings;
+            battlementColliders = withBattlementColliders;
             enclosedReady = false;
             Subscribe();
             dirty = true;
@@ -238,7 +250,20 @@ namespace ProjectNeo.Walls
             }
         }
 
-        public void Refresh()
+        /// <summary>
+        /// 성이 첫 길찾기 메시를 만들기 직전에 부른다(<see cref="ConstructionWorld"/> Awake, SIEGE-19).
+        /// 킷 충돌체가 곧 만들 메시에 담기므로 다시 만들기를 요청하지 않는다(시작하자마자 메시를 한 번 더 만들면 그동안 전투를 시작할 수 없다).
+        /// </summary>
+        public void BuildBeforeNavigation(ConstructionWorld owner)
+        {
+            if (world == null) world = owner;
+            if (world != owner) return;
+            Refresh(false);
+        }
+
+        public void Refresh() => Refresh(true);
+
+        void Refresh(bool requestNavigation)
         {
             if (world == null || world.Layout == null || settings == null) return;
             dirty = false;
@@ -268,11 +293,12 @@ namespace ProjectNeo.Walls
                 navigation |= Discard(existing);
                 existing.Signature = signature;
                 existing.Root = Build(entry.Key, entry.Value, out existing.HasColliders);
+                existing.Combined = Batch(existing.Root);
                 navigation |= existing.HasColliders;
             }
             navigation |= UpdateStructures();
             // 기둥·계단 충돌체가 바뀌면 길찾기 메시를 다시 만든다(성가퀴와 같은 방식).
-            if (navigation) world.RequestNavigationRebuild();
+            if (navigation && requestNavigation) world.RequestNavigationRebuild();
         }
 
         void EnsureEnclosed()
@@ -497,9 +523,30 @@ namespace ProjectNeo.Walls
                 float uniform = placement.Piece == CastleKitPiece.TowerCap ? settings.TowerCapScale : 1f;
                 piece.transform.localScale = uniform * new Vector3(stretchX * placement.StretchX, placement.ScaleY,
                     (placement.MirrorZ ? -1f : 1f) * stretch * placement.StretchZ);
+                if (!battlementColliders && IsBattlement(placement.Piece)) StripCollision(piece);
                 hasColliders |= piece.GetComponentInChildren<Collider>(true) != null;
             }
             return root;
+        }
+
+        // 칸 조각을 정적 배칭으로 묶고 합친 메쉬를 돌려준다(성문 칸·에디터 모드는 묶지 않는다).
+        Mesh Batch(GameObject root)
+        {
+            if (!staticBatching || !Application.isPlaying || root.transform.Find(CastleKitPiece.GateOuter.ToString()) != null) return null;
+            StaticBatchingUtility.Combine(root);
+            foreach (MeshRenderer renderer in root.GetComponentsInChildren<MeshRenderer>(true))
+                if (renderer.isPartOfStaticBatch) return renderer.GetComponent<MeshFilter>().sharedMesh;
+            return null;
+        }
+
+        static bool IsBattlement(CastleKitPiece piece) =>
+            piece == CastleKitPiece.Battlement || piece == CastleKitPiece.BattlementCap || piece == CastleKitPiece.BattlementHalf;
+
+        // 외형 전용으로 만든다. 같은 프레임의 길찾기 수집·충돌에서 빠지도록 바로 지운다(엄폐가 충돌체를 요구하므로 엄폐부터).
+        static void StripCollision(GameObject piece)
+        {
+            foreach (ProjectNeo.Combat.ShotCover cover in piece.GetComponentsInChildren<ProjectNeo.Combat.ShotCover>(true)) DestroyImmediate(cover);
+            foreach (Collider collider in piece.GetComponentsInChildren<Collider>(true)) DestroyImmediate(collider);
         }
 
         // 계단 방의 바닥·층참·경사 판. 칸 루트는 늘리지 않으므로 자기 크기로 늘려도 비틀리지 않는다.
@@ -529,6 +576,7 @@ namespace ProjectNeo.Walls
         // 걷어 낸 칸에 충돌체가 있었으면 true(길찾기 메시를 다시 만들어야 한다).
         static bool Discard(Built entry)
         {
+            if (entry.Combined != null) { Destroy(entry.Combined); entry.Combined = null; }
             if (entry.Root == null) return false;
             entry.Root.SetActive(false);
             Destroy(entry.Root);

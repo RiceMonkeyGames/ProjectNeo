@@ -77,6 +77,9 @@ namespace ProjectNeo.Walls
             // 성가퀴는 첫 길찾기 메시에 함께 담는다. 따로 만들면 시작하자마자 메시를 한 번 더 만들게 된다(SIEGE-10).
             var battlements = GetComponent<CastleBattlements>();
             if (battlements != null) battlements.BuildBeforeNavigation(this);
+            // 성 킷 꾸밈(기둥·계단·계단 방 충돌체)도 첫 메시에 담는다(SIEGE-19).
+            var kit = GetComponent<CastleKitDresser>();
+            if (kit != null) kit.BuildBeforeNavigation(this);
             Physics.SyncTransforms();
             surface.BuildNavMesh();
             NavigationRevision = 1;

@@ -16,6 +16,8 @@ namespace ProjectNeo.Walls
     /// 이어진 바닥 통로라, 발치 면과 맞은편 면은 모든 방 층에서 드나든다. 맨 아래 방 층은 바닥이 꽉 차 둘째 계단 쪽 면(계단 밑)으로도 들어온다.
     /// 첫 계단 쪽 면에는 문을 둘 수 없다. 통로 문을 가장 많이 살리는 짜임을 고르고(같으면 면 순서), 맞지 않는 문은 벽판으로 둔다.</item>
     /// <item>3층 이상 성벽 칸으로는 성벽 바깥 계단을 두지 않는다(<see cref="IsTallWall"/>). 바깥 계단은 1층↔2층만이다.</item>
+    /// <item>맨 아래가 성문이고 그 위가 모두 성벽인 성문 칸도 성벽 칸과 똑같이 방이 된다(SIEGE-19, 사용자 결정 2026-11-23).
+    /// 올린 쇠창살(두께 약 0.2m)은 위층 바깥 벽판 두께(0.5m) 안에 숨고, 방 안쪽은 벽에서 안으로 들어간 곳부터라 계단과 겹치지 않는다.</item>
     /// </list>
     /// </summary>
     public static class StairRoomRules
@@ -46,7 +48,7 @@ namespace ProjectNeo.Walls
             if (layout == null) return;
             foreach (BuildPlacement placement in layout.Placements)
             {
-                if (placement.Level != 0 || placement.Definition.Kind != BuildPieceKind.Wall) continue;
+                if (placement.Level != 0 || (placement.Definition.Kind != BuildPieceKind.Wall && placement.Definition.Kind != BuildPieceKind.Gate)) continue;
                 for (int x = 0; x < placement.Size.x; x++)
                     for (int z = 0; z < placement.Size.y; z++)
                     {
@@ -100,13 +102,22 @@ namespace ProjectNeo.Walls
         /// </summary>
         public static bool IsTallWall(BuildLayout layout, ICollection<int> unfinished, Vector2Int cell)
         {
-            if (layout == null) return false;
-            int height = layout.ColumnHeight(cell);
+            return layout != null && IsRoomColumn(layout, unfinished, cell, layout.ColumnHeight(cell));
+        }
+
+        /// <summary>
+        /// 방을 둘 수 있는 기둥인지: 3층 이상이고 모든 층이 다 지은 성벽이다. 맨 아래가 성문이고 그 위가 모두 성벽이어도 된다
+        /// (성문 칸, SIEGE-19, 사용자 결정 2026-11-23).
+        /// </summary>
+        static bool IsRoomColumn(BuildLayout layout, ICollection<int> unfinished, Vector2Int cell, int height)
+        {
             if (height < MinStoreys) return false;
             for (int level = 0; level < height; level++)
             {
                 BuildPlacement piece = layout.At(cell, level);
-                if (piece.Definition.Kind != BuildPieceKind.Wall || (unfinished != null && unfinished.Contains(piece.Id))) return false;
+                if (piece == null || (unfinished != null && unfinished.Contains(piece.Id))) return false;
+                BuildPieceKind kind = piece.Definition.Kind;
+                if (kind != BuildPieceKind.Wall && !(level == 0 && kind == BuildPieceKind.Gate)) return false;
             }
             return true;
         }
@@ -168,12 +179,7 @@ namespace ProjectNeo.Walls
         {
             candidate = default;
             int height = layout.ColumnHeight(cell);
-            if (height < MinStoreys) return false;
-            for (int level = 0; level < height; level++)
-            {
-                BuildPlacement piece = layout.At(cell, level);
-                if (piece.Definition.Kind != BuildPieceKind.Wall || (unfinished != null && unfinished.Contains(piece.Id))) return false;
-            }
+            if (!IsRoomColumn(layout, unfinished, cell, height)) return false;
             BuildPlacement top = layout.At(cell, height - 1);
             float roof = top.Elevation + top.Definition.Height;
 

@@ -9,7 +9,7 @@ namespace ProjectNeo.Walls
     [CreateAssetMenu(menuName = "ProjectNeo/Construction/Castle Kit Settings")]
     public sealed class CastleKitSettings : ScriptableObject
     {
-        const int PieceCount = 33;
+        const int PieceCount = 34;
 
         [SerializeField] GameObject[] prefabs = new GameObject[PieceCount];
         // 킷 한 칸(벽판 폭·층 높이). 조각 높이·두께와 모듈 기준 m 값은 늘 이 크기 그대로다(층 높이 = 모듈).

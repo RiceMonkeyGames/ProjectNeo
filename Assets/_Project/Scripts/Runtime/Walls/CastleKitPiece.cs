@@ -79,5 +79,7 @@ namespace ProjectNeo.Walls
         /// 계단 방·망루 방의 벽과 문 양옆을 채운다(SIEGE-35).
         /// </summary>
         RoomPanelHalf = 32,
+        /// <summary>성 바깥 모서리 윗부분의 내닫이 망루(Wall_Tower_M_01, 외형 전용, SIEGE-19).</summary>
+        CornerTurret = 33,
     }
 }
