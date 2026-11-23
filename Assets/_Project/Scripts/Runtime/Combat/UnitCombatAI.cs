@@ -48,6 +48,10 @@ namespace ProjectNeo.Combat
         bool squadNeighborhoodClear;
         public void SetSquadNeighborhoodClear(bool clear) => squadNeighborhoodClear = clear;
         public bool IsSquadNeighborhoodClear => squadNeighborhoodClear;
+        // 원거리(LOD 2) 하이브리드 Flow Field 이동 중인지(PERF-ai-flow-field).
+        bool usingFlowField;
+        Vector3 flowDirectionCached;
+        public bool IsUsingFlowField => usingFlowField;
         // 자리 방향(COMBAT-14). 대형이 바라볼 방향이나 자리를 받은 때의 방향(도). 없으면 돌지 않는다.
         float? postFacing;
         // 근접 위협 후퇴(COMBAT-14).
@@ -116,6 +120,7 @@ namespace ProjectNeo.Combat
             hasClearShotCached = true;
             clearShotDirty = true;
             squadNeighborhoodClear = false;
+            usingFlowField = false;
             fallingBack = false;
             // 방향은 부대 대형 방향을 함께 받은 지시(SetDirective(지시, 목적지, 방향))만 지킨다(COMBAT-14).
             // 공성 적 판단처럼 중지 중에 스스로 방향을 돌리는 쪽과 다투지 않게 여기서는 비운다.
@@ -740,29 +745,33 @@ namespace ProjectNeo.Combat
                     decisionRemaining = NextDecisionInterval();
                     refreshed = true;
                     clearShotDirty = true;
-                    if (Target != null && CanReach(Target))
+                    if (!TryUpdateFlowFieldEngage())
                     {
-                        if (!suppressRetaliation && targetLockRemaining <= 0f && !CanStrikeFromHere(Target))
+                        usingFlowField = false;
+                        if (Target != null && CanReach(Target))
                         {
-                            CharacterActor closer = FindTarget();
-                            if (closer != null && !ReferenceEquals(closer, Target)
-                                && (CanStrikeFromHere(closer) || PriorityOf(closer) < PriorityOf(Target)))
-                                SwitchTarget(closer, false);
+                            if (!suppressRetaliation && targetLockRemaining <= 0f && !CanStrikeFromHere(Target))
+                            {
+                                CharacterActor closer = FindTarget();
+                                if (closer != null && !ReferenceEquals(closer, Target)
+                                    && (CanStrikeFromHere(closer) || PriorityOf(closer) < PriorityOf(Target)))
+                                    SwitchTarget(closer, false);
+                            }
+                            if (CanReach(Target)) ApplyApproachPath(false);
                         }
-                        if (CanReach(Target)) ApplyApproachPath(false);
-                    }
-                    else
-                    {
-                        Target = FindTarget();
-                        clearShotDirty = true;
-                        if (Target != null) targetLockRemaining = settings.TargetSwitchCooldown;
-                        // 대상을 고르는 동안 path가 바뀔 수 있으므로 선택된 대상의 경로를 다시 얻는다.
-                        if (Target != null && CanReach(Target)) ApplyApproachPath(false);
+                        else
+                        {
+                            Target = FindTarget();
+                            clearShotDirty = true;
+                            if (Target != null) targetLockRemaining = settings.TargetSwitchCooldown;
+                            // 대상을 고르는 동안 path가 바뀔 수 있으므로 선택된 대상의 경로를 다시 얻는다.
+                            if (Target != null && CanReach(Target)) ApplyApproachPath(false);
+                        }
                     }
                 }
             }
             if (UpdateMeleeThreat(refreshed, false)) return;
-            if (refreshed && Target != null) TryUpgradeThreatTarget();
+            if (refreshed && Target != null && !usingFlowField) TryUpgradeThreatTarget();
             if (Target == null)
             {
                 Advance();
@@ -771,6 +780,17 @@ namespace ProjectNeo.Combat
             // 적을 쫓느라 경로가 바뀌었으므로, 처리한 뒤에는 지점으로 가는 길을 바로 다시 구한다.
             advanceRepathRemaining = 0f;
             stall.Reset();
+            if (usingFlowField)
+            {
+                if (agent.hasPath) agent.ResetPath();
+                agent.isStopped = false;
+                agent.updateRotation = false;
+                agent.velocity = flowDirectionCached * agent.speed;
+                if (flowDirectionCached.sqrMagnitude > 1e-4f)
+                    transform.rotation = Quaternion.RotateTowards(transform.rotation,
+                        Quaternion.LookRotation(flowDirectionCached), settings.TurnSpeed * Time.deltaTime);
+                return;
+            }
             bool inRange = CombatPhysics.IsInRange(actor, Target);
             if (inRange) Face(Target);
             bool canAttack = actor.CanAttack(Target);
@@ -802,6 +822,62 @@ namespace ProjectNeo.Combat
             agent.isStopped = ((canAttack || holdRangedRange) && !toSlot) || actor.IsAttacking;
             agent.updateRotation = !inRange;
             if (canAttack) actor.TryAttack(Target);
+        }
+
+        // 원거리 행군 중인 지상 유닛이 적과 아직 멀리 떨어져 있을 때는 개별 CalculatePath와 SetDestination을 생략하고
+        // 공유 Flow Field 방향 벡터로 직접 전진한다(PERF-ai-flow-field).
+        // 적과 가까워지거나(FlowFieldMinDistance 안) 다층 고저차가 있으면 false를 돌려줘 기존 정밀 NavMesh 경로로 넘긴다.
+        bool TryUpdateFlowFieldEngage()
+        {
+            if (settings == null || !settings.EnableFlowField || actor.Character != null) return false;
+            if (CharacterActor.ActiveActors.Count < 24) return false;
+            Vector3 selfPos = transform.position;
+            float minDist = Mathf.Max(settings.FlowFieldMinDistance, CombatPhysics.MaximumAttackRange(actor) + 4f);
+            float minDistSqr = minDist * minDist;
+
+            // 이미 타겟이 있고 가까워졌으면 정밀 길찾기로 전환한다.
+            if (Target != null && (Target.transform.position - selfPos).sqrMagnitude <= minDistSqr)
+                return false;
+
+            // 반경 minDist 안에 적이 하나라도 들어왔으면 정밀 타겟팅·길찾기로 전환한다.
+            CombatSpatialIndex.QueryEnemies(actor.Team, selfPos, minDist, spatialCandidates);
+            for (int i = 0; i < spatialCandidates.Count; i++)
+            {
+                CharacterActor candidate = spatialCandidates[i];
+                if (actor.IsEnemy(candidate) && CombatPhysics.CanTarget(actor, candidate)
+                    && (candidate.transform.position - selfPos).sqrMagnitude <= minDistSqr)
+                    return false;
+            }
+
+            if (Target == null)
+            {
+                // CalculatePath 없이 가장 가까운 적 하나를 임시 타겟으로 잡는다.
+                System.Collections.Generic.IReadOnlyList<CharacterActor> enemies = CombatSpatialIndex.AllEnemiesOf(actor.Team);
+                CharacterActor best = null;
+                float bestSqr = settings.DetectionRange * settings.DetectionRange;
+                for (int i = 0; i < enemies.Count; i++)
+                {
+                    CharacterActor candidate = enemies[i];
+                    if (!actor.IsEnemy(candidate) || !CombatPhysics.CanTarget(actor, candidate)) continue;
+                    float sqr = (candidate.transform.position - selfPos).sqrMagnitude;
+                    if (sqr < bestSqr) { bestSqr = sqr; best = candidate; }
+                }
+                if (best == null) return false;
+                Target = best;
+                targetLockRemaining = settings.TargetSwitchCooldown;
+            }
+
+            // 대상과 층 높이가 크게 다르면(성벽 위 수비병 등) NavMesh 길찾기에 맡긴다.
+            if (Mathf.Abs(Target.transform.position.y - selfPos.y) > 1.5f) return false;
+
+            if (!BattleFlowFieldService.TryGetFlowDirection(actor.Team, selfPos, out Vector3 flowDir))
+                return false;
+
+            meleeSlotBoard.Release(this);
+            if (agent.hasPath) agent.ResetPath();
+            flowDirectionCached = flowDir;
+            usingFlowField = true;
+            return true;
         }
 
         // 교전 중 사선이 막혔을 때(COMBAT-12). 원거리는 무엇이 막는지 판단 주기마다 보고, 막은 적으로 바꾸거나
