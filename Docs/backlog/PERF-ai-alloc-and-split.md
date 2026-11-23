@@ -1,9 +1,9 @@
 ---
 id: PERF-ai-alloc-and-split
 title: Remove Per-Frame AI Allocations & Refactor UnitCombatAI Sub-States
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: SeongminHwang
+branch: feature/perf-ai-alloc-and-split
 area: PERF
 depends_on: []
 created: 2026-11-23
