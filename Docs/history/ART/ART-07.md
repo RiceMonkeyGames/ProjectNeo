@@ -1,6 +1,6 @@
 # ART-07 | 2026-11-23 | Art - Dynamic Castle Wall Trim (Buttresses, Plinth, Corbels, Corner Turrets) (Superseded)
 
-Status: **Superseded** without merge (2026-11-23, youngho). Branch `feature/art-07` has no commits beyond the claim; the work-in-progress box trim stays only in the local stash `ART-07 wall trim WIP (boxes)` on youngho's machine. Decision: [Decisions-Resolved](../../plan/Decisions-Resolved.md) ("Game adopts the 5m castle kit").
+Status: **Superseded** without merge (2026-11-23, youngho). Branch `feature/art-07` has no commits beyond the claim; the work-in-progress box trim was kept in a local stash on youngho's machine and dropped on 2026-11-23 (see [Q-59](../Q/Q-59.md)). Decision: [Decisions-Resolved](../../plan/Decisions-Resolved.md) ("Game adopts the 5m castle kit").
 
 ## Original scope
 
