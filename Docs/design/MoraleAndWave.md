@@ -17,7 +17,7 @@ Morale applies to ally squads only (enemies have no morale since Q-44, 2026-11-1
 
 ## Ally Morale: Breaking Point (2026-11-12)
 
-Combines Bannerlord-style squad morale with a Darkest Dungeon-style resolve check. Starting values live in data assets and remain subject to tuning.
+Combines Bannerlord-style squad morale with a Darkest Dungeon-style resolve check. Starting values live in data assets and are confirmed as the baseline defaults (Q-58, 2026-11-23; further tuning deferred to M4/M6 balance passes).
 
 - **Scale**: `0–200` per squad; new squad starts at `150`.
 - **Breaking Point Check**: At `100` morale, checks **once per battle**: **Collapse** (negative) or **Awaken** (positive, `25%` base chance; modified by captain traits/perks). No repeat check in the same battle even if morale recovers above 100 and drops again.
@@ -41,7 +41,7 @@ Combines Bannerlord-style squad morale with a Darkest Dungeon-style resolve chec
   - *Contagion*: Periodically lowers nearby squads' morale slightly.
   - (*Berserk* charging out the gate dropped).
 - **Persistence & Reorganization**: Morale belongs to the squad and is stored on the run-data squad between battles (Q-44); every newly created squad, including squads auto-created by barracks recruiting, starts at `150`. After each battle every squad's morale becomes `max(current + 20, 80)`, capped at `200` (Q-39 2026-11-13), so a squad that held never ends below one that routed. Routed squads (0) therefore start next battle at `80` (keeps debuff, no check, can recover). Moving soldiers between squads does not alter squad morale; new squad starts at `150`; empty squad and its morale are removed (after a battle, a squad is removed at the next prep start only when it has no grunts and no living captain; a captain-only squad stays with its morale, Q-50 2026-11-13). Merging under-strength squads and a minimum squad size are pending (Q-45, decide with preparation-phase work).
-- **Test Display**: `SquadCommandHud` shows ally morale number, state (`Normal`, `Collapse: <type>`, `Awaken`), and one-line check notice. Enemy morale hidden. Prep-phase morale recovery facilities and player proximity modifiers are later design.
+- **Test Display**: `SquadCommandHud` shows ally morale number, state (`Normal`, `Collapse: <type>`, `Awaken`), and one-line check notice. Enemy morale hidden. No separate prep-phase morale recovery facility will be added for now (Q-58, 2026-11-23; post-battle recovery plus perks/skills remain the recovery paths); player proximity modifiers remain later design.
 
 ## Enemy Morale (removed, Q-44 2026-11-13)
 
