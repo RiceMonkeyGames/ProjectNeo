@@ -47,6 +47,7 @@ namespace ProjectNeo.Siege
             allEnemies = enemies;
             waveMates = mates;
             Actor = GetComponent<CharacterActor>();
+            if (Actor != null) Actor.IsBoss = true;
             auraModifiers = BossRules.AuraModifiers(definition);
             Transform visual = transform.Find("Visual");
             if (visual != null) visual.localScale *= definition.VisualScale;

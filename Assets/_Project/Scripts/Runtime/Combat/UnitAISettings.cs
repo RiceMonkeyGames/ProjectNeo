@@ -72,6 +72,18 @@ namespace ProjectNeo.Combat
         [SerializeField, Min(0f)] float rangedFallbackHoldLeash = 4f;
         // 자리 방향 복귀(COMBAT-14). 끄면 자리에 돌아와도 마지막으로 보던 방향을 그대로 본다.
         [SerializeField] bool holdFacingRestore = true;
+        // 대상 분산(COMBAT-17). 임시 값이며 플레이 후 조정한다. 끄면 예전처럼 고른다.
+        [SerializeField] bool targetSpread = true;
+        // 근접: 안쪽 근접 자리가 다 찬 대상을 이 배율만큼 먼 거리로 본다(1 이상).
+        [SerializeField, Range(1f, 4f)] float meleeCongestionDistanceFactor = 1.5f;
+        // 원거리: 일반 대상을 이미 쏘는 다른 원거리 유닛이 이 수 이상이면 감점한다. 0이면 감점하지 않는다.
+        [SerializeField, Min(0)] int rangedOverkillThreshold = 3;
+        // 원거리: 기준을 넘는 사수 한 명마다 곱하는 거리 배율(1 이상).
+        [SerializeField, Range(1f, 4f)] float rangedOverkillDistanceFactor = 1.25f;
+        // 크레넬 자리 옮기기(COMBAT-17): 자리를 지키는 원거리 유닛이 구조물에 막혀 이 시간(초) 넘게 못 쏘면 옮긴다. 0이면 옮기지 않는다.
+        [SerializeField, Min(0f)] float crenelRepositionDelay = 2f;
+        // 지시받은 자리에서 수평으로 이 거리(m) 안의 크레넬 사격 자리만 본다.
+        [SerializeField, Min(0f)] float crenelRepositionRadius = 4f;
         // 대규모 전투 탐색 최적화(PERF-ai-query-budget).
         // 판단 주기마다 점수 순으로 먼저 추린 뒤 실제로 NavMesh.CalculatePath를 시험할 최대 후보 수.
         [SerializeField, Min(1)] int maxPathCandidatesPerTick = 4;
@@ -123,6 +135,12 @@ namespace ProjectNeo.Combat
         public float MeleeOuterRingOffset => meleeOuterRingOffset;
         public float MeleeSlotSampleDistance => meleeSlotSampleDistance;
         public float MeleeSlotLevelTolerance => meleeSlotLevelTolerance;
+        public bool TargetSpread => targetSpread;
+        public float MeleeCongestionDistanceFactor => meleeCongestionDistanceFactor;
+        public int RangedOverkillThreshold => rangedOverkillThreshold;
+        public float RangedOverkillDistanceFactor => rangedOverkillDistanceFactor;
+        public float CrenelRepositionDelay => crenelRepositionDelay;
+        public float CrenelRepositionRadius => crenelRepositionRadius;
         public float MoveStallDistance => moveStallDistance;
         public float MoveStallSeconds => moveStallSeconds;
         public float MoveStallProgress => moveStallProgress;
@@ -140,9 +158,17 @@ namespace ProjectNeo.Combat
             int maxPathQueriesPerFrame = 0, int decisionStaggerBuckets = 8, float spatialCellSize = 8f,
             bool enableAiLod = true, float lod0Distance = 25f, float lod1Distance = 60f,
             float lodEvaluationInterval = 0.5f, bool enableFlowField = true, float flowFieldMinDistance = 18f,
-            float flowFieldStepDistance = 8f)
+            float flowFieldStepDistance = 8f, bool targetSpread = true, float meleeCongestionDistanceFactor = 1.5f,
+            int rangedOverkillThreshold = 3, float rangedOverkillDistanceFactor = 1.25f,
+            float crenelRepositionDelay = 2f, float crenelRepositionRadius = 4f)
         {
             var value = CreateInstance<UnitAISettings>();
+            value.targetSpread = targetSpread;
+            value.meleeCongestionDistanceFactor = Mathf.Clamp(meleeCongestionDistanceFactor, 1f, 4f);
+            value.rangedOverkillThreshold = Mathf.Max(0, rangedOverkillThreshold);
+            value.rangedOverkillDistanceFactor = Mathf.Clamp(rangedOverkillDistanceFactor, 1f, 4f);
+            value.crenelRepositionDelay = Mathf.Max(0f, crenelRepositionDelay);
+            value.crenelRepositionRadius = Mathf.Max(0f, crenelRepositionRadius);
             value.meleeSlots = meleeSlots;
             value.rangedThreatPriority = rangedThreatPriority;
             value.rangedMeleeThreatRadius = Mathf.Max(0f, rangedMeleeThreatRadius);

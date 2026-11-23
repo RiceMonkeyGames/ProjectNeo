@@ -59,7 +59,17 @@ namespace ProjectNeo.Combat
         float fallbackRemaining;
         float fallbackCooldownRemaining;
         float threatRecheckRemaining;
-        public CharacterActor Target { get; private set; }
+        public CharacterActor Target
+        {
+            get => target;
+            private set
+            {
+                if (ReferenceEquals(target, value)) return;
+                target = value;
+                spreadRevision++;
+            }
+        }
+        CharacterActor target;
         /// <summary>지금 유닛의 AI LOD 등급(PERF-ai-lod).</summary>
         public AILodTier LodTier => lodTier;
         /// <summary>유닛이 카메라 시야 원뿔 안에 있는지(PERF-ai-lod).</summary>
@@ -126,6 +136,9 @@ namespace ProjectNeo.Combat
             // 공성 적 판단처럼 중지 중에 스스로 방향을 돌리는 쪽과 다투지 않게 여기서는 비운다.
             postFacing = null;
             if (directive == UnitDirective.Hold) HoldPost = transform.position;
+            crenelAnchor = HoldPost;
+            crenelBlockedSeconds = 0f;
+            crenelMoveUsed = false;
         }
 
         public void SetDirective(UnitDirective directive, Vector3 destination)
@@ -133,6 +146,7 @@ namespace ProjectNeo.Combat
             if (GetComponent<ProjectNeo.Siege.LadderTraveller>()?.Defer(directive, true, destination) == true) return;
             SetDirective(directive);
             if (directive == UnitDirective.Hold) HoldPost = destination;
+            crenelAnchor = HoldPost;
             MoveDestination = destination;
             HasAdvancePoint = directive == UnitDirective.Engage;
             destinationPending = directive != UnitDirective.Hold;
@@ -161,6 +175,7 @@ namespace ProjectNeo.Combat
         {
             actor.Died += OnDied;
             actor.HitReceivedFrom += OnHitReceived;
+            if (!activeUnits.Contains(this)) activeUnits.Add(this);
         }
 
         static int nextStaggerIndex;
@@ -403,6 +418,8 @@ namespace ProjectNeo.Combat
                 agent.updateRotation = false;
                 Face(Target);
                 if (actor.CanAttack(Target)) actor.TryAttack(Target);
+                crenelBlockedSeconds = 0f;
+                crenelMoveUsed = false;
                 return;
             }
             agent.updateRotation = true;
@@ -424,6 +441,7 @@ namespace ProjectNeo.Combat
                 if (Target != null) return;
             }
             if ((!squadNeighborhoodClear || opening != null) && UpdateOpening(refreshed)) return;
+            if (refreshed && !squadNeighborhoodClear) UpdateCrenelReposition();
             // 자리로 돌아가기. 여유 거리(HoldReturnDistance)보다 멀리 밀려났을 때만 출발하고, 출발하면 도착 거리까지 붙는다.
             // 자리가 다른 유닛에 막혀 더 못 가면 거기서 멈춘다. 살짝 밀린 정도로 자리 다툼을 하지 않는다.
             Vector3 offset = HoldPost - transform.position;
@@ -447,6 +465,118 @@ namespace ProjectNeo.Combat
             if (refreshed || !agent.hasPath) agent.SetDestination(HoldPost);
         }
 
+        // ── 크레넬 자리 옮기기(COMBAT-17) ─────────────────
+
+        /// <summary>
+        /// 주변 성가퀴 빈틈(크레넬) 사격 자리를 담는 함수(center, radius, output). 성 쪽 흐름(<c>GamePrepPlacement</c>)이
+        /// 성가퀴 정보를 넣는다. 없으면 옮기지 않는다.
+        /// </summary>
+        public static System.Action<Vector3, float, System.Collections.Generic.List<Vector3>> CrenelStandPoints { get; set; }
+
+        /// <summary>크레넬 자리를 찾는 기준인 지시받은 지킬 자리(옮겨도 바뀌지 않는다).</summary>
+        public Vector3 CrenelAnchor => crenelAnchor;
+
+        Vector3 crenelAnchor;
+        float crenelBlockedSeconds;
+        float crenelLastCheck = -1f;
+        bool crenelMoveUsed;
+        readonly System.Collections.Generic.List<Vector3> crenelPoints = new System.Collections.Generic.List<Vector3>();
+        readonly System.Collections.Generic.List<int> crenelOrder = new System.Collections.Generic.List<int>();
+
+        // 자리를 지키는 원거리 유닛이 쏠 대상 없이 사거리 안 적을 구조물에 막혀 못 쏘는 시간을 판단 주기마다 잰다.
+        // 기다림 시간을 넘기면 지시받은 자리 근처 빈 크레넬로 옮겨 그곳을 새 지킬 자리로 삼는다. 쏘기 전까지 한 번만 옮긴다.
+        void UpdateCrenelReposition()
+        {
+            float now = Time.time;
+            float elapsed = crenelLastCheck < 0f ? 0f : Mathf.Min(now - crenelLastCheck, 1f);
+            crenelLastCheck = now;
+            if (!IsRangedUnit || CrenelStandPoints == null || crenelMoveUsed || opening != null
+                || settings.CrenelRepositionDelay <= 0f || actor.IsOnLadder || !IsBlockedByStructure())
+            {
+                crenelBlockedSeconds = 0f;
+                return;
+            }
+            crenelBlockedSeconds += elapsed;
+            if (!CrenelRepositionRules.ShouldReposition(crenelBlockedSeconds, settings.CrenelRepositionDelay)) return;
+            crenelBlockedSeconds = 0f;
+            crenelMoveUsed = true;
+            TryMoveToCrenel();
+        }
+
+        // 사거리 안 가장 가까운 적이 구조물에 막혀 있는지.
+        bool IsBlockedByStructure()
+        {
+            float range = CombatPhysics.MaximumAttackRange(actor);
+            CombatSpatialIndex.QueryEnemies(actor.Team, transform.position, range, spatialCandidates);
+            CharacterActor nearest = null;
+            float best = float.PositiveInfinity;
+            for (int i = 0; i < spatialCandidates.Count; i++)
+            {
+                CharacterActor candidate = spatialCandidates[i];
+                float distance = SqrDistanceTo(candidate);
+                if (distance >= best || !actor.IsEnemy(candidate) || !CombatPhysics.CanTarget(actor, candidate)
+                    || !CombatPhysics.IsInRange(actor, candidate)) continue;
+                best = distance;
+                nearest = candidate;
+            }
+            return nearest != null && CombatPhysics.ClassifyShot(actor, nearest, out _) == ShotBlock.Structure;
+        }
+
+        bool TryMoveToCrenel()
+        {
+            CrenelStandPoints(crenelAnchor, settings.CrenelRepositionRadius, crenelPoints);
+            Vector3 self = transform.position;
+            crenelOrder.Clear();
+            for (int i = 0; i < crenelPoints.Count; i++)
+            {
+                if (!CrenelRepositionRules.IsCandidate(crenelPoints[i], crenelAnchor, self, settings.CrenelRepositionRadius,
+                        settings.MeleeSlotLevelTolerance) || IsCrenelOccupied(crenelPoints[i])) continue;
+                float distance = (crenelPoints[i] - self).sqrMagnitude;
+                int at = crenelOrder.Count;
+                while (at > 0 && (crenelPoints[crenelOrder[at - 1]] - self).sqrMagnitude > distance) at--;
+                crenelOrder.Insert(at, i);
+            }
+            var filter = new NavMeshQueryFilter { agentTypeID = agent.agentTypeID, areaMask = agent.areaMask };
+            foreach (int index in crenelOrder)
+            {
+                if (!NavMesh.SamplePosition(crenelPoints[index], out NavMeshHit hit, 0.5f, filter)) continue;
+                if (!agent.CalculatePath(hit.position, path) || path.status != NavMeshPathStatus.PathComplete) continue;
+                if (settings.HoldMaxDescent > 0f
+                    && !HoldDescentRule.StaysAbove(path.corners, HoldPost.y - settings.HoldMaxDescent)) continue;
+                HoldPost = hit.position;
+                agent.SetPath(path);
+                agent.isStopped = false;
+                returningToPost = true;
+                stall.Reset();
+                return true;
+            }
+            return false;
+        }
+
+        // 다른 유닛이 그 자리에 서 있거나 그 자리를 지킬 자리로 삼았으면 찬 자리다.
+        // 서 있는 같은 편은 플레이어까지 본다.
+        bool IsCrenelOccupied(Vector3 point)
+        {
+            CombatSpatialIndex.QueryTeam(actor.Team, point, CrenelRepositionRules.OccupiedDistance + 0.5f, spatialCandidates);
+            for (int i = 0; i < spatialCandidates.Count; i++)
+            {
+                CharacterActor other = spatialCandidates[i];
+                if (other == actor || other.Health == null || other.Health.IsDead) continue;
+                if (CrenelRepositionRules.IsNear(other.transform.position, point, CrenelRepositionRules.OccupiedDistance)
+                    && Mathf.Abs(other.transform.position.y - point.y) <= 1f) return true;
+            }
+            for (int i = 0; i < activeUnits.Count; i++)
+            {
+                UnitCombatAI other = activeUnits[i];
+                if (other == this || other.actor == null || other.actor.Team != actor.Team || other.actor.Health == null
+                    || other.actor.Health.IsDead) continue;
+                if (other.Directive == UnitDirective.Hold
+                    && CrenelRepositionRules.IsNear(other.HoldPost, point, CrenelRepositionRules.OccupiedDistance)
+                    && Mathf.Abs(other.HoldPost.y - point.y) <= 1f) return true;
+            }
+            return false;
+        }
+
         // 싸울 대상 없이 자리에 서 있으면 대형 방향으로 돌아선다(COMBAT-14).
         void RestorePostFacing()
         {
@@ -464,6 +594,61 @@ namespace ProjectNeo.Combat
         // 위협 우선순위를 쓰는 원거리 유닛이면 대상의 위협 배율, 아니면 1.
         float ThreatFactorOf(CharacterActor other) =>
             IsRangedUnit && settings.RangedThreatPriority ? settings.ThreatDistanceFactor(other.Threat) : 1f;
+
+        // ── 대상 분산(COMBAT-17) ─────────────────
+        // 점수에 쓰는 거리 배율: 원거리 위협 배율 × 분산 배율(근접 혼잡 또는 원거리 과잉 사격).
+        float ScoreFactorOf(CharacterActor other) => ThreatFactorOf(other) * SpreadFactorOf(other);
+
+        static readonly System.Collections.Generic.List<UnitCombatAI> activeUnits =
+            new System.Collections.Generic.List<UnitCombatAI>();
+        static readonly System.Collections.Generic.Dictionary<object, int> innerSlotCounts =
+            new System.Collections.Generic.Dictionary<object, int>();
+        static readonly System.Collections.Generic.Dictionary<CharacterActor, int> rangedShooterCounts =
+            new System.Collections.Generic.Dictionary<CharacterActor, int>();
+        // 대상이 바뀌거나 근접 자리를 맡고 놓을 때마다 오른다. 값이 같으면 센 결과를 다시 쓴다.
+        static int spreadRevision;
+        static int spreadCountRevision = -1;
+        static int spreadCountFrame = -1;
+
+        // 근접 자리 표와 원거리 사수 수를 바뀐 때(또는 프레임마다 한 번)만 센다(후보마다 전체를 훑지 않게).
+        // 같은 프레임에 앞서 판단한 유닛이 맡은 자리와 대상도 뒤에 판단하는 유닛이 본다.
+        static void RefreshSpreadCounts()
+        {
+            int revision = spreadRevision + meleeSlotBoard.Revision;
+            if (spreadCountFrame == Time.frameCount && spreadCountRevision == revision) return;
+            spreadCountFrame = Time.frameCount;
+            spreadCountRevision = revision;
+            meleeSlotBoard.CountByTarget(MeleeRingRules.InnerRing, ClaimStillValid, innerSlotCounts);
+            rangedShooterCounts.Clear();
+            for (int i = 0; i < activeUnits.Count; i++)
+            {
+                UnitCombatAI unit = activeUnits[i];
+                if (unit.actor == null || unit.actor.Profile == null || unit.actor.Profile.AttackKind != AttackKind.Projectile
+                    || unit.Target == null || unit.actor.Health == null || unit.actor.Health.IsDead) continue;
+                rangedShooterCounts.TryGetValue(unit.Target, out int count);
+                rangedShooterCounts[unit.Target] = count + 1;
+            }
+        }
+
+        float SpreadFactorOf(CharacterActor other)
+        {
+            if (!settings.TargetSpread || other == null || other.Profile == null) return 1f;
+            RefreshSpreadCounts();
+            if (IsRangedUnit)
+            {
+                rangedShooterCounts.TryGetValue(other, out int shooters);
+                if (ReferenceEquals(other, Target)) shooters--;
+                return TargetSpreadRules.OverkillFactor(shooters, settings.RangedOverkillThreshold,
+                    settings.RangedOverkillDistanceFactor, TargetSpreadRules.IsFocusTarget(other.Threat, other.IsBoss));
+            }
+            if (!settings.MeleeSlots || actor.Profile.AttackKind != AttackKind.Melee) return 1f;
+            innerSlotCounts.TryGetValue(other, out int taken);
+            if (meleeSlotBoard.TryGet(this, other, out int ring, out _) && ring == MeleeRingRules.InnerRing) taken--;
+            float inner = MeleeRingRules.InnerRadius(other.Profile.Radius, actor.Profile.Radius, settings.MeleeSlotGap,
+                actor.Stats.GetValue(StatType.AttackRange));
+            int capacity = MeleeRingRules.SlotCount(inner, settings.MeleeSlotSpacing);
+            return TargetSpreadRules.CongestionFactor(taken, capacity, settings.MeleeCongestionDistanceFactor);
+        }
 
         bool IsMeleeThreat(CharacterActor other) => other != null && other.Profile != null
             && RangedMeleeThreatRules.IsMeleeThreat(IsRangedUnit, other.Profile.AttackKind == AttackKind.Melee,
@@ -726,7 +911,7 @@ namespace ProjectNeo.Combat
                 if (limitDescent && !HoldDescentRule.EndpointMayStayAbove(CombatPhysics.ReachPoint(candidate).y, floorY))
                     continue;
                 float distance = RangedTargetPriorityRules.Score((candidate.transform.position - transform.position).sqrMagnitude,
-                    1f, ThreatFactorOf(candidate));
+                    1f, ScoreFactorOf(candidate));
                 if (distance >= topCandidates.WorstScore) continue;
                 topCandidates.TryAdd(candidate, distance);
             }
@@ -748,7 +933,7 @@ namespace ProjectNeo.Combat
                     if (limitDescent && !HoldDescentRule.EndpointMayStayAbove(CombatPhysics.ReachPoint(candidate).y, floorY))
                         continue;
                     float score = RangedTargetPriorityRules.Score((candidate.transform.position - transform.position).sqrMagnitude,
-                        1f, ThreatFactorOf(candidate));
+                        1f, ScoreFactorOf(candidate));
                     if (score < scoreFloor || score >= best) continue;
                     bool alreadyChecked = false;
                     for (int k = 0; k < topCandidates.Count; k++)
@@ -1084,7 +1269,7 @@ namespace ProjectNeo.Combat
         float PriorityOf(CharacterActor other) => ScoreOf(other, SqrDistanceTo(other));
 
         float ScoreOf(CharacterActor other, float sqrDistance) => RangedTargetPriorityRules.Score(sqrDistance,
-            TargetDistanceScale != null ? TargetDistanceScale(other) : 1f, ThreatFactorOf(other));
+            TargetDistanceScale != null ? TargetDistanceScale(other) : 1f, ScoreFactorOf(other));
 
         void SwitchTarget(CharacterActor next, bool isHoldRetaliation)
         {
@@ -1144,7 +1329,8 @@ namespace ProjectNeo.Combat
                 if (candidate.Airborne == null && candidate.Body.bounds.SqrDistance(aim) > range * range) continue;
                 float factor = ThreatFactorOf(candidate);
                 if (onlyHigher && !RangedTargetPriorityRules.IsHigherThreat(belowFactor, factor)) continue;
-                float distance = RangedTargetPriorityRules.Score((candidate.transform.position - position).sqrMagnitude, 1f, factor);
+                float distance = RangedTargetPriorityRules.Score((candidate.transform.position - position).sqrMagnitude, 1f,
+                    factor * SpreadFactorOf(candidate));
                 if (distance >= nearestDistance || !CanStrikeFromHere(candidate)) continue;
                 nearestDistance = distance;
                 nearest = candidate;
@@ -1214,6 +1400,7 @@ namespace ProjectNeo.Combat
             GetComponent<ProjectNeo.Siege.LadderTraveller>()?.Interrupt();
             actor.Died -= OnDied;
             actor.HitReceivedFrom -= OnHitReceived;
+            activeUnits.Remove(this);
             fallingBack = false;
             ReleaseOpening();
             meleeSlotBoard.Release(this);
