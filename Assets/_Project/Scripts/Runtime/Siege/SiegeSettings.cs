@@ -86,6 +86,33 @@ namespace ProjectNeo.Siege
         [SerializeField, Min(0f)] float ladderAvoidSeconds = 10f;
         [SerializeField, Min(0f)] float ladderAvoidPenalty = 30f;
 
+        [Header("성벽 위 사다리 방어(SIEGE-31)")]
+        // 중지 중인 근접 아군이 자기 자리에서 이 거리 안(같은 성벽 높이)의 세워진 사다리를 맡는다. 0이면 끈다.
+        [SerializeField, Min(0f)] float ladderDefenseRadius = 12f;
+        // 사다리 하나에 밀러 가는 최대 인원(협동 보너스 상한과 같다).
+        [SerializeField, Range(1, 6)] int ladderDefenseMaxPushers = 3;
+        // 밀기 자리 사이 간격(성벽을 따라 옆으로).
+        [SerializeField, Min(0.2f)] float ladderPushSpotSpacing = 0.8f;
+        // 오르는 적이 사다리 높이의 이 비율 이상 올라오면 남는 수비병이 출구를 둘러싼다.
+        [SerializeField, Range(0f, 1f)] float ladderChokepointClimbFraction = 0.5f;
+        // 출구 안쪽 반원의 반경과 자리 수.
+        [SerializeField, Min(0.5f)] float ladderChokepointRadius = 2.5f;
+        [SerializeField, Range(0, 9)] int ladderChokepointSlots = 5;
+        // 임무 배정을 다시 계산하는 주기(초)와, 길이 없어 거절된 사다리를 다시 맡기지 않는 시간(초).
+        [SerializeField, Min(0.05f)] float ladderDefenseInterval = 0.5f;
+        [SerializeField, Min(0f)] float ladderDefenseRejectSeconds = 3f;
+        // 이미 맡은 임무를 유지하도록 거리에서 빼 주는 값(미터). 자리 다툼으로 임무가 매번 바뀌지 않게 한다.
+        [SerializeField, Min(0f)] float ladderDefenseStickiness = 1.5f;
+        public float LadderDefenseRadius => ladderDefenseRadius;
+        public int LadderDefenseMaxPushers => Mathf.Max(1, ladderDefenseMaxPushers);
+        public float LadderPushSpotSpacing => ladderPushSpotSpacing;
+        public float LadderChokepointClimbFraction => ladderChokepointClimbFraction;
+        public float LadderChokepointRadius => ladderChokepointRadius;
+        public int LadderChokepointSlots => Mathf.Max(0, ladderChokepointSlots);
+        public float LadderDefenseInterval => ladderDefenseInterval;
+        public float LadderDefenseRejectSeconds => ladderDefenseRejectSeconds;
+        public float LadderDefenseStickiness => ladderDefenseStickiness;
+
         [Header("적 판단")]
         [SerializeField, Min(0.05f)] float attackerDecisionInterval = 0.5f;
         // 성문 바깥면에서 서는 자리까지의 거리. 음수면 문기둥 사이 안쪽으로 들어가 문에 닿는다.
