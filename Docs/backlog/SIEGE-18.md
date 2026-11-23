@@ -1,9 +1,9 @@
 ---
 id: SIEGE-18
 title: Game 7.5m Grid & Default Castle Layout
-status: Waiting for Prerequisite
+status: In Progress
 assignee: youngho
-branch:
+branch: feature/siege-18
 area: SIEGE
 depends_on: [SIEGE-14, SIEGE-27, SIEGE-35]
 created: 2026-11-23
