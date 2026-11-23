@@ -21,8 +21,8 @@ namespace ProjectNeo.Editor
         public const string BuildingName = "HeroHall";
         public const string SettingsPath = "Assets/_Project/Data/GameFlow/HeroPromotion.asset";
         const string StartPath = "Assets/_Project/Data/GameFlow/Build/RunStart.asset";
-        // 병영(Training) 맞은편, 대장간 아래 빈자리. 크기는 병영과 같다.
-        public static readonly Vector3 BuildingPosition = new Vector3(148.5f, 0f, 94.5f);
+        // 병영(Training) 맞은편, 대장간 아래 빈자리. 크기는 병영과 같다. 자리는 SIEGE-18 7.5m 격자 안뜰 기준(지면 기준 m).
+        public static readonly Vector3 BuildingPosition = new Vector3(150f, 0f, 97f);
         public static readonly Vector3 BuildingSize = new Vector3(15f, 5f, 9f);
 
         [MenuItem("ProjectNeo/Setup/Add Hero Hall (PREP-10)")]

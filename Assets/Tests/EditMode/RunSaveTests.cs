@@ -397,6 +397,10 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(RunSaveStatus.Unreadable, store.Inspect(0).Status);
             File.WriteAllText(store.MainPath(1), "{}");
             Assert.AreEqual(RunSaveStatus.Unreadable, store.Inspect(1).Status);
+            // SIEGE-18: 1판은 3m 칸 성 좌표라 읽지 않는다.
+            File.WriteAllText(store.MainPath(2), JsonUtility.ToJson(new RunSaveFile { version = 1, snapshot = saved }));
+            Assert.AreEqual(RunSaveStatus.Unreadable, store.Inspect(2).Status, "pre-7.5m grid saves are not read");
+            File.Delete(store.MainPath(2));
 
             Assert.IsTrue(store.Save(2, saved));
             Assert.IsTrue(store.Delete(2));

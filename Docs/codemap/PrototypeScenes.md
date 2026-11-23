@@ -3,6 +3,8 @@
 Last Updated: 2026-11-21 01:49:40 (KST)
 
 > Purpose: Detailed setup, assets, and controls for prototype scenes (B-2, B-3, B-4, B-5, B-5.4, Siege). | Parent: [codemap/README](README.md) | Related: [Scenes](Scenes.md)
+>
+> Note (`SIEGE-18`): `ConstructionPrototype`, `WallCommandPrototype` and `SiegePrototype` (and the verification scenes built from it) now use 7.5m cells with 5m storeys. Cell counts and metre figures in the sections below that predate SIEGE-18 describe the old 3m grid unless stated otherwise.
 
 ## B-2 Combat Prototype (`CombatPrototype.unity`)
 

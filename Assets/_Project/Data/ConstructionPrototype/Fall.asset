@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Walls.FallSettings
   gravity: 25
   safeHeight: 1
-  damagePerMeter: 12
+  damagePerMeter: 6
   supportProbe: 0.4
   navMeshSnapDistance: 0.6

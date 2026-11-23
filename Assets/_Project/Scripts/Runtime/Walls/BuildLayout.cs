@@ -23,6 +23,8 @@ namespace ProjectNeo.Walls
         TowerStack = 14,
         /// <summary>계단은 땅 위에만 놓는다(SIEGE-27, <see cref="BuildGridDefinition.GroundStairsOnly"/>).</summary>
         StairsGroundOnly = 15,
+        /// <summary>그 조각의 층 제한(<see cref="BuildPieceDefinition.MaxStorey"/>)보다 높아진다(Q-59, SIEGE-18).</summary>
+        StoreyCap = 16,
     }
 
     public sealed class BuildPlacement
@@ -145,6 +147,7 @@ namespace ProjectNeo.Walls
             }
             if (definition.Kind == BuildPieceKind.Gate && common > 0) return PlacementIssue.ReservedGate;
             level = common; elevation = commonElevation;
+            if (common >= StoreyLimit(definition)) return PlacementIssue.StoreyCap;
             if (grid.ForbidValleys && ValleyFill(definition, cell, rotation, level, elevation) == 0) return PlacementIssue.Valley;
             return PlacementIssue.None;
         }
@@ -152,6 +155,10 @@ namespace ProjectNeo.Walls
         // ── 골짜기 규칙(SIEGE-14). 성벽류(성벽·보루·성문) 맨 위 높이만 본다. 빈 칸·계단은 높이 0(골짜기가 아니다). ──
 
         const float ValleyTolerance = 0.01f;
+
+        /// <summary>그 조각이 쌓일 수 있는 층 수. 격자 층 수와 조각의 층 제한 중 작은 쪽이다.</summary>
+        int StoreyLimit(BuildPieceDefinition definition) =>
+            definition.MaxStorey > 0 ? Mathf.Min(grid.MaxLevels, definition.MaxStorey) : grid.MaxLevels;
 
         static bool WallLike(BuildPlacement placement) => placement != null
             && (placement.Definition.Kind == BuildPieceKind.Wall || placement.Definition.Kind == BuildPieceKind.Bastion
@@ -198,7 +205,7 @@ namespace ProjectNeo.Walls
         {
             if (!grid.ForbidValleys || definition.Kind == BuildPieceKind.Stairs || definition.Kind == BuildPieceKind.Gate
                 || RotatedSize(definition.Footprint, rotation) != Vector2Int.one) return 1;
-            for (int count = 1; level + count <= grid.MaxLevels; count++)
+            for (int count = 1; level + count <= StoreyLimit(definition); count++)
             {
                 float height = elevation + definition.Height * count;
                 // 높이를 올리면 이웃 골짜기는 더 깊어질 뿐이라, 이웃이 골짜기가 되면 더 쌓아도 소용없다.

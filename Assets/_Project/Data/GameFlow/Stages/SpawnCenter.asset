@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: SpawnCenter
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Stages.SpawnPointDefinition
   displayName: "\uAC00\uC6B4\uB370"
-  cell: {x: 40, y: 90}
+  cell: {x: 16, y: 36}

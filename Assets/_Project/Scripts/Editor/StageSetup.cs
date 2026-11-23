@@ -17,8 +17,8 @@ namespace ProjectNeo.Editor
         public const string CatalogPath = Folder + "/StageCatalog.asset";
         const string BattlePath = "Assets/_Project/Data/GameFlow/Battle.asset";
         const string Prefabs = "Assets/_Project/Prefabs/SiegePrototype/";
-        // 가운데 스폰 칸에서 좌우 지점까지의 거리(칸).
-        const float SideOffsetCells = 15f;
+        // 가운데 스폰 칸에서 좌우 지점까지의 거리(칸). 7.5m 칸에서 45m(3m 칸 시절 15칸과 같은 거리, SIEGE-18).
+        const float SideOffsetCells = 6f;
 
         [MenuItem("ProjectNeo/Setup/Create Stage Data (B-7.1)")]
         public static void Apply()

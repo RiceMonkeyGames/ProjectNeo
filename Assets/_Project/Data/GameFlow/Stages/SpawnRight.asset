@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: SpawnRight
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Stages.SpawnPointDefinition
   displayName: "\uC624\uB978\uCABD"
-  cell: {x: 55, y: 90}
+  cell: {x: 22, y: 36}

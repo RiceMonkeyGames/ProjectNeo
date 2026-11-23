@@ -37,7 +37,10 @@ namespace ProjectNeo.Run
     /// </summary>
     public sealed class RunSaveStore
     {
-        public const int CurrentVersion = 1;
+        /// <summary>2: Game 격자가 7.5m 칸으로 바뀌었다(SIEGE-18). 성 조각 칸 좌표가 3m 칸 기준인 1판은 읽지 않는다.</summary>
+        public const int CurrentVersion = 2;
+        /// <summary>읽을 수 있는 가장 오래된 버전.</summary>
+        public const int MinimumVersion = 2;
 
         public string Directory { get; }
         /// <summary>마지막 저장·읽기에서 생긴 파일 오류. 없으면 빈 문자열.</summary>
@@ -168,7 +171,7 @@ namespace ProjectNeo.Run
             {
                 if (!File.Exists(path)) return null;
                 RunSaveFile file = JsonUtility.FromJson<RunSaveFile>(File.ReadAllText(path));
-                if (file == null || file.version < 1 || file.version > CurrentVersion) return null;
+                if (file == null || file.version < MinimumVersion || file.version > CurrentVersion) return null;
                 RunSnapshot snapshot = file.snapshot;
                 // JsonUtility는 빈 내용에서도 빈 기록을 만들어 주므로 꼭 있어야 하는 값으로 가려낸다.
                 if (snapshot == null || snapshot.stageNumber < 1 || snapshot.nextUnitId < 1) return null;

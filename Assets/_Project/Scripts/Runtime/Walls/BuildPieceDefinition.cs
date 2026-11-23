@@ -28,6 +28,8 @@ namespace ProjectNeo.Walls
         [SerializeField] Vector2Int footprint = Vector2Int.one;
         [SerializeField, Min(0.1f)] float height = 3f;
         [SerializeField, Min(1f)] float maxHealth = 100f;
+        [Tooltip("이 조각이 올라갈 수 있는 가장 높은 층(1 = 땅 위 첫 층). 0이면 격자의 층 제한만 따른다(Q-59, SIEGE-18).")]
+        [SerializeField, Min(0)] int maxStorey;
         [SerializeField] GameObject prefab;
         [SerializeField] List<BuildMountPoint> mountPoints = new List<BuildMountPoint>();
         [Tooltip("맨 위 윗면에 선 아군 원거리 공격자에게 붙는 스탯 수정값(망루). 내려오면 뗀다. 비우면 효과 없음.")]
@@ -37,6 +39,8 @@ namespace ProjectNeo.Walls
         public Vector2Int Footprint => footprint;
         public float Height => height;
         public float MaxHealth => maxHealth;
+        /// <summary>올라갈 수 있는 가장 높은 층(1부터). 0이면 제한 없음(격자의 층 수만 따른다).</summary>
+        public int MaxStorey => maxStorey;
         // 프리팹은 가로·높이·세로 1, 바닥 y=0을 기준으로 만든다. 외형과 충돌은 서로 분리한다.
         public GameObject Prefab => prefab;
         // 바닥 칸과 별개의 설치 지점. 향후 수성 무기는 지지 조각 ID + 지점 ID로 연결한다.
@@ -46,6 +50,9 @@ namespace ProjectNeo.Walls
         /// <summary>윗면에 선 아군 원거리 공격자의 수정값을 정한다(에디터 설정·시험용).</summary>
         public void SetOccupantModifiers(params ProjectNeo.Stats.StatModifier[] modifiers) =>
             occupantModifiers = new List<ProjectNeo.Stats.StatModifier>(modifiers);
+
+        /// <summary>층 제한을 정한다(에디터 설정·시험용). 0이면 제한 없음.</summary>
+        public void SetMaxStorey(int storey) => maxStorey = Mathf.Max(0, storey);
 
         public static BuildPieceDefinition Create(BuildPieceKind kind, string name, Vector2Int footprint,
             float height = 3f, float maxHealth = 100f, GameObject prefab = null, params BuildMountPoint[] mountPoints)

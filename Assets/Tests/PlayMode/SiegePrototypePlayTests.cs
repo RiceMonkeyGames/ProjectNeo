@@ -165,9 +165,11 @@ namespace ProjectNeo.Tests
             int archers = SquadOf(AttackKind.Projectile);
             Assert.IsTrue(prep.PlaceSquad(archers, WallTop(9)), prep.Message);
             yield return WaitForNavigation();
-            // 성벽 바깥면에서 2m 떨어진 땅. 성벽 위 한가운데에서 내려다보면 발밑 성벽 모서리를 스치는 각도다.
+            // 성벽 위 한가운데에서 내려다보면 발밑 성벽 모서리를 스치는 각도의 땅. 3m 칸·3m 성벽에서는 바깥면에서 2m였고,
+            // 7.5m 칸·5m 성벽(SIEGE-18)에서는 통로 가운데가 모서리에서 3.75m 안쪽이라 바깥면에서 약 15m다
+            // (그보다 가까운 성벽 밑은 통로 가운데에서 보이지 않는다. 성가퀴 사격 자리는 SIEGE-20).
             Vector3 below = world.WorldCenter(wall, new Vector2Int(9, WallRow), 0)
-                + Vector3.forward * (world.Grid.CellSize * 0.5f + 2f);
+                + Vector3.forward * (world.Grid.CellSize * 0.5f + 15f);
             CharacterActor enemy = PlaceStillEnemy(SiegeAttackerRole.GateBreaker, below);
             int frames = 0;
             while (enemy.Health.Current >= enemy.Health.Maximum && frames++ < 300) yield return null;
@@ -182,8 +184,8 @@ namespace ProjectNeo.Tests
             int melee = SquadOf(AttackKind.Melee);
             Assert.IsTrue(prep.PlaceSquad(melee, WallTop(9)), prep.Message);
             yield return WaitForNavigation();
-            // 성벽 위로 올라온 적. 근접 사거리 밖이지만 자리 반경(6m) 안이다.
-            CharacterActor enemy = PlaceStillEnemy(SiegeAttackerRole.Ladder, WallTop(10) + Vector3.right * 0.5f);
+            // 성벽 위로 올라온 적. 근접 사거리 밖이지만 자리 반경(6m) 안이다(7.5m 칸에서는 이웃 칸 가운데가 반경 밖이라 4m에 둔다).
+            CharacterActor enemy = PlaceStillEnemy(SiegeAttackerRole.Ladder, WallTop(9) + Vector3.right * 4f);
             int frames = 0;
             while (!enemy.Health.IsDead && frames++ < 900) yield return null;
             Assert.IsTrue(enemy.Health.IsDead, "성벽 위 근접 부대가 다가가 싸우지 않았다.");
@@ -255,8 +257,9 @@ namespace ProjectNeo.Tests
             Assert.IsTrue(prep.PlaceSquad(0, ladders[0].TopPoint), prep.Message);
             Assert.IsTrue(prep.PlaceSquad(1, ladders[1].TopPoint), prep.Message);
             Assert.IsTrue(director.StartBattle());
+            // 7.5m 칸 판(SIEGE-18)에서는 적이 2.5배 먼 곳(성벽에서 약 60m)에서 걸어온다.
             int frames = 0;
-            while (!ladders.Any(ladder => ladder.State.ToppleCount > 0) && frames++ < 600)
+            while (!ladders.Any(ladder => ladder.State.ToppleCount > 0) && frames++ < 1800)
                 yield return null;
             Assert.IsTrue(ladders.Any(ladder => ladder.State.ToppleCount > 0),
                 "성벽 위 아군이 사다리를 밀어내지 못했다.");
@@ -923,7 +926,8 @@ namespace ProjectNeo.Tests
         public IEnumerator ClosedWalls_FarSortieAlly_DoesNotPullSiegeEnemies_ButLeashDoes()
         {
             yield return CloseWalls();
-            Vector3 far = FieldPoint(20f, 12f);
+            // 성 밖, 적의 사다리·성문 행군 길에서 멀리 떨어진 곳(7.5m 칸 판 기준, SIEGE-18에서 3m 판의 (20, 12)를 2.5배로).
+            Vector3 far = FieldPoint(50f, 30f);
             CharacterActor sortie = PlaceStillAlly(far);
             director.StartBattle();
             SiegeAttackerBrain[] brains = director.Enemies.OfType<SiegeAttackerBrain>().ToArray();
@@ -945,8 +949,14 @@ namespace ProjectNeo.Tests
             // 근접 반경 안에 들어오면 그 적은 돌격하고, 풀림 반경 밖으로 멀어지면 공성 임무로 돌아간다.
             SiegeAttackerBrain breaker = brains.First(enemy => enemy.Role == SiegeAttackerRole.GateBreaker
                 && !enemy.Actor.Health.IsDead && !enemy.IsAssaulting && !enemy.IsMidAction);
-            Move(sortie, FieldPoint(breaker.transform.position.x, breaker.transform.position.z + 4f));
+            // 7.5m 칸 판(SIEGE-18)에서는 행군이 길어 8초 뒤에도 성문으로 걷는 중이다. 걷는 동안 뒤에 두면 바로 멀어지므로
+            // 3m 판에서처럼 성문 앞에 닿은 뒤 바깥쪽 4m에 아군을 둔다.
+            float gateFace = world.transform.position.z + (WallRow + 1) * world.Grid.CellSize;
             int frames = 0;
+            while (breaker.transform.position.z > gateFace + 4f && frames++ < 900) { sortie.Health.RestoreFull(); yield return null; }
+            Assert.LessOrEqual(breaker.transform.position.z, gateFace + 4f, "성문 파괴병이 성문 앞에 닿지 않았다.");
+            Move(sortie, FieldPoint(breaker.transform.position.x, breaker.transform.position.z + 4f));
+            frames = 0;
             while (!breaker.IsAssaulting && frames++ < 120) { sortie.Health.RestoreFull(); yield return null; }
             Assert.IsTrue(breaker.IsAssaulting, "근접 반경 안의 성 밖 아군에게 돌격하지 않았다.");
             Move(sortie, far);

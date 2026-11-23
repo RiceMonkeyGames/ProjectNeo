@@ -81,6 +81,7 @@ namespace ProjectNeo.UI
                     case PlacementIssue.TowerNeedsWall: issue = "망루는 성 바깥에서 성벽에 붙여 짓습니다"; break;
                     case PlacementIssue.TowerStack: issue = "망루 위에는 아무것도 쌓을 수 없습니다"; break;
                     case PlacementIssue.StairsGroundOnly: issue = "계단은 땅 위에만 놓습니다. 성벽 위 계단은 자동으로 생깁니다"; break;
+                    case PlacementIssue.StoreyCap: issue = "이 조각은 더 높이 쌓을 수 없습니다"; break;
                     default: issue = "위치를 고르세요"; break;
                 }
                 string floor = placement.PreviewLevel > 0 ? " · " + (placement.PreviewLevel + 1) + "층" : "";

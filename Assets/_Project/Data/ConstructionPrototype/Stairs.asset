@@ -15,7 +15,9 @@ MonoBehaviour:
   kind: 1
   displayName: "\uACC4\uB2E8"
   footprint: {x: 1, y: 1}
-  height: 3
+  height: 5
   maxHealth: 100
-  prefab: {fileID: 5861192547522997101, guid: a7054230a13d2ae4bbac4ca4a417ae2c, type: 3}
+  maxStorey: 3
+  prefab: {fileID: 7668183519982475337, guid: 6cf2e8dbe3dbabc4e86119d369d6547a, type: 3}
   mountPoints: []
+  occupantModifiers: []

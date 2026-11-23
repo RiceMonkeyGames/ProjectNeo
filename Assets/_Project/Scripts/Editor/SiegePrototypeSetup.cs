@@ -52,10 +52,12 @@ namespace ProjectNeo.Editor
             GameObject enemyMelee = Required<GameObject>(Units + "hostile_melee.prefab");
             GameObject enemyRanged = Required<GameObject>(Units + "hostile_ranged.prefab");
             CombatPrototypeSetup.EnsureFolder(Data);
-            var grid = CombatPrototypeSetup.Save(BuildGridDefinition.Create(16, 20, 3f, 3), Data + "/Grid.asset");
+            // SIEGE-18: 7.5m 칸, 5m 층.
+            var grid = CombatPrototypeSetup.Save(BuildGridDefinition.Create(16, 20, Grid75Migration.Cell, 3), Data + "/Grid.asset");
             // 성문 파괴병이 바로 뚫지 못하도록 이 시험의 성문은 체력을 따로 둔다.
             var gate = CombatPrototypeSetup.Save(BuildPieceDefinition.Create(BuildPieceKind.Gate, "메인 성문",
-                new Vector2Int(2, 1), maxHealth: 600f, prefab: gatePrefab), Data + "/Gate.asset");
+                Vector2Int.one, Grid75Migration.Storey, 600f, gatePrefab), Data + "/Gate.asset");
+            Grid75Migration.ConfigureGate(gate);
             var settings = CombatPrototypeSetup.Save(SiegeSettings.Create(40,
                 new[] { new PieceCost { piece = wall, cost = 2 }, new PieceCost { piece = stairs, cost = 3 } },
                 new[] { new WeaponCost { weapon = cannon, cost = 6 } }), Data + "/Siege.asset");
@@ -110,7 +112,7 @@ namespace ProjectNeo.Editor
             ground.localPosition = new Vector3(width * 0.5f, -0.5f, depth * 0.5f);
             var seeds = new List<InitialBuildPiece>();
             for (int x = 0; x < grid.Width; x++)
-                if (x != 7 && x != 8 && !Gaps.Contains(x))
+                if (x != 7 && !Gaps.Contains(x))
                     seeds.Add(new InitialBuildPiece { definition = wall, cell = new Vector2Int(x, WallRow) });
             seeds.Add(new InitialBuildPiece { definition = gate, cell = new Vector2Int(7, WallRow), fixedGate = true });
             seeds.Add(new InitialBuildPiece { definition = stairs, cell = new Vector2Int(5, WallRow - 1) });
@@ -127,7 +129,7 @@ namespace ProjectNeo.Editor
             // 부대마다 처음 서는 성 안쪽 자리.
             Vector3[] allyPoints =
             {
-                new Vector3(-9f, 0f, -13f), new Vector3(9f, 0f, -13f), new Vector3(0f, 0f, -18f), new Vector3(0f, 0f, -23f),
+                new Vector3(-22.5f, 0f, -32.5f), new Vector3(22.5f, 0f, -32.5f), new Vector3(0f, 0f, -45f), new Vector3(0f, 0f, -57.5f),
             };
             // 성벽 위는 적 궁수의 사거리 안이라, 플레이어는 성문 뒤 땅에서 시작해 스스로 올라간다.
             GameObject player = playerInput.gameObject;
@@ -160,7 +162,7 @@ namespace ProjectNeo.Editor
             director.Configure(world, settings, prep, center, buildCamera, firstPerson, placement, playerInput, commandInput,
                 hud.gameObject, commandHud.gameObject, player.GetComponent<CharacterActor>());
             // 적 첫 줄은 성 밖 멀리. 전투 시작 때 나타난다.
-            director.ConfigureSpawns(allyAI, fall, ladders, Outward, allyPoints, new Vector3(0f, 0f, 22f));
+            director.ConfigureSpawns(allyAI, fall, ladders, Outward, allyPoints, new Vector3(0f, 0f, 55f));
             ApplyCommandSetup(center, commandHud);
 
             EditorSceneManager.MarkSceneDirty(scene);
@@ -217,8 +219,10 @@ namespace ProjectNeo.Editor
         {
             var value = BuildCameraSettings.Create();
             var serialized = new SerializedObject(value);
-            serialized.FindProperty("orthographicSize").floatValue = 26f;
-            serialized.FindProperty("distance").floatValue = 70f;
+            serialized.FindProperty("orthographicSize").floatValue = 65f;
+            serialized.FindProperty("distance").floatValue = 175f;
+            serialized.FindProperty("minZoom").floatValue = 50f;
+            serialized.FindProperty("maxZoom").floatValue = 350f;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             return value;
         }

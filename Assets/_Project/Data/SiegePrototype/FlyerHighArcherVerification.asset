@@ -21,3 +21,6 @@ MonoBehaviour:
   groundProbeDistance: 60
   holdInset: 6
   corpseFallAcceleration: 9.81
+  targetsSiegeWeapons: 1
+  hoverSeparation: 1.2
+  roofProbeDistance: 6

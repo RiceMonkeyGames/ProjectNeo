@@ -17,4 +17,6 @@ Registered 2026-11-23 from the team decision to move the Game to the 5m castle k
 
 - About 10 Game PlayMode test files use Game cells or heights (3m); update them for the 5m grid and kit heights, and keep EditMode tests that build their own grids unchanged.
 
+*Updated 2026-11-23 by SIEGE-18*: the Game is on 7.5m cells with 5m storeys (not 5m cells). Failing Game PlayMode tests after SIEGE-18: StackedConstructionPlayTests (8), GameBattlementPlayTests (5), GameBattlePlayTests (1), GameFlowPlayTests (1); prototype tests were already updated in SIEGE-18.
+
 Done when the full EditMode and PlayMode suites pass on the 5m Game.

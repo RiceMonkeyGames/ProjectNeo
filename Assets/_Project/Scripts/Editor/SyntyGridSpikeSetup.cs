@@ -389,7 +389,16 @@ namespace ProjectNeo.Editor
         {
             var source = Required<GameObject>(CastleWallArtSetup.StairsPath);
             if (Cell <= Storey) return source;
-            float ratio = Storey / Cell;
+            return NarrowStairs(Prefabs + "/StairsNarrow.prefab", Data + "/StairsRampNarrow.asset", Storey / Cell);
+        }
+
+        /// <summary>
+        /// 설치형 계단 프리팹(<see cref="CastleWallArtSetup.StairsPath"/>)의 폭(로컬 x)만 <paramref name="ratio"/>로 줄인 복사본.
+        /// 경사 충돌 메시는 <paramref name="meshPath"/>에 새로 저장하고, 외형은 Visual 배율로 줄인다. Game과 7.5m 프로토타입도 쓴다(SIEGE-18).
+        /// </summary>
+        internal static GameObject NarrowStairs(string prefabPath, string meshPath, float ratio)
+        {
+            var source = Required<GameObject>(CastleWallArtSetup.StairsPath);
             var ramp = source.GetComponent<MeshCollider>().sharedMesh;
             var narrow = Object.Instantiate(ramp);
             narrow.name = ramp.name + "_Narrow";
@@ -397,7 +406,7 @@ namespace ProjectNeo.Editor
             for (int i = 0; i < vertices.Length; i++) vertices[i].x *= ratio;
             narrow.vertices = vertices;
             narrow.RecalculateBounds();
-            narrow = Replace(narrow, Data + "/StairsRampNarrow.asset");
+            narrow = Replace(narrow, meshPath);
             GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(source);
             try
             {
@@ -406,7 +415,7 @@ namespace ProjectNeo.Editor
                 instance.GetComponent<MeshCollider>().sharedMesh = narrow;
                 Transform visual = instance.transform.Find("Visual");
                 visual.localScale = new Vector3(ratio, 1f, 1f);
-                return PrefabUtility.SaveAsPrefabAsset(instance, Prefabs + "/StairsNarrow.prefab");
+                return PrefabUtility.SaveAsPrefabAsset(instance, prefabPath);
             }
             finally { Object.DestroyImmediate(instance); }
         }

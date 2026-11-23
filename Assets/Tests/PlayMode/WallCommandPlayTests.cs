@@ -96,8 +96,11 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(SquadOrderKind.Move, center.Commander.OrderOf(0).Kind, construction.Message);
             mode.SetConstructionView(false);
             yield return WaitForHold();
+            // SIEGE-18: 1층 성벽 윗면은 5m.
+            float wallTop = Object.FindAnyObjectByType<ConstructionWorld>().Structures
+                .First(piece => piece.Placement.Definition.Kind == BuildPieceKind.Wall).Placement.Definition.Height;
             foreach (UnitCombatAI member in center.Squads[0].Members)
-                Assert.That(member.transform.position.y, Is.EqualTo(3f).Within(0.2f));
+                Assert.That(member.transform.position.y, Is.EqualTo(wallTop).Within(0.2f));
             for (int i = 0; i < others.Length; i++)
                 Assert.That(Vector3.Distance(others[i], center.Squads[1].Members[i].transform.position), Is.LessThan(0.1f));
         }
@@ -120,7 +123,8 @@ namespace ProjectNeo.Tests
                 best = ranks;
                 foreach (Vector3 slot in slots) Assert.That(slot.y, Is.EqualTo(anchor.y).Within(0.2f), "every slot stays on the wall top");
             }
-            Assert.LessOrEqual(best, 2, "across the 3m wall top at most two ranks fit");
+            // SIEGE-18: 7.5m 칸 통로에는 줄 간격 1.1m로 네 줄까지 선다(한 줄이면 8줄).
+            Assert.LessOrEqual(best, 4, "across the 7.5m wall top at most four ranks fit");
         }
 
         [UnityTest]
