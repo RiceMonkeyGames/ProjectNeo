@@ -10,13 +10,16 @@ namespace ProjectNeo.Editor
 {
     /// <summary>
     /// COMBAT-06 샘플 스킬 6종(효과 종류마다 하나, 사용자 결정 2026-11-20)과 영웅 고정 스킬 3개씩, 자동 시전 수치를 에셋으로 만든다.
-    /// 플레이어 스킬 퍽은 <see cref="PerkTreeSetup"/>이 이 스킬로 만든다. 다시 실행하면 같은 값으로 덮어쓴다(에셋 참조는 유지된다).
+    /// 플레이어도 영웅처럼 자기 영웅 데이터의 고정 스킬 3개를 쓴다(UI-07, 2026-11-23: 퍽은 스킬을 주지 않는다).
+    /// 다시 실행하면 같은 값으로 덮어쓴다(에셋 참조는 유지된다).
     /// </summary>
     public static class SkillSetup
     {
         const string Folder = "Assets/_Project/Data/GameFlow/Skills";
         const string HeroFolder = "Assets/_Project/Data/GameFlow/Heroes";
         const string BattlePath = "Assets/_Project/Data/GameFlow/Battle.asset";
+        /// <summary>게임 씬 플레이어의 영웅 데이터.</summary>
+        const string PlayerPath = "Assets/_Project/Data/CombatPrototype/Player.asset";
         public const string Whirlwind = "skill_whirlwind";
         public const string WarCry = "skill_war_cry";
         public const string Hobble = "skill_hobble";
@@ -24,13 +27,15 @@ namespace ProjectNeo.Editor
         public const string Rally = "skill_rally";
         public const string ShieldBash = "skill_shield_bash";
 
-        /// <summary>영웅마다 등급 1·2·3에 열리는 고정 스킬 순서.</summary>
-        static readonly (string hero, string[] skills)[] HeroSkills =
+        /// <summary>영웅마다 등급 1·2·3에 열리는 고정 스킬 순서(에셋 경로). 플레이어는 늘 최고 등급이라 3개가 모두 열린다.</summary>
+        static readonly (string path, string[] skills)[] HeroSkills =
         {
-            ("hero_swordsman", new[] { Whirlwind, WarCry, ShieldBash }),
-            ("hero_archer", new[] { Hobble, Rally, HealingLight }),
-            ("hero_knight", new[] { ShieldBash, WarCry, Rally }),
-            ("hero_paladin", new[] { HealingLight, ShieldBash, Rally }),
+            (HeroFolder + "/hero_swordsman.asset", new[] { Whirlwind, WarCry, ShieldBash }),
+            (HeroFolder + "/hero_archer.asset", new[] { Hobble, Rally, HealingLight }),
+            (HeroFolder + "/hero_knight.asset", new[] { ShieldBash, WarCry, Rally }),
+            (HeroFolder + "/hero_paladin.asset", new[] { HealingLight, ShieldBash, Rally }),
+            // 예전 전투 트리 스킬 퍽에서 셋(임시 구성).
+            (PlayerPath, new[] { Whirlwind, ShieldBash, HealingLight }),
         };
 
         [MenuItem("ProjectNeo/Setup/Create Skills (COMBAT-06)")]
@@ -40,8 +45,6 @@ namespace ProjectNeo.Editor
             AssignHeroSkills(skills);
             LinkAutoSettings();
             AssetDatabase.SaveAssets();
-            // 플레이어 스킬 퍽을 전투 트리에 넣고 런 저장 목록을 갱신한다.
-            PerkTreeSetup.Apply();
         }
 
         /// <summary>샘플 스킬 6종을 만들거나 덮어쓰고 id로 돌려준다.</summary>
@@ -71,15 +74,22 @@ namespace ProjectNeo.Editor
         {
             SkillDefinition skill = SkillDefinition.Create(id, cooldown, mode, range, radius, effects);
             skill.SetText(name, description);
-            skills[id] = SaveOver(skill, $"{Folder}/{id}.asset");
+            string path = $"{Folder}/{id}.asset";
+            // 덮어써도 그림(UI-07 EquipmentWindowLayout.AssignSkillIcons나 인스펙터에서 고른 것)은 남긴다.
+            Sprite icon = AssetDatabase.LoadAssetAtPath<SkillDefinition>(path)?.Icon;
+            skills[id] = SaveOver(skill, path);
+            if (icon == null) return;
+            var data = new SerializedObject(skills[id]);
+            data.FindProperty("icon").objectReferenceValue = icon;
+            data.ApplyModifiedPropertiesWithoutUndo();
         }
 
         static void AssignHeroSkills(Dictionary<string, SkillDefinition> skills)
         {
-            foreach ((string heroId, string[] ids) in HeroSkills)
+            foreach ((string path, string[] ids) in HeroSkills)
             {
-                var hero = AssetDatabase.LoadAssetAtPath<HeroDefinition>($"{HeroFolder}/{heroId}.asset");
-                if (hero == null) { Debug.LogError("Skill setup: hero asset is missing: " + heroId); continue; }
+                var hero = AssetDatabase.LoadAssetAtPath<HeroDefinition>(path);
+                if (hero == null) { Debug.LogError("Skill setup: hero asset is missing: " + path); continue; }
                 var data = new SerializedObject(hero);
                 SerializedProperty list = data.FindProperty("skills");
                 list.ClearArray();

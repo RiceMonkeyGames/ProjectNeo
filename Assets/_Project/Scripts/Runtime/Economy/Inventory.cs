@@ -30,6 +30,21 @@ namespace ProjectNeo.Economy
             Changed?.Invoke();
         }
 
+        /// <summary>
+        /// index 자리에 넣는다(뒤의 아이템은 한 칸씩 밀린다). 범위 밖이면 맨 뒤에 넣는다. 바꿔 낀 장비가 새 장비가
+        /// 있던 보관함 자리로 들어갈 때 쓴다(UI-07).
+        /// </summary>
+        public void Insert(int index, ItemInstance item)
+        {
+            if (item == null) throw new ArgumentNullException(nameof(item));
+            if (items.Contains(item)) return;
+            items.Insert(index >= 0 && index <= items.Count ? index : items.Count, item);
+            Changed?.Invoke();
+        }
+
+        /// <summary>아이템의 자리. 없으면 -1.</summary>
+        public int IndexOf(ItemInstance item) => items.IndexOf(item);
+
         public bool Remove(ItemInstance item)
         {
             if (!items.Remove(item)) return false;

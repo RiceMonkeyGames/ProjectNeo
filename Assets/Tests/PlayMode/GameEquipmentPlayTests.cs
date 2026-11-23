@@ -74,14 +74,32 @@ namespace ProjectNeo.Tests
                 yield return null;
                 Assert.IsTrue(equipment.IsOpen && view.IsPanelView, "I로 장비 화면을 연다.");
                 Assert.IsFalse(Object.FindAnyObjectByType<PlayerInputController>().enabled);
-                Assert.AreEqual(2, equipment.InventoryRows, "보기 바꾸기 줄(COMBAT-06) + 장비 1개");
-                StringAssert.Contains("장비 칸 0 / 3", equipment.StatusText);
+                Assert.IsTrue(equipment.PaperDoll, "UI-07 B안 화면이 연결돼 있다.");
+                CollectionAssert.AreEqual(new[] { sword.DisplayName }, equipment.StorageSlotNames, "보관함 격자에 장비 1개");
+                Assert.AreEqual(5, equipment.WornSlotCount, "UI-07: 투구·방어구·장신구·보조무기·무기 칸(빈 칸 포함)");
+                CollectionAssert.IsEmpty(equipment.WornSlotNames);
+                StringAssert.Contains("장비 칸 0 / 5", equipment.StatusText);
+
+                // UI-07: 보관함 장비를 미리 보면 왼쪽 스탯에 오를 공격력이 나오고, 상세 칸에 이름이 나온다.
+                equipment.PreviewItem(false, 0);
+                // 플레이어는 늘 최고 등급이라 등급 공격력 %가 장비 공격력에도 붙는다(UI-07): 오르는 값은 끼운 뒤에 잰다.
+                string previewStats = equipment.StatsText;
+                StringAssert.Contains(sword.DisplayName, equipment.DetailText);
+                Assert.IsTrue(equipment.TooltipShowing, "마우스를 올린 장비는 툴팁으로 보여준다.");
+                StringAssert.Contains("공격력 +4", equipment.DetailText);
 
                 Assert.IsTrue(equipment.TryEquip(0));
-                Assert.AreEqual(attack + 4f, player.Stats.GetValue(StatType.Attack), 0.001f);
+                CollectionAssert.AreEqual(new[] { sword.DisplayName }, equipment.WornSlotNames);
+                CollectionAssert.IsEmpty(equipment.StorageSlotNames);
+                float gain = player.Stats.GetValue(StatType.Attack) - attack;
+                Assert.GreaterOrEqual(gain, 4f - 0.001f, "칼의 공격력 +4가 (등급 %와 함께) 붙는다.");
+                // 미리 보기는 바뀐 뒤의 최종 값을 색으로 보인다(UI-07, 사용자 2026-11-23): 오르면 초록, 내리면 빨강.
+                StringAssert.Contains($"<color=#8FD16A>{attack + gain:0.##}</color>", previewStats, "미리 보기 값이 끼운 뒤의 값과 같다.");
+                equipment.PreviewItem(true, 0);
+                StringAssert.Contains($"<color=#E57A6A>{attack:0.##}</color>", equipment.StatsText, "착용 장비를 미리 보면 벗은 뒤의 값이 빨갛게 나온다.");
                 Assert.AreEqual(1, player.Character.Equipment.Count);
                 Assert.AreEqual(0, state.Inventory.CountOf(sword));
-                StringAssert.Contains("장비 칸 1 / 3", equipment.StatusText);
+                StringAssert.Contains("장비 칸 1 / 5", equipment.StatusText);
                 StringAssert.Contains("장착", equipment.BodyText);
 
                 Assert.IsTrue(equipment.TryUnequip(0));
@@ -93,6 +111,19 @@ namespace ProjectNeo.Tests
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Escape));
                 yield return null; yield return null;
                 Assert.IsFalse(equipment.IsOpen, "Esc로 닫는다.");
+                Assert.IsTrue(view.IsExplorationView);
+
+                // UI-07: 연 키(I)를 다시 누르면 닫는다.
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+                yield return null;
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.I));
+                yield return null;
+                Assert.IsTrue(equipment.IsOpen, "I로 다시 연다.");
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+                yield return null;
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.I));
+                yield return null; yield return null;
+                Assert.IsFalse(equipment.IsOpen, "I를 한 번 더 누르면 닫는다.");
                 Assert.IsTrue(view.IsExplorationView);
             }
             finally

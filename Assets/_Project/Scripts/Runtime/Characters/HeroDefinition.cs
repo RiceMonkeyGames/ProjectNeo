@@ -15,6 +15,7 @@ namespace ProjectNeo.Characters
         [SerializeField] string displayName;
         [SerializeField] bool unlockedByDefault = true;
         [SerializeField] Cost hireCost;
+        // 0이면 장비를 못 낀다. 1 이상이면 무기·보조무기·방어구·장신구 한 칸씩(UI-07, Character.CanEquip). 값 자체는 칸 수로 쓰지 않는다.
         [SerializeField, Min(0)] int equipmentSlots = 3;
         [SerializeField] List<StatValue> baseStats = new List<StatValue>();
         [SerializeField] List<SkillDefinition> skills = new List<SkillDefinition>();

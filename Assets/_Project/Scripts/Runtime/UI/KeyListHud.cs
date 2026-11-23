@@ -84,7 +84,9 @@ namespace ProjectNeo.UI
         void LateUpdate()
         {
             if (content == null || interaction == null) return;
-            bool exploration = GameSession.Flow.Phase == GamePhase.Preparation && phaseView != null && phaseView.IsExplorationView;
+            // UI-07(사용자 2026-11-23): 시설·장비 등 창이 열려 있어도 보인다(창이 가리지 않는데 꺼지던 것을 고침).
+            bool exploration = GameSession.Flow.Phase == GamePhase.Preparation && phaseView != null
+                && (phaseView.IsExplorationView || phaseView.IsPanelView);
             if (rowTemplate == null)
             {
                 // 예전 모양(UI-06): 닫혀 있으면 "H 키 안내" 한 줄, 열면 전체 목록 글.
@@ -144,7 +146,7 @@ namespace ProjectNeo.UI
             if (squads != null)
             {
                 // 선택 키 범위와 전체 선택 키(`)는 따로 한 줄씩이다(한 키캡에 붙이면 `가 찌꺼기처럼 보였다).
-                guide.Add(new KeyHint(SelectRange(squads), "부대 선택/해제"));
+                guide.Add(SelectHint(squads));
                 guide.Add(new KeyHint(squads.SelectAll.GetBindingDisplayString(), "전체 선택/해제"));
                 guide.Add(PageHint(squads));
                 guide.Add(new KeyHint(squads.Move.GetBindingDisplayString(), "부대 이동"));
@@ -170,13 +172,17 @@ namespace ProjectNeo.UI
         static KeyHint PageHint(SquadCommandSettings squads) => new KeyHint(squads.PreviousPage.GetBindingDisplayString(),
             "부대 페이지", false, squads.NextPage.GetBindingDisplayString());
 
-        /// <summary>부대 선택 키 범위("F1~F10"). 키가 하나면 그 키만.</summary>
-        static string SelectRange(SquadCommandSettings squads)
+        /// <summary>
+        /// 부대 선택 키 범위 줄. "F1~F10" 같은 키는 키보드에 없으므로(UI-07 사용자 결정) "F1"과 "F10"을 따로 키캡으로 그리고
+        /// 가운데 "~"는 키캡 없는 글로 둔다. 키가 하나면 그 키만.
+        /// </summary>
+        static KeyHint SelectHint(SquadCommandSettings squads)
         {
-            if (squads.SelectSquad.Length == 0) return string.Empty;
+            const string action = "부대 선택/해제";
+            if (squads.SelectSquad.Length == 0) return new KeyHint(string.Empty, action);
             string first = squads.SelectSquad[0].GetBindingDisplayString();
             string last = squads.SelectSquad[squads.SelectSquad.Length - 1].GetBindingDisplayString();
-            return first == last ? first : $"{first}~{last}";
+            return first == last ? new KeyHint(first, action) : new KeyHint(first, action, false, last, "~");
         }
 
         /// <summary>지금 키로 만든 전체 목록. 준비 중 1인칭 탐색에서 쓰는 키를 모두 담는다(상황과 상관없이).</summary>

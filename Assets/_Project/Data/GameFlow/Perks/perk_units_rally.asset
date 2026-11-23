@@ -24,4 +24,3 @@ MonoBehaviour:
   prerequisites:
   - {fileID: 11400000, guid: 9c735fd045ede914db0167407f54d140, type: 2}
   description: 
-  grantedSkill: {fileID: 0}

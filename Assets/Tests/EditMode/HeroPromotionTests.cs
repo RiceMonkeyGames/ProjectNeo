@@ -98,9 +98,37 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(100f, low.Character.Stats.GetValue(StatType.MaxHealth), 0.001f, "grade 1 has no bonus");
             Assert.AreEqual(115f, high.Character.Stats.GetValue(StatType.MaxHealth), 0.001f);
             Assert.AreEqual(23f, high.Character.Stats.GetValue(StatType.Attack), 0.001f);
-            Assert.AreEqual(1, run.Player.Grade, "the player does not use grades");
-            Assert.AreEqual(100f, run.Player.Character.Stats.GetValue(StatType.MaxHealth), 0.001f);
+            Assert.AreEqual(3, run.Player.Grade, "the player is always at the highest grade (UI-07)");
+            Assert.AreEqual(130f, run.Player.Character.Stats.GetValue(StatType.MaxHealth), 0.001f, "and gets that grade's bonus");
             CollectionAssert.AreEqual(new[] { low, high, top }, run.GradedHeroes, "the player is not listed for promotion");
+        }
+
+        [Test]
+        public void Skills_AreFixedHeroSkills_OpenedByGrade_AndThePlayerHasAll()
+        {
+            var skills = new ProjectNeo.Skills.SkillDefinition[3];
+            for (int i = 0; i < skills.Length; i++)
+                skills[i] = Track(ProjectNeo.Skills.SkillDefinition.Create("s" + i, 10f, ProjectNeo.Skills.SkillTargetMode.Self, 0f, 3f));
+            SetSkills(playerHero, skills);
+            SetSkills(footman, skills);
+            RunState run = NewRun();
+            RunHero hero = Hire(run, footman, 0);
+
+            CollectionAssert.AreEqual(skills, run.PlayerSkills(), "the player has all 3 fixed skills from the start");
+            CollectionAssert.AreEqual(new[] { skills[0] }, RunState.OpenSkills(hero), "grade 1 opens the first skill");
+            Fight(run, BattleOutcome.Victory);
+            Fight(run, BattleOutcome.Victory);
+            Assert.IsTrue(run.TryPromote(hero));
+            CollectionAssert.AreEqual(new[] { skills[0], skills[1] }, RunState.OpenSkills(hero), "each grade opens the next one");
+        }
+
+        static void SetSkills(HeroDefinition hero, ProjectNeo.Skills.SkillDefinition[] skills)
+        {
+            var data = new UnityEditor.SerializedObject(hero);
+            UnityEditor.SerializedProperty list = data.FindProperty("skills");
+            list.arraySize = skills.Length;
+            for (int i = 0; i < skills.Length; i++) list.GetArrayElementAtIndex(i).objectReferenceValue = skills[i];
+            data.ApplyModifiedPropertiesWithoutUndo();
         }
 
         [Test]

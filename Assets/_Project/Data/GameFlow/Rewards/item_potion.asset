@@ -22,3 +22,4 @@ MonoBehaviour:
   equipModifiers: []
   useHealRatio: 0.35
   upgradeMaterials: []
+  icon: {fileID: 21300000, guid: 71597b0e2385e5c4097f3b21fd250cbb, type: 3}

@@ -25,7 +25,7 @@ namespace ProjectNeo.Run
             HeroPromotion = settings;
             foreach (RunHero hero in heroes)
             {
-                if (hero.IsPlayer) continue;
+                if (hero.IsPlayer) { InitGrade(hero, PlayerGrade, 0); continue; }
                 hero.Grade = ClampGrade(hero.Grade);
                 hero.Exp = ClampExp(hero, hero.Exp);
                 ApplyGradeBonus(hero);
@@ -45,6 +45,12 @@ namespace ProjectNeo.Run
                 return result;
             }
         }
+
+        /// <summary>
+        /// 플레이어의 등급: 언제나 최고 등급(UI-07, 사용자 결정 2026-11-23). 스킬 3개가 모두 열리고 그 등급의 능력치도 붙는다.
+        /// 플레이어는 경험치를 받지 않고 승급하지도 않는다.
+        /// </summary>
+        public int PlayerGrade => ClampGrade(int.MaxValue);
 
         /// <summary>영웅이 고용될 때의 등급: 고용 등급(주점 tier)이며 최고 등급을 넘지 않는다.</summary>
         public int StartingGrade(HeroDefinition definition) => ClampGrade(definition != null ? definition.Tier : 1);
@@ -111,12 +117,11 @@ namespace ProjectNeo.Run
             }
         }
 
-        /// <summary>고용·되살리기로 런에 들어온 영웅의 등급·경험치를 정하고 등급 능력치를 붙인다.</summary>
+        /// <summary>런에 들어온 영웅의 등급·경험치를 정하고 등급 능력치를 붙인다. 플레이어는 늘 최고 등급이다.</summary>
         void InitGrade(RunHero hero, int grade, int exp)
         {
-            if (hero.IsPlayer) return;
-            hero.Grade = ClampGrade(grade);
-            hero.Exp = ClampExp(hero, exp);
+            hero.Grade = hero.IsPlayer ? PlayerGrade : ClampGrade(grade);
+            hero.Exp = hero.IsPlayer ? 0 : ClampExp(hero, exp);
             ApplyGradeBonus(hero);
         }
 
@@ -134,7 +139,7 @@ namespace ProjectNeo.Run
         {
             StatSheet stats = hero.Character.Stats;
             stats.RemoveModifiersFrom(GradeBonusSource);
-            if (HeroPromotion == null || hero.IsPlayer || hero.Grade <= 1) return;
+            if (HeroPromotion == null || hero.Grade <= 1) return;
             int levels = hero.Grade - 1;
             foreach (StatModifier bonus in HeroPromotion.BonusPerGrade)
                 stats.AddModifier(new StatModifier(bonus.stat, bonus.kind, bonus.value * levels), GradeBonusSource);

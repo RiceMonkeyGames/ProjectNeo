@@ -140,9 +140,6 @@ namespace ProjectNeo.Run
                         Note($"removed perk '{s.perks[i]}'; its point is free again");
                         s.perks.RemoveAt(i);
                     }
-                if (s.playerSkills != null)
-                    for (int i = 0; i < s.playerSkills.Count; i++)
-                        s.playerSkills[i] = Rename(ContentKind.Skill, s.playerSkills[i]);
 
                 PayRefund(s);
             }

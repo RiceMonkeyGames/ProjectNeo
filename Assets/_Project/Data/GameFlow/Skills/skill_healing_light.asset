@@ -15,6 +15,7 @@ MonoBehaviour:
   id: skill_healing_light
   displayName: "\uCE58\uC720\uC758 \uBE5B"
   description: "15m \uC548\uC758 \uC870\uC900 \uC9C0\uC810 4m \uC548 \uC544\uAD70\uC758 \uCCB4\uB825\uC744 \uD68C\uBCF5\uD55C\uB2E4(40 + \uACF5\uACA9\uB825 50%)."
+  icon: {fileID: 21300000, guid: 71597b0e2385e5c4097f3b21fd250cbb, type: 3}
   cooldown: 20
   targetMode: 1
   range: 15

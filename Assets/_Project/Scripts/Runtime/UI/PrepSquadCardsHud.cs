@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using ProjectNeo.Flow;
 using ProjectNeo.Morale;
 using ProjectNeo.Squads;
@@ -52,6 +52,8 @@ namespace ProjectNeo.UI
 
         int PerPage => style != null ? style.SquadCardsPerPage : HudStyle.DefaultSquadCardsPerPage;
 
+        /// <summary>준비 HUD 공용 모양 값. 실행 중에 만드는 창(Esc 메뉴)도 이 값을 쓴다(UI-07).</summary>
+        public HudStyle Style => style;
         public bool IsShowing => content != null && content.activeSelf;
         public IReadOnlyList<PrepSquadCard> Cards => cards;
         public string MessageText => messageLabel != null ? messageLabel.text : string.Empty;
@@ -67,8 +69,9 @@ namespace ProjectNeo.UI
         void LateUpdate()
         {
             if (content == null) return;
+            // UI-07(사용자 2026-11-23): 시설·장비 등 창이 열려 있어도 보인다(창이 가리지 않는데 꺼지던 것을 고침).
             bool show = GameSession.Flow.Phase == GamePhase.Preparation && phaseView != null
-                && (phaseView.IsExplorationView || phaseView.IsPlacementView)
+                && (phaseView.IsExplorationView || phaseView.IsPlacementView || phaseView.IsPanelView)
                 && center != null && center.Commander != null && template != null;
             if (content.activeSelf != show) content.SetActive(show);
             if (commandHud != null) commandHud.SetListVisible(!show);

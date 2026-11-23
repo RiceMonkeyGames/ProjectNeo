@@ -4,6 +4,7 @@ using ProjectNeo.Economy;
 using ProjectNeo.Run;
 using ProjectNeo.Skills;
 using ProjectNeo.Stats;
+using ProjectNeo.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -32,7 +33,39 @@ namespace ProjectNeo.Flow
         [SerializeField] RectTransform equippedList;
         [SerializeField] RectTransform inventoryList;
         [SerializeField] Button rowTemplate;
+        // UI-07 B안(인물 칸 + 아이콘 격자). 연결돼 있으면 장비 보기는 이 화면을 쓰고, 스킬 보기만 두 목록을 쓴다.
+        [SerializeField] GameObject gearView;
+        [SerializeField] GameObject listView;
+        [SerializeField] EquipmentSlotView slotTemplate;
+        [SerializeField] RectTransform wornSlots;
+        // 장비 칸 자리(EquipmentSlot 값 순서). 있으면 칸을 각 자리에 꽉 채워 놓는다(UI-07 초상화 둘레 배치).
+        [SerializeField] RectTransform[] wornAnchors = new RectTransform[0];
+        readonly List<EquipmentSlotView> wornViews = new List<EquipmentSlotView>();
+        [SerializeField] RectTransform storageGrid;
+        [SerializeField] TMP_Text stats;
+        [SerializeField] TMP_Text detail;
+        // 마우스를 올린 칸 옆에 뜨는 툴팁(UI-07, 사용자 2026-11-23: 고정 정보 칸 대신). detail은 그 안의 글이다.
+        [SerializeField] RectTransform tooltip;
+        [SerializeField] Button gearTab, skillTab, previousHero, nextHero;
+        [SerializeField] TMP_Text heroName;
+        [SerializeField, Min(1)] int storageColumns = 7;
+        [SerializeField, Min(0)] int minStorageCells = 14;
+        // 빈 장비 칸에 흐리게 띄우는 종류 그림. EquipmentSlot 값 순서(무기, 보조무기, 방어구, 장신구).
+        [SerializeField] Sprite[] slotPlaceholders = new Sprite[0];
+        // UI-07 스킬 탭(사용자 스케치 2026-11-23): 둥근 칸 3개를 삼각형으로, 아래에 고른 칸 설명, 위 오른쪽에 자동 사용 버튼.
+        // 연결돼 있으면 스킬 보기는 두 목록 대신 이 화면을 쓴다.
+        [SerializeField] GameObject skillPanel;
+        [SerializeField] SkillCircleView[] skillCircles = new SkillCircleView[0];
+        [SerializeField] TMP_Text skillDetail;
+        // 자동 사용 상태 색 판(사용자 2026-11-23: 켜지면 초록 판, 꺼지면 회색 판, 누르면 바뀐다). 영웅만 보인다.
+        [SerializeField] Button autoPlate;
+        int selectedSkill;
         readonly List<Button> rows = new List<Button>();
+        readonly List<EquipmentSlotView> slots = new List<EquipmentSlotView>();
+        ItemInstance hoveredItem;
+        bool hoveredWorn;
+
+        static readonly string Up = "#8FD16A", Down = "#E57A6A", Dim = "#9C927C";
         GameBattleController battle;
         GameFlow flow;
         TMP_Text equippedHeader, inventoryHeader;
@@ -49,6 +82,64 @@ namespace ProjectNeo.Flow
         /// <summary>왼쪽·오른쪽 목록의 줄 글자(테스트용).</summary>
         public List<string> EquippedRowTexts => RowTexts(equippedList);
         public List<string> InventoryRowTexts => RowTexts(inventoryList);
+        /// <summary>B안 화면이 연결돼 있는지.</summary>
+        public bool PaperDoll => gearView != null && slotTemplate != null && wornSlots != null && storageGrid != null;
+        /// <summary>B안 장비 칸·보관함 격자에 든 아이템 이름(빈 칸 제외, 테스트용).</summary>
+        public List<string> WornSlotNames
+        {
+            get
+            {
+                var names = new List<string>();
+                foreach (EquipmentSlotView view in wornViews)
+                    if (view != null && !view.IsEmpty) names.Add(view.ItemName);
+                return names;
+            }
+        }
+        public List<string> StorageSlotNames => SlotNames(storageGrid);
+        /// <summary>B안 장비 칸 수(빈 칸 포함).</summary>
+        public int WornSlotCount => wornViews.Count;
+        public string StatsText => stats != null ? stats.text : string.Empty;
+        public string DetailText => detail != null ? detail.text : string.Empty;
+
+        /// <summary>스킬 탭 삼각형 화면이 연결돼 있는지.</summary>
+        public bool SkillTriangle => skillPanel != null && skillCircles != null && skillCircles.Length == SkillSlotRules.MaxSlots && skillDetail != null;
+        /// <summary>스킬 탭에서 고른 칸(0부터).</summary>
+        public int SelectedSkillSlot => selectedSkill;
+        /// <summary>스킬 탭 설명 칸 글(테스트용).</summary>
+        public string SkillDetailText => skillDetail != null ? skillDetail.text : string.Empty;
+        /// <summary>자동 사용 판이 보이는지와, 판이 켜짐(초록)으로 칠해졌는지(테스트용).</summary>
+        public bool AutoPlateShown => autoPlate != null && autoPlate.gameObject.activeSelf;
+        public bool AutoPlateShowsOn { get; private set; }
+        /// <summary>스킬 칸(테스트용). 잠김 여부와 이름을 본다.</summary>
+        public IReadOnlyList<SkillCircleView> SkillCircles => skillCircles;
+
+        /// <summary>UI-07 스킬 탭 화면을 연결한다(에디터 설치 코드). 칸은 위·왼쪽 아래·오른쪽 아래 순서다.</summary>
+        public void ConfigureSkillTab(GameObject view, SkillCircleView[] circles, TMP_Text detailLabel, Button auto)
+        {
+            skillPanel = view; skillCircles = circles ?? new SkillCircleView[0]; skillDetail = detailLabel; autoPlate = auto;
+        }
+
+        /// <summary>UI-07 B안 화면을 연결한다(에디터 설치 코드).</summary>
+        public void ConfigurePaperDoll(GameObject gear, GameObject lists, EquipmentSlotView template, RectTransform worn,
+            RectTransform storage, TMP_Text statsLabel, TMP_Text detailLabel, Button gearButton, Button skillButton,
+            Button previous, Button next, TMP_Text heroLabel, int columns)
+        {
+            gearView = gear; listView = lists; slotTemplate = template; wornSlots = worn; storageGrid = storage;
+            stats = statsLabel; detail = detailLabel; gearTab = gearButton; skillTab = skillButton;
+            previousHero = previous; nextHero = next; heroName = heroLabel; storageColumns = Mathf.Max(1, columns);
+        }
+
+        /// <summary>마우스를 올린 칸 옆에 띄울 툴팁을 연결한다. 글은 <see cref="ConfigurePaperDoll"/>의 detail이다.</summary>
+        public void ConfigureTooltip(RectTransform box) => tooltip = box;
+
+        /// <summary>툴팁이 보이는지(테스트용).</summary>
+        public bool TooltipShowing => tooltip != null && tooltip.gameObject.activeSelf;
+
+        /// <summary>빈 장비 칸 그림(EquipmentSlot 값 순서)을 연결한다.</summary>
+        public void ConfigureSlotPlaceholders(Sprite[] sprites) => slotPlaceholders = sprites ?? new Sprite[0];
+
+        /// <summary>장비 칸 자리(EquipmentSlot 값 순서)를 연결한다.</summary>
+        public void ConfigureWornAnchors(RectTransform[] anchors) => wornAnchors = anchors ?? new RectTransform[0];
 
         public void Configure(GamePhaseView view, PreparationInteraction input, GameObject popup, TMP_Text statusLabel,
             TMP_Text bodyLabel, RectTransform equipped, RectTransform inventory, Button template)
@@ -63,6 +154,7 @@ namespace ProjectNeo.Flow
             flow = GameSession.Flow;
             if (panel != null) panel.SetActive(false);
             if (rowTemplate != null) rowTemplate.gameObject.SetActive(false);
+            if (slotTemplate != null) slotTemplate.gameObject.SetActive(false);
             equippedHeader = Header(equippedList);
             inventoryHeader = Header(inventoryList);
             equippedHeaderText = equippedHeader != null ? equippedHeader.text : string.Empty;
@@ -76,8 +168,22 @@ namespace ProjectNeo.Flow
             return header != null ? header.GetComponent<TMP_Text>() : null;
         }
 
-        void OnEnable() { if (interaction != null) interaction.EquipmentRequested += OnRequested; }
-        void OnDisable() { if (interaction != null) interaction.EquipmentRequested -= OnRequested; }
+        void OnEnable()
+        {
+            if (interaction == null) return;
+            interaction.EquipmentRequested += OnRequested;
+            interaction.EquipmentKeyInPanel += OnKeyInPanel;
+        }
+
+        void OnDisable()
+        {
+            if (interaction == null) return;
+            interaction.EquipmentRequested -= OnRequested;
+            interaction.EquipmentKeyInPanel -= OnKeyInPanel;
+        }
+
+        // 장비 창을 연 키(I)를 다시 누르면 닫는다(사용자 2026-11-23). 다른 창이 열려 있을 때는 아무 일도 없다.
+        void OnKeyInPanel() { if (IsOpen) Close(); }
 
         void OnRequested() => Open();
 
@@ -98,14 +204,37 @@ namespace ProjectNeo.Flow
         }
 
         /// <summary>대상을 다음 영웅(플레이어 포함, 런에 들어온 순서)으로 바꾼다.</summary>
-        public bool NextHero()
+        public bool NextHero() => StepHero(1);
+
+        /// <summary>대상을 이전 영웅으로 바꾼다.</summary>
+        public bool PreviousHero() => StepHero(-1);
+
+        bool StepHero(int step)
         {
             RunState state = State;
             if (!IsOpen || state == null || state.Heroes.Count == 0) return false;
-            int index = -1;
+            int index = 0;
             for (int i = 0; i < state.Heroes.Count; i++) if (state.Heroes[i] == SelectedHero) index = i;
-            selected = state.Heroes[(index + 1) % state.Heroes.Count];
+            int count = state.Heroes.Count;
+            selected = state.Heroes[((index + step) % count + count) % count];
+            selectedSkill = 0;
             Message = string.Empty;
+            Rebuild();
+            return true;
+        }
+
+        // 버튼 연결용(반환값 없는 메서드만 저장된 리스너로 쓸 수 있다).
+        public void NextHeroFromButton() => NextHero();
+        public void PreviousHeroFromButton() => PreviousHero();
+        public void ShowGearView() { if (SkillView) ToggleView(); }
+        public void ShowSkillView() { if (!SkillView) ToggleView(); }
+        public void ToggleHeroAutoFromButton() => ToggleHeroAuto();
+
+        /// <summary>스킬 탭에서 칸을 고르고 아래 설명 칸에 보여 준다. 잠긴 칸도 고를 수 있다.</summary>
+        public bool SelectSkill(int slot)
+        {
+            if (!IsOpen || !SkillView || slot < 0 || slot >= SkillSlotRules.MaxSlots) return false;
+            selectedSkill = slot;
             Rebuild();
             return true;
         }
@@ -119,8 +248,7 @@ namespace ProjectNeo.Flow
             Message = string.Empty;
             selected = Player;
             SkillView = false;
-            // 퍽을 바꿨을 수 있으니 배운 스킬에 맞춰 장착 칸을 정리한다(빈 칸은 배운 순서로 채운다).
-            State.PlayerSkillLoadout.Refresh(State.LearnedPlayerSkills());
+            selectedSkill = 0;
             panel.SetActive(true);
             Rebuild();
             return true;
@@ -139,8 +267,11 @@ namespace ProjectNeo.Flow
             List<ItemInstance> gear = InventoryGear(state);
             if (!IsOpen || index < 0 || index >= gear.Count) return false;
             ItemInstance item = gear[index];
+            ItemInstance replaced = SelectedHero.Character.EquippedIn(item.Definition.Slot);
             bool equipped = state.TryEquip(SelectedHero, item);
-            Message = equipped ? $"{item.Definition.DisplayName} 장착" : "빈 장비 칸이 없습니다. 먼저 장비를 벗으세요.";
+            Message = !equipped ? "이 영웅은 장비를 낄 수 없습니다."
+                : replaced != null ? $"{item.Definition.DisplayName} 장착 ({replaced.Definition.DisplayName} 해제)"
+                : $"{item.Definition.DisplayName} 장착";
             Rebuild();
             return equipped;
         }
@@ -158,38 +289,33 @@ namespace ProjectNeo.Flow
             return removed;
         }
 
+        bool TryUnequipItem(ItemInstance item)
+        {
+            RunHero hero = SelectedHero;
+            if (hero == null) return false;
+            for (int i = 0; i < hero.Character.Equipment.Count; i++)
+                if (hero.Character.Equipment[i] == item) return TryUnequip(i);
+            return false;
+        }
+
+        static string SlotCountText(Characters.Character character) =>
+            $"장비 칸 {character.Equipment.Count} / {(character.CanEquip ? EquipmentSlots.Count : 0)}";
+
+        Sprite Placeholder(EquipmentSlot kind)
+        {
+            int index = (int)kind;
+            return slotPlaceholders != null && index < slotPlaceholders.Length ? slotPlaceholders[index] : null;
+        }
+
         /// <summary>장비 보기와 스킬 보기를 바꾼다.</summary>
         public bool ToggleView()
         {
             if (!IsOpen) return false;
             SkillView = !SkillView;
+            selectedSkill = 0;
             Message = string.Empty;
             Rebuild();
             return true;
-        }
-
-        /// <summary>플레이어의 배운 스킬 중 장착하지 않은 것의 index번째를 첫 빈 칸에 장착한다.</summary>
-        public bool TryEquipSkill(int index)
-        {
-            RunState state = State;
-            List<SkillDefinition> spare = SpareSkills(state);
-            if (!IsOpen || !SkillView || SelectedHero == null || !SelectedHero.IsPlayer || index < 0 || index >= spare.Count) return false;
-            bool equipped = state.TryEquipPlayerSkill(spare[index].Id);
-            Message = equipped ? $"{spare[index].DisplayName} 장착" : "빈 스킬 칸이 없습니다. 먼저 스킬을 빼세요.";
-            Rebuild();
-            return equipped;
-        }
-
-        /// <summary>플레이어 스킬 칸의 스킬을 뺀다.</summary>
-        public bool TryUnequipSkill(int slot)
-        {
-            RunState state = State;
-            if (!IsOpen || !SkillView || SelectedHero == null || !SelectedHero.IsPlayer) return false;
-            SkillDefinition skill = SkillById(state.LearnedPlayerSkills(), state.PlayerSkillLoadout.EquippedId(slot));
-            bool removed = state.UnequipPlayerSkill(slot);
-            if (removed) Message = $"{(skill != null ? skill.DisplayName : "스킬")} 해제. 빈 칸은 전투 시작 때 남은 배운 스킬로 채워집니다.";
-            Rebuild();
-            return removed;
         }
 
         /// <summary>고른 영웅(플레이어 제외)의 스킬 자동 사용을 켜고 끈다.</summary>
@@ -224,23 +350,6 @@ namespace ProjectNeo.Flow
             return gear;
         }
 
-        static List<SkillDefinition> SpareSkills(RunState state)
-        {
-            var spare = new List<SkillDefinition>();
-            if (state == null) return spare;
-            foreach (SkillDefinition skill in state.LearnedPlayerSkills())
-                if (skill != null && !state.PlayerSkillLoadout.IsEquipped(skill.Id)) spare.Add(skill);
-            return spare;
-        }
-
-        static SkillDefinition SkillById(IReadOnlyList<SkillDefinition> skills, string id)
-        {
-            if (skills == null || string.IsNullOrEmpty(id)) return null;
-            foreach (SkillDefinition skill in skills)
-                if (skill != null && skill.Id == id) return skill;
-            return null;
-        }
-
         void Rebuild()
         {
             RunState state = State;
@@ -248,17 +357,23 @@ namespace ProjectNeo.Flow
             if (hero == null) return;
             if (equippedHeader != null) equippedHeader.text = SkillView ? "스킬 칸" : equippedHeaderText;
             if (inventoryHeader != null)
-                inventoryHeader.text = SkillView ? (hero.IsPlayer ? "배운 스킬 (클릭해서 장착)" : "스킬 사용") : inventoryHeaderText;
+                inventoryHeader.text = SkillView ? "스킬 사용" : inventoryHeaderText;
+            RefreshChrome(state, hero);
             if (SkillView)
             {
                 RebuildSkills(state, hero);
+                return;
+            }
+            if (PaperDoll)
+            {
+                RebuildPaperDoll(state, hero);
                 return;
             }
             var character = hero.Character;
             if (status != null)
             {
                 var text = new StringBuilder(state.Heroes.Count > 1 ? $"{character.Definition.DisplayName} · " : string.Empty);
-                text.Append($"장비 칸 {character.Equipment.Count} / {character.Definition.EquipmentSlots}\n");
+                text.Append(SlotCountText(character)).Append('\n');
                 for (int i = 0; i < ShownStats.Length; i++)
                 {
                     if (i > 0) text.Append(" · ");
@@ -287,9 +402,230 @@ namespace ProjectNeo.Flow
             }
         }
 
-        // 왼쪽 맨 위: 대상 바꾸기(고용 영웅이 있을 때). 오른쪽 맨 위: 보기 바꾸기.
+        // B안: 탭·대상 바꾸기 버튼과, 장비 보기(격자)·스킬 보기(목록) 중 하나만 보이게 한다.
+        void RefreshChrome(RunState state, RunHero hero)
+        {
+            if (!PaperDoll) return;
+            gearView.SetActive(!SkillView);
+            if (listView != null) listView.SetActive(SkillView && !SkillTriangle);
+            if (skillPanel != null) skillPanel.SetActive(SkillView && SkillTriangle);
+            if (autoPlate != null) autoPlate.gameObject.SetActive(SkillView && SkillTriangle && !hero.IsPlayer);
+            SetTab(gearTab, !SkillView);
+            SetTab(skillTab, SkillView);
+            bool many = state.Heroes.Count > 1;
+            if (previousHero != null) previousHero.gameObject.SetActive(many);
+            if (nextHero != null) nextHero.gameObject.SetActive(many);
+            // 이름은 고를 영웅이 여럿일 때만 보인다(사용자 2026-11-23: 플레이어 혼자면 이름 줄을 지운다).
+            if (heroName != null)
+            {
+                heroName.gameObject.SetActive(many);
+                heroName.text = hero.Definition.DisplayName;
+            }
+            // 장비 보기에서는 "장비 칸 n / 4" 줄을 감춘다(글은 테스트용으로 계속 쓴다). 스킬 보기에서는 보인다.
+            if (status != null) status.gameObject.SetActive(SkillView && !SkillTriangle);
+            // 장비 보기에는 "나무 방패 장착" 같은 알림 줄도 두지 않는다(사용자 2026-11-23). 스킬 보기 안내는 남긴다.
+            if (body != null) body.gameObject.SetActive(SkillView && !SkillTriangle);
+            if (SkillView && tooltip != null) tooltip.gameObject.SetActive(false);
+        }
+
+        // 선택된 탭은 누를 수 없고 금색이다(사용자 2026-11-23: 크기는 그대로, 색만 바꾼다). 색은 버튼 색 전환(서서히
+        // 바뀜)에 맡기지 않고 글자에 바로 칠한다. 다른 탭은 흰 글자에 버튼 색(회색, 올리면 흰색)이 곱해진다.
+        static readonly Color TabSelectedColor = new Color32(0xE3, 0xBB, 0x71, 0xFF);
+
+        static void SetTab(Button tab, bool selected)
+        {
+            if (tab == null) return;
+            tab.interactable = !selected;
+            var label = tab.GetComponentInChildren<TMP_Text>(true);
+            if (label == null) return;
+            label.color = selected ? TabSelectedColor : Color.white;
+        }
+
+        void RebuildPaperDoll(RunState state, RunHero hero)
+        {
+            var character = hero.Character;
+            ClearRows();
+            ClearSlots();
+            hoveredItem = null;
+            if (status != null) status.text = SlotCountText(character);
+            // 안내 문구 없이 방금 한 일만 보인다(사용자 2026-11-23).
+            if (body != null) body.text = Message ?? string.Empty;
+            wornViews.Clear();
+            // 무기·보조무기·방어구·장신구 칸(UI-07). 빈 칸에는 그 종류 그림을 흐리게 띄운다.
+            if (character.CanEquip)
+                foreach (EquipmentSlot kind in EquipmentSlots.All)
+                {
+                    EquipmentSlotView slot = AddWornSlot(kind);
+                    ItemInstance item = character.EquippedIn(kind);
+                    if (item == null) { slot.ShowEmpty(Placeholder(kind)); continue; }
+                    var wornRect = (RectTransform)slot.transform;
+                    slot.Show(item.DisplayName, item.Definition.Icon, item.UpgradeLevel, () => TryUnequipItem(item),
+                        () => Hover(item, true, wornRect), () => Unhover(item));
+                }
+            List<ItemInstance> gear = InventoryGear(state);
+            int cells = Mathf.Max(minStorageCells, (gear.Count + storageColumns - 1) / storageColumns * storageColumns);
+            for (int i = 0; i < cells; i++)
+            {
+                EquipmentSlotView slot = AddSlot(storageGrid);
+                if (i >= gear.Count) { slot.ShowEmpty(null); continue; }
+                int index = i;
+                ItemInstance item = gear[i];
+                var cellRect = (RectTransform)slot.transform;
+                slot.Show(item.DisplayName, item.Definition.Icon, item.UpgradeLevel, () => TryEquip(index),
+                    () => Hover(item, false, cellRect), () => Unhover(item));
+            }
+            RefreshPreview();
+        }
+
+        RectTransform hoveredRect;
+
+        void Hover(ItemInstance item, bool worn, RectTransform cell)
+        {
+            hoveredItem = item;
+            hoveredWorn = worn;
+            hoveredRect = cell;
+            RefreshPreview();
+        }
+
+        void Unhover(ItemInstance item)
+        {
+            if (hoveredItem != item) return;
+            hoveredItem = null;
+            RefreshPreview();
+        }
+
+        /// <summary>
+        /// 마우스를 올린 아이템을 미리 본다(테스트용). worn이면 착용 중인 index번째, 아니면 보관함 장비 index번째.
+        /// 범위 밖이면 미리보기를 끈다.
+        /// </summary>
+        public void PreviewItem(bool worn, int index)
+        {
+            RunHero hero = SelectedHero;
+            if (!IsOpen || hero == null) return;
+            IReadOnlyList<ItemInstance> source = worn ? hero.Character.Equipment : (IReadOnlyList<ItemInstance>)InventoryGear(State);
+            if (index < 0 || index >= source.Count) { hoveredItem = null; RefreshPreview(); return; }
+            Hover(source[index], worn, null);
+        }
+
+        // 왼쪽 스탯 목록(미리보기 변화 포함)과 격자 아래 상세 칸을 다시 쓴다.
+        void RefreshPreview()
+        {
+            RunHero hero = SelectedHero;
+            if (hero == null || !PaperDoll) return;
+            var sheet = hero.Character.Stats;
+            ItemInstance item = hoveredItem;
+            // 보관함 장비는 같은 칸의 장비와 바꿔 끼므로 그 장비 효과를 빼고 계산한다.
+            ItemInstance occupant = item != null && !hoveredWorn ? hero.Character.EquippedIn(item.Definition.Slot) : null;
+            if (stats != null)
+            {
+                var text = new StringBuilder();
+                foreach (StatType stat in ShownStats)
+                {
+                    float now = sheet.GetValue(stat);
+                    text.Append(StatName(stat)).Append(" <pos=58%>");
+                    // 미리 보기는 바뀐 뒤의 최종 값을 그 자리에 색으로 보인다(사용자 2026-11-23: "+12.35"처럼 차이를 덧붙이면
+                    // 상자 밖으로 삐져나간다). 오르면 초록, 내리면 빨강.
+                    float after = item == null ? now
+                        : hoveredWorn ? sheet.GetValueWith(stat, null, item) : sheet.GetValueWith(stat, item.EquipModifiers, occupant);
+                    float delta = after - now;
+                    if (Mathf.Abs(delta) > 0.001f) text.Append($"<color={(delta > 0f ? Up : Down)}>{after:0.##}</color>");
+                    else text.Append(now.ToString("0.##"));
+                    text.Append('\n');
+                }
+                stats.text = text.ToString().TrimEnd('\n');
+            }
+            if (item == null)
+            {
+                if (detail != null) detail.text = string.Empty;
+                if (tooltip != null) tooltip.gameObject.SetActive(false);
+                return;
+            }
+            // 이름·종류 한 줄, 효과는 한 줄에 하나씩(효과가 많아도 툴팁이 늘어난다). 클릭 안내는 쓰지 않는다(사용자 2026-11-23).
+            var tip = new StringBuilder($"<b>{item.DisplayName}</b>  <color={Dim}>{EquipmentSlots.DisplayName(item.Definition.Slot)}</color>");
+            if (item.EquipModifiers.Count == 0) tip.Append($"\n<color={Dim}>효과 없음</color>");
+            foreach (StatModifier modifier in item.EquipModifiers) tip.Append("\n").Append(DescribeModifier(modifier));
+            if (detail != null) detail.text = tip.ToString();
+            PlaceTooltip(hoveredRect);
+        }
+
+        // 툴팁을 마우스를 올린 칸 오른쪽(창 밖으로 나가면 왼쪽)에 붙인다. 칸을 모르면(테스트) 창 가운데에 둔다.
+        void PlaceTooltip(RectTransform cell)
+        {
+            if (tooltip == null) return;
+            tooltip.gameObject.SetActive(true);
+            tooltip.SetAsLastSibling();
+            var parent = (RectTransform)tooltip.parent;
+            LayoutRebuilder.ForceRebuildLayoutImmediate(tooltip);
+            tooltip.anchorMin = tooltip.anchorMax = new Vector2(0.5f, 0.5f);
+            if (cell == null || parent == null)
+            {
+                tooltip.pivot = new Vector2(0.5f, 0.5f);
+                tooltip.anchoredPosition = Vector2.zero;
+                return;
+            }
+            var corners = new Vector3[4];
+            cell.GetWorldCorners(corners); // 왼쪽 아래, 왼쪽 위, 오른쪽 위, 오른쪽 아래
+            Vector2 topLeft = parent.InverseTransformPoint(corners[1]);
+            Vector2 topRight = parent.InverseTransformPoint(corners[2]);
+            float width = tooltip.rect.width;
+            bool right = topRight.x + TooltipGap + width <= parent.rect.xMax - TooltipGap;
+            tooltip.pivot = new Vector2(right ? 0f : 1f, 1f);
+            tooltip.anchoredPosition = right ? topRight + new Vector2(TooltipGap, 0f) : topLeft - new Vector2(TooltipGap, 0f);
+        }
+
+        const float TooltipGap = 6f;
+
+        EquipmentSlotView AddWornSlot(EquipmentSlot kind)
+        {
+            int index = (int)kind;
+            RectTransform anchor = wornAnchors != null && index < wornAnchors.Length ? wornAnchors[index] : null;
+            EquipmentSlotView slot = AddSlot(anchor != null ? anchor : wornSlots);
+            if (anchor != null)
+            {
+                var rect = (RectTransform)slot.transform;
+                rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
+                rect.offsetMin = rect.offsetMax = Vector2.zero;
+            }
+            wornViews.Add(slot);
+            return slot;
+        }
+
+        EquipmentSlotView AddSlot(RectTransform parent)
+        {
+            EquipmentSlotView slot = Instantiate(slotTemplate, parent);
+            slot.gameObject.SetActive(true);
+            slots.Add(slot);
+            return slot;
+        }
+
+        void ClearSlots()
+        {
+            foreach (EquipmentSlotView slot in slots)
+            {
+                if (slot == null) continue;
+                slot.gameObject.SetActive(false);
+                Destroy(slot.gameObject);
+            }
+            slots.Clear();
+        }
+
+        static List<string> SlotNames(RectTransform parent)
+        {
+            var names = new List<string>();
+            if (parent == null) return names;
+            foreach (Transform child in parent)
+            {
+                if (!child.gameObject.activeSelf) continue;
+                var slot = child.GetComponent<EquipmentSlotView>();
+                if (slot != null && !slot.IsEmpty) names.Add(slot.ItemName);
+            }
+            return names;
+        }
+
+        // 왼쪽 맨 위: 대상 바꾸기(고용 영웅이 있을 때). 오른쪽 맨 위: 보기 바꾸기. B안에서는 탭과 위쪽 버튼이 대신한다.
         void AddHeadRows(RunState state, RunHero hero)
         {
+            if (PaperDoll) return;
             if (state.Heroes.Count > 1)
                 AddRow(equippedList, $"대상: {hero.Definition.DisplayName}" + (hero.IsPlayer ? " (플레이어)" : string.Empty)
                     + " - 클릭해서 바꾸기", () => NextHero());
@@ -299,46 +635,20 @@ namespace ProjectNeo.Flow
         void RebuildSkills(RunState state, RunHero hero)
         {
             GameSkills skills = battle != null ? battle.Skills : null;
-            if (hero.IsPlayer)
+            if (SkillTriangle)
             {
-                List<SkillDefinition> learned = state.LearnedPlayerSkills();
-                int count = state.PlayerSkillLoadout.EquippedSkills(learned).Count;
-                if (status != null)
-                    status.text = (state.Heroes.Count > 1 ? $"{hero.Definition.DisplayName} · " : string.Empty)
-                        + $"스킬 칸 {count} / {state.PlayerSkillLoadout.SlotCount} · 배운 스킬 {learned.Count}";
-                if (body != null)
-                    body.text = (string.IsNullOrEmpty(Message) ? string.Empty : Message + "\n")
-                        + (learned.Count == 0 ? "배운 스킬이 없습니다. 퍽 창의 전투 트리에서 스킬 퍽을 찍으면 배웁니다."
-                            : "배운 스킬을 클릭하면 빈 칸에 장착하고, 칸을 클릭하면 뺍니다.");
-                ClearRows();
-                if (rowTemplate == null) return;
-                AddHeadRows(state, hero);
-                for (int i = 0; i < state.PlayerSkillLoadout.SlotCount; i++)
-                {
-                    int slot = i;
-                    SkillDefinition skill = SkillById(learned, state.PlayerSkillLoadout.EquippedId(i));
-                    string key = SlotKey(skills, i);
-                    if (skill == null) AddRow(equippedList, $"{key}: 비어 있음", null);
-                    else AddRow(equippedList, $"{key}: {DescribeSkill(skill)}", () => TryUnequipSkill(slot));
-                }
-                List<SkillDefinition> spare = SpareSkills(state);
-                if (spare.Count == 0) AddRow(inventoryList, learned.Count == 0 ? "배운 스킬이 없습니다." : "배운 스킬을 모두 장착했습니다.", null);
-                for (int i = 0; i < spare.Count; i++)
-                {
-                    int index = i;
-                    AddRow(inventoryList, DescribeSkill(spare[i]), () => TryEquipSkill(index));
-                }
+                RebuildSkillTab(hero, skills);
                 return;
             }
-
             IReadOnlyList<SkillDefinition> fixedSkills = hero.Definition.Skills;
-            List<SkillDefinition> open = SkillSlotRules.OpenHeroSkills(fixedSkills, hero.Grade);
+            List<SkillDefinition> open = RunState.OpenSkills(hero);
             if (status != null)
                 status.text = $"{hero.Definition.DisplayName} · 등급 {hero.Grade} · 스킬 칸 {open.Count} / {SkillSlotRules.MaxSlots}"
-                    + $" · 자동 사용 {(hero.SkillAuto ? "켜짐" : "꺼짐")}";
+                    + (hero.IsPlayer ? string.Empty : $" · 자동 사용 {(hero.SkillAuto ? "켜짐" : "꺼짐")}");
             if (body != null)
                 body.text = (string.IsNullOrEmpty(Message) ? string.Empty : Message + "\n")
-                    + "영웅 스킬은 정해져 있고 등급이 오르면 칸이 열립니다. 전투 중 부대를 고르고 Alt + 스킬 키로 직접 시킬 수 있습니다.";
+                    + (hero.IsPlayer ? "플레이어 스킬은 정해져 있고 처음부터 모두 열려 있습니다. 전투 중 스킬 키로 씁니다."
+                        : "영웅 스킬은 정해져 있고 등급이 오르면 칸이 열립니다. 전투 중 부대를 고르고 Alt + 스킬 키로 직접 시킬 수 있습니다.");
             ClearRows();
             if (rowTemplate == null) return;
             AddHeadRows(state, hero);
@@ -349,12 +659,84 @@ namespace ProjectNeo.Flow
                 SkillDefinition skill = fixedSkills[i];
                 if (skill == null) continue;
                 if (i < SkillSlotRules.HeroSlots(hero.Grade))
-                    AddRow(equippedList, $"{ModifierKey(skills)}+{SlotKey(skills, opened++)}: {DescribeSkill(skill)}", null);
+                    AddRow(equippedList, $"{CastKey(skills, hero, opened++)}: {DescribeSkill(skill)}", null);
                 else AddRow(equippedList, $"잠김: {skill.DisplayName} (등급 {i + 1}에 열림)", null);
             }
             if (open.Count == 0) AddRow(equippedList, "스킬이 없습니다.", null);
-            AddRow(inventoryList, $"자동 사용: {(hero.SkillAuto ? "켜짐" : "꺼짐")} - 클릭해서 바꾸기", () => ToggleHeroAuto());
+            if (hero.IsPlayer) AddRow(inventoryList, "직접 사용: 전투 중 스킬 키를 누릅니다.", null);
+            else AddRow(inventoryList, $"자동 사용: {(hero.SkillAuto ? "켜짐" : "꺼짐")} - 클릭해서 바꾸기", () => ToggleHeroAuto());
         }
+
+        // 삼각형 스킬 탭: 고정 스킬 3칸(잠긴 칸은 흐리게, 배지는 열리는 등급), 고른 칸의 설명, 영웅이면 자동 사용 버튼.
+        void RebuildSkillTab(RunHero hero, GameSkills skills)
+        {
+            IReadOnlyList<SkillDefinition> fixedSkills = hero.Definition.Skills;
+            int open = SkillSlotRules.HeroSlots(hero.Grade);
+            if (fixedSkills == null || selectedSkill >= fixedSkills.Count || fixedSkills[selectedSkill] == null) selectedSkill = 0;
+            for (int i = 0; i < skillCircles.Length; i++)
+            {
+                SkillCircleView circle = skillCircles[i];
+                if (circle == null) continue;
+                SkillDefinition skill = fixedSkills != null && i < fixedSkills.Count ? fixedSkills[i] : null;
+                if (skill == null) { circle.Hide(); continue; }
+                int slot = i;
+                circle.Show(skill.DisplayName, skill.Icon, i + 1, i >= open, i == selectedSkill, () => SelectSkill(slot));
+            }
+            SkillDefinition chosen = fixedSkills != null && selectedSkill < fixedSkills.Count ? fixedSkills[selectedSkill] : null;
+            skillDetail.text = chosen == null ? "스킬이 없습니다." : SkillDetail(chosen, hero, skills, selectedSkill, selectedSkill >= open);
+            if (!hero.IsPlayer)
+            {
+                AutoPlateShowsOn = hero.SkillAuto;
+                PaintAutoPlate(hero.SkillAuto);
+            }
+        }
+
+        // 켜짐: 초록 판에 밝은 글자. 꺼짐: 회색 판에 흐린 글자.
+        static readonly Color AutoOnPlate = new Color32(0x2F, 0x6B, 0x3A, 0xFF), AutoOffPlate = new Color32(0x3A, 0x3D, 0x40, 0xFF);
+        static readonly Color AutoOnText = new Color32(0xF2, 0xEA, 0xD8, 0xFF), AutoOffText = new Color32(0xA8, 0xA4, 0x9A, 0xFF);
+
+        void PaintAutoPlate(bool on)
+        {
+            if (autoPlate == null) return;
+            if (autoPlate.targetGraphic != null) autoPlate.targetGraphic.color = on ? AutoOnPlate : AutoOffPlate;
+            TMP_Text label = autoPlate.GetComponentInChildren<TMP_Text>(true);
+            if (label == null) return;
+            label.text = on ? "자동 사용 켜짐" : "자동 사용 꺼짐";
+            label.color = on ? AutoOnText : AutoOffText;
+        }
+
+        static string SkillDetail(SkillDefinition skill, RunHero hero, GameSkills skills, int slot, bool locked)
+        {
+            var text = new StringBuilder();
+            text.Append($"<color=#E3BB71><size=120%>{skill.DisplayName}</size></color>");
+            if (locked) text.Append($"  <color={Dim}>{slot + 1}등급에 열림</color>");
+            else text.Append($"  <color={Dim}>{CastKey(skills, hero, slot).Replace("+", " + ")}</color>");
+            text.Append('\n').Append($"<color={Dim}>{SkillInfo(skill)}</color>");
+            if (skill.Description.Length > 0) text.Append('\n').Append(skill.Description);
+            return text.ToString();
+        }
+
+        // 쿨다운 · 사거리 · 범위 · 대상 한 줄.
+        static string SkillInfo(SkillDefinition skill)
+        {
+            var parts = new List<string> { $"쿨다운 {skill.Cooldown:0.#}초" };
+            bool aimed = skill.TargetMode == SkillTargetMode.AimPoint || skill.TargetMode == SkillTargetMode.TargetUnit;
+            if (aimed && skill.Range > 0f) parts.Add($"사거리 {skill.Range:0.#}m");
+            if (skill.TargetMode != SkillTargetMode.TargetUnit && skill.Radius > 0f) parts.Add($"범위 {skill.Radius:0.#}m");
+            parts.Add(skill.TargetMode switch
+            {
+                SkillTargetMode.Self => "자기 주변",
+                SkillTargetMode.AimPoint => "조준 지점",
+                SkillTargetMode.TargetUnit => "대상 하나",
+                SkillTargetMode.OwnSquad => "자기 부대",
+                _ => string.Empty,
+            });
+            return string.Join(" · ", parts);
+        }
+
+        // 플레이어는 스킬 키만, 영웅은 보조 키 + 스킬 키로 쓴다.
+        static string CastKey(GameSkills skills, RunHero hero, int slot) =>
+            hero.IsPlayer ? SlotKey(skills, slot) : $"{ModifierKey(skills)}+{SlotKey(skills, slot)}";
 
         static string SlotKey(GameSkills skills, int slot)
         {
@@ -403,6 +785,9 @@ namespace ProjectNeo.Flow
             foreach (Transform child in parent) if (child.gameObject.activeSelf) count++;
             return count;
         }
+
+        static string DescribeModifier(StatModifier modifier) =>
+            StatName(modifier.stat) + " " + (modifier.kind == ModifierKind.Percent ? $"{modifier.value * 100f:+0;-0}%" : $"{modifier.value:+0.##;-0.##}");
 
         string Describe(ItemInstance item)
         {

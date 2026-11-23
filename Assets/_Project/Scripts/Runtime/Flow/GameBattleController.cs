@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using ProjectNeo.Combat;
 using ProjectNeo.Core;
@@ -197,7 +197,9 @@ namespace ProjectNeo.Flow
             }
             // 준비 단계 Esc 메뉴(FLOW-04). Game.unity를 고치지 않고 실행 중에 붙인다.
             PauseMenu = gameObject.AddComponent<GamePauseMenu>();
-            PauseMenu.Configure(FindAnyObjectByType<GamePhaseView>());
+            // 모양(금테 판·글꼴)은 준비 HUD 공용 모양 값에서 가져온다(UI-07).
+            var squadCards = FindAnyObjectByType<ProjectNeo.UI.PrepSquadCardsHud>();
+            PauseMenu.Configure(FindAnyObjectByType<GamePhaseView>(), squadCards != null ? squadCards.Style : null);
             // 보스 체력바(SIEGE-09). Game.unity를 고치지 않고 실행 중에 붙인다.
             BossHud = gameObject.AddComponent<ProjectNeo.UI.BossHealthHud>();
             BossHud.Configure(this);
@@ -207,7 +209,7 @@ namespace ProjectNeo.Flow
                 Skills = gameObject.AddComponent<GameSkills>();
                 Skills.Configure(flow, settings, player, commander, morale, () => RunLink, SkillCamera);
                 // 플레이어 스킬은 찍은 전투 트리 퍽으로 배운 것 중 장착한 것(COMBAT-06, Q-72).
-                Skills.PlayerSkills = () => RunLink.State?.EquippedPlayerSkills();
+                Skills.PlayerSkills = () => RunLink.State?.PlayerSkills();
                 Skills.HeroAuto = hero => hero.SkillAuto;
                 SkillHud = gameObject.AddComponent<ProjectNeo.UI.SkillHud>();
                 SkillHud.Configure(Skills);

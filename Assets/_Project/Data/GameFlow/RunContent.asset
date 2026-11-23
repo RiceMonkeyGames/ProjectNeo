@@ -58,15 +58,15 @@ MonoBehaviour:
   weapons:
   - {fileID: 11400000, guid: dcd5362db7ff6a84db2f93ac232125a8, type: 2}
   perks:
+  - {fileID: 11400000, guid: 34c617b06334ec84bb005b07bc0a6f7c, type: 2}
   - {fileID: 11400000, guid: bb104755b9bba71428db659e015aa369, type: 2}
+  - {fileID: 11400000, guid: ec188b44b4600ff47803e1eea033b08a, type: 2}
   - {fileID: 11400000, guid: a8dfb57e99df6874f896de1a4784cd42, type: 2}
   - {fileID: 11400000, guid: b4e71a4ee1716c24f902745775ff4a62, type: 2}
-  - {fileID: 11400000, guid: e45fb8d668bd3ce4d88e03e8107c4d69, type: 2}
-  - {fileID: 11400000, guid: b34b9b3babda8914f8ee2a01c68aeeb6, type: 2}
-  - {fileID: 11400000, guid: 115583d2c218c3c44aaf509b4330f68b, type: 2}
-  - {fileID: 11400000, guid: 0e149db8abc8a5c48890f162681c66e7, type: 2}
   - {fileID: 11400000, guid: bd49144c647cf814a859c1c67e364318, type: 2}
+  - {fileID: 11400000, guid: 770c79442a10fd740bd4835e194002b3, type: 2}
   - {fileID: 11400000, guid: bc97a200433b91445a3853d56c027afb, type: 2}
+  - {fileID: 11400000, guid: 1934cf85a82b90e4e8221b7e77e0d602, type: 2}
   - {fileID: 11400000, guid: d1b8e6f6d4c99f94e8574d1d89ea9f6a, type: 2}
   - {fileID: 11400000, guid: 97e2db27fa63c144cacf1d6e88d7e1db, type: 2}
   - {fileID: 11400000, guid: c5936bf28ab238a4cadbb240232544cd, type: 2}

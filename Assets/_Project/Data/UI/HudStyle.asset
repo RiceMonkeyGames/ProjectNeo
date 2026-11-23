@@ -36,3 +36,12 @@ MonoBehaviour:
   moraleLow: {r: 0.85, g: 0.25, b: 0.2, a: 1}
   moraleNormal: {r: 0.55, g: 0.78, b: 0.4, a: 1}
   moraleHigh: {r: 0.98, g: 0.82, b: 0.35, a: 1}
+  squadCardsPerPage: 5
+  windowPlateSprite: {fileID: 21300000, guid: 5eacea6e3c56a8f418e9cb70882c6eea, type: 3}
+  windowPlate: {r: 0.0627451, g: 0.08627451, b: 0.101960786, a: 0.9490196}
+  windowPlatePixelsPerUnit: 2
+  windowFrameSprite: {fileID: 21300000, guid: c45ec5e932de84c40bf16d11a7081667, type: 3}
+  windowFrame: {r: 0.85, g: 0.85, b: 0.85, a: 1}
+  windowFramePixelsPerUnit: 10
+  windowAccent: {r: 0.8901961, g: 0.73333335, b: 0.44313726, a: 1}
+  windowFont: {fileID: 11400000, guid: 95b1cbf62ebe8134b9ff683cc5fe7ae4, type: 2}

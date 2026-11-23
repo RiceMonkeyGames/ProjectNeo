@@ -32,7 +32,7 @@ namespace ProjectNeo.Flow
         bool prepared;
         SkillAutoSettings defaultAuto;
 
-        /// <summary>플레이어 스킬 칸에 넣을 스킬(배운 퍽 스킬 중 장착한 것). 비어 있으면 플레이어 영웅 데이터의 스킬을 쓴다.</summary>
+        /// <summary>플레이어 스킬 칸에 넣을 스킬(런 플레이어의 등급으로 열린 고정 스킬). 비어 있으면 플레이어 영웅 데이터의 스킬을 쓴다.</summary>
         public Func<IEnumerable<SkillDefinition>> PlayerSkills { get; set; }
         /// <summary>영웅의 자동 시전 켜짐 여부(런 영웅마다). 비어 있거나 런 영웅이 아니면 켜짐.</summary>
         public Func<RunHero, bool> HeroAuto { get; set; }
@@ -110,7 +110,7 @@ namespace ProjectNeo.Flow
         }
 
         /// <summary>
-        /// 전투 시작: 플레이어는 장착 스킬, 영웅은 등급으로 열린 고정 스킬로 칸을 채우고 모두 준비 상태로 만든다.
+        /// 전투 시작: 플레이어와 영웅 모두 등급으로 열린 고정 스킬로 칸을 채우고 모두 준비 상태로 만든다(플레이어는 늘 최고 등급).
         /// 잡졸은 스킬이 없다.
         /// </summary>
         public void PrepareBattle()

@@ -13,6 +13,8 @@ namespace ProjectNeo.Skills
         [SerializeField] string id;
         [SerializeField] string displayName;
         [SerializeField, TextArea] string description;
+        [Tooltip("장비 창 스킬 탭의 둥근 칸에 그릴 그림(UI-07). 비우면 이름 앞 글자를 쓴다.")]
+        [SerializeField] Sprite icon;
         [Tooltip("다시 쓸 수 있을 때까지 걸리는 시간(초).")]
         [SerializeField, Min(0f)] float cooldown = 10f;
         [SerializeField] SkillTargetMode targetMode = SkillTargetMode.Self;
@@ -25,6 +27,8 @@ namespace ProjectNeo.Skills
         public string Id => id;
         public string DisplayName => displayName;
         public string Description => description ?? string.Empty;
+        /// <summary>스킬 그림. 없으면 null.</summary>
+        public Sprite Icon => icon;
         public float Cooldown => cooldown;
         public SkillTargetMode TargetMode => targetMode;
         public float Range => range;

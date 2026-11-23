@@ -40,3 +40,4 @@ MonoBehaviour:
   - materials:
     - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
       amount: 10
+  icon: {fileID: 21300000, guid: 965129895f783004e928eb620f4d2820, type: 3}

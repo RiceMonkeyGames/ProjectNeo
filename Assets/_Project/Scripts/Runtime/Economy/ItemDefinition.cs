@@ -26,8 +26,16 @@ namespace ProjectNeo.Economy
         // 소모품을 썼을 때 바로 회복하는 양(최대 체력 대비 비율, PREP-04 임시값). 장비에는 쓰지 않는다. 0이면 회복 효과 없음.
         [SerializeField, Range(0f, 1f)] float useHealRatio = 0.35f;
         [SerializeField] List<ItemUpgradeMaterials> upgradeMaterials = new List<ItemUpgradeMaterials>();
+        // 장비 화면 보관함 격자와 장비 칸에 그리는 아이콘(UI-07). 없으면 이름 앞 글자를 보여준다.
+        [SerializeField] Sprite icon;
+        // 장비가 들어가는 칸(UI-07). 장비에만 쓴다.
+        [SerializeField] EquipmentSlot slot;
 
         public string Id => id;
+        /// <summary>장비가 들어가는 칸.</summary>
+        public EquipmentSlot Slot => slot;
+        /// <summary>장비 화면 아이콘. 없으면 null.</summary>
+        public Sprite Icon => icon;
         public string DisplayName => displayName;
         public ItemKind Kind => kind;
         /// <summary>구매하거나 생산할 때 드는 비용.</summary>
@@ -51,6 +59,14 @@ namespace ProjectNeo.Economy
             item.price = price;
             item.unlockedByDefault = unlockedByDefault;
             item.equipModifiers = new List<StatModifier>(equipModifiers);
+            return item;
+        }
+
+        /// <summary>칸을 정한 장비를 만든다(테스트용).</summary>
+        public static ItemDefinition CreateEquipment(string id, EquipmentSlot slot, Cost price, params StatModifier[] equipModifiers)
+        {
+            var item = Create(id, ItemKind.Equipment, price, true, equipModifiers);
+            item.slot = slot;
             return item;
         }
 

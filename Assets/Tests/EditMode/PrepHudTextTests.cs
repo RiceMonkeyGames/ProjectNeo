@@ -107,9 +107,9 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
-        public void AscensionTag_EmptyAtZero()
+        public void AscensionTag_ShowsZeroToo()
         {
-            Assert.AreEqual(string.Empty, PrepHudText.AscensionTag(0));
+            Assert.AreEqual("승천 0", PrepHudText.AscensionTag(0));
             Assert.AreEqual("승천 3", PrepHudText.AscensionTag(3));
         }
 

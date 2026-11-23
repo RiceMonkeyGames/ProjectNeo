@@ -79,32 +79,61 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
-        public void TwoCopiesOfSameItem_StackAndUnequipSeparately()
+        public void TryEquip_SameSlot_ReplacesWornItem_AndReturnsItToInventory()
         {
             Character hero = NewHero();
             ItemInstance first = inventory.Add(sword);
             ItemInstance second = inventory.Add(sword);
             hero.TryEquip(first, inventory);
-            hero.TryEquip(second, inventory);
-            Assert.AreEqual(40f, hero.Stats.GetValue(StatType.Attack));
 
-            hero.TryUnequip(first, inventory);
+            Assert.IsTrue(hero.TryEquip(second, inventory, out ItemInstance replaced));
 
-            Assert.AreEqual(30f, hero.Stats.GetValue(StatType.Attack));
+            Assert.AreSame(first, replaced);
+            Assert.AreSame(second, hero.EquippedIn(EquipmentSlot.Weapon));
+            Assert.IsTrue(inventory.Contains(first));
+            Assert.AreEqual(30f, hero.Stats.GetValue(StatType.Attack), "UI-07: 한 칸에 하나만, 바꿔 끼면 이전 장비 효과는 빠진다.");
         }
 
         [Test]
-        public void TryEquip_Fails_WhenSlotsAreFull_OrItemIsNotEquipment_OrNotOwned()
+        public void TryEquip_SameSlot_PutsWornItemIntoTheNewItemsStoragePlace()
         {
-            Character hero = NewHero(slots: 1);
+            Character hero = NewHero();
+            ItemInstance worn = inventory.Add(sword);
+            hero.TryEquip(worn, inventory);
+            ItemInstance before = inventory.Add(potion);
+            ItemInstance replacement = inventory.Add(sword);
+            ItemInstance after = inventory.Add(potion);
+
+            Assert.IsTrue(hero.TryEquip(replacement, inventory, out _));
+
+            CollectionAssert.AreEqual(new[] { before, worn, after }, inventory.Items, "UI-07: 끼고 있던 장비가 새 장비 자리로 간다.");
+        }
+
+        [Test]
+        public void TryEquip_DifferentSlots_StackTheirStats()
+        {
+            Character hero = NewHero();
+            ItemDefinition shield = Track(ItemDefinition.CreateEquipment("shield", EquipmentSlot.Offhand, new Cost(20), StatModifier.Flat(StatType.Attack, 5f)));
+            hero.TryEquip(inventory.Add(sword), inventory);
+
+            Assert.IsTrue(hero.TryEquip(inventory.Add(shield), inventory, out ItemInstance replaced));
+
+            Assert.IsNull(replaced);
+            Assert.AreEqual(2, hero.Equipment.Count);
+            Assert.AreEqual(35f, hero.Stats.GetValue(StatType.Attack));
+        }
+
+        [Test]
+        public void TryEquip_Fails_WithoutSlots_OrItemIsNotEquipment_OrNotOwned()
+        {
+            Character hero = NewHero();
+            Character dummy = NewHero(slots: 0);
             ItemInstance first = inventory.Add(sword);
-            ItemInstance second = inventory.Add(sword);
             ItemInstance consumable = inventory.Add(potion);
 
             Assert.IsFalse(hero.TryEquip(consumable, inventory));
             Assert.IsFalse(hero.TryEquip(new ItemInstance(sword), inventory));
-            Assert.IsTrue(hero.TryEquip(first, inventory));
-            Assert.IsFalse(hero.TryEquip(second, inventory));
+            Assert.IsFalse(dummy.TryEquip(first, inventory), "칸 수 0이면 장비를 못 낀다.");
             Assert.AreEqual(2, inventory.Items.Count);
         }
 

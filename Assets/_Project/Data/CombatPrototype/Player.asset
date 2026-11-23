@@ -30,6 +30,9 @@ MonoBehaviour:
     value: 6
   - stat: 5
     value: 2.5
-  skills: []
+  skills:
+  - {fileID: 11400000, guid: 50e82d8de08bd6f489f36da1ab55b749, type: 2}
+  - {fileID: 11400000, guid: 848b2a5a21fabcb4d9925eea401851f9, type: 2}
+  - {fileID: 11400000, guid: ff56aeca9ac63c842bfb250865949e3e, type: 2}
   tier: 1
   unitPrefab: {fileID: 0}
