@@ -14,7 +14,7 @@ using UnityEngine.TestTools;
 
 namespace ProjectNeo.Tests
 {
-    /// <summary>D-0b: 준비 중에 모집한 잡졸이 Game 씬 시설 앞에 나타나 부대·지휘·전투 집계에 들어간다(Q-36).</summary>
+    /// <summary>D-0b·UI-07: 준비 중에 모집한 잡졸은 시설 앞에 숨겨진 채 보관되고, 부대에 넣으면 나타나 지휘·전투 집계에 들어간다.</summary>
     public class GameUnitSpawnPlayTests
     {
         static int cleanup;
@@ -53,7 +53,7 @@ namespace ProjectNeo.Tests
         static float Flat(Vector3 a, Vector3 b) { a.y = 0f; b.y = 0f; return Vector3.Distance(a, b); }
 
         [UnityTest]
-        public IEnumerator 모집한_잡졸은_병영_앞에_나타나_부대로_걸어가고_다음_전투에_들어간다()
+        public IEnumerator 모집한_잡졸은_숨겨진_채_보관되고_부대에_넣으면_나타나_걸어가고_다음_전투에_들어간다()
         {
             Assert.IsNotNull(spawner, "Game 씬에 GameUnitSpawner가 있어야 한다.");
             RunState state = GameSession.Flow.Run.State;
@@ -65,22 +65,31 @@ namespace ProjectNeo.Tests
 
             UnitCombatAI unit = spawner.Recruit(spawner.DebugSoldier, FacilityType.TrainingGround);
             Assert.IsNotNull(unit);
-            Assert.IsTrue(unit.isActiveAndEnabled);
+            Assert.IsFalse(unit.gameObject.activeSelf, "보관 병사는 씬에서 숨겨진다(UI-07).");
             Assert.AreEqual(gameObjectScene(), unit.gameObject.scene);
-            Assert.Less(Flat(unit.transform.position, barracks), 12f, "병영 앞에 나타난다.");
-            Assert.AreEqual(squadsBefore, center.Squads.Count, "자리가 남은 첫 부대에 들어가므로 부대가 늘지 않는다.");
-            Assert.AreEqual(membersBefore + 1, center.Squads[0].Members.Count);
-            Assert.Contains(unit, center.Squads[0].Members.ToList());
-            int id = battle.RunLink.IdOf(unit.Actor);
+            Assert.Less(Flat(unit.transform.position, barracks), 12f, "병영 앞에 만든다.");
+            Assert.AreEqual(squadsBefore, center.Squads.Count, "부대가 늘지 않는다.");
+            Assert.AreEqual(membersBefore, center.Squads[0].Members.Count, "씬 부대에 들지 않는다.");
+            int id = battle.RunLink.IdOf(unit.GetComponent<CharacterActor>());
             Assert.Greater(id, 0);
-            Assert.IsNotNull(state.Find(id));
-            Assert.AreSame(state.Army.Squads[0], state.SquadOf((RunSoldier)state.Find(id)));
+            var soldier = (RunSoldier)state.Find(id);
+            Assert.IsNull(state.SquadOf(soldier));
+
+            Assert.AreEqual(OrganizeCheck.Ok, battle.RunLink.TryMoveSoldier(soldier, 0));
+            Assert.IsTrue(unit.isActiveAndEnabled, "부대에 넣으면 나타난다.");
+            Assert.Contains(unit, center.Squads[0].Members.ToList());
+            Assert.AreSame(state.Army.Squads[0], state.SquadOf(soldier));
             Assert.AreEqual(UnitDirective.Move, unit.Directive);
             Assert.IsTrue(unit.GetComponent<NavMeshAgent>().isOnNavMesh);
 
             float start = Flat(unit.transform.position, gather);
             for (int i = 0; i < 90; i++) yield return null;
             Assert.Less(Flat(unit.transform.position, gather), start - 2f, "부대가 모인 곳으로 걸어간다.");
+
+            Assert.AreEqual(OrganizeCheck.Ok, battle.RunLink.TryStoreSoldier(soldier));
+            Assert.IsFalse(unit.gameObject.activeSelf, "보관으로 돌리면 다시 숨겨진다.");
+            Assert.IsFalse(center.Squads[0].Members.Contains(unit));
+            Assert.AreEqual(OrganizeCheck.Ok, battle.RunLink.TryMoveSoldier(soldier, 0));
 
             Assert.IsTrue(battle.TryStartBattle());
             Assert.IsTrue(battle.RunLink.CurrentInput.Squads[0].Members.Any(member => member.Id == id), "다음 전투 입력에 들어간다.");
@@ -101,30 +110,36 @@ namespace ProjectNeo.Tests
         Scene gameObjectScene() => battle.gameObject.scene;
 
         [UnityTest]
-        public IEnumerator 모든_부대가_꽉_차면_새_부대가_생기고_지휘_번호로_고를_수_있다()
+        public IEnumerator 새_빈_부대를_만들어_넣으면_지휘_번호로_고를_수_있고_부대를_없애면_보관으로_돌아간다()
         {
             RunState state = GameSession.Flow.Run.State;
             int squads = center.Squads.Count;
-            int free = center.Squads.Sum(squad => squad.Capacity - squad.Members.Count);
-            for (int i = 0; i < free; i++)
-                Assert.IsNotNull(spawner.Recruit(spawner.DebugSoldier, FacilityType.TrainingGround), "빈자리 " + i);
-            Assert.AreEqual(squads, center.Squads.Count);
-
-            UnitCombatAI extra = spawner.Recruit(spawner.DebugSoldier, FacilityType.TrainingGround);
-            Assert.IsNotNull(extra);
+            Assert.AreEqual(OrganizeCheck.Ok, battle.RunLink.TryAddSquad(out int added));
+            Assert.AreEqual(squads, added);
             Assert.AreEqual(squads + 1, center.Squads.Count);
             Assert.AreEqual(squads + 1, center.Commander.SquadCount);
             Assert.AreEqual(squads + 1, state.Army.Squads.Count);
-            Assert.AreSame(extra, center.Squads[squads].Members.Single());
+
+            UnitCombatAI extra = spawner.Recruit(spawner.DebugSoldier, FacilityType.TrainingGround);
+            Assert.IsNotNull(extra);
+            Assert.AreEqual(OrganizeCheck.Ok, battle.RunLink.TryMoveSoldier(state.StoredSoldiers.Single(), added));
+            Assert.AreSame(extra, center.Squads[added].Members.Single());
             Assert.AreEqual(UnitDirective.Hold, extra.Directive, "빈 새 부대는 모일 곳이 없어 나타난 자리를 지킨다.");
             yield return null;
 
             var input = Object.FindAnyObjectByType<SquadCommandInput>();
-            Assert.IsTrue(input.SelectSquad(squads));
-            Assert.IsTrue(center.Commander.IsSelected(squads));
+            Assert.IsTrue(input.SelectSquad(added));
+            Assert.IsTrue(center.Commander.IsSelected(added));
             yield return null;
             var markers = Object.FindAnyObjectByType<PlaceholderSquadMarkers>();
             if (markers != null) Assert.IsTrue(markers.IsMarked(extra), "새 부대원도 선택 표시가 붙는다.");
+
+            Assert.AreEqual(OrganizeCheck.Ok, battle.RunLink.TryRemoveSquad(added));
+            Assert.AreEqual(squads, state.Army.Squads.Count);
+            Assert.AreEqual(squads, center.Squads.Count);
+            Assert.AreEqual(squads, center.Commander.SquadCount);
+            Assert.AreEqual(1, state.StoredSoldiers.Count, "부대원은 보관으로 돌아간다.");
+            Assert.IsFalse(extra.gameObject.activeSelf);
         }
     }
 }

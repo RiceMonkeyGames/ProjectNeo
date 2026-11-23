@@ -52,23 +52,22 @@ namespace ProjectNeo.Flow
         }
 
         /// <summary>
-        /// 잡졸을 모집해 <paramref name="facility"/> 앞에 만든다. <paramref name="preferred"/>가 없으면 자리가 남은 첫 부대,
-        /// 모두 꽉 찼으면 새 부대다(Q-36). 준비 단계가 아니거나 넣을 수 없으면 null. 비용은 받지 않는다(테스트·연출용).
+        /// 잡졸을 모집해 <paramref name="facility"/> 앞에 만든다. 새 잡졸은 보관 병사라 만든 뒤 바로 숨기고(UI-07),
+        /// 편성 화면에서 부대에 넣으면 그 자리에서 나타나 부대 쪽으로 걸어간다. 준비 단계가 아니면 null. 비용은 받지 않는다(테스트·연출용).
         /// 병영 모집은 <see cref="RecruitAtBarracks"/>를 쓴다.
         /// </summary>
-        public UnitCombatAI Recruit(SoldierDefinition definition, FacilityType facility, Squad<RunUnit> preferred = null)
-            => Recruit(definition, facility, preferred, false, out _);
+        public UnitCombatAI Recruit(SoldierDefinition definition, FacilityType facility)
+            => Recruit(definition, facility, false);
 
         /// <summary>
         /// 병영 규칙으로 잡졸을 모집한다(D-4): 지금 병영 레벨에서 모집할 수 있는 종류여야 하고 모집 비용을 런 지갑에서 낸다.
-        /// 병영 앞에 나타나 부대로 걸어가며 훈련 보너스를 받는다. 넣은 부대 순번은 <paramref name="squad"/>. 못 하면 null.
+        /// 보관 병사가 되어 훈련 보너스를 받은 채 숨겨진다(UI-07). 못 하면 null.
         /// </summary>
-        public UnitCombatAI RecruitAtBarracks(SoldierDefinition definition, Squad<RunUnit> preferred, out int squad)
-            => Recruit(definition, FacilityType.TrainingGround, preferred, true, out squad);
+        public UnitCombatAI RecruitAtBarracks(SoldierDefinition definition)
+            => Recruit(definition, FacilityType.TrainingGround, true);
 
-        UnitCombatAI Recruit(SoldierDefinition definition, FacilityType facility, Squad<RunUnit> preferred, bool pay, out int squad)
+        UnitCombatAI Recruit(SoldierDefinition definition, FacilityType facility, bool pay)
         {
-            squad = -1;
             if (definition == null || battle == null) return null;
             if (definition.UnitPrefab == null)
             {
@@ -77,20 +76,21 @@ namespace ProjectNeo.Flow
             }
             Vector3 origin = stations.TryGetValue(facility, out FacilityStation station) ? station.transform.position
                 : battle.transform.position;
-            UnitCombatAI unit = battle.RunLink.TryRecruit(definition, preferred, def => Create(def, origin),
-                out squad, out Vector3 gather, out bool hasGather, pay);
+            UnitCombatAI unit = battle.RunLink.TryRecruit(definition, def => Create(def, origin), pay);
             if (unit == null) return null;
 
-            Vector3 spawnPoint = FrontOf(origin, hasGather ? gather : origin + (station != null ? station.transform.forward : Vector3.forward));
-            Place(unit, spawnPoint, hasGather ? gather : spawnPoint);
-            unit.name = definition.Id + "_Recruit" + (++spawned) + "_Squad" + (squad + 1);
+            Vector3 toward = origin + (station != null ? station.transform.forward : Vector3.forward);
+            Vector3 spawnPoint = SlotNear(FrontOf(origin, toward));
+            Place(unit, spawnPoint, spawnPoint + (toward - origin));
+            unit.name = definition.Id + "_Recruit" + (++spawned);
+            // 켜야 능력치·체력이 생긴다. 훈련·퍽을 붙인 뒤 보관 병사로 숨긴다.
             unit.gameObject.SetActive(true);
             battle.RunLink.ApplyTraining();
             battle.RunLink.ApplyPerks();
             var agent = unit.GetComponent<NavMeshAgent>();
             if (agent != null && agent.enabled) agent.Warp(spawnPoint);
-            if (hasGather) unit.SetDirective(UnitDirective.Move, SlotNear(gather));
-            else unit.SetDirective(UnitDirective.Hold);
+            unit.SetDirective(UnitDirective.Hold);
+            battle.RunLink.HideStoredSoldiers();
             return unit;
         }
 

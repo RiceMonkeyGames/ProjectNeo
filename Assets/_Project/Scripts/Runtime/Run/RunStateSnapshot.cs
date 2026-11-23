@@ -57,9 +57,9 @@ namespace ProjectNeo.Run
             foreach (RunHero hero in heroes) snapshot.heroes.Add(Record(hero));
             foreach (RunHero hero in fallenHeroes) snapshot.fallenHeroes.Add(Record(hero));
 
+            // 빈 부대도 남긴다(UI-07): 편성 화면에서 만든 빈 부대가 저장 뒤에도 그대로 있다.
             foreach (Squad<RunUnit> squad in Army.Squads)
             {
-                if (squad.Members.Count == 0 && squad.Leader == null) continue;
                 var record = new SquadRecord { leaderUnitId = squad.Leader != null ? squad.Leader.Id : 0 };
                 foreach (RunUnit member in squad.Members)
                     if (member is RunSoldier soldier) record.soldiers.Add(Record(soldier));

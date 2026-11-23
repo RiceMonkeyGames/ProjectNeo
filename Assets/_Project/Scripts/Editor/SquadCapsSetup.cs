@@ -48,9 +48,7 @@ namespace ProjectNeo.Editor
             var hud = GameFacilitySetup.Find<GameFlowHud>(scene);
             var intel = hud != null ? hud.transform.Find("EnemyIntel") as RectTransform : null;
             if (intel != null) { intel.anchoredPosition = EnemyIntelHudSetup.Offset; EditorUtility.SetDirty(intel); }
-            Transform organization = hud != null ? hud.transform.Find("OrganizationPanel") : null;
-            if (organization == null) throw new InvalidOperationException("OrganizationPanel is missing. Run Connect Squad Organization first.");
-            SquadOrganizationSetup.ApplyScrolling(organization);
+            // 편성 창의 열은 처음부터 세로 스크롤이다(UI-07, SquadOrganizationSetup).
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);

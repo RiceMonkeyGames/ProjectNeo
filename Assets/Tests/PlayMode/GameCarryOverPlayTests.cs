@@ -14,8 +14,8 @@ using UnityEngine.TestTools;
 namespace ProjectNeo.Tests
 {
     /// <summary>
-    /// C-3: 전투 뒤 다음 준비에서 죽은 유닛은 씬 부대에서 빠지고(몸은 남는다), 잡졸도 대장도 없는 부대는 런·씬에서 함께 없어지며,
-    /// 대장만 남은 부대는 남는다(Q-50). 그 뒤 모집·다음 전투 입력이 런과 씬에서 어긋나지 않는다.
+    /// C-3: 전투 뒤 다음 준비에서 죽은 유닛은 씬 부대에서 빠지고(몸은 남는다), 빈 부대도 런·씬에 남는다(UI-07).
+    /// 그 뒤 모집·편성·다음 전투 입력이 런과 씬에서 어긋나지 않는다.
     /// </summary>
     public class GameCarryOverPlayTests
     {
@@ -58,7 +58,7 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
-        public IEnumerator 전투_뒤_죽은_유닛은_부대에서_빠지고_빈_부대는_대장이_없을_때만_없어진다()
+        public IEnumerator 전투_뒤_죽은_유닛은_부대에서_빠지고_빈_부대는_남는다()
         {
             RunState state = GameSession.Flow.Run.State;
             int squadCount = state.Army.Squads.Count;
@@ -90,14 +90,15 @@ namespace ProjectNeo.Tests
             Assert.IsTrue(GameSession.Flow.ContinueToNextStage());
             yield return Navigation();
 
-            Assert.AreEqual(squadCount - 1, state.Army.Squads.Count, "잡졸도 대장도 없는 부대만 없어진다.");
-            Assert.AreEqual(squadCount - 1, center.Squads.Count, "씬 부대도 함께 없어진다.");
-            Assert.AreEqual(squadCount - 1, center.Commander.SquadCount);
-            CollectionAssert.DoesNotContain(state.Army.Squads.ToList(), lose);
-            Assert.AreSame(keep, state.Army.Squads[0], "대장만 남은 부대는 남는다.");
+            Assert.AreEqual(squadCount, state.Army.Squads.Count, "빈 부대도 없어지지 않는다(UI-07).");
+            Assert.AreEqual(squadCount, center.Squads.Count, "씬 부대도 그대로다.");
+            Assert.AreEqual(squadCount, center.Commander.SquadCount);
+            Assert.AreSame(lose, state.Army.Squads[1]);
+            CollectionAssert.IsEmpty(lose.Members);
+            Assert.AreSame(keep, state.Army.Squads[0], "대장만 남은 부대도 남는다.");
             Assert.AreSame(captain, keep.Leader);
             Assert.AreSame(captainUnit, center.Squads[0].Leader);
-            Assert.AreSame(survive, state.Army.Squads[1]);
+            Assert.AreSame(survive, state.Army.Squads[2]);
             Assert.IsTrue(center.Squads.All(squad => squad.Members.All(unit => !unit.Actor.Health.IsDead)),
                 "죽은 유닛은 씬 부대에서 빠진다.");
             Assert.IsTrue(doomed.All(actor => actor != null && actor.Health.IsDead), "몸은 씬에 남는다.");
@@ -105,14 +106,17 @@ namespace ProjectNeo.Tests
             for (int i = 0; i < state.Army.Squads.Count; i++)
                 Assert.AreEqual(state.Army.Squads[i].Members.Count, center.Squads[i].Members.Count, "런과 씬 부대원 수가 같다: " + i);
 
-            UnitCombatAI recruit = spawner.Recruit(spawner.DebugSoldier, FacilityType.TrainingGround, keep);
-            Assert.IsNotNull(recruit, "잡졸이 모두 죽었던 부대에도 다시 모집된다.");
+            UnitCombatAI recruit = spawner.Recruit(spawner.DebugSoldier, FacilityType.TrainingGround);
+            Assert.IsNotNull(recruit);
+            RunSoldier stored = state.StoredSoldiers.Single();
+            Assert.AreEqual(OrganizeCheck.Ok, battle.RunLink.TryMoveSoldier(stored, 0), "잡졸이 모두 죽었던 부대에도 다시 넣는다.");
             Assert.IsTrue(center.Squads[0].Members.Contains(recruit));
+            Assert.IsTrue(recruit.gameObject.activeSelf, "부대에 넣으면 다시 나타난다.");
             Assert.AreEqual(1, keep.Members.Count);
 
             Assert.IsTrue(battle.TryStartBattle());
             Assert.AreEqual(2, battle.RunLink.CurrentInput.BattleNumber);
-            Assert.AreEqual(squadCount - 1, battle.RunLink.CurrentInput.Squads.Count);
+            Assert.AreEqual(squadCount, battle.RunLink.CurrentInput.Squads.Count);
             Assert.AreEqual(state.Soldiers.Count, battle.RunLink.CurrentInput.Squads.Sum(squad => squad.Members.Count));
         }
     }

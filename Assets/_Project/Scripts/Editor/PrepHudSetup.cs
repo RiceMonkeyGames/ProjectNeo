@@ -55,8 +55,8 @@ namespace ProjectNeo.Editor
             if (hud == null || battle == null || view == null || interaction == null || clock == null || center == null)
                 throw new InvalidOperationException("Game HUD, battle, phase view, interaction, prep clock (PREP-06) and squad center are required.");
             TMP_FontAsset font = hud.GetComponentInChildren<TMP_Text>(true).font;
-            Transform organization = hud.transform.Find("OrganizationPanel");
-            GameObject covered = organization != null ? organization.gameObject : null;
+            // 편성 창이 열려도 자원 바와 시계는 남는다(UI-07, 사용자 2026-11-23: 장비 창과 같게).
+            GameObject covered = null;
 
             BuildTopBar(hud, battle, clock, style, font, covered);
             BuildSquadCards(hud, style, font, center, morale, view, commandHud, commandInput);

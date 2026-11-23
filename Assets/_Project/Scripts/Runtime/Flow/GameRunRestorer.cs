@@ -48,6 +48,7 @@ namespace ProjectNeo.Flow
             var actors = new Dictionary<int, CharacterActor>();
             var heroUnits = new Dictionary<int, UnitCombatAI>();
             RestoreSoldiers(snapshot, actors);
+            RestoreStoredSoldiers(snapshot, actors);
             foreach (HeroRecord hero in snapshot.heroes)
             {
                 if (hero.isPlayer) { actors[hero.unitId] = player; continue; }
@@ -136,7 +137,25 @@ namespace ProjectNeo.Flow
             foreach (SquadRecord squad in snapshot.squads)
                 foreach (SoldierRecord soldier in squad.soldiers)
                     if (content.Soldier(soldier.id).UnitPrefab == null) return "soldier has no scene unit prefab: " + soldier.id;
+            foreach (SoldierRecord soldier in snapshot.looseSoldiers ?? new List<SoldierRecord>())
+                if (content.Soldier(soldier.id).UnitPrefab == null) return "soldier has no scene unit prefab: " + soldier.id;
             return string.Empty;
+        }
+
+        // 보관 병사(UI-07): 병영 앞에 만들어 능력치가 생기도록 한 번 켠 뒤 숨긴다. 편성 화면에서 부대에 넣으면 다시 켜진다.
+        void RestoreStoredSoldiers(RunSnapshot snapshot, Dictionary<int, CharacterActor> actors)
+        {
+            foreach (SoldierRecord soldier in snapshot.looseSoldiers ?? new List<SoldierRecord>())
+            {
+                UnitCombatAI unit = spawner.SpawnRestoredSoldier(content.Soldier(soldier.id), null);
+                if (unit == null)
+                {
+                    Debug.LogWarning("Saved stored soldier could not be created in the scene: " + soldier.id);
+                    continue;
+                }
+                unit.gameObject.SetActive(false);
+                actors[soldier.unitId] = ActorOf(unit);
+            }
         }
 
         /// <summary>되살린 성에 걸려 있던 작업 주문(SIEGE-08). 저장한 순서대로다. 씬의 작업 목록이 가져간다.</summary>

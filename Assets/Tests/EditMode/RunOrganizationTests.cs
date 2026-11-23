@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace ProjectNeo.Tests
 {
-    /// <summary>D-8 부대 편성: 잡졸 한 명씩 옮기기, 빈 부대 정리, 대장 지정(Q-32 임시·Q-45·Q-47).</summary>
+    /// <summary>D-8·UI-07 부대 편성: 잡졸 옮기기·보관, 빈 부대 유지, 부대 만들기·없애기, 대장 지정(Q-32 임시).</summary>
     public class RunOrganizationTests
     {
         SoldierDefinition melee;
@@ -46,11 +46,10 @@ namespace ProjectNeo.Tests
             int changed = 0;
             run.Changed += () => changed++;
 
-            Assert.IsTrue(run.TryMoveSoldier(a, second, out int to, out int removed));
+            Assert.IsTrue(run.TryMoveSoldier(a, second, out int to));
 
             Assert.AreSame(second, run.SquadOf(a));
             Assert.AreEqual(1, to);
-            Assert.AreEqual(-1, removed);
             CollectionAssert.AreEqual(new RunUnit[] { b }, first.Members);
             Assert.AreSame(morale, second.Morale);
             Assert.AreEqual(120f, second.Morale.Value);
@@ -58,50 +57,71 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
-        public void 받을_부대가_꽉_찼거나_같은_부대면_옮기지_않는다()
+        public void 받을_부대가_꽉_찼거나_같은_부대거나_부대가_없으면_옮기지_않는다()
         {
             run.TryAssign(run.AddSoldier(melee), second);
             Assert.AreEqual(OrganizeCheck.SquadFull, run.CheckMoveSoldier(a, second));
-            Assert.IsFalse(run.TryMoveSoldier(a, second, out _, out _));
+            Assert.IsFalse(run.TryMoveSoldier(a, second, out _));
             Assert.AreSame(first, run.SquadOf(a));
             Assert.AreEqual(OrganizeCheck.SameSquad, run.CheckMoveSoldier(a, first));
+            Assert.AreEqual(OrganizeCheck.NotInRun, run.CheckMoveSoldier(a, null));
         }
 
         [Test]
-        public void 혼자인_잡졸은_새_부대로_옮겨도_같아서_막는다()
+        public void 마지막_잡졸을_옮겨도_빈_부대와_대장은_남는다()
         {
-            Assert.AreEqual(OrganizeCheck.SameSquad, run.CheckMoveSoldier(c, null));
-        }
-
-        [Test]
-        public void 부대가_비면_없어지고_대장은_대기로_가며_뒤_부대_번호가_당겨진다()
-        {
-            Squad<RunUnit> third = run.Army.TryAddSquad();
-            RunSoldier d = run.AddSoldier(melee);
-            run.TryAssign(d, third);
             RunHero captain = run.AddHero(knight);
             Assert.IsTrue(run.TrySetCaptain(second, captain));
 
-            Assert.IsTrue(run.TryMoveSoldier(c, third, out int to, out int removed));
+            Assert.IsTrue(run.TryStoreSoldier(c), "두 번째 부대의 마지막 잡졸을 보관으로 돌린다.");
+            Assert.IsTrue(run.TryStoreSoldier(a));
+            Assert.IsTrue(run.TryStoreSoldier(b));
 
-            Assert.AreEqual(1, removed, "옮기기 전 2번째 부대가 없어진다.");
-            Assert.AreEqual(1, to, "세 번째 부대가 두 번째로 당겨진다.");
-            Assert.AreEqual(2, run.Army.Squads.Count);
-            Assert.AreSame(third, run.Army.Squads[1]);
-            Assert.IsNull(run.LeadingSquadOf(captain));
-            CollectionAssert.AreEqual(new[] { captain }, run.ReserveHeroes);
+            Assert.AreEqual(2, run.Army.Squads.Count, "빈 부대는 없어지지 않는다(UI-07).");
+            Assert.AreSame(captain, second.Leader);
+            CollectionAssert.IsEmpty(first.Members);
         }
 
         [Test]
-        public void 새_부대로_옮기면_맨_뒤에_부대가_생기고_상한이면_막는다()
+        public void 잡졸을_보관으로_돌리고_다시_부대에_넣는다()
         {
-            Assert.IsTrue(run.TryMoveSoldier(a, null, out int to, out int removed));
-            Assert.AreEqual(2, to);
-            Assert.AreEqual(-1, removed);
-            Assert.AreEqual(3, run.Army.Squads.Count);
-            RunSoldier e = run.AddSoldier(melee);
-            run.TryAssign(e, second);
-            Assert.AreEqual(OrganizeCheck.SquadFull, run.CheckMoveSoldier(e, null), "부대 수 상한 3");
+            Assert.IsTrue(run.TryStoreSoldier(c));
+            Assert.IsNull(run.SquadOf(c));
+            CollectionAssert.AreEqual(new[] { c }, run.StoredSoldiers);
+            CollectionAssert.IsEmpty(second.Members);
+            Assert.AreEqual(OrganizeCheck.SameSquad, run.CheckStoreSoldier(c), "이미 보관 중이다.");
+
+            Assert.IsTrue(run.TryMoveSoldier(c, second, out int to));
+            Assert.AreEqual(1, to);
+            CollectionAssert.IsEmpty(run.StoredSoldiers);
+        }
+
+        [Test]
+        public void 새_부대는_맨_뒤에_빈_채로_생기고_상한이면_막는다()
+        {
+            Squad<RunUnit> added = run.TryAddSquad();
+            Assert.IsNotNull(added);
+            Assert.AreSame(added, run.Army.Squads[2]);
+            CollectionAssert.IsEmpty(added.Members);
+            Assert.AreEqual(OrganizeCheck.SquadFull, run.CheckAddSquad(), "부대 수 상한 3");
+            Assert.IsNull(run.TryAddSquad());
+        }
+
+        [Test]
+        public void 부대를_없애면_잡졸은_보관으로_대장은_대기로_가고_뒤_부대가_당겨진다()
+        {
+            Squad<RunUnit> third = run.TryAddSquad();
+            RunHero captain = run.AddHero(knight);
+            Assert.IsTrue(run.TrySetCaptain(first, captain));
+
+            Assert.IsTrue(run.TryRemoveSquad(first));
+
+            Assert.AreEqual(2, run.Army.Squads.Count);
+            Assert.AreSame(second, run.Army.Squads[0]);
+            Assert.AreSame(third, run.Army.Squads[1]);
+            CollectionAssert.AreEquivalent(new[] { a, b }, run.StoredSoldiers);
+            CollectionAssert.AreEqual(new[] { captain }, run.ReserveHeroes);
+            Assert.AreEqual(3, run.Soldiers.Count, "잡졸은 런에 남는다.");
         }
 
         [Test]
@@ -139,7 +159,10 @@ namespace ProjectNeo.Tests
             run.CreateBattleInput(1);
             Assert.AreEqual(OrganizeCheck.BattlePending, run.CheckMoveSoldier(a, second));
             Assert.AreEqual(OrganizeCheck.BattlePending, run.CheckSetCaptain(first, null));
-            Assert.IsFalse(run.TryMoveSoldier(a, second, out _, out _));
+            Assert.IsFalse(run.TryMoveSoldier(a, second, out _));
+            Assert.AreEqual(OrganizeCheck.BattlePending, run.CheckStoreSoldier(a));
+            Assert.AreEqual(OrganizeCheck.BattlePending, run.CheckAddSquad());
+            Assert.AreEqual(OrganizeCheck.BattlePending, run.CheckRemoveSquad(first));
         }
     }
 }

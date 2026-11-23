@@ -96,7 +96,7 @@ Last Updated: 2026-11-21 20:58:37 (KST)
 | Minion (Grunt) | Recruited at barracks. Eliminated on death; only fleeing/routed minions return next battle. |
 
 - Surviving heroes and minions fully recover HP before the next battle (2026-11-12). Only wall HP damage carries over.
-- Fallen ally corpses remain on the ground during the next preparation phase (2026-11-12), excluded from squads and run. At the next prep start fallen units leave their scene squads (bodies stay), so they no longer take squad slots (Q-50, 2026-11-13).
+- Fallen ally corpses remain on the ground during the next preparation phase (2026-11-12), excluded from squads and run. At the next prep start fallen units leave their scene squads (bodies stay), so they no longer take squad slots (Q-50, 2026-11-13). Squads left empty stay in the army (UI-07, 2026-11-23); only the organization window removes a squad.
 - **Fallen hero equipment** (Q-31, user 2026-11-19): Equipment is never lost on hero permadeath. When the battle result is applied, the fallen hero's equipped items return to the run stash with their upgrade levels and can be equipped again by the player or another hero (implementation: PREP-08).
 
 ## Active Skills

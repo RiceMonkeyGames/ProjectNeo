@@ -57,45 +57,32 @@ namespace ProjectNeo.Tests
         {
             RunState run = RunState.CreateNew(RunConfig.Create(SquadConfig.Create(4, 4), playerHero, 100, null, new RunSquadSetup()));
             Assert.AreEqual(0, run.RecruitableSoldiers.Count);
-            Assert.AreEqual(RecruitCheck.NotRecruitable, run.CheckBarracksRecruit(melee, null));
-            Assert.IsNull(run.TryRecruitAtBarracks(melee, null, out _));
+            Assert.AreEqual(RecruitCheck.NotRecruitable, run.CheckBarracksRecruit(melee));
+            Assert.IsNull(run.TryRecruitAtBarracks(melee));
         }
 
         [Test]
-        public void 모집하면_비용을_내고_자리가_남은_첫_부대에_들어간다()
+        public void 모집하면_비용을_내고_보관_병사가_된다()
         {
             RunState run = NewRun(100, 4, 2, new RunSquadSetup(melee, melee), new RunSquadSetup(melee));
             CollectionAssert.AreEqual(new[] { melee, ranged }, run.RecruitableSoldiers);
 
-            RunSoldier soldier = run.TryRecruitAtBarracks(ranged, null, out Squad<RunUnit> squad);
+            RunSoldier soldier = run.TryRecruitAtBarracks(ranged);
 
             Assert.IsNotNull(soldier);
             Assert.AreSame(ranged, soldier.Definition);
-            Assert.AreSame(run.Army.Squads[1], squad);
+            Assert.IsNull(run.SquadOf(soldier));
+            CollectionAssert.AreEqual(new[] { soldier }, run.StoredSoldiers);
             Assert.AreEqual(80, run.Wallet.Gold);
         }
 
         [Test]
-        public void 고른_부대로_모집하고_꽉_찼으면_거부하며_돈을_받지_않는다()
+        public void 부대가_모두_찼어도_모집하고_부대를_새로_만들지_않는다()
         {
-            RunState run = NewRun(100, 4, 2, new RunSquadSetup(melee), new RunSquadSetup(melee, melee));
-            Assert.AreEqual(RecruitCheck.NoSquad, run.CheckBarracksRecruit(melee, run.Army.Squads[1]));
-            Assert.IsNull(run.TryRecruitAtBarracks(melee, run.Army.Squads[1], out _));
-            Assert.AreEqual(100, run.Wallet.Gold);
-
-            Assert.IsNotNull(run.TryRecruitAtBarracks(melee, run.Army.Squads[0], out Squad<RunUnit> squad));
-            Assert.AreSame(run.Army.Squads[0], squad);
-            Assert.AreEqual(85, run.Wallet.Gold);
-        }
-
-        [Test]
-        public void 모든_부대가_차면_상한까지_새_부대를_만들고_그다음은_거부한다()
-        {
-            RunState run = NewRun(100, 2, 1, new RunSquadSetup(melee));
-            Assert.IsNotNull(run.TryRecruitAtBarracks(melee, null, out Squad<RunUnit> created));
-            Assert.AreEqual(2, run.Army.Squads.Count);
-            Assert.AreSame(run.Army.Squads[1], created);
-            Assert.AreEqual(RecruitCheck.NoSquad, run.CheckBarracksRecruit(melee, null));
+            RunState run = NewRun(100, 1, 1, new RunSquadSetup(melee));
+            Assert.AreEqual(RecruitCheck.Ok, run.CheckBarracksRecruit(melee));
+            Assert.IsNotNull(run.TryRecruitAtBarracks(melee));
+            Assert.AreEqual(1, run.Army.Squads.Count);
             Assert.AreEqual(85, run.Wallet.Gold);
         }
 
@@ -103,16 +90,16 @@ namespace ProjectNeo.Tests
         public void 비용이_모자라거나_모집할_수_없는_종류거나_전투_중이면_거부한다()
         {
             RunState run = NewRun(19, 4, 4, new RunSquadSetup());
-            Assert.AreEqual(RecruitCheck.NotEnoughFunds, run.CheckBarracksRecruit(ranged, null));
-            Assert.IsNull(run.TryRecruitAtBarracks(ranged, null, out _));
-            Assert.AreEqual(RecruitCheck.NotRecruitable, run.CheckBarracksRecruit(locked, null));
-            Assert.AreEqual(RecruitCheck.NotRecruitable, run.CheckBarracksRecruit(null, null));
+            Assert.AreEqual(RecruitCheck.NotEnoughFunds, run.CheckBarracksRecruit(ranged));
+            Assert.IsNull(run.TryRecruitAtBarracks(ranged));
+            Assert.AreEqual(RecruitCheck.NotRecruitable, run.CheckBarracksRecruit(locked));
+            Assert.AreEqual(RecruitCheck.NotRecruitable, run.CheckBarracksRecruit(null));
             Assert.AreEqual(19, run.Wallet.Gold);
             Assert.AreEqual(0, run.Soldiers.Count);
 
             run.CreateBattleInput(1);
-            Assert.AreEqual(RecruitCheck.BattlePending, run.CheckBarracksRecruit(melee, null));
-            Assert.IsNull(run.TryRecruitAtBarracks(melee, null, out _));
+            Assert.AreEqual(RecruitCheck.BattlePending, run.CheckBarracksRecruit(melee));
+            Assert.IsNull(run.TryRecruitAtBarracks(melee));
             Assert.AreEqual(19, run.Wallet.Gold);
         }
 

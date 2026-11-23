@@ -282,17 +282,25 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
-        public void Capture_DropsSquadsWithNoSoldiersAndNoCaptain_AndDoesNotChangeTheRun()
+        public void Capture_KeepsEmptySquadsAndStoredSoldiers_AndDoesNotChangeTheRun()
         {
             RunState run = RichRun();
             run.Army.TryAddSquad();
+            RunSoldier stored = run.Soldiers[0];
+            Assert.IsTrue(run.Unassign(stored));
             int changes = 0;
             run.Changed += () => changes++;
             RunSnapshot saved = run.Capture(2, content);
-            Assert.AreEqual(2, saved.squads.Count);
+            Assert.AreEqual(3, saved.squads.Count, "empty squads are kept (UI-07)");
             Assert.AreEqual(3, run.Army.Squads.Count);
             Assert.AreEqual(0, changes);
             Assert.AreEqual(2, saved.stageNumber);
+
+            RunState restored = RunState.Restore(saved, content, options, out string error);
+            Assert.IsNotNull(restored, error);
+            Assert.AreEqual(3, restored.Army.Squads.Count);
+            Assert.AreEqual(1, restored.StoredSoldiers.Count);
+            Assert.AreEqual(stored.Id, restored.StoredSoldiers[0].Id);
         }
 
         [Test]
