@@ -94,9 +94,28 @@ namespace ProjectNeo.Siege
 
         public override bool CanReachAnyEnemy()
         {
-            // 성벽에 막히지 않으므로 살아 있는 아군이 있으면 닿는다.
+            // 성벽에 막히지 않으므로 지붕 아래에 있지 않은 살아 있는 아군이 있으면 닿는다.
             foreach (CharacterActor candidate in CharacterActor.ActiveActors)
-                if (Actor.IsEnemy(candidate)) return true;
+                if (Actor.IsEnemy(candidate) && !IsSheltered(candidate)) return true;
+            return false;
+        }
+
+        /// <summary>
+        /// 아군 머리 위 <see cref="FlyerSettings.RoofProbeDistance"/> 안에 성 조각 같은 지붕이 있는지(SIEGE-16).
+        /// 유닛 몸통과 트리거, 다른 씬의 물체는 지붕으로 치지 않는다.
+        /// </summary>
+        public bool IsSheltered(CharacterActor ally)
+        {
+            if (ally == null || flyer == null || flyer.RoofProbeDistance <= 0f) return false;
+            float head = ally.Profile != null ? ally.Profile.Height : 2f;
+            Vector3 start = ally.transform.position + Vector3.up * (head + 0.05f);
+            foreach (RaycastHit hit in Physics.RaycastAll(start, Vector3.up, flyer.RoofProbeDistance, ~0,
+                         QueryTriggerInteraction.Ignore))
+            {
+                if (hit.collider.gameObject.scene != ally.gameObject.scene
+                    || hit.collider.GetComponentInParent<CharacterActor>() != null) continue;
+                return true;
+            }
             return false;
         }
 
@@ -169,7 +188,8 @@ namespace ProjectNeo.Siege
             float ground = world.transform.position.y;
             foreach (CharacterActor candidate in CharacterActor.ActiveActors)
             {
-                if (!Actor.IsEnemy(candidate)) continue;
+                // 지붕 아래 아군(계단방·탑 안·성문 통로)은 날아서 닿지 않으므로 고르지 않는다.
+                if (!Actor.IsEnemy(candidate) || IsSheltered(candidate)) continue;
                 // 같은 거리일 때는 활성 목록에 먼저 들어온 아군을 고른다.
                 candidates.Add(new FlyerTargetCandidate(targets.Count,
                     (candidate.transform.position - transform.position).sqrMagnitude,

@@ -190,5 +190,32 @@ namespace ProjectNeo.Tests
             Assert.Greater(Horizontal(first.transform.position, second.transform.position),
                 first.Actor.Profile.Radius * 2f - 0.05f, "두 비행 적 몸통이 겹치지 않는다.");
         }
+
+        [UnityTest]
+        public IEnumerator RoofedWallTopAlly_IsSkipped_UntilRoofIsGone()
+        {
+            Vector3 top = WallTop(out _);
+            CharacterActor sheltered = PlaceAlly(top);
+            // 계단방·탑 안처럼 머리 위가 막힌 자리. 머리 위 1m에 얇은 판을 둔다.
+            GameObject roof = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            SceneManager.MoveGameObjectToScene(roof, scene);
+            roof.transform.position = top + Vector3.up * (sheltered.Profile.Height + 1f);
+            roof.transform.localScale = new Vector3(4f, 0.2f, 4f);
+            player.transform.position = world.transform.TransformPoint(new Vector3(world.Grid.CellSize * 2.5f, 0f, world.Grid.CellSize * 2f));
+            Physics.SyncTransforms();
+            FlyerBrain flyer = Spawn(Outside(top, 12f));
+            Assert.IsTrue(flyer.IsSheltered(sheltered));
+            Assert.IsFalse(flyer.IsSheltered(player));
+            for (int frame = 0; frame < 60 && flyer.Target == null; frame++) yield return null;
+            Assert.AreSame(player, flyer.Target, "지붕 아래 아군은 성벽 위여도 노리지 않는다.");
+
+            Object.Destroy(roof);
+            yield return null;
+            Physics.SyncTransforms();
+            Assert.IsFalse(flyer.IsSheltered(sheltered));
+            float interval = director.Settings.AttackerDecisionInterval;
+            for (int frame = 0; frame < Mathf.CeilToInt(interval * 30f) + 30 && flyer.Target != sheltered; frame++) yield return null;
+            Assert.AreSame(sheltered, flyer.Target, "지붕에서 나오면 다시 성벽 위 아군을 먼저 노린다.");
+        }
     }
 }

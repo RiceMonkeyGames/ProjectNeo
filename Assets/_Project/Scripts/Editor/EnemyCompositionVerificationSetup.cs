@@ -33,7 +33,7 @@ namespace ProjectNeo.Editor
             var variantSettings = Save(FlyerSettings.Create(baseSettings.TargetStrategy, baseSettings.Movement, hover,
                 baseSettings.CruiseClearance, baseSettings.MeleeExposureAltitude, baseSettings.WallTopMinimumHeight,
                 baseSettings.GroundProbeDistance, baseSettings.CorpseFallAcceleration, baseSettings.HoldInset,
-                baseSettings.TargetsSiegeWeapons, baseSettings.HoverSeparation),
+                baseSettings.TargetsSiegeWeapons, baseSettings.HoverSeparation, baseSettings.RoofProbeDistance),
                 Data + "FlyerHighArcherVerification.asset");
             GameObject instance = UnityEngine.Object.Instantiate(baseFlyer);
             GameObject variant;
