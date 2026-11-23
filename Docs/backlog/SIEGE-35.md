@@ -1,9 +1,9 @@
 ---
 id: SIEGE-35
 title: 7.5m Footprint Grid Spike (5m Storey Height)
-status: Waiting for Prerequisite
+status: In Progress
 assignee: youngho
-branch:
+branch: feature/siege-35
 area: SIEGE
 depends_on: [SIEGE-27]
 created: 2026-11-23
