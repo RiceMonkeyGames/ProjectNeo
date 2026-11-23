@@ -478,11 +478,7 @@ namespace ProjectNeo.Combat
             CharacterActor threat = FindMeleeThreat();
             if (threat == null) return false;
             if (!ReferenceEquals(threat, Target)) SwitchTarget(threat, false);
-            if (TryBeginFallback(threat, holding)) return true;
-            // 물러날 곳을 못 찾았으면 잠시 뒤에 다시 찾는다(판단 주기마다 길찾기를 하지 않게).
-            if (settings.RangedFallbackDistance > 0f && fallbackCooldownRemaining <= 0f)
-                fallbackCooldownRemaining = settings.DecisionInterval * 2f;
-            return false;
+            return TryBeginFallback(threat, holding);
         }
 
         // 진행 중인 후퇴를 이어 간다. 판단 주기의 대상 갱신(접근 경로 적용)보다 먼저 불러야 후퇴 경로를 덮어쓰지 않는다.
@@ -534,21 +530,36 @@ namespace ProjectNeo.Combat
                 || actor.IsOnLadder) return false;
             Vector3 self = transform.position;
             Vector3 threatPosition = threat.transform.position;
-            Vector3 point = RangedMeleeThreatRules.FallbackPoint(self, threatPosition, -transform.forward,
-                settings.RangedFallbackDistance);
+            // 정반대 방향부터 ±45°, ±90° 순서로 찾아 성벽 통로에서는 통로를 따라 비켜선다(COMBAT-16).
+            for (int i = 0; i < RangedMeleeThreatRules.FallbackCandidateCount; i++)
+            {
+                Vector3 point = RangedMeleeThreatRules.FallbackPoint(self, threatPosition, -transform.forward,
+                    settings.RangedFallbackDistance, RangedMeleeThreatRules.FallbackAngle(i));
+                if (TryFallbackPath(self, threatPosition, point, holding)) return StartFallback();
+            }
+            // 어느 쪽에도 물러날 곳이 없으면 RangedFallbackCooldown 동안 서서 쏜다(판단 주기마다 길찾기를 하지 않게).
+            fallbackCooldownRemaining = settings.RangedFallbackCooldown;
+            return false;
+        }
+
+        // 후보 지점이 쓸 수 있으면 path에 경로를 담고 true. 같은 층, 위협에서 더 멀어짐, 자리 지키기 거리,
+        // 짧은 경로, HoldMaxDescent 아래로 내려가지 않음을 모두 만족해야 한다.
+        bool TryFallbackPath(Vector3 self, Vector3 threatPosition, Vector3 point, bool holding)
+        {
             var filter = new NavMeshQueryFilter { agentTypeID = agent.agentTypeID, areaMask = agent.areaMask };
             if (!NavMesh.SamplePosition(point, out NavMeshHit hit, 1f, filter)) return false;
             if (!RangedMeleeThreatRules.AllowsFallback(self, hit.position, settings.MeleeSlotLevelTolerance, holding,
                     HoldPost, settings.RangedFallbackHoldLeash)) return false;
-            // 위협에서 실제로 더 멀어지는 지점만 쓴다.
-            Vector3 before = self - threatPosition, after = hit.position - threatPosition;
-            before.y = 0f; after.y = 0f;
-            if (after.sqrMagnitude <= before.sqrMagnitude) return false;
+            if (!RangedMeleeThreatRules.IncreasesSeparation(self, threatPosition, hit.position)) return false;
             if (!agent.CalculatePath(hit.position, path) || path.status != NavMeshPathStatus.PathComplete) return false;
             if (!RangedMeleeThreatRules.IsShortPath(CalculatePathLength(path), Vector3.Distance(self, hit.position), 2f))
                 return false;
             float floor = (holding ? HoldPost.y : self.y) - settings.HoldMaxDescent;
-            if (settings.HoldMaxDescent > 0f && !HoldDescentRule.StaysAbove(path.corners, floor)) return false;
+            return settings.HoldMaxDescent <= 0f || HoldDescentRule.StaysAbove(path.corners, floor);
+        }
+
+        bool StartFallback()
+        {
             agent.stoppingDistance = 0f;
             agent.SetPath(path);
             agent.isStopped = false;

@@ -179,6 +179,87 @@ namespace ProjectNeo.Tests
             Assert.Less(Vector3.Distance(start, archer.transform.position), 0.3f, "stays on post");
         }
 
+        // 본 바닥과 떨어진 곳에 바닥과 높이 3m 상자(성벽 통로/기둥)를 만들고 NavMesh를 따로 굽는다. 상자 윗면 중심(origin 기준)을 돌려준다.
+        Vector3 BuildRaisedBlock(Vector3 localCenter, Vector3 blockSize)
+        {
+            var geometry = new GameObject("RaisedGeometry");
+            var ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            ground.transform.position = origin + localCenter + new Vector3(0f, -0.5f, 0f);
+            ground.transform.localScale = new Vector3(30f, 1f, 30f);
+            ground.transform.SetParent(geometry.transform, true);
+            var block = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            block.transform.position = origin + localCenter + new Vector3(0f, blockSize.y * 0.5f, 0f);
+            block.transform.localScale = blockSize;
+            block.transform.SetParent(geometry.transform, true);
+            var surface = geometry.AddComponent<NavMeshSurface>();
+            surface.collectObjects = CollectObjects.Children;
+            surface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
+            surface.BuildNavMesh();
+            assets.Add(surface.navMeshData);
+            return localCenter + new Vector3(0f, blockSize.y, 0f);
+        }
+
+        [UnityTest]
+        public IEnumerator HoldArcherOnWalkway_ThreatFromSide_SidestepsAlongWalkway()
+        {
+            // 폭 3m 통로(걸을 수 있는 폭 약 2m). 근접 적이 앞옆에 붙어 정반대 방향은 통로 밖 허공이라 옆으로 비켜서야 한다.
+            Vector3 top = BuildRaisedBlock(new Vector3(200f, 0f, 0f), new Vector3(16f, 3f, 3f));
+            CharacterActor archer = Unit("Archer", CombatTeam.Allied, top, AttackKind.Projectile, true);
+            var ai = archer.GetComponent<UnitCombatAI>();
+            ai.SetDirective(UnitDirective.Hold);
+            yield return null;
+            Vector3 start = archer.transform.position;
+            CharacterActor rusher = Unit("Rusher", CombatTeam.Hostile, top + new Vector3(0.5f, 0f, 1f),
+                AttackKind.Melee, false);
+            float before = HorizontalDistance(archer.transform.position, rusher.transform.position);
+            for (int i = 0; i < 30 && ai.Target != rusher; i++) yield return null;
+            Assert.AreSame(rusher, ai.Target, "switches to the melee threat");
+            bool fellBack = false;
+            for (int i = 0; i < 90; i++)
+            {
+                fellBack |= ai.IsFallingBack;
+                yield return null;
+            }
+            Assert.IsTrue(fellBack, "finds a sidestep along the walkway");
+            Vector3 end = archer.transform.position;
+            Assert.AreEqual(start.y, end.y, 0.3f, "stays on the walkway");
+            Assert.Less(Mathf.Abs(end.z - start.z), 1.2f, "stays inside the walkway width");
+            Assert.Less(end.x, start.x - 1.5f, "moves along the walkway, away from the threat side");
+            Assert.Greater(HorizontalDistance(end, rusher.transform.position), before + 1.5f, "separation grows");
+            Assert.LessOrEqual(HorizontalDistance(end, ai.HoldPost), aiSettings.RangedFallbackHoldLeash + 0.3f,
+                "within the hold leash");
+        }
+
+        [UnityTest]
+        public IEnumerator HoldArcherOnPillar_NoRoomInAnyDirection_StaysAndShoots()
+        {
+            // 3m 기둥 위(걸을 수 있는 곳 약 2m). 다섯 방향 후보 모두 허공이라 물러나지 않고 대상만 바꾼다.
+            Vector3 top = BuildRaisedBlock(new Vector3(-200f, 0f, 0f), new Vector3(3f, 3f, 3f));
+            Assert.IsTrue(NavMesh.SamplePosition(origin + top, out _, 0.3f, NavMesh.AllAreas), "pillar top has NavMesh");
+            CharacterActor archer = Unit("Archer", CombatTeam.Allied, top, AttackKind.Projectile, true);
+            var ai = archer.GetComponent<UnitCombatAI>();
+            ai.SetDirective(UnitDirective.Hold);
+            yield return null;
+            Vector3 start = archer.transform.position;
+            CharacterActor rusher = Unit("Rusher", CombatTeam.Hostile, top + new Vector3(0f, 0f, 1f),
+                AttackKind.Melee, false);
+            for (int i = 0; i < 30 && ai.Target != rusher; i++) yield return null;
+            Assert.AreSame(rusher, ai.Target, "switches to the melee threat");
+            for (int i = 0; i < 90; i++)
+            {
+                Assert.IsFalse(ai.IsFallingBack, "no fallback point on a pillar");
+                yield return null;
+            }
+            Assert.Less(Vector3.Distance(start, archer.transform.position), 0.3f, "stays on the pillar");
+        }
+
+        static float HorizontalDistance(Vector3 a, Vector3 b)
+        {
+            a.y = 0f;
+            b.y = 0f;
+            return Vector3.Distance(a, b);
+        }
+
         [UnityTest]
         public IEnumerator HoldWithFormationFacing_TurnsBackWhenIdle()
         {
