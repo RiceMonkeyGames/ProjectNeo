@@ -9,7 +9,7 @@ namespace ProjectNeo.Walls
     [CreateAssetMenu(menuName = "ProjectNeo/Construction/Castle Kit Settings")]
     public sealed class CastleKitSettings : ScriptableObject
     {
-        const int PieceCount = 27;
+        const int PieceCount = 32;
 
         [SerializeField] GameObject[] prefabs = new GameObject[PieceCount];
         // 킷 한 칸(벽판 폭·층 높이). 칸 크기가 이와 다르면 조각을 고르게 늘리거나 줄인다.
@@ -40,6 +40,35 @@ namespace ProjectNeo.Walls
         public float TowerOverhang => towerOverhang;
         public float TowerCapOffset => towerCapOffset;
         public float TowerCapScale => towerCapScale;
+
+        // 3층 성벽 계단 방(SIEGE-27, 모듈 기준 m): 면에서 안쪽 벽면까지(Wall_01 두께 절반), 층참 깊이, 바닥·층참 판 두께, 경사 판 두께.
+        // 층참 밑으로 걸어 들어오므로(맨 아래 방 층의 맞은편 문) 층참 아래 높이 = 반 층 − 판 두께가 유닛 키(2m)보다 커야 한다.
+        [SerializeField, Min(0f)] float roomWallInset = 0.31f;
+        [SerializeField, Min(0.5f)] float roomLandingDepth = 1f;
+        [SerializeField, Min(0.02f)] float roomSlabThickness = 0.2f;
+        [SerializeField, Min(0.02f)] float roomRampThickness = 0.15f;
+        // 천장 구멍을 둘째 계단 발치에서 층참 쪽으로 더 넓히는 거리. 층참에서 둘째 계단을 오를 때 플레이어 머리(반경 0.4m 몸통)가
+        // 천장 끝에 걸리지 않게 한다(0이면 반 층 오른 곳에서 걸린다).
+        [SerializeField, Min(0f)] float roomHoleOverhang = 0.6f;
+        public float RoomHoleOverhang => roomHoleOverhang;
+        // 계단 한 줄의 폭(사용자 요청 2026-11-23: 맞붙던 2.19m의 약 2/3). 두 줄 사이가 발치에서 층참 밑까지 바닥 통로로 남는다.
+        [SerializeField, Min(0.8f)] float roomFlightWidth = 1.46f;
+        public float RoomFlightWidth => roomFlightWidth;
+        // 계단 모델(Stairs_Wood_Straight_01) 기둥 두 개의 자리(모델 로컬 x, z). 둘째 계단 아래 나무 기둥을 여기에 맞춘다.
+        [SerializeField] Vector2 stairPostNear = new Vector2(0.05f, 0.06f);
+        [SerializeField] Vector2 stairPostFar = new Vector2(0.07f, -1.97f);
+        // 나무 기둥 모델(SM_Bld_House_WoodBeam_01) 높이(모듈 기준 m).
+        [SerializeField, Min(0.1f)] float roomPostHeight = 2.5f;
+        public Vector2 StairPostNear => stairPostNear;
+        public Vector2 StairPostFar => stairPostFar;
+        public float RoomPostHeight => roomPostHeight;
+        // 나무 기둥 굵기 ÷ 계단 모델 기둥 굵기(0.32m ÷ 약 0.3m). 계단 배율을 곱해 두 기둥이 같은 굵기로 이어진다.
+        [SerializeField, Min(0.1f)] float roomPostThickness = 0.95f;
+        public float RoomPostThickness => roomPostThickness;
+        public float RoomWallInset => roomWallInset;
+        public float RoomLandingDepth => roomLandingDepth;
+        public float RoomSlabThickness => roomSlabThickness;
+        public float RoomRampThickness => roomRampThickness;
 
         public GameObject Prefab(CastleKitPiece piece)
         {

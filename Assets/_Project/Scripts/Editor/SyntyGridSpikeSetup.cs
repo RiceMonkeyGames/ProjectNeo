@@ -69,6 +69,12 @@ namespace ProjectNeo.Editor
             (CastleKitPiece.TowerCorbel, "SM_Bld_Castle_Wall_Corbels_01", Body.None),
             (CastleKitPiece.TowerCorbelCorner, "SM_Bld_Castle_Wall_Corbels_Corner_01", Body.None),
             (CastleKitPiece.TowerCap, "SM_Bld_Castle_Battlements_Pillar_01", Body.Exact),
+            // 3층 성벽 계단 방(SIEGE-27): 반 층 계단 외형만. 밑으로 걸어 지나가도록 충돌은 킷의 경사 판(RoomCollider)이 맡는다.
+            (CastleKitPiece.RoomStairs, "SM_Bld_Stairs_Wood_Straight_01", Body.None),
+            // 둘째 계단 기둥을 바닥까지 잇는 나무 기둥(2.5m, 외형 전용).
+            (CastleKitPiece.RoomPost, "House/SM_Bld_House_WoodBeam_01", Body.None),
+            // 계단 방 문으로만 들어오는 모서리의 꺾임 계단: 외형만, 옆으로 올라타도록 충돌은 경사 판이 맡는다.
+            (CastleKitPiece.CornerStairsOpen, "SM_Bld_Stairs_Wood_Corner_01", Body.None),
         };
         const string KeysHint = "시험 키  P: 쇠창살 올림/내림 · O: 성문 열기/닫기 · B: 성문 부수기/고치기 · K: 조준한 성벽·계단·망루 무너뜨리기";
 
@@ -83,7 +89,7 @@ namespace ProjectNeo.Editor
             CombatPrototypeSetup.EnsureFolder(KitFolder);
 
             CreateKit();
-            Replace(BuildGridDefinition.Create(16, 14, Cell, 3, forbidValleys: true), Data + "/Grid.asset");
+            Replace(BuildGridDefinition.Create(16, 14, Cell, 3, forbidValleys: true, groundStairsOnly: true), Data + "/Grid.asset");
             Material stone = CombatPrototypeSetup.MaterialAsset("ConstructionStone", new Color(0.58f, 0.66f, 0.75f));
             Replace(BuildPieceDefinition.Create(BuildPieceKind.Wall, "성벽", Vector2Int.one, Cell,
                 prefab: KitStructurePrefab("KitWall", stone)), Data + "/Wall.asset");
@@ -192,6 +198,11 @@ namespace ProjectNeo.Editor
             seeds.Add(new InitialBuildPiece { definition = bastion, cell = new Vector2Int(5, North + 1) });
             // 북쪽 2층 줄(9~10) 바깥의 망루: 이웃 성벽보다 한 층 높은 3층(맨윗층은 통로 높이의 방, 지붕에 무기·궁수).
             for (int tier = 0; tier < 3; tier++) seeds.Add(new InitialBuildPiece { definition = tower, cell = new Vector2Int(9, North + 1) });
+            // 남쪽 줄 계단 방 사례(SIEGE-27): x 3~12 높이 1 3 1 1 3 2 2 3 2 1(골짜기 없음).
+            // 4 = 1-3-1(아래 방 양쪽 문), 7 = 1-3-2(서쪽 아래 문, 동쪽 위 문), 10 = 2-3-2(위 방 하나), 11→12 = 2-1 바깥 계단.
+            int[] south = { 1, 3, 1, 1, 3, 2, 2, 3, 2, 1 };
+            for (int x = West; x <= East; x++)
+                for (int storey = 1; storey < south[x - West]; storey++) Wall(x, South);
             return seeds.ToArray();
         }
 
@@ -249,7 +260,9 @@ namespace ProjectNeo.Editor
         // 원본 프리팹과 연결하지 않은 복사본(재질은 프로젝트 URP 복사본). Solid만 충돌체를 남기고, 없으면 메쉬 충돌체를 단다.
         static GameObject KitCopy(string model, string name, Body body, Dictionary<Material, Material> converted)
         {
-            var source = Required<GameObject>(Castle + model + ".prefab");
+            // 모델 이름에 폴더가 있으면(House/...) 팩 Prefabs 폴더 기준, 없으면 Castle 폴더.
+            string path = model.Contains("/") ? Castle.Substring(0, Castle.Length - "Castle/".Length) + model : Castle + model;
+            var source = Required<GameObject>(path + ".prefab");
             GameObject instance = Object.Instantiate(source);
             instance.name = name;
             try

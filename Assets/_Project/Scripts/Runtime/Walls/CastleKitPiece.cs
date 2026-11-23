@@ -51,5 +51,28 @@ namespace ProjectNeo.Walls
         TowerCorbelCorner = 25,
         /// <summary>망루 지붕 모서리의 높은 흉벽 기둥(Battlements_Pillar_01, 1.2배).</summary>
         TowerCap = 26,
+        /// <summary>3층 성벽 계단 방의 반 층 계단 한 줄(Stairs_Wood_Straight_01, 외형 전용. 충돌은 <see cref="RoomCollider"/>, SIEGE-27).</summary>
+        RoomStairs = 27,
+        /// <summary>
+        /// 프리팹 없는 상자 충돌체(SIEGE-27 계단 방의 바닥·층참·경사). <see cref="CastleKitPlacement.Position"/>이 상자 가운데,
+        /// <see cref="CastleKitPlacement.StretchX"/> × <see cref="CastleKitPlacement.ScaleY"/> × <see cref="CastleKitPlacement.StretchZ"/>가 크기(m),
+        /// <see cref="CastleKitPlacement.Tilt"/>가 로컬 z축 기울기(°)다.
+        /// </summary>
+        RoomCollider = 28,
+        /// <summary>
+        /// 프리팹 없는 양방향 길찾기 연결(SIEGE-27 계단 방의 층참·발치 띠를 가로지른다). <see cref="CastleKitPlacement.Position"/>이 가운데,
+        /// 로컬 +x(<see cref="CastleKitPlacement.Yaw"/>)로 <see cref="CastleKitPlacement.StretchX"/> 길이, <see cref="CastleKitPlacement.StretchZ"/> 폭(m).
+        /// </summary>
+        RoomLink = 29,
+        /// <summary>
+        /// 계단 방 둘째 계단의 기둥을 바닥까지 잇는 나무 기둥(SM_Bld_House_WoodBeam_01: 기준점 바닥 가운데, 높이 2.5m, 외형 전용).
+        /// 계단 모델 기둥은 그 계단의 아래 끝 높이(층참)까지만 내려와, 그 아래를 이어 준다.
+        /// </summary>
+        RoomPost = 30,
+        /// <summary>
+        /// 옆으로 올라타는 꺾임 계단의 외형(<see cref="CornerStairs"/>와 같은 모델, 충돌체 없음). 계단 방 문으로만 들어오는 모서리에 쓰며,
+        /// 충돌은 옆판 없는 경사 판(<see cref="RoomCollider"/>)이 맡는다(SIEGE-27).
+        /// </summary>
+        CornerStairsOpen = 31,
     }
 }

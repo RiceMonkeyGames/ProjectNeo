@@ -17,3 +17,4 @@ MonoBehaviour:
   cellSize: 5
   maxLevels: 3
   forbidValleys: 1
+  groundStairsOnly: 1

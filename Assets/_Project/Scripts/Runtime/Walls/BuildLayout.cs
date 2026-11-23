@@ -21,6 +21,8 @@ namespace ProjectNeo.Walls
         TowerNeedsWall = 13,
         /// <summary>망루 위에는 망루 층만, 망루 층은 망루 위에만 쌓는다(SIEGE-14).</summary>
         TowerStack = 14,
+        /// <summary>계단은 땅 위에만 놓는다(SIEGE-27, <see cref="BuildGridDefinition.GroundStairsOnly"/>).</summary>
+        StairsGroundOnly = 15,
     }
 
     public sealed class BuildPlacement
@@ -136,6 +138,11 @@ namespace ProjectNeo.Walls
                     else if (height != common || !Mathf.Approximately(surface, commonElevation)) uneven = true;
                 }
             if (uneven) return PlacementIssue.UnevenSupport;
+            if (definition.Kind == BuildPieceKind.Stairs && grid.GroundStairsOnly && common > 0)
+            {
+                level = common; elevation = commonElevation;
+                return PlacementIssue.StairsGroundOnly;
+            }
             if (definition.Kind == BuildPieceKind.Gate && common > 0) return PlacementIssue.ReservedGate;
             level = common; elevation = commonElevation;
             if (grid.ForbidValleys && ValleyFill(definition, cell, rotation, level, elevation) == 0) return PlacementIssue.Valley;
