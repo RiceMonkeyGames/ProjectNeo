@@ -1,9 +1,9 @@
 ---
 id: SIEGE-31
 title: Autonomous Ally Wall-Top Ladder Push & Upper-Exit Chokepoint Defense
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: SeongminHwang
+branch: feature/siege-31
 area: SIEGE
 depends_on: []
 created: 2026-11-23
