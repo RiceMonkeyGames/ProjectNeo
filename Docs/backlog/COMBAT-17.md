@@ -1,9 +1,9 @@
 ---
 id: COMBAT-17
 title: Melee Target Slot Congestion Penalty & Ranged Overkill Spread
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: SeongminHwang
+branch: feature/combat-17
 area: COMBAT
 depends_on: []
 created: 2026-11-23
