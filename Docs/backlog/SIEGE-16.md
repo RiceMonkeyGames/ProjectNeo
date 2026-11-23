@@ -1,9 +1,9 @@
 ---
 id: SIEGE-16
 title: Flyer Cannon Targeting & Hover Slot Separation
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: SeongminHwang
+branch: feature/siege-16
 area: SIEGE
 depends_on: []
 created: 2026-11-22
