@@ -178,5 +178,27 @@ namespace ProjectNeo.Tests
             Assert.IsNull(ai.Opening);
             Assert.IsNull(opening.Claimant);
         }
+
+        [UnityTest]
+        public IEnumerator HoldArcher_ReleasesOpening_EvenWhenSquadNeighborhoodClears()
+        {
+            CharacterActor archer = Unit("WallArcher", CombatTeam.Allied, new Vector3(-3f, GateHeight, 0f), ai: true);
+            var ai = archer.GetComponent<UnitCombatAI>();
+            Vector3 post = archer.transform.position;
+            ai.SetDirective(UnitDirective.Hold, post);
+            yield return null;
+
+            CharacterActor enemy = Unit("GateBreaker", CombatTeam.Hostile, GateBase, facingYaw: 180f);
+            for (int i = 0; i < 300 && ai.Opening == null; i++) yield return null;
+            Assert.AreSame(opening, ai.Opening, "궁수가 성문 앞 적을 보고 구멍을 점유해야 한다.");
+            Assert.AreSame(ai, opening.Claimant);
+
+            // 적이 제거되고 동시에 분대 대기 슬립(squadNeighborhoodClear=true)이 걸려도 구멍 점유를 놓아야 한다(BUG-ai-core-defects).
+            enemy.Health.TakeDamage(9999f);
+            ai.SetSquadNeighborhoodClear(true);
+            for (int i = 0; i < 120 && ai.Opening != null; i++) yield return null;
+            Assert.IsNull(ai.Opening, "분대 슬립 상태여도 적이 없으면 마치콜레이션 점유를 해제해야 한다.");
+            Assert.IsNull(opening.Claimant, "해제 후 다른 아군이 쓸 수 있도록 Claimant가 비어야 한다.");
+        }
     }
 }

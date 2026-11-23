@@ -23,6 +23,7 @@ namespace ProjectNeo.Siege
         float? nextFacing;
         NavMeshPath path;
         public bool IsTraversing { get; private set; }
+        public SiegeLadder AssignedLadder => ladder;
         public string PlayerHint { get; private set; } = "";
         public bool HasInterruptNotice => interruptNoticeTimer > 0f;
         public ActionPoise InterruptPoise => interaction != null
@@ -111,6 +112,7 @@ namespace ProjectNeo.Siege
                 if (agent.CalculatePath(ai.MoveDestination, path) && path.status == NavMeshPathStatus.PathComplete) return false;
                 ladder = FindRoute(ai.MoveDestination, out ascending);
                 if (ladder == null) return false;
+                ladder.Reserve(actor);
             }
             if (!ladder.isActiveAndEnabled || !ladder.HasWall) { CancelWaiting(); return false; }
             if (ladder.World.IsRebuilding || ladder.World.RebuildPending) return true;
@@ -138,7 +140,7 @@ namespace ProjectNeo.Siege
                 if (!agent.CalculatePath(entry, path) || path.status != NavMeshPathStatus.PathComplete) continue;
                 if (!NavMesh.CalculatePath(exit, destination, filter, path) || path.status != NavMeshPathStatus.PathComplete) continue;
                 float distance = Vector3.Distance(transform.position, entry) + Vector3.Distance(exit, destination)
-                    + candidate.Waiting.Count * candidate.Settings.LadderCrowdPenalty;
+                    + candidate.PlannedCrowdExcluding(actor) * candidate.Settings.LadderCrowdPenalty;
                 if (distance >= score) continue;
                 score = distance; best = candidate; up = ascent;
             }

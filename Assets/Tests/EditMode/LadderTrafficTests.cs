@@ -33,5 +33,32 @@ namespace ProjectNeo.Tests
             Assert.IsFalse(traffic.TryEnter(null));
             Assert.IsTrue(traffic.TryEnter(first));
         }
+
+        [Test]
+        public void ApproachReservation_CountsTowardPlannedLoad_AndClearsOnJoinOrLeave()
+        {
+            var traffic = new LadderTraffic<object>();
+            var a = new object(); var b = new object(); var c = new object();
+            traffic.Reserve(a);
+            traffic.Reserve(a); // duplicate ignored
+            traffic.Reserve(b);
+            Assert.AreEqual(2, traffic.Approaching.Count);
+            Assert.AreEqual(2, traffic.PlannedLoad());
+            Assert.AreEqual(1, traffic.PlannedLoad(a), "excludes self");
+            Assert.AreEqual(2, traffic.PlannedLoad(c));
+
+            // Arriving at entry moves a from Approaching into Occupant without double counting.
+            Assert.IsTrue(traffic.TryEnter(a));
+            Assert.AreEqual(1, traffic.Approaching.Count);
+            Assert.AreEqual(2, traffic.PlannedLoad());
+            Assert.AreEqual(1, traffic.PlannedLoad(a));
+            Assert.AreEqual(1, traffic.PlannedLoad(b));
+
+            traffic.Leave(b);
+            Assert.AreEqual(0, traffic.Approaching.Count);
+            Assert.AreEqual(1, traffic.PlannedLoad());
+            traffic.Clear();
+            Assert.AreEqual(0, traffic.PlannedLoad());
+        }
     }
 }
