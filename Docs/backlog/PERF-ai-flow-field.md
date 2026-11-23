@@ -1,9 +1,9 @@
 ---
 id: PERF-ai-flow-field
 title: Hybrid Flow Field Navigation for Far-Distance (LOD 2) & Mass Siege Marching
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: 신용준
+branch: feature/perf-ai-flow-field
 area: PERF
 depends_on: []
 created: 2026-11-23
