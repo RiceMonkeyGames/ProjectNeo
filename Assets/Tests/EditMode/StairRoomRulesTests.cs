@@ -312,5 +312,44 @@ namespace ProjectNeo.Tests
             Assert.IsTrue(free.TryPlace(wall, new Vector2Int(4, 4), 0, out _));
             Assert.AreEqual(PlacementIssue.None, free.Check(stairs, new Vector2Int(4, 4), 0), "other grids keep stairs on walls");
         }
+
+        // SIEGE-19: x = 4가 성문 + 성벽 두 층(3층 성문 칸), 양옆 x = 3, 5는 side층 성벽.
+        void GateColumn(int side)
+        {
+            BuildPieceDefinition gate = Track(BuildPieceDefinition.Create(BuildPieceKind.Gate, "gate", Vector2Int.one, Cell));
+            Assert.IsTrue(layout.TryPlace(gate, new Vector2Int(4, 3), 0, out _, fixedGate: true));
+            for (int s = 0; s < 2; s++) Assert.IsTrue(layout.TryPlace(wall, new Vector2Int(4, 3), 0, out _), $"gate storey {s + 2}");
+            for (int s = 0; s < side; s++)
+            {
+                Assert.IsTrue(layout.TryPlace(wall, new Vector2Int(3, 3), 0, out _));
+                Assert.IsTrue(layout.TryPlace(wall, new Vector2Int(5, 3), 0, out _));
+            }
+        }
+
+        [Test]
+        public void GateColumn_BesideTwoStoreyWalkways_RoomsFromTheWalkwayUp()
+        {
+            GateColumn(2);
+            StairRoom room = Room(4);
+            Assert.AreEqual(2, room.BaseLevel, "floor at 10m beside two-storey walkways");
+            Assert.AreEqual(2, room.TopLevel);
+            Assert.IsFalse(room.Contains(0) || room.Contains(1), "the gate and the storey above it stay solid");
+            Assert.AreEqual((1 << East) | (1 << West), room.Doors(2));
+            Assert.IsTrue(StairRoomRules.IsTallWall(layout, unfinished, new Vector2Int(4, 3)), "no outside stairs up to the gate column");
+            Dress();
+            Assert.IsFalse(Of(CastleKitPiece.WallStairs).Any(), "the room replaces the outside stairs");
+        }
+
+        [Test]
+        public void GateColumn_BesideOneStoreyWalkways_RoomsFromTheStoreyAboveTheGate()
+        {
+            GateColumn(1);
+            StairRoom room = Room(4);
+            Assert.AreEqual(1, room.BaseLevel, "like a wall column: the raised portcullis hides in the outer wall panel");
+            Assert.AreEqual(2, room.TopLevel);
+            Assert.IsFalse(room.Contains(0), "the gate storey is never a room");
+            Assert.AreEqual((1 << East) | (1 << West), room.Doors(1));
+            Assert.IsTrue(StairRoomRules.IsTallWall(layout, unfinished, new Vector2Int(4, 3)));
+        }
     }
 }

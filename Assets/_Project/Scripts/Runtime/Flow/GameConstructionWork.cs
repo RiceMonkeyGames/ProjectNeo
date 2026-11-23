@@ -140,6 +140,19 @@ namespace ProjectNeo.Flow
             queue.RemoveCompleted();
         }
 
+        /// <summary>
+        /// 시험용(<see cref="GameDevKeys"/>): 준비 시계를 쓰지 않고 남은 주문을 모두 끝낸다. 끝낸 주문 수를 알린다.
+        /// </summary>
+        public int FinishAllForTesting()
+        {
+            int pending = queue.PendingCount;
+            if (pending == 0) return 0;
+            queue.SetCrews(Time != null ? Time.WorkCrews : 1);
+            queue.Advance(queue.HoursToFinishAll() + 0.01f);
+            queue.RemoveCompleted();
+            return pending;
+        }
+
         void OnProgressed(WorkOrder order)
         {
             if (order.Kind == WorkKind.Build && targets.TryGetValue((order.Target, order.Key), out Component target))
