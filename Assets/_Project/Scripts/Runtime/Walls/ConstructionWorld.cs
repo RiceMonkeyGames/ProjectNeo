@@ -503,6 +503,7 @@ namespace ProjectNeo.Walls
             Physics.SyncTransforms();
             yield return surface.UpdateNavMesh(surface.navMeshData);
             NavigationRevision++;
+            BattleFlowFieldService.Invalidate();
             IsRebuilding = false;
         }
 

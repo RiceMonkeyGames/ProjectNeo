@@ -85,6 +85,12 @@ namespace ProjectNeo.Combat
         [SerializeField, Min(1f)] float lod0Distance = 25f;
         [SerializeField, Min(2f)] float lod1Distance = 60f;
         [SerializeField, Min(0.05f)] float lodEvaluationInterval = 0.5f;
+        // 원거리(LOD 2) 하이브리드 Flow Field 길찾기(PERF-ai-flow-field).
+        [SerializeField] bool enableFlowField = true;
+        // 대상까지 거리가 이 값(m) 이상이고 LOD 2인 지상 유닛은 개별 CalculatePath 대신 공유 Flow Field를 따라 나아간다.
+        [SerializeField, Min(4f)] float flowFieldMinDistance = 18f;
+        // Flow Field 한 걸음 앞으로 내딛는 웨이포인트 거리(m).
+        [SerializeField, Min(2f)] float flowFieldStepDistance = 8f;
         public bool RangedThreatPriority => rangedThreatPriority;
         public float RangedMeleeThreatRadius => rangedMeleeThreatRadius;
         public float RangedFallbackDistance => rangedFallbackDistance;
@@ -100,6 +106,9 @@ namespace ProjectNeo.Combat
         public float Lod0Distance => Mathf.Max(1f, lod0Distance);
         public float Lod1Distance => Mathf.Max(Lod0Distance, lod1Distance);
         public float LodEvaluationInterval => Mathf.Max(0.05f, lodEvaluationInterval);
+        public bool EnableFlowField => enableFlowField;
+        public float FlowFieldMinDistance => Mathf.Max(4f, flowFieldMinDistance);
+        public float FlowFieldStepDistance => Mathf.Max(2f, flowFieldStepDistance);
 
         /// <summary>위협 종류의 거리 배율. 우선순위를 끄면 언제나 1이다.</summary>
         public float ThreatDistanceFactor(TargetThreat threat) => rangedThreatPriority
@@ -129,7 +138,8 @@ namespace ProjectNeo.Combat
             float rangedThreatDistanceFactor = 0.75f, int maxPathCandidatesPerTick = 4,
             int maxPathQueriesPerFrame = 0, int decisionStaggerBuckets = 8, float spatialCellSize = 8f,
             bool enableAiLod = true, float lod0Distance = 25f, float lod1Distance = 60f,
-            float lodEvaluationInterval = 0.5f)
+            float lodEvaluationInterval = 0.5f, bool enableFlowField = true, float flowFieldMinDistance = 18f,
+            float flowFieldStepDistance = 8f)
         {
             var value = CreateInstance<UnitAISettings>();
             value.meleeSlots = meleeSlots;
@@ -154,6 +164,9 @@ namespace ProjectNeo.Combat
             value.lod0Distance = Mathf.Max(1f, lod0Distance);
             value.lod1Distance = Mathf.Max(value.lod0Distance, lod1Distance);
             value.lodEvaluationInterval = Mathf.Max(0.05f, lodEvaluationInterval);
+            value.enableFlowField = enableFlowField;
+            value.flowFieldMinDistance = Mathf.Max(4f, flowFieldMinDistance);
+            value.flowFieldStepDistance = Mathf.Max(2f, flowFieldStepDistance);
             return value;
         }
     }

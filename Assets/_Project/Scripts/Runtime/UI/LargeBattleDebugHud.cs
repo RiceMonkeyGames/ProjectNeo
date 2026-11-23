@@ -26,9 +26,12 @@ namespace ProjectNeo.UI
         [SerializeField] Material sleepMaterial;
 
         readonly Dictionary<UnitCombatAI, MeshRenderer> rings = new Dictionary<UnitCombatAI, MeshRenderer>(512);
+        readonly List<MeshRenderer> flowArrows = new List<MeshRenderer>(512);
         readonly StringBuilder sb = new StringBuilder(512);
         Transform ringRoot;
+        Transform flowRoot;
         bool showRings = true;
+        bool showFlowField = true;
         bool lodEnabled = true;
         bool topDownActive;
         float smoothedDelta = 1f / 60f;
@@ -63,6 +66,8 @@ namespace ProjectNeo.UI
         {
             ringRoot = new GameObject("LodRings").transform;
             ringRoot.SetParent(transform, false);
+            flowRoot = new GameObject("FlowFieldArrows").transform;
+            flowRoot.SetParent(transform, false);
             if (topDownCamera != null) topDownCamera.gameObject.SetActive(false);
         }
 
@@ -107,6 +112,11 @@ namespace ProjectNeo.UI
                 showRings = !showRings;
                 ringRoot.gameObject.SetActive(showRings);
             }
+            if (kb.fKey.wasPressedThisFrame)
+            {
+                showFlowField = !showFlowField;
+                flowRoot.gameObject.SetActive(showFlowField);
+            }
             if (kb.tabKey.wasPressedThisFrame && firstPersonCamera != null && topDownCamera != null)
             {
                 topDownActive = !topDownActive;
@@ -146,7 +156,7 @@ namespace ProjectNeo.UI
         void UpdateUnitsAndHud()
         {
             int allies = 0, enemies = 0;
-            int lod0 = 0, lod1 = 0, lod2 = 0, sleeping = 0, engaged = 0;
+            int lod0 = 0, lod1 = 0, lod2 = 0, sleeping = 0, engaged = 0, flowUsers = 0;
 
             IReadOnlyList<CharacterActor> actors = CharacterActor.ActiveActors;
             for (int i = 0; i < actors.Count; i++)
@@ -160,6 +170,7 @@ namespace ProjectNeo.UI
                 if (ai == null) continue;
                 if (ai.Target != null) engaged++;
                 if (ai.IsSquadNeighborhoodClear) sleeping++;
+                if (ai.IsUsingFlowField) flowUsers++;
 
                 AILodTier tier = lodEnabled ? ai.LodTier : AILodTier.Lod0;
                 switch (tier)
@@ -169,24 +180,64 @@ namespace ProjectNeo.UI
                     default: lod2++; break;
                 }
 
-                if (showRings) UpdateRing(ai, tier, ai.IsSquadNeighborhoodClear);
+                if (showRings) UpdateRing(ai, tier, ai.IsSquadNeighborhoodClear, ai.IsUsingFlowField);
             }
+
+            if (showFlowField) UpdateFlowArrows();
 
             if (statsLabel == null) return;
             float fps = 1f / Mathf.Max(0.0001f, smoothedDelta);
             float frameMs = smoothedDelta * 1000f;
             sb.Clear();
-            sb.AppendFormat("<b>[200 vs 200 AI LOD 검증 씬]</b>  FPS: {0:F1} ({1:F2} ms)\n", fps, frameMs);
+            sb.AppendFormat("<b>[200 vs 200 AI LOD & Flow Field 검증 씬]</b>  FPS: {0:F1} ({1:F2} ms)\n", fps, frameMs);
             sb.AppendFormat("생존 유닛: 아군 <b>{0}</b> vs 적군 <b>{1}</b> (교전 중: {2})\n", allies, enemies, engaged);
-            sb.AppendFormat("AI LOD ({0}): <color=#33FF55>LOD0(근경): {1}</color> | <color=#FFCC22>LOD1(중경): {2}</color> | <color=#99AABB>LOD2(원경): {3}</color> | <color=#44CCFF>분대슬립: {4}</color>\n",
-                lodEnabled ? "ON" : "OFF", lod0, lod1, lod2, sleeping);
-            sb.AppendFormat("CalculatePath: 이번 프레임 <b>{0}</b>회 (최근 2초 피크: {1}회 / 누적: {2}회)\n",
-                queriesPerFrame, peakQueriesPerFrame, lastTotalQueries);
-            sb.Append("단축키: <b>[M]</b> 전군 총공격  <b>[H]</b> 전군 제자리 대기  <b>[Tab]</b> 1인칭/탑다운 뷰 전환  <b>[V]</b> 발밑 LOD 링 표시  <b>[L]</b> 카메라 오버라이드 토글");
+            sb.AppendFormat("AI LOD ({0}): <color=#33FF55>LOD0(근경): {1}</color> | <color=#FFCC22>LOD1(중경): {2}</color> | <color=#99AABB>LOD2(원경): {3}</color> | <color=#44CCFF>FlowField이동: {4}</color> (분대슬립: {5})\n",
+                lodEnabled ? "ON" : "OFF", lod0, lod1, lod2, flowUsers, sleeping);
+            sb.AppendFormat("CalculatePath: 이번 프레임 <b>{0}</b>회 (피크: {1}회 / 누적: {2}회) | FlowField 스텝 누적: <b>{3}</b>회\n",
+                queriesPerFrame, peakQueriesPerFrame, lastTotalQueries, BattleFlowFieldService.FlowStepCount);
+            sb.Append("단축키: <b>[M]</b> 총공격  <b>[H]</b> 대기  <b>[Tab]</b> 탑다운 뷰  <b>[V]</b> LOD 링  <b>[F]</b> FlowField 화살표  <b>[L]</b> LOD 토글");
             statsLabel.text = sb.ToString();
         }
 
-        void UpdateRing(UnitCombatAI ai, AILodTier tier, bool isSleeping)
+        void UpdateFlowArrows()
+        {
+            FlowFieldGrid field = BattleFlowFieldService.ToHostileField;
+            if (field == null || !field.HasValidField) return;
+
+            int index = 0;
+            // 전장 격자에서 2칸(6m) 간격으로 바닥에 Flow 방향 막대를 그린다.
+            for (int z = 0; z < field.Depth; z += 2)
+            {
+                for (int x = 0; x < field.Width; x += 2)
+                {
+                    Vector2 dir = field.DirectionAt(x, z);
+                    if (dir.sqrMagnitude < 1e-4f) continue;
+
+                    while (flowArrows.Count <= index)
+                    {
+                        var bar = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                        bar.name = "FlowArrow_" + flowArrows.Count;
+                        Destroy(bar.GetComponent<Collider>());
+                        bar.transform.SetParent(flowRoot, false);
+                        bar.transform.localScale = new Vector3(0.22f, 0.04f, 1.4f);
+                        var r = bar.GetComponent<MeshRenderer>();
+                        r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                        if (sleepMaterial != null) r.sharedMaterial = sleepMaterial;
+                        flowArrows.Add(r);
+                    }
+
+                    MeshRenderer arrow = flowArrows[index++];
+                    if (!arrow.gameObject.activeSelf) arrow.gameObject.SetActive(true);
+                    Vector3 worldPos = field.CellCenterWorld(x, z) + Vector3.up * 0.08f;
+                    Vector3 forward = new Vector3(dir.x, 0f, dir.y);
+                    arrow.transform.SetPositionAndRotation(worldPos, Quaternion.LookRotation(forward));
+                }
+            }
+            for (int i = index; i < flowArrows.Count; i++)
+                if (flowArrows[i].gameObject.activeSelf) flowArrows[i].gameObject.SetActive(false);
+        }
+
+        void UpdateRing(UnitCombatAI ai, AILodTier tier, bool isSleeping, bool isFlowing)
         {
             if (!rings.TryGetValue(ai, out MeshRenderer renderer) || renderer == null)
             {
@@ -206,7 +257,7 @@ namespace ProjectNeo.UI
             }
             if (!renderer.gameObject.activeSelf) renderer.gameObject.SetActive(true);
             renderer.transform.position = ai.transform.position + Vector3.up * 0.05f;
-            Material targetMat = isSleeping && sleepMaterial != null ? sleepMaterial
+            Material targetMat = (isSleeping || isFlowing) && sleepMaterial != null ? sleepMaterial
                 : tier == AILodTier.Lod0 ? lod0Material
                 : tier == AILodTier.Lod1 ? lod1Material
                 : lod2Material;
