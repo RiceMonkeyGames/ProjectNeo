@@ -94,6 +94,61 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
+        public void FallbackAngles_StraightFirst_ThenSidesteps()
+        {
+            Assert.AreEqual(5, RangedMeleeThreatRules.FallbackCandidateCount);
+            float[] expected = { 0f, 45f, -45f, 90f, -90f };
+            for (int i = 0; i < expected.Length; i++)
+                Assert.AreEqual(expected[i], RangedMeleeThreatRules.FallbackAngle(i), 1e-5f, $"candidate {i}");
+            Assert.AreEqual(0f, RangedMeleeThreatRules.FallbackAngle(-1), 1e-5f, "out of range is straight");
+            Assert.AreEqual(0f, RangedMeleeThreatRules.FallbackAngle(5), 1e-5f, "out of range is straight");
+        }
+
+        [Test]
+        public void FallbackPoint_RotatesAwayDirection_AndKeepsHeight()
+        {
+            // 위협이 +z에 있으면 정반대는 -z. +90°는 -x, -90°는 +x(위에서 볼 때 시계 방향 +).
+            Vector3 self = new Vector3(0f, 3f, 0f), threat = new Vector3(0f, 3f, 2f);
+            Vector3 right = RangedMeleeThreatRules.FallbackPoint(self, threat, Vector3.back, 2f, 90f);
+            Assert.AreEqual(-2f, right.x, 1e-4f);
+            Assert.AreEqual(0f, right.z, 1e-4f);
+            Assert.AreEqual(3f, right.y, 1e-4f, "keeps own height");
+            Vector3 left = RangedMeleeThreatRules.FallbackPoint(self, threat, Vector3.back, 2f, -90f);
+            Assert.AreEqual(2f, left.x, 1e-4f);
+            Assert.AreEqual(0f, left.z, 1e-4f);
+            Vector3 diagonal = RangedMeleeThreatRules.FallbackPoint(self, threat, Vector3.back, 2f, 45f);
+            Assert.AreEqual(-Mathf.Sqrt(2f), diagonal.x, 1e-4f);
+            Assert.AreEqual(-Mathf.Sqrt(2f), diagonal.z, 1e-4f);
+            Assert.AreEqual(2f, Vector3.Distance(self, diagonal), 1e-4f, "same step length");
+            // 0° 오버로드는 예전 결과와 같다.
+            Assert.AreEqual(RangedMeleeThreatRules.FallbackPoint(self, threat, Vector3.back, 2f),
+                RangedMeleeThreatRules.FallbackPoint(self, threat, Vector3.back, 2f, 0f));
+        }
+
+        [Test]
+        public void FallbackCandidates_AllIncreaseSeparation()
+        {
+            Vector3 self = new Vector3(1f, 0f, -1f), threat = new Vector3(2.5f, 0f, 0.5f);
+            for (int i = 0; i < RangedMeleeThreatRules.FallbackCandidateCount; i++)
+            {
+                Vector3 point = RangedMeleeThreatRules.FallbackPoint(self, threat, Vector3.back, 3f,
+                    RangedMeleeThreatRules.FallbackAngle(i));
+                Assert.IsTrue(RangedMeleeThreatRules.IncreasesSeparation(self, threat, point), $"candidate {i}");
+            }
+        }
+
+        [Test]
+        public void IncreasesSeparation_StrictlyHorizontal()
+        {
+            Vector3 self = Vector3.zero, threat = new Vector3(0f, 0f, 2f);
+            Assert.IsTrue(RangedMeleeThreatRules.IncreasesSeparation(self, threat, new Vector3(0f, 0f, -1f)));
+            Assert.IsFalse(RangedMeleeThreatRules.IncreasesSeparation(self, threat, Vector3.zero), "same spot");
+            Assert.IsFalse(RangedMeleeThreatRules.IncreasesSeparation(self, threat, new Vector3(0f, 0f, 1f)), "closer");
+            Assert.IsFalse(RangedMeleeThreatRules.IncreasesSeparation(self, threat, new Vector3(0f, -5f, 0f)),
+                "height alone does not count");
+        }
+
+        [Test]
         public void AllowsFallback_RejectsOtherLevel_AndPointsBeyondHoldLeash()
         {
             Vector3 self = new Vector3(0f, 3f, 0f);
