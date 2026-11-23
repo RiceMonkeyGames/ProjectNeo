@@ -1,9 +1,9 @@
 ---
 id: COMBAT-18
 title: Hero Auto-Skill Urgency Priority, Area Heal Clustering & True Engagement Check
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: SeongminHwang
+branch: feature/combat-18
 area: COMBAT
 depends_on: []
 created: 2026-11-23
