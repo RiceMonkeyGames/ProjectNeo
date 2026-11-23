@@ -74,5 +74,10 @@ namespace ProjectNeo.Walls
         /// 충돌은 옆판 없는 경사 판(<see cref="RoomCollider"/>)이 맡는다(SIEGE-27).
         /// </summary>
         CornerStairsOpen = 31,
+        /// <summary>
+        /// 충돌체가 있는 반 모듈 벽판(Wall_Cut_01). 칸이 모듈보다 넓을 때 짜맞춤(<see cref="CastleKitLook.Compose"/>)으로
+        /// 계단 방·망루 방의 벽과 문 양옆을 채운다(SIEGE-35).
+        /// </summary>
+        RoomPanelHalf = 32,
     }
 }

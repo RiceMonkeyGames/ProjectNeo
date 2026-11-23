@@ -9,10 +9,11 @@ namespace ProjectNeo.Walls
     [CreateAssetMenu(menuName = "ProjectNeo/Construction/Castle Kit Settings")]
     public sealed class CastleKitSettings : ScriptableObject
     {
-        const int PieceCount = 32;
+        const int PieceCount = 33;
 
         [SerializeField] GameObject[] prefabs = new GameObject[PieceCount];
-        // 킷 한 칸(벽판 폭·층 높이). 칸 크기가 이와 다르면 조각을 고르게 늘리거나 줄인다.
+        // 킷 한 칸(벽판 폭·층 높이). 조각 높이·두께와 모듈 기준 m 값은 늘 이 크기 그대로다(층 높이 = 모듈).
+        // 칸이 이보다 넓으면 면 방향으로만 늘리거나 반 모듈 조각으로 짠다(SIEGE-35, CastleKitLook).
         [SerializeField, Min(0.1f)] float moduleSize = 5f;
         // 바깥 면에서 장식 벽판(PanelAccent)을 넣는 간격(칸). 격자 번호 기준이라 성벽을 늘려도 무늬가 그대로다.
         [SerializeField, Min(1)] int accentSpacingCells = 2;
