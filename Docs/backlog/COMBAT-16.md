@@ -1,9 +1,9 @@
 ---
 id: COMBAT-16
 title: Multi-Direction Ranged Melee-Threat Fallback Along Wall Walkways
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: SeongminHwang
+branch: feature/combat-16
 area: COMBAT
 depends_on: []
 created: 2026-11-23
