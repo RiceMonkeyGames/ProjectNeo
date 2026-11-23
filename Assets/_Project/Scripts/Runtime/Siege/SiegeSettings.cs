@@ -80,6 +80,11 @@ namespace ProjectNeo.Siege
         [SerializeField, Min(0f)] float ladderFallOutwardSpeed = 3.5f;
         [SerializeField, Min(0f)] float ladderPushPoise = 10f;
         [SerializeField, Min(0f)] float ladderPushInterruptCooldown = 0.3f;
+        // 고른 사다리에서 이 시간 동안 다가가지도, 사다리 일이 진행되지도 않으면 막힌 것으로 보고 다른 사다리를 고른다(SIEGE-17).
+        // 포기한 사다리는 avoid초 동안 avoidPenalty미터만큼 불리하게 친다. 0이면 막힘 판단을 하지 않는다.
+        [SerializeField, Min(0f)] float ladderStallSeconds = 6f;
+        [SerializeField, Min(0f)] float ladderAvoidSeconds = 10f;
+        [SerializeField, Min(0f)] float ladderAvoidPenalty = 30f;
 
         [Header("적 판단")]
         [SerializeField, Min(0.05f)] float attackerDecisionInterval = 0.5f;
@@ -152,6 +157,9 @@ namespace ProjectNeo.Siege
         public float LadderFallOutwardSpeed => ladderFallOutwardSpeed;
         public float LadderPushPoise => ladderPushPoise;
         public float LadderPushInterruptCooldown => ladderPushInterruptCooldown;
+        public float LadderStallSeconds => ladderStallSeconds;
+        public float LadderAvoidSeconds => ladderAvoidSeconds;
+        public float LadderAvoidPenalty => ladderAvoidPenalty;
         public float AttackerDecisionInterval => attackerDecisionInterval;
         public float GateStandOffset => gateStandOffset;
         public float GateSpread => gateSpread;

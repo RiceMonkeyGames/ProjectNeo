@@ -67,6 +67,15 @@ namespace ProjectNeo.Siege
             footprintWorld = null;
         }
         SiegeLadder ladder;
+        // 사다리 고르기(SIEGE-17): 후보별 점수·확인 여부, 막혀서 포기한 시각, 길찾기로 닿는지와 그 결과를 구한 길찾기 판.
+        float[] ladderScores;
+        bool[] ladderChecked;
+        float[] ladderAvoidUntil;
+        int[] ladderReachKeys;
+        bool[] ladderReachable;
+        readonly LadderStallTracker ladderStall = new LadderStallTracker();
+        float lastRaiseProgress;
+        int seenToppleCount;
         PlacedStructure gate;
         Collider[] gateBodies;
         PlacedSiegeWeapon cannon;
@@ -130,6 +139,7 @@ namespace ProjectNeo.Siege
             SiegeLadder[] ladderSpots, Vector2Int outwardDirection)
         {
             role = attackerRole; world = owner; settings = siegeSettings; ladders = ladderSpots; outward = outwardDirection;
+            ladderScores = null;
         }
 
         /// <summary>프리팹으로 만든 적을 씬의 성과 사다리에 연결한다. 활성화하기 전에 부른다.</summary>
@@ -137,6 +147,7 @@ namespace ProjectNeo.Siege
             SiegeSettings battleSettings = null)
         {
             world = owner; ladders = ladderSpots; outward = outwardDirection;
+            ladderScores = null;
             if (battleSettings != null) settings = battleSettings;
             GetComponent<WallBreakerAttack>()?.Bind(owner);
         }
@@ -556,10 +567,13 @@ namespace ProjectNeo.Siege
 
         void DecideLadder()
         {
-            SiegeLadder best = ChooseLadder();
+            float now = Time.time;
+            // 붙들던 사다리가 쓰러졌으면 놓고 처음부터 다시 고른다(SIEGE-17). 밑에 몰려 있던 인원이 다른 사다리로 흩어진다.
+            if (ladder != null && ladder.State.ToppleCount != seenToppleCount) LeaveLadder();
+            SiegeLadder best = ChooseLadder(now);
             if (best == null)
             {
-                // 쓸 수 있는 사다리가 하나도 없으면 멈춰 서지 않고 성문으로 간다.
+                // 걸어서 닿는 사다리가 하나도 없으면 멈춰 서지 않고 성문으로 간다.
                 LeaveLadder();
                 DecideGate();
                 return;
@@ -569,14 +583,28 @@ namespace ProjectNeo.Siege
                 LeaveLadder();
                 ladder = best;
                 ladder.Join(this);
+                seenToppleCount = ladder.State.ToppleCount;
+                lastRaiseProgress = ladder.State.RaiseProgress;
+                ladderStall.Reset(now, FlatDistance(transform.position, ladder.BasePoint));
                 ai.SetDirective(UnitDirective.Move, ladder.BasePoint);
                 mode = Mode.ToLadder;
                 return;
             }
             if (mode == Mode.Raising && ladder.IsRaiser(this) && ladder.State.Phase != LadderPhase.Up) return;
-            Vector3 offset = transform.position - ladder.BasePoint;
-            offset.y = 0f;
-            if (offset.magnitude > settings.LadderUseRadius)
+            float distance = FlatDistance(transform.position, ladder.BasePoint);
+            // 다가가지도 못하고 사다리 일(세우기·오르기)도 진행되지 않으면 막힌 것으로 보고 잠시 피한다(SIEGE-17).
+            bool advanced = ladder.State.HasClimber || ladder.State.RaiseProgress > lastRaiseProgress + 0.0001f;
+            lastRaiseProgress = ladder.State.RaiseProgress;
+            ladderStall.Observe(now, distance, advanced);
+            if (ladderStall.IsStalled(now, settings.LadderStallSeconds))
+            {
+                int index = System.Array.IndexOf(ladders, ladder);
+                if (index >= 0 && ladderAvoidUntil != null) ladderAvoidUntil[index] = now + settings.LadderAvoidSeconds;
+                LeaveLadder();
+                think = 0f;
+                return;
+            }
+            if (distance > settings.LadderUseRadius)
             {
                 // 밀려났거나 아직 가는 중이다.
                 if (ai.Directive != UnitDirective.Move) ai.SetDirective(UnitDirective.Move, ladder.BasePoint);
@@ -603,23 +631,75 @@ namespace ProjectNeo.Siege
             if (ai.Directive != UnitDirective.Hold) ai.SetDirective(UnitDirective.Hold);
         }
 
-        SiegeLadder ChooseLadder()
+        /// <summary>
+        /// 점수(거리·몰린 인원·이미 고른 사다리·막혀서 피하는 사다리)가 좋은 순서로, 걸어서 사다리 밑에 닿고
+        /// 다 오른 뒤 내려설 성벽 위 자리가 있는 첫 사다리(SIEGE-17). 없으면 null.
+        /// </summary>
+        SiegeLadder ChooseLadder(float now)
         {
-            SiegeLadder best = null;
-            float bestScore = float.PositiveInfinity;
-            foreach (SiegeLadder candidate in ladders)
+            if (ladders == null || ladders.Length == 0) return null;
+            EnsureLadderBuffers();
+            int count = ladders.Length;
+            for (int i = 0; i < count; i++)
             {
-                if (candidate == null || !candidate.HasWall) continue;
-                int others = candidate.Crowd - (candidate == ladder ? 1 : 0);
-                float score = Vector3.Distance(transform.position, candidate.BasePoint)
-                    + others * settings.LadderCrowdPenalty;
-                // 이미 고른 사다리는 조금 더 붙들어 이리저리 옮겨 다니지 않게 한다.
-                if (candidate == ladder) score -= settings.LadderCrowdPenalty;
-                if (score >= bestScore) continue;
-                bestScore = score;
-                best = candidate;
+                SiegeLadder candidate = ladders[i];
+                ladderChecked[i] = false;
+                if (candidate == null || !candidate.HasWall) { ladderScores[i] = float.PositiveInfinity; continue; }
+                bool current = candidate == ladder;
+                ladderScores[i] = LadderChoiceRules.Score(Vector3.Distance(transform.position, candidate.BasePoint),
+                    candidate.Crowd - (current ? 1 : 0), current, ladderAvoidUntil[i] > now,
+                    settings.LadderCrowdPenalty, settings.LadderAvoidPenalty);
             }
-            return best;
+            int key = LadderReachKey();
+            int index;
+            while ((index = LadderChoiceRules.NextBest(ladderScores, ladderChecked, count)) >= 0)
+            {
+                ladderChecked[index] = true;
+                if (IsLadderReachable(index, key)) return ladders[index];
+            }
+            return null;
+        }
+
+        void EnsureLadderBuffers()
+        {
+            int count = ladders.Length;
+            if (ladderScores != null && ladderScores.Length == count) return;
+            ladderScores = new float[count];
+            ladderChecked = new bool[count];
+            ladderAvoidUntil = new float[count];
+            ladderReachKeys = new int[count];
+            ladderReachable = new bool[count];
+            for (int i = 0; i < count; i++) ladderReachKeys[i] = int.MinValue;
+        }
+
+        // 길찾기 메시가 바뀌거나 땅·성벽 위를 오가면 닿는지 다시 구한다. 그 밖에는 사다리마다 한 번만 구한다.
+        int LadderReachKey() => world.NavigationRevision * 2 + (HeightAboveGround(transform.position) < WallTopMinimumHeight ? 1 : 0);
+
+        bool IsLadderReachable(int index, int key)
+        {
+            if (ladderReachKeys[index] == key) return ladderReachable[index];
+            SiegeLadder candidate = ladders[index];
+            bool reachable = false;
+            Vector3 basePoint = candidate.BasePoint, topPoint = candidate.TopPoint;
+            if (NavMesh.SamplePosition(basePoint, out NavMeshHit foot, settings.LadderUseRadius, agent.areaMask)
+                && Mathf.Abs(foot.position.y - basePoint.y) <= settings.LadderHeightTolerance
+                // 다 오른 뒤 내려설 곳이 없으면 오르기만 하고 떨어진다(UpdateClimb과 같은 기준).
+                && NavMesh.SamplePosition(topPoint, out NavMeshHit top, 1.5f, NavMesh.AllAreas)
+                && Mathf.Abs(top.position.y - topPoint.y) <= settings.LadderHeightTolerance)
+            {
+                UnitCombatAI.Scheduler.RecordPathQuery(Time.frameCount);
+                reachable = agent.CalculatePath(foot.position, path) && path.status == NavMeshPathStatus.PathComplete;
+            }
+            ladderReachKeys[index] = key;
+            ladderReachable[index] = reachable;
+            return reachable;
+        }
+
+        static float FlatDistance(Vector3 a, Vector3 b)
+        {
+            Vector3 offset = a - b;
+            offset.y = 0f;
+            return offset.magnitude;
         }
 
         void BeginClimb()
@@ -697,6 +777,7 @@ namespace ProjectNeo.Siege
         {
             if (ladder != null) ladder.Leave(this);
             ladder = null;
+            ladderStall.Stop();
         }
 
         // ── 성문 ────────────────────────────────────────────────
