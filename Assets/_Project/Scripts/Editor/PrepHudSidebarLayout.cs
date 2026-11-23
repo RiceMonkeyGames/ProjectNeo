@@ -46,11 +46,14 @@ namespace ProjectNeo.Editor
             // UI-12 squad card option A (user pick 2026-11-22): empty portrait, number badge, order badge, headcount segments.
             PrepHudSquadCardLayout.Apply(hud, AssetDatabase.LoadAssetAtPath<HudStyle>(PrepHudSetup.StylePath), noto);
             Health(hud);
+            // UI-07 equipment window option B (user pick 2026-11-23), before the windows are moved right of the column.
+            EquipmentWindowLayout.Apply(hud);
             Popups(hud);
             GoldChip(hud);
             IntelPanel(hud, noto);
             KeyGuide(hud, noto);
             HoldRing(hud, noto);
+            ContextPrompt(hud, noto);
             Shrink(hud);
             // The top bar stays the last sibling so it draws over the facility windows (PREP-06 rule, GamePrepTimePlayTests).
             hud.transform.Find(PrepHudSetup.BarName).SetAsLastSibling();
@@ -105,9 +108,10 @@ namespace ProjectNeo.Editor
 
             var title = bar.Find("StageTitle").GetComponent<TMP_Text>();
             title.fontSize = 21f; // was 26 (user 2026-11-22: too big for the 260-wide header)
+            title.alignment = TextAlignmentOptions.MidlineLeft; // vertically centred with the ascension tag (user 2026-11-23)
             // Glyph offsets inside the boxes were measured on captures so the visible padding is even (about 14 from the
             // frame's outer line on every side, user 2026-11-22).
-            FW.Place(title.rectTransform, new Vector2(0f, 1f), new Vector2(Inner - 1f, -Edge - 3.5f), new Vector2(InnerWidth, 32f), new Vector2(0f, 1f));
+            FW.Place(title.rectTransform, new Vector2(0f, 1f), new Vector2(Inner - 1f, -Edge - 8.5f), new Vector2(InnerWidth, 32f), new Vector2(0f, 1f));
             // The "준비 · 스테이지 N" line repeated the title (user 2026-11-22): hidden but still wired (PrepTopBarHud.StageText),
             // and only the ascension shows, small on the right of the title row.
             bar.Find("Stage").gameObject.SetActive(false);
@@ -123,11 +127,11 @@ namespace ProjectNeo.Editor
         {
             Transform old = bar.Find(AscensionName);
             if (old != null) UnityEngine.Object.DestroyImmediate(old.gameObject);
-            var label = FW.NewLabel(bar, AscensionName, "승천 1", title.font, 16f, FW.Cream, TextAlignmentOptions.BottomRight);
+            var label = FW.NewLabel(bar, AscensionName, "승천 1", title.font, 16f, FW.Cream, TextAlignmentOptions.MidlineRight);
             label.textWrappingMode = TextWrappingModes.NoWrap;
             label.raycastTarget = false;
             // Bottom-aligned with the title box so it sits on the title's baseline area.
-            FW.Place(label.rectTransform, new Vector2(0f, 1f), new Vector2(Inner - 1f, -Edge - 3.5f), new Vector2(InnerWidth + 1f, 32f), new Vector2(0f, 1f));
+            FW.Place(label.rectTransform, new Vector2(0f, 1f), new Vector2(Inner - 1f, -Edge - 8.5f), new Vector2(InnerWidth + 1f, 32f), new Vector2(0f, 1f));
             label.gameObject.SetActive(false);
             var top = hud.GetComponent<PrepTopBarHud>();
             if (top != null)
@@ -284,9 +288,11 @@ namespace ProjectNeo.Editor
         }
 
         // Dark plate in the thick gold Box22 frame, the gold chip look (header).
-        static void GoldPlate(RectTransform panel)
+        internal static void GoldPlate(RectTransform panel) => GoldPlate(panel, new Color32(0x10, 0x16, 0x1A, 0xD8));
+
+        internal static void GoldPlate(RectTransform panel, Color plateColor)
         {
-            var plate = FW.Image(panel, "SPR_Background", "SPR_HUD_FantasyWarrior_Box_White01", new Color32(0x10, 0x16, 0x1A, 0xD8), 2f);
+            var plate = FW.Image(panel, "SPR_Background", "SPR_HUD_FantasyWarrior_Box_White01", plateColor, 2f);
             FW.Stretch(plate.rectTransform, Vector2.zero, Vector2.zero);
             var frame = FW.Image(panel, "SPR_Frame", "SPR_FantasyWarrior_Frame_Box22_Variant01", new Color(0.85f, 0.85f, 0.85f, 1f), 10f);
             FW.Stretch(frame.rectTransform, new Vector2(-2f, -2f), new Vector2(2f, 2f));
@@ -525,24 +531,8 @@ namespace ProjectNeo.Editor
             var holdSize = hold.gameObject.AddComponent<LayoutElement>();
             holdSize.preferredWidth = holdSize.minWidth = HoldSlotWidth;
 
-            var cap = FW.Node(row, "KeyCap");
-            var capImage = cap.gameObject.AddComponent<Image>();
-            capImage.sprite = FW.Sprite("SPR_HUD_FantasyWarrior_Box_White01");
-            capImage.type = Image.Type.Sliced;
-            capImage.pixelsPerUnitMultiplier = 4f;
-            capImage.color = new Color32(0x10, 0x14, 0x18, 0xD0);
-            capImage.raycastTarget = false;
-            var capLayout = cap.gameObject.AddComponent<HorizontalLayoutGroup>();
-            capLayout.padding = new RectOffset(6, 6, 0, 0);
-            capLayout.childAlignment = TextAnchor.MiddleCenter;
-            capLayout.childControlWidth = capLayout.childControlHeight = true;
-            capLayout.childForceExpandWidth = capLayout.childForceExpandHeight = false;
-            var capSize = cap.gameObject.AddComponent<LayoutElement>();
-            capSize.minWidth = RowHeight;
-            capSize.minHeight = capSize.preferredHeight = RowHeight;
-            var key = FW.NewLabel(cap, "Key", "F", noto, 13f, Color.white, TextAlignmentOptions.Center);
-            key.fontStyle = FontStyles.Bold;
-            key.textWrappingMode = TextWrappingModes.NoWrap;
+            var key = KeyCap(row, "KeyCap", noto, RowHeight, 13f);
+            var cap = (RectTransform)key.transform.parent;
 
             var action = FW.NewLabel(row, "Action", "상호작용", noto, 15f, Color.white, TextAlignmentOptions.MidlineLeft);
             action.textWrappingMode = TextWrappingModes.NoWrap;
@@ -556,9 +546,12 @@ namespace ProjectNeo.Editor
             cap2.SetSiblingIndex(cap.GetSiblingIndex() + 1);
             cap2.gameObject.SetActive(false);
             var key2 = cap2.Find("Key").GetComponent<TMP_Text>();
+            var joiner = KeyJoiner(row, noto, shadowed);
+            joiner.transform.SetSiblingIndex(cap2.GetSiblingIndex());
             var template = row.gameObject.AddComponent<KeyGuideRow>();
             template.Configure(null, key, action);
             template.ConfigureSecondKey(key2);
+            template.ConfigureJoiner(joiner);
             row.gameObject.SetActive(false);
             keys.ConfigureRows(template);
             EditorUtility.SetDirty(keys);
@@ -611,6 +604,135 @@ namespace ProjectNeo.Editor
             EditorUtility.SetDirty(hud);
         }
 
+        // Interaction prompt under the crosshair (UI-07, user picks 2026-11-23: option A of three, no plate, so it no longer
+        // reads as a button; key cap option 2, the black 3D KeyCap below). The action text ("상점 사용") follows the cap
+        // in white with the outlined drop shadow. GameFlowHud writes the key into the cap.
+        internal const string ContextKeyCapName = "KeyCap";
+        const float ContextCapSize = 28f;
+
+        static void ContextPrompt(GameFlowHud hud, TMP_FontAsset noto)
+        {
+            var box = (RectTransform)hud.transform.Find(PrepHudSetup.ContextName);
+            if (box == null) return;
+            var shadowed = AssetDatabase.LoadAssetAtPath<Material>(PrepHudLayoutA.OutlinedNotoPath);
+            var plate = box.GetComponent<Image>();
+            if (plate != null) { plate.sprite = null; plate.color = Color.clear; plate.raycastTarget = false; }
+            foreach (string old in new[] { PrepHudSetup.FrameName, ContextKeyCapName })
+            {
+                Transform existing = box.Find(old);
+                if (existing != null) UnityEngine.Object.DestroyImmediate(existing.gameObject);
+            }
+            var layout = box.GetComponent<HorizontalLayoutGroup>();
+            layout.padding = new RectOffset(0, 0, 0, 0);
+            layout.spacing = 8f;
+            layout.childAlignment = TextAnchor.MiddleCenter;
+
+            var key = KeyCap(box, ContextKeyCapName, noto, ContextCapSize, 14f);
+            key.transform.parent.SetAsFirstSibling();
+
+            var label = box.Find("Text").GetComponent<TMP_Text>();
+            FW.Font(label, noto, 17f, Color.white, TextAlignmentOptions.MidlineLeft);
+            label.textWrappingMode = TextWrappingModes.NoWrap;
+            label.raycastTarget = false;
+            Shadow(label, shadowed);
+
+            hud.ConfigureContextKey(key);
+            EditorUtility.SetDirty(hud);
+        }
+
+        // Neutral black 3D key cap (UI-07, user pick 2026-11-23, option 2 of three, from the user's sketch): a dark base
+        // and a lighter top face raised toward the top, so the base shows below it as the key's thickness. No pack has
+        // a keycap sprite (the only key art is a flat white square, and the pack boxes have no 9-slice border, so their
+        // corners stretch flat), so both layers use the project's own white rounded 9-slice (RoundedSprite, user
+        // 2026-11-23: round corners). Every cap is square (user 2026-11-23: 1:1 buttons); longer key names (F10, Esc)
+        // shrink their text to fit the top face instead of widening the cap. Returns the key label.
+        static readonly Color KeyCapBase = new Color32(0x15, 0x17, 0x1A, 0xF0), KeyCapTop = new Color32(0x3A, 0x3E, 0x44, 0xFF);
+        static readonly Color KeyCapText = new Color32(0xF0, 0xEE, 0xE8, 0xFF);
+
+        internal static TMP_Text KeyCap(Transform parent, string name, TMP_FontAsset noto, float height, float fontSize)
+        {
+            float side = Mathf.Round(height * 0.13f), lip = Mathf.Round(height * 0.07f), depth = Mathf.Round(height * 0.23f);
+            Sprite rounded = RoundedSprite();
+            var cap = FW.Node(parent, name);
+            var baseImage = cap.gameObject.AddComponent<Image>();
+            Rounded(baseImage, rounded, KeyCapBase, height * 0.26f);
+            var top = FW.Node(cap, "Top").gameObject.AddComponent<Image>();
+            Rounded(top, rounded, KeyCapTop, height * 0.2f);
+            FW.Stretch(top.rectTransform, new Vector2(side, depth), new Vector2(-side, -lip));
+            top.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+
+            float square = height + 2f;
+            var size = cap.gameObject.AddComponent<LayoutElement>();
+            size.minWidth = size.preferredWidth = square;
+            size.minHeight = size.preferredHeight = square;
+            size.flexibleWidth = size.flexibleHeight = 0f;
+            cap.sizeDelta = new Vector2(square, square);
+
+            // Text sits on the top face, the base's thickness kept below it.
+            var key = FW.NewLabel(cap, "Key", "F", noto, fontSize, KeyCapText, TextAlignmentOptions.Center);
+            key.fontStyle = FontStyles.Bold;
+            key.textWrappingMode = TextWrappingModes.NoWrap;
+            key.enableAutoSizing = true;
+            key.fontSizeMin = Mathf.Max(6f, fontSize * 0.5f);
+            key.fontSizeMax = fontSize;
+            key.margin = Vector4.zero;
+            FW.Stretch(key.rectTransform, new Vector2(side + 1f, depth), new Vector2(-side - 1f, -lip));
+            return key;
+        }
+
+        // Plain text between two key caps (UI-07, user 2026-11-23: "F1~F10" is not a real key, so F1 and F10 get their own
+        // caps with a "~" in between); on only in rows whose hint has a joiner (KeyHint.Joiner).
+        internal static TMP_Text KeyJoiner(Transform parent, TMP_FontAsset noto, Material shadowed)
+        {
+            var joiner = FW.NewLabel(parent, "Joiner", "~", noto, 15f, Color.white, TextAlignmentOptions.Center);
+            joiner.textWrappingMode = TextWrappingModes.NoWrap;
+            Shadow(joiner, shadowed);
+            joiner.gameObject.SetActive(false);
+            return joiner;
+        }
+
+        // White rounded rectangle with a 9-slice border, generated once into the project (no pack sprite fits).
+        const string RoundedPath = "Assets/_Project/Art/UI/SPR_RoundedBox_White.png";
+        const int RoundedSize = 64, RoundedRadius = 14, RoundedBorder = 16;
+
+        static Sprite RoundedSprite()
+        {
+            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(RoundedPath);
+            if (sprite != null) return sprite;
+            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(RoundedPath));
+            var texture = new Texture2D(RoundedSize, RoundedSize, TextureFormat.RGBA32, false);
+            float edge = RoundedSize - 1f - RoundedRadius;
+            for (int y = 0; y < RoundedSize; y++)
+                for (int x = 0; x < RoundedSize; x++)
+                {
+                    // Distance outside the rounded rectangle, antialiased over one pixel.
+                    float dx = Mathf.Max(RoundedRadius - x, x - edge, 0f), dy = Mathf.Max(RoundedRadius - y, y - edge, 0f);
+                    float outside = Mathf.Sqrt(dx * dx + dy * dy) - RoundedRadius;
+                    texture.SetPixel(x, y, new Color(1f, 1f, 1f, Mathf.Clamp01(0.5f - outside)));
+                }
+            System.IO.File.WriteAllBytes(RoundedPath, texture.EncodeToPNG());
+            UnityEngine.Object.DestroyImmediate(texture);
+            AssetDatabase.ImportAsset(RoundedPath);
+            var importer = (TextureImporter)AssetImporter.GetAtPath(RoundedPath);
+            importer.textureType = TextureImporterType.Sprite;
+            importer.spriteImportMode = SpriteImportMode.Single;
+            importer.spriteBorder = new Vector4(RoundedBorder, RoundedBorder, RoundedBorder, RoundedBorder);
+            importer.alphaIsTransparency = true;
+            importer.mipmapEnabled = false;
+            importer.SaveAndReimport();
+            return AssetDatabase.LoadAssetAtPath<Sprite>(RoundedPath);
+        }
+
+        // Sliced rounded plate whose corner radius on screen is about radius canvas units.
+        static void Rounded(Image image, Sprite sprite, Color color, float radius)
+        {
+            image.sprite = sprite;
+            image.type = Image.Type.Sliced;
+            image.pixelsPerUnitMultiplier = RoundedRadius / Mathf.Max(1f, radius);
+            image.color = color;
+            image.raycastTarget = false;
+        }
+
         static void Shadow(TMP_Text label, Material material)
         {
             if (material == null) return;
@@ -628,7 +750,9 @@ namespace ProjectNeo.Editor
         {
             // Center of [column right edge + margin, canvas right edge - margin], measured from the canvas center.
             float shift = (Width + Edge) * 0.5f;
-            foreach (string name in new[] { "FacilityPanel", "EquipmentPanel" })
+            // The equipment window is screen-centered instead (UI-07, user 2026-11-23); at 780 wide it clears the 0.8-scaled
+            // sidebar (EquipmentWindowLayout).
+            foreach (string name in new[] { "FacilityPanel" })
             {
                 var popup = (RectTransform)hud.transform.Find(name);
                 if (popup == null) continue;

@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
-using ProjectNeo.Meta;
 using ProjectNeo.Run;
 using ProjectNeo.Characters;
 using ProjectNeo.Combat;
@@ -183,16 +182,10 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
-        public IEnumerator 스킬_퍽을_찍으면_플레이어_칸에_들어가고_고용_영웅은_고정_스킬과_자동_시전을_받는다()
+        public IEnumerator 플레이어는_고정_스킬_3개를_모두_쓰고_고용_영웅은_고정_스킬과_자동_시전을_받는다()
         {
             RunState state = GameSession.Flow.Run.State;
-            Assert.IsNotNull(state.Perks, "준비 단계에서 퍽 묶음이 만들어진다.");
-            PerkTreeCatalog trees = Object.FindAnyObjectByType<GameFacilities>().StartConfig.PerkTrees;
-            PerkDefinition whirlPerk = trees.AllPerks().Single(perk => perk.Id == "perk_combat_skill_whirlwind");
-            Assert.AreEqual("skill_whirlwind", whirlPerk.GrantedSkill.Id);
-            state.Perks.BonusPoints = 5;
-            Assert.IsTrue(state.TryAllocatePerk(whirlPerk));
-            CollectionAssert.AreEqual(new[] { whirlPerk.GrantedSkill }, state.LearnedPlayerSkills());
+            Assert.AreEqual(3, state.Player.Grade, "플레이어는 처음부터 최고 등급이다(UI-07).");
 
             // 주점 1레벨 영웅(검사·궁수) 중 하나를 1분대 대장으로 고용한다. 1등급이라 고정 스킬 첫 칸만 열린다.
             var facilities = Object.FindAnyObjectByType<GameFacilities>();
@@ -205,9 +198,9 @@ namespace ProjectNeo.Tests
             yield return null;
 
             yield return StartBattle();
-            Assert.AreEqual(1, skills.PlayerCaster.Slots.Count);
-            Assert.AreEqual("skill_whirlwind", skills.PlayerCaster.Slots.Get(0).Id, "찍은 스킬 퍽의 스킬이 첫 칸에 들어간다.");
-            Assert.AreEqual("회오리 베기", battle.SkillHud.NameText(0));
+            Assert.AreEqual(3, skills.PlayerCaster.Slots.Count, "플레이어 영웅 데이터의 고정 스킬 3개가 모두 열린다.");
+            for (int i = 0; i < 3; i++) Assert.AreSame(state.Player.Definition.Skills[i], skills.PlayerCaster.Slots.Get(i));
+            Assert.AreEqual(state.Player.Definition.Skills[0].DisplayName, battle.SkillHud.NameText(0));
 
             SquadCommandCenter center = Object.FindAnyObjectByType<SquadCommandCenter>();
             SkillCaster captainCaster = center.Squads[0].Leader.GetComponent<SkillCaster>();
@@ -221,17 +214,9 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
-        public IEnumerator 장비_창_스킬_보기에서_스킬을_바꿔_끼우고_영웅_자동_사용을_끈다()
+        public IEnumerator 장비_창_스킬_보기는_고정_스킬을_보여주고_영웅_자동_사용을_끈다()
         {
             RunState state = GameSession.Flow.Run.State;
-            PerkTreeCatalog trees = Object.FindAnyObjectByType<GameFacilities>().StartConfig.PerkTrees;
-            PerkDefinition Perk(string id) => trees.AllPerks().Single(perk => perk.Id == id);
-            state.Perks.BonusPoints = 10;
-            // 회오리(선행 없음) -> 벼린 칼날 -> 방패 강타 -> 강인함 -> 전투 함성: 배운 스킬 3개.
-            foreach (string id in new[] { "perk_combat_skill_whirlwind", "perk_combat_sharpened_blade", "perk_combat_skill_shield_bash",
-                "perk_combat_toughness", "perk_combat_skill_war_cry" })
-                Assert.IsTrue(state.TryAllocatePerk(Perk(id)), id);
-            Assert.AreEqual(3, state.LearnedPlayerSkills().Count);
 
             var facilities = Object.FindAnyObjectByType<GameFacilities>();
             state.Wallet.AddGold(200);
@@ -246,32 +231,43 @@ namespace ProjectNeo.Tests
             Assert.IsFalse(equipment.SkillView);
             Assert.IsTrue(equipment.ToggleView());
             Assert.IsTrue(equipment.SkillView);
-            StringAssert.Contains("스킬 칸 3 / 3", equipment.StatusText);
-            Assert.IsTrue(equipment.EquippedRowTexts.Any(text => text.StartsWith("Z: 회오리 베기")), string.Join(" | ", equipment.EquippedRowTexts));
-            Assert.IsFalse(equipment.TryEquipSkill(0), "남은 배운 스킬이 없다.");
-
-            Assert.IsTrue(equipment.TryUnequipSkill(0));
-            StringAssert.Contains("스킬 칸 2 / 3", equipment.StatusText);
-            Assert.IsTrue(equipment.InventoryRowTexts.Any(text => text.StartsWith("회오리 베기")), "뺀 스킬이 배운 스킬 목록에 나온다.");
-            Assert.IsTrue(equipment.TryEquipSkill(0));
-            Assert.AreEqual("skill_whirlwind", state.PlayerSkillLoadout.EquippedId(0), "첫 빈 칸에 다시 들어간다.");
+            // UI-07 삼각형 스킬 탭: 칸 3개, 고른 칸 설명, 영웅만 자동 사용 버튼.
+            Assert.IsTrue(equipment.SkillTriangle, "Game 씬 장비 창에 스킬 탭 화면이 연결돼 있어야 한다.");
+            string first = state.Player.Definition.Skills[0].DisplayName;
+            Assert.AreEqual(first, equipment.SkillCircles[0].SkillName);
+            Assert.IsTrue(equipment.SkillCircles.All(circle => !circle.Locked), "플레이어 스킬은 모두 열려 있다.");
+            Assert.IsTrue(equipment.SkillCircles[0].Selected, "처음에는 1번 칸을 고른다.");
+            StringAssert.Contains(first, equipment.SkillDetailText);
+            StringAssert.Contains("Z", equipment.SkillDetailText, "플레이어는 스킬 키만 보인다.");
+            Assert.IsFalse(equipment.AutoPlateShown, "플레이어는 자동 사용 판이 없다.");
+            Assert.IsFalse(equipment.ToggleHeroAuto(), "플레이어는 자동 사용을 바꿀 수 없다.");
+            equipment.SkillCircles[2].Click();
+            Assert.AreEqual(2, equipment.SelectedSkillSlot, "칸을 누르면 그 칸을 고른다.");
+            StringAssert.Contains(state.Player.Definition.Skills[2].DisplayName, equipment.SkillDetailText);
 
             Assert.IsTrue(equipment.NextHero());
             RunHero hero = equipment.SelectedHero;
             Assert.IsFalse(hero.IsPlayer);
-            Assert.IsTrue(equipment.EquippedRowTexts.Any(text => text.StartsWith("Alt+Z: ")), string.Join(" | ", equipment.EquippedRowTexts));
-            Assert.IsTrue(equipment.EquippedRowTexts.Any(text => text.StartsWith("잠김: ")), "1등급 영웅은 둘째 칸부터 잠겨 있다.");
-            Assert.IsTrue(equipment.ToggleHeroAuto());
+            Assert.AreEqual(0, equipment.SelectedSkillSlot, "영웅을 바꾸면 1번 칸부터 본다.");
+            StringAssert.Contains("Alt + Z", equipment.SkillDetailText);
+            Assert.IsFalse(equipment.SkillCircles[0].Locked);
+            Assert.IsTrue(equipment.SkillCircles[1].Locked && equipment.SkillCircles[2].Locked, "1등급 영웅은 둘째 칸부터 잠겨 있다.");
+            Assert.IsTrue(equipment.SelectSkill(1));
+            StringAssert.Contains("2등급에 열림", equipment.SkillDetailText);
+            Assert.IsTrue(equipment.AutoPlateShown);
+            Assert.IsTrue(equipment.AutoPlateShowsOn, "기본은 켜짐(초록 판).");
+            Assert.IsTrue(equipment.ToggleHeroAuto(), "판을 누르면 바뀐다.");
             Assert.IsFalse(hero.SkillAuto);
-            StringAssert.Contains("자동 사용 꺼짐", equipment.StatusText);
+            Assert.IsFalse(equipment.AutoPlateShowsOn, "꺼지면 회색 판.");
             Assert.IsTrue(equipment.ToggleView());
             Assert.IsFalse(equipment.ToggleHeroAuto(), "장비 보기에서는 바꾸지 않는다.");
             equipment.Close();
             yield return null;
 
             yield return StartBattle();
-            CollectionAssert.AreEqual(new[] { "skill_whirlwind", "skill_shield_bash", "skill_war_cry" },
-                Enumerable.Range(0, skills.PlayerCaster.Slots.Count).Select(i => skills.PlayerCaster.Slots.Get(i).Id).ToArray());
+            CollectionAssert.AreEqual(state.Player.Definition.Skills.Select(skill => skill.Id).ToArray(),
+                Enumerable.Range(0, skills.PlayerCaster.Slots.Count).Select(i => skills.PlayerCaster.Slots.Get(i).Id).ToArray(),
+                "플레이어는 자기 고정 스킬을 칸 순서대로 쓴다.");
             SquadCommandCenter center = Object.FindAnyObjectByType<SquadCommandCenter>();
             HeroSkillAI brain = center.Squads[0].Leader.GetComponent<HeroSkillAI>();
             Assert.IsNotNull(brain);

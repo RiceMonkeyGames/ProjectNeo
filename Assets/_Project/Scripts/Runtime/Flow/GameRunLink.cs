@@ -107,8 +107,20 @@ namespace ProjectNeo.Flow
                 if (actor != null && actor.Health != null) actor.Health.RestoreFull();
             CleanUpSquadsAfterBattle();
             SetReserveHeroesActive(true);
+            HideStoredSoldiers();
             ApplyTraining();
             ApplyPerks();
+        }
+
+        /// <summary>보관 병사(UI-07)의 씬 유닛을 끈다. 부대에 넣으면 다시 켠다.</summary>
+        public void HideStoredSoldiers()
+        {
+            if (binding == null) return;
+            foreach (RunSoldier soldier in binding.State.StoredSoldiers)
+            {
+                CharacterActor actor = binding.ObjectOf(soldier.Id);
+                if (actor != null && actor.gameObject.activeSelf) actor.gameObject.SetActive(false);
+            }
         }
 
         readonly HashSet<ProjectNeo.Meta.PerkDefinition> appliedPerks = new HashSet<ProjectNeo.Meta.PerkDefinition>();
@@ -142,21 +154,13 @@ namespace ProjectNeo.Flow
         }
 
         /// <summary>
-        /// 전투 뒤 다음 준비 시작 때 부대를 정리한다(C-3, Q-50). 죽은 유닛은 씬 부대에서 빠지고(몸은 남는다), 잡졸도 대장도 없는 부대는
-        /// 런과 씬에서 함께 없어진다. 런은 이미 전투 결과로 죽은 유닛을 뺐으므로 씬을 런에 맞춘다. 결과는 한 번만 반영되었으므로
-        /// 여러 번 불러도 더 바뀌지 않는다.
+        /// 전투 뒤 다음 준비 시작 때 죽은 유닛을 씬 부대에서 뺀다(C-3, Q-50, 몸은 남는다). 런은 이미 전투 결과로 죽은 유닛을 뺐다.
+        /// 빈 부대는 없애지 않는다(UI-07, 사용자 2026-11-23).
         /// </summary>
         void CleanUpSquadsAfterBattle()
         {
             if (squads == null || binding == null) return;
             squads.RemoveFallen();
-            if (squads.Squads.Count != binding.State.Army.Squads.Count)
-            {
-                Debug.LogWarning("씬 부대 수와 런 부대 수가 달라 빈 부대를 정리하지 않는다.");
-                return;
-            }
-            foreach (int index in binding.State.RemoveEmptySquads())
-                if (!squads.RemoveSquad(index)) Debug.LogError("빈 씬 부대를 없애지 못했다: " + index);
         }
 
         /// <summary>
@@ -177,44 +181,27 @@ namespace ProjectNeo.Flow
         }
 
         /// <summary>
-        /// 준비 중에 잡졸 하나를 모집해 런과 씬 부대에 함께 넣는다(D-0b, Q-36). <paramref name="create"/>는 씬 유닛을
-        /// 만들어 돌려준다(위치·활성화는 부르는 쪽). 준비 단계가 아니거나 넣을 부대가 없거나 씬 유닛을 만들지 못하면 null이고
-        /// 런·씬 부대는 바뀌지 않는다. <paramref name="gatherPoint"/>는 넣기 전 부대가 모여 있던 곳이며, 빈 부대면 false다.
+        /// 준비 중에 잡졸 하나를 모집해 런과 씬에 함께 넣는다(D-0b). 새 잡졸은 보관 병사이므로 씬 부대에는 넣지 않는다(UI-07).
+        /// <paramref name="create"/>는 씬 유닛을 만들어 돌려준다(위치·활성화는 부르는 쪽이 하고, 켠 뒤 <see cref="HideStoredSoldiers"/>로 숨긴다).
+        /// 준비 단계가 아니거나 씬 유닛을 만들지 못하면 null이고 런은 바뀌지 않는다.
         /// <paramref name="payAtBarracks"/>면 병영 규칙(모집 가능 종류·비용, D-4)을 따르고 비용을 낸다. 아니면 비용을 받지 않는다.
-        /// 훈련 보너스는 유닛이 켜진 뒤 <see cref="ApplyTraining"/>으로 붙인다.
         /// </summary>
-        public UnitCombatAI TryRecruit(SoldierDefinition definition, Squad<RunUnit> preferred,
-            System.Func<SoldierDefinition, UnitCombatAI> create, out int squadIndex, out Vector3 gatherPoint, out bool hasGatherPoint,
+        public UnitCombatAI TryRecruit(SoldierDefinition definition, System.Func<SoldierDefinition, UnitCombatAI> create,
             bool payAtBarracks = false)
         {
-            squadIndex = -1; gatherPoint = default; hasGatherPoint = false;
             if (definition == null || create == null || squads == null) return null;
             if (binding == null || flow.Run == null || flow.Run.State != binding.State || flow.Phase != GamePhase.Preparation)
                 return null;
             RunState state = binding.State;
-            if (squads.Squads.Count != state.Army.Squads.Count)
-            {
-                Debug.LogWarning("씬 부대 수와 런 부대 수가 달라 모집하지 않는다.");
-                return null;
-            }
-            if (payAtBarracks && state.CheckBarracksRecruit(definition, preferred) != RecruitCheck.Ok) return null;
-            if (!state.TryFindRecruitSquad(preferred, out _, out bool needsNewSquad)) return null;
+            if (payAtBarracks ? state.CheckBarracksRecruit(definition) != RecruitCheck.Ok : state.HasPendingBattle) return null;
 
             // 씬 유닛은 아직 꺼진 채 올 수 있어(Awake 전) UnitCombatAI.Actor 대신 컴포넌트를 직접 찾는다.
             UnitCombatAI unit = create(definition);
             if (unit == null) return null;
             var actor = unit.GetComponent<CharacterActor>();
             if (actor == null) { Object.Destroy(unit.gameObject); return null; }
-            Squad<RunUnit> squad;
-            RunSoldier soldier = payAtBarracks ? state.TryRecruitAtBarracks(definition, preferred, out squad)
-                : state.TryRecruit(definition, preferred, out squad);
+            RunSoldier soldier = payAtBarracks ? state.TryRecruitAtBarracks(definition) : state.TryRecruit(definition);
             if (soldier == null) { Object.Destroy(unit.gameObject); return null; }
-            squadIndex = state.IndexOf(squad);
-            if (needsNewSquad && squads.AddSquad() != squadIndex)
-                Debug.LogError("새 씬 부대 번호가 런 부대 번호와 다르다: " + squadIndex);
-            hasGatherPoint = squads.TryGetGatherPoint(squadIndex, out gatherPoint);
-            if (!squads.AddMember(squadIndex, unit))
-                Debug.LogError("모집한 유닛을 씬 부대에 넣지 못했다: " + squadIndex);
             binding.BindNew(actor, soldier);
             return unit;
         }
@@ -301,35 +288,98 @@ namespace ProjectNeo.Flow
         }
 
         /// <summary>
-        /// 준비 중에 잡졸 하나를 다른 부대로 옮긴다(D-8, Q-45·Q-47). <paramref name="targetSquad"/>가 -1이면 새 부대로 옮긴다.
-        /// 런·씬 부대를 함께 바꾸고, 원래 부대가 비면 둘 다에서 없앤다(대장은 대기). 옮긴 유닛은 받은 부대가 모인 곳으로 걸어간다.
+        /// 준비 중에 잡졸 하나를 <paramref name="targetSquad"/> 부대에 넣는다(D-8, UI-07). 보관 병사면 씬 유닛을 켜서 넣고,
+        /// 다른 부대원이면 옮긴다. 원래 부대가 비어도 남는다. 넣은 유닛은 받은 부대가 모인 곳으로 걸어간다(빈 부대면 그 자리에 선다).
         /// 런이 받지 않으면 <see cref="OrganizeCheck"/> 이유를 돌려주고 아무것도 바뀌지 않는다.
         /// </summary>
-        public OrganizeCheck TryMoveSoldier(RunSoldier soldier, int targetSquad, out int movedTo)
+        public OrganizeCheck TryMoveSoldier(RunSoldier soldier, int targetSquad)
         {
-            movedTo = -1;
             if (!CanOrganize()) return OrganizeCheck.NotInRun;
             RunState state = binding.State;
-            if (targetSquad < -1 || targetSquad >= state.Army.Squads.Count) return OrganizeCheck.NotInRun;
-            Squad<RunUnit> target = targetSquad < 0 ? null : state.Army.Squads[targetSquad];
+            if (targetSquad < 0 || targetSquad >= state.Army.Squads.Count) return OrganizeCheck.NotInRun;
+            Squad<RunUnit> target = state.Army.Squads[targetSquad];
             OrganizeCheck check = state.CheckMoveSoldier(soldier, target);
             if (check != OrganizeCheck.Ok) return check;
             CharacterActor actor = binding.ObjectOf(soldier.Id);
             UnitCombatAI unit = actor != null ? actor.GetComponent<UnitCombatAI>() : null;
             if (unit == null) { Debug.LogWarning("옮길 잡졸의 씬 유닛이 없다: " + soldier.Id); return OrganizeCheck.NotInRun; }
-            if (targetSquad < 0 && squads.AddSquad() != state.Army.Squads.Count)
-                Debug.LogError("새 씬 부대 번호가 런 부대 번호와 다르다.");
-            int sceneTarget = targetSquad < 0 ? squads.Squads.Count - 1 : targetSquad;
-            bool hasGather = squads.TryGetGatherPoint(sceneTarget, out Vector3 gather);
-            if (!squads.MoveMember(unit, sceneTarget))
+            bool hasGather = squads.TryGetGatherPoint(targetSquad, out Vector3 gather);
+            bool stored = state.SquadOf(soldier) == null;
+            if (!(stored ? squads.AddMember(targetSquad, unit) : squads.MoveMember(unit, targetSquad)))
             {
-                if (targetSquad < 0) squads.RemoveSquad(sceneTarget);
-                Debug.LogWarning("씬 부대에 자리가 없어 옮기지 않는다: " + sceneTarget);
+                Debug.LogWarning("씬 부대에 자리가 없어 넣지 않는다: " + targetSquad);
                 return OrganizeCheck.SquadFull;
             }
-            state.TryMoveSoldier(soldier, target, out movedTo, out int removed);
-            if (removed >= 0 && !squads.RemoveSquad(removed)) Debug.LogError("빈 씬 부대를 없애지 못했다: " + removed);
+            state.TryMoveSoldier(soldier, target, out _);
+            if (stored)
+            {
+                unit.gameObject.SetActive(true);
+                ApplyTraining();
+                ApplyPerks();
+            }
             if (hasGather) unit.SetDirective(UnitDirective.Move, gather);
+            else unit.SetDirective(UnitDirective.Hold);
+            return OrganizeCheck.Ok;
+        }
+
+        /// <summary>준비 중에 잡졸을 부대에서 빼 보관 병사로 둔다(UI-07). 씬 유닛은 숨긴다. 부대가 비어도 남는다.</summary>
+        public OrganizeCheck TryStoreSoldier(RunSoldier soldier)
+        {
+            if (!CanOrganize()) return OrganizeCheck.NotInRun;
+            RunState state = binding.State;
+            OrganizeCheck check = state.CheckStoreSoldier(soldier);
+            if (check != OrganizeCheck.Ok) return check;
+            CharacterActor actor = binding.ObjectOf(soldier.Id);
+            UnitCombatAI unit = actor != null ? actor.GetComponent<UnitCombatAI>() : null;
+            if (unit != null) squads.RemoveMember(unit);
+            state.TryStoreSoldier(soldier);
+            if (actor != null) actor.gameObject.SetActive(false);
+            return OrganizeCheck.Ok;
+        }
+
+        /// <summary>준비 중에 빈 부대를 맨 뒤에 만든다(UI-07). 만든 부대 순번은 <paramref name="index"/>.</summary>
+        public OrganizeCheck TryAddSquad(out int index)
+        {
+            index = -1;
+            if (!CanOrganize()) return OrganizeCheck.NotInRun;
+            RunState state = binding.State;
+            OrganizeCheck check = state.CheckAddSquad();
+            if (check != OrganizeCheck.Ok) return check;
+            int scene = squads.AddSquad();
+            if (scene < 0) return OrganizeCheck.SquadFull;
+            state.TryAddSquad();
+            index = state.Army.Squads.Count - 1;
+            if (scene != index) Debug.LogError("새 씬 부대 번호가 런 부대 번호와 다르다: " + scene);
+            return OrganizeCheck.Ok;
+        }
+
+        /// <summary>
+        /// 준비 중에 부대를 없앤다(UI-07). 잡졸은 모두 보관 병사가 되어 씬에서 숨겨지고, 대장은 대기 영웅이 된다.
+        /// 뒤 부대의 순번은 하나씩 당겨진다.
+        /// </summary>
+        public OrganizeCheck TryRemoveSquad(int index)
+        {
+            if (!CanOrganize()) return OrganizeCheck.NotInRun;
+            RunState state = binding.State;
+            if (index < 0 || index >= state.Army.Squads.Count) return OrganizeCheck.NotInRun;
+            Squad<RunUnit> squad = state.Army.Squads[index];
+            OrganizeCheck check = state.CheckRemoveSquad(squad);
+            if (check != OrganizeCheck.Ok) return check;
+            var members = new List<RunUnit>(squad.Members);
+            foreach (RunUnit member in members)
+            {
+                CharacterActor actor = binding.ObjectOf(member.Id);
+                UnitCombatAI unit = actor != null ? actor.GetComponent<UnitCombatAI>() : null;
+                if (unit != null) squads.RemoveMember(unit);
+                if (actor != null) actor.gameObject.SetActive(false);
+            }
+            squads.SetLeader(index, null);
+            if (!squads.RemoveSquad(index))
+            {
+                Debug.LogError("씬 부대를 없애지 못했다: " + index);
+                return OrganizeCheck.NotInRun;
+            }
+            state.TryRemoveSquad(squad);
             return OrganizeCheck.Ok;
         }
 

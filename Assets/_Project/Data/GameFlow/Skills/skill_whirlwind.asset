@@ -15,6 +15,7 @@ MonoBehaviour:
   id: skill_whirlwind
   displayName: "\uD68C\uC624\uB9AC \uBCA0\uAE30"
   description: "\uC8FC\uBCC0 3m \uC548\uC758 \uC801\uC744 \uBAA8\uB450 \uBCA4\uB2E4(\uACF5\uACA9\uB825 100% + 10)."
+  icon: {fileID: 21300000, guid: 965129895f783004e928eb620f4d2820, type: 3}
   cooldown: 12
   targetMode: 0
   range: 0

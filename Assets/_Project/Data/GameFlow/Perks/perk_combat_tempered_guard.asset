@@ -10,16 +10,21 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 245f67fb49f0e7f418de26ef3bd6270c, type: 3}
-  m_Name: perk_combat_skill_whirlwind
+  m_Name: perk_combat_tempered_guard
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Meta.PerkDefinition
-  id: perk_combat_skill_whirlwind
-  displayName: "\uC2A4\uD0AC: \uD68C\uC624\uB9AC \uBCA0\uAE30"
+  id: perk_combat_tempered_guard
+  displayName: "\uB2E8\uB828\uB41C \uBC29\uC5B4"
   category: 0
   pointCost: 1
   unlockedByDefault: 1
-  statEffects: []
+  statEffects:
+  - target: 0
+    modifier:
+      stat: 2
+      kind: 0
+      value: 3
   specialEffects: []
   runEffects: []
-  prerequisites: []
-  description: "\uC2A4\uD0AC \uC2B5\uB4DD: \uC8FC\uBCC0 3m \uC548\uC758 \uC801\uC744 \uBAA8\uB450 \uBCA4\uB2E4(\uACF5\uACA9\uB825 100% + 10)."
-  grantedSkill: {fileID: 11400000, guid: 50e82d8de08bd6f489f36da1ab55b749, type: 2}
+  prerequisites:
+  - {fileID: 11400000, guid: a8dfb57e99df6874f896de1a4784cd42, type: 2}
+  description: 

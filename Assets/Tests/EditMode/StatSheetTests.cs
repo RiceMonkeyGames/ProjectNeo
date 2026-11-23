@@ -81,6 +81,21 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
+        public void GetValueWith_PreviewsWithoutChangingTheSheet()
+        {
+            object worn = new object();
+            sheet.AddModifier(StatModifier.Flat(StatType.Attack, 10f), worn);
+            sheet.AddModifier(StatModifier.Percent(StatType.Attack, 0.5f), "perk");
+
+            float equipped = sheet.GetValueWith(StatType.Attack, new[] { StatModifier.Flat(StatType.Attack, 20f) }, null);
+            float removed = sheet.GetValueWith(StatType.Attack, null, worn);
+
+            Assert.AreEqual((100f + 10f + 20f) * 1.5f, equipped, 0.001f);
+            Assert.AreEqual(100f * 1.5f, removed, 0.001f);
+            Assert.AreEqual(110f * 1.5f, sheet.GetValue(StatType.Attack), 0.001f, "미리보기는 시트를 바꾸지 않는다.");
+        }
+
+        [Test]
         public void SetBases_SetsEveryListedStat()
         {
             sheet.SetBases(new[] { new StatValue(StatType.Defense, 7f), new StatValue(StatType.MoveSpeed, 3f) });

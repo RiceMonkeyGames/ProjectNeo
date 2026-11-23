@@ -157,58 +157,6 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
-        public void Loadout_RefreshAutoEquipsUpToThreeInLearnOrder()
-        {
-            var loadout = new SkillLoadout();
-            loadout.Refresh(new List<SkillDefinition> { whirl, warCry });
-            Assert.AreEqual("whirl", loadout.EquippedId(0));
-            Assert.AreEqual("war_cry", loadout.EquippedId(1));
-            Assert.IsNull(loadout.EquippedId(2));
-
-            var learned = new List<SkillDefinition> { whirl, warCry, heal, slam };
-            loadout.Refresh(learned);
-            CollectionAssert.AreEqual(new[] { whirl, warCry, heal }, loadout.EquippedSkills(learned));
-            Assert.IsFalse(loadout.IsEquipped("slam"), "fourth skill waits for the player's choice");
-        }
-
-        [Test]
-        public void Loadout_EquipSwapsAndRejectsUnlearned()
-        {
-            var learned = new List<SkillDefinition> { whirl, warCry, heal, slam };
-            var loadout = new SkillLoadout();
-            loadout.Refresh(learned);
-
-            Assert.IsTrue(loadout.TryEquip(1, "slam", learned));
-            CollectionAssert.AreEqual(new[] { whirl, slam, heal }, loadout.EquippedSkills(learned));
-
-            Assert.IsTrue(loadout.TryEquip(0, "heal", learned), "already in slot 2 -> swap");
-            CollectionAssert.AreEqual(new[] { heal, slam, whirl }, loadout.EquippedSkills(learned));
-
-            Assert.IsFalse(loadout.TryEquip(0, "unknown", learned));
-            Assert.IsFalse(loadout.TryEquip(3, "whirl", learned));
-            Assert.IsTrue(loadout.Unequip(2));
-            Assert.IsFalse(loadout.Unequip(2));
-            CollectionAssert.AreEqual(new[] { heal, slam }, loadout.EquippedSkills(learned));
-        }
-
-        [Test]
-        public void Loadout_RefreshDropsForgottenSkillsAndRefills()
-        {
-            var loadout = new SkillLoadout();
-            loadout.Refresh(new List<SkillDefinition> { whirl, warCry, heal, slam });
-            loadout.TryEquip(2, "slam", new List<SkillDefinition> { whirl, warCry, heal, slam });
-
-            var afterReset = new List<SkillDefinition> { heal, warCry };
-            loadout.Refresh(afterReset);
-            Assert.IsFalse(loadout.IsEquipped("whirl"), "whirl forgotten");
-            CollectionAssert.AreEquivalent(new[] { warCry, heal }, loadout.EquippedSkills(afterReset));
-            Assert.IsFalse(loadout.IsEquipped("slam"));
-
-            loadout.Refresh(null);
-            Assert.AreEqual(0, loadout.EquippedSkills(null).Count);
-        }
-
-        [Test]
         public void StatusTimers_RefreshWithoutStacking_AndExpire()
         {
             var timers = new SkillStatusTimers();
@@ -346,29 +294,6 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(0, hits);
             Assert.AreEqual(0, SkillAutoRules.BestClusterCenter(enemies, enemies, bodies, 0f, Vector3.zero, out hits));
             Assert.AreEqual(0, hits, "zero radius catches no one");
-        }
-
-        [Test]
-        public void Loadout_CaptureRestoreRoundTrip()
-        {
-            var learned = new List<SkillDefinition> { whirl, warCry, heal, slam };
-            var loadout = new SkillLoadout();
-            loadout.Refresh(learned);
-            loadout.TryEquip(0, "slam", learned);
-            loadout.Unequip(1);
-            List<string> saved = loadout.Capture();
-            CollectionAssert.AreEqual(new[] { "slam", string.Empty, "heal" }, saved);
-
-            var restored = new SkillLoadout();
-            restored.Restore(saved);
-            Assert.AreEqual("slam", restored.EquippedId(0));
-            Assert.IsNull(restored.EquippedId(1));
-            Assert.AreEqual("heal", restored.EquippedId(2));
-
-            restored.Restore(new[] { "gone" });
-            restored.Refresh(learned);
-            Assert.IsFalse(restored.IsEquipped("gone"));
-            CollectionAssert.AreEqual(new[] { whirl, warCry, heal }, restored.EquippedSkills(learned));
         }
     }
 }

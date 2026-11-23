@@ -58,12 +58,6 @@ namespace ProjectNeo.Meta
         [SerializeField] List<PerkDefinition> prerequisites = new List<PerkDefinition>();
         [Tooltip("퍽 창에 보여 줄 한 줄 설명. 비어 있으면 효과로 만든 설명을 쓴다.")]
         [SerializeField] string description;
-        [Tooltip("이 퍽을 찍으면 배우는 플레이어 액티브 스킬(COMBAT-06, Q-72). 비우면 스킬을 주지 않는다.")]
-        [SerializeField] ProjectNeo.Skills.SkillDefinition grantedSkill;
-
-        /// <summary>이 퍽으로 배우는 플레이어 스킬. 없으면 null.</summary>
-        public ProjectNeo.Skills.SkillDefinition GrantedSkill => grantedSkill;
-
         public string Id => id;
         public string DisplayName => displayName;
         public PerkCategory Category => category;
@@ -96,12 +90,10 @@ namespace ProjectNeo.Meta
             IEnumerable<PerkRunEffect> runEffects = null,
             string displayName = null,
             IEnumerable<PerkDefinition> prerequisites = null,
-            string description = null,
-            ProjectNeo.Skills.SkillDefinition grantedSkill = null)
+            string description = null)
         {
             var perk = CreateInstance<PerkDefinition>();
             perk.id = id;
-            perk.grantedSkill = grantedSkill;
             perk.displayName = string.IsNullOrEmpty(displayName) ? id : displayName;
             if (runEffects != null) perk.runEffects = new List<PerkRunEffect>(runEffects);
             if (prerequisites != null) foreach (PerkDefinition required in prerequisites) if (required != null) perk.prerequisites.Add(required);

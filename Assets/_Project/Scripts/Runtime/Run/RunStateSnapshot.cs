@@ -57,9 +57,9 @@ namespace ProjectNeo.Run
             foreach (RunHero hero in heroes) snapshot.heroes.Add(Record(hero));
             foreach (RunHero hero in fallenHeroes) snapshot.fallenHeroes.Add(Record(hero));
 
+            // 빈 부대도 남긴다(UI-07): 편성 화면에서 만든 빈 부대가 저장 뒤에도 그대로 있다.
             foreach (Squad<RunUnit> squad in Army.Squads)
             {
-                if (squad.Members.Count == 0 && squad.Leader == null) continue;
                 var record = new SquadRecord { leaderUnitId = squad.Leader != null ? squad.Leader.Id : 0 };
                 foreach (RunUnit member in squad.Members)
                     if (member is RunSoldier soldier) record.soldiers.Add(Record(soldier));
@@ -79,7 +79,6 @@ namespace ProjectNeo.Run
             snapshot.prepTime.budget = Clock.Budget;
             snapshot.prepTime.used = Clock.Used;
             snapshot.perks.AddRange(PerkIds());
-            snapshot.playerSkills.AddRange(PlayerSkillLoadout.Capture());
             snapshot.score = CaptureScore();
 
             snapshot.shop.stockedFor = ShopStockedFor;
@@ -335,8 +334,6 @@ namespace ProjectNeo.Run
             state.Castle = CastleState.FromRecords(pieces, weapons);
 
             state.RestorePerks(snapshot.perks, content);
-            // 퍽 묶음은 나중에 씬이 만들므로 여기서는 id만 되살린다. 배우지 않은 id는 다음 Refresh에서 빠진다.
-            state.PlayerSkillLoadout.Restore(snapshot.playerSkills);
             state.RestoreScore(snapshot.score);
             state.nextUnitId = Math.Max(snapshot.nextUnitId, highestId + 1);
             state.BattlesFought = snapshot.battlesFought;
@@ -358,7 +355,7 @@ namespace ProjectNeo.Run
             return soldier;
         }
 
-        // 저장된 장비를 보관함을 거쳐 끼운다. 칸이 모자라 못 끼운 장비는 보관함에 남아 잃지 않는다.
+        // 저장된 장비를 보관함을 거쳐 끼운다. 같은 칸에 두 개가 저장돼 있으면(UI-07 칸 종류 이전 저장) 앞의 것이 보관함으로 돌아가 잃지 않는다.
         void Equip(Character character, HeroRecord record, IRunContentLookup content, RunRestoreOptions options)
         {
             foreach (ItemRecord equipment in record.equipment ?? new List<ItemRecord>())

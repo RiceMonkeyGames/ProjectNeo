@@ -1,3 +1,4 @@
+﻿using TMPro;
 using UnityEngine;
 
 namespace ProjectNeo.UI
@@ -42,6 +43,16 @@ namespace ProjectNeo.UI
         [SerializeField] Color moraleHigh = new Color(0.98f, 0.82f, 0.35f, 1f);
         [Tooltip("UI-12 준비 화면 분대 패널 한 페이지의 카드 수. 더 많으면 [ ] 키로 넘긴다. 0이면 기본값.")]
         [SerializeField, Min(0)] int squadCardsPerPage = DefaultSquadCardsPerPage;
+        [Header("Windows (UI-07)")]
+        [Tooltip("실행 중에 코드로 만드는 창(Esc 메뉴 등)의 판. 사이드바와 같은 어두운 판과 굵은 금테. 비어 있으면 단색 판.")]
+        [SerializeField] Sprite windowPlateSprite;
+        [SerializeField] Color windowPlate = new Color32(0x10, 0x16, 0x1A, 0xF2);
+        [SerializeField, Min(0.1f)] float windowPlatePixelsPerUnit = 2f;
+        [SerializeField] Sprite windowFrameSprite;
+        [SerializeField] Color windowFrame = new Color(0.85f, 0.85f, 0.85f, 1f);
+        [SerializeField, Min(0.1f)] float windowFramePixelsPerUnit = 10f;
+        [SerializeField] Color windowAccent = new Color32(0xE3, 0xBB, 0x71, 0xFF);
+        [SerializeField] TMP_FontAsset windowFont;
 
         public Color Panel => panel;
         public Color PanelSelected => panelSelected;
@@ -70,6 +81,15 @@ namespace ProjectNeo.UI
 
         public const int DefaultSquadCardsPerPage = 5;
         public int SquadCardsPerPage => squadCardsPerPage > 0 ? squadCardsPerPage : DefaultSquadCardsPerPage;
+
+        public Sprite WindowPlateSprite => windowPlateSprite;
+        public Color WindowPlate => windowPlate;
+        public float WindowPlatePixelsPerUnit => windowPlatePixelsPerUnit;
+        public Sprite WindowFrameSprite => windowFrameSprite;
+        public Color WindowFrame => windowFrame;
+        public float WindowFramePixelsPerUnit => windowFramePixelsPerUnit;
+        public Color WindowAccent => windowAccent;
+        public TMP_FontAsset WindowFont => windowFont;
 
         public static HudStyle Create() => CreateInstance<HudStyle>();
     }

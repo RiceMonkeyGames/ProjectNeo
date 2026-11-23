@@ -47,15 +47,17 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
-        public void 소모품_빈칸_없음_보관함에_없는_아이템은_거부한다()
+        public void 소모품_보관함에_없는_아이템은_거부하고_같은_칸은_바꿔_낀다()
         {
             RunState run = NewRun(out RunHero player);
             Assert.IsFalse(run.TryEquip(player, run.Inventory.Add(potion)), "소모품");
             Assert.IsFalse(run.TryEquip(player, new ItemInstance(sword)), "보관함에 없음");
-            Assert.IsTrue(run.TryEquip(player, run.Inventory.Add(sword)));
+            ItemInstance first = run.Inventory.Add(sword);
+            Assert.IsTrue(run.TryEquip(player, first));
             ItemInstance second = run.Inventory.Add(sword);
-            Assert.IsFalse(run.TryEquip(player, second), "칸이 1개");
-            Assert.IsTrue(run.Inventory.Contains(second));
+            Assert.IsTrue(run.TryEquip(player, second), "UI-07: 같은 무기 칸이면 바꿔 낀다.");
+            Assert.IsTrue(run.Inventory.Contains(first), "벗은 장비는 보관함으로 돌아온다.");
+            Assert.AreEqual(1, player.Character.Equipment.Count);
             Assert.AreEqual(15f, player.Character.Stats.GetValue(StatType.Attack));
         }
 

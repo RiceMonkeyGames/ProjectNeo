@@ -15,7 +15,7 @@ namespace ProjectNeo.Tests
 {
     /// <summary>
     /// PREP-09(Q-57): Game 씬은 10부대 × 잡졸 20명(대장은 따로)과 부대 선택 키 F1~F10을 쓴다.
-    /// 잡졸 20명이 찬 부대도 편성 창 카드에 모든 줄이 들어가고, 카드 영역을 세로로 스크롤하면 마지막 줄이 보인다.
+    /// 잡졸 20명이 찬 부대도 편성 창(UI-07) 가운데 열을 세로로 스크롤하면 마지막 줄이 보인다.
     /// </summary>
     public class GameSquadCapsPlayTests
     {
@@ -68,33 +68,35 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
-        public IEnumerator 잡졸_20명이_찬_부대도_편성_창_카드에_모든_줄이_보인다()
+        public IEnumerator 잡졸_20명이_찬_부대도_편성_창_가운데_열을_스크롤하면_모든_줄이_보인다()
         {
             RunState state = GameSession.Flow.Run.State;
             state.Wallet.AddGold(2000);
             Assert.IsTrue(facilities.Open(FacilityType.TrainingGround));
             yield return null;
-            Assert.IsTrue(facilities.ChooseSquad(0));
-            for (int guard = 0; guard < 30 && !state.Army.Squads[0].IsFull; guard++)
-                Assert.IsTrue(facilities.TryRecruit(0), facilities.Message);
-            Assert.AreEqual(20, state.Army.Squads[0].Members.Count);
-            Assert.AreEqual(20, center.Squads[0].Members.Count, "씬 부대도 20명이다.");
+            int missing = state.Army.Squads[0].Capacity - state.Army.Squads[0].Members.Count;
+            for (int i = 0; i < missing + 2; i++) Assert.IsTrue(facilities.TryRecruit(0), facilities.Message);
             facilities.Close();
             yield return null;
 
             Assert.IsTrue(organization.Open());
+            Assert.AreEqual(0, organization.SelectedSquad);
+            for (int guard = 0; guard < 30 && !state.Army.Squads[0].IsFull; guard++)
+                Assert.IsTrue(organization.Assign(state.StoredSoldiers[0]), organization.Message);
+            Assert.AreEqual(20, state.Army.Squads[0].Members.Count);
+            Assert.AreEqual(20, center.Squads[0].Members.Count, "씬 부대도 20명이다.");
+            Assert.AreEqual(2, state.StoredSoldiers.Count);
+            Assert.IsFalse(organization.Assign(state.StoredSoldiers[0]), "가득 찬 부대에는 더 넣지 않는다.");
+            Assert.IsTrue(organization.RowsIn(2).TrueForAll(row => !row.IsClickable), "가득 차면 보관 병사 줄이 흐려진다.");
             yield return null;
             Canvas.ForceUpdateCanvases();
-            RectTransform card = organization.CardAt(0);
-            Assert.IsNotNull(card);
-            var list = (RectTransform)card.Find("List");
-            Assert.AreEqual(21, list.childCount, "대장 줄 + 잡졸 20줄");
-            RectTransform last = (RectTransform)list.GetChild(list.childCount - 1);
-            Assert.GreaterOrEqual(Bottom(last), Bottom(card) - 0.5f, "마지막 줄이 카드 안에 있다.");
 
-            var scroll = card.GetComponentInParent<ScrollRect>();
-            Assert.IsTrue(scroll.vertical, "카드 영역은 세로로도 스크롤한다.");
-            Assert.Greater(scroll.content.rect.height, scroll.viewport.rect.height, "21줄 카드는 보이는 영역보다 길다.");
+            var members = organization.RowsIn(1);
+            Assert.AreEqual(21, members.Count, "부대장 줄 + 잡졸 20줄");
+            var last = (RectTransform)members[members.Count - 1].transform;
+            var scroll = last.GetComponentInParent<ScrollRect>();
+            Assert.IsTrue(scroll.vertical, "열은 세로로 스크롤한다.");
+            Assert.Greater(scroll.content.rect.height, scroll.viewport.rect.height, "21줄은 보이는 영역보다 길다.");
             scroll.verticalNormalizedPosition = 0f;
             Canvas.ForceUpdateCanvases();
             Assert.GreaterOrEqual(Bottom(last), Bottom(scroll.viewport) - 0.5f, "맨 아래로 스크롤하면 마지막 줄이 보인다.");

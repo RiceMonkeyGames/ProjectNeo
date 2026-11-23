@@ -128,7 +128,8 @@ namespace ProjectNeo.UI
             GamePhase phase = GameSession.Flow.Phase;
             EnemyIntel intel = battle != null ? battle.Intel : null;
             bool show = intel != null && (phase == GamePhase.Battle
-                || phase == GamePhase.Preparation && PreviewOpen && phaseView != null && phaseView.IsExplorationView);
+                || phase == GamePhase.Preparation && PreviewOpen && phaseView != null
+                    && (phaseView.IsExplorationView || phaseView.IsPanelView)); // UI-07: 창이 열려도 보인다(사용자 2026-11-23)
             if (content.activeSelf != show) content.SetActive(show);
             if (!show) return;
             Place(phase);

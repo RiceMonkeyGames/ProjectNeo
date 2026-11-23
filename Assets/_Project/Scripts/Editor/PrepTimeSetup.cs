@@ -101,9 +101,8 @@ namespace ProjectNeo.Editor
 
             var controller = hud.GetComponent<PrepClockHud>();
             if (controller == null) controller = hud.gameObject.AddComponent<PrepClockHud>();
-            // 부대 편성 창은 거의 화면 전체라 시계 줄이 제목 상자에 닿는다. 시간을 쓰지 않는 창이라 열려 있는 동안 시계를 숨긴다.
-            Transform organization = hud.transform.Find("OrganizationPanel");
-            controller.Configure(battle, line.gameObject, label, organization != null ? organization.gameObject : null);
+            // 편성 창이 열려도 시계는 남는다(UI-07, 사용자 2026-11-23: 장비 창과 같게).
+            controller.Configure(battle, line.gameObject, label);
             EditorUtility.SetDirty(controller);
             EditorUtility.SetDirty(label);
             EditorUtility.SetDirty(panel);

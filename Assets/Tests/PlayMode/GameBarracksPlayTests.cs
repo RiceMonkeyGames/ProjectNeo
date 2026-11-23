@@ -15,7 +15,7 @@ using UnityEngine.TestTools;
 
 namespace ProjectNeo.Tests
 {
-    /// <summary>D-4: Game 씬 병영 팝업에서 잡졸을 모집(비용·부대 선택)하고, 업그레이드한 훈련 보너스가 모든 잡졸에게 붙는다(Q-37).</summary>
+    /// <summary>D-4: Game 씬 병영 팝업에서 잡졸을 모집(비용, 보관 병사로)하고, 업그레이드한 훈련 보너스가 모든 잡졸에게 붙는다(Q-37).</summary>
     public class GameBarracksPlayTests
     {
         static int cleanup;
@@ -54,8 +54,10 @@ namespace ProjectNeo.Tests
 
         static float Flat(Vector3 a, Vector3 b) { a.y = 0f; b.y = 0f; return Vector3.Distance(a, b); }
 
+        CharacterActor ActorOf(RunUnit unit) => battle.RunLink.ActorsInRun().First(actor => battle.RunLink.IdOf(actor) == unit.Id);
+
         [UnityTest]
-        public IEnumerator 병영에서_비용을_내고_고른_부대로_잡졸을_모집한다()
+        public IEnumerator 병영에서_비용을_내고_모집한_잡졸은_보관되어_숨겨진다()
         {
             RunState state = GameSession.Flow.Run.State;
             Assert.IsTrue(facilities.Open(FacilityType.TrainingGround));
@@ -63,27 +65,20 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(2, state.RecruitableSoldiers.Count, "1레벨부터 근접·원거리 모두 모집한다.");
             Assert.AreEqual(2, facilities.OfferRows);
             StringAssert.StartsWith("모집", facilities.OfferHeaderText);
-            Assert.AreEqual(-1, facilities.ChosenSquad, "처음에는 자동 배치다.");
             StringAssert.Contains("훈련 보너스", facilities.BodyText);
-            Vector3 barracks = Object.FindObjectsByType<FacilityStation>()
-                .First(station => station.Type == FacilityType.TrainingGround).transform.position;
 
             int gold = state.Wallet.Gold;
             int first = center.Squads[0].Members.Count;
             Assert.IsTrue(facilities.TryRecruit(0));
             Assert.AreEqual(gold - 15, state.Wallet.Gold, "근접 잡졸은 15골드.");
-            Assert.AreEqual(first + 1, center.Squads[0].Members.Count, "자동 배치는 자리가 남은 첫 부대.");
-            UnitCombatAI recruit = center.Squads[0].Members.Last();
-            Assert.Less(Flat(recruit.transform.position, barracks), 12f, "병영 앞에 나타난다.");
-            StringAssert.Contains("1부대", facilities.Message);
+            Assert.AreEqual(first, center.Squads[0].Members.Count, "부대에는 들어가지 않는다(UI-07).");
+            Assert.AreEqual(1, state.StoredSoldiers.Count);
+            Assert.IsFalse(ActorOf(state.StoredSoldiers[0]).gameObject.activeSelf, "보관 병사는 씬에서 숨겨진다.");
+            StringAssert.Contains("보관", facilities.Message);
 
-            Assert.IsTrue(facilities.ChooseSquad(1));
-            Assert.AreEqual(1, facilities.ChosenSquad);
-            int second = center.Squads[1].Members.Count;
             Assert.IsTrue(facilities.TryRecruit(1));
             Assert.AreEqual(gold - 35, state.Wallet.Gold, "원거리 잡졸은 20골드.");
-            Assert.AreEqual(second + 1, center.Squads[1].Members.Count, "고른 부대에 들어간다.");
-            Assert.AreSame(state.RecruitableSoldiers[1], center.Squads[1].Members.Last().Actor.SoldierDefinition);
+            Assert.AreSame(state.RecruitableSoldiers[1], state.StoredSoldiers.Last().Definition);
 
             Assert.IsTrue(state.Wallet.TrySpend(new Cost(state.Wallet.Gold - 10)));
             int soldiers = state.Soldiers.Count;
@@ -94,9 +89,10 @@ namespace ProjectNeo.Tests
 
             facilities.Close();
             yield return null;
+            var stored = state.StoredSoldiers.Select(soldier => soldier.Id).ToList();
             Assert.IsTrue(battle.TryStartBattle());
-            Assert.IsTrue(battle.RunLink.CurrentInput.Squads[1].Members.Any(member => member.Id == battle.RunLink.IdOf(center.Squads[1].Members.Last().Actor)),
-                "모집한 잡졸이 다음 전투 입력에 들어간다.");
+            Assert.IsFalse(battle.RunLink.CurrentInput.Squads.Any(squad => squad.Members.Any(member => stored.Contains(member.Id))),
+                "보관 병사는 전투에 나가지 않는다.");
         }
 
         [UnityTest]
@@ -119,7 +115,7 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(playerHealth, player.Stats.GetValue(StatType.MaxHealth), 0.001f, "플레이어에게는 붙지 않는다.");
 
             Assert.IsTrue(facilities.TryRecruit(0));
-            CharacterActor recruit = center.Squads[0].Members.Last().Actor;
+            CharacterActor recruit = ActorOf(state.StoredSoldiers.Last());
             Assert.AreNotSame(veteran, recruit);
             Assert.AreEqual(recruit.Stats.GetBase(StatType.MaxHealth) * 1.1f, recruit.Health.Maximum, 0.01f, "새 잡졸도 보너스를 받는다.");
             Assert.AreEqual(recruit.Health.Maximum, recruit.Health.Current, 0.01f);

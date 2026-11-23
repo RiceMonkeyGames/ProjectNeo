@@ -105,9 +105,12 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(300, item.UpgradeGoldSpent);
             Assert.IsFalse(run.TryUpgradeEquipment(item));
             Assert.AreEqual(0, other.UpgradeLevel);
-            Assert.IsTrue(run.TryEquip(run.Player, item));
+            // 장비는 종류마다 한 칸이라 같은 무기 둘을 끼면 나중 것이 앞의 것과 자리를 바꾼다(UI-07).
             Assert.IsTrue(run.TryEquip(run.Player, other));
-            Assert.AreEqual(45f, run.Player.Character.Stats.GetValue(StatType.Attack), 0.0001f);
+            float withOther = run.Player.Character.Stats.GetValue(StatType.Attack);
+            Assert.IsTrue(run.TryEquip(run.Player, item));
+            Assert.Greater(run.Player.Character.Stats.GetValue(StatType.Attack), withOther);
+            Assert.AreEqual(0, other.UpgradeLevel);
         }
 
         [Test]

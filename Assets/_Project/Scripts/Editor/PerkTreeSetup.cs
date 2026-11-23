@@ -23,6 +23,12 @@ namespace ProjectNeo.Editor
             "perk_sample_shop_discount", "perk_sample_prep_hours", "perk_sample_battle_morale", "PerkEffect_SampleMoraleAtBattleStart",
         };
 
+        /// <summary>UI-07에서 없앤 스킬 퍽. 저장에 남은 id는 불러올 때 빠지고 포인트가 돌아온다(META-10).</summary>
+        static readonly string[] OldSkillPerks =
+        {
+            "perk_combat_skill_whirlwind", "perk_combat_skill_shield_bash", "perk_combat_skill_war_cry", "perk_combat_skill_healing_light",
+        };
+
         [MenuItem("ProjectNeo/Setup/Create Perk Trees (META-09)")]
         public static void Apply()
         {
@@ -67,12 +73,16 @@ namespace ProjectNeo.Editor
             PerkDefinition u4 = Perk("perk_units_rally", "재집결", PerkCategory.UnitBoost, new[] { u2 }, special: rally);
             PerkDefinition u5 = Perk("perk_units_avenge_them", "복수", PerkCategory.UnitBoost, new[] { u3 }, special: avenge);
 
-            // 전투 트리 스킬 퍽(COMBAT-06, Q-72): 찍으면 플레이어가 그 스킬을 배운다.
-            Dictionary<string, ProjectNeo.Skills.SkillDefinition> skills = SkillSetup.CreateSkills();
-            PerkDefinition s1 = SkillPerk("perk_combat_skill_whirlwind", skills[SkillSetup.Whirlwind], null);
-            PerkDefinition s2 = SkillPerk("perk_combat_skill_shield_bash", skills[SkillSetup.ShieldBash], new[] { c1 });
-            PerkDefinition s3 = SkillPerk("perk_combat_skill_war_cry", skills[SkillSetup.WarCry], new[] { c2 });
-            PerkDefinition s4 = SkillPerk("perk_combat_skill_healing_light", skills[SkillSetup.HealingLight], new[] { c4 });
+            // 예전 스킬 퍽 자리의 능력치 퍽(UI-07, 사용자 결정 2026-11-23: 퍽은 스킬을 주지 않는다). 수치는 임시값.
+            foreach (string name in OldSkillPerks) AssetDatabase.DeleteAsset(Folder + "/" + name + ".asset");
+            PerkDefinition s1 = Perk("perk_combat_battle_rhythm", "전투 리듬", PerkCategory.Combat, null,
+                Stat(PerkTarget.Player, StatModifier.Percent(StatType.AttackSpeed, 0.1f)));
+            PerkDefinition s2 = Perk("perk_combat_honed_edge", "날 세우기", PerkCategory.Combat, new[] { c1 },
+                Stat(PerkTarget.Player, StatModifier.Percent(StatType.Attack, 0.1f)));
+            PerkDefinition s3 = Perk("perk_combat_vitality", "활력", PerkCategory.Combat, new[] { c2 },
+                Stat(PerkTarget.Player, StatModifier.Percent(StatType.MaxHealth, 0.15f)));
+            PerkDefinition s4 = Perk("perk_combat_tempered_guard", "단련된 방어", PerkCategory.Combat, new[] { c4 },
+                Stat(PerkTarget.Player, StatModifier.Flat(StatType.Defense, 3f)));
 
             PerkTreeDefinition combat = SaveOver(PerkTreeDefinition.Create(PerkCategory.Combat, "전투",
                     new[] { c1, c2, c3, c4, c5, s1, s2, s3, s4 }),
@@ -109,10 +119,6 @@ namespace ProjectNeo.Editor
             return SaveOver(PerkDefinition.Create(id, category, stats, specials, 1, true, run, name, prerequisites),
                 Folder + "/" + id + ".asset");
         }
-
-        static PerkDefinition SkillPerk(string id, ProjectNeo.Skills.SkillDefinition skill, PerkDefinition[] prerequisites) =>
-            SaveOver(PerkDefinition.Create(id, PerkCategory.Combat, null, null, 1, true, null, "스킬: " + skill.DisplayName,
-                prerequisites, "스킬 습득: " + skill.Description, skill), Folder + "/" + id + ".asset");
 
         // 이미 있으면 내용을 덮어써서 다른 에셋의 참조(GUID)를 유지한다.
         static T SaveOver<T>(T value, string path) where T : ScriptableObject

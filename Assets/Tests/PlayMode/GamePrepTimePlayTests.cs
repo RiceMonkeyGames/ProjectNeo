@@ -96,16 +96,16 @@ namespace ProjectNeo.Tests
                 Assert.AreEqual(hud.transform.childCount - 1, bar.Area.GetSiblingIndex(), "자원 바는 시설 창보다 위에 그린다.");
                 Assert.IsFalse(phaseBox.gameObject.activeSelf, "준비 중에는 단계 상자 대신 자원 바가 보인다.");
                 Assert.AreEqual(1f, clockHud.FillRatio, 0.0001f, "첫 준비는 시간 게이지가 가득 차 있다.");
-                foreach (string popup in new[] { "FacilityPanel", "EquipmentPanel" })
+                foreach (string popup in new[] { "FacilityPanel", "EquipmentPanel", "OrganizationPanel" })
                 {
                     Rect area = Bounds((RectTransform)hud.transform.Find(popup));
                     Assert.IsFalse(Bounds(clockRect).Overlaps(area), $"{popup}: clock={Bounds(clockRect)} popup={area}");
                 }
-                // 거의 화면 전체인 부대 편성 창이 열려 있는 동안에는 시계를 숨긴다.
+                // 부대 편성 창이 열려도 장비 창처럼 시계는 남는다(UI-07).
                 GameObject organization = hud.transform.Find("OrganizationPanel").gameObject;
                 organization.SetActive(true);
                 yield return null;
-                Assert.IsFalse(clockHud.IsShowing, "부대 편성 창 위에는 시계를 그리지 않는다.");
+                Assert.IsTrue(clockHud.IsShowing, "부대 편성 창이 열려도 시계를 숨기지 않는다.");
                 organization.SetActive(false);
                 yield return null;
                 Assert.IsTrue(clockHud.IsShowing);

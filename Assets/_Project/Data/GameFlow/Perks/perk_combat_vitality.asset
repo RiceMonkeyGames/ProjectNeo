@@ -10,17 +10,21 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 245f67fb49f0e7f418de26ef3bd6270c, type: 3}
-  m_Name: perk_combat_skill_healing_light
+  m_Name: perk_combat_vitality
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Meta.PerkDefinition
-  id: perk_combat_skill_healing_light
-  displayName: "\uC2A4\uD0AC: \uCE58\uC720\uC758 \uBE5B"
+  id: perk_combat_vitality
+  displayName: "\uD65C\uB825"
   category: 0
   pointCost: 1
   unlockedByDefault: 1
-  statEffects: []
+  statEffects:
+  - target: 0
+    modifier:
+      stat: 0
+      kind: 1
+      value: 0.15
   specialEffects: []
   runEffects: []
   prerequisites:
-  - {fileID: 11400000, guid: a8dfb57e99df6874f896de1a4784cd42, type: 2}
-  description: "\uC2A4\uD0AC \uC2B5\uB4DD: 15m \uC548\uC758 \uC870\uC900 \uC9C0\uC810 4m \uC548 \uC544\uAD70\uC758 \uCCB4\uB825\uC744 \uD68C\uBCF5\uD55C\uB2E4(40 + \uACF5\uACA9\uB825 50%)."
-  grantedSkill: {fileID: 11400000, guid: ff56aeca9ac63c842bfb250865949e3e, type: 2}
+  - {fileID: 11400000, guid: bc97a200433b91445a3853d56c027afb, type: 2}
+  description: 

@@ -377,7 +377,7 @@ namespace ProjectNeo.Tests
                 Physics.SyncTransforms();
                 interaction.RefreshTarget();
                 Assert.AreSame(shop, interaction.Target);
-                Assert.AreEqual("상점 - 사용", shop.Prompt);
+                Assert.AreEqual("상점 사용", shop.Prompt);
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.F));
                 yield return null;
                 Assert.IsTrue(facilities.IsOpen && view.IsPanelView);

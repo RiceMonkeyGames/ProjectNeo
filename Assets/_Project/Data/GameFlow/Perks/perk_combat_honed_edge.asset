@@ -10,17 +10,21 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 245f67fb49f0e7f418de26ef3bd6270c, type: 3}
-  m_Name: perk_combat_skill_war_cry
+  m_Name: perk_combat_honed_edge
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Meta.PerkDefinition
-  id: perk_combat_skill_war_cry
-  displayName: "\uC2A4\uD0AC: \uC804\uD22C \uD568\uC131"
+  id: perk_combat_honed_edge
+  displayName: "\uB0A0 \uC138\uC6B0\uAE30"
   category: 0
   pointCost: 1
   unlockedByDefault: 1
-  statEffects: []
+  statEffects:
+  - target: 0
+    modifier:
+      stat: 1
+      kind: 1
+      value: 0.1
   specialEffects: []
   runEffects: []
   prerequisites:
-  - {fileID: 11400000, guid: bc97a200433b91445a3853d56c027afb, type: 2}
-  description: "\uC2A4\uD0AC \uC2B5\uB4DD: \uC790\uAE30 \uBD80\uB300(\uBD80\uB300\uAC00 \uC5C6\uC73C\uBA74 \uC8FC\uBCC0 8m \uC544\uAD70)\uC758 \uACF5\uACA9\uB825\uC744 8\uCD08 \uB3D9\uC548 25% \uC62C\uB9B0\uB2E4."
-  grantedSkill: {fileID: 11400000, guid: 28c16125e9452254c87ab5d57e6b7588, type: 2}
+  - {fileID: 11400000, guid: b4e71a4ee1716c24f902745775ff4a62, type: 2}
+  description: 

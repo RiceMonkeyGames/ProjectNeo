@@ -47,6 +47,10 @@ namespace ProjectNeo.Flow
         public string EquipmentKey => equipment != null ? equipment.GetBindingDisplayString() : string.Empty;
         /// <summary>1인칭 탐색 중 장비 키를 눌렀다(D-7). 장비 화면이 듣는다.</summary>
         public event System.Action EquipmentRequested;
+        /// <summary>창이 열린 동안 장비 키를 눌렀다(UI-07: 장비 창은 연 키로 다시 닫는다).</summary>
+        public event System.Action EquipmentKeyInPanel;
+        /// <summary>창이 열린 동안 편성 키를 눌렀다(UI-07: 편성 창은 연 키로 다시 닫는다).</summary>
+        public event System.Action OrganizationKeyInPanel;
         public string OrganizationKey => organization != null ? organization.GetBindingDisplayString() : string.Empty;
         /// <summary>1인칭 탐색 중 편성 키를 눌렀다(D-8). 편성 화면이 듣는다.</summary>
         public event System.Action OrganizationRequested;
@@ -179,6 +183,8 @@ namespace ProjectNeo.Flow
                 CancelBattleStart(); CancelWait();
                 Target = null;
                 if (close.WasPressedThisFrame()) phaseView.ExitPanel();
+                else if (equipment != null && equipment.WasPressedThisFrame()) EquipmentKeyInPanel?.Invoke();
+                else if (organization != null && organization.WasPressedThisFrame()) OrganizationKeyInPanel?.Invoke();
                 return;
             }
             if (phaseView.IsPlacementView)

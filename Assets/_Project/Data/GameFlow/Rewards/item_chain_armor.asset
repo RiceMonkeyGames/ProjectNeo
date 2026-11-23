@@ -53,3 +53,5 @@ MonoBehaviour:
       amount: 20
     - material: {fileID: 11400000, guid: d8a422bc2c200bc4098f7e97952c696e, type: 2}
       amount: 10
+  icon: {fileID: 21300000, guid: bd853dfb41854e34b8430e0ccfd40a6e, type: 3}
+  slot: 2

@@ -56,6 +56,8 @@ namespace ProjectNeo.Squads
         }
 
         public bool CanAddSquad => squads.Count < config.MaxSquads;
+        /// <summary>부대 수 상한.</summary>
+        public int MaxSquads => config.MaxSquads;
 
         /// <summary>부대 수 상한에 여유가 있으면 빈 부대를 만들어 돌려주고, 없으면 null.</summary>
         public Squad<TUnit> TryAddSquad()

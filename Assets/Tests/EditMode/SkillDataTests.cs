@@ -13,14 +13,20 @@ namespace ProjectNeo.Tests
 {
     /// <summary>
     /// COMBAT-06 5단계 데이터(Editor/SkillSetup, PerkTreeSetup): 샘플 스킬 6종, 영웅 고정 스킬 3개씩,
-    /// 전투 트리 스킬 퍽, 런 저장 목록, 자동 시전 수치 연결. 배운 스킬 규칙(퍽 → 스킬)도 함께 본다.
+    /// 플레이어 영웅 고정 스킬, 퍽 트리(스킬 퍽 없음, UI-07), 자동 시전 수치 연결.
     /// </summary>
     public class SkillDataTests
     {
         const string SkillFolder = "Assets/_Project/Data/GameFlow/Skills";
         static readonly string[] SkillIds =
             { "skill_whirlwind", "skill_war_cry", "skill_hobble", "skill_healing_light", "skill_rally", "skill_shield_bash" };
-        static readonly string[] HeroIds = { "hero_swordsman", "hero_archer", "hero_knight", "hero_paladin" };
+        static readonly string[] HeroPaths =
+        {
+            "Assets/_Project/Data/GameFlow/Heroes/hero_swordsman.asset", "Assets/_Project/Data/GameFlow/Heroes/hero_archer.asset",
+            "Assets/_Project/Data/GameFlow/Heroes/hero_knight.asset", "Assets/_Project/Data/GameFlow/Heroes/hero_paladin.asset",
+            // 게임 씬 플레이어의 영웅 데이터(UI-07: 플레이어도 고정 스킬 3개).
+            "Assets/_Project/Data/CombatPrototype/Player.asset",
+        };
 
         static SkillDefinition Skill(string id) =>
             AssetDatabase.LoadAssetAtPath<SkillDefinition>($"{SkillFolder}/{id}.asset");
@@ -48,9 +54,9 @@ namespace ProjectNeo.Tests
         [Test]
         public void Heroes_HaveThreeFixedSampleSkills()
         {
-            foreach (string id in HeroIds)
+            foreach (string id in HeroPaths)
             {
-                var hero = AssetDatabase.LoadAssetAtPath<HeroDefinition>($"Assets/_Project/Data/GameFlow/Heroes/{id}.asset");
+                var hero = AssetDatabase.LoadAssetAtPath<HeroDefinition>(id);
                 Assert.IsNotNull(hero, id);
                 Assert.AreEqual(SkillSlotRules.MaxSlots, hero.Skills.Count, id);
                 Assert.IsTrue(hero.Skills.All(skill => skill != null && SkillIds.Contains(skill.Id)), id);
@@ -59,19 +65,17 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
-        public void CombatTree_HasSkillPerks_InRunContent()
+        public void PerkTrees_AreValid_AndOldSkillPerksAreGone()
         {
             var catalog = AssetDatabase.LoadAssetAtPath<PerkTreeCatalog>("Assets/_Project/Data/GameFlow/Perks/PerkTrees.asset");
-            PerkTreeDefinition combat = catalog.Trees.Single(tree => tree.Category == PerkCategory.Combat);
-            List<PerkDefinition> skillPerks = combat.Perks.Where(perk => perk.GrantedSkill != null).ToList();
-            Assert.GreaterOrEqual(skillPerks.Count, 4, "more skills than slots so the equip choice matters");
-            Assert.AreEqual(skillPerks.Count, skillPerks.Select(perk => perk.GrantedSkill).Distinct().Count());
             Assert.IsEmpty(catalog.Validate());
-            foreach (PerkTreeDefinition tree in catalog.Trees.Where(tree => tree.Category != PerkCategory.Combat))
-                Assert.IsTrue(tree.Perks.All(perk => perk.GrantedSkill == null), "only the Combat tree grants skills");
+            PerkTreeDefinition combat = catalog.Trees.Single(tree => tree.Category == PerkCategory.Combat);
+            Assert.AreEqual(9, combat.Perks.Count, "the 4 former skill perks became stat perks");
+            Assert.IsTrue(combat.Perks.All(perk => !perk.Id.StartsWith("perk_combat_skill_")), "no skill perk left");
+            Assert.IsTrue(combat.Perks.All(perk => perk.StatEffects.Count > 0), "every Combat perk improves player stats");
 
             var content = AssetDatabase.LoadAssetAtPath<RunContentCatalog>("Assets/_Project/Data/GameFlow/RunContent.asset");
-            foreach (PerkDefinition perk in skillPerks) Assert.AreSame(perk, content.Perk(perk.Id), perk.Id + " is saved");
+            foreach (PerkDefinition perk in combat.Perks) Assert.AreSame(perk, content.Perk(perk.Id), perk.Id + " is saved");
         }
 
         [Test]
@@ -82,32 +86,5 @@ namespace ProjectNeo.Tests
             Assert.AreEqual($"{SkillFolder}/SkillAuto.asset", AssetDatabase.GetAssetPath(battle.SkillAuto));
         }
 
-        [Test]
-        public void LearnedSkills_FollowAllocationOrder_WithoutDuplicates()
-        {
-            var created = new List<Object>();
-            try
-            {
-                SkillDefinition a = SkillDefinition.Create("a", 1f, SkillTargetMode.Self, 0f, 0f);
-                SkillDefinition b = SkillDefinition.Create("b", 1f, SkillTargetMode.Self, 0f, 0f);
-                created.Add(a); created.Add(b);
-                PerkDefinition stat = PerkDefinition.Create("stat", PerkCategory.Combat);
-                PerkDefinition grantB = PerkDefinition.Create("grant_b", PerkCategory.Combat, grantedSkill: b);
-                PerkDefinition grantA = PerkDefinition.Create("grant_a", PerkCategory.Combat, grantedSkill: a);
-                PerkDefinition grantAAgain = PerkDefinition.Create("grant_a2", PerkCategory.Combat, grantedSkill: a);
-                created.AddRange(new Object[] { stat, grantB, grantA, grantAAgain });
-
-                var loadout = new PerkLoadout(new MetaProgress { perkPoints = 10 });
-                Assert.IsTrue(loadout.TryAllocate(grantB));
-                Assert.IsTrue(loadout.TryAllocate(stat));
-                Assert.IsTrue(loadout.TryAllocate(grantA));
-                Assert.IsTrue(loadout.TryAllocate(grantAAgain));
-                CollectionAssert.AreEqual(new[] { b, a }, loadout.LearnedSkills());
-
-                loadout.Reset();
-                Assert.IsEmpty(loadout.LearnedSkills(), "skills reset with the perk allocation");
-            }
-            finally { foreach (Object obj in created) Object.DestroyImmediate(obj); }
-        }
     }
 }

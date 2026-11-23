@@ -11,6 +11,8 @@ namespace ProjectNeo.UI
         [SerializeField] TMP_Text action;
         [Tooltip("두 번째 키캡 글자(UI-12). 키캡은 이 글자의 부모이고, 두 번째 키가 있는 줄에서만 켠다.")]
         [SerializeField] TMP_Text secondKey;
+        [Tooltip("두 키 사이 글(UI-07, 범위의 \"~\"). 키캡 없이 두 키캡 사이에 놓고, 글이 있을 때만 켠다.")]
+        [SerializeField] TMP_Text joiner;
 
         public string KeyText => key != null ? key.text : string.Empty;
         public string SecondKeyText => secondKey != null && secondKey.transform.parent.gameObject.activeSelf ? secondKey.text : string.Empty;
@@ -40,6 +42,8 @@ namespace ProjectNeo.UI
         }
 
         public void ConfigureSecondKey(TMP_Text keyLabel) => secondKey = keyLabel;
+        public void ConfigureJoiner(TMP_Text label) => joiner = label;
+        public string JoinerText => joiner != null && joiner.gameObject.activeSelf ? joiner.text : string.Empty;
 
         public void Show(KeyHint hint)
         {
@@ -49,6 +53,12 @@ namespace ProjectNeo.UI
                 bool has = hint.SecondKey.Length > 0;
                 if (cap.activeSelf != has) cap.SetActive(has);
                 secondKey.text = hint.SecondKey;
+            }
+            if (joiner != null)
+            {
+                bool join = hint.SecondKey.Length > 0 && hint.Joiner.Length > 0;
+                if (joiner.gameObject.activeSelf != join) joiner.gameObject.SetActive(join);
+                joiner.text = hint.Joiner;
             }
             if (hold != null) hold.text = hint.Hold ? "HOLD" : string.Empty;
             if (key != null) key.text = hint.Key;

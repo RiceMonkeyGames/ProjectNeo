@@ -430,38 +430,26 @@ namespace ProjectNeo.Run
         }
 
         /// <summary>
-        /// 새 잡졸이 들어갈 부대를 고른다(Q-36). 지정한 부대가 있으면 그 부대에 자리가 있어야 하고,
-        /// 없으면 자리가 남은 첫 부대다. 모든 부대가 꽉 찼으면 부대 수 상한까지 새 부대가 들어갈 자리가 된다(이때 null이고
-        /// <paramref name="needsNewSquad"/>가 true). 넣을 수 없으면 false. 런을 바꾸지 않는다.
+        /// 잡졸을 런에 더한다. 새 잡졸은 어느 부대에도 들지 않은 보관 병사로 시작하고(UI-07, 사용자 2026-11-23),
+        /// 편성 화면에서 부대에 넣는다. 전투 대기 중이면 null이고 런은 바뀌지 않는다. 비용은 받지 않는다(병영 D-4가 낸다).
         /// </summary>
-        public bool TryFindRecruitSquad(Squad<RunUnit> preferred, out Squad<RunUnit> squad, out bool needsNewSquad)
-        {
-            squad = null; needsNewSquad = false;
-            if (HasPendingBattle) return false;
-            if (preferred != null)
-            {
-                if (!Owns(preferred) || preferred.IsFull) return false;
-                squad = preferred;
-                return true;
-            }
-            foreach (Squad<RunUnit> own in Army.Squads)
-                if (!own.IsFull) { squad = own; return true; }
-            needsNewSquad = Army.CanAddSquad;
-            return needsNewSquad;
-        }
-
-        /// <summary>
-        /// 잡졸을 런에 더하고 Q-36 규칙으로 부대에 넣는다. 전투 중이거나 넣을 부대가 없으면 null이고 런은 바뀌지 않는다.
-        /// 비용은 받지 않는다(병영 D-4가 낸다). 들어간 부대는 <paramref name="squad"/>, 새로 만든 부대면 그 부대다.
-        /// </summary>
-        public RunSoldier TryRecruit(SoldierDefinition definition, Squad<RunUnit> preferred, out Squad<RunUnit> squad)
+        public RunSoldier TryRecruit(SoldierDefinition definition)
         {
             if (definition == null) throw new ArgumentNullException(nameof(definition));
-            if (!TryFindRecruitSquad(preferred, out squad, out bool needsNewSquad)) return null;
-            if (needsNewSquad) squad = Army.TryAddSquad();
-            RunSoldier soldier = AddSoldier(definition);
-            TryAssign(soldier, squad);
-            return soldier;
+            if (HasPendingBattle) return null;
+            return AddSoldier(definition);
+        }
+
+        /// <summary>부대에 들지 않은 보관 병사(UI-07). 씬에서는 숨겨지고 전투에 나가지 않는다.</summary>
+        public IReadOnlyList<RunSoldier> StoredSoldiers
+        {
+            get
+            {
+                var stored = new List<RunSoldier>();
+                foreach (RunSoldier soldier in soldiers)
+                    if (SquadOf(soldier) == null) stored.Add(soldier);
+                return stored;
+            }
         }
 
         /// <summary>병영(훈련장) 상태. 시설을 아직 붙이지 않았으면 null.</summary>
@@ -478,10 +466,10 @@ namespace ProjectNeo.Run
         }
 
         /// <summary>
-        /// 병영에서 이 잡졸을 <paramref name="preferred"/> 부대(null이면 Q-36 자동 배치)로 모집할 수 있는지(D-4).
-        /// 전투 대기 → 모집 가능 종류 → 넣을 부대 → 비용 순으로 처음 걸린 이유를 돌려준다. 런을 바꾸지 않는다.
+        /// 병영에서 이 잡졸을 모집할 수 있는지(D-4). 새 잡졸은 보관 병사가 되므로 부대 자리는 보지 않는다(UI-07).
+        /// 전투 대기 → 모집 가능 종류 → 비용 순으로 처음 걸린 이유를 돌려준다. 런을 바꾸지 않는다.
         /// </summary>
-        public RecruitCheck CheckBarracksRecruit(SoldierDefinition definition, Squad<RunUnit> preferred)
+        public RecruitCheck CheckBarracksRecruit(SoldierDefinition definition)
         {
             if (HasPendingBattle) return RecruitCheck.BattlePending;
             if (definition == null) return RecruitCheck.NotRecruitable;
@@ -489,21 +477,19 @@ namespace ProjectNeo.Run
             foreach (SoldierDefinition soldier in RecruitableSoldiers)
                 if (soldier == definition) { recruitable = true; break; }
             if (!recruitable) return RecruitCheck.NotRecruitable;
-            if (!TryFindRecruitSquad(preferred, out _, out _)) return RecruitCheck.NoSquad;
             if (!Wallet.CanAfford(definition.RecruitCost)) return RecruitCheck.NotEnoughFunds;
             return RecruitCheck.Ok;
         }
 
         /// <summary>
-        /// 병영에서 잡졸을 모집하고 모집 비용을 런 지갑에서 낸다(D-4). <see cref="CheckBarracksRecruit"/>가 Ok가 아니면 null이고
-        /// 런은 바뀌지 않는다. 들어간 부대는 <paramref name="squad"/>다.
+        /// 병영에서 잡졸을 모집하고 모집 비용을 런 지갑에서 낸다(D-4). 새 잡졸은 보관 병사다(UI-07).
+        /// <see cref="CheckBarracksRecruit"/>가 Ok가 아니면 null이고 런은 바뀌지 않는다.
         /// </summary>
-        public RunSoldier TryRecruitAtBarracks(SoldierDefinition definition, Squad<RunUnit> preferred, out Squad<RunUnit> squad)
+        public RunSoldier TryRecruitAtBarracks(SoldierDefinition definition)
         {
-            squad = null;
-            if (CheckBarracksRecruit(definition, preferred) != RecruitCheck.Ok) return null;
+            if (CheckBarracksRecruit(definition) != RecruitCheck.Ok) return null;
             if (!Wallet.TrySpend(definition.RecruitCost)) return null;
-            return TryRecruit(definition, preferred, out squad);
+            return TryRecruit(definition);
         }
 
         /// <summary>대장간 상태. 시설을 아직 붙이지 않았으면 null.</summary>
@@ -631,40 +617,83 @@ namespace ProjectNeo.Run
         }
 
         /// <summary>
-        /// 잡졸 하나를 <paramref name="target"/> 부대로 옮길 수 있는지(D-8, Q-45·Q-47). target이 null이면 새 부대로 옮긴다.
+        /// 잡졸 하나를 <paramref name="target"/> 부대에 넣을 수 있는지(D-8, UI-07). 보관 병사든 다른 부대원이든 된다.
         /// 전투 대기 → 런 소속 → 같은 부대 → 자리 순으로 처음 걸린 이유를 돌려준다. 런을 바꾸지 않는다.
         /// </summary>
         public OrganizeCheck CheckMoveSoldier(RunSoldier soldier, Squad<RunUnit> target)
         {
             if (HasPendingBattle) return OrganizeCheck.BattlePending;
-            if (soldier == null || Find(soldier.Id) != soldier || (target != null && !Owns(target))) return OrganizeCheck.NotInRun;
-            Squad<RunUnit> source = SquadOf(soldier);
-            if (source == target || (target == null && source != null && source.Members.Count == 1)) return OrganizeCheck.SameSquad;
-            if (target == null ? !Army.CanAddSquad : target.IsFull) return OrganizeCheck.SquadFull;
+            if (soldier == null || Find(soldier.Id) != soldier || target == null || !Owns(target)) return OrganizeCheck.NotInRun;
+            if (SquadOf(soldier) == target) return OrganizeCheck.SameSquad;
+            if (target.IsFull) return OrganizeCheck.SquadFull;
             return OrganizeCheck.Ok;
         }
 
         /// <summary>
-        /// 잡졸 하나를 옮긴다(D-8). target이 null이면 맨 뒤에 새 부대를 만들어 넣는다. 받는 부대의 사기는 그대로다.
-        /// 원래 부대가 비면 그 부대를 없애고(사기도 함께 없어진다) 대장은 대기 영웅이 된다(Q-45).
-        /// <paramref name="targetIndex"/>는 옮긴 뒤 받은 부대 순번, <paramref name="removedIndex"/>는 없앤 부대의 옮기기 전 순번(없으면 -1)이다.
+        /// 잡졸 하나를 <paramref name="target"/> 부대에 넣는다(D-8, UI-07). 다른 부대에 있었으면 옮기고, 받는 부대의 사기는 그대로다.
+        /// 원래 부대가 비어도 없애지 않는다(UI-07, 사용자 2026-11-23). <paramref name="targetIndex"/>는 받은 부대 순번이다.
         /// <see cref="CheckMoveSoldier"/>가 Ok가 아니면 false이고 런은 바뀌지 않는다.
         /// </summary>
-        public bool TryMoveSoldier(RunSoldier soldier, Squad<RunUnit> target, out int targetIndex, out int removedIndex)
+        public bool TryMoveSoldier(RunSoldier soldier, Squad<RunUnit> target, out int targetIndex)
         {
-            targetIndex = -1; removedIndex = -1;
+            targetIndex = -1;
             if (CheckMoveSoldier(soldier, target) != OrganizeCheck.Ok) return false;
-            Squad<RunUnit> source = SquadOf(soldier);
-            if (target == null) target = Army.TryAddSquad();
-            source?.Remove(soldier);
+            SquadOf(soldier)?.Remove(soldier);
             target.TryAdd(soldier);
-            if (source != null && source.Members.Count == 0)
-            {
-                removedIndex = IndexOf(source);
-                source.Leader = null;
-                Army.RemoveSquad(source);
-            }
             targetIndex = IndexOf(target);
+            Changed?.Invoke();
+            return true;
+        }
+
+        /// <summary>잡졸을 부대에서 빼 보관 병사로 둘 수 있는지(UI-07). 이미 보관 중이면 SameSquad. 런을 바꾸지 않는다.</summary>
+        public OrganizeCheck CheckStoreSoldier(RunSoldier soldier)
+        {
+            if (HasPendingBattle) return OrganizeCheck.BattlePending;
+            if (soldier == null || Find(soldier.Id) != soldier) return OrganizeCheck.NotInRun;
+            return SquadOf(soldier) == null ? OrganizeCheck.SameSquad : OrganizeCheck.Ok;
+        }
+
+        /// <summary>잡졸을 부대에서 빼 보관 병사로 둔다(UI-07). 부대가 비어도 남는다. Ok가 아니면 false이고 런은 바뀌지 않는다.</summary>
+        public bool TryStoreSoldier(RunSoldier soldier)
+        {
+            if (CheckStoreSoldier(soldier) != OrganizeCheck.Ok) return false;
+            return Unassign(soldier);
+        }
+
+        /// <summary>새 빈 부대를 맨 뒤에 만들 수 있는지(UI-07). 부대 수 상한이면 SquadFull. 런을 바꾸지 않는다.</summary>
+        public OrganizeCheck CheckAddSquad()
+        {
+            if (HasPendingBattle) return OrganizeCheck.BattlePending;
+            return Army.CanAddSquad ? OrganizeCheck.Ok : OrganizeCheck.SquadFull;
+        }
+
+        /// <summary>새 빈 부대를 맨 뒤에 만든다(UI-07). 못 만들면 null이고 런은 바뀌지 않는다.</summary>
+        public Squad<RunUnit> TryAddSquad()
+        {
+            if (CheckAddSquad() != OrganizeCheck.Ok) return null;
+            Squad<RunUnit> squad = Army.TryAddSquad();
+            if (squad != null) Changed?.Invoke();
+            return squad;
+        }
+
+        /// <summary>부대를 없앨 수 있는지(UI-07). 런을 바꾸지 않는다.</summary>
+        public OrganizeCheck CheckRemoveSquad(Squad<RunUnit> squad)
+        {
+            if (HasPendingBattle) return OrganizeCheck.BattlePending;
+            return squad != null && Owns(squad) ? OrganizeCheck.Ok : OrganizeCheck.NotInRun;
+        }
+
+        /// <summary>
+        /// 부대를 없앤다(UI-07, 사용자 2026-11-23). 잡졸은 모두 보관 병사가 되고 대장은 대기 영웅이 된다. 사기도 함께 없어진다.
+        /// 뒤 부대의 순번은 하나씩 당겨진다. Ok가 아니면 false이고 런은 바뀌지 않는다.
+        /// </summary>
+        public bool TryRemoveSquad(Squad<RunUnit> squad)
+        {
+            if (CheckRemoveSquad(squad) != OrganizeCheck.Ok) return false;
+            var members = new List<RunUnit>(squad.Members);
+            foreach (RunUnit member in members) squad.Remove(member);
+            squad.Leader = null;
+            Army.RemoveSquad(squad);
             Changed?.Invoke();
             return true;
         }
@@ -786,25 +815,6 @@ namespace ProjectNeo.Run
             pendingBattle = 0;
             Changed?.Invoke();
             return BattleResultIssue.None;
-        }
-
-        /// <summary>
-        /// 전투 뒤 정리(C-3, Q-50): 잡졸도 대장도 없는 부대를 없앤다(사기도 함께 없어진다). 대장만 남은 부대는 사기와 함께 남는다.
-        /// 없앤 부대의 원래 순번을 큰 것부터 돌려준다(씬 부대를 같은 순서로 지우면 번호가 맞는다). 전투 대기 중이면 아무것도 하지 않는다.
-        /// </summary>
-        public List<int> RemoveEmptySquads()
-        {
-            var removed = new List<int>();
-            if (HasPendingBattle) return removed;
-            for (int i = Army.Squads.Count - 1; i >= 0; i--)
-            {
-                Squad<RunUnit> squad = Army.Squads[i];
-                if (squad.Members.Count > 0 || squad.Leader != null) continue;
-                Army.RemoveSquad(squad);
-                removed.Add(i);
-            }
-            if (removed.Count > 0) Changed?.Invoke();
-            return removed;
         }
 
         /// <summary>캐릭터가 끼고 있는 장비를 모두 벗겨 런 보관함에 넣는다(Q-31). 강화 단계는 아이템에 남는다.</summary>

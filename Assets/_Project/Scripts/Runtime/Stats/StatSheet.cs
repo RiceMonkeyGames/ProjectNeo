@@ -66,16 +66,30 @@ namespace ProjectNeo.Stats
             return removed;
         }
 
-        public float GetValue(StatType stat)
+        public float GetValue(StatType stat) => GetValueWith(stat, null, null);
+
+        /// <summary>
+        /// 수정값을 실제로 바꾸지 않고 미리 계산한다: <paramref name="removedSource"/>가 준 수정값을 빼고
+        /// <paramref name="added"/>를 더한 값(UI-07 장비 화면 미리보기). 둘 다 null이면 <see cref="GetValue"/>와 같다.
+        /// </summary>
+        public float GetValueWith(StatType stat, IEnumerable<StatModifier> added, object removedSource)
         {
             float flat = 0f;
             float percent = 0f;
             foreach (Entry entry in entries)
             {
                 if (entry.modifier.stat != stat) continue;
+                if (removedSource != null && ReferenceEquals(entry.source, removedSource)) continue;
                 if (entry.modifier.kind == ModifierKind.Flat) flat += entry.modifier.value;
                 else percent += entry.modifier.value;
             }
+            if (added != null)
+                foreach (StatModifier modifier in added)
+                {
+                    if (modifier.stat != stat) continue;
+                    if (modifier.kind == ModifierKind.Flat) flat += modifier.value;
+                    else percent += modifier.value;
+                }
             float value = (GetBase(stat) + flat) * (1f + percent);
             return value < 0f ? 0f : value;
         }

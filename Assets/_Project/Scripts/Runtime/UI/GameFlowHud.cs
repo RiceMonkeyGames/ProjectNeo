@@ -30,6 +30,8 @@ namespace ProjectNeo.UI
         [SerializeField] CannonOperator cannonOperator;
         [Tooltip("조준점 바로 아래 상호작용 안내(UI-06). 비어 있으면 예전처럼 아래 안내 줄에 키 목록과 함께 적는다.")]
         [SerializeField] TMP_Text contextPrompt;
+        // 조준점 아래 안내의 키 칸(UI-07 A안). 있으면 키는 이 칸에, 행동 글은 contextPrompt에 따로 쓴다.
+        [SerializeField] TMP_Text contextKey;
         [Header("Battle-start plate (UI-06 layout A)")]
         [Tooltip("아래 안내 판 안의 길게 누르기 게이지 채움. 비어 있으면 글의 %만 보여 준다.")]
         [SerializeField] RectTransform holdFill;
@@ -71,6 +73,7 @@ namespace ProjectNeo.UI
         /// <summary>조준점 아래 상호작용 안내 글. 보이지 않으면 빈 글.</summary>
         public string ContextPrompt => contextPrompt != null && contextPrompt.transform.parent.gameObject.activeSelf ? contextPrompt.text : string.Empty;
         public void ConfigureContextPrompt(TMP_Text prompt) => contextPrompt = prompt;
+        public void ConfigureContextKey(TMP_Text key) => contextKey = key;
         /// <summary>대포 조작 중 조준선 표시(SIEGE-07). 한 번도 타지 않았으면 null.</summary>
         public CannonReticleView CannonReticle => cannonReticle;
         GameFlow flow;
@@ -132,7 +135,9 @@ namespace ProjectNeo.UI
             bool ending = flow.Phase == GamePhase.Ending && battle != null;
             // UI-12 조준점 링: 1인칭 탐색 중에는 아래 판을 숨긴다(글은 그대로 만들어 둔다). 다른 화면에서는 판을 쓴다.
             bool ringExploration = holdRing != null && contextPrompt != null && preparation && phaseView.IsExplorationView && battle != null;
-            interactionHint.transform.parent.gameObject.SetActive(preparation && !ringExploration);
+            // UI-07: 시설·장비·편성·특성 창은 모두 자기 닫기 버튼이 있어, 창이 열린 동안 아래 "Esc 닫기" 판은 겹치는 안내라 숨긴다.
+            bool panelOpen = phaseView.IsPanelView;
+            interactionHint.transform.parent.gameObject.SetActive(preparation && !ringExploration && !panelOpen);
             if (!ringExploration) ShowRing(false, string.Empty);
             ShowContextPrompt(preparation && phaseView.IsExplorationView && interaction.Target != null);
             if (battleStatus != null) battleStatus.transform.parent.gameObject.SetActive(fighting || rewarding || runEnded || ending);
@@ -223,7 +228,14 @@ namespace ProjectNeo.UI
                     : $"WASD 이동 - {interaction.InteractKey} 상호작용 - {interaction.EquipmentKey} 장비 - {interaction.OrganizationKey} 부대 - {interaction.EnemyPreviewKey} 적 정보"
                         + (battle != null && battle.PerkWindow != null ? $" - {battle.PerkWindow.KeyText} 특성" : string.Empty);
             if (shortHints && phaseView.IsExplorationView && interaction.Target != null)
-                contextPrompt.text = PrepHudText.ContextPrompt(interaction.InteractKey, interaction.Target.Prompt);
+            {
+                if (contextKey != null)
+                {
+                    contextKey.text = interaction.InteractKey;
+                    contextPrompt.text = interaction.Target.Prompt;
+                }
+                else contextPrompt.text = PrepHudText.ContextPrompt(interaction.InteractKey, interaction.Target.Prompt);
+            }
             if (phaseView.IsExplorationView && battle != null)
             {
                 // UI-12: 막혀 있어도 시작 줄은 그대로 두고, 이유는 키를 눌렀을 때만 잠깐 알린다.

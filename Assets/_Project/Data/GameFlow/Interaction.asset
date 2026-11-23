@@ -103,4 +103,78 @@ MonoBehaviour:
       m_Flags: 0
     m_Flags: 0
     m_Priority: 0
+  squadPlacement:
+    m_Name: OpenSquadPlacement
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: cab31998-4286-42ce-be5e-9429f99481b3
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 787709bc-1778-495a-83fe-34fac2b8927c
+      m_Path: <Keyboard>/p
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: OpenSquadPlacement
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
   battleStartHoldSeconds: 1
+  blockedStartNoticeSeconds: 2
+  wait:
+    m_Name: WaitPrepTime
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 35f8c71b-46fc-4bd4-88a6-3b421b526de5
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 33ed00de-cbc0-41c5-9657-d54ec2add2f4
+      m_Path: <Keyboard>/t
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: WaitPrepTime
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  waitHoldSeconds: 1
+  enemyPreview:
+    m_Name: ToggleEnemyPreview
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: d02237c4-8086-4b82-8e88-7762629d6a58
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: cbacc7f3-e418-4c9d-8247-d258e26d5a18
+      m_Path: <Keyboard>/v
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: ToggleEnemyPreview
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0
+  keyList:
+    m_Name: ToggleKeyList
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: d3463cb6-bd94-41b6-b5d9-6d940d95418b
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: e33a0d50-6063-498f-82d3-c8b5dc25444a
+      m_Path: <Keyboard>/h
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: ToggleKeyList
+      m_Flags: 0
+    m_Flags: 0
+    m_Priority: 0

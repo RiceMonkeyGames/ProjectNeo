@@ -6,14 +6,16 @@ using ProjectNeo.Flow;
 using ProjectNeo.Run;
 using ProjectNeo.Squads;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
 namespace ProjectNeo.Tests
 {
     /// <summary>
-    /// D-8·UI-01: Game 씬 편성 화면(부대 카드)에서 잡졸을 고르고 카드에 놓으면 런과 씬 부대가 함께 바뀌고, 빈 부대는 둘 다에서 없어진다.
-    /// 고용 영웅은 부대 카드에 놓으면 대장, 대기 카드에 놓으면 대기가 된다.
+    /// D-8·UI-07: Game 씬 편성 화면(세 열)에서 줄을 누르면 런과 씬 부대가 함께 바뀐다. 보관 병사는 고른 부대로, 부대원은 보관으로 가고,
+    /// 빈 부대는 남는다. 보관 영웅을 누르면 부대장이 되고(있던 부대장은 보관으로), 부대장을 누르면 해제된다.
     /// </summary>
     public class GameOrganizationPlayTests
     {
@@ -54,50 +56,62 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
-        public IEnumerator 카드_화면에서_잡졸을_새_부대로_옮기고_되돌리면_빈_부대가_없어진다()
+        public IEnumerator 줄을_누르면_보관과_부대_사이를_오가고_빈_부대는_남는다()
         {
             Assert.IsNotNull(organization, "Game 씬 전투 오브젝트에 편성 컴포넌트가 있어야 한다.");
             var battle = organization.GetComponent<GameBattleController>();
             RunState state = GameSession.Flow.Run.State;
             int squadCount = state.Army.Squads.Count;
             Assert.AreEqual(squadCount, center.Squads.Count);
-            int source = Enumerable.Range(0, squadCount).First(i => state.Army.Squads[i].Members.Count >= 2);
             Assert.IsTrue(state.Army.CanAddSquad, "시작 부대 수가 상한보다 적어야 새 부대 경로를 확인할 수 있다.");
 
             Assert.IsTrue(organization.Open());
             Assert.IsTrue(view.IsPanelView);
-            Assert.AreEqual(squadCount + 2, organization.CardCount, "부대 카드 + 새 부대 카드 + 대기 카드");
-            var soldier = (RunSoldier)state.Army.Squads[source].Members.First(member => member is RunSoldier);
-            int sourceSize = state.Army.Squads[source].Members.Count;
+            Assert.AreEqual(0, organization.SelectedSquad);
+            Assert.AreEqual(squadCount + 1, organization.RowsIn(0).Count, "부대 줄 + 새 부대 줄");
+            Assert.IsTrue(organization.RowsIn(0)[0].IsSelected);
+            Assert.AreEqual("1부대", organization.MemberTitleText);
+            Squad<RunUnit> first = state.Army.Squads[0];
+            Assert.AreEqual(first.Members.Count + 1, organization.RowsIn(1).Count, "부대장 줄 + 병사 줄");
+            Assert.AreEqual("부대장 공석", organization.RowsIn(1)[0].NameText);
+            Assert.IsFalse(organization.RowsIn(1)[0].IsClickable);
 
-            Assert.IsTrue(organization.Select(soldier));
-            Assert.AreSame(soldier, organization.Selected);
-            Assert.IsTrue(organization.Select(soldier), "다시 누르면 선택을 푼다.");
-            Assert.IsNull(organization.Selected);
-            Assert.IsFalse(organization.DropOnSquad(-1), "고른 것이 없으면 옮기지 않는다.");
+            // 병사를 눌러 보관으로, 보관 줄을 눌러 다시 부대로.
+            var soldier = (RunSoldier)first.Members.First(member => member is RunSoldier);
+            int size = first.Members.Count;
+            Assert.IsTrue(organization.Release(soldier));
+            Assert.AreEqual(size - 1, first.Members.Count);
+            Assert.IsFalse(InScene(center, 0, soldier, battle));
+            CollectionAssert.Contains(state.StoredSoldiers.ToList(), soldier);
+            Assert.AreEqual(1, organization.RowsIn(2).Count, "보관 줄에 나타난다.");
+            Assert.IsTrue(organization.Assign(soldier));
+            Assert.AreSame(first, state.SquadOf(soldier));
+            Assert.IsTrue(InScene(center, 0, soldier, battle));
 
-            Assert.IsTrue(organization.Select(soldier));
-            Assert.IsTrue(organization.DropOnSquad(-1));
-            Assert.IsNull(organization.Selected, "옮기면 선택이 풀린다.");
+            // 새 부대를 만들고 고른 뒤, 병사를 넣었다 빼도 빈 부대는 남는다.
+            Assert.IsTrue(organization.AddSquad());
+            Assert.AreEqual(squadCount, organization.SelectedSquad, "새 부대가 골라진다.");
             Assert.AreEqual(squadCount + 1, state.Army.Squads.Count);
             Assert.AreEqual(squadCount + 1, center.Squads.Count, "씬 부대도 함께 늘어난다.");
             Assert.AreEqual(squadCount + 1, center.Commander.SquadCount);
-            Assert.AreSame(state.Army.Squads[squadCount], state.SquadOf(soldier));
+            Assert.IsTrue(organization.SelectSquad(0));
+            Assert.IsTrue(organization.Release(soldier));
+            Assert.IsTrue(organization.SelectSquad(squadCount));
+            Assert.IsTrue(organization.Assign(soldier));
             Assert.IsTrue(InScene(center, squadCount, soldier, battle));
-            Assert.AreEqual(sourceSize - 1, state.Army.Squads[source].Members.Count);
-            StringAssert.Contains((squadCount + 1) + "부대", organization.BodyText);
+            Assert.IsTrue(organization.Release(soldier));
+            Assert.AreEqual(squadCount + 1, state.Army.Squads.Count, "비게 된 부대도 남는다.");
 
-            Assert.IsTrue(organization.Select(soldier));
-            Assert.IsFalse(organization.DropOnReserve(), "잡졸은 대기로 보낼 수 없다.");
-            Assert.IsTrue(organization.DropOnSquad(source));
-            Assert.AreEqual(squadCount, state.Army.Squads.Count, "비게 된 새 부대가 없어진다.");
+            // 고른 부대를 없애면 부대원은 보관으로 간다.
+            Assert.IsTrue(organization.Assign(soldier));
+            Assert.IsTrue(organization.RemoveSquad(squadCount));
+            Assert.AreEqual(squadCount, state.Army.Squads.Count);
             Assert.AreEqual(squadCount, center.Squads.Count);
             Assert.AreEqual(squadCount, center.Commander.SquadCount);
-            Assert.AreSame(state.Army.Squads[source], state.SquadOf(soldier));
-            Assert.IsTrue(InScene(center, source, soldier, battle));
-            StringAssert.Contains("빈 부대", organization.BodyText);
+            Assert.IsNull(state.SquadOf(soldier));
+            Assert.AreEqual(squadCount - 1, organization.SelectedSquad);
 
-            Assert.IsFalse(organization.Select(state.Player), "플레이어는 카드에서 고를 수 없다(Q-32 임시).");
+            Assert.IsFalse(organization.Assign(state.Player), "플레이어는 부대장이 될 수 없다(Q-32 임시).");
             organization.Close();
             yield return null;
             Assert.IsFalse(organization.IsOpen);
@@ -105,7 +119,7 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
-        public IEnumerator 고용_영웅을_부대_카드에_놓으면_대장_대기_카드에_놓으면_대기가_된다()
+        public IEnumerator 보관_영웅을_누르면_부대장이_되고_다른_영웅을_누르면_교체되며_부대장을_누르면_해제된다()
         {
             RunState state = GameSession.Flow.Run.State;
             var spawner = Object.FindAnyObjectByType<GameUnitSpawner>();
@@ -113,35 +127,54 @@ namespace ProjectNeo.Tests
             Assert.IsNotNull(Object.FindAnyObjectByType<GameFacilities>().Facility(ProjectNeo.Facilities.FacilityType.Tavern));
             state.RestockTavernIfNeeded();
             Assert.Greater(state.TavernOffers.Count, 0, "주점 1레벨 영웅 풀");
+            state.Wallet.AddGold(2000);
             UnitCombatAI unit = spawner.HireAtTavern(state.TavernOffers[0], -1, out HireCheck check);
             Assert.AreEqual(HireCheck.Ok, check);
             RunHero hero = state.ReserveHeroes.Single();
+            state.RestockTavernIfNeeded();
+            Assume.That(state.TavernOffers.Count, Is.GreaterThan(0), "두 번째 영웅을 고용할 매물이 있어야 교체를 확인한다.");
+            UnitCombatAI otherUnit = spawner.HireAtTavern(state.TavernOffers[0], -1, out check);
+            Assert.AreEqual(HireCheck.Ok, check);
+            RunHero other = state.ReserveHeroes.First(reserve => reserve != hero);
 
             Assert.IsTrue(organization.Open());
-            Assert.IsTrue(organization.Select(hero));
-            Assert.IsFalse(organization.DropOnSquad(-1), "영웅은 새 부대 카드에 놓을 수 없다.");
-            Assert.AreSame(hero, organization.Selected, "놓지 못하면 선택이 남는다.");
             Assert.IsTrue(center.TryGetGatherPoint(0, out Vector3 gather), "시작 부대 0에는 부대원이 있다.");
             Assert.AreEqual(UnitDirective.Hold, unit.Directive, "대기 영웅은 주점 앞에 선다.");
-            Assert.IsTrue(organization.DropOnSquad(0));
+            Assert.IsTrue(organization.Assign(hero));
             Assert.AreSame(hero, state.Army.Squads[0].Leader);
             Assert.AreSame(unit, center.Squads[0].Leader, "씬 부대장도 바뀐다.");
+            Assert.IsTrue(organization.RowsIn(1)[0].IsLeader);
             Assert.AreEqual(UnitDirective.Move, unit.Directive, "새 대장은 부대 쪽으로 걸어간다(BUG-hired-unit-not-joining-squad).");
             Assert.Less(Vector3.Distance(gather, unit.MoveDestination), 0.01f, "목적지는 부대가 모인 곳이다.");
 
-            if (state.Army.Squads.Count > 1)
-            {
-                Assert.IsTrue(organization.Select(hero));
-                Assert.IsTrue(organization.DropOnSquad(1), "대장을 다른 부대로 바로 옮긴다.");
-                Assert.IsNull(state.Army.Squads[0].Leader);
-                Assert.AreSame(hero, state.Army.Squads[1].Leader);
-            }
+            Assert.IsTrue(organization.Assign(other), "다른 영웅을 누르면 부대장이 바뀐다.");
+            Assert.AreSame(other, state.Army.Squads[0].Leader);
+            Assert.AreSame(otherUnit, center.Squads[0].Leader);
+            CollectionAssert.AreEqual(new[] { hero }, state.ReserveHeroes, "있던 부대장은 보관으로 간다.");
 
-            Assert.IsTrue(organization.Select(hero));
-            Assert.IsTrue(organization.DropOnReserve());
-            CollectionAssert.AreEqual(new[] { hero }, state.ReserveHeroes);
+            Assert.IsTrue(organization.Release(other));
+            Assert.IsNull(state.Army.Squads[0].Leader);
+            Assert.AreEqual(2, state.ReserveHeroes.Count);
             Assert.IsTrue(center.Squads.All(squad => squad.Leader == null));
             yield break;
+        }
+
+        [UnityTest]
+        public IEnumerator 편성_키를_다시_누르면_창이_닫힌다()
+        {
+            var keyboard = InputSystem.AddDevice<Keyboard>();
+            try
+            {
+                Assert.IsTrue(organization.Open());
+                yield return null;
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.O));
+                yield return null;
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+                yield return null;
+                Assert.IsFalse(organization.IsOpen, "열 때 쓴 O 키로 닫는다(UI-07).");
+                Assert.IsTrue(view.IsExplorationView);
+            }
+            finally { InputSystem.RemoveDevice(keyboard); }
         }
 
         [UnityTest]

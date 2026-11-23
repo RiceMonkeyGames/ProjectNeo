@@ -54,7 +54,6 @@ namespace ProjectNeo.Flow
         TMP_Text inventoryHeader;
         string shopOfferHeader;
         string shopInventoryHeader;
-        Squad<RunUnit> chosenSquad;
         int captainSquad = -1;
         GameFlow flow;
 
@@ -73,8 +72,6 @@ namespace ProjectNeo.Flow
         public bool IsRerollVisible => rerollButton != null && rerollButton.gameObject.activeSelf;
         /// <summary>지금 보이는 매물 줄 수(상점).</summary>
         public int OfferRows => offerList != null ? ActiveChildren(offerList) : 0;
-        /// <summary>병영에서 고른 부대 순번. -1이면 자동 배치(자리가 남은 첫 부대).</summary>
-        public int ChosenSquad => chosenSquad != null && State != null ? State.IndexOf(chosenSquad) : -1;
         /// <summary>매물 칸 제목(상점: 매물, 병영: 모집).</summary>
         public string OfferHeaderText => offerHeader != null ? offerHeader.text : string.Empty;
         /// <summary>지금 보이는 보관함 줄 수(상점) 또는 부대 줄 수(병영).</summary>
@@ -167,7 +164,6 @@ namespace ProjectNeo.Flow
             if (type == FacilityType.Tavern) State.RestockTavernIfNeeded(IsHeroAvailable);
             OpenFacility = type;
             Message = string.Empty;
-            chosenSquad = null;
             captainSquad = -1;
             panel.SetActive(true);
             Rebuild();
@@ -574,7 +570,7 @@ namespace ProjectNeo.Flow
             "영웅은 부대 대장으로 전투에서 이기면 EXP를 얻습니다. 예비 영웅은 얻지 못합니다.\n"
             + "EXP가 다 찬 영웅은 골드와 준비 시간을 써서 승급합니다. 영웅은 고용 티어와 같은 등급으로 시작합니다.";
 
-        /// <summary>병영에서 모집할 수 있는 잡졸의 index번째를 고른 부대(없으면 자동 배치)로 모집한다(D-4). 비용을 낸다.</summary>
+        /// <summary>병영에서 모집할 수 있는 잡졸의 index번째를 모집한다(D-4). 비용을 낸다. 새 잡졸은 보관 병사가 된다(UI-07).</summary>
         public bool TryRecruit(int index)
         {
             RunState state = State;
@@ -582,33 +578,19 @@ namespace ProjectNeo.Flow
             IReadOnlyList<SoldierDefinition> soldiers = state.RecruitableSoldiers;
             if (index < 0 || index >= soldiers.Count || soldiers[index] == null) return false;
             SoldierDefinition soldier = soldiers[index];
-            if (chosenSquad != null && state.IndexOf(chosenSquad) < 0) chosenSquad = null;
-            RecruitCheck check = state.CheckBarracksRecruit(soldier, chosenSquad);
+            RecruitCheck check = state.CheckBarracksRecruit(soldier);
             UnitCombatAI unit = null;
-            int squad = -1;
-            if (check == RecruitCheck.Ok && spawner != null) unit = spawner.RecruitAtBarracks(soldier, chosenSquad, out squad);
-            Message = unit != null ? $"{soldier.DisplayName} 모집 · {Describe(soldier.RecruitCost)} -> {squad + 1}부대"
+            if (check == RecruitCheck.Ok && spawner != null) unit = spawner.RecruitAtBarracks(soldier);
+            Message = unit != null ? $"{soldier.DisplayName} 모집 · {Describe(soldier.RecruitCost)} -> 보관"
                 : $"{soldier.DisplayName}: " + Reason(check);
             Rebuild();
             return unit != null;
-        }
-
-        /// <summary>병영에서 새 잡졸을 넣을 부대를 고른다. -1이면 자동 배치(자리가 남은 첫 부대, 모두 차면 새 부대).</summary>
-        public bool ChooseSquad(int index)
-        {
-            RunState state = State;
-            if (OpenFacility != FacilityType.TrainingGround || state == null || index >= state.Army.Squads.Count) return false;
-            chosenSquad = index < 0 ? null : state.Army.Squads[index];
-            Message = string.Empty;
-            Rebuild();
-            return true;
         }
 
         static string Reason(RecruitCheck check) => check switch
         {
             RecruitCheck.BattlePending => "전투 중에는 모집할 수 없습니다.",
             RecruitCheck.NotRecruitable => "이 훈련장 레벨에서는 모집할 수 없습니다.",
-            RecruitCheck.NoSquad => "들어갈 부대가 없습니다 (부대가 가득 찼거나 부대 수 한도).",
             RecruitCheck.NotEnoughFunds => "자금이 부족합니다.",
             _ => "모집하지 못했습니다.",
         };
@@ -661,7 +643,7 @@ namespace ProjectNeo.Flow
                 offerHeader.text = barracks ? "모집 (클릭해서 모집)" : smithy ? "제작 (클릭해서 제작)"
                     : tavern ? "영웅 (클릭해서 고용)" : heroHall ? "영웅 (클릭해서 승급)" : shopOfferHeader;
             if (inventoryHeader != null)
-                inventoryHeader.text = barracks ? "부대 (클릭해서 선택)" : smithy ? "장비 강화 / 판매"
+                inventoryHeader.text = barracks ? "보관" : smithy ? "장비 강화 / 판매"
                     : tavern ? "배치 (클릭해서 선택)" : heroHall ? "등급 보너스" : shopInventoryHeader;
             ClearRows();
             if (rowTemplate == null) return;
@@ -701,16 +683,8 @@ namespace ProjectNeo.Flow
                 if (soldiers[i] == null) continue;
                 AddRow(offerList, $"{soldiers[i].DisplayName} · {Describe(soldiers[i].RecruitCost)}", () => TryRecruit(index));
             }
-            if (chosenSquad != null && state.IndexOf(chosenSquad) < 0) chosenSquad = null;
-            AddRow(inventoryList, (chosenSquad == null ? "[선택] " : string.Empty) + "자동 배치 (자리가 있는 첫 부대)", () => ChooseSquad(-1));
-            IReadOnlyList<Squad<RunUnit>> squads = state.Army.Squads;
-            for (int i = 0; i < squads.Count && i < MaxInventoryRows; i++)
-            {
-                int index = i;
-                string mark = squads[i] == chosenSquad ? "[선택] " : string.Empty;
-                AddRow(inventoryList, $"{mark}{i + 1}부대 - {squads[i].Members.Count}/{squads[i].Capacity}명", () => ChooseSquad(index));
-            }
-            if (state.Army.CanAddSquad) AddRow(inventoryList, "모든 부대가 가득 차면 새 부대를 만듭니다", null);
+            AddRow(inventoryList, $"보관 병사 {state.StoredSoldiers.Count}명", null);
+            AddRow(inventoryList, "모집한 병사는 보관되고, 부대 편성(O)에서 부대에 넣습니다.", null);
         }
 
         void BuildSmithyRows(RunState state)

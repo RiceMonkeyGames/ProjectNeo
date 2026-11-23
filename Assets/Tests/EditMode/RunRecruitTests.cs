@@ -6,7 +6,7 @@ using ProjectNeo.Squads;
 
 namespace ProjectNeo.Tests
 {
-    /// <summary>D-0b·Q-36 잡졸 모집 배치 규칙과 새 유닛 짝짓기.</summary>
+    /// <summary>D-0b 잡졸 모집과 새 유닛 짝짓기. 새 잡졸은 보관 병사로 시작한다(UI-07).</summary>
     public class RunRecruitTests
     {
         SoldierDefinition melee;
@@ -23,60 +23,24 @@ namespace ProjectNeo.Tests
             RunState.CreateNew(RunConfig.Create(SquadConfig.Create(maxSquads, maxMembers), playerHero, 0, null, squads));
 
         [Test]
-        public void 부대를_고르지_않으면_자리가_남은_첫_부대에_들어간다()
+        public void 모집한_잡졸은_어느_부대에도_들지_않고_보관된다()
         {
-            RunState run = NewRun(4, 2, new RunSquadSetup(melee, melee), new RunSquadSetup(melee));
-            RunSoldier soldier = run.TryRecruit(melee, null, out Squad<RunUnit> squad);
+            RunState run = NewRun(4, 2, new RunSquadSetup(melee), new RunSquadSetup());
+            RunSoldier soldier = run.TryRecruit(melee);
             Assert.IsNotNull(soldier);
-            Assert.AreSame(run.Army.Squads[1], squad);
-            Assert.AreSame(squad, run.SquadOf(soldier));
-            Assert.AreEqual(1, run.IndexOf(squad));
-            Assert.AreEqual(2, run.Army.Squads.Count);
+            Assert.IsNull(run.SquadOf(soldier));
+            CollectionAssert.AreEqual(new[] { soldier }, run.StoredSoldiers);
+            Assert.AreEqual(2, run.Army.Squads.Count, "부대를 새로 만들지 않는다.");
+            Assert.AreEqual(1, run.Army.Squads[0].Members.Count);
         }
 
         [Test]
-        public void 고른_부대에_자리가_있으면_그_부대에_들어간다()
-        {
-            RunState run = NewRun(4, 3, new RunSquadSetup(melee), new RunSquadSetup(melee));
-            Squad<RunUnit> chosen = run.Army.Squads[1];
-            run.TryRecruit(melee, chosen, out Squad<RunUnit> squad);
-            Assert.AreSame(chosen, squad);
-            Assert.AreEqual(2, chosen.Members.Count);
-        }
-
-        [Test]
-        public void 고른_부대가_꽉_찼거나_다른_런의_부대면_모집하지_않는다()
-        {
-            RunState run = NewRun(4, 1, new RunSquadSetup(melee), new RunSquadSetup());
-            int before = run.Soldiers.Count;
-            Assert.IsNull(run.TryRecruit(melee, run.Army.Squads[0], out _));
-            RunState other = NewRun(4, 1, new RunSquadSetup());
-            Assert.IsNull(run.TryRecruit(melee, other.Army.Squads[0], out _));
-            Assert.AreEqual(before, run.Soldiers.Count);
-        }
-
-        [Test]
-        public void 모든_부대가_꽉_찼으면_상한까지_새_부대를_만든다()
-        {
-            RunState run = NewRun(2, 1, new RunSquadSetup(melee));
-            Assert.IsTrue(run.TryFindRecruitSquad(null, out Squad<RunUnit> found, out bool needsNew));
-            Assert.IsNull(found);
-            Assert.IsTrue(needsNew);
-            Assert.AreEqual(1, run.Army.Squads.Count, "찾기만 해서는 부대를 만들지 않는다.");
-
-            run.TryRecruit(melee, null, out Squad<RunUnit> squad);
-            Assert.AreEqual(2, run.Army.Squads.Count);
-            Assert.AreSame(run.Army.Squads[1], squad);
-        }
-
-        [Test]
-        public void 부대_수_상한까지_꽉_찼으면_모집하지_않는다()
+        public void 부대가_모두_찼어도_모집한다()
         {
             RunState run = NewRun(1, 1, new RunSquadSetup(melee));
-            Assert.IsFalse(run.TryFindRecruitSquad(null, out _, out bool needsNew));
-            Assert.IsFalse(needsNew);
-            Assert.IsNull(run.TryRecruit(melee, null, out _));
-            Assert.AreEqual(1, run.Soldiers.Count);
+            Assert.IsNotNull(run.TryRecruit(melee));
+            Assert.AreEqual(2, run.Soldiers.Count);
+            Assert.AreEqual(1, run.StoredSoldiers.Count);
         }
 
         [Test]
@@ -84,17 +48,22 @@ namespace ProjectNeo.Tests
         {
             RunState run = NewRun(4, 4, new RunSquadSetup(melee));
             run.CreateBattleInput(1);
-            Assert.IsNull(run.TryRecruit(melee, null, out _));
+            Assert.IsNull(run.TryRecruit(melee));
             Assert.AreEqual(1, run.Soldiers.Count);
         }
 
         [Test]
-        public void 모집한_잡졸은_다음_전투_입력에_들어간다()
+        public void 보관_병사는_전투_입력에_들지_않고_부대에_넣으면_들어간다()
         {
             RunState run = NewRun(4, 4, new RunSquadSetup(melee));
-            RunSoldier soldier = run.TryRecruit(melee, null, out _);
-            BattleInput input = run.CreateBattleInput(1);
-            CollectionAssert.Contains(input.Squads[0].Members, soldier);
+            RunSoldier soldier = run.TryRecruit(melee);
+            CollectionAssert.DoesNotContain(run.CreateBattleInput(1).Squads[0].Members, soldier);
+
+            RunState next = NewRun(4, 4, new RunSquadSetup(melee));
+            RunSoldier joined = next.TryRecruit(melee);
+            Assert.IsTrue(next.TryMoveSoldier(joined, next.Army.Squads[0], out int index));
+            Assert.AreEqual(0, index);
+            CollectionAssert.Contains(next.CreateBattleInput(1).Squads[0].Members, joined);
         }
 
         [Test]
@@ -104,12 +73,12 @@ namespace ProjectNeo.Tests
             RunUnitBinding<object> binding = RunUnitBinding<object>.Create(SquadConfig.Create(4, 4), playerHero, player,
                 new System.Collections.Generic.List<System.Collections.Generic.IReadOnlyList<
                     System.Collections.Generic.KeyValuePair<object, SoldierDefinition>>>());
-            RunSoldier soldier = binding.State.TryRecruit(melee, null, out _);
+            RunSoldier soldier = binding.State.TryRecruit(melee);
             var unit = new object();
             binding.BindNew(unit, soldier);
             Assert.AreEqual(soldier.Id, binding.IdOf(unit));
             Assert.Throws<System.ArgumentException>(() => binding.BindNew(new object(), soldier));
-            Assert.Throws<System.ArgumentException>(() => binding.BindNew(unit, binding.State.TryRecruit(melee, null, out _)));
+            Assert.Throws<System.ArgumentException>(() => binding.BindNew(unit, binding.State.TryRecruit(melee)));
             RunState stranger = NewRun(4, 4, new RunSquadSetup(melee));
             Assert.Throws<System.ArgumentException>(() => binding.BindNew(new object(), stranger.Soldiers[0]));
         }

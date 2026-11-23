@@ -17,8 +17,8 @@ namespace ProjectNeo.UI
             return ascension > 0 ? text + $" · 승천 {ascension}" : text;
         }
 
-        /// <summary>제목 오른쪽 승천 표시(UI-12 사이드바). 예: "승천 1". 승천 0이면 빈 글.</summary>
-        public static string AscensionTag(int ascension) => ascension > 0 ? $"승천 {ascension}" : string.Empty;
+        /// <summary>제목 오른쪽 승천 표시(UI-12 사이드바). 예: "승천 1". 승천 0도 "승천 0"으로 보인다(사용자 2026-11-23).</summary>
+        public static string AscensionTag(int ascension) => $"승천 {Math.Max(0, ascension)}";
 
         /// <summary>왼쪽 위 깃발 옆 큰 제목(UI-06 A안). 예: "스테이지 2".</summary>
         public static string StageTitle(int stage) => $"스테이지 {stage}";
@@ -154,7 +154,7 @@ namespace ProjectNeo.UI
                 if (hint.Key.Length == 0 || hint.Action.Length == 0) continue;
                 if (text.Length > 0) text.Append('\n');
                 text.Append(hint.Key);
-                if (hint.SecondKey.Length > 0) text.Append(' ').Append(hint.SecondKey);
+                if (hint.SecondKey.Length > 0) text.Append(hint.Joiner.Length > 0 ? hint.Joiner : " ").Append(hint.SecondKey);
                 text.Append(" - ");
                 if (hint.Hold) text.Append("길게 누르기 - ");
                 text.Append(hint.Action);

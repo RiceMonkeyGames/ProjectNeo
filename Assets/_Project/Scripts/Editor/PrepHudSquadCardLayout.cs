@@ -20,7 +20,9 @@ namespace ProjectNeo.Editor
         // 1280x720 Game canvas units. Width follows the sidebar card column (270).
         const float CardHeight = 70f, PortraitSize = 56f, TextLeft = 68f, BadgeWidth = 46f, CountWidth = 44f;
         const float BadgeSize = 24f;
-        static readonly Vector2 SelectMin = new Vector2(-11.5f, -6.9f), SelectMax = new Vector2(3.25f, 3.9f); // about 4 on every side
+        // Selection outline extents. UI-07 (user 2026-11-23): the outline keeps one even gap to the squad panel's inner frame
+        // edge on the left, top and right (about 3.5 canvas units, 8 px on a 3840-wide capture; was 8/9/13 px).
+        static readonly Vector2 SelectMin = new Vector2(-11.5f, -6.9f), SelectMax = new Vector2(5.42f, 4.33f);
         internal const string NumberName = "Number", OrderName = "Order", SegmentsName = "HeadcountSegments";
         static readonly Color SegmentOn = new Color32(0x4C, 0x9A, 0xE6, 0xFF);
         static readonly Color SegmentOff = new Color32(0x2A, 0x31, 0x36, 0xE6);
