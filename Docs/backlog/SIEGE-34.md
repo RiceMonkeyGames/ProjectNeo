@@ -1,9 +1,9 @@
 ---
 id: SIEGE-34
 title: Enemy Siege Role Coordination, Focused Wall Breach & Archer Blocked-Target Switch
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: SeongminHwang
+branch: feature/siege-34
 area: SIEGE
 depends_on: [SIEGE-17]
 created: 2026-11-23
