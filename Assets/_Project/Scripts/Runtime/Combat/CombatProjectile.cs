@@ -23,6 +23,33 @@ namespace ProjectNeo.Combat
         Collider footing;
         float footingFloor;
         ShotOpening opening;
+        // 지점을 노린 발사체(SIEGE-32). 유닛에게 피해를 주지 않고, 멈출 때 한 번 부른다.
+        bool pointShot;
+        Vector3 stopPoint;
+        float stopRadius;
+        System.Action stopped;
+
+        /// <summary>
+        /// 유닛이 아닌 지점을 향해 쏜다(SIEGE-32, 충돌체 없는 수성 무기). 날아가는 모습은 <see cref="Launch"/>와 같다.
+        /// 이동 구간이 <paramref name="point"/>에서 <paramref name="radius"/> 안을 지나거나, 무엇에든 닿거나, 수명이 다하면
+        /// 그 자리에서 멈추고 <paramref name="onStopped"/>를 한 번 부른다. 유닛에 닿아도 피해는 주지 않는다.
+        /// </summary>
+        public void LaunchAtPoint(CharacterActor source, Vector3 launchVelocity, Vector3 point, float radius,
+            System.Action onStopped)
+        {
+            Launch(source, 0f, launchVelocity);
+            pointShot = true;
+            stopPoint = point;
+            stopRadius = Mathf.Max(0f, radius);
+            stopped = onStopped;
+        }
+
+        void NotifyStopped()
+        {
+            System.Action callback = stopped;
+            stopped = null;
+            callback?.Invoke();
+        }
 
         public void Launch(CharacterActor source, float attackPower, Vector3 launchVelocity)
         {
@@ -57,6 +84,7 @@ namespace ProjectNeo.Combat
             Vector3 next = ArrowBallistics.Evaluate(start, velocity, gravity, elapsed);
             Vector3 step = next - origin;
             float distance = step.magnitude;
+            if (pointShot && TryReachStopPoint(origin, step)) return;
             if (distance > 0f)
             {
                 Vector3 direction = step / distance;
@@ -77,7 +105,27 @@ namespace ProjectNeo.Combat
             }
             transform.position = next;
             Face(ArrowBallistics.VelocityAt(velocity, gravity, elapsed));
-            if (elapsed >= profile.ProjectileLifetime) Destroy(gameObject);
+            if (elapsed >= profile.ProjectileLifetime)
+            {
+                launched = false;
+                NotifyStopped();
+                Destroy(gameObject);
+            }
+        }
+
+        // 이번 이동 구간이 노린 지점 둘레를 지나면 가장 가까운 자리에서 멈춘다.
+        bool TryReachStopPoint(Vector3 origin, Vector3 step)
+        {
+            float lengthSquared = step.sqrMagnitude;
+            float t = lengthSquared > 0f ? Mathf.Clamp01(Vector3.Dot(stopPoint - origin, step) / lengthSquared) : 0f;
+            Vector3 closest = origin + step * t;
+            float reach = stopRadius + profile.ProjectileRadius;
+            if ((closest - stopPoint).sqrMagnitude > reach * reach) return false;
+            transform.position = closest;
+            launched = false;
+            NotifyStopped();
+            Destroy(gameObject);
+            return true;
         }
 
         void Face(Vector3 heading)
@@ -100,7 +148,7 @@ namespace ProjectNeo.Combat
         bool TryImpact(Collider collider, Vector3 contact)
         {
             if (ShouldIgnore(collider, contact)) return false;
-            var target = collider.GetComponentInParent<CharacterActor>();
+            var target = pointShot ? null : collider.GetComponentInParent<CharacterActor>();
             // 위로 쏠 때의 감소는 성벽 위를 노릴 때만이다. 공중 대상은 언제나 온전한 피해를 받는다(Q-43).
             if (target != null)
                 target.ReceiveDamage(DamageRules.Calculate(attack, target.Stats.GetValue(StatType.Defense), profile.MinimumDamage)
@@ -109,6 +157,7 @@ namespace ProjectNeo.Combat
             // 화살 프리팹(StuckArrow)은 맞은 자리에 박혀 남고, 그렇지 않은 발사체는 사라진다(ART-05).
             if (!TryGetComponent(out StuckArrow arrow) || !arrow.Stick(collider, profile.ProjectileRadius)) Destroy(gameObject);
             launched = false;
+            NotifyStopped();
             return true;
         }
     }

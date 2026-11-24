@@ -109,10 +109,11 @@ namespace ProjectNeo.Tests
             return wall.transform.position + Vector3.up * wall.Placement.Definition.Height;
         }
 
-        FlyerBrain Spawn(Vector3 at)
+        FlyerBrain Spawn(Vector3 at, GameObject prefab = null)
         {
-            GameObject prefab = director.Settings.EnemyGroups.Select(g => g.unitPrefab)
-                .First(p => p != null && p.GetComponent<FlyerBrain>() != null);
+            if (prefab == null)
+                prefab = director.Settings.EnemyGroups.Select(g => g.unitPrefab)
+                    .First(p => p != null && p.GetComponent<FlyerBrain>() != null);
             GameObject unit = Object.Instantiate(prefab, at, Quaternion.identity);
             SceneManager.MoveGameObjectToScene(unit, scene);
             var brain = unit.GetComponent<FlyerBrain>();
@@ -217,5 +218,100 @@ namespace ProjectNeo.Tests
             for (int frame = 0; frame < Mathf.CeilToInt(interval * 30f) + 30 && flyer.Target != sheltered; frame++) yield return null;
             Assert.AreSame(sheltered, flyer.Target, "지붕에서 나오면 다시 성벽 위 아군을 먼저 노린다.");
         }
+
+        GameObject Roof(Vector3 feet, CharacterActor under)
+        {
+            GameObject roof = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            SceneManager.MoveGameObjectToScene(roof, scene);
+            roof.transform.position = feet + Vector3.up * (under.Profile.Height + 1f);
+            roof.transform.localScale = new Vector3(4f, 0.2f, 4f);
+            Physics.SyncTransforms();
+            return roof;
+        }
+
+        [UnityTest]
+        public IEnumerator AllAlliesSheltered_LiveCannonKeepsFlyerReachable_UntilDestroyed()
+        {
+            PlacedSiegeWeapon weapon = null;
+            yield return MountCannon(w => weapon = w);
+            // 살아 있는 아군은 지붕 아래 플레이어 하나뿐이다.
+            Vector3 feet = world.transform.TransformPoint(new Vector3(world.Grid.CellSize * 2.5f, 0f, world.Grid.CellSize * 2f));
+            player.transform.position = feet;
+            Roof(feet, player);
+            FlyerBrain flyer = Spawn(Outside(weapon.transform.position, 12f));
+            Assert.IsTrue(flyer.IsSheltered(player));
+            for (int frame = 0; frame < 60 && flyer.WeaponTarget != weapon; frame++) yield return null;
+            Assert.AreSame(weapon, flyer.WeaponTarget, "아군이 모두 지붕 아래면 대포를 노린다.");
+            Assert.IsTrue(flyer.CanReachAnyEnemy(), "노릴 대포가 남았으면 후퇴 판단에서 닿는 것으로 친다(SIEGE-32).");
+
+            weapon.ReceiveDamage(weapon.Health.Current + 1f);
+            yield return null;
+            Assert.IsFalse(flyer.CanReachAnyEnemy(), "대포도 없고 아군이 모두 지붕 아래면 닿지 않는다.");
+        }
+
+#if UNITY_EDITOR
+        const string HighArcherPath = "Assets/_Project/Prefabs/SiegePrototype/enemy_flyer_high_archer.prefab";
+
+        GameObject HighArcherPrefab()
+        {
+            var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(HighArcherPath);
+            Assert.IsNotNull(prefab, "높이 나는 궁수 비행 적 프리팹이 있어야 한다.");
+            Assert.AreEqual(AttackKind.Projectile, prefab.GetComponent<CharacterActor>().Profile.AttackKind);
+            return prefab;
+        }
+
+        [UnityTest]
+        public IEnumerator RangedFlyer_StrikesCannon_WithVisibleProjectile_DamageOnArrival()
+        {
+            PlacedSiegeWeapon weapon = null;
+            yield return MountCannon(w => weapon = w);
+            player.gameObject.SetActive(false);
+            FlyerBrain flyer = Spawn(Outside(weapon.transform.position, 14f), HighArcherPrefab());
+            for (int frame = 0; frame < 60 && flyer.WeaponTarget != weapon; frame++) yield return null;
+            Assert.AreSame(weapon, flyer.WeaponTarget);
+            bool sawProjectile = false;
+            for (int frame = 0; frame < 900 && weapon.Health.Current >= weapon.Health.Maximum; frame++)
+            {
+                if (scene.GetRootGameObjects().Any(r => r.GetComponent<CombatProjectile>() != null)) sawProjectile = true;
+                yield return null;
+            }
+            Assert.Less(weapon.Health.Current, weapon.Health.Maximum, "원거리 비행 적도 대포에 피해를 준다.");
+            Assert.IsTrue(sawProjectile, "대포를 칠 때 눈에 보이는 발사체를 날리고, 피해는 그것이 닿은 뒤에 들어간다(SIEGE-32).");
+        }
+
+        [UnityTest]
+        public IEnumerator RangedFlyer_OccludedHoverPoint_IsRecomputedWithClearShot()
+        {
+            player.gameObject.SetActive(false);
+            CharacterActor onWall = PlaceAlly(WallTop(out _));
+            onWall.Stats.SetBase(ProjectNeo.Stats.StatType.MaxHealth, 100000f);
+            onWall.Health.RestoreFull();
+            FlyerBrain flyer = Spawn(Outside(onWall.transform.position, 14f), HighArcherPrefab());
+            for (int frame = 0; frame < 600 && !(flyer.HasHoverPoint
+                && Horizontal(flyer.transform.position, flyer.Destination) < 0.2f); frame++) yield return null;
+            Assert.AreSame(onWall, flyer.Target);
+            Assert.IsTrue(flyer.HasHoverPoint, "공격 자리에 닿아야 한다.");
+            Vector3 before = flyer.Destination;
+            Assert.IsTrue(CombatPhysics.HasClearShot(flyer.Actor, onWall));
+
+            // 공격 자리와 대상 사이 가운데에 기둥을 세워 사선을 막는다.
+            GameObject pillar = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            SceneManager.MoveGameObjectToScene(pillar, scene);
+            Vector3 middle = (flyer.Actor.AimPoint + onWall.AimPoint) * 0.5f;
+            pillar.transform.position = middle;
+            pillar.transform.rotation = Quaternion.LookRotation(onWall.AimPoint - flyer.Actor.AimPoint);
+            pillar.transform.localScale = new Vector3(0.8f, 4f, 0.2f);
+            Physics.SyncTransforms();
+            Assert.IsFalse(CombatPhysics.HasClearShotFrom(before, flyer.Actor, onWall), "기둥이 처음 자리의 사선을 막아야 한다.");
+
+            float wait = flyer.Settings.SightlineRecheckInterval + 0.5f;
+            for (int frame = 0; frame < Mathf.CeilToInt(wait * 30f) && Horizontal(flyer.Destination, before) < 0.05f;
+                 frame++) yield return null;
+            Assert.AreSame(onWall, flyer.Target, "사선이 막혀도 대상은 그대로다.");
+            Assert.Greater(Horizontal(flyer.Destination, before), 0.05f, "가려진 공격 자리는 다시 구한다(SIEGE-32).");
+            Assert.IsTrue(CombatPhysics.HasClearShotFrom(flyer.Destination, flyer.Actor, onWall),
+                "새 공격 자리에서는 대상이 보인다.");
+        }
+#endif
     }
 }

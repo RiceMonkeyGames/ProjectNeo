@@ -20,6 +20,11 @@ namespace ProjectNeo.Combat
         bool pendingImpact;
         CharacterActor attackTarget;
         bool targetedAttack;
+        // 유닛이 아닌 지점(충돌체 없는 수성 무기 등)을 노린 공격(SIEGE-32). 판정 때 피해 대신 콜백을 부른다.
+        bool pointAttack;
+        Vector3 pointAim;
+        float pointStopRadius;
+        Action pointImpact;
         public Character Character { get; private set; }
         /// <summary>잡졸이면 그 정의. 영웅이면 null이다.</summary>
         public SoldierDefinition SoldierDefinition => soldierDefinition;
@@ -183,12 +188,60 @@ namespace ProjectNeo.Combat
             pendingImpact = true;
             attackTarget = target;
             targetedAttack = target != null;
+            ClearPointAttack();
             AttackStarted?.Invoke();
             return true;
         }
 
+        /// <summary>
+        /// 유닛이 아닌 지점을 노려 공격한다(SIEGE-32, 비행 적이 대포를 칠 때). 공격 속도·선딜레이는 유닛 공격과 같다.
+        /// 판정 때 근접이면 바로 <paramref name="impact"/>를 부르고, 원거리면 퍼짐 없이 <paramref name="aimPoint"/>로
+        /// 발사체를 날려 그것이 멈출 때(지점 <paramref name="stopRadius"/> 안에 들어오거나 무엇에든 닿거나 수명이 다할 때) 부른다.
+        /// 발사체는 유닛에게 피해를 주지 않는다. 판정 전에 죽거나 끊기면 부르지 않는다.
+        /// </summary>
+        public bool TryAttackPoint(Vector3 aimPoint, float stopRadius, Action impact)
+        {
+            if (IsOnLadder || Health == null || Health.IsDead || pendingImpact || cooldown > 0f) return false;
+            if (profile.AttackKind == AttackKind.Projectile && profile.ProjectilePrefab == null) return false;
+            float speed = Stats.GetValue(StatType.AttackSpeed);
+            if (speed <= 0f) return false;
+            cooldown = Mathf.Max(1f / speed, profile.ImpactDelay);
+            impactRemaining = profile.ImpactDelay;
+            pendingImpact = true;
+            attackTarget = null;
+            targetedAttack = false;
+            pointAttack = true;
+            pointAim = aimPoint;
+            pointStopRadius = Mathf.Max(0f, stopRadius);
+            pointImpact = impact;
+            AttackStarted?.Invoke();
+            return true;
+        }
+
+        void ClearPointAttack()
+        {
+            pointAttack = false;
+            pointImpact = null;
+        }
+
+        void ResolvePointImpact()
+        {
+            Action impact = pointImpact;
+            ClearPointAttack();
+            if (profile.AttackKind == AttackKind.Melee)
+            {
+                impact?.Invoke();
+                return;
+            }
+            Vector3 launch = ArrowBallistics.LaunchVelocity(AimPoint, pointAim, profile.ProjectileSpeed, profile.ProjectileGravity);
+            GameObject shot = Instantiate(profile.ProjectilePrefab, AimPoint, Quaternion.LookRotation(launch));
+            UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(shot, gameObject.scene);
+            shot.GetComponent<CombatProjectile>().LaunchAtPoint(this, launch, pointAim, pointStopRadius, impact);
+        }
+
         void ResolveImpact()
         {
+            if (pointAttack) { ResolvePointImpact(); return; }
             // 입력 공격은 판정 시 전방 대상을 찾는다. AI의 지정 대상은 중간에 바꾸지 않는다.
             CharacterActor nearest = attackTarget;
             float nearestDistance = float.PositiveInfinity;
