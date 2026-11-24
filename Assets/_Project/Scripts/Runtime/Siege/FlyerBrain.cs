@@ -61,6 +61,11 @@ namespace ProjectNeo.Siege
         Vector3 hoverFeet;
         Vector3 approach;
         const float HoverRefreshDistance = 0.3f;
+        // 대상 잠금 남은 시간과 다음 사선 검사까지 남은 시간(SIEGE-32).
+        float lockRemaining;
+        float sightlineCheckRemaining;
+        // 공격 자리에 닿았다고 보는 거리(m). 그 전에는 지금 자리 대신 공격 자리에서 사선을 본다.
+        const float HoverArrivalDistance = 0.5f;
 
         /// <summary>지금 노리는 아군. 없으면 null.</summary>
         public CharacterActor Target { get; private set; }
@@ -114,6 +119,10 @@ namespace ProjectNeo.Siege
             IReadOnlyList<CharacterActor> actors = CharacterActor.ActiveActors;
             for (int i = 0; i < actors.Count; i++)
                 if (Actor.IsEnemy(actors[i]) && !IsShelteredCached(actors[i])) return true;
+            // 아군이 모두 지붕 아래여도 노릴 수 있는 대포가 남았으면 닿는다(SIEGE-32). 대상 고르기와 같은 기준이다.
+            if (flyer != null && flyer.TargetsSiegeWeapons && world != null)
+                foreach (PlacedSiegeWeapon placed in world.Weapons)
+                    if (IsLiveWeapon(placed)) return true;
             return false;
         }
 
@@ -232,6 +241,8 @@ namespace ProjectNeo.Siege
             Target = null;
             WeaponTarget = null;
             hoverTarget = null;
+            lockRemaining = 0f;
+            sightlineCheckRemaining = 0f;
         }
 
         void Update()
@@ -244,6 +255,7 @@ namespace ProjectNeo.Siege
             if (mode == Mode.Exiting) { Fly(destination, true); return; }
             if (retreatRequested) { UpdateRetreat(); return; }
             think -= Time.deltaTime;
+            lockRemaining = Mathf.Max(0f, lockRemaining - Time.deltaTime);
             // 대상이 죽거나 사라지면 판단 주기를 기다리지 않고 바로 다시 고른다.
             if (!ReferenceEquals(Target, null) && !Actor.IsEnemy(Target)) think = 0f;
             if (!ReferenceEquals(WeaponTarget, null) && !IsLiveWeapon(WeaponTarget)) think = 0f;
@@ -263,6 +275,8 @@ namespace ProjectNeo.Siege
             candidates.Clear();
             weaponTargets.Clear();
             float ground = world.transform.position.y;
+            // 지금 대상이 후보 목록에서 몇 번인지. 없으면(죽음·지붕 아래·제거) -1이라 잠금 없이 바로 다시 고른다.
+            int currentIndex = -1;
             // 인터페이스 목록을 foreach로 돌면 열거자가 할당되므로 번호로 돈다(PERF-ai-alloc-and-split).
             IReadOnlyList<CharacterActor> actors = CharacterActor.ActiveActors;
             for (int i = 0; i < actors.Count; i++)
@@ -270,6 +284,7 @@ namespace ProjectNeo.Siege
                 CharacterActor candidate = actors[i];
                 // 지붕 아래 아군(계단방·탑 안·성문 통로)은 날아서 닿지 않으므로 고르지 않는다.
                 if (!Actor.IsEnemy(candidate) || IsShelteredCached(candidate)) continue;
+                if (candidate == Target) currentIndex = candidates.Count;
                 // 같은 거리일 때는 활성 목록에 먼저 들어온 아군을 고른다.
                 candidates.Add(new FlyerTargetCandidate(targets.Count,
                     (candidate.transform.position - transform.position).sqrMagnitude,
@@ -282,14 +297,15 @@ namespace ProjectNeo.Siege
                 foreach (PlacedSiegeWeapon placed in world.Weapons)
                 {
                     if (!IsLiveWeapon(placed)) continue;
+                    if (placed == WeaponTarget) currentIndex = candidates.Count;
                     candidates.Add(FlyerTargetCandidate.SiegeWeapon(candidates.Count,
                         (placed.transform.position - transform.position).sqrMagnitude));
                     weaponTargets.Add(placed);
                 }
             // 먼저 노릴 대상 규칙이 있으면(SIEGE-09 결투형 보스) 그 대상을 먼저 고르고, 없으면 원래 전략을 쓴다.
-            int index = PriorityTarget != null
-                ? FlyerPriorityTargeting.Select(candidates, flyer.TargetStrategy)
-                : flyer.TargetStrategy != null ? flyer.TargetStrategy.Select(candidates) : -1;
+            // 지금 대상은 잠금 시간과 거리 여유만큼 지킨다(SIEGE-32).
+            int index = FlyerTargetLockRules.Select(candidates, flyer.TargetStrategy, PriorityTarget != null,
+                currentIndex, lockRemaining, flyer.RetargetDistanceMargin);
             if (index < 0 || index >= targets.Count + weaponTargets.Count)
             {
                 // 노릴 대상이 없으면 성 안마당 위 높은 곳에서 기다린다.
@@ -300,7 +316,12 @@ namespace ProjectNeo.Siege
             }
             CharacterActor actor = index < targets.Count ? targets[index] : null;
             PlacedSiegeWeapon weapon = actor == null ? weaponTargets[index - targets.Count] : null;
-            if (actor != Target || weapon != WeaponTarget) hoverTarget = null;
+            if (actor != Target || weapon != WeaponTarget)
+            {
+                hoverTarget = null;
+                lockRemaining = flyer.TargetLockSeconds;
+                sightlineCheckRemaining = 0f;
+            }
             Target = actor;
             WeaponTarget = weapon;
             mode = Mode.Pursuing;
@@ -353,12 +374,30 @@ namespace ProjectNeo.Siege
         {
             bool inRange = CombatPhysics.IsInRange(Actor, Target);
             Fly(destination, !inRange);
+            if (RevalidateSightline()) return;
             if (!inRange) return;
             Face(Target.transform.position - transform.position);
             if (Actor.CanAttack(Target)) Actor.TryAttack(Target);
         }
 
+        // 쫓는 중 정해진 간격마다 사선을 다시 본다(SIEGE-32). 대상이 성가퀴·기둥 뒤로 가려졌으면 공격 자리를 버리고
+        // 다음 프레임에 다시 구한다(자리 고르기는 사선이 열린 곳을 먼저 고른다). 공격 자리에 닿았으면 지금 자리에서,
+        // 아직 가는 중이면 공격 자리에서 본다. 자리를 버렸으면 true.
+        bool RevalidateSightline()
+        {
+            sightlineCheckRemaining -= Time.deltaTime;
+            if (sightlineCheckRemaining > 0f || hoverTarget == null || Actor.IsAttacking) return false;
+            sightlineCheckRemaining = flyer.SightlineRecheckInterval;
+            bool arrived = (transform.position - destination).sqrMagnitude <= HoverArrivalDistance * HoverArrivalDistance;
+            bool clear = arrived ? CombatPhysics.HasClearShot(Actor, Target)
+                : CombatPhysics.HasClearShotFrom(destination, Actor, Target);
+            if (clear) return false;
+            hoverTarget = null;
+            return true;
+        }
+
         // 대포에는 충돌체가 없어 무기 크기로 닿는지 잰다. 걷는 적과 같은 규칙이고 방어력은 없다(SIEGE-02).
+        // 피해는 공격 판정 때(원거리면 화살이 멈출 때) 한 번 확정해서 준다(SIEGE-32). 그 사이에 대포가 없어지면 주지 않는다.
         void StrikeWeapon()
         {
             PlacedSiegeWeapon weapon = WeaponTarget;
@@ -367,9 +406,17 @@ namespace ProjectNeo.Siege
             Fly(destination, !inReach);
             if (!inReach) return;
             Face(weapon.transform.position - transform.position);
-            if (!Actor.TryAttack()) return;
-            weapon.ReceiveDamage(BossUnit.StructureDamage(Actor,
-                DamageRules.Calculate(Actor.Stats.GetValue(StatType.Attack), 0f, Actor.Profile.MinimumDamage)));
+            // 공격을 시작할 수 없는 프레임에는 판정 콜백을 만들지 않는다.
+            if (Actor.IsAttacking || Actor.CooldownRemaining > 0f) return;
+            float damage = BossUnit.StructureDamage(Actor,
+                DamageRules.Calculate(Actor.Stats.GetValue(StatType.Attack), 0f, Actor.Profile.MinimumDamage));
+            Vector3 size = weapon.Definition.Size;
+            Vector3 aim = weapon.transform.position + Vector3.up * (size.y * 0.5f);
+            float stopRadius = Mathf.Max(size.x, Mathf.Max(size.y, size.z)) * 0.5f;
+            Actor.TryAttackPoint(aim, stopRadius, () =>
+            {
+                if (IsLiveWeapon(weapon)) weapon.ReceiveDamage(damage);
+            });
         }
 
         // 이 자리(발 위치)에 비행 적 몸통이 성 조각 등에 박히지 않고 들어가는지. 유닛 몸통과 트리거는 따지지 않는다.

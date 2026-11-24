@@ -44,6 +44,12 @@ namespace ProjectNeo.Siege
         [SerializeField, Min(1f)] float lod0Distance = 25f;
         [SerializeField, Min(2f)] float lod1Distance = 60f;
         [SerializeField, Min(0.05f)] float lodEvaluationInterval = 0.5f;
+        // 대상을 고른 뒤 이만큼(초)은 바꾸지 않는다(SIEGE-32). 대상이 죽거나 지붕 아래로 숨으면 바로 바꾼다.
+        [SerializeField, Min(0f)] float targetLockSeconds = 1.5f;
+        // 잠금이 끝난 뒤 같은 순위의 다른 대상이 이만큼(m) 넘게 더 가까워야 바꾼다(SIEGE-32).
+        [SerializeField, Min(0f)] float retargetDistanceMargin = 2f;
+        // 쫓는 중 사선(성가퀴·기둥 가림)을 다시 보는 간격(초). 가려졌으면 공격 자리를 다시 구한다(SIEGE-32).
+        [SerializeField, Min(0.05f)] float sightlineRecheckInterval = 0.25f;
         public FlyerTargetStrategy TargetStrategy => targetStrategy;
         public FlyerMovement Movement => movement;
         public FlyerEngagement Engagement => engagement;
@@ -65,6 +71,9 @@ namespace ProjectNeo.Siege
         public float Lod0Distance => Mathf.Max(1f, lod0Distance);
         public float Lod1Distance => Mathf.Max(Lod0Distance, lod1Distance);
         public float LodEvaluationInterval => Mathf.Max(0.05f, lodEvaluationInterval);
+        public float TargetLockSeconds => Mathf.Max(0f, targetLockSeconds);
+        public float RetargetDistanceMargin => Mathf.Max(0f, retargetDistanceMargin);
+        public float SightlineRecheckInterval => Mathf.Max(0.05f, sightlineRecheckInterval);
 
         public static FlyerSettings Create(FlyerTargetStrategy targetStrategy, FlyerMovement movement,
             FlyerEngagement engagement, float cruiseClearance = 3f, float meleeExposureAltitude = 1.5f,
@@ -72,7 +81,8 @@ namespace ProjectNeo.Siege
             float holdInset = 6f, bool targetsSiegeWeapons = true, float hoverSeparation = 1.2f,
             float roofProbeDistance = 6f, int decisionStaggerBuckets = 4, float groundProbeInterval = 0.1f,
             float groundProbeMoveTolerance = 0.25f, float shelterCacheSeconds = 0.5f, float shelterMoveTolerance = 0.25f,
-            bool enableAiLod = true, float lod0Distance = 25f, float lod1Distance = 60f, float lodEvaluationInterval = 0.5f)
+            bool enableAiLod = true, float lod0Distance = 25f, float lod1Distance = 60f, float lodEvaluationInterval = 0.5f,
+            float targetLockSeconds = 1.5f, float retargetDistanceMargin = 2f, float sightlineRecheckInterval = 0.25f)
         {
             var value = CreateInstance<FlyerSettings>();
             value.targetStrategy = targetStrategy;
@@ -96,6 +106,9 @@ namespace ProjectNeo.Siege
             value.lod0Distance = Mathf.Max(1f, lod0Distance);
             value.lod1Distance = Mathf.Max(value.lod0Distance, lod1Distance);
             value.lodEvaluationInterval = Mathf.Max(0.05f, lodEvaluationInterval);
+            value.targetLockSeconds = Mathf.Max(0f, targetLockSeconds);
+            value.retargetDistanceMargin = Mathf.Max(0f, retargetDistanceMargin);
+            value.sightlineRecheckInterval = Mathf.Max(0.05f, sightlineRecheckInterval);
             return value;
         }
     }
