@@ -1,9 +1,9 @@
 ---
 id: SIEGE-32
 title: Flyer Target Lock Cooldown, Ranged LoS Revalidation & Shelter Edge Cases
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: SeongminHwang
+branch: feature/siege-32
 area: SIEGE
 depends_on: []
 created: 2026-11-23
