@@ -37,7 +37,9 @@ namespace ProjectNeo.Tests
         }
 
         static int Potions(RunState state) => state.Inventory.Items.Count(item => item.Definition.Id == "item_potion");
-        static int StartingRecruits() => Object.FindObjectsByType<UnitCombatAI>().Count(unit => unit.name.Contains("_Recruit"));
+        // 새로 뽑은 잡졸은 숨겨진 보관 병사라(UI-07) 꺼진 유닛까지 센다.
+        static int StartingRecruits() => Object.FindObjectsByType<UnitCombatAI>(FindObjectsInactive.Include)
+            .Count(unit => unit.name.Contains("_Recruit"));
 
         [UnityTest]
         public IEnumerator NewRun_GetsOpenedStartingBonuses()
