@@ -57,8 +57,13 @@ namespace ProjectNeo.Tests
             CharacterActor player = ActorWhere(unit => unit is RunHero hero && hero.IsPlayer);
             CharacterActor soldier = ActorWhere(unit => unit is RunSoldier);
             Assert.IsNotNull(player); Assert.IsNotNull(soldier);
-            float playerAttack = player.Stats.GetValue(StatType.Attack);
             float soldierAttack = soldier.Stats.GetValue(StatType.Attack);
+            // % 수정값은 서로 더한다(StatSheet). 플레이어는 늘 최고 등급이라 등급 보너스(%)가 이미 붙어 있으므로(UI-07),
+            // +50% 퍽 뒤의 값은 지금 값 × 1.5가 아니라 같은 수정값을 더해 계산한 값이다.
+            float playerAttack = player.Stats.GetValueWith(StatType.Attack,
+                new[] { StatModifier.Percent(StatType.Attack, 0.5f) }, null);
+            float soldierDoubled = soldier.Stats.GetValueWith(StatType.Attack,
+                new[] { StatModifier.Percent(StatType.Attack, 1f) }, null);
 
             PerkDefinition playerPerk = PerkDefinition.Create("test_player_attack", PerkCategory.Combat,
                 new[] { new PerkStatEffect(PerkTarget.Player, StatModifier.Percent(StatType.Attack, 0.5f)) });
@@ -68,12 +73,12 @@ namespace ProjectNeo.Tests
             state.Perks.BonusPoints = 2;
 
             Assert.IsTrue(state.TryAllocatePerk(playerPerk));
-            Assert.AreEqual(playerAttack * 1.5f, player.Stats.GetValue(StatType.Attack), 0.01f, "플레이어 공격력 +50%");
+            Assert.AreEqual(playerAttack, player.Stats.GetValue(StatType.Attack), 0.01f, "플레이어 공격력 +50%");
             Assert.AreEqual(soldierAttack, soldier.Stats.GetValue(StatType.Attack), 0.01f, "잡졸은 플레이어 대상 퍽을 받지 않는다");
 
             Assert.IsTrue(state.TryAllocatePerk(soldierPerk));
-            Assert.AreEqual(soldierAttack * 2f, soldier.Stats.GetValue(StatType.Attack), 0.01f, "잡졸 공격력 +100%");
-            Assert.AreEqual(playerAttack * 1.5f, player.Stats.GetValue(StatType.Attack), 0.01f, "다시 붙여도 겹치지 않는다");
+            Assert.AreEqual(soldierDoubled, soldier.Stats.GetValue(StatType.Attack), 0.01f, "잡졸 공격력 +100%");
+            Assert.AreEqual(playerAttack, player.Stats.GetValue(StatType.Attack), 0.01f, "다시 붙여도 겹치지 않는다");
 
             var spawner = Object.FindAnyObjectByType<GameUnitSpawner>();
             UnitCombatAI recruit = spawner.Recruit(spawner.DebugSoldier, FacilityType.TrainingGround);

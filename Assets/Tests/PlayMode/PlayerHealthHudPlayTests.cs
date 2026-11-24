@@ -88,7 +88,9 @@ namespace ProjectNeo.Tests
             var view = Object.FindAnyObjectByType<GamePhaseView>();
             Assert.IsTrue(view.EnterPanel());
             yield return null;
-            Assert.IsFalse(hud.IsShowing);
+            // 시설·장비 창이 열려 있어도 체력 HUD는 보인다(UI-07, 사용자 결정 2026-11-23).
+            Assert.IsTrue(hud.IsShowing, "창이 열려도 체력 HUD는 그대로 보인다.");
+            AssertHealth();
             view.ExitPanel();
             yield return null;
             Assert.IsTrue(hud.IsShowing);
