@@ -1,9 +1,9 @@
 ---
 id: SIEGE-33
 title: Cannon Cluster/Threat Targeting, Trajectory Obstacle Check & Flyer Lead Velocity
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: SeongminHwang
+branch: feature/siege-33
 area: SIEGE
 depends_on: []
 created: 2026-11-23
