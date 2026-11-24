@@ -55,7 +55,7 @@ namespace ProjectNeo.Walls
             return Mathf.Max(1, target - level);
         }
 
-        /// <summary>망루 맨 윗층 방의 짜임. <see cref="HasRoom"/>이 거짓이면 방 없이 꽉 찬 층이다(통로와 이어지는 면이 없다).</summary>
+        /// <summary>망루 한 층 방의 짜임(SIEGE-29). <see cref="HasRoom"/>이 거짓이면 방 없이 꽉 찬 층이다(통로와 이어지는 면이 없다).</summary>
         public readonly struct Interior
         {
             public readonly bool HasRoom;
@@ -63,23 +63,75 @@ namespace ProjectNeo.Walls
             public readonly int InnerFace;
             public readonly Vector2Int DoorCell;
             public readonly Vector2Int StairCell;
-            /// <summary>계단이 올라가는 쪽(계단 칸에서 문 칸의 반대쪽 면).</summary>
+            /// <summary>계단이 올라가는 쪽(계단 칸에서 문 칸 쪽 면). 바깥벽 쪽 끝에서 출발해 꼭대기가 문 칸 쪽 탁 트인 바닥으로 나온다(SIEGE-29).</summary>
             public readonly int RiseFace;
+            /// <summary>가장 낮은 이웃 통로의 바닥 높이. 망루 모든 방 층이 같은 계단 칸을 쌓는 기준이다(SIEGE-29).</summary>
+            public readonly float FirstFloor;
+            /// <summary>이 층 바닥 높이의 통로와 닿은 면 비트(1 &lt;&lt; 면). 이 면은 문 칸이 아니어도 벽판이다.</summary>
+            public readonly int Walkways;
+            /// <summary>이 층에 문이 나는 면 비트(1 &lt;&lt; 면). 계단 칸은 문을 내지 않는다.</summary>
+            public readonly int Doors;
 
-            public Interior(bool hasRoom, int innerFace, Vector2Int doorCell, Vector2Int stairCell, int riseFace)
-            { HasRoom = hasRoom; InnerFace = innerFace; DoorCell = doorCell; StairCell = stairCell; RiseFace = riseFace; }
+            public Interior(bool hasRoom, int innerFace, Vector2Int doorCell, Vector2Int stairCell, int riseFace,
+                float firstFloor = 0f, int walkways = 0, int doors = 0)
+            {
+                HasRoom = hasRoom; InnerFace = innerFace; DoorCell = doorCell; StairCell = stairCell; RiseFace = riseFace;
+                FirstFloor = firstFloor; Walkways = walkways; Doors = doors;
+            }
+
+            public bool HasDoor(int face) => (Doors & (1 << face)) != 0;
+            public bool MeetsWalkway(int face) => (Walkways & (1 << face)) != 0;
+        }
+
+        /// <summary>
+        /// 망루 한 층의 문 칸: 그 면의 칸 가운데 이 층 바닥 높이의 통로와 닿은 첫 칸. 계단 칸에는 문을 내지 않는다(SIEGE-29).
+        /// </summary>
+        public static bool FaceDoorCell(BuildLayout layout, BuildGridDefinition grid, BuildPlacement tier, Vector2Int stairCell, int face,
+            out Vector2Int door)
+        {
+            door = default;
+            if (layout == null || tier == null) return false;
+            Vector2Int size = tier.Size, direction = BattlementRules.Directions[face];
+            for (int x = 0; x < size.x; x++)
+                for (int z = 0; z < size.y; z++)
+                {
+                    var key = tier.Cell + new Vector2Int(x, z);
+                    var next = key + direction;
+                    if (next.x >= tier.Cell.x && next.x < tier.Cell.x + size.x && next.y >= tier.Cell.y && next.y < tier.Cell.y + size.y) continue;
+                    if (grid != null && (next.x < 0 || next.y < 0 || next.x >= grid.Width || next.y >= grid.Depth)) continue;
+                    if (key == stairCell || !Walkway(layout, next, tier.Elevation)) continue;
+                    door = key;
+                    return true;
+                }
+            return false;
+        }
+
+        // 이웃 통로(성벽·성문 윗면) 가운데 가장 낮은 바닥 높이. 없으면 −1.
+        static float LowestWalkway(BuildLayout layout, BuildGridDefinition grid, BuildPlacement tier)
+        {
+            float lowest = -1f;
+            ForEachNeighbour(grid, tier.Cell, tier.Size, (inside, next, face) =>
+            {
+                BuildPlacement top = layout.Top(next);
+                if (top == null || (top.Definition.Kind != BuildPieceKind.Wall && top.Definition.Kind != BuildPieceKind.Gate)) return;
+                float surface = top.Elevation + top.Definition.Height;
+                if (lowest < 0f || surface < lowest) lowest = surface;
+            });
+            return lowest;
         }
 
         /// <summary>
         /// 망루 맨 윗층 방: 바닥 높이가 이웃 성벽 통로와 같은 면을 문 쪽(안쪽)으로 고른다(가장 많이 닿은 쪽, 같으면 방향 순서).
-        /// 안쪽 줄 두 칸 가운데 통로와 닿은 첫 칸이 문 칸, 다른 칸이 계단 칸이고 계단은 문 칸의 반대쪽으로 오른다.
+        /// 안쪽 줄 두 칸 가운데 통로와 닿은 첫 칸이 문 칸, 다른 칸이 계단 칸이고 계단은 바깥벽 쪽 끝에서 문 칸 쪽으로 오른다.
         /// </summary>
         public static Interior RoomOf(BuildLayout layout, BuildGridDefinition grid, BuildPlacement top)
         {
             if (layout == null || top == null || top.Definition.Kind != BuildPieceKind.Tower) return default;
             Vector2Int size = top.Size;
             var counts = new int[4];
-            float floor = top.Elevation;
+            // 가장 낮은 통로 바닥부터 위로 모든 층이 방이다. 그 아래 층은 꽉 찬 채 둔다(SIEGE-29).
+            float floor = LowestWalkway(layout, grid, top);
+            if (floor < 0f || top.Elevation < floor - HeightTolerance) return default;
             ForEachNeighbour(grid, top.Cell, size, (inside, next, face) =>
             {
                 if (Walkway(layout, next, floor)) counts[face]++;
@@ -100,10 +152,18 @@ namespace ProjectNeo.Walls
             if (row.Count < 2) return default;
             Vector2Int door = row[0], stair = row[1];
             if (!Walkway(layout, door + direction, floor)) { door = row[1]; stair = row[0]; }
-            Vector2Int rise = stair - door;
+            Vector2Int rise = door - stair;
             int riseFace = 0;
             for (int face = 0; face < 4; face++) if (BattlementRules.Directions[face] == rise) riseFace = face;
-            return new Interior(true, inner, door, stair, riseFace);
+            // 이 층 바닥 높이의 통로와 닿은 면과 문 면(층마다 다르다).
+            int walkways = 0, doors = 0;
+            ForEachNeighbour(grid, top.Cell, size, (inside, next, face) =>
+            {
+                if (Walkway(layout, next, top.Elevation)) walkways |= 1 << face;
+            });
+            for (int face = 0; face < 4; face++)
+                if ((walkways & (1 << face)) != 0 && FaceDoorCell(layout, grid, top, stair, face, out _)) doors |= 1 << face;
+            return new Interior(true, inner, door, stair, riseFace, floor, walkways, doors);
         }
 
         /// <summary>

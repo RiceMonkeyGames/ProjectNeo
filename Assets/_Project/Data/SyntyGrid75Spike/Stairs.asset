@@ -17,6 +17,7 @@ MonoBehaviour:
   footprint: {x: 1, y: 1}
   height: 5
   maxHealth: 50
+  maxStorey: 0
   prefab: {fileID: 4185244723395006943, guid: a9a8c2d48e67d3f469aac2cca6ee7d1e, type: 3}
   mountPoints: []
   occupantModifiers: []
