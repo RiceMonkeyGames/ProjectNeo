@@ -190,34 +190,139 @@ namespace ProjectNeo.Tests
 
         // ── 자동 조준 ──────────────────────────────────────────
 
+        static List<CannonTargetCandidate> Candidates(params Vector3[] positions)
+        {
+            var list = new List<CannonTargetCandidate>();
+            foreach (Vector3 position in positions) list.Add(new CannonTargetCandidate(position));
+            return list;
+        }
+
+        static ClusterThreatCannonTargetSelector Cluster() => new ClusterThreatCannonTargetSelector(3f, 0.5f, 3f, 3f, 1.5f);
+
         [Test]
         public void Selector_PicksNearestValidCandidate()
         {
-            var candidates = new List<Vector3>
-            {
+            var candidates = Candidates(
                 new Vector3(0f, 0f, 3f),    // 최소 사거리 안
                 new Vector3(0f, 0f, -10f),  // 뒤쪽
                 new Vector3(0f, 0f, 30f),
                 new Vector3(5f, 0f, 12f),   // 13m, 가장 가까운 유효 후보
-                new Vector3(0f, 0f, 80f),   // 최대 사거리 밖
-            };
+                new Vector3(0f, 0f, 80f));  // 최대 사거리 밖
             Assert.AreEqual(3, new NearestCannonTargetSelector().Select(Context(), candidates));
         }
 
         [Test]
         public void Selector_ReturnsMinusOneWithoutValidCandidates()
         {
-            var selector = new NearestCannonTargetSelector();
-            Assert.AreEqual(-1, selector.Select(Context(), new List<Vector3>()));
-            Assert.AreEqual(-1, selector.Select(Context(), new List<Vector3> { new Vector3(0f, 0f, -20f) }));
-            Assert.AreEqual(-1, selector.Select(Context(), null));
+            foreach (ICannonTargetSelector selector in new ICannonTargetSelector[] { new NearestCannonTargetSelector(), Cluster() })
+            {
+                Assert.AreEqual(-1, selector.Select(Context(), Candidates()));
+                Assert.AreEqual(-1, selector.Select(Context(), Candidates(new Vector3(0f, 0f, -20f))));
+                Assert.AreEqual(-1, selector.Select(Context(), null));
+            }
         }
 
         [Test]
         public void Selector_TieKeepsEarlierIndex()
         {
-            var candidates = new List<Vector3> { new Vector3(-5f, 0f, 12f), new Vector3(5f, 0f, 12f) };
+            var candidates = Candidates(new Vector3(-5f, 0f, 12f), new Vector3(5f, 0f, 12f));
             Assert.AreEqual(0, new NearestCannonTargetSelector().Select(Context(), candidates));
+            Assert.AreEqual(0, Cluster().Select(Context(), candidates));
+        }
+
+        [Test]
+        public void Selectors_SkipExcludedCandidates()
+        {
+            var candidates = Candidates(new Vector3(0f, 0f, 12f), new Vector3(0f, 0f, 30f));
+            candidates[0] = candidates[0].WithExcluded();
+            Assert.AreEqual(1, new NearestCannonTargetSelector().Select(Context(), candidates));
+            Assert.AreEqual(1, Cluster().Select(Context(), candidates));
+        }
+
+        [Test]
+        public void ClusterSelector_PrefersDenseGroupOverNearerLoneEnemy()
+        {
+            var candidates = Candidates(
+                new Vector3(0f, 0f, 12f),     // 혼자 선 가까운 적
+                new Vector3(0f, 0f, 30f),     // 무리 중심
+                new Vector3(1f, 0f, 30f),
+                new Vector3(-1f, 0f, 30.5f));
+            Assert.AreEqual(1, Cluster().Select(Context(), candidates), "무리 한가운데 적을 노린다.");
+        }
+
+        [Test]
+        public void ClusterSelector_ThreatWeightOutranksSmallGroup()
+        {
+            var candidates = new List<CannonTargetCandidate>
+            {
+                new CannonTargetCandidate(new Vector3(0f, 0f, 20f)),
+                new CannonTargetCandidate(new Vector3(0.5f, 0f, 20f)),
+                new CannonTargetCandidate(new Vector3(20f, 0f, 30f), TargetThreat.LadderClimber),
+            };
+            // 둘 무리 점수는 1 + (1 - 0.5 × 0.5/3) ≈ 1.92, 사다리 적 하나는 3.
+            Assert.AreEqual(2, Cluster().Select(Context(), candidates));
+            var ranged = new List<CannonTargetCandidate>(candidates)
+            {
+                [2] = new CannonTargetCandidate(new Vector3(20f, 0f, 30f), TargetThreat.Ranged),
+            };
+            Assert.AreEqual(0, Cluster().Select(Context(), ranged), "원거리 1.5는 둘 무리보다 낮다.");
+        }
+
+        [Test]
+        public void ClusterSelector_CountsExcludedAndOutOfArcEnemiesInScore()
+        {
+            ClusterThreatCannonTargetSelector selector = Cluster();
+            var candidates = new List<CannonTargetCandidate>
+            {
+                new CannonTargetCandidate(new Vector3(0f, 0f, 20f)),
+                new CannonTargetCandidate(new Vector3(0f, 0f, 21f), TargetThreat.SiegeBreaker, true),
+            };
+            float expected = 1f + Mathf.Lerp(1f, 0.5f, 1f / 3f) * 3f;
+            Assert.AreEqual(expected, selector.Score(candidates[0].Position, candidates), 0.0001f);
+            Assert.AreEqual(0f, selector.Falloff(3.01f));
+            Assert.AreEqual(0.5f, selector.Falloff(3f), 0.0001f);
+            Assert.AreEqual(1f, selector.ThreatWeight(TargetThreat.None));
+        }
+
+        [Test]
+        public void ClusterSelector_FromSettingsUsesThreatWeights()
+        {
+            var settings = CannonSettings.Create(ladderClimberThreatWeight: 7f, siegeBreakerThreatWeight: 5f, rangedThreatWeight: 2f);
+            try
+            {
+                ClusterThreatCannonTargetSelector selector = ClusterThreatCannonTargetSelector.From(settings);
+                Assert.AreEqual(7f, selector.ThreatWeight(TargetThreat.LadderClimber));
+                Assert.AreEqual(5f, selector.ThreatWeight(TargetThreat.SiegeBreaker));
+                Assert.AreEqual(2f, selector.ThreatWeight(TargetThreat.Ranged));
+            }
+            finally { Object.DestroyImmediate(settings); }
+        }
+
+        // ── 앞지르기 ──────────────────────────────────────────
+
+        [Test]
+        public void Lead_PredictsAlongVelocity_IncludingVertical()
+        {
+            Vector3 muzzle = new Vector3(0f, 9f, 0f), target = new Vector3(0f, 6f, 30f);
+            Vector3 velocity = new Vector3(3f, 1f, 0f);
+            Vector3 led = CannonLead.Predict(muzzle, target, velocity, 30f, 9.81f);
+            Assert.IsTrue(CannonBallistics.TrySolve(muzzle, led, 30f, 9.81f, out _, out float time));
+            Assert.AreEqual(target.x + velocity.x * time, led.x, 0.05f);
+            Assert.AreEqual(target.y + velocity.y * time, led.y, 0.05f, "비행 적의 오르내림도 앞지른다.");
+            Assert.AreEqual(target, CannonLead.Predict(muzzle, target, Vector3.zero, 30f, 9.81f));
+        }
+
+        [Test]
+        public void Lead_FallsBackToCurrentPositionOutsideAim()
+        {
+            CannonAimContext context = Context();
+            Vector3 current = new Vector3(0f, 0f, 58f), led = new Vector3(0f, 0f, 63f);
+            Assert.IsTrue(CannonLead.TryResolve(context, current, led, out Vector3 aim));
+            Assert.AreEqual(current, aim, "앞지른 자리가 사거리 밖이면 지금 위치를 쏜다.");
+            Vector3 inside = new Vector3(0f, 0f, 40f);
+            Assert.IsTrue(CannonLead.TryResolve(context, current, inside, out aim));
+            Assert.AreEqual(inside, aim);
+            Assert.IsFalse(CannonLead.TryResolve(context, new Vector3(0f, 0f, 70f), new Vector3(0f, 0f, 75f), out _));
         }
 
         // ── 흩어짐 ────────────────────────────────────────────

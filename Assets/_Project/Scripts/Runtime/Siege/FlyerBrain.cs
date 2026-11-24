@@ -14,7 +14,7 @@ namespace ProjectNeo.Siege
     /// 성벽 위 아군이 없으면 설치된 대포도 노리고(SIEGE-16), 같은 대상을 쫓는 비행 적끼리는 다른 자리에 뜬다.
     /// </summary>
     [RequireComponent(typeof(CharacterActor), typeof(AirborneBody))]
-    public sealed class FlyerBrain : SiegeAttacker, IAnimationCueSource
+    public sealed class FlyerBrain : SiegeAttacker, IAnimationCueSource, IMotionVelocitySource
     {
         enum Mode { Deciding, Pursuing, Holding, Retreating, Exiting }
 
@@ -77,6 +77,8 @@ namespace ProjectNeo.Siege
         CharacterActor IAnimationCueSource.AimTarget => Target;
         bool IAnimationCueSource.HoldsDrawnBow => false;
         public FlyerSettings Settings => flyer;
+        /// <summary>이번 프레임 비행 속도(SIEGE-33). 대포가 앞질러 겨눌 때 읽는다. 날지 않은 프레임은 0.</summary>
+        public Vector3 Velocity { get; private set; }
         /// <summary>먼저 노릴 아군인지(SIEGE-09 결투형 보스). 비워 두면(기본) 설정의 대상 전략만 쓴다.</summary>
         public System.Func<CharacterActor, bool> PriorityTarget { get; set; }
         /// <summary>노릴 아군이 없어 성 안마당 위에서 기다리는 중인지.</summary>
@@ -247,6 +249,7 @@ namespace ProjectNeo.Siege
 
         void Update()
         {
+            Velocity = Vector3.zero;
             if (Actor.Health == null) return;
             if (Actor.Health.IsDead) { UpdateCorpse(); return; }
             if (flyer == null || flyer.Movement == null || world == null || settings == null) return;
@@ -443,6 +446,7 @@ namespace ProjectNeo.Siege
             Vector3 next = flyer.Movement.Step(transform.position, point, cruiseHeight,
                 Actor.Stats.GetValue(StatType.MoveSpeed), Time.deltaTime);
             if (faceMotion) Face(next - transform.position);
+            if (Time.deltaTime > 0f) Velocity = (next - transform.position) / Time.deltaTime;
             transform.position = next;
         }
 

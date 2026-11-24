@@ -403,5 +403,93 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(edge.Health.Maximum - edgeDamage, edge.Health.Current, 0.01f, "가장자리일수록 덜 다친다.");
             yield return null;
         }
+
+        // ── SIEGE-33: 무리·위협 조준, 포물선 막힘 검사, 앞지르기 ──────────
+
+        GameObject Blocker(Vector3 center, Vector3 size, Vector3 facing)
+        {
+            var block = Own(GameObject.CreatePrimitive(PrimitiveType.Cube));
+            block.name = "TestArcBlocker";
+            SceneManager.MoveGameObjectToScene(block, scene);
+            block.transform.SetPositionAndRotation(center, Quaternion.LookRotation(facing));
+            block.transform.localScale = size;
+            return block;
+        }
+
+        [UnityTest]
+        public IEnumerator AutoFire_PrefersDenseGroupOverNearerLoneEnemy()
+        {
+            CannonModule cannon = MountCannon(Own(CannonSettings.Create(autoScatterRadius: 0f)));
+            Dummy(Ground(cannon, 12f), CombatTeam.Hostile);
+            CharacterActor middle = Dummy(Ground(cannon, 28f), CombatTeam.Hostile);
+            Dummy(Ground(cannon, 28f, 1.2f), CombatTeam.Hostile);
+            Dummy(Ground(cannon, 28f, -1.2f), CombatTeam.Hostile);
+            Physics.SyncTransforms();
+            cannon.SetArmed(true);
+            Assert.IsTrue(cannon.TryAutoFire());
+            Assert.AreSame(middle, cannon.LastTarget, "가까운 외톨이 대신 무리 한가운데를 쏜다.");
+            yield return WaitForShells();
+        }
+
+        [UnityTest]
+        public IEnumerator AutoFire_SkipsTargetBehindBlockingObstacle_AndHoldsWhenAllBlocked()
+        {
+            CannonModule cannon = MountCannon(Own(CannonSettings.Create(autoScatterRadius: 0f)));
+            CharacterActor near = Dummy(Ground(cannon, 12f), CombatTeam.Hostile);
+            CharacterActor side = Dummy(Ground(cannon, 25f, 10f), CombatTeam.Hostile);
+            // 바로 앞 목표로 가는 포물선만 막는 높은 기둥.
+            float top = cannon.Muzzle.y + 4f;
+            GameObject pillar = Blocker(Ground(cannon, 7f) + Vector3.up * (top * 0.5f), new Vector3(2f, top, 1f), cannon.Facing);
+            Physics.SyncTransforms();
+            cannon.SetArmed(true);
+            Assert.IsTrue(cannon.TryAutoFire(), "막히지 않은 다음 후보를 쏜다.");
+            Assert.AreSame(side, cannon.LastTarget);
+            Assert.AreNotSame(near, cannon.LastTarget);
+            yield return WaitForShells();
+
+            // 정면 전체를 막으면 쏘지 않고 장전 상태를 지킨다.
+            pillar.transform.localScale = new Vector3(60f, top, 1f);
+            Physics.SyncTransforms();
+            cannon.Reload.Reset();
+            Assert.IsFalse(cannon.TryAutoFire());
+            Assert.IsTrue(cannon.Reload.IsReady, "막혀서 못 쏘면 장전을 쓰지 않는다.");
+            Assert.AreEqual(0, CannonShell.Active.Count);
+        }
+
+        [UnityTest]
+        public IEnumerator AutoFire_LeadsVelocitySource_AndFallsBackWhenLeadLeavesRange()
+        {
+            CannonModule cannon = MountCannon(Own(CannonSettings.Create(autoScatterRadius: 0f)));
+            Vector3 right = Vector3.Cross(Vector3.up, cannon.Facing);
+            CharacterActor flyer = Dummy(Ground(cannon, 20f) + Vector3.up * 6f, CombatTeam.Hostile);
+            var motion = flyer.gameObject.AddComponent<TestMotionVelocitySource>();
+            motion.Value = right * 4f;
+            Assert.AreEqual(motion.Value, MotionVelocity.Of(flyer), "속도 창구 값을 그대로 읽는다.");
+            Physics.SyncTransforms();
+            CannonShell shot = null;
+            cannon.Fired += (_, shell) => shot = shell;
+            cannon.SetArmed(true);
+            Assert.IsTrue(cannon.TryAutoFire());
+            Assert.IsNotNull(shot);
+            Vector3 toTarget = flyer.transform.position - cannon.Muzzle;
+            float leadYaw = Vector3.SignedAngle(new Vector3(toTarget.x, 0f, toTarget.z),
+                new Vector3(shot.Velocity.x, 0f, shot.Velocity.z), Vector3.up);
+            Assert.Greater(leadYaw, 1f, "움직이는 쪽으로 앞질러 쏜다.");
+            // 시험 목표는 실제로 움직이지 않아 앞지른 포탄이 허공을 지난다. 기다리지 않고 치운다.
+            Object.Destroy(shot.gameObject);
+            yield return WaitForShells();
+
+            // 사거리 끝에서 멀어지는 목표: 앞지른 자리가 사거리 밖이면 지금 자리를 쏜다.
+            flyer.transform.position = Ground(cannon, 59f);
+            motion.Value = cannon.Facing * 6f;
+            Physics.SyncTransforms();
+            shot = null;
+            cannon.Reload.Reset();
+            Assert.IsTrue(cannon.TryAutoFire());
+            Assert.IsTrue(CannonBallistics.TrySolve(cannon.Muzzle, flyer.transform.position, 30f, 9.81f,
+                out Vector3 direct, out _));
+            Assert.AreEqual(0f, Vector3.Angle(direct, shot.Velocity), 0.5f, "지금 위치로 쏜다.");
+            yield return WaitForShells();
+        }
     }
 }
