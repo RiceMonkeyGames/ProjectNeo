@@ -39,7 +39,7 @@ namespace ProjectNeo.Siege
             team = shooter;
             source = weapon;
             // 대포를 받치는 성벽은 통과한다. 성벽 위에서 바로 아래로 쏠 때 발밑 모서리에 터지지 않게 한다.
-            footing = weapon != null && weapon.Support != null ? weapon.Support.GetComponentInChildren<Collider>() : null;
+            footing = CannonShotFilter.Footing(weapon);
             remaining = settings.ShellLifetime;
             launched = true;
         }
@@ -84,10 +84,8 @@ namespace ProjectNeo.Siege
 
         bool ShouldPass(Collider collider)
         {
-            if (collider.gameObject.scene != gameObject.scene || collider == footing) return true;
-            if (ShotCover.Passes(collider, team)) return true;
+            if (CannonShotFilter.PassesStructure(collider, gameObject.scene, team, footing, source)) return true;
             if (collider.transform.IsChildOf(transform)) return true;
-            if (source != null && collider.transform.IsChildOf(source.transform)) return true;
             var actor = collider.GetComponentInParent<CharacterActor>();
             if (actor == null) return false;
             // 죽은 몸과, 맞지 않을 아군은 지나간다.

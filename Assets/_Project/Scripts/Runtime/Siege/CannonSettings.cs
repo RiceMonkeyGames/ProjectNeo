@@ -25,6 +25,13 @@ namespace ProjectNeo.Siege
         [SerializeField, Min(0.1f)] float shellLifetime = 10f;
         [SerializeField, Min(0.01f)] float targetSearchInterval = 0.25f;
         [SerializeField] bool friendlyFire;
+        [Header("Auto targeting (SIEGE-33)")]
+        [SerializeField, Min(0f)] float ladderClimberThreatWeight = 3f;
+        [SerializeField, Min(0f)] float siegeBreakerThreatWeight = 3f;
+        [SerializeField, Min(0f)] float rangedThreatWeight = 1.5f;
+        [SerializeField, Min(1)] int maxTargetAttempts = 3;
+        [SerializeField, Min(1)] int trajectoryCheckSegments = 12;
+        [SerializeField, Min(0f)] float trajectoryImpactTolerance = 1.5f;
 
         /// <summary>수평 거리 기준 최소 사거리. 성벽 바로 아래는 맞히지 못한다.</summary>
         public float MinimumRange => minimumRange;
@@ -49,11 +56,25 @@ namespace ProjectNeo.Siege
         public float TargetSearchInterval => targetSearchInterval;
         /// <summary>켜면 아군과 우리 성벽도 폭발 피해를 받는다. 현재 기본값은 꺼짐.</summary>
         public bool FriendlyFire => friendlyFire;
+        /// <summary>자동 사격 무리 점수에서 사다리를 세우거나 오르는 적 한 명의 가중치(일반 적 1).</summary>
+        public float LadderClimberThreatWeight => ladderClimberThreatWeight;
+        /// <summary>성문·성벽·대포를 부수러 가거나 부수는 적 한 명의 가중치.</summary>
+        public float SiegeBreakerThreatWeight => siegeBreakerThreatWeight;
+        /// <summary>원거리 공격을 하는 적 한 명의 가중치.</summary>
+        public float RangedThreatWeight => rangedThreatWeight;
+        /// <summary>한 번 탐색에서 포물선이 막혀 다음 후보로 넘어가며 시도하는 최대 후보 수.</summary>
+        public int MaxTargetAttempts => Mathf.Max(1, maxTargetAttempts);
+        /// <summary>쏘기 전 포물선 검사를 나누는 구간 수.</summary>
+        public int TrajectoryCheckSegments => Mathf.Max(1, trajectoryCheckSegments);
+        /// <summary>조준점에서 이 거리(m) 안에 닿는 충돌은 목표에 닿은 것으로 본다.</summary>
+        public float TrajectoryImpactTolerance => trajectoryImpactTolerance;
 
         public static CannonSettings Create(float minimumRange = 6f, float maximumRange = 60f, float aimHalfAngle = 45f,
             float blastRadius = 3f, float centerDamage = 40f, float edgeDamageRatio = 0.5f, float reloadSeconds = 6f,
             float autoScatterRadius = 2f, float shellSpeed = 30f, float shellGravity = 9.81f, bool friendlyFire = false,
-            float manualAimHalfAngle = 90f, float swivelSpeed = 180f)
+            float manualAimHalfAngle = 90f, float swivelSpeed = 180f, float ladderClimberThreatWeight = 3f,
+            float siegeBreakerThreatWeight = 3f, float rangedThreatWeight = 1.5f, int maxTargetAttempts = 3,
+            int trajectoryCheckSegments = 12, float trajectoryImpactTolerance = 1.5f)
         {
             var value = CreateInstance<CannonSettings>();
             value.minimumRange = Mathf.Max(0f, minimumRange);
@@ -69,6 +90,12 @@ namespace ProjectNeo.Siege
             value.friendlyFire = friendlyFire;
             value.manualAimHalfAngle = Mathf.Clamp(manualAimHalfAngle, 0f, 180f);
             value.swivelSpeed = Mathf.Max(1f, swivelSpeed);
+            value.ladderClimberThreatWeight = Mathf.Max(0f, ladderClimberThreatWeight);
+            value.siegeBreakerThreatWeight = Mathf.Max(0f, siegeBreakerThreatWeight);
+            value.rangedThreatWeight = Mathf.Max(0f, rangedThreatWeight);
+            value.maxTargetAttempts = Mathf.Max(1, maxTargetAttempts);
+            value.trajectoryCheckSegments = Mathf.Max(1, trajectoryCheckSegments);
+            value.trajectoryImpactTolerance = Mathf.Max(0f, trajectoryImpactTolerance);
             return value;
         }
     }

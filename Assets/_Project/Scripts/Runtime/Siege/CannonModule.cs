@@ -4,7 +4,6 @@ using ProjectNeo.Combat;
 using ProjectNeo.Core;
 using ProjectNeo.Walls;
 using UnityEngine;
-using UnityEngine.AI;
 
 namespace ProjectNeo.Siege
 {
@@ -20,9 +19,11 @@ namespace ProjectNeo.Siege
         // 프리팹 기준(가로·높이·세로 1) 포구 위치. 실제 크기는 무기 정의의 크기로 늘어난다.
         [SerializeField] Vector3 muzzleLocal = new Vector3(0f, 0.65f, 0.65f);
         [SerializeField] CombatTeam team = CombatTeam.Allied;
-        readonly List<Vector3> candidatePositions = new List<Vector3>();
+        readonly List<CannonTargetCandidate> candidates = new List<CannonTargetCandidate>();
         readonly List<CharacterActor> candidateActors = new List<CharacterActor>();
-        ICannonTargetSelector selector = new NearestCannonTargetSelector();
+        // 비워 두면 설정값으로 무리·위협 점수 전략을 만든다(SIEGE-33). SetSelector로 바꿔 끼운 전략은 설정이 바뀌어도 그대로다.
+        ICannonTargetSelector selector;
+        bool customSelector;
         IRandomSource random;
         CannonReload reload;
         float searchRemaining;
@@ -71,9 +72,20 @@ namespace ProjectNeo.Siege
             settings = cannon;
             shellPrefab = shell;
             reload = null;
+            if (!customSelector) selector = null;
         }
 
-        public void SetSelector(ICannonTargetSelector value) => selector = value ?? new NearestCannonTargetSelector();
+        /// <summary>자동 사격 목표 전략을 바꾼다. null이면 기본(무리·위협 점수)으로 돌아간다.</summary>
+        public void SetSelector(ICannonTargetSelector value)
+        {
+            selector = value;
+            customSelector = value != null;
+        }
+
+        /// <summary>지금 쓰는 목표 전략.</summary>
+        public ICannonTargetSelector Selector => selector ??= settings != null
+            ? ClusterThreatCannonTargetSelector.From(settings)
+            : new NearestCannonTargetSelector();
         public void SetRandom(IRandomSource value) => random = value;
 
         public void SetArmed(bool armed)
@@ -135,46 +147,90 @@ namespace ProjectNeo.Siege
             TryAutoFire();
         }
 
-        /// <summary>목표 고르기 전략으로 적을 골라, 움직임을 앞질러 흩어짐을 넣어 쏜다. 쐈으면 true.</summary>
+        /// <summary>
+        /// 목표 고르기 전략으로 적을 골라, 움직임을 앞질러 흩어짐을 넣어 쏜다. 쐈으면 true(SIEGE-33).
+        /// 앞지른 자리가 범위 밖이면 지금 위치를 겨누고, 포물선이 막히거나 닿지 않으면 다음 후보를 시도한다.
+        /// </summary>
         public bool TryAutoFire()
         {
             if (!IsInstalled || settings == null || !Reload.IsReady) return false;
-            candidatePositions.Clear();
+            candidates.Clear();
             candidateActors.Clear();
             foreach (CharacterActor actor in CharacterActor.ActiveActors)
             {
                 if (actor == null || actor.Team == team || actor.gameObject.scene != gameObject.scene
                     || actor.Health == null || actor.Health.IsDead) continue;
                 candidateActors.Add(actor);
-                candidatePositions.Add(actor.transform.position);
+                candidates.Add(new CannonTargetCandidate(actor.transform.position, actor.Threat));
             }
             CannonAimContext context = AimContext;
-            int index = selector.Select(context, candidatePositions);
-            if (index < 0) return false;
-            CharacterActor target = candidateActors[index];
-            Vector3 aim = Lead(target, candidatePositions[index]);
-            aim = CannonScatter.Apply(aim, settings.AutoScatterRadius, random);
-            if (!FireAt(aim)) return false;
-            LastTarget = target;
-            return true;
+            ICannonTargetSelector strategy = Selector;
+            for (int attempt = 0; attempt < settings.MaxTargetAttempts; attempt++)
+            {
+                int index = strategy.Select(context, candidates);
+                if (index < 0) return false;
+                CharacterActor target = candidateActors[index];
+                if (TryAim(context, target, candidates[index].Position, out Vector3 aim, out Vector3 velocity)
+                    && FireWithVelocity(velocity))
+                {
+                    LastTarget = target;
+                    return true;
+                }
+                candidates[index] = candidates[index].WithExcluded();
+            }
+            return false;
         }
 
-        // 날아가는 동안 움직일 거리만큼 앞을 겨눈다. 한 번 다시 풀어 비행 시간을 맞춘다.
-        Vector3 Lead(CharacterActor target, Vector3 position)
+        // 앞지르기·범위 재확인·흩어짐을 거쳐 조준점과 발사 속도를 정하고, 포물선이 막히지 않았는지 본다.
+        bool TryAim(in CannonAimContext context, CharacterActor target, Vector3 position, out Vector3 aim, out Vector3 velocity)
         {
-            var agent = target.GetComponent<NavMeshAgent>();
-            if (agent == null || !agent.enabled) return position;
-            Vector3 motion = agent.velocity;
-            motion.y = 0f;
-            if (motion.sqrMagnitude < 0.0001f) return position;
-            Vector3 aim = position;
-            for (int i = 0; i < 2; i++)
+            velocity = Vector3.zero;
+            Vector3 led = CannonLead.Predict(Muzzle, position, MotionVelocity.Of(target),
+                settings.ShellSpeed, settings.ShellGravity);
+            if (!CannonLead.TryResolve(context, position, led, out aim)) return false;
+            aim = CannonScatter.Apply(aim, settings.AutoScatterRadius, random);
+            // 포신을 목표 쪽으로 맞춘 뒤의 포구에서 풀어, 실제로 포탄이 나가는 자리에서 검사한다.
+            float previousSwivel = Swivel;
+            SwivelToward(aim, true);
+            if (CannonBallistics.TrySolve(Muzzle, aim, settings.ShellSpeed, settings.ShellGravity,
+                    out velocity, out float flightTime)
+                && IsArcClear(Muzzle, velocity, flightTime, aim))
+                return true;
+            SetSwivel(previousSwivel, true);
+            return false;
+        }
+
+        /// <summary>
+        /// 풀어 둔 포물선을 구간으로 나눠, 포탄을 멈출 충돌체(아군 탑·보루·지붕·지형)가 있는지 본다(SIEGE-33).
+        /// 유닛 몸통과 발밑·엄폐물은 무시하고, 조준점 가까이의 충돌은 목표에 닿은 것으로 본다.
+        /// </summary>
+        public bool IsArcClear(Vector3 origin, Vector3 velocity, float flightTime, Vector3 aim)
+        {
+            if (settings == null || !(flightTime > 0f)) return false;
+            int segments = settings.TrajectoryCheckSegments;
+            float gravity = settings.ShellGravity;
+            float tolerance = settings.TrajectoryImpactTolerance;
+            Collider footing = CannonShotFilter.Footing(Weapon);
+            Vector3 from = origin;
+            for (int i = 1; i <= segments; i++)
             {
-                if (!CannonBallistics.TrySolve(Muzzle, aim, settings.ShellSpeed, settings.ShellGravity, out _, out float time))
-                    return position;
-                aim = position + motion * time;
+                Vector3 to = CannonBallistics.Evaluate(origin, velocity, gravity, flightTime * i / segments);
+                Vector3 step = to - from;
+                float length = step.magnitude;
+                if (length > 0.0001f)
+                {
+                    foreach (RaycastHit hit in Physics.RaycastAll(from, step / length, length, ~0, QueryTriggerInteraction.Ignore))
+                    {
+                        Collider collider = hit.collider;
+                        if (CannonShotFilter.PassesStructure(collider, gameObject.scene, team, footing, Weapon)) continue;
+                        if (collider.GetComponentInParent<CharacterActor>() != null) continue;
+                        if ((hit.point - aim).sqrMagnitude <= tolerance * tolerance) continue;
+                        return false;
+                    }
+                }
+                from = to;
             }
-            return aim;
+            return true;
         }
 
         /// <summary>정한 지점에 낮은 포물선으로 쏜다. 장전되지 않았거나 닿을 수 없으면 쏘지 않는다.</summary>
