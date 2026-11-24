@@ -413,9 +413,9 @@ namespace ProjectNeo.Walls
         bool UpdateTowerRoom(PlacedStructure structure, bool dressed)
         {
             BuildPlacement placement = structure.Placement;
-            TowerRules.Interior room = dressed && world.Layout.Top(placement.Cell) == placement
-                ? TowerRules.RoomOf(world.Layout, world.Grid, placement) : default;
-            int key = room.HasRoom ? 1 + room.InnerFace * 7 + (room.StairCell.x * 31 + room.StairCell.y) * 17 : 0;
+            // 가장 낮은 통로 바닥부터 위로 모든 층이 방이다(SIEGE-29).
+            TowerRules.Interior room = dressed ? TowerRules.RoomOf(world.Layout, world.Grid, placement) : default;
+            int key = room.HasRoom ? 1 + room.InnerFace * 7 + (room.StairCell.x * 31 + room.StairCell.y) * 17 + room.Doors * 1009 : 0;
             Transform hollow = structure.transform.Find(HollowTopName);
             towerRooms.TryGetValue(structure, out int current);
             if (current == key && (key == 0) == (hollow == null)) return false;
@@ -432,10 +432,14 @@ namespace ProjectNeo.Walls
             float size = world.Grid.CellSize;
             Vector2Int inner = BattlementRules.Directions[room.InnerFace];
             var d = new Vector3(inner.x, 0f, inner.y);
-            var across = new Vector3(-d.z, 0f, d.x);
             var center = new Vector3((room.StairCell.x + 0.5f) * size, 0f, (room.StairCell.y + 0.5f) * size);
-            Vector3 a = Normalized(structure, center - across * (size * 0.5f));
-            Vector3 b = Normalized(structure, center + d * (size * 0.5f) + across * (size * 0.5f));
+            // 구멍은 통로 쪽 벽에서 계단 폭까지만(킷 천장 조각과 같은 깊이, SIEGE-29).
+            float depth = Mathf.Min(size, settings.TowerOpeningDepth);
+            // 오르는 쪽으로는 계단 발치부터 꼭대기 뒤 여유까지만 뚫는다(킷 천장 조각과 같은 범위).
+            Vector2Int rise = BattlementRules.Directions[room.RiseFace];
+            var up = new Vector3(rise.x, 0f, rise.y);
+            Vector3 a = Normalized(structure, center + d * (size * 0.5f - depth) + up * settings.TowerHoleStart(size));
+            Vector3 b = Normalized(structure, center + d * (size * 0.5f) + up * settings.TowerHoleEnd(size));
             float hx0 = Mathf.Min(a.x, b.x), hx1 = Mathf.Max(a.x, b.x), hz0 = Mathf.Min(a.z, b.z), hz1 = Mathf.Max(a.z, b.z);
             float thickness = Mathf.Min(0.5f, 0.25f / Mathf.Max(0.1f, placement.Definition.Height));
             AddSlab(slab, -0.5f, hx0, -0.5f, 0.5f, thickness);

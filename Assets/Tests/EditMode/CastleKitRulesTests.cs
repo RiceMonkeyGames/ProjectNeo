@@ -164,6 +164,23 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
+        public void TallTower_StacksOneInteriorStairPerRoomStorey_AndOpensEveryCeilingAboveIt()
+        {
+            grid = Track(BuildGridDefinition.Create(12, 12, Cell, 4));
+            layout = new BuildLayout(grid);
+            var tower = Track(BuildPieceDefinition.Create(BuildPieceKind.Tower, "tower", new Vector2Int(2, 2), Cell, 400f));
+            foreach (int x in new[] { 3, 4, 5, 6 }) Place(wall, x, 3);
+            for (int tier = 0; tier < 4; tier++) Place(tower, 4, 4);
+            Collect();
+            CollectionAssert.AreEqual(new[] { 5f, 10f, 15f }, Of(CastleKitPiece.WallStairs).Select(p => p.Position.y).OrderBy(y => y).ToArray(),
+                "rooms at 5, 10 and 15m each get a stair, none below the walkway");
+            Assert.AreEqual(1, Of(CastleKitPiece.TowerDoor).Count(), "a door only where the walkway meets a storey floor");
+            Assert.AreEqual(3, Of(CastleKitPiece.FloorHalf).Count(), "each room ceiling opens above its stair");
+            Assert.IsTrue(Of(CastleKitPiece.WallStairs).All(p => p.Cell == new Vector2Int(5, 4)), "the stairs stack in one cell");
+            Assert.AreEqual(5, Of(CastleKitPiece.RoomLink).Count(), "NavMesh links: a top link per room storey, a foot link above the first");
+        }
+
+        [Test]
         public void TowerPillars_StandOnlyAtItsFourCorners()
         {
             var tower = Track(BuildPieceDefinition.Create(BuildPieceKind.Tower, "tower", new Vector2Int(2, 2), Cell, 400f));

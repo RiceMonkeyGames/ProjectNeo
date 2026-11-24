@@ -41,6 +41,20 @@ namespace ProjectNeo.Walls
         public float TowerOverhang => towerOverhang;
         public float TowerCapOffset => towerCapOffset;
         public float TowerCapScale => towerCapScale;
+        // 망루 안 계단(SIEGE-29): 통로 쪽 벽에서 계단까지 띄우는 거리와, 그 벽에서 천장·지붕 구멍 안쪽 끝까지의 깊이(= 띄움 + 계단 폭).
+        // 구멍이 칸 절반으로 고정이면 7.5m 칸에서 계단 옆에 1.3m 틈이 남아 꼭대기에서 바닥으로 건너갈 수 없다.
+        public float TowerStairInset => 0.3f;
+        public float TowerOpeningDepth => TowerStairInset + stairWidth;
+        // 계단은 바깥벽 쪽 끝에서 문 칸 쪽으로 올라 꼭대기가 계단 칸 끝(문 칸과의 경계)에 닿는다(사용자 검토 2026-11-24: 바깥벽 쪽으로
+        // 오르면 올라온 바로 앞이 벽이라 어색하다). 꼭대기 앞은 위층 문 칸 바닥이라 곧장 걸어 나가고, 발치와 바깥벽 사이에는
+        // 7.5m 칸에서 약 2.2m가 남아 돌아 들어간다. 이 값은 꼭대기를 칸 끝에서 안쪽으로 띄우는 거리다.
+        // 구멍은 계단 발치부터 꼭대기 끝까지만 뚫는다(그 밖은 바닥).
+        public float TowerStairBack => 0f;
+        public float TowerHoleMargin => 0f;
+        // 계단 칸 가운데에서 오르는 쪽으로 잰 거리: 계단 꼭대기 끝, 발치(모듈 길이만큼 아래), 구멍 끝.
+        public float TowerStairTop(float cell) => cell * 0.5f - TowerStairBack;
+        public float TowerHoleStart(float cell) => TowerStairTop(cell) - moduleSize;
+        public float TowerHoleEnd(float cell) => Mathf.Min(cell * 0.5f, TowerStairTop(cell) + TowerHoleMargin);
 
         // 3층 성벽 계단 방(SIEGE-27, 모듈 기준 m): 면에서 안쪽 벽면까지(Wall_01 두께 절반), 층참 깊이, 바닥·층참 판 두께, 경사 판 두께.
         // 층참 밑으로 걸어 들어오므로(맨 아래 방 층의 맞은편 문) 층참 아래 높이 = 반 층 − 판 두께가 유닛 키(2m)보다 커야 한다.

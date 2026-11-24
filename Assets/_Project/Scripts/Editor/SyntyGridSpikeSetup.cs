@@ -111,7 +111,7 @@ namespace ProjectNeo.Editor
             CombatPrototypeSetup.EnsureFolder(KitFolder);
 
             CreateKit();
-            Replace(BuildGridDefinition.Create(16, 14, Cell, 3, forbidValleys: true, groundStairsOnly: true), Data + "/Grid.asset");
+            Replace(BuildGridDefinition.Create(16, 14, Cell, 4, forbidValleys: true, groundStairsOnly: true), Data + "/Grid.asset");
             Material stone = CombatPrototypeSetup.MaterialAsset("ConstructionStone", new Color(0.58f, 0.66f, 0.75f));
             Replace(BuildPieceDefinition.Create(BuildPieceKind.Wall, "성벽", Vector2Int.one, Storey,
                 prefab: KitStructurePrefab("KitWall", stone)), Data + "/Wall.asset");
@@ -222,6 +222,12 @@ namespace ProjectNeo.Editor
             seeds.Add(new InitialBuildPiece { definition = bastion, cell = new Vector2Int(5, North + 1) });
             // 북쪽 2층 줄(9~10) 바깥의 망루: 이웃 성벽보다 한 층 높은 3층(맨윗층은 통로 높이의 방, 지붕에 무기·궁수).
             for (int tier = 0; tier < 3; tier++) seeds.Add(new InitialBuildPiece { definition = tower, cell = new Vector2Int(9, North + 1) });
+            // 망루 층별 방 사례(SIEGE-29, 격자 층 한도 4): 서쪽·동쪽 1층 성벽 바깥에 2·3·4층 망루, 북쪽 2층 줄과 새 2층 성벽(z 13) 사이의
+            // 3층 망루(위의 (9, 11))는 10m부터만 방이고 남북 양쪽에 문이 난다.
+            for (int tier = 0; tier < 2; tier++) seeds.Add(new InitialBuildPiece { definition = tower, cell = new Vector2Int(1, 4) });
+            for (int tier = 0; tier < 3; tier++) seeds.Add(new InitialBuildPiece { definition = tower, cell = new Vector2Int(1, 7) });
+            for (int tier = 0; tier < 4; tier++) seeds.Add(new InitialBuildPiece { definition = tower, cell = new Vector2Int(13, 4) });
+            for (int storey = 0; storey < 2; storey++) { Wall(9, 13); Wall(10, 13); }
             // 남쪽 줄 계단 방 사례(SIEGE-27): x 3~12 높이 1 3 1 1 3 2 2 3 2 1(골짜기 없음).
             // 4 = 1-3-1(아래 방 양쪽 문), 7 = 1-3-2(서쪽 아래 문, 동쪽 위 문), 10 = 2-3-2(위 방 하나), 11→12 = 2-1 바깥 계단.
             int[] south = { 1, 3, 1, 1, 3, 2, 2, 3, 2, 1 };

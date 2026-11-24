@@ -109,7 +109,7 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(2, room.InnerFace, "the walkway is south of the tower");
             Assert.AreEqual(new Vector2Int(4, 4), room.DoorCell);
             Assert.AreEqual(new Vector2Int(5, 4), room.StairCell);
-            Assert.AreEqual(1, room.RiseFace, "the stair climbs away from the door (east)");
+            Assert.AreEqual(3, room.RiseFace, "the stair climbs from the outer wall toward the door cell (west)");
         }
 
         [Test]
@@ -118,6 +118,47 @@ namespace ProjectNeo.Tests
             Walls(2, 3, 4, 5, 6);
             PlaceTower(new Vector2Int(4, 4), 2);
             Assert.IsFalse(TowerRules.RoomOf(layout, grid, layout.Top(new Vector2Int(4, 4))).HasRoom, "a two-tier tower is level with the walkway");
+        }
+
+        // SIEGE-29: every storey from the lowest touching walkway floor up is a room; storeys below stay solid.
+        [Test]
+        public void TallTowerBesideOneStoreyWalls_HasRoomsFromTheWalkwayUp_AndADoorOnlyAtTheWalkwayStorey()
+        {
+            grid = Track(BuildGridDefinition.Create(12, 12, Cell, 4));
+            layout = new BuildLayout(grid);
+            Walls(1, 4, 5);
+            for (int i = 0; i < 4; i++) Assert.IsTrue(layout.TryPlace(tower, new Vector2Int(4, 4), 0, out _));
+            var cell = new Vector2Int(4, 4);
+            Assert.IsFalse(TowerRules.RoomOf(layout, grid, layout.At(cell, 0)).HasRoom, "below the walkway stays solid");
+            TowerRules.Interior first = TowerRules.RoomOf(layout, grid, layout.At(cell, 1));
+            Assert.IsTrue(first.HasRoom);
+            Assert.AreEqual(5f, first.FirstFloor, 1e-3f);
+            Assert.IsTrue(first.HasDoor(2), "a door south, onto the walkway");
+            for (int level = 2; level <= 3; level++)
+            {
+                TowerRules.Interior room = TowerRules.RoomOf(layout, grid, layout.At(cell, level));
+                Assert.IsTrue(room.HasRoom, $"storey {level} is a room");
+                Assert.AreEqual(0, room.Doors, $"no walkway at the floor of storey {level}");
+                Assert.AreEqual(first.StairCell, room.StairCell, "the stair stacks in the same cell");
+                Assert.AreEqual(first.RiseFace, room.RiseFace);
+            }
+        }
+
+        [Test]
+        public void ThreeStoreyTowerBetweenTwoStoreyWalls_HasRoomsOnlyFromTenMetres_WithADoorOnEachWalkwaySide()
+        {
+            Walls(2, 4, 5);
+            foreach (int x in new[] { 4, 5 })
+                for (int i = 0; i < 2; i++) Assert.IsTrue(layout.TryPlace(wall, new Vector2Int(x, 6), 0, out _));
+            PlaceTower(new Vector2Int(4, 4), 3);
+            var cell = new Vector2Int(4, 4);
+            Assert.IsFalse(TowerRules.RoomOf(layout, grid, layout.At(cell, 0)).HasRoom);
+            Assert.IsFalse(TowerRules.RoomOf(layout, grid, layout.At(cell, 1)).HasRoom, "5m is below both walkways");
+            TowerRules.Interior top = TowerRules.RoomOf(layout, grid, layout.At(cell, 2));
+            Assert.IsTrue(top.HasRoom);
+            Assert.IsTrue(top.HasDoor(0) && top.HasDoor(2), "doors north and south");
+            Assert.IsTrue(TowerRules.FaceDoorCell(layout, grid, layout.At(cell, 2), top.StairCell, 0, out Vector2Int north));
+            Assert.AreNotEqual(top.StairCell, north, "the stair cell never gets a door");
         }
 
         [Test]

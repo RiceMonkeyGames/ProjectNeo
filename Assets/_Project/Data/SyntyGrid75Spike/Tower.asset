@@ -17,6 +17,7 @@ MonoBehaviour:
   footprint: {x: 2, y: 2}
   height: 5
   maxHealth: 400
+  maxStorey: 0
   prefab: {fileID: 7052124607116483299, guid: 52a4c5c47f2775945ad32c6a253ce903, type: 3}
   mountPoints:
   - id: roof_sw
