@@ -94,24 +94,17 @@ namespace ProjectNeo.Flow
             FacilityState defense = state != null ? Defense : null;
             string text;
             bool interactable = false;
+            // 건설 막대 오른쪽 도구 칸에 들어가도록 짧게(UI-13).
             if (defense == null) text = "흉벽";
-            else if (defense.IsMaxLevel) text = $"흉벽 Lv{defense.Level + 1}: {Name(defense.Current.battlementStyle)} (최대)";
+            else if (defense.IsMaxLevel) text = $"흉벽 Lv{defense.Level + 1} (최대)";
             else
             {
                 Cost cost = defense.NextUpgradeCost;
-                BattlementStyle next = defense.Definition.Levels[defense.Level + 1].battlementStyle;
-                text = $"흉벽 Lv{defense.Level + 1} > {Name(next)} - {cost.gold}골드";
+                text = $"흉벽 강화 · {cost.gold}골드";
                 interactable = InPreparation && state.Wallet.CanAfford(cost);
             }
             if (upgradeLabel != null && upgradeLabel.text != text) upgradeLabel.text = text;
             if (upgradeButton.interactable != interactable) upgradeButton.interactable = interactable;
         }
-
-        static string Name(BattlementStyle style) => style switch
-        {
-            BattlementStyle.Parapet => "parapet",
-            BattlementStyle.Crenellated => "crenels",
-            _ => "none",
-        };
     }
 }

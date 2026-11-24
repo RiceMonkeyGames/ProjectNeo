@@ -32,6 +32,14 @@ namespace ProjectNeo.UI
             selection = selectionLabel; status = statusLabel; unitHealth = healthLabel;
         }
 
+        // 건설 막대(UI-13)가 카드로 보여 줄 조각들. 비어 있는 칸은 카드를 만들지 않는다.
+        public BuildPieceDefinition Wall => wall;
+        public BuildPieceDefinition Stairs => stairs;
+        public BuildPieceDefinition Tower => tower;
+        public PlacementController Placement => placement;
+        public void Select(BuildPieceDefinition piece) { if (piece != null) placement.Select(piece); }
+        public void SelectWeapon(SiegeWeaponDefinition weapon) { if (weapon != null) placement.SelectWeapon(weapon); }
+
         public void SelectWall() => placement.Select(wall);
         public void SelectStairs() => placement.Select(stairs);
         public void SelectBastion() { if (bastion != null) placement.Select(bastion); }

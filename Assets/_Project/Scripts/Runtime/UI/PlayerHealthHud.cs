@@ -71,7 +71,8 @@ namespace ProjectNeo.UI
                 RefreshValues();
             }
             // UI-07(사용자 2026-11-23): 시설·장비 등 창이 열려 있어도 보인다(창이 가리지 않는데 꺼지던 것을 고침).
-            bool gameplay = phaseView != null && (phaseView.IsExplorationView || phaseView.IsBattleView || phaseView.IsPanelView);
+            // UI-13(사용자 2026-11-24): 건설 모드에서도 다른 준비 HUD와 같이 보인다.
+            bool gameplay = phaseView != null && (phaseView.IsExplorationView || phaseView.IsBattleView || phaseView.IsPanelView || phaseView.IsBuildView);
             GamePhase phase = GameSession.Flow.Phase;
             if (content != null) content.SetActive(health != null && gameplay
                 && (phase == GamePhase.Preparation || phase == GamePhase.Battle));

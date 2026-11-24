@@ -70,11 +70,18 @@ namespace ProjectNeo.UI
         {
             if (content == null) return;
             // UI-07(사용자 2026-11-23): 시설·장비 등 창이 열려 있어도 보인다(창이 가리지 않는데 꺼지던 것을 고침).
-            bool show = GameSession.Flow.Phase == GamePhase.Preparation && phaseView != null
-                && (phaseView.IsExplorationView || phaseView.IsPlacementView || phaseView.IsPanelView)
-                && center != null && center.Commander != null && template != null;
+            bool preparation = GameSession.Flow.Phase == GamePhase.Preparation && phaseView != null
+                && (phaseView.IsExplorationView || phaseView.IsPlacementView || phaseView.IsPanelView || phaseView.IsBuildView); // UI-13: 건설 모드에서도
+            // UI-13 전투 HUD A안: 전투 상황판이 머리 판 자리를 채우는 동안 전투 중에도 같은 카드 열을 보여 준다.
+            bool fighting = GameSession.Flow.Phase == GamePhase.Battle && BattleStatusHud.Showing;
+            bool show = (preparation || fighting) && center != null && center.Commander != null && template != null;
             if (content.activeSelf != show) content.SetActive(show);
-            if (commandHud != null) commandHud.SetListVisible(!show);
+            if (commandHud != null)
+            {
+                commandHud.SetListVisible(!show);
+                // 전투 중 아래 긴 키 안내 상자는 오른쪽 아래 키 가이드(KeyListHud)가 대신한다.
+                if (fighting && show && commandHud.HelpVisible) commandHud.SetHelpVisible(false);
+            }
             if (!show) return;
             // 사기 관리자는 실행 중에 붙으므로 씬 설정에 없으면 같은 씬에서 찾는다(SquadCommandHud와 같다).
             if (morale == null)
@@ -189,7 +196,11 @@ namespace ProjectNeo.UI
             previousPage?.Disable();
             nextPage?.Disable();
             if (content != null) content.SetActive(false);
-            if (commandHud != null) commandHud.SetListVisible(true);
+            if (commandHud != null)
+            {
+                commandHud.SetListVisible(true);
+                if (phaseView != null) commandHud.SetHelpVisible(phaseView.IsBattleView);
+            }
         }
     }
 }

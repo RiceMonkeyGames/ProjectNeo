@@ -123,7 +123,6 @@ namespace ProjectNeo.Tests
             ProjectNeo.Run.RunState state = GameSession.Flow.Run.State;
             state.Wallet.AddGold(500);
             Assert.IsTrue(Station(FacilityType.Tavern).Interact());
-            Assert.IsTrue(facilities.ChooseCaptainSquad(0));
             Assert.IsTrue(facilities.TryHire(0));
             facilities.Close();
             yield return null;
@@ -182,7 +181,7 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(3, state.Shop.Stock.Count, "상점 1레벨 매물 수");
             Assert.AreEqual(0, state.ShopStockedFor);
             Assert.AreEqual(3, facilities.OfferRows);
-            Assert.AreEqual(1, facilities.InventoryRows, "빈 보관함 안내 한 줄");
+            Assert.AreEqual(0, facilities.InventoryRows, "빈 보관함에는 타일이 없다.");
             var item = state.Shop.Stock[0];
             int gold = state.Wallet.Gold;
             Assert.IsTrue(facilities.TryBuy(0));
@@ -239,7 +238,7 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(3, recipes.Count, "대장간 1레벨 레시피 수");
             Assert.AreEqual(3, facilities.OfferRows);
             StringAssert.Contains("제작", facilities.OfferHeaderText);
-            Assert.AreEqual(1, facilities.InventoryRows, "팔 장비가 없다는 안내 한 줄");
+            Assert.AreEqual(0, facilities.InventoryRows, "팔 장비가 없으면 타일이 없다.");
 
             int gold = state.Wallet.Gold;
             var expensive = recipes.First(recipe => !state.Wallet.CanAfford(recipe.cost));
@@ -294,15 +293,19 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(5, item.Definition.UpgradeMaterials.Count);
             Assert.IsTrue(state.EquipmentUpgrades.TryGetNextCost(item, out var cost));
             int gold = state.Wallet.Gold;
-            var row = facilities.EquipmentUpgradeButton(0);
-            Assert.IsNotNull(row);
-            Assert.IsTrue(row.interactable);
-            row.onClick.Invoke();
+            // 장비 탭에서 장비 타일을 고르면 상세에 강화와 판매 단추가 뜬다(UI-13 C안).
+            Assert.IsTrue(facilities.ShowStorage());
+            Assert.IsTrue(facilities.IsStorageView);
+            Assert.IsTrue(facilities.Select(0));
+            Assert.AreEqual("강화", facilities.ActionText);
+            Assert.IsTrue(facilities.ActionButton.interactable);
+            facilities.ActionButton.onClick.Invoke();
             yield return null;
             Assert.AreEqual(1, item.UpgradeLevel);
             Assert.AreEqual(gold - cost.gold, state.Wallet.Gold);
             StringAssert.Contains("+1 강화", facilities.BodyText);
-            Assert.IsFalse(facilities.EquipmentUpgradeButton(0).interactable, "Lv1의 강화 한도");
+            Assert.AreEqual(0, facilities.SelectedIndex, "강화한 장비는 고른 채로 남는다.");
+            Assert.IsFalse(facilities.ActionButton.interactable, "Lv1의 강화 한도");
             gold = state.Wallet.Gold;
             Assert.IsFalse(facilities.TryUpgradeEquipment(0));
             Assert.AreEqual(gold, state.Wallet.Gold);
@@ -323,9 +326,11 @@ namespace ProjectNeo.Tests
             yield return null;
             Assert.IsTrue(Station(FacilityType.Smithy).Interact());
             int sell = state.Shop.GetInstanceSellPrice(item);
-            var sellButton = facilities.EquipmentUpgradeButton(0).transform.Find("Button_SellEquipment")
-                .GetComponent<UnityEngine.UI.Button>();
-            Assert.IsTrue(sellButton.interactable, "강화가 최대여도 판매 버튼은 사용할 수 있다.");
+            Assert.IsTrue(facilities.ShowStorage());
+            Assert.IsTrue(facilities.Select(0));
+            var sellButton = facilities.SecondButton;
+            Assert.AreEqual("판매", facilities.SecondText);
+            Assert.IsTrue(sellButton.gameObject.activeSelf && sellButton.interactable, "강화가 최대여도 판매 버튼은 사용할 수 있다.");
             sellButton.onClick.Invoke();
             yield return null;
             Assert.AreEqual(gold + sell, state.Wallet.Gold);
@@ -394,6 +399,19 @@ namespace ProjectNeo.Tests
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState());
                 yield return null;
 
+                // UI-13: 연 F로 다시 닫는다.
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.F));
+                yield return null;
+                Assert.IsTrue(facilities.IsOpen, "F로 다시 연다.");
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+                yield return null;
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.F));
+                yield return null; yield return null;
+                Assert.IsFalse(facilities.IsOpen, "열린 팝업은 F로 닫는다.");
+                Assert.IsTrue(view.IsExplorationView && player.enabled);
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+                yield return null;
+
                 Assert.IsTrue(shop.Interact());
                 Assert.IsTrue(GameSession.Flow.StartBattle());
                 yield return null;
@@ -417,8 +435,10 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(1, facilities.ShopMaxLocked);
 
             int goldBefore = state.Wallet.Gold;
-            var secondLockButton = facilities.OfferLockButton(1);
-            Assert.IsNotNull(secondLockButton, "매물 줄마다 잠금 버튼이 있어야 한다.");
+            Assert.IsTrue(facilities.Select(1));
+            var secondLockButton = facilities.SecondButton;
+            Assert.AreEqual("잠금", facilities.SecondText, "매물 상세에 잠금 버튼이 있어야 한다.");
+            Assert.AreEqual("구매", facilities.ActionText);
             var lockedItem = state.Shop.Stock[1];
             secondLockButton.onClick.Invoke();
             yield return null;

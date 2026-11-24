@@ -99,9 +99,9 @@ namespace ProjectNeo.Tests
             var facilities = Object.FindAnyObjectByType<GameFacilities>();
             GameSession.Flow.Run.State.Wallet.AddGold(200);
             Assert.IsTrue(Object.FindObjectsByType<FacilityStation>().Single(station => station.Type == FacilityType.Tavern).Interact());
-            Assert.IsTrue(facilities.ChooseCaptainSquad(0));
             Assert.IsTrue(facilities.TryHire(0));
             facilities.Close();
+            TavernCaptainHelper.MakeLastReserveCaptain(0); // UI-13: 대장은 편성 창에서 정한다.
             yield return null;
             var captain = center.Squads[0].Leader;
             Assert.IsNotNull(captain);
@@ -525,9 +525,9 @@ namespace ProjectNeo.Tests
             var facilities = Object.FindAnyObjectByType<GameFacilities>();
             GameSession.Flow.Run.State.Wallet.AddGold(200);
             Assert.IsTrue(Object.FindObjectsByType<FacilityStation>().Single(station => station.Type == FacilityType.Tavern).Interact());
-            Assert.IsTrue(facilities.ChooseCaptainSquad(0));
             Assert.IsTrue(facilities.TryHire(0));
             facilities.Close();
+            TavernCaptainHelper.MakeLastReserveCaptain(0); // UI-13: 대장은 편성 창에서 정한다.
             yield return null;
             UnitCombatAI captain = center.Squads[0].Leader;
             Assert.IsNotNull(captain);

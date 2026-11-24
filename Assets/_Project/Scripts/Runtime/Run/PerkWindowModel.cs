@@ -9,14 +9,14 @@ namespace ProjectNeo.Run
 {
     /// <summary>
     /// 퍽 창의 규칙과 글자(META-09). 화면 오브젝트를 모르는 순수 C#이다.
-    /// 퍽을 처음 누르면 확인을 기다리고, 같은 퍽을 다시 누르면 찍는다(사용자 결정 2026-11-20: 해금 창과 같은 방식).
+    /// 카드를 고르면 오른쪽 상세에 보이고, 획득 버튼을 눌러야 찍는다(사용자 결정 2026-11-24, UI-13 C안. 이전: 같은 퍽 두 번 클릭).
     /// 찍은 퍽은 이번 런이 끝날 때까지 되돌릴 수 없다.
     /// </summary>
     public sealed class PerkWindowModel
     {
         public RunState State { get; }
         public PerkTreeCatalog Trees { get; }
-        public PerkDefinition ArmedPerk { get; private set; }
+        public PerkDefinition SelectedPerk { get; private set; }
         public string Notice { get; private set; } = string.Empty;
 
         public PerkWindowModel(RunState state, PerkTreeCatalog trees)
@@ -39,23 +39,23 @@ namespace ProjectNeo.Run
             return false;
         }
 
-        /// <summary>퍽을 누른다. 결과는 해금 창과 같은 세 가지다.</summary>
-        public UnlockClickResult Click(PerkDefinition perk)
+        /// <summary>카드를 고른다(UI-13 C안). 고르기만 하고 얻지는 않는다. 얻는 것은 <see cref="Acquire"/>.</summary>
+        public void Select(PerkDefinition perk)
         {
+            SelectedPerk = perk;
+            Notice = string.Empty;
+        }
+
+        /// <summary>고른 퍽을 얻는다. 결과는 해금 창과 같은 방식이고, 얻으면 Opened, 못 얻으면 이유를 Notice에 두고 Refused.</summary>
+        public UnlockClickResult Acquire()
+        {
+            PerkDefinition perk = SelectedPerk;
             PerkAllocateCheck check = State.CheckPerk(perk);
             if (check != PerkAllocateCheck.Ok)
             {
-                ArmedPerk = null;
-                Notice = Reason(check, perk);
+                Notice = perk == null ? "얻을 특성을 먼저 고르세요." : Reason(check, perk);
                 return UnlockClickResult.Refused;
             }
-            if (ArmedPerk != perk)
-            {
-                ArmedPerk = perk;
-                Notice = string.Empty;
-                return UnlockClickResult.Armed;
-            }
-            ArmedPerk = null;
             if (!State.TryAllocatePerk(perk))
             {
                 Notice = "이 특성을 얻지 못했습니다.";
@@ -65,19 +65,36 @@ namespace ProjectNeo.Run
             return UnlockClickResult.Opened;
         }
 
-        public void Disarm() => ArmedPerk = null;
-
-        /// <summary>퍽 버튼 글자: 이름, 설명, 상태.</summary>
-        public string EntryText(PerkDefinition perk)
+        /// <summary>타일의 짧은 상태 글: 획득함 / 필요한 선행 / 획득 가능. 모든 퍽이 1포인트라 비용은 쓰지 않는다(사용자 2026-11-24).</summary>
+        public string StateText(PerkDefinition perk)
         {
             if (perk == null) return string.Empty;
-            string head = $"{perk.DisplayName}\n<size=80%>{Describe(perk)}</size>";
-            if (IsAllocated(perk)) return head + "\n<size=80%>획득함</size>";
-            if (perk == ArmedPerk) return head + $"\n<size=80%>한 번 더 클릭해서 획득 ({perk.PointCost}포인트)</size>";
+            if (IsAllocated(perk)) return "획득함";
             List<PerkDefinition> missing = Perks != null ? Perks.MissingPrerequisites(perk) : new List<PerkDefinition>();
-            if (missing.Count > 0) return head + $"\n<size=80%>필요: {Names(missing)}</size>";
-            return head + $"\n<size=80%>{perk.PointCost}포인트</size>";
+            if (missing.Count > 0) return $"필요: {Names(missing)}";
+            return "획득 가능";
         }
+
+        /// <summary>카드 글자: 이름과 상태.</summary>
+        public string EntryText(PerkDefinition perk) => perk == null ? string.Empty
+            : $"{perk.DisplayName}\n<size=80%>{StateText(perk)}</size>";
+
+        /// <summary>오른쪽 상세 글자: 이름, 효과 설명, 선행. 비용은 모두 1포인트라 쓰지 않는다.</summary>
+        public string DetailText(PerkDefinition perk)
+        {
+            if (perk == null) return "특성을 고르세요.";
+            string text = $"{perk.DisplayName}\n\n{Describe(perk)}";
+            if (perk.Prerequisites != null && perk.Prerequisites.Count > 0)
+            {
+                var names = new List<string>();
+                foreach (PerkDefinition need in perk.Prerequisites) if (need != null) names.Add(need.DisplayName);
+                text += $"\n\n선행{string.Join(", ", names)}";
+            }
+            return text;
+        }
+
+        /// <summary>상세의 획득 버튼 글자.</summary>
+        public string AcquireLabel => SelectedPerk != null && IsAllocated(SelectedPerk) ? "획득함" : "획득";
 
         string Reason(PerkAllocateCheck check, PerkDefinition perk) => check switch
         {

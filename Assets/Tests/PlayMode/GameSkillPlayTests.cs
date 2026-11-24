@@ -192,9 +192,9 @@ namespace ProjectNeo.Tests
             state.Wallet.AddGold(200);
             Assert.IsTrue(Object.FindObjectsByType<FacilityStation>().Single(s => s.Type == ProjectNeo.Facilities.FacilityType.Tavern).Interact());
             HeroDefinition offered = state.TavernOffers[0];
-            Assert.IsTrue(facilities.ChooseCaptainSquad(0));
             Assert.IsTrue(facilities.TryHire(0));
             facilities.Close();
+            TavernCaptainHelper.MakeLastReserveCaptain(0); // UI-13: 대장은 편성 창에서 정한다.
             yield return null;
 
             yield return StartBattle();
@@ -221,17 +221,18 @@ namespace ProjectNeo.Tests
             var facilities = Object.FindAnyObjectByType<GameFacilities>();
             state.Wallet.AddGold(200);
             Assert.IsTrue(Object.FindObjectsByType<FacilityStation>().Single(s => s.Type == ProjectNeo.Facilities.FacilityType.Tavern).Interact());
-            Assert.IsTrue(facilities.ChooseCaptainSquad(0));
             Assert.IsTrue(facilities.TryHire(0));
             facilities.Close();
+            TavernCaptainHelper.MakeLastReserveCaptain(0); // UI-13: 대장은 편성 창에서 정한다.
             yield return null;
 
             var equipment = Object.FindAnyObjectByType<GameEquipment>();
             Assert.IsTrue(equipment.Open());
-            Assert.IsFalse(equipment.SkillView);
-            Assert.IsTrue(equipment.ToggleView());
-            Assert.IsTrue(equipment.SkillView);
-            // UI-07 삼각형 스킬 탭: 칸 3개, 고른 칸 설명, 영웅만 자동 사용 버튼.
+            // UI-13: 장비와 스킬을 탭 없이 한 창에 나란히 보인다.
+            Assert.IsTrue(equipment.SideBySide, "Game 씬 장비 창은 장비와 스킬을 나란히 보여야 한다.");
+            Assert.IsTrue(equipment.SkillsShown);
+            Assert.IsFalse(equipment.ToggleView(), "나란히 보기에는 탭이 없다.");
+            // UI-07 삼각형 스킬 칸: 칸 3개, 고른 칸 설명, 영웅만 자동 사용 버튼.
             Assert.IsTrue(equipment.SkillTriangle, "Game 씬 장비 창에 스킬 탭 화면이 연결돼 있어야 한다.");
             string first = state.Player.Definition.Skills[0].DisplayName;
             Assert.AreEqual(first, equipment.SkillCircles[0].SkillName);
@@ -259,8 +260,6 @@ namespace ProjectNeo.Tests
             Assert.IsTrue(equipment.ToggleHeroAuto(), "판을 누르면 바뀐다.");
             Assert.IsFalse(hero.SkillAuto);
             Assert.IsFalse(equipment.AutoPlateShowsOn, "꺼지면 회색 판.");
-            Assert.IsTrue(equipment.ToggleView());
-            Assert.IsFalse(equipment.ToggleHeroAuto(), "장비 보기에서는 바꾸지 않는다.");
             equipment.Close();
             yield return null;
 

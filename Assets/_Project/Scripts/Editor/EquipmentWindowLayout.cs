@@ -14,7 +14,8 @@ using FW = ProjectNeo.Editor.FantasyHudStyle;
 namespace ProjectNeo.Editor
 {
     /// <summary>
-    /// UI-07 equipment window (I), option B of three (user pick 2026-11-23): paper doll on the left (empty portrait frame,
+    /// UI-07 equipment window (I), option B of three (user pick 2026-11-23); since UI-13 gear and skills sit side by side in
+    /// one 800x560 window like the organization (O) window. Paper doll on the left (empty portrait frame,
     /// one square slot per equipment slot, five stats with a hover preview) and the storage as an icon grid on the right
     /// with a detail box under it. Rebuilds the inside of the EquipmentPanel made by <see cref="GameFacilitySetup"/> in the
     /// UI-12 look (dark plate in the thick gold Box22 frame); the skill view keeps the two lists. Runs from
@@ -23,19 +24,16 @@ namespace ProjectNeo.Editor
     /// </summary>
     public static class EquipmentWindowLayout
     {
-        // Layout (user sketch 2026-11-23): the paper doll in a square box at the top-left, the stats in a square box of the
-        // same size at the top-right, the storage as a 3x6 grid across the full width below, item info as a tooltip beside
-        // the hovered cell (no fixed info box). The window size follows from the grid: six cells plus gaps is the inner width.
-        // Tabs sit as far from the top as the content from the left (user 2026-11-23: equal left and top margins);
-        // TabTextTop is the caption's top-left glyph corner, measured on captures (TMP keeps a little room above glyphs).
-        // TabTextTop: TMP keeps about 6.5 units above the glyphs, so the box sits that much higher than Pad (captures measured
-        // from the frame's inner line to the caption: 64 px left; 82 px top at Pad, 70 at Pad - 4.5, 62 at Pad - 6.7, 66 at Pad - 6.2).
-        // UI-07 (2026-11-23): a little higher so the caption top matches the other three margins on captures (41 -> 39 px at 1920, within a pixel).
-        const float Pad = 24f, TabTextTop = Pad - 7f, TabHeight = 26f;
-        // Section headers ("착용 장비", "능력치", "보관함") in the storage header style, then the boxes under them.
-        const float HeaderHeight = 24f, ContentTop = TabTextTop + TabHeight + 8f, BoxTop = ContentTop + HeaderHeight;
-        // 70 keeps the whole window (about 624 tall) inside a 667-tall canvas on a wide Game view (16:9 gives 720).
-        const float Cell = 70f, CellGap = 8f;
+        // Layout (UI-13, user 2026-11-24): gear and skills side by side in one window with no tabs, the same 800x560 plate as
+        // the organization (O) and perk (K) windows. Title row at 14/36 and content from 60 like those windows. Left column:
+        // the paper doll and stats in two squares, the 3x6 storage grid under them (item info as a tooltip beside the hovered
+        // cell). Right column: the skill triangle and the selected skill's details. Bottom row: hero switcher on the left,
+        // close on the right, Pad from the bottom edge.
+        const float Pad = 24f, TitleTop = 14f, TitleHeight = 36f, ContentTop = 60f;
+        // Section headers ("착용 장비", "능력치", "보관함", "스킬") in one style, then the boxes under them.
+        const float HeaderHeight = 24f, BoxTop = ContentTop + HeaderHeight;
+        // 56 is the largest cell that fits the gear column (two squares of three cells plus the grid) inside 560.
+        const float Cell = 56f, CellGap = 8f;
         const int Columns = 6, Rows = 3;
         const float InnerWidth = Columns * Cell + (Columns - 1) * CellGap;
         // The equipment slots are exactly storage cells (user 2026-11-23): the paper doll is three storage columns wide
@@ -43,25 +41,24 @@ namespace ProjectNeo.Editor
         const float Gap = CellGap, Square = 3f * Cell + 2f * CellGap, BoxPad = 12f;
         const float DollGap = CellGap, DollCell = Cell;
         const float StorageTop = BoxTop + Square + 10f, GridTop = StorageTop + HeaderHeight;
-        // The bottom row sits Pad above the bottom edge, like the sides and the top (user 2026-11-23: equal margins on all
-        // four sides of the whole content).
-        const float GridHeight = Rows * Cell + (Rows - 1) * CellGap, CloseHeight = 36f, CloseBottom = Pad;
-        const float PanelWidth = InnerWidth + 2f * Pad, RawPanelHeight = GridTop + GridHeight + 10f + CloseHeight + CloseBottom;
-        // Whole units, so the screen-centred window does not land on half pixels (captures jittered by 1-2 px, 2026-11-23).
-        static readonly float PanelHeight = Mathf.Ceil(RawPanelHeight);
-        // Skill view (kept in this window, user 2026-11-23: one window per hero for gear and skills): status line, then the
-        // two lists, then the message line above the close button.
+        const float GridHeight = Rows * Cell + (Rows - 1) * CellGap, CloseHeight = 36f, CloseWidth = 160f, CloseBottom = Pad;
+        const float PanelWidth = 800f, PanelHeight = 560f, ColumnGap = 24f;
+        // Skill column right of the gear column; its details box ends level with the storage grid.
+        const float SkillLeft = Pad + InnerWidth + ColumnGap, SkillWidth = PanelWidth - Pad - SkillLeft;
+        const float ContentBottom = PanelHeight - GridTop - GridHeight;
+        // Tab-view leftovers (status line, two lists, message line) stay placed but hidden in this window.
         const float ListTop = ContentTop + 34f, BodyBottom = CloseBottom + CloseHeight + 10f, ListBottom = BodyBottom + 40f;
         const float HeroNameWidth = 150f, TooltipWidth = 210f;
         internal const string GearViewName = "GearView", SlotTemplateName = "SlotTemplate", TooltipName = "Tooltip";
         internal const string SkillTabName = "SkillTab", AutoPlateName = "AutoPlate";
         static readonly string[] Owned =
             { GearViewName, "Visual", "Tab_Gear", "Tab_Skill", "Hero_Previous", "Hero_Next", "HeroName", TooltipName, SkillTabName, AutoPlateName, "AutoSwitch", "Button_Auto" };
-        // Skill tab (user sketch 2026-11-23): three round slots in a triangle (1 top, 2 bottom-left, 3 bottom-right) with the
-        // opening grade on a badge at each slot's top-left, the clicked slot's details in a box below, and the Auto button
-        // at the top-right where the hero switcher was. The switcher moved to the bottom row, left of the close button.
-        const float SkillCircle = 110f, SkillBadge = 34f, TriangleHalfWidth = 125f, TriangleHeight = 172f;
-        const float TriangleTop = ContentTop + 18f, DetailTop = TriangleTop + SkillCircle + TriangleHeight + 22f;
+        // Skill column (user sketch 2026-11-23, scaled to the column): three round slots in a triangle (1 top, 2 bottom-left,
+        // 3 bottom-right) with the opening grade on a badge at each slot's top-left and the clicked slot's details below.
+        // The Auto plate sits at the top-right, on the title row.
+        const float SkillCircle = 96f, SkillBadge = 30f, TriangleHalfWidth = 110f, TriangleHeight = 140f;
+        const float TriangleTop = BoxTop + 8f, DetailTop = TriangleTop + SkillCircle + TriangleHeight + 18f;
+        const float SkillCentreX = SkillLeft + SkillWidth * 0.5f - PanelWidth * 0.5f;
         // Square plate arrows as tall as the close button (user pick A, 2026-11-23); Auto is one plate that is green when on
         // and grey when off (user, same day: status-coloured plate instead of the two-segment switch).
         const float ArrowWidth = CloseHeight, NameGap = 8f, AutoWidth = 150f, AutoHeight = 30f;
@@ -105,15 +102,10 @@ namespace ProjectNeo.Editor
 
             var title = panel.Find("Title").GetComponent<TMP_Text>();
             FW.Font(title, noto, 26f, FW.Gold, TextAlignmentOptions.MidlineLeft);
-            title.text = "장비";
+            title.text = "장비 · 스킬";
             title.raycastTarget = false;
-            FW.Place(title.rectTransform, new Vector2(0f, 1f), new Vector2(Pad, -14f), new Vector2(90f, 36f), new Vector2(0f, 1f));
-            // No separate title (user 2026-11-23): the tabs are the heading, the selected one larger and gold (GameEquipment).
-            title.gameObject.SetActive(false);
-
-            Button gearTab = Tab(panel, "Tab_Gear", "장비", Pad, noto, equipment.ShowGearView);
-            // Right of the first caption; both captions keep one size (user 2026-11-23: only the colour shows the tab).
-            Button skillTab = Tab(panel, "Tab_Skill", "스킬", Pad + TabWidth, noto, equipment.ShowSkillView);
+            FW.Place(title.rectTransform, new Vector2(0f, 1f), new Vector2(Pad, -TitleTop), new Vector2(300f, TitleHeight), new Vector2(0f, 1f));
+            title.gameObject.SetActive(true);
             // Hero switcher on the bottom row, left of the close button (user 2026-11-23: the bottom row had room).
             Button previous = Arrow(panel, "Hero_Previous", "<", Pad, noto, equipment.PreviousHeroFromButton);
             Button next = Arrow(panel, "Hero_Next", ">", Pad + ArrowWidth + 2f * NameGap + HeroNameWidth, noto, equipment.NextHeroFromButton);
@@ -135,9 +127,8 @@ namespace ProjectNeo.Editor
 
             var close = (RectTransform)panel.Find("Button_Close");
             FW.PlateButton(close, "닫기", noto, 17f); // Esc and I close it too (user 2026-11-23: no key in the caption)
-            // As wide as two storage cells and their gap (user 2026-11-23), under the right two columns now that the hero
-            // switcher shares the bottom row.
-            FW.Place(close, new Vector2(1f, 0f), new Vector2(-Pad, CloseBottom), new Vector2(2f * Cell + CellGap, CloseHeight), new Vector2(1f, 0f));
+            // Same size and place as the organization window's buttons (UI-13).
+            FW.Place(close, new Vector2(1f, 0f), new Vector2(-Pad, CloseBottom), new Vector2(CloseWidth, CloseHeight), new Vector2(1f, 0f));
 
             // Skill view: the two lists keep working, with gold headers (restyle later).
             var lists = (RectTransform)panel.Find("Lists");
@@ -191,8 +182,9 @@ namespace ProjectNeo.Editor
             TMP_Text tooltipText = Tooltip(panel, noto, out RectTransform tooltip);
 
             equipment.ConfigurePaperDoll(gear.gameObject, lists.gameObject, template, worn, storage, stats, tooltipText,
-                gearTab, skillTab, previous, next, heroName, Columns);
+                null, null, previous, next, heroName, Columns);
             BuildSkillTab(panel, equipment, noto, lists.GetSiblingIndex());
+            equipment.ConfigureSideBySide(true);
             equipment.ConfigureSlotPlaceholders(SlotPlaceholders());
             equipment.ConfigureWornAnchors(anchors);
             equipment.ConfigureTooltip(tooltip);
@@ -262,25 +254,6 @@ namespace ProjectNeo.Editor
             rect.offsetMin = new Vector2(Pad, y - height); rect.offsetMax = new Vector2(-Pad, y);
         }
 
-        // Caption-only tab; the current tab is not interactable, and GameEquipment paints its caption gold and larger. Both
-        // captions sit on one baseline.
-        const float TabWidth = 64f, TabFontSize = 22f;
-
-        static Button Tab(RectTransform panel, string name, string caption, float x, TMP_FontAsset noto, UnityEngine.Events.UnityAction action)
-        {
-            Button button = GameFacilitySetup.ButtonAt(panel, name, caption, new Vector2(0f, 1f), Vector2.zero, new Vector2(TabWidth, TabHeight), action, out _);
-            var rect = (RectTransform)button.transform;
-            TMP_Text label = FW.TextButton(rect, caption, noto, TabFontSize, Color.white);
-            label.alignment = TextAlignmentOptions.TopLeft;
-            label.rectTransform.offsetMin = label.rectTransform.offsetMax = Vector2.zero;
-            FW.Place(rect, new Vector2(0f, 1f), new Vector2(x, -TabTextTop), new Vector2(TabWidth, TabHeight), new Vector2(0f, 1f));
-            ColorBlock colors = FW.Tint(new Color(0.62f, 0.62f, 0.62f), Color.white, new Color(0.8f, 0.8f, 0.8f));
-            colors.disabledColor = Color.white; // the caption itself turns gold (GameEquipment.SetTab)
-            colors.fadeDuration = 0f;
-            button.colors = colors;
-            return button;
-        }
-
         // Square plate button (same plate as 닫기) with the pack's gold arrow, on the bottom row, x from the panel's left edge.
         static Button Arrow(RectTransform panel, string name, string caption, float x, TMP_FontAsset noto, UnityEngine.Events.UnityAction action)
         {
@@ -303,34 +276,39 @@ namespace ProjectNeo.Editor
             FW.Stretch(tab, Vector2.zero, Vector2.zero);
             tab.SetSiblingIndex(siblingIndex);
 
+            Header(tab, "SkillHeader", "스킬", noto, new Vector2(SkillLeft, -ContentTop), SkillWidth);
             float topY = -(TriangleTop + SkillCircle * 0.5f), bottomY = topY - TriangleHeight;
-            var centres = new[] { new Vector2(0f, topY), new Vector2(-TriangleHalfWidth, bottomY), new Vector2(TriangleHalfWidth, bottomY) };
+            var centres = new[]
+            {
+                new Vector2(SkillCentreX, topY), new Vector2(SkillCentreX - TriangleHalfWidth, bottomY),
+                new Vector2(SkillCentreX + TriangleHalfWidth, bottomY),
+            };
             for (int i = 0; i < centres.Length; i++) Line(tab, "Line" + i, centres[i], centres[(i + 1) % centres.Length]);
             var circles = new SkillCircleView[centres.Length];
             for (int i = 0; i < centres.Length; i++) circles[i] = Circle(tab, "Skill" + (i + 1), centres[i], noto);
 
             var box = FW.Node(tab, "DetailBox");
             box.anchorMin = Vector2.zero; box.anchorMax = Vector2.one; box.pivot = new Vector2(0.5f, 0.5f);
-            box.offsetMin = new Vector2(Pad, CloseBottom + CloseHeight + 12f); box.offsetMax = new Vector2(-Pad, -DetailTop);
+            box.offsetMin = new Vector2(SkillLeft, ContentBottom); box.offsetMax = new Vector2(-Pad, -DetailTop);
             var fill = FW.Image(box, "SPR_Background", "SPR_HUD_FantasyWarrior_Box_White01", BoxFill, 4f);
             FW.Stretch(fill.rectTransform, new Vector2(2f, 2f), new Vector2(-2f, -2f));
             var frame = FW.Image(box, "SPR_Frame", "SPR_FantasyWarrior_Frame_Box22_Variant01", new Color(0.85f, 0.85f, 0.85f, 0.6f), 14f);
             FW.Stretch(frame.rectTransform, Vector2.zero, Vector2.zero);
-            var detail = FW.NewLabel(box, "Detail", "", noto, 17f, FW.Cream, TextAlignmentOptions.TopLeft);
+            var detail = FW.NewLabel(box, "Detail", "", noto, 16f, FW.Cream, TextAlignmentOptions.TopLeft);
             detail.textWrappingMode = TextWrappingModes.Normal;
             detail.richText = true;
-            detail.lineSpacing = 6f;
+            detail.lineSpacing = 4f;
             detail.raycastTarget = false;
             FW.Stretch(detail.rectTransform, new Vector2(BoxPad + 4f, BoxPad), new Vector2(-BoxPad - 4f, -BoxPad - 2f));
 
-            // Auto plate at the top-right corner, Pad from the top and the right like the rest of the content. GameEquipment
-            // paints the plate and caption by state.
+            // Auto plate at the top-right corner, centred on the title row and Pad from the right. GameEquipment paints the
+            // plate and caption by state.
             Button auto = GameFacilitySetup.ButtonAt(panel, AutoPlateName, "자동 사용 켜짐", new Vector2(1f, 1f), Vector2.zero,
                 new Vector2(AutoWidth, AutoHeight), equipment.ToggleHeroAutoFromButton, out _);
             var autoRect = (RectTransform)auto.transform;
             FW.PlateButton(autoRect, "자동 사용 켜짐", noto, 15f);
-            // The plate frame is dim at its outer edge, so the visible top sits 2 below the rect: raise it by that much.
-            FW.Place(autoRect, new Vector2(1f, 1f), new Vector2(-Pad, -(Pad - 2f)), new Vector2(AutoWidth, AutoHeight), new Vector2(1f, 1f));
+            FW.Place(autoRect, new Vector2(1f, 1f), new Vector2(-Pad, -(TitleTop + (TitleHeight - AutoHeight) * 0.5f)),
+                new Vector2(AutoWidth, AutoHeight), new Vector2(1f, 1f));
             auto.gameObject.SetActive(false);
 
             tab.gameObject.SetActive(false);
@@ -374,8 +352,8 @@ namespace ProjectNeo.Editor
             var icon = FW.Node(body, "Icon").gameObject.AddComponent<Image>();
             icon.preserveAspect = true;
             icon.raycastTarget = false;
-            FW.Stretch(icon.rectTransform, new Vector2(24f, 24f), new Vector2(-24f, -24f));
-            var letters = FW.NewLabel(body, "Letters", "", noto, 24f, FW.Cream, TextAlignmentOptions.Center);
+            FW.Stretch(icon.rectTransform, new Vector2(20f, 20f), new Vector2(-20f, -20f));
+            var letters = FW.NewLabel(body, "Letters", "", noto, 22f, FW.Cream, TextAlignmentOptions.Center);
             letters.raycastTarget = false;
             FW.Stretch(letters.rectTransform, Vector2.zero, Vector2.zero);
             // Unselected rings are dimmed so the selected one (bright gold, larger) stands out.
@@ -390,7 +368,7 @@ namespace ProjectNeo.Editor
             FW.Place(badge, new Vector2(0f, 1f), new Vector2(2f, -2f), new Vector2(SkillBadge, SkillBadge), new Vector2(0f, 1f));
             Round(badge, "SPR_Background", "SPR_HUD_FantasyWarrior_Circle_Medium01_Clean", new Color32(0x1C, 0x1A, 0x17, 0xFF), 3f);
             Round(badge, "SPR_Frame", "SPR_FantasyWarrior_Ring_Large06", Color.white, 0f);
-            var grade = FW.NewLabel(badge, "Grade", "1", FW.Grenze, 18f, FW.Gold, TextAlignmentOptions.Center);
+            var grade = FW.NewLabel(badge, "Grade", "1", FW.Grenze, 16f, FW.Gold, TextAlignmentOptions.Center);
             grade.raycastTarget = false;
             FW.Stretch(grade.rectTransform, Vector2.zero, new Vector2(0f, 1f));
 
@@ -434,12 +412,12 @@ namespace ProjectNeo.Editor
             placeholder.raycastTarget = false;
             placeholder.color = PlaceholderTint;
             placeholder.enabled = false;
-            FW.Stretch(placeholder.rectTransform, new Vector2(9f, 9f), new Vector2(-9f, -9f));
+            FW.Stretch(placeholder.rectTransform, new Vector2(8f, 8f), new Vector2(-8f, -8f));
             var icon = FW.Node(root, "Icon").gameObject.AddComponent<Image>();
             icon.preserveAspect = true;
             icon.raycastTarget = false;
             FW.Stretch(icon.rectTransform, new Vector2(6f, 6f), new Vector2(-6f, -6f));
-            var letters = FW.NewLabel(root, "Letters", "", noto, 17f, FW.Cream, TextAlignmentOptions.Center);
+            var letters = FW.NewLabel(root, "Letters", "", noto, 15f, FW.Cream, TextAlignmentOptions.Center);
             FW.Stretch(letters.rectTransform, Vector2.zero, Vector2.zero);
             var level = FW.NewLabel(root, "Level", "", noto, 12f, FW.Gold, TextAlignmentOptions.BottomRight);
             FW.Stretch(level.rectTransform, new Vector2(4f, 3f), new Vector2(-5f, -3f));

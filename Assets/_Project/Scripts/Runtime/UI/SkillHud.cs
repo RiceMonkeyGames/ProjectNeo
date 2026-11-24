@@ -16,12 +16,17 @@ namespace ProjectNeo.UI
         const float SlotWidth = 116f;
         const float SlotHeight = 64f;
         const float Gap = 8f;
+        // 칸 아래쪽 높이(UI-13): 플레이어 체력·키 가이드와 같은 화면 아래 가장자리 줄.
+        const float BarBottom = 12f;
+        // 쿨다운 중인 칸의 테두리는 조금 어둡게(UI-13).
+        static readonly Color DimFrame = new Color(0.5f, 0.5f, 0.5f, 1f);
         static readonly Color SlotColor = new Color(0f, 0f, 0f, 0.6f);
         static readonly Color ReadyColor = new Color(0.95f, 0.85f, 0.4f, 1f);
         static readonly Color EmptyColor = new Color(1f, 1f, 1f, 0.35f);
         static readonly Color CoverColor = new Color(0f, 0f, 0f, 0.65f);
 
         GameSkills skills;
+        HudStyle style;
         GameObject panel;
         TMP_Text message;
         Slot[] slots = new Slot[0];
@@ -71,28 +76,28 @@ namespace ProjectNeo.UI
             slot.Cover.anchorMax = new Vector2(1f, playerSlots.RemainingFraction(index));
             Color color = skill == null ? EmptyColor : playerSlots.IsReady(index) ? ReadyColor : Color.white;
             if (slot.Name.color != color) slot.Name.color = color;
+            if (slot.Frame != null)
+            {
+                Color frame = skill != null && playerSlots.IsReady(index) ? Color.white : DimFrame;
+                if (slot.Frame.color != frame) slot.Frame.color = frame;
+            }
         }
 
         // 화면 아래 가운데: 칸 3개를 가로로, 그 위에 안내 한 줄.
+        // UI-13 전투 HUD A안: 준비 HUD 사이드바와 같은 어두운 판 + 금색 테두리 칸, 왼쪽 위 작은 키 칸. 아래 가운데 판이 전투 중에는
+        // 없으므로 화면 아래쪽(분대 카드 열·키 가이드와 같은 가장자리 높이)에 붙인다. 모양 값이 없으면 예전 평평한 칸이다.
         void Build()
         {
-            var root = new GameObject("SkillCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
-            root.transform.SetParent(transform, false);
-            var canvas = root.GetComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 25;
-            var scaler = root.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1280f, 720f);
-            scaler.matchWidthOrHeight = 0.5f;
+            style = HudPlate.FindStyle(gameObject.scene);
+            RectTransform root = HudPlate.OverlayCanvas(transform, "SkillCanvas", 25);
 
             int count = Mathf.Max(1, skills != null ? skills.SlotCount : SkillSlotRules.PlayerSlots);
             float width = count * SlotWidth + (count - 1) * Gap;
             panel = new GameObject("SkillBar", typeof(RectTransform));
-            panel.transform.SetParent(root.transform, false);
+            panel.transform.SetParent(root, false);
             var rect = (RectTransform)panel.transform;
             rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0f);
-            rect.anchoredPosition = new Vector2(0f, 84f);
+            rect.anchoredPosition = new Vector2(0f, BarBottom);
             rect.sizeDelta = new Vector2(width, SlotHeight);
 
             slots = new Slot[count];
@@ -102,30 +107,34 @@ namespace ProjectNeo.UI
             var messageRect = (RectTransform)message.transform;
             messageRect.anchorMin = new Vector2(0f, 1f); messageRect.anchorMax = new Vector2(1f, 1f);
             messageRect.pivot = new Vector2(0.5f, 0f);
-            messageRect.offsetMin = new Vector2(-120f, 4f); messageRect.offsetMax = new Vector2(120f, 28f);
+            messageRect.offsetMin = new Vector2(-120f, 6f); messageRect.offsetMax = new Vector2(120f, 30f);
             panel.SetActive(false);
         }
 
-        static Slot BuildSlot(int index, Transform parent, float left)
+        Slot BuildSlot(int index, Transform parent, float left)
         {
-            GameObject frame = Box("Slot" + (index + 1), parent, SlotColor);
-            var rect = (RectTransform)frame.transform;
-            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0f);
-            rect.pivot = new Vector2(0f, 0f);
-            rect.anchoredPosition = new Vector2(left, 0f);
-            rect.sizeDelta = new Vector2(SlotWidth, SlotHeight);
+            var frame = HudPlate.Node(parent, "Slot" + (index + 1));
+            frame.anchorMin = frame.anchorMax = new Vector2(0.5f, 0f);
+            frame.pivot = new Vector2(0f, 0f);
+            frame.anchoredPosition = new Vector2(left, 0f);
+            frame.sizeDelta = new Vector2(SlotWidth, SlotHeight);
+            Image border = HudPlate.Plate(frame, style, style != null ? HudPlate.PlateColor : SlotColor);
 
-            GameObject cover = Box("Cooldown", frame.transform, CoverColor);
+            GameObject cover = Box("Cooldown", frame, CoverColor);
             var coverRect = (RectTransform)cover.transform;
             coverRect.anchorMin = Vector2.zero; coverRect.anchorMax = new Vector2(1f, 0f);
-            coverRect.offsetMin = coverRect.offsetMax = Vector2.zero;
+            coverRect.offsetMin = new Vector2(3f, 3f); coverRect.offsetMax = new Vector2(-3f, 0f);
+            if (border != null) border.transform.SetAsLastSibling(); // 덮개가 테두리를 가리지 않게
 
-            var slot = new Slot { Frame = frame.GetComponent<Image>(), Cover = coverRect };
-            slot.Key = Label("Key", frame.transform, 14f, FontStyles.Bold, TextAlignmentOptions.TopLeft);
-            Inset((RectTransform)slot.Key.transform, 6f, 4f);
-            slot.Name = Label("Name", frame.transform, 14f, FontStyles.Bold, TextAlignmentOptions.Bottom);
-            Inset((RectTransform)slot.Name.transform, 4f, 6f);
-            slot.Timer = Label("Timer", frame.transform, 22f, FontStyles.Bold, TextAlignmentOptions.Center);
+            var slot = new Slot { Frame = border, Cover = coverRect };
+            // 왼쪽 위 작은 키 칸: 어두운 바탕 위 크림색 키 이름.
+            Image keyPlate = HudPlate.Box(frame, "KeyPlate", HudPlate.TrackColor);
+            HudPlate.Place(keyPlate.rectTransform, new Vector2(0f, 1f), new Vector2(6f, -6f), new Vector2(22f, 20f), new Vector2(0f, 1f));
+            slot.Key = Label("Key", keyPlate.transform, 13f, FontStyles.Normal, TextAlignmentOptions.Center);
+            slot.Key.color = HudPlate.Cream;
+            slot.Name = Label("Name", frame, 15f, FontStyles.Normal, TextAlignmentOptions.Bottom);
+            Inset((RectTransform)slot.Name.transform, 6f, 7f);
+            slot.Timer = Label("Timer", frame, 24f, FontStyles.Normal, TextAlignmentOptions.Center);
             return slot;
         }
 
@@ -144,7 +153,7 @@ namespace ProjectNeo.UI
             return go;
         }
 
-        static TMP_Text Label(string name, Transform parent, float size, FontStyles style, TextAlignmentOptions alignment)
+        TMP_Text Label(string name, Transform parent, float size, FontStyles fontStyle, TextAlignmentOptions alignment)
         {
             var go = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI));
             go.transform.SetParent(parent, false);
@@ -152,7 +161,8 @@ namespace ProjectNeo.UI
             rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one; rect.offsetMin = rect.offsetMax = Vector2.zero;
             var label = go.GetComponent<TextMeshProUGUI>();
             label.text = string.Empty;
-            label.fontSize = size; label.fontStyle = style; label.color = Color.white;
+            if (style != null && style.WindowFont != null) label.font = style.WindowFont;
+            label.fontSize = size; label.fontStyle = fontStyle; label.color = Color.white;
             label.alignment = alignment; label.raycastTarget = false;
             return label;
         }

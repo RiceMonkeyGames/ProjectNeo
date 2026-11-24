@@ -87,7 +87,16 @@ namespace ProjectNeo.Tests
             yield return null; yield return null;
             Canvas.ForceUpdateCanvases();
             var construction = Object.FindAnyObjectByType<ConstructionHud>();
-            Assert.IsFalse(Bounds(hud.transform.Find("InteractionPrompt")).Overlaps(Bounds(construction.transform.Find("BuildPanel"))));
+            // UI-13: 건설 막대가 아래 가운데에 서고, 아래 안내 판은 막대 옆 키 가이드로 대신해 숨긴다.
+            Assert.IsFalse(hud.transform.Find("InteractionPrompt").gameObject.activeInHierarchy
+                && Bounds(hud.transform.Find("InteractionPrompt")).Overlaps(Bounds(construction.transform.Find("BuildPanel"))));
+            foreach (string part in new[] { "BuildTabs", "BuildStatus" })
+                Assert.IsFalse(Bounds((RectTransform)construction.transform.Find(part)).Overlaps(Bounds(construction.transform.Find("BuildPanel"))),
+                    part + " must not cover the build bar");
+            // 건설 키는 탐색·배치 화면과 같은 오른쪽 아래 키 가이드(KeyListHud)가 보여 준다.
+            var keys = Object.FindAnyObjectByType<KeyListHud>();
+            Assert.IsTrue(keys.IsShowing, "건설 모드에서도 키 가이드가 보인다.");
+            Assert.IsFalse(Bounds(keys.Area).Overlaps(Bounds(construction.transform.Find("BuildPanel"))), "키 가이드가 건설 막대를 덮지 않는다.");
         }
 
         [UnityTest]

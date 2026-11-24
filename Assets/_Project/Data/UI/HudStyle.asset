@@ -45,3 +45,5 @@ MonoBehaviour:
   windowFramePixelsPerUnit: 10
   windowAccent: {r: 0.8901961, g: 0.73333335, b: 0.44313726, a: 1}
   windowFont: {fileID: 11400000, guid: 95b1cbf62ebe8134b9ff683cc5fe7ae4, type: 2}
+  windowButtonPlateSprite: {fileID: 21300000, guid: cd21359e4ed53304f96a2a13c053288f, type: 3}
+  windowButtonFrameSprite: {fileID: 21300000, guid: cf616f64504d28b49a328e3fc7ca7539, type: 3}

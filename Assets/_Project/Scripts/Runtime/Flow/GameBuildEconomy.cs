@@ -70,6 +70,7 @@ namespace ProjectNeo.Flow
 
         void OnDisable()
         {
+            hover.Clear();
             flow.PhaseChanged -= OnPhaseChanged;
             if (placement == null) return;
             if (placement.ConfirmGate == (System.Func<bool>)CanConfirm) placement.ConfirmGate = null;
@@ -155,6 +156,7 @@ namespace ProjectNeo.Flow
             if (!Preparing || EnsureEconomy() == null) return;
             placement.Cancel();
             Dismantling = !Dismantling;
+            if (!Dismantling) hover.Clear();
             Message = Dismantling ? "해체할 조각이나 대포를 클릭하세요. 우클릭으로 마칩니다." : string.Empty;
         }
 
@@ -263,12 +265,65 @@ namespace ProjectNeo.Flow
         {
             BuildEconomy current = EnsureEconomy();
             if (label != null) label.text = Describe(current);
-            if (!Dismantling || current == null || Mouse.current == null) return;
-            if (!Preparing || phaseView == null || !phaseView.IsBuildView || placement.HasSelection) { Dismantling = false; return; }
-            if (Mouse.current.rightButton.wasPressedThisFrame) { Dismantling = false; Message = string.Empty; return; }
-            if (!Mouse.current.leftButton.wasPressedThisFrame || constructionCamera == null) return;
+            if (!Dismantling || current == null || Mouse.current == null) { hover.Clear(); return; }
+            if (!Preparing || phaseView == null || !phaseView.IsBuildView || placement.HasSelection) { Dismantling = false; hover.Clear(); return; }
+            if (Mouse.current.rightButton.wasPressedThisFrame) { Dismantling = false; Message = string.Empty; hover.Clear(); return; }
+            if (constructionCamera == null) return;
             Vector2 pointer = Mouse.current.position.ReadValue();
-            if (OverUI(pointer)) return;
+            // UI-13: 해체 중에는 가리킨 조각(위에 무기가 있으면 무기)을 지을 수 없는 자리의 미리보기처럼 붉게 보여 준다.
+            PlacedStructure hovered = OverUI(pointer) ? null : PickStructure(pointer);
+            GameObject target = DismantleTarget(hovered, out GameObject prefab);
+            if (target != hover.Target)
+            {
+                // 조각이면 그 칸의 성 킷 모델을 잠깐 숨기고 같은 칸 다른 층은 임시 외형으로 대신 보인다(킷이 칸 전체를 그린다).
+                bool piece = hovered != null && target == hovered.gameObject;
+                hover.Show(target, prefab, placement.ViewSettings, piece ? KitCell(hovered) : null, piece ? StandIns(hovered) : null);
+            }
+            if (!Mouse.current.leftButton.wasPressedThisFrame || OverUI(pointer)) return;
+            if (hovered == null) Message = "해체할 조각을 클릭하세요.";
+            else { hover.Clear(); Dismantle(hovered); }
+        }
+
+        DismantleHighlight hoverView;
+        // 처음 쓸 때 만든다(씬에서 불러온 컴포넌트에서도 늘 있게).
+        DismantleHighlight hover => hoverView ??= new DismantleHighlight();
+
+        CastleKitDresser kit;
+
+        GameObject KitCell(PlacedStructure structure)
+        {
+            if (kit == null) kit = FindAnyObjectByType<CastleKitDresser>();
+            return kit != null ? kit.CellRoot(structure.Placement.Cell) : null;
+        }
+
+        IEnumerable<Renderer> StandIns(PlacedStructure structure)
+        {
+            foreach (PlacedStructure other in world.Structures)
+            {
+                if (other == null || other == structure || other.Placement == null || other.Placement.Cell != structure.Placement.Cell) continue;
+                Transform visual = other.transform.Find("Visual");
+                if (visual == null) continue;
+                foreach (Renderer renderer in visual.GetComponentsInChildren<Renderer>(true)) yield return renderer;
+            }
+        }
+
+        // 해체하면 먼저 사라지는 것: 조각 위 무기, 없으면 조각. 미리보기를 만들 프리팹도 함께 돌려준다.
+        GameObject DismantleTarget(PlacedStructure structure, out GameObject prefab)
+        {
+            prefab = null;
+            if (structure == null) return null;
+            foreach (PlacedSiegeWeapon weapon in world.Weapons)
+                if (weapon.Support == structure)
+                {
+                    prefab = weapon.Definition != null ? weapon.Definition.Prefab : null;
+                    return weapon.gameObject;
+                }
+            prefab = structure.Placement.Definition != null ? structure.Placement.Definition.Prefab : null;
+            return structure.gameObject;
+        }
+
+        PlacedStructure PickStructure(Vector2 pointer)
+        {
             Ray ray = constructionCamera.ScreenPointToRay(pointer);
             int count = Physics.RaycastNonAlloc(ray, rayHits, Mathf.Infinity, ~0, QueryTriggerInteraction.Ignore);
             float nearest = float.PositiveInfinity;
@@ -280,8 +335,7 @@ namespace ProjectNeo.Flow
                 nearest = rayHits[i].distance;
                 picked = rayHits[i].collider.GetComponentInParent<PlacedStructure>();
             }
-            if (picked == null) Message = "해체할 조각을 클릭하세요.";
-            else Dismantle(picked);
+            return picked;
         }
 
         bool OverUI(Vector2 position)
@@ -295,19 +349,21 @@ namespace ProjectNeo.Flow
         string Describe(BuildEconomy current)
         {
             if (current == null) return string.Empty;
+            // UI-13 건설 막대: 골드는 위 자원 바, 고른 조각 값은 카드에 있으므로 여기에는 수리·해체·작업·결과만 남긴다.
             var text = new StringBuilder();
-            text.Append($"골드 {current.Wallet.Gold}");
-            if (placement != null && placement.SelectedWeapon != null)
-                text.Append($" · {placement.SelectedWeapon.DisplayName} {table.CostOf(placement.SelectedWeapon)}골드");
-            else if (placement != null && placement.Selected != null)
-                text.Append($" · {placement.Selected.DisplayName} {table.CostOf(placement.Selected)}골드");
             int repair = FullRepairCost;
-            if (repair > 0) text.Append($"\n전체 수리 {repair}골드");
-            if (Dismantling) text.Append("\n해체 중: 조각 클릭 - 우클릭으로 마침");
+            if (repair > 0) text.Append($"전체 수리 {repair}골드");
+            if (Dismantling) Line(text, "해체 중: 조각 클릭 · 우클릭으로 마침");
             string queued = work != null ? work.Summary() : string.Empty;
-            if (queued.Length > 0) text.Append('\n').Append(queued);
-            if (!string.IsNullOrEmpty(Message)) text.Append('\n').Append(Message);
+            if (queued.Length > 0) Line(text, queued);
+            if (!string.IsNullOrEmpty(Message)) Line(text, Message);
             return text.ToString();
+        }
+
+        static void Line(StringBuilder text, string line)
+        {
+            if (text.Length > 0) text.Append('\n');
+            text.Append(line);
         }
     }
 }

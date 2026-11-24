@@ -51,6 +51,8 @@ namespace ProjectNeo.Flow
         public event System.Action EquipmentKeyInPanel;
         /// <summary>창이 열린 동안 편성 키를 눌렀다(UI-07: 편성 창은 연 키로 다시 닫는다).</summary>
         public event System.Action OrganizationKeyInPanel;
+        /// <summary>창이 열린 동안 상호작용 키를 눌렀다(UI-13: 시설 팝업은 연 F로 다시 닫는다).</summary>
+        public event System.Action InteractKeyInPanel;
         public string OrganizationKey => organization != null ? organization.GetBindingDisplayString() : string.Empty;
         /// <summary>1인칭 탐색 중 편성 키를 눌렀다(D-8). 편성 화면이 듣는다.</summary>
         public event System.Action OrganizationRequested;
@@ -175,7 +177,8 @@ namespace ProjectNeo.Flow
             {
                 CancelBattleStart(); CancelWait();
                 Target = null;
-                if (close.WasPressedThisFrame()) phaseView.ExitConstruction();
+                // UI-13: 건설 모드도 들어온 F로 다시 나간다(Esc와 같다).
+                if (close.WasPressedThisFrame() || interact.WasPressedThisFrame()) phaseView.ExitConstruction();
                 return;
             }
             if (phaseView.IsPanelView)
@@ -185,6 +188,7 @@ namespace ProjectNeo.Flow
                 if (close.WasPressedThisFrame()) phaseView.ExitPanel();
                 else if (equipment != null && equipment.WasPressedThisFrame()) EquipmentKeyInPanel?.Invoke();
                 else if (organization != null && organization.WasPressedThisFrame()) OrganizationKeyInPanel?.Invoke();
+                else if (interact.WasPressedThisFrame()) InteractKeyInPanel?.Invoke();
                 return;
             }
             if (phaseView.IsPlacementView)
@@ -207,7 +211,8 @@ namespace ProjectNeo.Flow
                 // 적 목록 창은 화면을 막지 않으므로 전투 시작·기다리기 누르기를 끊지 않는다.
                 if (phaseView.IsExplorationView && enemyPreview != null && enemyPreview.WasPressedThisFrame())
                     EnemyPreviewToggled?.Invoke();
-                if (phaseView.IsExplorationView && keyList != null && keyList.WasPressedThisFrame())
+                // UI-13: 전투 중에도 같은 키 가이드를 H로 접고 편다.
+                if ((phaseView.IsExplorationView || phaseView.IsBattleView) && keyList != null && keyList.WasPressedThisFrame())
                     KeyListToggled?.Invoke();
                 UpdateBattleStart(); UpdateWait();
             }
