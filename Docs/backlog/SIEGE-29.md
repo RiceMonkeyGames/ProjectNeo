@@ -1,9 +1,9 @@
 ---
 id: SIEGE-29
 title: Tower Storey Rooms & Doors at Every Walkway Height
-status: Waiting for Prerequisite
+status: In Progress
 assignee: youngho
-branch:
+branch: feature/siege-29
 area: SIEGE
 depends_on: [SIEGE-27]
 created: 2026-11-23
