@@ -51,6 +51,8 @@ namespace ProjectNeo.Flow
             {
                 PrepPlacement = gameObject.AddComponent<GamePrepPlacement>();
                 PrepPlacement.Configure(this, commandInput, placement, constructionCamera);
+                // 부대 배치 화면의 지도 표식(UI-13). 같은 방식으로 실행 중에 붙인다.
+                PrepPlacement.gameObject.AddComponent<ProjectNeo.UI.PlacementMapHud>().Configure(PrepPlacement, null);
             }
             Apply(flow.Phase);
         }

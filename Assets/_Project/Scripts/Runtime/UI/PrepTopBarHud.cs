@@ -70,7 +70,9 @@ namespace ProjectNeo.UI
             GameFlow flow = GameSession.Flow;
             RunState state = battle != null ? battle.RunLink.State : null;
             bool preparation = flow.Phase == GamePhase.Preparation && flow.Run != null && state != null;
-            if (phaseBox != null && phaseBox.activeSelf == preparation) phaseBox.SetActive(!preparation);
+            // UI-13: 전투 중에도 전투 상황판(BattleStatusHud)이 스테이지와 웨이브를 보여 주면 단계 상자를 숨긴다.
+            bool hidePhase = preparation || flow.Phase == GamePhase.Battle && BattleStatusHud.Showing;
+            if (phaseBox != null && phaseBox.activeSelf == hidePhase) phaseBox.SetActive(!hidePhase);
             bool show = preparation && !Covered();
             if (content.activeSelf != show) content.SetActive(show);
             if (!show) return;

@@ -111,6 +111,14 @@ namespace ProjectNeo.Flow
         }
 
         /// <summary>전투 화면 안내 한 줄. 소모품이 있으면 키·이름·개수와 남은 대기 시간, 방금 못 썼으면 이유를 보여준다.</summary>
+        /// <summary>전투 키 가이드 소모품 줄의 하는 일(UI-13): "회복 물약 ×2 (3초)", 없으면 "소모품 없음".</summary>
+        public string GuideText()
+        {
+            int count = Count;
+            string name = count > 0 ? ConsumableUse.FindUsable(Stash).Definition.DisplayName : string.Empty;
+            return ProjectNeo.UI.BattleHudText.Consumable(name, count, CooldownRemaining);
+        }
+
         public string Hint()
         {
             int count = Count;

@@ -39,7 +39,7 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
-        public IEnumerator Window_OpensInPreparation_AndTakesAPerkWithTwoClicks()
+        public IEnumerator Window_OpensInPreparation_AndTakesAPerkWithSelectThenAcquire()
         {
             GamePerkWindow window = battle.PerkWindow;
             Assert.IsNotNull(window, "RunStart.asset에 퍽 트리가 연결돼 있어야 한다.");
@@ -54,12 +54,21 @@ namespace ProjectNeo.Tests
 
             Assert.IsTrue(window.Open());
             Assert.IsTrue(window.IsOpen);
-            Assert.AreEqual(19, window.RowCount, "전투 9개(스킬 퍽 4개 포함, COMBAT-06) + 경제 5개 + 유닛 강화 5개");
-            Assert.AreEqual(UnlockClickResult.Armed, window.Click(first));
-            Assert.AreEqual(UnlockClickResult.Opened, window.Click(first));
+            Assert.AreEqual(9, window.RowCount, "처음엔 전투 트리 카드 9개(스킬 퍽 4개 포함, COMBAT-06)");
+            window.SelectTree(1);
+            Assert.AreEqual(5, window.RowCount, "경제 트리 5개");
+            window.SelectTree(2);
+            Assert.AreEqual(5, window.RowCount, "유닛 강화 트리 5개");
+            window.SelectTree(0);
+            window.Select(first);
+            Assert.AreSame(first, window.SelectedPerk);
+            StringAssert.Contains(first.DisplayName, window.DetailText);
+            Assert.IsFalse(state.Perks.Allocated.Contains(first), "고르기만 하고 찍지 않는다");
+            Assert.AreEqual(UnlockClickResult.Opened, window.Acquire());
             StringAssert.Contains("획득함", window.RowText(first));
             Assert.Greater(player.Stats.GetValue(StatType.Attack), attack, "첫 전투 퍽(공격 +15%)이 바로 붙는다");
-            Assert.AreEqual(UnlockClickResult.Refused, window.Click(window.Trees.Trees[0].Perks[4]));
+            window.Select(window.Trees.Trees[0].Perks[4]);
+            Assert.AreEqual(UnlockClickResult.Refused, window.Acquire());
             StringAssert.StartsWith("먼저 ", window.StatusText);
 
             window.Close();

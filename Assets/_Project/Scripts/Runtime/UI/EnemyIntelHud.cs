@@ -83,14 +83,15 @@ namespace ProjectNeo.UI
             battleCorner = battleAt; battleOffset = battleShift;
         }
 
-        /// <summary>준비 미리보기 창 크기 배율(UI-12 준비 HUD 0.8배). 전투 중 창은 늘 1배다.</summary>
+        /// <summary>준비 미리보기 창 크기 배율(UI-12 준비 HUD 0.8배). 전투 상황판(UI-13)이 있으면 전투 중에도 이 배율, 없으면 1배다.</summary>
         public void ConfigurePreviewScale(float scale) => previewScale = scale > 0f ? scale : 1f;
 
         void Place(GamePhase phase)
         {
             if (!placeByPhase) return;
             var rect = (RectTransform)content.transform;
-            bool fighting = phase == GamePhase.Battle;
+            // UI-13 전투 HUD A안: 전투 상황판이 있으면 전투 중에도 준비 미리보기 자리(오른쪽 위 칩 아래)와 크기를 쓴다.
+            bool fighting = phase == GamePhase.Battle && !BattleStatusHud.Showing;
             rect.localScale = Vector3.one * (fighting ? 1f : previewScale);
             Vector2 corner = fighting ? battleCorner : previewCorner;
             rect.anchorMin = rect.anchorMax = rect.pivot = corner;
@@ -129,7 +130,7 @@ namespace ProjectNeo.UI
             EnemyIntel intel = battle != null ? battle.Intel : null;
             bool show = intel != null && (phase == GamePhase.Battle
                 || phase == GamePhase.Preparation && PreviewOpen && phaseView != null
-                    && (phaseView.IsExplorationView || phaseView.IsPanelView)); // UI-07: 창이 열려도 보인다(사용자 2026-11-23)
+                    && (phaseView.IsExplorationView || phaseView.IsPanelView || phaseView.IsBuildView)); // UI-07: 창이 열려도, UI-13: 건설 모드에서도 보인다
             if (content.activeSelf != show) content.SetActive(show);
             if (!show) return;
             Place(phase);

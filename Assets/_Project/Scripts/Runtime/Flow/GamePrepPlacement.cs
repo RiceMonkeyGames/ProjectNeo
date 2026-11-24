@@ -40,6 +40,8 @@ namespace ProjectNeo.Flow
         public string Message { get; private set; } = "";
         public SquadPlacementMemory Memory => memory;
         public SquadCommandCenter Center => center;
+        /// <summary>위에서 보는 배치 화면 카메라(UI-13 지도 표식이 화면 좌표를 구할 때 쓴다).</summary>
+        public Camera TopDownCamera => topDownCamera;
 
         public void Configure(GamePhaseView view, SquadCommandInput input, PlacementController placementController, Camera camera)
         {
@@ -118,6 +120,35 @@ namespace ProjectNeo.Flow
         public bool IsInsideCastle(Vector3 point)
         {
             if (world == null) return true;
+            if (!TryInteriorRect(out Rect rect)) return true;
+            Vector3 local = world.LocalPoint(point);
+            return CastleInteriorRules.Contains(rect, new Vector2(local.x, local.z));
+        }
+
+        /// <summary>
+        /// 성 안 구역의 네 모서리(월드 좌표, 시계 방향)를 채운다(UI-13 지도 표식). 성벽·성문 조각이 없으면 false.
+        /// </summary>
+        public bool TryGetInteriorCorners(Vector3[] corners)
+        {
+            if (world == null || corners == null || corners.Length < 4 || !TryInteriorRect(out Rect rect)) return false;
+            Transform root = world.transform;
+            corners[0] = root.TransformPoint(new Vector3(rect.xMin, 0f, rect.yMin));
+            corners[1] = root.TransformPoint(new Vector3(rect.xMin, 0f, rect.yMax));
+            corners[2] = root.TransformPoint(new Vector3(rect.xMax, 0f, rect.yMax));
+            corners[3] = root.TransformPoint(new Vector3(rect.xMax, 0f, rect.yMin));
+            return true;
+        }
+
+        /// <summary>전열을 끄는 중이고 충분히 길면 그은 선의 두 끝(UI-13 지도 표식).</summary>
+        public bool TryGetDragLine(out Vector3 start, out Vector3 end)
+        {
+            start = dragStart; end = dragEnd;
+            return dragging && IsLine();
+        }
+
+        bool TryInteriorRect(out Rect rect)
+        {
+            rect = default;
             var corners = new List<Vector2>();
             foreach (PlacedStructure piece in world.Structures)
             {
@@ -136,9 +167,7 @@ namespace ProjectNeo.Flow
                 corners.Add(new Vector2(min.x, min.z));
                 corners.Add(new Vector2(max.x, max.z));
             }
-            if (!CastleInteriorRules.TryGetBounds(corners, 0f, out Rect rect)) return true;
-            Vector3 local = world.LocalPoint(point);
-            return CastleInteriorRules.Contains(rect, new Vector2(local.x, local.z));
+            return CastleInteriorRules.TryGetBounds(corners, 0f, out rect);
         }
 
         // ── 기억과 복귀 ───────────────────────────────────────

@@ -139,6 +139,17 @@ namespace ProjectNeo.Flow
                 return true;
             }
         }
+        /// <summary>남은 성문 체력 합과 최대 체력 합(UI-13 전투 상황판). 성문이 없으면 둘 다 0.</summary>
+        public void GateHealth(out float current, out float maximum)
+        {
+            current = maximum = 0f;
+            foreach (PlacedStructure piece in world.Structures)
+                if (piece != null && piece.Placement.Definition.Kind == BuildPieceKind.Gate && piece.Health != null)
+                {
+                    maximum += piece.Health.Maximum;
+                    if (!piece.Health.IsDead) current += Mathf.Max(0f, piece.Health.Current);
+                }
+        }
         public int AlliesAlive
         {
             get { int count = 0; for (int i = 0; i < commander.Squads.Count; i++) count += commander.AliveCount(i); return count; }
@@ -193,7 +204,9 @@ namespace ProjectNeo.Flow
             if (perkTrees != null)
             {
                 PerkWindow = gameObject.AddComponent<GamePerkWindow>();
-                PerkWindow.Configure(FindAnyObjectByType<GamePhaseView>(), perkTrees);
+                // 모양(금테 판·글꼴)은 Esc 메뉴와 같은 준비 HUD 공용 모양 값에서 가져온다(UI-13).
+                var perkStyleSource = FindAnyObjectByType<ProjectNeo.UI.PrepSquadCardsHud>();
+                PerkWindow.Configure(FindAnyObjectByType<GamePhaseView>(), perkTrees, perkStyleSource != null ? perkStyleSource.Style : null);
             }
             // 준비 단계 Esc 메뉴(FLOW-04). Game.unity를 고치지 않고 실행 중에 붙인다.
             PauseMenu = gameObject.AddComponent<GamePauseMenu>();
@@ -203,6 +216,9 @@ namespace ProjectNeo.Flow
             // 보스 체력바(SIEGE-09). Game.unity를 고치지 않고 실행 중에 붙인다.
             BossHud = gameObject.AddComponent<ProjectNeo.UI.BossHealthHud>();
             BossHud.Configure(this);
+            // 전투 상황판(UI-13 전투 HUD A안): 준비 사이드바 자리의 웨이브 머리 판과 아군·성문 칩. 실행 중에 붙인다.
+            StatusHud = gameObject.AddComponent<ProjectNeo.UI.BattleStatusHud>();
+            StatusHud.Configure(this, squadCards != null ? squadCards.Style : null);
             // 액티브 스킬 입력·HUD(COMBAT-06). Game.unity를 고치지 않고 실행 중에 붙인다.
             if (player != null)
             {
@@ -230,6 +246,8 @@ namespace ProjectNeo.Flow
         }
         /// <summary>보스 체력바(SIEGE-09).</summary>
         public ProjectNeo.UI.BossHealthHud BossHud { get; private set; }
+        /// <summary>전투 상황판(UI-13): 웨이브 머리 판과 아군·성문 칩.</summary>
+        public ProjectNeo.UI.BattleStatusHud StatusHud { get; private set; }
         /// <summary>준비 단계 성문 열기(PREP-05).</summary>
         public GamePrepGate PrepGate { get; private set; }
         /// <summary>전투 중 소모품 사용(PREP-04).</summary>

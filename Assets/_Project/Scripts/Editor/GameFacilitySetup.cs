@@ -58,10 +58,8 @@ namespace ProjectNeo.Editor
             if (facilities == null) facilities = battle.gameObject.AddComponent<GameFacilities>();
             GamePhaseView view = Find<GamePhaseView>(scene);
             GameFlowHud hud = Find<GameFlowHud>(scene);
-            Popup popup = BuildPopup(hud, facilities);
-            facilities.Configure(start, view, popup.panel, popup.title, popup.status, popup.body);
-            facilities.ConfigureActions(popup.upgrade, popup.upgradeLabel, popup.trade, popup.offers, popup.inventory, popup.row);
-            facilities.ConfigureReroll(popup.reroll, popup.rerollLabel);
+            // UI-13 option C: tile grid and detail in the I / O / K window look.
+            FacilityWindowLayout.Apply(hud, facilities, start, view);
             EditorUtility.SetDirty(facilities);
 
             // D-7 장비 화면(I 키). 상호작용 설정 에셋에 새 키 칸을 저장한다.
@@ -284,34 +282,6 @@ namespace ProjectNeo.Editor
             public RectTransform offers, inventory;
         }
 
-        /// <summary>
-        /// PREP-02 상점 리롤 버튼만 Game 씬의 시설 팝업에 더한다. 팝업 전체를 다시 만들지 않아 씬 변경이 작다.
-        /// 이미 있으면 다시 만들어 연결한다.
-        /// </summary>
-        [MenuItem("ProjectNeo/Setup/Add Shop Reroll Button To Game Scene")]
-        public static void ApplyRerollButton()
-        {
-            if (EditorSceneManager.GetActiveScene().isDirty) throw new InvalidOperationException("Save the active scene first.");
-            Scene scene = EditorSceneManager.OpenScene(GameFlowSetup.GamePath, OpenSceneMode.Single);
-            GameFacilities facilities = Find<GameFacilities>(scene);
-            var panel = (GameObject)new SerializedObject(facilities).FindProperty("panel").objectReferenceValue
-                ?? throw new InvalidOperationException("Run Connect Facilities To Game Scene first: no FacilityPanel.");
-            Button reroll = RerollButton(panel.transform, facilities, out TMP_Text label);
-            facilities.ConfigureReroll(reroll, label);
-            EditorUtility.SetDirty(facilities);
-            EditorSceneManager.MarkSceneDirty(scene);
-            EditorSceneManager.SaveScene(scene);
-        }
-
-        /// <summary>팝업 왼쪽 아래의 리롤 버튼. 상점 팝업에서만 보이고 글자는 실행 중에 비용으로 바뀐다.</summary>
-        static Button RerollButton(Transform panel, GameFacilities facilities, out TMP_Text label)
-        {
-            Transform existing = panel.Find("Button_Reroll");
-            if (existing != null) UnityEngine.Object.DestroyImmediate(existing.gameObject);
-            return ButtonAt(panel, "Button_Reroll", "리롤", new Vector2(0f, 0f), new Vector2(24f, 20f),
-                new Vector2(230f, 48f), facilities.TryRerollFromButton, out label);
-        }
-
         static void SetModifiers(ItemDefinition item, params StatModifier[] modifiers)
         {
             var data = new SerializedObject(item);
@@ -366,51 +336,6 @@ namespace ProjectNeo.Editor
 
             ButtonAt(popup.panel.transform, "Button_Close", "닫기 (Esc)", new Vector2(0.5f, 0f), new Vector2(0f, 20f),
                 new Vector2(200f, 48f), equipment.Close, out _);
-            popup.panel.SetActive(false);
-            return popup;
-        }
-
-        static Popup BuildPopup(GameFlowHud hud, GameFacilities facilities)
-        {
-            Transform parent = hud.transform;
-            Transform existing = parent.Find("FacilityPanel");
-            if (existing != null) UnityEngine.Object.DestroyImmediate(existing.gameObject);
-
-            var popup = new Popup();
-            popup.panel = new GameObject("FacilityPanel", typeof(RectTransform), typeof(Image));
-            popup.panel.transform.SetParent(parent, false);
-            var rect = popup.panel.GetComponent<RectTransform>();
-            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.sizeDelta = new Vector2(780f, 540f);
-            popup.panel.GetComponent<Image>().color = new Color(0.06f, 0.08f, 0.1f, 0.94f);
-
-            popup.title = Text(popup.panel.transform, "Title", "시설", 32f, new Vector2(24f, -20f), new Vector2(-270f, -66f));
-            popup.title.fontStyle = FontStyles.Bold;
-            popup.status = Text(popup.panel.transform, "Status", "Level", 18f, new Vector2(24f, -70f), new Vector2(-24f, -122f));
-            popup.status.color = new Color(1f, 0.9f, 0.55f);
-            popup.body = Text(popup.panel.transform, "Body", "", 17f, new Vector2(24f, -126f), new Vector2(-24f, -196f));
-
-            popup.upgrade = ButtonAt(popup.panel.transform, "Button_Upgrade", "업그레이드", new Vector2(1f, 1f),
-                new Vector2(-24f, -20f), new Vector2(230f, 44f), facilities.TryUpgradeFromButton, out popup.upgradeLabel);
-
-            popup.trade = new GameObject("Trade", typeof(RectTransform));
-            popup.trade.transform.SetParent(popup.panel.transform, false);
-            var tradeRect = popup.trade.GetComponent<RectTransform>();
-            tradeRect.anchorMin = Vector2.zero; tradeRect.anchorMax = Vector2.one;
-            tradeRect.offsetMin = new Vector2(24f, 84f); tradeRect.offsetMax = new Vector2(-24f, -204f);
-            popup.offers = Column(popup.trade.transform, "Offers", "매물 (클릭해서 구매)", 0f, 0.5f);
-            popup.inventory = Column(popup.trade.transform, "Inventory", "보관함 (클릭해서 판매)", 0.5f, 1f);
-
-            popup.row = ButtonAt(popup.panel.transform, "RowTemplate", "아이템", new Vector2(0.5f, 0.5f), Vector2.zero,
-                new Vector2(340f, 34f), null, out TMP_Text rowLabel);
-            rowLabel.fontSize = 16f; rowLabel.alignment = TextAlignmentOptions.MidlineLeft;
-            rowLabel.rectTransform.offsetMin = new Vector2(10f, 0f);
-            popup.row.gameObject.AddComponent<LayoutElement>().preferredHeight = 34f;
-            popup.row.gameObject.SetActive(false);
-
-            ButtonAt(popup.panel.transform, "Button_Close", "닫기 (Esc)", new Vector2(0.5f, 0f), new Vector2(0f, 20f),
-                new Vector2(200f, 48f), facilities.Close, out _);
-            popup.reroll = RerollButton(popup.panel.transform, facilities, out popup.rerollLabel);
             popup.panel.SetActive(false);
             return popup;
         }

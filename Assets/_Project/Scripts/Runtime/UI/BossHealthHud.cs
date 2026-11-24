@@ -62,36 +62,41 @@ namespace ProjectNeo.UI
         }
 
         // 화면 위 가운데: 보스 이름, 그 아래 빨간 막대와 체력 숫자.
+        // UI-13 전투 HUD A안: 준비 HUD 사이드바와 같은 어두운 판 + 금색 테두리, 금색 이름, 어두운 홈 안의 빨간 막대.
+        // 모양 값이 없으면 예전 평평한 판이다. 위 가장자리는 전투 상황판과 같은 높이다.
         void Build()
         {
-            var root = new GameObject("BossHealthCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
-            root.transform.SetParent(transform, false);
-            var canvas = root.GetComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 30;
-            var scaler = root.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1280f, 720f);
-            scaler.matchWidthOrHeight = 0.5f;
+            HudStyle style = HudPlate.FindStyle(gameObject.scene);
+            RectTransform root = HudPlate.OverlayCanvas(transform, "BossHealthCanvas", 30);
 
-            panel = Box("BossHealth", root.transform, PanelColor);
+            panel = new GameObject("BossHealth", typeof(RectTransform));
+            panel.transform.SetParent(root, false);
             var rect = (RectTransform)panel.transform;
             rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 1f);
-            rect.anchoredPosition = new Vector2(0f, -16f);
+            rect.anchoredPosition = new Vector2(0f, -TopEdge);
             rect.sizeDelta = new Vector2(520f, 62f);
+            HudPlate.Plate(rect, style, style != null ? HudPlate.PlateColor : PanelColor);
 
-            nameLabel = Label("Name", panel.transform, 20f, FontStyles.Bold, new Vector2(0f, 0.55f), Vector2.one);
-            GameObject back = Box("Bar", panel.transform, BackColor);
+            nameLabel = Label("Name", panel.transform, 19f, FontStyles.Normal, new Vector2(0f, 0.55f), Vector2.one);
+            nameLabel.color = style != null ? HudPlate.Gold : Color.white;
+            ((RectTransform)nameLabel.transform).offsetMin = new Vector2(12f, -2f);
+            ((RectTransform)nameLabel.transform).offsetMax = new Vector2(-12f, -4f);
+            GameObject back = Box("Bar", panel.transform, style != null ? HudPlate.TrackColor : BackColor);
             var barRect = (RectTransform)back.transform;
             barRect.anchorMin = new Vector2(0f, 0f); barRect.anchorMax = new Vector2(1f, 0.55f);
-            barRect.offsetMin = new Vector2(12f, 8f); barRect.offsetMax = new Vector2(-12f, -2f);
-            GameObject filled = Box("Fill", back.transform, FillColor);
+            barRect.offsetMin = new Vector2(14f, 10f); barRect.offsetMax = new Vector2(-14f, -2f);
+            GameObject filled = Box("Fill", back.transform, style != null ? HudPlate.HealthRed : FillColor);
             fill = (RectTransform)filled.transform;
             fill.anchorMin = Vector2.zero; fill.anchorMax = Vector2.one;
-            fill.offsetMin = fill.offsetMax = Vector2.zero;
-            valueLabel = Label("Value", back.transform, 15f, FontStyles.Normal, Vector2.zero, Vector2.one);
+            fill.offsetMin = new Vector2(0f, 2f); fill.offsetMax = new Vector2(0f, -2f);
+            valueLabel = Label("Value", back.transform, 14f, FontStyles.Normal, Vector2.zero, Vector2.one);
+            valueLabel.color = HudPlate.Cream;
+            if (style != null && style.WindowFont != null) { nameLabel.font = style.WindowFont; valueLabel.font = style.WindowFont; }
             panel.SetActive(false);
         }
+
+        // 전투 상황판(0.8배 판, 가장자리 12)의 위 테두리와 같은 높이.
+        const float TopEdge = 12f * 0.8f;
 
         static GameObject Box(string name, Transform parent, Color color)
         {

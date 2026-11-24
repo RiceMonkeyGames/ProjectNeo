@@ -1,4 +1,5 @@
 using System;
+using ProjectNeo.Flow;
 using ProjectNeo.UI;
 using TMPro;
 using UnityEditor;
@@ -48,7 +49,14 @@ namespace ProjectNeo.Editor
             Health(hud);
             // UI-07 equipment window option B (user pick 2026-11-23), before the windows are moved right of the column.
             EquipmentWindowLayout.Apply(hud);
-            Popups(hud);
+            // UI-13 facility window option C (user pick 2026-11-24): screen-centered like the equipment window.
+            var facilities = UnityEngine.Object.FindAnyObjectByType<GameFacilities>(FindObjectsInactive.Include);
+            if (facilities != null)
+            {
+                var data = new SerializedObject(facilities);
+                FacilityWindowLayout.Apply(hud, facilities, (ProjectNeo.Run.RunConfig)data.FindProperty("startConfig").objectReferenceValue,
+                    (GamePhaseView)data.FindProperty("phaseView").objectReferenceValue);
+            }
             GoldChip(hud);
             IntelPanel(hud, noto);
             KeyGuide(hud, noto);
@@ -739,27 +747,6 @@ namespace ProjectNeo.Editor
             var serialized = new SerializedObject(label);
             serialized.FindProperty("m_sharedMaterial").objectReferenceValue = material;
             serialized.ApplyModifiedPropertiesWithoutUndo();
-        }
-
-        // Facility and equipment windows (GameFacilitySetup, centered 780 wide) are centered in the space right of the column
-        // instead, so they never sit under the column (the top bar draws over them). Rerunning GameFacilitySetup recenters
-        // them; run this menu again afterwards.
-        const float CanvasWidth = 1280f;
-
-        static void Popups(GameFlowHud hud)
-        {
-            // Center of [column right edge + margin, canvas right edge - margin], measured from the canvas center.
-            float shift = (Width + Edge) * 0.5f;
-            // The equipment window is screen-centered instead (UI-07, user 2026-11-23); at 780 wide it clears the 0.8-scaled
-            // sidebar (EquipmentWindowLayout).
-            foreach (string name in new[] { "FacilityPanel" })
-            {
-                var popup = (RectTransform)hud.transform.Find(name);
-                if (popup == null) continue;
-                float room = CanvasWidth - (Edge + Width + Edge) - Edge;
-                if (popup.sizeDelta.x > room) Debug.LogWarning($"{name} is wider than the space right of the sidebar.");
-                popup.anchoredPosition = new Vector2(shift, popup.anchoredPosition.y);
-            }
         }
     }
 }

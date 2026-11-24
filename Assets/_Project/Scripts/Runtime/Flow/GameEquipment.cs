@@ -59,6 +59,8 @@ namespace ProjectNeo.Flow
         [SerializeField] TMP_Text skillDetail;
         // 자동 사용 상태 색 판(사용자 2026-11-23: 켜지면 초록 판, 꺼지면 회색 판, 누르면 바뀐다). 영웅만 보인다.
         [SerializeField] Button autoPlate;
+        // UI-13(사용자 2026-11-24): 장비와 스킬을 탭 없이 한 창에 나란히 보인다(O·K 창과 같은 800×560).
+        [SerializeField] bool sideBySide;
         int selectedSkill;
         readonly List<Button> rows = new List<Button>();
         readonly List<EquipmentSlotView> slots = new List<EquipmentSlotView>();
@@ -103,6 +105,10 @@ namespace ProjectNeo.Flow
 
         /// <summary>스킬 탭 삼각형 화면이 연결돼 있는지.</summary>
         public bool SkillTriangle => skillPanel != null && skillCircles != null && skillCircles.Length == SkillSlotRules.MaxSlots && skillDetail != null;
+        /// <summary>장비와 스킬을 한 창에 나란히 보이는지(탭 없음).</summary>
+        public bool SideBySide => sideBySide && PaperDoll && SkillTriangle;
+        /// <summary>스킬 칸이 지금 보이는지(나란히 보기이거나 스킬 보기).</summary>
+        public bool SkillsShown => SideBySide || SkillView;
         /// <summary>스킬 탭에서 고른 칸(0부터).</summary>
         public int SelectedSkillSlot => selectedSkill;
         /// <summary>스킬 탭 설명 칸 글(테스트용).</summary>
@@ -118,6 +124,9 @@ namespace ProjectNeo.Flow
         {
             skillPanel = view; skillCircles = circles ?? new SkillCircleView[0]; skillDetail = detailLabel; autoPlate = auto;
         }
+
+        /// <summary>장비와 스킬을 나란히 보일지 정한다(에디터 설치 코드).</summary>
+        public void ConfigureSideBySide(bool value) => sideBySide = value;
 
         /// <summary>UI-07 B안 화면을 연결한다(에디터 설치 코드).</summary>
         public void ConfigurePaperDoll(GameObject gear, GameObject lists, EquipmentSlotView template, RectTransform worn,
@@ -233,7 +242,7 @@ namespace ProjectNeo.Flow
         /// <summary>스킬 탭에서 칸을 고르고 아래 설명 칸에 보여 준다. 잠긴 칸도 고를 수 있다.</summary>
         public bool SelectSkill(int slot)
         {
-            if (!IsOpen || !SkillView || slot < 0 || slot >= SkillSlotRules.MaxSlots) return false;
+            if (!IsOpen || !SkillsShown || slot < 0 || slot >= SkillSlotRules.MaxSlots) return false;
             selectedSkill = slot;
             Rebuild();
             return true;
@@ -249,6 +258,7 @@ namespace ProjectNeo.Flow
             selected = Player;
             SkillView = false;
             selectedSkill = 0;
+            PopupBackdrop.Attach(panel);
             panel.SetActive(true);
             Rebuild();
             return true;
@@ -310,7 +320,7 @@ namespace ProjectNeo.Flow
         /// <summary>장비 보기와 스킬 보기를 바꾼다.</summary>
         public bool ToggleView()
         {
-            if (!IsOpen) return false;
+            if (!IsOpen || SideBySide) return false;
             SkillView = !SkillView;
             selectedSkill = 0;
             Message = string.Empty;
@@ -322,7 +332,7 @@ namespace ProjectNeo.Flow
         public bool ToggleHeroAuto()
         {
             RunHero hero = SelectedHero;
-            if (!IsOpen || !SkillView || hero == null || hero.IsPlayer) return false;
+            if (!IsOpen || !SkillsShown || hero == null || hero.IsPlayer) return false;
             hero.SkillAuto = !hero.SkillAuto;
             Message = hero.SkillAuto ? "자동 사용 켜짐: 영웅이 알아서 스킬을 씁니다." : "자동 사용 꺼짐: 부대를 고르고 Alt + 스킬 키로 시킵니다.";
             Rebuild();
@@ -359,6 +369,12 @@ namespace ProjectNeo.Flow
             if (inventoryHeader != null)
                 inventoryHeader.text = SkillView ? "스킬 사용" : inventoryHeaderText;
             RefreshChrome(state, hero);
+            if (SideBySide)
+            {
+                RebuildPaperDoll(state, hero);
+                RebuildSkillTab(hero, battle != null ? battle.Skills : null);
+                return;
+            }
             if (SkillView)
             {
                 RebuildSkills(state, hero);
@@ -406,12 +422,18 @@ namespace ProjectNeo.Flow
         void RefreshChrome(RunState state, RunHero hero)
         {
             if (!PaperDoll) return;
-            gearView.SetActive(!SkillView);
-            if (listView != null) listView.SetActive(SkillView && !SkillTriangle);
-            if (skillPanel != null) skillPanel.SetActive(SkillView && SkillTriangle);
-            if (autoPlate != null) autoPlate.gameObject.SetActive(SkillView && SkillTriangle && !hero.IsPlayer);
-            SetTab(gearTab, !SkillView);
-            SetTab(skillTab, SkillView);
+            if (SideBySide)
+            {
+                gearView.SetActive(true);
+                if (listView != null) listView.SetActive(false);
+                skillPanel.SetActive(true);
+                if (autoPlate != null) autoPlate.gameObject.SetActive(!hero.IsPlayer);
+                if (gearTab != null) gearTab.gameObject.SetActive(false);
+                if (skillTab != null) skillTab.gameObject.SetActive(false);
+                if (status != null) status.gameObject.SetActive(false);
+                if (body != null) body.gameObject.SetActive(false);
+            }
+            else RefreshViewChrome(hero);
             bool many = state.Heroes.Count > 1;
             if (previousHero != null) previousHero.gameObject.SetActive(many);
             if (nextHero != null) nextHero.gameObject.SetActive(many);
@@ -421,6 +443,17 @@ namespace ProjectNeo.Flow
                 heroName.gameObject.SetActive(many);
                 heroName.text = hero.Definition.DisplayName;
             }
+        }
+
+        // 탭 보기: 장비 보기(격자)·스킬 보기 중 하나만 보이게 한다.
+        void RefreshViewChrome(RunHero hero)
+        {
+            gearView.SetActive(!SkillView);
+            if (listView != null) listView.SetActive(SkillView && !SkillTriangle);
+            if (skillPanel != null) skillPanel.SetActive(SkillView && SkillTriangle);
+            if (autoPlate != null) autoPlate.gameObject.SetActive(SkillView && SkillTriangle && !hero.IsPlayer);
+            SetTab(gearTab, !SkillView);
+            SetTab(skillTab, SkillView);
             // 장비 보기에서는 "장비 칸 n / 4" 줄을 감춘다(글은 테스트용으로 계속 쓴다). 스킬 보기에서는 보인다.
             if (status != null) status.gameObject.SetActive(SkillView && !SkillTriangle);
             // 장비 보기에는 "나무 방패 장착" 같은 알림 줄도 두지 않는다(사용자 2026-11-23). 스킬 보기 안내는 남긴다.

@@ -106,6 +106,8 @@ namespace ProjectNeo.Walls
         public IReadOnlyCollection<Vector2Int> Rubble => rubble;
         public IReadOnlyDictionary<Vector2Int, StairRoom> Rooms => rooms;
         public Transform Container => container;
+        /// <summary>이 칸을 꾸민 킷 조각들의 부모. 꾸미지 않은 칸이면 null(UI-13 해체 미리보기가 잠깐 숨긴다).</summary>
+        public GameObject CellRoot(Vector2Int cell) => built.TryGetValue(cell, out Built entry) ? entry.Root : null;
         public int BuiltCellCount
         {
             get

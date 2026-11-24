@@ -68,21 +68,23 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
-        public void Window_FirstClickArms_SecondClickTakes()
+        public void Window_SelectOnlyPicks_AcquireTakes()
         {
             var window = new PerkWindowModel(run, catalog);
 
-            Assert.AreEqual(UnlockClickResult.Armed, window.Click(blade));
-            Assert.AreEqual(0, run.Perks.Allocated.Count, "첫 클릭은 찍지 않는다");
-            StringAssert.Contains("한 번 더 클릭해서 획득 (1포인트)", window.EntryText(blade));
+            window.Select(blade);
+            Assert.AreSame(blade, window.SelectedPerk);
+            Assert.AreEqual(0, run.Perks.Allocated.Count, "고르기만 하고 찍지 않는다");
+            StringAssert.Contains("Sharpened Blade", window.DetailText(blade));
+            StringAssert.DoesNotContain("포인트", window.DetailText(blade), "모든 퍽이 1포인트라 비용은 보이지 않는다");
 
-            Assert.AreEqual(UnlockClickResult.Opened, window.Click(blade));
+            Assert.AreEqual(UnlockClickResult.Opened, window.Acquire());
 
             CollectionAssert.AreEqual(new[] { blade }, run.Perks.Allocated);
             Assert.AreEqual("Sharpened Blade 획득.", window.Notice);
             StringAssert.Contains("획득함", window.EntryText(blade));
+            Assert.AreEqual("획득함", window.AcquireLabel);
             Assert.AreEqual("특성 포인트: 2 남음 (사용 1)", window.PointsText);
-            Assert.IsNull(window.ArmedPerk);
         }
 
         [Test]
@@ -91,15 +93,19 @@ namespace ProjectNeo.Tests
             var window = new PerkWindowModel(run, catalog);
             StringAssert.Contains("필요: Toughness, Swift Strikes", window.EntryText(champion));
 
-            Assert.AreEqual(UnlockClickResult.Refused, window.Click(toughness));
+            Assert.AreEqual(UnlockClickResult.Refused, window.Acquire(), "고른 퍽이 없으면 얻지 못한다");
+
+            window.Select(toughness);
+            Assert.AreEqual(UnlockClickResult.Refused, window.Acquire());
             Assert.AreEqual("먼저 Sharpened Blade을(를) 얻으세요.", window.Notice);
 
-            window.Click(blade); window.Click(blade);
-            Assert.AreEqual(UnlockClickResult.Refused, window.Click(blade));
+            window.Select(blade); window.Acquire();
+            Assert.AreEqual(UnlockClickResult.Refused, window.Acquire());
             Assert.AreEqual("Sharpened Blade은(는) 이미 얻었습니다.", window.Notice);
 
             run.CreateBattleInput(1);
-            Assert.AreEqual(UnlockClickResult.Refused, window.Click(toughness));
+            window.Select(toughness);
+            Assert.AreEqual(UnlockClickResult.Refused, window.Acquire());
             Assert.AreEqual("전투 중에는 특성을 얻을 수 없습니다.", window.Notice);
         }
 

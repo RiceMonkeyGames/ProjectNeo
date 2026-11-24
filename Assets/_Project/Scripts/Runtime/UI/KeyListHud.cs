@@ -101,9 +101,15 @@ namespace ProjectNeo.UI
                 return;
             }
 
-            if (content.activeSelf != exploration) content.SetActive(exploration);
+            // UI-13: 부대 배치 화면(P)에서도 같은 자리에 그 화면의 키를 보여 준다.
+            bool placement = GameSession.Flow.Phase == GamePhase.Preparation && phaseView != null && phaseView.IsPlacementView;
+            // UI-13: 건설 모드도 같은 자리, 같은 키캡 줄로 그 화면의 키를 보여 준다(예전 오른쪽 위 시점 안내·아래 판을 대신한다).
+            bool build = GameSession.Flow.Phase == GamePhase.Preparation && BuildShowing;
+            // UI-13 전투 HUD A안: 전투 중에도 같은 자리에 전투 키를 보여 준다(예전 아래 긴 키 안내 상자를 대신한다).
+            bool visible = exploration || placement || build || BattleShowing;
+            if (content.activeSelf != visible) content.SetActive(visible);
             if (toggleHint != null && toggleHint.gameObject.activeSelf) toggleHint.gameObject.SetActive(false);
-            if (!exploration) return;
+            if (!visible) return;
             BuildGuide();
             ShowRows();
             if (body != null) body.text = PrepHudText.KeyList(guide);
@@ -124,7 +130,7 @@ namespace ProjectNeo.UI
                 if (rows[i].gameObject.activeSelf != used) rows[i].gameObject.SetActive(used);
                 if (!used) continue;
                 rows[i].Show(guide[i]);
-                rows[i].Align(!ListOpen);
+                rows[i].Align(!ListOpen && !PlacementShowing && !BuildShowing);
             }
         }
 
@@ -136,6 +142,9 @@ namespace ProjectNeo.UI
         {
             guide.Clear();
             if (interaction == null) return guide;
+            if (PlacementShowing) return BuildPlacementGuide();
+            if (BuildShowing) return BuildConstructionGuide();
+            if (BattleShowing && ListOpen) return BuildBattleGuide();
             if (!ListOpen)
             {
                 guide.Add(new KeyHint(interaction.KeyListKey, "키 가이드 보기"));
@@ -163,6 +172,83 @@ namespace ProjectNeo.UI
                 guide.Add(new KeyHint(interaction.WaitKey, $"{battle.RunLink.State.PrepTime.WaitHours:0.#}시간 기다리기", true));
             if (battle != null && battle.PauseMenu != null) guide.Add(new KeyHint(battle.PauseMenu.KeyText, "메뉴"));
             guide.Add(new KeyHint(interaction.KeyListKey, "가이드 숨기기"));
+            for (int i = guide.Count - 1; i >= 0; i--)
+                if (guide[i].Key.Length == 0 || guide[i].Action.Length == 0) guide.RemoveAt(i);
+            return guide;
+        }
+
+        bool PlacementShowing => phaseView != null && phaseView.IsPlacementView;
+        // 전투 상황판(UI-13)이 있는 씬만 전투 키 가이드를 쓴다. 예전 씬은 부대 지휘 HUD의 아래 키 안내 상자를 쓴다.
+        bool BattleShowing => GameSession.Flow.Phase == GamePhase.Battle && BattleStatusHud.Showing && rowTemplate != null;
+
+        /// <summary>
+        /// 전투 키 가이드(UI-13 전투 HUD A안). 부대 선택·페이지·명령, 전열 끌기·진형, 영웅 스킬 보조 키, 소모품(이름과 남은 수),
+        /// 상호작용(대포·사다리), 접기(H). 플레이어 스킬 키(Z/X/C)는 아래 가운데 스킬 칸에 적혀 있어 넣지 않는다.
+        /// 준비 탐색처럼 줄 순서는 늘 같고, H로 접으면 H 한 줄만 남는다.
+        /// </summary>
+        IReadOnlyList<KeyHint> BuildBattleGuide()
+        {
+            SquadCommandSettings squads = center != null ? center.Settings : null;
+            if (squads != null)
+            {
+                guide.Add(SelectHint(squads));
+                guide.Add(new KeyHint(squads.SelectAll.GetBindingDisplayString(), "전체 선택/해제"));
+                guide.Add(PageHint(squads));
+                guide.Add(new KeyHint(squads.Move.GetBindingDisplayString(), "부대 이동"));
+                guide.Add(new KeyHint(squads.Attack.GetBindingDisplayString(), "부대 공격"));
+                guide.Add(new KeyHint(squads.Hold.GetBindingDisplayString(), "부대 정지"));
+                guide.Add(new KeyHint(Display(squads.DragFormation, "RMB"), "끌어서 전열"));
+                guide.Add(new KeyHint(Display(squads.CycleFormation, "G"), "진형 바꾸기"));
+            }
+            if (battle != null && battle.Skills != null) guide.Add(new KeyHint(battle.Skills.ModifierKey, "영웅 스킬 (+ 스킬 키)"));
+            if (battle != null && battle.Consumables != null) guide.Add(new KeyHint(battle.Consumables.UseKey, battle.Consumables.GuideText()));
+            guide.Add(new KeyHint(interaction.InteractKey, "상호작용"));
+            guide.Add(new KeyHint(interaction.KeyListKey, "가이드 숨기기"));
+            for (int i = guide.Count - 1; i >= 0; i--)
+                if (guide[i].Key.Length == 0 || guide[i].Action.Length == 0) guide.RemoveAt(i);
+            return guide;
+        }
+
+        // 예전 설정 에셋에는 진형 키가 비어 있을 수 있어 기본 키 이름을 쓴다(SquadCommandHud와 같다).
+        static string Display(InputAction action, string fallback) =>
+            action != null && action.bindings.Count > 0 ? action.GetBindingDisplayString() : fallback;
+        // 건설 막대(UI-13)가 있는 씬만 건설 키 가이드를 쓴다. 예전 씬은 건설 화면 자체 안내를 쓴다.
+        bool BuildShowing => phaseView != null && phaseView.IsBuildView && ConstructionBarHud.Showing;
+
+        /// <summary>
+        /// 건설 모드 키 가이드(UI-13). 조각 회전·취소와 건설 카메라 키(돌리기·이동·확대·초기화), 돌아가기. 접기(H)는 쓰지 않는다.
+        /// R·Q·E·Home은 건설 도구와 카메라가 키보드에서 바로 읽는 고정 키다.
+        /// </summary>
+        IReadOnlyList<KeyHint> BuildConstructionGuide()
+        {
+            guide.Add(new KeyHint("LMB", "조각 놓기"));
+            guide.Add(new KeyHint("R", "조각 회전"));
+            guide.Add(new KeyHint("RMB", "취소"));
+            guide.Add(new KeyHint("Q", "시점 돌리기", false, "E"));
+            guide.Add(new KeyHint("MMB", "화면 이동"));
+            guide.Add(new KeyHint("Wheel", "확대/축소"));
+            guide.Add(new KeyHint("Home", "시점 초기화"));
+            guide.Add(new KeyHint(interaction.InteractKey, "돌아가기", false, interaction.CloseKey));
+            for (int i = guide.Count - 1; i >= 0; i--)
+                if (guide[i].Key.Length == 0 || guide[i].Action.Length == 0) guide.RemoveAt(i);
+            return guide;
+        }
+
+        /// <summary>
+        /// 부대 배치 화면(P) 키 가이드(UI-13). 예전 아래 안내 두 줄을 키캡 줄로 바꾼 것이다. 마우스 동작은 이름 그대로 키캡에 적는다.
+        /// 접기(H)는 이 화면에서 쓰지 않는다.
+        /// </summary>
+        IReadOnlyList<KeyHint> BuildPlacementGuide()
+        {
+            SquadCommandSettings squads = center != null ? center.Settings : null;
+            if (squads != null)
+            {
+                guide.Add(SelectHint(squads));
+                guide.Add(new KeyHint(squads.SelectAll.GetBindingDisplayString(), "전체 선택/해제"));
+            }
+            guide.Add(new KeyHint("LMB", "부대 배치"));
+            guide.Add(new KeyHint("RMB", "선택 해제"));
+            guide.Add(new KeyHint(interaction.PlacementKey, "돌아가기", false, interaction.CloseKey));
             for (int i = guide.Count - 1; i >= 0; i--)
                 if (guide[i].Key.Length == 0 || guide[i].Action.Length == 0) guide.RemoveAt(i);
             return guide;

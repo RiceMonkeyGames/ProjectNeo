@@ -137,10 +137,28 @@ namespace ProjectNeo.UI
             bool ringExploration = holdRing != null && contextPrompt != null && preparation && phaseView.IsExplorationView && battle != null;
             // UI-07: 시설·장비·편성·특성 창은 모두 자기 닫기 버튼이 있어, 창이 열린 동안 아래 "Esc 닫기" 판은 겹치는 안내라 숨긴다.
             bool panelOpen = phaseView.IsPanelView;
-            interactionHint.transform.parent.gameObject.SetActive(preparation && !ringExploration && !panelOpen);
+            // UI-13: 부대 배치 화면은 아래 판 대신 키 가이드(KeyListHud)와 경고 한 줄(noticeLine)을 쓴다. 한 줄 칸이 없는 예전 씬은 판 글을 쓴다.
+            bool placementNotice = preparation && phaseView.IsPlacementView && noticeLine != null;
+            // UI-13: 건설 모드는 건설 막대 옆 키 가이드가 "Esc 돌아가기"를 보여 주므로 아래 판을 숨긴다(막대가 없는 예전 씬은 판을 쓴다).
+            bool buildBar = preparation && phaseView.IsBuildView && ConstructionBarHud.Showing;
+            interactionHint.transform.parent.gameObject.SetActive(preparation && !ringExploration && !panelOpen && !placementNotice && !buildBar);
             if (!ringExploration) ShowRing(false, string.Empty);
-            ShowContextPrompt(preparation && phaseView.IsExplorationView && interaction.Target != null);
-            if (battleStatus != null) battleStatus.transform.parent.gameObject.SetActive(fighting || rewarding || runEnded || ending);
+            if (placementNotice)
+            {
+                string placementMessage = phaseView.PrepPlacement != null ? phaseView.PrepPlacement.Message : string.Empty;
+                bool showMessage = placementMessage.Length > 0;
+                if (noticeLine.gameObject.activeSelf != showMessage) noticeLine.gameObject.SetActive(showMessage);
+                if (showMessage) noticeLine.text = placementMessage;
+            }
+            // UI-13 전투 HUD A안: 전투 상황판이 있으면 예전 오른쪽 위 글 상자 대신 상황판을 쓰고, 대포·사다리 안내는 조준점 아래,
+            // 끊김 같은 알림은 스킬 칸 위 경고 한 줄로 옮긴다. 글 상자의 글(StatusText)은 그대로 만든다.
+            bool battleHud = fighting && BattleStatusHud.Showing;
+            string battleKey = string.Empty, battleAction = string.Empty, battleNotice = string.Empty;
+            if (battleHud) BattlePrompt(out battleKey, out battleAction, out battleNotice);
+            PlaceNotice(battleHud);
+            ShowContextPrompt(preparation && phaseView.IsExplorationView && interaction.Target != null || battleAction.Length > 0);
+            if (battleHud) ShowBattlePrompt(battleKey, battleAction, battleNotice);
+            if (battleStatus != null) battleStatus.transform.parent.gameObject.SetActive(fighting && !battleHud || rewarding || runEnded || ending);
             if (ending)
             {
                 // 엔딩(FLOW-03): 깬 단계·열린 승천 단계 아래에 런 종료 해금 포인트(META-08)를 보여준다.
@@ -219,7 +237,7 @@ namespace ProjectNeo.UI
             prompt.sizeDelta = new Vector2(-32f, tall ? 96f : 64f);
             interactionHint.text = phaseView.IsBuildView
                 ? $"건설 - {interaction.CloseKey} 돌아가기"
-                : phaseView.IsPlacementView ? PlacementHint()
+                : phaseView.IsPlacementView ? (noticeLine != null ? string.Empty : PlacementHint())
                 : phaseView.IsPanelView
                 ? $"{interaction.CloseKey} 닫기"
                 : shortHints ? string.Empty
@@ -231,6 +249,7 @@ namespace ProjectNeo.UI
             {
                 if (contextKey != null)
                 {
+                    ShowContextKey(true);
                     contextKey.text = interaction.InteractKey;
                     contextPrompt.text = interaction.Target.Prompt;
                 }
@@ -305,6 +324,86 @@ namespace ProjectNeo.UI
         }
 
         static string Join(string first, string second) => first.Length == 0 ? second : first + "\n" + second;
+
+        // 전투 중 경고 한 줄은 아래 가운데 스킬 칸(SkillHud) 위로 올린다. 준비 화면에서는 원래 자리로 돌린다.
+        const float BattleNoticeY = 110f;
+        Vector2? noticeHome;
+
+        void PlaceNotice(bool battleHud)
+        {
+            if (noticeLine == null) return;
+            var rect = noticeLine.rectTransform;
+            if (noticeHome == null) noticeHome = rect.anchoredPosition;
+            Vector2 at = battleHud ? new Vector2(noticeHome.Value.x, BattleNoticeY) : noticeHome.Value;
+            if (rect.anchoredPosition != at) rect.anchoredPosition = at;
+        }
+
+        /// <summary>
+        /// 전투 중 조준점 아래 안내와 경고 한 줄(UI-13 전투 HUD A안). 대포에 타 있으면 발사·장전 상태와 내리기, 사다리를 밀 수 있으면
+        /// 밀기 키와 %, 사다리를 타는 중이면 오르내리기 안내, 대포 가까이면 잡기 키. 사다리 밀기 끊김·대포 알림은 경고 줄로 보낸다.
+        /// </summary>
+        void BattlePrompt(out string key, out string action, out string notice)
+        {
+            key = action = notice = string.Empty;
+            CannonModule manned = cannonOperator != null ? cannonOperator.Manned : null;
+            if (cannonOperator != null && !string.IsNullOrEmpty(cannonOperator.Message)) notice = cannonOperator.Message;
+            if (manned != null)
+            {
+                string reload = manned.Reload.IsReady ? "장전됨" : $"재장전 {Mathf.FloorToInt(manned.Reload.Progress * 100f)}%";
+                key = "LMB";
+                action = $"발사 · {reload} · {cannonOperator.InteractKey}/Esc 내리기";
+                return;
+            }
+            foreach (var ladder in battle.Ladders)
+                if (ladder.PlayerCanPush)
+                {
+                    key = battle.Settings.Siege.PushLadder.GetBindingDisplayString();
+                    action = $"사다리 밀기 {Mathf.RoundToInt(ladder.State.PushProgress * 100f)}%";
+                    break;
+                }
+            foreach (var actor in ProjectNeo.Combat.CharacterActor.ActiveActors)
+            {
+                if (actor.gameObject.scene != gameObject.scene || actor.GetComponent<ProjectNeo.Characters.PlayerInputController>() == null) continue;
+                var traveller = actor.GetComponent<LadderTraveller>();
+                if (traveller != null)
+                {
+                    if (traveller.HasInterruptNotice) notice = "공격을 받아 사다리 밀기가 끊겼습니다!";
+                    if (action.Length == 0 && traveller.PlayerHint.Length > 0) action = traveller.PlayerHint;
+                }
+                break;
+            }
+            if (action.Length == 0 && cannonOperator != null && cannonOperator.Nearby != null)
+            {
+                key = cannonOperator.InteractKey;
+                action = "대포 잡기";
+            }
+        }
+
+        void ShowBattlePrompt(string key, string action, string notice)
+        {
+            if (action.Length > 0 && contextPrompt != null)
+            {
+                if (contextKey != null)
+                {
+                    ShowContextKey(key.Length > 0);
+                    contextKey.text = key;
+                    contextPrompt.text = action;
+                }
+                else contextPrompt.text = key.Length > 0 ? PrepHudText.ContextPrompt(key, action) : action;
+            }
+            if (noticeLine == null) return;
+            bool show = notice.Length > 0;
+            if (noticeLine.gameObject.activeSelf != show) noticeLine.gameObject.SetActive(show);
+            if (show) noticeLine.text = notice;
+        }
+
+        // 조준점 아래 키캡(UI-07 A안). 키가 없는 안내(사다리 오르내리기)는 키캡을 숨긴다.
+        void ShowContextKey(bool visible)
+        {
+            if (contextKey == null) return;
+            GameObject cap = contextKey.transform.parent.gameObject;
+            if (cap.activeSelf != visible) cap.SetActive(visible);
+        }
 
         void ShowContextPrompt(bool visible)
         {

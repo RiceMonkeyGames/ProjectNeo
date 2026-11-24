@@ -53,6 +53,10 @@ namespace ProjectNeo.UI
         [SerializeField, Min(0.1f)] float windowFramePixelsPerUnit = 10f;
         [SerializeField] Color windowAccent = new Color32(0xE3, 0xBB, 0x71, 0xFF);
         [SerializeField] TMP_FontAsset windowFont;
+        [Tooltip("코드로 만드는 창의 판 단추(편성 창 '편성 확정'과 같은 결 있는 푸른 판 Box_Background01). 비어 있으면 단색 판.")]
+        [SerializeField] Sprite windowButtonPlateSprite;
+        [Tooltip("판 단추의 옅은 청동 테두리(Frame_Box12). 비어 있으면 창 테두리 그림을 쓴다.")]
+        [SerializeField] Sprite windowButtonFrameSprite;
 
         public Color Panel => panel;
         public Color PanelSelected => panelSelected;
@@ -90,6 +94,8 @@ namespace ProjectNeo.UI
         public float WindowFramePixelsPerUnit => windowFramePixelsPerUnit;
         public Color WindowAccent => windowAccent;
         public TMP_FontAsset WindowFont => windowFont;
+        public Sprite WindowButtonPlateSprite => windowButtonPlateSprite;
+        public Sprite WindowButtonFrameSprite => windowButtonFrameSprite;
 
         public static HudStyle Create() => CreateInstance<HudStyle>();
     }

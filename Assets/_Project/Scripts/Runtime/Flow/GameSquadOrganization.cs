@@ -95,6 +95,7 @@ namespace ProjectNeo.Flow
             IsOpen = true;
             Message = string.Empty;
             SelectedSquad = state.Army.Squads.Count > 0 ? 0 : -1;
+            PopupBackdrop.Attach(panel);
             panel.SetActive(true);
             Rebuild();
             return true;
