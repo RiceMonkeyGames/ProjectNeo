@@ -291,9 +291,11 @@ namespace ProjectNeo.Flow
             if (facility == null) return false;
             if (facility.IsMaxLevel) { Message = "이미 최고 레벨입니다."; return Done(false); }
             Cost cost = facility.NextUpgradeCost;
-            bool upgraded = State.TryUpgradeFacility(OpenFacility.Value);
+            FacilityUpgradeCheck check = State.CheckUpgradeFacility(OpenFacility.Value);
+            bool upgraded = check == FacilityUpgradeCheck.Ok && State.TryUpgradeFacility(OpenFacility.Value);
             if (upgraded && OpenFacility == FacilityType.TrainingGround) battle.RunLink.ApplyTraining();
-            Message = upgraded ? $"레벨 {facility.Level + 1}(으)로 업그레이드 · {Describe(cost)}" : "자금 부족: " + Describe(cost);
+            Message = upgraded ? $"레벨 {facility.Level + 1}(으)로 업그레이드 · {Describe(cost)}"
+                : check == FacilityUpgradeCheck.NotEnoughTime ? "시간이 부족합니다." : "자금 부족: " + Describe(cost);
             return Done(upgraded);
         }
 
@@ -614,7 +616,8 @@ namespace ProjectNeo.Flow
             if (window.status != null)
                 window.status.text = $"레벨 {facility.Level + 1} / {facility.Definition.Levels.Count} · " + DescribeWallet(state.Wallet);
             if (window.upgradeLabel != null)
-                window.upgradeLabel.text = facility.IsMaxLevel ? "최고 레벨" : "업그레이드 · " + Describe(facility.NextUpgradeCost);
+                window.upgradeLabel.text = facility.IsMaxLevel ? "최고 레벨"
+                    : "업그레이드 · " + Describe(facility.NextUpgradeCost) + WorkTime(state, state.FacilityUpgradeHours, RunState.DirectActionArtisans);
             if (window.upgradeButton != null) window.upgradeButton.interactable = !facility.IsMaxLevel;
 
             offerEntries.Clear();
@@ -841,7 +844,7 @@ namespace ProjectNeo.Flow
                 offerEntries.Add(new Entry
                 {
                     Name = recipe.item.DisplayName, Sub = Gold(recipe.cost), Icon = recipe.item.Icon,
-                    Price = Gold(recipe.cost), Detail = DescribeItem(recipe.item) + "\n\n" + CostLines(recipe.cost, state, craftHours),
+                    Price = Gold(recipe.cost), Detail = DescribeItem(recipe.item) + "\n\n" + CostLines(recipe.cost, state, craftHours, RunState.DirectActionArtisans),
                     Dim = !state.Wallet.CanAfford(recipe.cost),
                     Action = "제작", OnAction = () => TryCraft(index),
                 });
@@ -856,7 +859,7 @@ namespace ProjectNeo.Flow
                 Cost cost = default;
                 bool hasCost = state.EquipmentUpgrades != null && state.EquipmentUpgrades.TryGetNextCost(item, out cost);
                 string upgrade = check == EquipmentUpgradeCheck.MaximumLevel ? $"강화 최대 +{state.MaxEquipmentUpgrade}"
-                    : hasCost ? $"+{item.UpgradeLevel + 1} 강화\n" + CostLines(cost, state, upgradeHours) : UpgradeReason(check);
+                    : hasCost ? $"+{item.UpgradeLevel + 1} 강화\n" + CostLines(cost, state, upgradeHours, RunState.DirectActionArtisans) : UpgradeReason(check);
                 int sell = state.Shop.GetInstanceSellPrice(item);
                 bool canTry = check == EquipmentUpgradeCheck.Allowed || check == EquipmentUpgradeCheck.NotEnoughFunds
                     || check == EquipmentUpgradeCheck.NotEnoughTime;
@@ -1022,7 +1025,17 @@ namespace ProjectNeo.Flow
 
         // 상세 본문의 비용 목록(사용자 2026-11-24: 한 줄 칸에는 골드만, 재료·시간은 여기에 한 줄씩 가진 수와 함께).
         // 모자라는 줄은 붉게 칠한다.
-        static string CostLines(Cost cost, RunState state, float hours)
+        /// <summary>
+        /// 시간을 쓰는 행동의 짧은 꼬리(PREP-11): " · 1시간 · 장인 1명". 시간 설정이 없거나 0시간이면 비어 있다.
+        /// 장인을 쓰지 않는 행동(승급)은 시간만 붙는다.
+        /// </summary>
+        public static string WorkTime(RunState state, float hours, int artisans)
+        {
+            if (state == null || state.PrepTime == null || hours <= 0f) return string.Empty;
+            return artisans > 0 ? $" · {hours:0.#}시간 · 장인 {artisans}명" : $" · {hours:0.#}시간";
+        }
+
+        static string CostLines(Cost cost, RunState state, float hours, int artisans = 0)
         {
             const string Short = "<color=#D98A7A>", End = "</color>";
             Wallet wallet = state.Wallet;
@@ -1038,7 +1051,8 @@ namespace ProjectNeo.Flow
                     line = $"\n· {entry.material.DisplayName} {entry.amount} (보유 {owned})";
                     text.Append(owned < entry.amount ? Short + line + End : line);
                 }
-            if (state.PrepTime != null && hours > 0f) text.Append($"\n· 준비 시간 {hours:0.#}시간");
+            if (state.PrepTime != null && hours > 0f)
+                text.Append(artisans > 0 ? $"\n· 준비 시간 {hours:0.#}시간 · 장인 {artisans}명" : $"\n· 준비 시간 {hours:0.#}시간");
             return text.ToString();
         }
 

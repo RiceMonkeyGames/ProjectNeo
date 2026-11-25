@@ -36,6 +36,8 @@ namespace ProjectNeo.Flow
 
         public bool Dismantling { get; private set; }
         public string Message { get; private set; } = string.Empty;
+        /// <summary>건설 막대 상태 띠 오른쪽에 보일 결과 안내를 바꾼다(PREP-11 작업 탭: 고용·취소 결과).</summary>
+        public void Notify(string message) => Message = message ?? string.Empty;
         public BuildEconomy Economy => EnsureEconomy();
         public BuildCostTable Table => table;
         public RunConfig StartConfig => startConfig;

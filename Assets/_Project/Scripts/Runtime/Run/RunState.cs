@@ -321,11 +321,16 @@ namespace ProjectNeo.Run
             return true;
         }
 
-        /// <summary>시설을 런 지갑으로 한 레벨 올린다(D-1). 없는 시설·최대 레벨·비용 부족이면 false.</summary>
+        /// <summary>
+        /// 시설을 런 지갑으로 한 레벨 올린다(D-1). 준비 시간을 <see cref="FacilityUpgradeHours"/>만큼 쓰고 그동안 장인 1명이 일한다(PREP-11).
+        /// <see cref="CheckUpgradeFacility"/>가 Ok가 아니면 false이고 골드도 시간도 쓰지 않는다.
+        /// </summary>
         public bool TryUpgradeFacility(FacilityType type)
         {
-            FacilityState facility = Facility(type);
-            return facility != null && facility.TryUpgrade(Wallet);
+            if (CheckUpgradeFacility(type) != FacilityUpgradeCheck.Ok) return false;
+            if (!Facility(type).TryUpgrade(Wallet)) return false;
+            if (!HasPendingBattle) TrySpendPrepTime(FacilityUpgradeHours, DirectActionArtisans);
+            return true;
         }
 
         /// <summary>종류로 시설 상태를 찾는다. 없으면 null.</summary>
@@ -531,7 +536,7 @@ namespace ProjectNeo.Run
             if (CheckCraft(item, isAvailable) != CraftCheck.Ok) return null;
             TryFindRecipe(item, isAvailable, out CraftingRecipe recipe);
             if (!Wallet.TrySpend(recipe.cost)) return null;
-            TrySpendPrepTime(CraftHours);
+            TrySpendPrepTime(CraftHours, DirectActionArtisans);
             ItemInstance crafted = Inventory.Add(item);
             Changed?.Invoke();
             return crafted;
@@ -560,7 +565,7 @@ namespace ProjectNeo.Run
         {
             if (CheckUpgradeEquipment(item) != EquipmentUpgradeCheck.Allowed) return false;
             if (!EquipmentUpgrades.TryUpgrade(item, Inventory, Wallet, Smithy.Level)) return false;
-            TrySpendPrepTime(UpgradeHours);
+            TrySpendPrepTime(UpgradeHours, DirectActionArtisans);
             Changed?.Invoke();
             return true;
         }

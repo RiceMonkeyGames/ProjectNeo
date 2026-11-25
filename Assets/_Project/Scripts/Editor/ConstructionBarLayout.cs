@@ -121,9 +121,23 @@ namespace ProjectNeo.Editor
             FW.Place((RectTransform)walls.transform, Vector2.zero, Vector2.zero, new Vector2(TabWidth, TabHeight), Vector2.zero);
             Button weapons = Plate(tabs, "Tab_Weapons", "수성 무기", noto, 15f, out _);
             FW.Place((RectTransform)weapons.transform, Vector2.zero, new Vector2(TabWidth + 6f, 0f), new Vector2(TabWidth, TabHeight), Vector2.zero);
+            // PREP-11 work tab (option B, user 2026-11-25): "작업 N/Max" = artisans / current Blacksmith-level cap.
+            Button workTab = Plate(tabs, "Tab_Work", "작업", noto, 15f, out TMP_Text workTabLabel);
+            FW.Place((RectTransform)workTab.transform, Vector2.zero, new Vector2(2f * (TabWidth + 6f), 0f), new Vector2(TabWidth, TabHeight), Vector2.zero);
+            ((RectTransform)tabs).sizeDelta = new Vector2(3f * TabWidth + 12f, TabHeight);
+
+            // Work tab tools replace the build tools at the bar's right end: earlier / later on one row, cancel, hire.
+            var workTools = FW.Node(bar, "WorkTools");
+            FW.Stretch(workTools, Vector2.zero, Vector2.zero);
+            float half = (ToolsWidth - ToolGap) * 0.5f;
+            Button earlier = WorkTool(workTools, "Button_MoveEarlier", "앞으로", 0, 0f, half, noto, out _);
+            Button later = WorkTool(workTools, "Button_MoveLater", "뒤로", 0, half + ToolGap, half, noto, out _);
+            Button cancelWork = WorkTool(workTools, "Button_CancelWork", "작업 취소", 1, 0f, ToolsWidth, noto, out _);
+            Button hire = WorkTool(workTools, "Button_HireArtisan", "장인 고용", 2, 0f, ToolsWidth, noto, out TMP_Text hireLabel);
+            workTools.gameObject.SetActive(false);
 
             // Selected piece and placement state, above the bar right of the tabs.
-            float stripLeft = 2f * TabWidth + 6f + Inset + 10f;
+            float stripLeft = 3f * TabWidth + 12f + Inset + 10f;
             var strip = Chip(root, "BuildStatus", new Vector2(0.5f, 0f), new Vector2(-BarWidth * 0.5f + stripLeft, BarBottom + BarHeight + 6f),
                 new Vector2(BarWidth - stripLeft, StripHeight), new Vector2(0f, 0f));
             // Text is vertically centered in the strip (user 2026-11-24: it stuck to the bottom). Left: selection and state;
@@ -164,6 +178,9 @@ namespace ProjectNeo.Editor
 
             var barHud = hud.GetComponent<ConstructionBarHud>() ?? hud.gameObject.AddComponent<ConstructionBarHud>();
             barHud.Configure(hud, economy, walls, weapons, view, content, card, dismantle, repairLabel, notice);
+            var buildTools = new System.Collections.Generic.List<GameObject> { dismantle.gameObject, bar.Find("Button_Repair all").gameObject };
+            if (battlementsButton != null) buildTools.Add(battlementsButton.gameObject);
+            barHud.ConfigureWork(workTab, workTabLabel, buildTools.ToArray(), workTools.gameObject, earlier, later, cancelWork, hire, hireLabel);
             EditorUtility.SetDirty(barHud);
         }
 
@@ -182,6 +199,17 @@ namespace ProjectNeo.Editor
             UnityEventTools.AddPersistentListener(button.onClick, action);
             FW.Place((RectTransform)button.transform, new Vector2(1f, 1f), new Vector2(-Inset, -Inset - index * (ToolHeight + ToolGap)),
                 new Vector2(ToolsWidth, ToolHeight), new Vector2(1f, 1f));
+            return button;
+        }
+
+        // Work tab tool: same plate as the build tools, placed by row and horizontal offset from the tool column's left edge.
+        // The click is wired at runtime by ConstructionBarHud (it needs the selected order).
+        static Button WorkTool(RectTransform group, string name, string caption, int rowIndex, float left, float width,
+            TMP_FontAsset noto, out TMP_Text label)
+        {
+            Button button = Plate(group, name, caption, noto, 14f, out label);
+            FW.Place((RectTransform)button.transform, new Vector2(1f, 1f),
+                new Vector2(-Inset - ToolsWidth + left, -Inset - rowIndex * (ToolHeight + ToolGap)), new Vector2(width, ToolHeight), new Vector2(0f, 1f));
             return button;
         }
 

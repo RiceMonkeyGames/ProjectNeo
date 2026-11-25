@@ -27,6 +27,8 @@ namespace ProjectNeo.UI
         [SerializeField] Image segmentTemplate;
         [Tooltip("한 칸이 나타내는 준비 시간(시간). 칸 수는 예산에 맞춰 늘되 MaxSegments를 넘지 않는다.")]
         [SerializeField, Min(0.1f)] float hoursPerSegment = 1f;
+        [Tooltip("시계 줄 오른쪽의 장인 수(\"장인 3/4\", PREP-11). 비어 있으면 쓰지 않는다.")]
+        [SerializeField] TMP_Text artisanLabel;
         const int MaxSegments = 16;
         readonly List<Image> segments = new List<Image>();
 
@@ -53,6 +55,12 @@ namespace ProjectNeo.UI
         }
 
         public void ConfigureGauge(RectTransform gaugeFill) => fill = gaugeFill;
+        /// <summary>장인 수 글자를 붙인다(PREP-11).</summary>
+        public void ConfigureArtisans(TMP_Text label) => artisanLabel = label;
+        public string ArtisanText => artisanLabel != null ? artisanLabel.text : string.Empty;
+
+        /// <summary>장인 수 한 줄: "장인 3/4"(장인 수 / 지금 대장간 레벨의 상한).</summary>
+        public static string DescribeArtisans(RunState state) => $"장인 {state.ArtisanCount}/{state.ArtisanCap}";
         public bool IsShowing => content != null && content.activeSelf;
         public RectTransform Area => content != null ? (RectTransform)content.transform : null;
 
@@ -83,6 +91,11 @@ namespace ProjectNeo.UI
             if (fill != null) fill.anchorMax = new Vector2(PrepHudText.Ratio(state.Clock.Remaining, state.Clock.Budget), 1f);
             if (numberLabel != null) numberLabel.text = PrepHudText.ClockNumber(state.Clock.Remaining, state.Clock.Budget);
             ShowSegments(state.Clock.Remaining, state.Clock.Budget);
+            if (artisanLabel != null)
+            {
+                string artisans = DescribeArtisans(state);
+                if (artisanLabel.text != artisans) artisanLabel.text = artisans;
+            }
         }
 
         // 칸 게이지(UI-12): 예산을 칸으로 나누고, 칸마다 그 칸에 해당하는 만큼 채운다(마지막 남은 칸은 일부만 찰 수 있다).

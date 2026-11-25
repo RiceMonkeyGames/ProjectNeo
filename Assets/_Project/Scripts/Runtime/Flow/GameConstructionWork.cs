@@ -29,6 +29,8 @@ namespace ProjectNeo.Flow
         PrepTimeSettings Time => State?.PrepTime;
         /// <summary>준비 시간이 켜져 있어 작업 주문을 쓴다.</summary>
         public bool IsActive => Time != null;
+        /// <summary>장인 자리 수(PREP-11). 런의 장인 수이며 최소 1이다.</summary>
+        int Artisans => State != null && State.EffectiveArtisanCount > 0 ? State.EffectiveArtisanCount : 1;
 
         public void Configure(ConstructionWorld castle, PlacementController controller, GameBattleController owner,
             GameBuildEconomy economy, TMP_FontAsset labelFont)
@@ -53,14 +55,14 @@ namespace ProjectNeo.Flow
             }
             RunState state = State;
             if (ReferenceEquals(state, subscribed)) return;
-            if (subscribed != null) subscribed.Clock.Advanced -= OnClockAdvanced;
+            if (subscribed != null) subscribed.Clock.Stepped -= OnClockStepped;
             subscribed = state;
-            if (subscribed != null) subscribed.Clock.Advanced += OnClockAdvanced;
+            if (subscribed != null) subscribed.Clock.Stepped += OnClockStepped;
         }
 
         void OnDestroy()
         {
-            if (subscribed != null) subscribed.Clock.Advanced -= OnClockAdvanced;
+            if (subscribed != null) subscribed.Clock.Stepped -= OnClockStepped;
             queue.Completed -= OnCompleted;
             queue.Progressed -= OnProgressed;
         }
@@ -106,7 +108,7 @@ namespace ProjectNeo.Flow
 
         bool Add(WorkOrder order, Component target)
         {
-            queue.SetCrews(Time.WorkCrews);
+            queue.SetCrews(Artisans);
             queue.Add(order);
             targets[(order.Target, order.Key)] = target;
             if (order.Kind == WorkKind.Build) ShowView(target, 0f);
@@ -132,11 +134,12 @@ namespace ProjectNeo.Flow
 
         // ── 진행 ─────────────────────────────────────────────
 
-        void OnClockAdvanced(float hours)
+        void OnClockStepped(PrepClockStep step)
         {
             if (!IsActive || battle == null || GameSession.Flow.Phase != GamePhase.Preparation) return;
-            queue.SetCrews(Time.WorkCrews);
-            queue.Advance(hours);
+            queue.SetCrews(Artisans);
+            // 대장간·시설 강화를 하는 동안은 그 장인이 빠진다(PREP-11).
+            queue.Advance(step.Hours, step.FreeArtisans(Artisans));
             queue.RemoveCompleted();
         }
 
@@ -147,7 +150,7 @@ namespace ProjectNeo.Flow
         {
             int pending = queue.PendingCount;
             if (pending == 0) return 0;
-            queue.SetCrews(Time != null ? Time.WorkCrews : 1);
+            queue.SetCrews(Artisans);
             queue.Advance(queue.HoursToFinishAll() + 0.01f);
             queue.RemoveCompleted();
             return pending;
@@ -258,7 +261,7 @@ namespace ProjectNeo.Flow
             Subscribe();
             if (restored != null && restored.Count > 0 && queue.Orders.Count == 0 && IsActive)
             {
-                queue.SetCrews(Time.WorkCrews);
+                queue.SetCrews(Artisans);
                 foreach (RestoredWork entry in restored)
                 {
                     Component target = entry.Piece != null ? entry.Piece : (Component)entry.Weapon;
@@ -314,8 +317,88 @@ namespace ProjectNeo.Flow
         {
             int pending = queue.PendingCount;
             if (!IsActive || pending == 0) return string.Empty;
-            return $"작업 주문 {pending}개 · 작업반 {queue.Crews}개 · 완료까지 {queue.HoursToFinishAll():0.#}시간";
+            return $"작업 주문 {pending}개 · 장인 {queue.Crews}명 · 완료까지 {queue.HoursToFinishAll():0.#}시간";
         }
+
+        // ── 작업 탭(PREP-11) ─────────────────────────────────────────────
+
+        /// <summary>이 작업 주문을 쓰는 런(장인 수·고용). 없으면 null.</summary>
+        public RunState Run => State;
+        bool Preparing => IsActive && battle != null && GameSession.Flow != null && GameSession.Flow.Phase == GamePhase.Preparation;
+
+        /// <summary>작업 탭이 보여 줄 끝나지 않은 주문을 순서대로 채운다(우선순위 순).</summary>
+        public void PendingOrders(List<WorkOrder> into)
+        {
+            into.Clear();
+            Subscribe();
+            if (IsActive) queue.SetCrews(Artisans);
+            foreach (WorkOrder order in queue.Orders) if (!order.IsComplete) into.Add(order);
+        }
+
+        /// <summary>장인 자리를 맡은 주문인가(아니면 대기).</summary>
+        public bool IsAssigned(WorkOrder order) => queue.IsAssigned(order);
+
+        /// <summary>작업 카드 이름: 조각·무기 이름, 수리면 앞에 "수리".</summary>
+        public string NameOf(WorkOrder order)
+        {
+            if (order == null) return string.Empty;
+            targets.TryGetValue((order.Target, order.Key), out Component target);
+            string name = target is PlacedStructure piece && piece != null ? piece.Placement.Definition.DisplayName
+                : target is PlacedSiegeWeapon weapon && weapon != null ? weapon.Definition.DisplayName
+                : order.Target == WorkTarget.Weapon ? "수성 무기" : "조각";
+            return order.Kind == WorkKind.Repair ? "수리 " + name : name;
+        }
+
+        /// <summary>주문을 한 칸 앞(earlier)이나 뒤로 옮긴다. 준비 중이 아니거나 더 갈 곳이 없으면 false.</summary>
+        public bool Move(WorkOrder order, bool earlier)
+        {
+            if (!Preparing || order == null) return false;
+            return earlier ? queue.MoveUp(order) : queue.MoveDown(order);
+        }
+
+        /// <summary>
+        /// 주문을 취소한다. 건설은 철거와 같다(이번 준비에 지은 것이라 전액 환불, 위에 무기가 있으면 무기부터).
+        /// 수리는 못 한 만큼의 골드를 돌려준다. 결과는 건설 막대 안내에 보인다.
+        /// </summary>
+        public bool CancelOrder(WorkOrder order)
+        {
+            if (!Preparing || order == null || queue.Find(order.Target, order.Key) != order) return false;
+            targets.TryGetValue((order.Target, order.Key), out Component target);
+            if (target == null) { queue.Remove(order.Target, order.Key); return true; }
+            if (order.Kind == WorkKind.Build)
+            {
+                PlacedStructure support = target as PlacedStructure ?? (target as PlacedSiegeWeapon)?.Support;
+                return build != null && support != null && build.Dismantle(support);
+            }
+            string name = NameOf(order);
+            int refund = Cancel(target);
+            build?.Notify($"{name} 취소 - {refund}골드 환불");
+            return true;
+        }
+
+        /// <summary>장인을 한 명 고용한다(시간 없는 행동). 결과는 건설 막대 안내에 보인다.</summary>
+        public bool HireArtisan()
+        {
+            RunState state = State;
+            if (!Preparing || state == null) return false;
+            int gold = state.NextArtisanHireGold;
+            ArtisanHireCheck check = state.CheckHireArtisan();
+            bool hired = check == ArtisanHireCheck.Ok && state.TryHireArtisan();
+            if (hired) queue.SetCrews(Artisans);
+            build?.Notify(hired ? $"장인 고용 - {gold}골드 · 장인 {state.ArtisanCount}명" : HireRefusal(check, state));
+            return hired;
+        }
+
+        /// <summary>고용할 수 없는 이유 한 줄.</summary>
+        public static string HireRefusal(ArtisanHireCheck check, RunState state) => check switch
+        {
+            ArtisanHireCheck.AtCap when state != null && state.PrepTime != null && state.ArtisanCap < state.PrepTime.ArtisanCap(int.MaxValue)
+                => "장인이 가득 찼습니다. 대장간을 강화하면 한 명 더 고용할 수 있습니다.",
+            ArtisanHireCheck.AtCap => "장인을 더 고용할 수 없습니다.",
+            ArtisanHireCheck.NotEnoughFunds => $"골드가 부족합니다: 장인 고용 {state?.NextArtisanHireGold ?? 0}골드",
+            ArtisanHireCheck.BattlePending => "전투 준비 중에는 고용할 수 없습니다.",
+            _ => "장인을 고용할 수 없습니다.",
+        };
 
         /// <summary>
         /// 전투 시작 전 미완료 작업 경고 한 줄(Q-77). 끝나지 않은 주문이 없으면 비어 있다.
