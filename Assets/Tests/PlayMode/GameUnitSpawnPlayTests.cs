@@ -60,14 +60,17 @@ namespace ProjectNeo.Tests
             int squadsBefore = center.Squads.Count;
             int membersBefore = center.Squads[0].Members.Count;
             Assert.IsTrue(center.TryGetGatherPoint(0, out Vector3 gather));
-            Vector3 barracks = Object.FindObjectsByType<FacilityStation>()
-                .First(station => station.Type == FacilityType.TrainingGround).transform.position;
+            FacilityStation barracksStation = Object.FindObjectsByType<FacilityStation>()
+                .First(station => station.Type == FacilityType.TrainingGround);
+            Vector3 barracks = barracksStation.transform.position;
+            // SIEGE-36: 건물이 모델 크기라 정면 바깥면(반 깊이) 앞 6m에 흩어져 선다.
+            float frontLimit = barracksStation.GetComponent<BoxCollider>().size.z * 0.5f + 8f;
 
             UnitCombatAI unit = spawner.Recruit(spawner.DebugSoldier, FacilityType.TrainingGround);
             Assert.IsNotNull(unit);
             Assert.IsFalse(unit.gameObject.activeSelf, "보관 병사는 씬에서 숨겨진다(UI-07).");
             Assert.AreEqual(gameObjectScene(), unit.gameObject.scene);
-            Assert.Less(Flat(unit.transform.position, barracks), 12f, "병영 앞에 만든다.");
+            Assert.Less(Flat(unit.transform.position, barracks), frontLimit, "병영 앞에 만든다.");
             Assert.AreEqual(squadsBefore, center.Squads.Count, "부대가 늘지 않는다.");
             Assert.AreEqual(membersBefore, center.Squads[0].Members.Count, "씬 부대에 들지 않는다.");
             int id = battle.RunLink.IdOf(unit.GetComponent<CharacterActor>());

@@ -62,8 +62,9 @@ namespace ProjectNeo.Tests
             Assert.AreSame(captain, center.Squads[0].Leader);
 
             // 잡졸이 이미 서 있는 곳으로 보내 잡졸은 곧 도착하고, 선술집 앞에서 출발하는 대장은 한참 걸어야 하게 한다.
+            // SIEGE-36: 잡졸이 선 자리 그대로면 대장 칸을 잡졸이 막아 대장이 1m 앞에서 멈춘다. 6m 북쪽(계단 쪽) 빈 땅으로 보낸다(잡졸은 여전히 가깝다).
             Vector3 destination = center.Squads[0].Members.Aggregate(Vector3.zero, (sum, unit) => sum + unit.transform.position)
-                / center.Squads[0].Members.Count;
+                / center.Squads[0].Members.Count + Vector3.forward * 6f;
             float startDistance = Flat(captain.transform.position, destination);
             Assert.Greater(startDistance, 8f, "대장이 부대에서 멀리 떨어져 출발해야 이 경우를 확인한다.");
             center.Commander.ClearSelection();
@@ -72,7 +73,8 @@ namespace ProjectNeo.Tests
             center.Commander.ClearSelection();
 
             bool soldiersArrivedFirst = false;
-            for (int frame = 0; frame < 900 && captain.Directive == UnitDirective.Move; frame++)
+            // SIEGE-36: 안뜰이 넓어져 주점 앞에서 부대까지 100m 넘게 걷는다(30fps로 60초까지 기다린다).
+            for (int frame = 0; frame < 1800 && captain.Directive == UnitDirective.Move; frame++)
             {
                 if (!soldiersArrivedFirst && center.Squads[0].Members.All(unit => unit.Directive != UnitDirective.Move))
                 {

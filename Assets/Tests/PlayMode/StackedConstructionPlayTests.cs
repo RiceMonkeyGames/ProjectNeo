@@ -56,14 +56,15 @@ namespace ProjectNeo.Tests
             yield return null;
         }
 
-        // 기본 성(GameFlowSetup.DefaultSeeds): 7.5m 칸, 성벽 고리 x 10~22, z 11~23, 성문 (16, 23), 사다리 줄 x 12·14·18·20.
-        static readonly Vector2Int NorthWestCorner = new Vector2Int(10, 23);
+        // 기본 성(GameFlowSetup.DefaultSeeds, SIEGE-36): 7.5m 칸, 성벽 고리 x 10~35, z 11~36, 성문 (23, 36), 모서리 2×2칸 2층 탑,
+        // 사다리 줄 x 13·15·17·19·21·25·27·29·31. 북쪽 성벽의 1층 칸 하나(사다리·계단·탑과 떨어진 곳).
+        static readonly Vector2Int NorthWallCell = new Vector2Int(14, 36);
 
         PlacedStructure Lower(Vector2Int cell) => world.Structures.Single(piece => piece.Placement.Cell == cell && piece.Placement.Level == 0);
 
         static readonly int[] StairRotations = { 0, 1, 2, 3 };
 
-        // 성 밖 북서쪽 들판의 빈 칸(성벽 고리 x 10~22, z 11~23 바깥, 사다리 줄과 떨어진 곳).
+        // 성 밖 서쪽 들판의 빈 칸(성벽 고리 x 10~35, z 11~36 바깥, 사다리 줄과 떨어진 곳).
         static readonly Vector2Int OpenFieldCell = new Vector2Int(5, 31);
 
         [UnityTest]
@@ -135,7 +136,7 @@ namespace ProjectNeo.Tests
         [UnityTest]
         public IEnumerator 적층_성벽은_맨_위부터_철거하고_점유와_길찾기를_갱신한다()
         {
-            var cell = NorthWestCorner;
+            var cell = NorthWallCell;
             PlacedStructure lower = Lower(cell);
             Assert.IsTrue(world.TryPlace(wall, cell, 0, out PlacedStructure upper));
             yield return WaitForNavigation();
@@ -239,7 +240,7 @@ namespace ProjectNeo.Tests
         [UnityTest]
         public IEnumerator 성벽을_2층과_3층으로_올리면_안뜰에서_자동_계단으로_맨_위까지_길이_이어진다()
         {
-            // 서쪽 성벽 가운데 칸을 올린다. 땅 계단은 북쪽 성벽 (13,22)에만 있으므로, 1층 통로를 따라 와서
+            // 서쪽 성벽 칸을 올린다. 땅 계단 (11,20)·(11,28) 사이가 아닌 칸이라 1층 통로를 따라 와서
             // 1↔2층은 자동 바깥 계단으로, 3층은 계단실로 오른다(SIEGE-27).
             var cell = new Vector2Int(10, 17);
             var controller = Object.FindAnyObjectByType<PlacementController>(FindObjectsInactive.Include);
@@ -281,8 +282,8 @@ namespace ProjectNeo.Tests
         public IEnumerator 아래_보루가_부서지면_위_보루와_그_위의_무기가_함께_무너진다()
         {
             // 2층 성벽 앞에 2층 보루를 쌓는다(SIEGE-11: 쌓은 층도 그 층의 성벽과 맞닿아야 하고, 무기는 보루에만 놓는다).
-            // 사다리 줄(x 12·14·18·20)과 성문을 피한 북쪽 성벽 칸.
-            var wallCell = new Vector2Int(11, 23);
+            // 사다리 줄과 성문·모서리 탑을 피한 북쪽 성벽 칸.
+            var wallCell = NorthWallCell;
             Lower(wallCell);
             Assert.IsTrue(world.TryPlace(wall, wallCell, 0, out PlacedStructure upperWall), "2층 성벽: " + world.CheckPlacement(wall, wallCell, 0));
             BuildPieceDefinition bastion = BastionTestSupport.Definition(SceneManager.GetActiveScene());

@@ -436,11 +436,11 @@ namespace ProjectNeo.Tests
             yield return null;
             LogAssert.NoUnexpectedReceived();
             var world = Object.FindAnyObjectByType<ConstructionWorld>();
-            Assert.AreEqual(240f, world.Grid.Width * world.Grid.CellSize);
-            Assert.AreEqual(300f, world.Grid.Depth * world.Grid.CellSize);
+            Assert.AreEqual(345f, world.Grid.Width * world.Grid.CellSize);
+            Assert.AreEqual(397.5f, world.Grid.Depth * world.Grid.CellSize);
             var facilities = world.transform.Find("Geometry/CourtyardLayout");
             Assert.IsNotNull(facilities);
-            foreach (string name in new[] { "Tavern", "Shop", "Training", "Smithy", "Construction" })
+            foreach (string name in new[] { "Tavern", "Shop", "Training", "Smithy", "Construction", "HeroHall" })
                 Assert.IsNotNull(facilities.Find(name), "시설 " + name);
             Assert.AreEqual(1, world.Structures.Count(piece => piece.Placement.Definition.Kind == BuildPieceKind.Gate));
             PlacedStructure gate = world.Structures.Single(piece => piece.Placement.Definition.Kind == BuildPieceKind.Gate);
@@ -464,25 +464,25 @@ namespace ProjectNeo.Tests
             var player = Object.FindAnyObjectByType<PlayerInputController>(FindObjectsInactive.Include);
             Vector3 playerLocal = world.LocalPoint(player.transform.position);
             Assert.AreEqual(0f, playerLocal.y, 0.1f, "플레이어는 안뜰 바닥에서 시작한다.");
-            // 7.5m 칸의 성벽 고리 x 10~22, z 11~23(SIEGE-18) 안쪽 안뜰.
+            // 7.5m 칸의 성벽 고리 x 10~35, z 11~36(SIEGE-36) 안쪽 안뜰.
             Assert.Greater(playerLocal.x, 11f * world.Grid.CellSize);
-            Assert.Less(playerLocal.x, 22f * world.Grid.CellSize);
+            Assert.Less(playerLocal.x, 35f * world.Grid.CellSize);
             Assert.Greater(playerLocal.z, 12f * world.Grid.CellSize);
-            Assert.Less(playerLocal.z, 23f * world.Grid.CellSize);
+            Assert.Less(playerLocal.z, 36f * world.Grid.CellSize);
             var perimeter = world.Layout.Placements.Where(piece => piece.Definition.Kind != BuildPieceKind.Stairs).ToArray();
-            Assert.AreEqual(97.5f, (perimeter.Max(piece => piece.Cell.x + piece.Size.x) - perimeter.Min(piece => piece.Cell.x)) * world.Grid.CellSize);
-            Assert.AreEqual(97.5f, (perimeter.Max(piece => piece.Cell.y + piece.Size.y) - perimeter.Min(piece => piece.Cell.y)) * world.Grid.CellSize);
+            Assert.AreEqual(195f, (perimeter.Max(piece => piece.Cell.x + piece.Size.x) - perimeter.Min(piece => piece.Cell.x)) * world.Grid.CellSize);
+            Assert.AreEqual(195f, (perimeter.Max(piece => piece.Cell.y + piece.Size.y) - perimeter.Min(piece => piece.Cell.y)) * world.Grid.CellSize);
             Assert.AreEqual(120f, (world.Grid.Depth - perimeter.Max(piece => piece.Cell.y + piece.Size.y)) * world.Grid.CellSize);
-            // 새 건물에 도달할 수 있고 건물 충돌체를 가로지르지 않는 안뜰 동선이다.
-            foreach (string name in new[] { "Tavern", "Shop", "Training", "Smithy", "Construction" })
+            // 시설마다 입구 앞 NPC가 있고(SIEGE-36), 안뜰에서 그 NPC 앞까지 걸어갈 수 있다(조형물·건물이 길을 막지 않는다).
+            foreach (string name in new[] { "Tavern", "Shop", "Training", "Smithy", "Construction", "HeroHall" })
             {
-                var building = facilities.Find(name);
-                var bounds = building.GetComponent<BoxCollider>().bounds;
-                // 건물 남쪽 앞 1m. 훈련장과 남쪽 성벽 안쪽 면 사이는 2.5m라(SIEGE-18) 2m 앞은 성벽 쪽 길찾기 여백에 든다.
-                Vector3 entrance = new Vector3(bounds.center.x, 0f, bounds.min.z - 1f);
-                Assert.IsTrue(NavMesh.SamplePosition(entrance, out NavMeshHit door, 0.5f, NavMesh.AllAreas), name + " 입구 " + entrance);
+                var station = facilities.Find(name).GetComponent<PreparationStation>();
+                Assert.IsNotNull(station, name);
+                Assert.IsNotNull(station.Npc, name + " NPC");
+                Vector3 front = station.Npc.transform.position + station.Npc.transform.forward * 1.5f;
+                Assert.IsTrue(NavMesh.SamplePosition(front, out NavMeshHit door, 1f, NavMesh.AllAreas), name + " NPC 앞 " + front);
                 NavMesh.CalculatePath(from.position, door.position, NavMesh.AllAreas, path);
-                Assert.AreEqual(NavMeshPathStatus.PathComplete, path.status, name + " 앞까지 갈 수 있어야 한다.");
+                Assert.AreEqual(NavMeshPathStatus.PathComplete, path.status, name + " NPC 앞까지 갈 수 있어야 한다.");
             }
         }
 
@@ -502,9 +502,9 @@ namespace ProjectNeo.Tests
             camera.Zoom(1000f);
             Assert.AreEqual(20f, camera.ZoomSize);
             camera.Zoom(-1000f);
-            Assert.AreEqual(180f, camera.ZoomSize);
+            Assert.AreEqual(320f, camera.ZoomSize);
             camera.Pan(new Vector2(10000f, -10000f));
-            Assert.AreEqual(new Vector2(240f, 0f), camera.Focus);
+            Assert.AreEqual(new Vector2(345f, 0f), camera.Focus);
             camera.ResetNavigation();
             Assert.AreEqual(focus, camera.Focus);
             Assert.AreEqual(zoom, camera.ZoomSize);
@@ -610,7 +610,7 @@ namespace ProjectNeo.Tests
                 Assert.AreEqual(20f, camera.ZoomSize);
                 InputSystem.QueueStateEvent(mouse, new MouseState { position = position, scroll = Vector2.down * 1000f });
                 yield return null;
-                Assert.AreEqual(180f, camera.ZoomSize);
+                Assert.AreEqual(320f, camera.ZoomSize);
 
                 camera.Pan(new Vector2(10f, 10f));
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Home));
@@ -657,19 +657,32 @@ namespace ProjectNeo.Tests
                 interaction.RefreshTarget();
                 Assert.IsNull(interaction.Target, "시작 위치는 건설소에서 멀다.");
                 Assert.IsFalse(interaction.TryInteract());
-                Bounds bounds = station.GetComponent<BoxCollider>().bounds;
-                Vector3 near = new Vector3(bounds.center.x, 0f, bounds.min.z - 2f);
+                // SIEGE-36: F는 건물이 아니라 건물 앞 NPC(건설 감독)에게 건다.
+                StationNpc npc = station.Npc;
+                Assert.IsNotNull(npc, "건설소에는 NPC가 있다.");
+                Vector3 near = npc.transform.position + npc.transform.forward * 2.2f;
+                near.y = 0f;
                 motor.enabled = false; player.transform.position = near; motor.enabled = true;
                 yield return null;
                 Cursor.lockState = CursorLockMode.Locked;
-                camera.transform.rotation = Quaternion.LookRotation(Vector3.back);
+                Vector3 toNpc = npc.transform.position + Vector3.up * 1.2f - camera.transform.position;
+                camera.transform.rotation = Quaternion.LookRotation(-toNpc);
                 Physics.SyncTransforms();
                 interaction.RefreshTarget();
                 Assert.IsNull(interaction.Target, "등을 돌리면 상호작용하지 않는다.");
-                camera.transform.rotation = Quaternion.LookRotation(Vector3.forward);
+                // NPC는 입구 오른쪽에 서 있으니 건물 가운데보다 왼쪽 벽을 본다(NPC를 스치지 않게).
+                Vector3 toBuilding = station.GetComponent<BoxCollider>().bounds.center - npc.transform.right * 3f - camera.transform.position;
+                camera.transform.rotation = Quaternion.LookRotation(toBuilding);
+                interaction.RefreshTarget();
+                Assert.IsNull(interaction.Target, "건물 벽을 바라봐도 열리지 않는다(NPC에게 말을 건다).");
+                camera.transform.rotation = Quaternion.LookRotation(toNpc);
+                // 다음 프레임에도 카메라가 NPC를 보게 시점 값도 맞춘다(1인칭 카메라는 매 프레임 자기 시점으로 돌린다).
+                Vector3 look = camera.transform.eulerAngles;
+                camera.SetOrientation(look.y, Mathf.DeltaAngle(0f, look.x));
                 interaction.RefreshTarget();
                 Assert.AreSame(station, interaction.Target);
-                // 실제 InputAction 경로를 통과시킨다. 기존 카메라의 yaw도 건설소 쪽(+Z)이다.
+                StringAssert.Contains("건설 감독에게 말 걸기", interaction.TargetPrompt);
+                // 실제 InputAction 경로를 통과시킨다.
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.F));
                 yield return null;
                 Assert.IsTrue(view.IsBuildView);

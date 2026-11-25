@@ -373,16 +373,22 @@ namespace ProjectNeo.Tests
             var keyboard = InputSystem.AddDevice<Keyboard>();
             try
             {
-                Bounds bounds = shop.GetComponent<BoxCollider>().bounds;
-                Vector3 near = new Vector3(bounds.center.x, 0f, bounds.min.z - 2f);
+                // SIEGE-36: 상점 앞 NPC(상인)를 바라보고 F를 누른다.
+                Assert.IsNotNull(shop.Npc, "상점에는 NPC가 있다.");
+                Vector3 near = shop.Npc.transform.position + shop.Npc.transform.forward * 2.2f;
+                near.y = 0f;
                 motor.enabled = false; player.transform.position = near; motor.enabled = true;
                 yield return null;
                 Cursor.lockState = CursorLockMode.Locked;
-                camera.transform.rotation = Quaternion.LookRotation(Vector3.forward);
+                camera.transform.rotation = Quaternion.LookRotation(shop.Npc.transform.position + Vector3.up * 1.2f - camera.transform.position);
+                // 다음 프레임에도 카메라가 NPC를 보게 시점 값도 맞춘다(1인칭 카메라는 매 프레임 자기 시점으로 돌린다).
+                Vector3 look = camera.transform.eulerAngles;
+                camera.SetOrientation(look.y, Mathf.DeltaAngle(0f, look.x));
                 Physics.SyncTransforms();
                 interaction.RefreshTarget();
                 Assert.AreSame(shop, interaction.Target);
                 Assert.AreEqual("상점 사용", shop.Prompt);
+                Assert.AreEqual("상인에게 말 걸기 - 상점 사용", interaction.TargetPrompt);
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.F));
                 yield return null;
                 Assert.IsTrue(facilities.IsOpen && view.IsPanelView);

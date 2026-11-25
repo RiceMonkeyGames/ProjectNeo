@@ -298,11 +298,12 @@ namespace ProjectNeo.Tests
             var rules = morale.BattleOf(0);
             rules.Morale.Add(-60f);
             Vector3 origin = AliveMembers(0)[0].transform.position;
-            foreach (var unit in AliveMembers(1)) unit.GetComponent<NavMeshAgent>().Warp(origin);
+            // 옮긴 자리에 머물게 한다. 그대로 두면 전염 판정 전에 자기 자리(SIEGE-36 안뜰에서 100m 넘게 떨어짐)로 걸어가 반경을 벗어난다.
+            foreach (var unit in AliveMembers(1)) { unit.GetComponent<NavMeshAgent>().Warp(origin); unit.SetDirective(UnitDirective.Move, origin); }
             int farSquad = center.Squads.Count - 1;
             Vector3 distant = origin + Vector3.right * (settings.NearbyRadius + 20f);
             Assert.IsTrue(NavMesh.SamplePosition(distant, out var hit, 10f, NavMesh.AllAreas));
-            foreach (var unit in AliveMembers(farSquad)) unit.GetComponent<NavMeshAgent>().Warp(hit.position);
+            foreach (var unit in AliveMembers(farSquad)) { unit.GetComponent<NavMeshAgent>().Warp(hit.position); unit.SetDirective(UnitDirective.Move, hit.position); }
             float nearBefore = morale.MoraleOf(1).Value, farBefore = morale.MoraleOf(farSquad).Value;
             for (int i = 0; i < Mathf.CeilToInt(settings.ContagionInterval * 30f) + 4; i++) yield return null;
             Assert.AreEqual(nearBefore - settings.ContagionAmount, morale.MoraleOf(1).Value, 0.01f);

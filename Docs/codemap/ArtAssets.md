@@ -45,6 +45,7 @@ Other packs in the submodule (modern, sci-fi, zombie, seasonal and so on) are ou
 | Unit prefab | Model | Weapon |
 |---|---|---|
 | `allied_melee` | `PolygonFantasyKingdom/Prefabs/Characters/SM_Chr_Soldier_Male_01` ([view](art-assets/PolygonFantasyKingdom__SM_Chr_Soldier_Male_01.png)) | `PolygonFantasyKingdom/Prefabs/Weapons/SM_Wep_Sword_01` ([view](art-assets/PolygonFantasyKingdom__SM_Wep_Sword_01.png)) |
+| `Player` (`CharacterModelSetup.ApplyPlayerModel`, SIEGE-36; 1.78m, melee controller of `allied_melee`) | `PolygonKnights/Prefabs/Characters/Character_Knight_01_Blue` ([view](art-assets/PolygonKnights__Character_Knight_01_Blue.png)) | `PolygonFantasyKingdom/Prefabs/Weapons/SM_Wep_Sword_01` ([view](art-assets/PolygonFantasyKingdom__SM_Wep_Sword_01.png)) |
 | `allied_ranged` | `PolygonElvenRealm/Prefabs/Characters/SM_Chr_Soldier_Female_01` ([view](art-assets/PolygonElvenRealm__SM_Chr_Soldier_Female_01.png)) | `PolygonFantasyKingdom/Prefabs/Weapons/SM_Prop_Bow_01` ([view](art-assets/PolygonFantasyKingdom__SM_Prop_Bow_01.png)) |
 | `hostile_melee` (+ variant `enemy_ladder`) | `PolygonFantasyRivals/Prefabs/Characters/Character_BR_Slayer_01` ([view](art-assets/PolygonFantasyRivals__Character_BR_Slayer_01.png)) | `PolygonFantasyRivals/Prefabs/Weapons/SM_Wep_Slayer_01` ([view](art-assets/PolygonFantasyRivals__SM_Wep_Slayer_01.png)) |
 | `hostile_ranged` (+ variant `enemy_archer`) | `PolygonFantasyRivals/Prefabs/Characters/Character_DarkElf_01` ([view](art-assets/PolygonFantasyRivals__Character_DarkElf_01.png)) | `PolygonFantasyKingdom/Prefabs/Weapons/SM_Prop_Bow_02` ([view](art-assets/PolygonFantasyKingdom__SM_Prop_Bow_02.png)) |
@@ -78,6 +79,60 @@ Reserved for `SIEGE-13` (not applied yet; a Kingdom broken wall or rubble mesh f
 | 6m main gate | `PolygonFantasyKingdom/Prefabs/Castle/SM_Bld_Castle_Wall_Gate_01` ([view](art-assets/PolygonFantasyKingdom__SM_Bld_Castle_Wall_Gate_01.png)) |
 | Sliced battlement modules | `PolygonFantasyKingdom/Prefabs/Castle/SM_Bld_Castle_Battlements_01` ([view](art-assets/PolygonFantasyKingdom__SM_Bld_Castle_Battlements_01.png)) |
 | Sliced battlement modules | `PolygonFantasyKingdom/Prefabs/Castle/SM_Bld_Castle_Battlements_03` ([view](art-assets/PolygonFantasyKingdom__SM_Bld_Castle_Battlements_03.png)) |
+
+### Default castle courtyard (`GameCourtyardArtSetup`, menu `ProjectNeo/Setup/Apply Courtyard Art (SIEGE-36)`; SIEGE-36)
+
+Facility buildings (look only; the facility root keeps its `BoxCollider`, fitted to the model footprint, and its interaction components):
+
+| Facility | Model |
+|---|---|
+| `Tavern` | `PolygonFantasyKingdom/Prefabs/Buildings/Preset_Houses/SM_Bld_Preset_Tavern_01_Optimized` ([view](art-assets/PolygonFantasyKingdom__SM_Bld_Preset_Tavern_01_Optimized.png)) |
+| `Shop` | `PolygonFantasyKingdom/Prefabs/Buildings/Preset_Houses/SM_Bld_Preset_House_03_Optimized` ([view](art-assets/PolygonFantasyKingdom__SM_Bld_Preset_House_03_Optimized.png)) |
+| `Training` | `PolygonFantasyKingdom/Prefabs/Buildings/Preset_Houses/SM_Bld_Preset_Stables_01_Optimized` ([view](art-assets/PolygonFantasyKingdom__SM_Bld_Preset_Stables_01_Optimized.png)) |
+| `Smithy` | `PolygonFantasyKingdom/Prefabs/Buildings/Preset_Houses/SM_Bld_Preset_Blacksmith_01_Optimized` ([view](art-assets/PolygonFantasyKingdom__SM_Bld_Preset_Blacksmith_01_Optimized.png)) |
+| `Construction` | `PolygonFantasyKingdom/Prefabs/Buildings/Preset_Houses/SM_Bld_Preset_House_05_Optimized` ([view](art-assets/PolygonFantasyKingdom__SM_Bld_Preset_House_05_Optimized.png)) |
+| `HeroHall` | `PolygonFantasyKingdom/Prefabs/Buildings/Preset_Houses/SM_Bld_Preset_Church_01_A_Optimized` ([view](art-assets/PolygonFantasyKingdom__SM_Bld_Preset_Church_01_A_Optimized.png)) |
+
+Floor and decorations (blocking ones keep the model colliders, so the NavMesh goes around them; the others have no collider):
+
+| Use | Model | Blocks |
+|---|---|---|
+| Courtyard ground (combined mesh `Art/Courtyard/CourtyardGround.asset`, with the paths and plaza) | `PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Ground_Flat_01` ([view](art-assets/PolygonFantasyKingdom__SM_Env_Ground_Flat_01.png)), `PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Ground_Flat_Dirt_01` ([view](art-assets/PolygonFantasyKingdom__SM_Env_Ground_Flat_Dirt_01.png)) | no |
+| Winding paths (pieces along curves, random turn) | `PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Path_01` ([view](art-assets/PolygonFantasyKingdom__SM_Env_Path_01.png)), `PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Path_02` ([view](art-assets/PolygonFantasyKingdom__SM_Env_Path_02.png)), `PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Path_03` ([view](art-assets/PolygonFantasyKingdom__SM_Env_Path_03.png)), `PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Path_04` ([view](art-assets/PolygonFantasyKingdom__SM_Env_Path_04.png)), `PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Path_05` ([view](art-assets/PolygonFantasyKingdom__SM_Env_Path_05.png)) | no |
+| Round fountain plaza | `PolygonFantasyKingdom/Prefabs/Castle/SM_Bld_Castle_Floor_Stone_Round_L_01` ([view](art-assets/PolygonFantasyKingdom__SM_Bld_Castle_Floor_Stone_Round_L_01.png)) | no |
+| Grass, bushes and rocks (scattered) | `PolygonFantasyKingdom/Prefabs/Generic/SM_Generic_Grass_Patch_01` ([view](art-assets/PolygonFantasyKingdom__SM_Generic_Grass_Patch_01.png)), `PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Grass_Tuft_01` ([view](art-assets/PolygonFantasyKingdom__SM_Env_Grass_Tuft_01.png)), `PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Bush_01` ([view](art-assets/PolygonFantasyKingdom__SM_Env_Bush_01.png)), `PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Rock_Chunk_01` ([view](art-assets/PolygonFantasyKingdom__SM_Env_Rock_Chunk_01.png)) | no |
+| Yard clutter beside buildings | `PolygonFantasyKingdom/Prefabs/Props/SM_Prop_Barrel_Stack_01` ([view](art-assets/PolygonFantasyKingdom__SM_Prop_Barrel_Stack_01.png)), `PolygonFantasyKingdom/Prefabs/Props/SM_Prop_Crate_Stack_01` ([view](art-assets/PolygonFantasyKingdom__SM_Prop_Crate_Stack_01.png)), `PolygonFantasyKingdom/Prefabs/Props/SM_Prop_Sack_Stack_01` ([view](art-assets/PolygonFantasyKingdom__SM_Prop_Sack_Stack_01.png)), `PolygonFantasyKingdom/Prefabs/Props/SM_Prop_Hay_Bale_01` ([view](art-assets/PolygonFantasyKingdom__SM_Prop_Hay_Bale_01.png)), `PolygonFantasyKingdom/Prefabs/Props/SM_Prop_Wood_Pile_01` ([view](art-assets/PolygonFantasyKingdom__SM_Prop_Wood_Pile_01.png)), `PolygonFantasyKingdom/Prefabs/Props/SM_Prop_Fence_01` ([view](art-assets/PolygonFantasyKingdom__SM_Prop_Fence_01.png)), `PolygonFantasyKingdom/Prefabs/Props/Furniture/SM_Prop_Table_Preset_01` ([view](art-assets/PolygonFantasyKingdom__SM_Prop_Table_Preset_01.png)) | stacks, hay, wood, table: yes; fences: no |
+| Central fountain | `PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Fountain_01` ([view](art-assets/PolygonFantasyKingdom__SM_Env_Fountain_01.png)) | yes |
+| King statue | `PolygonFantasyKingdom/Prefabs/Bonus/SM_Prop_Statue_King_01` ([view](art-assets/PolygonFantasyKingdom__SM_Prop_Statue_King_01.png)) | yes |
+| Gate knight statues | `PolygonFantasyKingdom/Prefabs/Props/SM_Prop_Statue_Knight_01` ([view](art-assets/PolygonFantasyKingdom__SM_Prop_Statue_Knight_01.png)) | yes |
+| Hero hall statues | `PolygonFantasyKingdom/Prefabs/Props/SM_Prop_Statue_Hero_01` ([view](art-assets/PolygonFantasyKingdom__SM_Prop_Statue_Hero_01.png)) | yes |
+| Garden statue | `PolygonFantasyKingdom/Prefabs/Props/SM_Prop_Statue_Angel_01` ([view](art-assets/PolygonFantasyKingdom__SM_Prop_Statue_Angel_01.png)) | yes |
+| Statue plinths | `PolygonFantasyKingdom/Prefabs/Props/SM_Prop_Statue_Plinth_01` ([view](art-assets/PolygonFantasyKingdom__SM_Prop_Statue_Plinth_01.png)) | yes |
+| Trees | `PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Tree_Round_01` ([view](art-assets/PolygonFantasyKingdom__SM_Env_Tree_Round_01.png)), `PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Tree_Round_02` ([view](art-assets/PolygonFantasyKingdom__SM_Env_Tree_Round_02.png)), `PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Tree_Large_01` ([view](art-assets/PolygonFantasyKingdom__SM_Env_Tree_Large_01.png)) | yes |
+| Well | `PolygonFantasyKingdom/Prefabs/Props/SM_Prop_Well_01` ([view](art-assets/PolygonFantasyKingdom__SM_Prop_Well_01.png)) | yes |
+| Market stalls by the shop | `PolygonFantasyKingdom/Prefabs/Props/SM_Prop_Market_Stall_01` ([view](art-assets/PolygonFantasyKingdom__SM_Prop_Market_Stall_01.png)), `PolygonFantasyKingdom/Prefabs/Props/SM_Prop_Market_Stall_02` ([view](art-assets/PolygonFantasyKingdom__SM_Prop_Market_Stall_02.png)) | yes |
+| Hay cart by the construction office | `PolygonFantasyKingdom/Prefabs/Props/SM_Prop_Hay_Cart_01` ([view](art-assets/PolygonFantasyKingdom__SM_Prop_Hay_Cart_01.png)) | yes |
+| Street lamps | `PolygonFantasyKingdom/Prefabs/Props/SM_Prop_Street_Lamp_01` ([view](art-assets/PolygonFantasyKingdom__SM_Prop_Street_Lamp_01.png)) | no |
+| Banners at the muster ground | `PolygonFantasyKingdom/Prefabs/Props/Banners/SM_Prop_Battle_Banner_01` ([view](art-assets/PolygonFantasyKingdom__SM_Prop_Battle_Banner_01.png)) | no |
+| Braziers | `PolygonFantasyKingdom/Prefabs/Props/BattleGround/SM_Prop_Camp_Brazier_01` ([view](art-assets/PolygonFantasyKingdom__SM_Prop_Camp_Brazier_01.png)) | no |
+| Benches | `PolygonFantasyKingdom/Prefabs/Props/Furniture/SM_Prop_Bench_Seat_01` ([view](art-assets/PolygonFantasyKingdom__SM_Prop_Bench_Seat_01.png)) | no |
+| Planters and flowers | `PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Planter_Box_01` ([view](art-assets/PolygonFantasyKingdom__SM_Env_Planter_Box_01.png)), `PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Bush_Flowers_01` ([view](art-assets/PolygonFantasyKingdom__SM_Env_Bush_Flowers_01.png)), `PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Bush_Flowers_02` ([view](art-assets/PolygonFantasyKingdom__SM_Env_Bush_Flowers_02.png)) | no |
+| Training yard | `PolygonFantasyKingdom/Prefabs/Props/BattleGround/SM_Prop_Dummy_Armour_01` ([view](art-assets/PolygonFantasyKingdom__SM_Prop_Dummy_Armour_01.png)), `PolygonFantasyKingdom/Prefabs/Props/BattleGround/SM_Prop_Target_01` ([view](art-assets/PolygonFantasyKingdom__SM_Prop_Target_01.png)), `PolygonFantasyKingdom/Prefabs/Props/BattleGround/SM_Prop_Weapon_Rack_01` ([view](art-assets/PolygonFantasyKingdom__SM_Prop_Weapon_Rack_01.png)) | no |
+| Smithy yard | `PolygonFantasyKingdom/Prefabs/Props/SM_Prop_Anvil_01` ([view](art-assets/PolygonFantasyKingdom__SM_Prop_Anvil_01.png)), `PolygonFantasyKingdom/Prefabs/Props/SM_Prop_Workbench_Forge_01_Preset` ([view](art-assets/PolygonFantasyKingdom__SM_Prop_Workbench_Forge_01_Preset.png)) | no |
+
+### Courtyard NPCs and citizens (`GameTownSetup`, called by `ApplyDefaultCastle`; SIEGE-36)
+
+Facility NPCs take the F interaction for their building (`StationNpc`). Citizens walk between path points. All use `AC_Town_Masc` / `AC_Town_Femn` (Synty Base Locomotion idle, walk, run). The peasant models are shared on purpose between the construction NPC and citizens.
+
+| Role | Model |
+|---|---|
+| Tavern NPC (`바텐더`) | `PolygonFantasyKingdom/Prefabs/Characters/SM_Chr_Bartender_01` ([view](art-assets/PolygonFantasyKingdom__SM_Chr_Bartender_01.png)) |
+| Shop NPC (`상인`) | `PolygonFantasyKingdom/Prefabs/Characters/SM_Chr_Merchant_01` ([view](art-assets/PolygonFantasyKingdom__SM_Chr_Merchant_01.png)) |
+| Training NPC (`교관`) | `PolygonFantasyKingdom/Prefabs/Characters/SM_Chr_Rider_01` ([view](art-assets/PolygonFantasyKingdom__SM_Chr_Rider_01.png)) |
+| Smithy NPC (`대장장이`) | `PolygonFantasyKingdom/Prefabs/Characters/SM_Chr_Blacksmith_Male_01` ([view](art-assets/PolygonFantasyKingdom__SM_Chr_Blacksmith_Male_01.png)) |
+| Construction NPC (`건설 감독`) and citizens | `PolygonFantasyKingdom/Prefabs/Characters/SM_Chr_Peasant_Male_01` ([view](art-assets/PolygonFantasyKingdom__SM_Chr_Peasant_Male_01.png)) |
+| Hero hall NPC (`사제`) | `PolygonFantasyKingdom/Prefabs/Characters/SM_Chr_Priest_01` ([view](art-assets/PolygonFantasyKingdom__SM_Chr_Priest_01.png)) |
+| Citizens | `PolygonFantasyKingdom/Prefabs/Characters/SM_Chr_Peasant_Female_01` ([view](art-assets/PolygonFantasyKingdom__SM_Chr_Peasant_Female_01.png)), `PolygonFantasyKingdom/Prefabs/Characters/SM_Chr_Monk_01` ([view](art-assets/PolygonFantasyKingdom__SM_Chr_Monk_01.png)), `PolygonFantasyKingdom/Prefabs/Characters/SM_Chr_Nun_01` ([view](art-assets/PolygonFantasyKingdom__SM_Chr_Nun_01.png)), `PolygonFantasyKingdom/Prefabs/Characters/SM_Chr_Jester_01` ([view](art-assets/PolygonFantasyKingdom__SM_Chr_Jester_01.png)), `PolygonFantasyKingdom/Prefabs/Characters/SM_Chr_FortuneTeller_01` ([view](art-assets/PolygonFantasyKingdom__SM_Chr_FortuneTeller_01.png)) |
 
 ### Animation (`CharacterModelSetup`; ART-03, ART-04)
 
