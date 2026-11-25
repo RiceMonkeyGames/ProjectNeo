@@ -129,7 +129,8 @@ namespace ProjectNeo.Tests
             Assert.IsFalse(station.Interact(), "중복 전투 시작을 막는다.");
             Assert.IsFalse(Object.FindAnyObjectByType<GamePhaseView>().EnterConstruction());
             Vector3 start = battle.Enemies[0].transform.position;
-            Assert.Greater(start.z - world.transform.TransformPoint(new Vector3(120f, 0f, 180f)).z, 70f);
+            // 북쪽 외벽 바깥면(z 277.5m, SIEGE-36)에서 70m 넘게 떨어진 들판에서 나온다.
+            Assert.Greater(start.z - world.transform.TransformPoint(new Vector3(176.25f, 0f, 277.5f)).z, 70f);
             for (int i = 0; i < 120; i++) yield return null;
             Assert.Less(battle.Enemies[0].transform.position.z, start.z - 1f, "적이 먼 들판에서 성으로 접근해야 한다.");
         }
@@ -171,7 +172,8 @@ namespace ProjectNeo.Tests
             var walls = world.Structures.Where(piece => piece.Placement.Definition.Kind == BuildPieceKind.Wall).ToArray();
             Vector3 middle = walls.Aggregate(Vector3.zero, (sum, piece) => sum + piece.transform.position) / walls.Length;
             middle.y = 0f;
-            middle += Vector3.right * offset;
+            // 성 가운데는 분수 광장이라(SIEGE-36) 그 남쪽 큰길 위 빈 땅을 쓴다.
+            middle += Vector3.right * offset + Vector3.back * 15f;
             Assert.IsTrue(NavMesh.SamplePosition(middle, out NavMeshHit hit, 10f, NavMesh.AllAreas));
             return hit.position;
         }
@@ -398,7 +400,8 @@ namespace ProjectNeo.Tests
         [UnityTest]
         public IEnumerator 사다리는_삼층_성벽_맨_위까지_연결되어_적이_오른다()
         {
-            SiegeLadder ladder = battle.Ladders[0];
+            // 양옆이 모두 1층인 사다리 칸을 고른다. 모서리 탑·성문탑(2층) 바로 옆 칸을 올리면 그 사이 칸이 골짜기가 된다(SIEGE-36).
+            SiegeLadder ladder = battle.Ladders.OrderBy(l => l.Cell.x).ElementAt(2);
             var wall = world.Structures.First(piece => piece.Placement.Definition.Kind == BuildPieceKind.Wall).Placement.Definition;
             Assert.IsTrue(world.TryPlace(wall, ladder.Cell, 0, out _));
             Assert.IsTrue(world.TryPlace(wall, ladder.Cell, 0, out _));

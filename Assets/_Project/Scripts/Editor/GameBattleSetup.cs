@@ -22,6 +22,8 @@ namespace ProjectNeo.Editor
         internal const float SquadListHeight = 236f;
         // 사다리 자리 간격(칸). 7.5m 칸에서 15m로 3m 칸 시절(5칸)과 같은 거리다(사용자 결정 2026-11-23, SIEGE-18).
         internal const int LadderSpacing = 2;
+        // 북쪽 줄 양끝에서 사다리를 놓지 않는 칸 수. SIEGE-36: 모서리 2×2 탑과 그 옆 성벽 위 계단 칸을 피한다.
+        internal const int LadderEndMargin = 3;
         [MenuItem("ProjectNeo/Setup/Connect Battle To Game Scene")]
         public static void Apply()
         {
@@ -73,7 +75,7 @@ namespace ProjectNeo.Editor
             var ladders = new List<SiegeLadder>();
             var wood = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Art/Placeholder/SiegeLadder.mat");
             // 사다리는 북쪽 줄을 따라 LadderSpacing칸(7.5m 칸에서 15m)마다, 성문 칸은 건너뛴다(SIEGE-18).
-            for (int x = west + 2; x <= east - 2; x += LadderSpacing)
+            for (int x = west + LadderEndMargin; x <= east - LadderEndMargin; x += LadderSpacing)
             {
                 if (x >= gateCell.x && x < gateCell.x + gateSize.x) continue;
                 var root = new GameObject("Ladder_" + x);

@@ -19,6 +19,8 @@ namespace ProjectNeo.Flow
         [SerializeField] SquadCommandInput commandInput;
         [SerializeField] GameObject constructionHud, commandHud;
         [SerializeField] GameObject[] actors;
+        [Tooltip("건설 격자선. 건설 화면에서만 켠다(SIEGE-36). 비어 있으면 건드리지 않는다.")]
+        [SerializeField] GameObject buildGrid;
         GameFlow flow;
         bool constructionOpen, panelOpen, placementOpen;
 
@@ -40,6 +42,9 @@ namespace ProjectNeo.Flow
             playerInput = playerController; commandInput = squadInput; constructionHud = buildHud; commandHud = squadHud;
             actors = sceneActors;
         }
+
+        /// <summary>건설 화면에서만 보일 격자선(SIEGE-36).</summary>
+        public void ConfigureBuildGrid(GameObject grid) => buildGrid = grid;
 
         void Awake()
         {
@@ -140,6 +145,8 @@ namespace ProjectNeo.Flow
             battleCamera.gameObject.SetActive(!topDown);
             // 준비 중 1인칭 탐색과 부대 배치 화면에서도 부대 상태를 보여준다(PREP-05). 키 안내 상자는 전투에서만 보인다.
             constructionHud.SetActive(build); commandHud.SetActive(battle || exploration || squadPlacement);
+            // 격자선은 건설할 때만 필요하다. 1인칭 탐색·전투에서는 바닥 위 초록 선으로 거슬린다.
+            if (buildGrid != null) buildGrid.SetActive(build);
             var commandView = commandHud.GetComponent<ProjectNeo.UI.SquadCommandHud>();
             if (commandView != null) commandView.SetHelpVisible(battle);
             IsBuildView = build; IsBattleView = battle; IsExplorationView = exploration; IsPanelView = panel;

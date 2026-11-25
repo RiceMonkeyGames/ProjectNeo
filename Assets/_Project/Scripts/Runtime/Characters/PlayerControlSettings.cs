@@ -23,7 +23,10 @@ namespace ProjectNeo.Characters
         [SerializeField, Min(0f)] float jumpHeight = 1.2f;
         // 점프 중 입력이 수평 속도에 섞이는 비율. 나머지는 뛸 때의 속도를 유지한다.
         [SerializeField, Range(0f, 1f)] float airControl = 0.3f;
+        // 1인칭 카메라를 몸 앞으로 내미는 거리(SIEGE-36). 플레이어 모델의 머리·투구가 화면을 가리지 않게 얼굴 앞에 둔다.
+        [SerializeField, Min(0f)] float cameraForwardOffset = 0.22f;
         public float MouseSensitivity => mouseSensitivity;
+        public float CameraForwardOffset => cameraForwardOffset;
         public float CameraDistance => cameraDistance;
         public float CameraHeight => cameraHeight;
         public float MinimumPitch => minimumPitch;

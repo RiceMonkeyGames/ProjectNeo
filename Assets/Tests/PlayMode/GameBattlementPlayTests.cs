@@ -71,8 +71,8 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(BattlementStyle.Parapet, battlements.Style, "새 런은 방어 시설 1레벨 = 낮은 난간이다.");
             int ringCells = world.Structures.Where(p => p.Placement.Definition.Kind != BuildPieceKind.Stairs)
                 .Select(p => p.Placement.Cell).Distinct().Count();
-            Assert.AreEqual(48, ringCells, "7.5m 칸 13칸 성벽 고리(SIEGE-18).");
-            Assert.AreEqual(ringCells, battlements.BuiltCount, "성벽 고리의 맨 위 칸마다 선다.");
+            Assert.AreEqual(104, ringCells, "7.5m 칸 26칸 성벽 고리 100칸 + 모서리 탑 안쪽 칸 4(SIEGE-36).");
+            Assert.AreEqual(100, battlements.BuiltCount, "바깥 면이 있는 고리 칸마다 선다. 모서리 탑 안쪽 칸은 바깥 면이 없어 서지 않는다.");
 
             PlacedStructure wall = NorthWallWithoutLadder();
             Assert.AreEqual(North, battlements.FacesAt(wall.Placement.Cell), "북쪽 성벽은 바깥(북) 면에만 선다.");

@@ -240,16 +240,22 @@ namespace ProjectNeo.Editor
             AssetDatabase.SaveAssets();
         }
 
-        // SIEGE-18: 7.5m 칸, 5m 층. 지면 32×40칸(240×300m), 성 13×13칸(97.5m), 안뜰 82.5m. 북쪽 외벽에서 지면 끝까지 120m다.
-        // 성문은 북쪽 줄 가운데 칸(16)이라 지면 가운데 선에서 동쪽으로 3.75m 비껴 있다(사용자 결정 2026-11-23).
+        // SIEGE-36: 7.5m 칸, 5m 층. 지면 46×53칸(345×397.5m), 성 26×26칸(195m), 안뜰 180m. 북쪽 외벽에서 지면 끝까지 120m다.
+        // 서·동·남 여백은 SIEGE-18과 같다(서 10칸, 동 10칸, 남 11칸). 성문은 북쪽 줄 x 23 칸이라 성 가운데 선에서 동쪽으로 3.75m 비껴 있다.
         // 성벽·보루·계단·성문 칸은 3층까지, 4층은 망루 층만 쓴다(Q-59). 골짜기 금지, 계단은 땅 위에만.
-        internal const int GridWidth = 32, GridDepth = 40, MaxLevels = 4;
+        internal const int GridWidth = 46, GridDepth = 53, MaxLevels = 4;
         internal const float CellSize = 7.5f;
-        internal const int WallWest = 10, WallEast = 22, WallSouth = 11, WallNorth = 23, GateX = 16;
+        internal const int WallWest = 10, WallEast = 35, WallSouth = 11, WallNorth = 36, GateX = 23;
+        /// <summary>네 모서리의 2층 탑 한 변 칸 수(고리 모서리 칸과 안쪽 칸을 합친 2×2).</summary>
+        internal const int CornerTowerSize = 2;
+        /// <summary>안뜰 큰길(성문 가운데 선)과 가운데 광장의 지면 기준 m.</summary>
+        internal const float AvenueX = (GateX + 0.5f) * CellSize, PlazaZ = 180f;
+        /// <summary>적 출현 가운데 칸: 성문 줄에서 북쪽 외벽 바깥 13칸(외벽 바깥면에서 90m, SIEGE-18과 같은 거리).</summary>
+        internal static readonly Vector2 SpawnCell = new Vector2(GateX, WallNorth + 13);
 
         /// <summary>
-        /// 기본 성: 1층(5m) 외벽 고리, 성문 위에 고정 성벽 한 층을 얹은 2층 성문탑, 안뜰에서 성벽으로 오르는 땅 위 계단 셋.
-        /// 계단 회전 0은 북쪽, 회전 2는 남쪽 성벽으로 올라간다.
+        /// 기본 성(SIEGE-36): 1층(5m) 외벽 고리, 성문 위에 고정 성벽 한 층을 얹은 2층 성문탑, 네 모서리의 2×2칸 2층 탑,
+        /// 안뜰에서 성벽으로 오르는 땅 위 계단 여덟(각 변에 둘). 계단 회전 0 북, 1 동, 2 남, 3 서 성벽으로 올라간다.
         /// </summary>
         internal static InitialBuildPiece[] DefaultSeeds(BuildPieceDefinition wall, BuildPieceDefinition stairs, BuildPieceDefinition gate)
         {
@@ -267,11 +273,37 @@ namespace ProjectNeo.Editor
                 seeds.Add(new InitialBuildPiece { definition = wall, cell = new Vector2Int(WallWest, z) });
                 seeds.Add(new InitialBuildPiece { definition = wall, cell = new Vector2Int(WallEast, z) });
             }
-            seeds.Add(new InitialBuildPiece { definition = stairs, cell = new Vector2Int(WallWest + 3, WallNorth - 1) });
-            seeds.Add(new InitialBuildPiece { definition = stairs, cell = new Vector2Int(WallEast - 3, WallNorth - 1) });
-            seeds.Add(new InitialBuildPiece { definition = stairs, cell = new Vector2Int(GateX, WallSouth + 1), rotation = 2 });
+            // 모서리 탑: 고리 모서리 2×2칸을 2층으로 쌓는다. 안쪽 칸은 1층부터 새로 채운다. 탑 위로는 성벽 위 계단이 자동으로 붙는다(SIEGE-19 장식 규칙).
+            foreach (Vector2Int cell in CornerTowerCells())
+            {
+                bool onRing = cell.x == WallWest || cell.x == WallEast || cell.y == WallSouth || cell.y == WallNorth;
+                if (!onRing) seeds.Add(new InitialBuildPiece { definition = wall, cell = cell });
+                seeds.Add(new InitialBuildPiece { definition = wall, cell = cell });
+            }
+            foreach ((Vector2Int cell, int rotation) in StairSeeds())
+                seeds.Add(new InitialBuildPiece { definition = stairs, cell = cell, rotation = rotation });
             return seeds.ToArray();
         }
+
+        /// <summary>네 모서리 탑이 차지하는 칸(각 2×2).</summary>
+        internal static IEnumerable<Vector2Int> CornerTowerCells()
+        {
+            int[] xs = { WallWest, WallEast - CornerTowerSize + 1 }, zs = { WallSouth, WallNorth - CornerTowerSize + 1 };
+            foreach (int x0 in xs)
+                foreach (int z0 in zs)
+                    for (int dx = 0; dx < CornerTowerSize; dx++)
+                        for (int dz = 0; dz < CornerTowerSize; dz++)
+                            yield return new Vector2Int(x0 + dx, z0 + dz);
+        }
+
+        /// <summary>땅 위 계단 여덟: 각 변 안쪽에 둘, 성문·모서리 탑에서 떨어진 자리. 회전은 오를 성벽 쪽이다.</summary>
+        internal static (Vector2Int cell, int rotation)[] StairSeeds() => new[]
+        {
+            (new Vector2Int(16, WallNorth - 1), 0), (new Vector2Int(30, WallNorth - 1), 0),
+            (new Vector2Int(16, WallSouth + 1), 2), (new Vector2Int(30, WallSouth + 1), 2),
+            (new Vector2Int(WallEast - 1, 20), 1), (new Vector2Int(WallEast - 1, 28), 1),
+            (new Vector2Int(WallWest + 1, 20), 3), (new Vector2Int(WallWest + 1, 28), 3),
+        };
 
         /// <summary>
         /// 게임 씬의 격자를 넓히고 기본 성 배치와 유닛 시작 위치를 적용한다. 여러 번 실행해도 같은 결과다.
@@ -300,12 +332,13 @@ namespace ProjectNeo.Editor
             gridData.ApplyModifiedPropertiesWithoutUndo();
             var cameraSettings = CombatPrototypeSetup.Save(BuildCameraSettings.Create(), Data + "/BuildCamera.asset");
             var cameraData = new SerializedObject(cameraSettings);
-            cameraData.FindProperty("orthographicSize").floatValue = 55f;
-            cameraData.FindProperty("distance").floatValue = 320f;
+            // SIEGE-36: 성이 두 배라 처음 화면과 최대 축소도 두 배 가까이 넓힌다. 처음 초점은 성 가운데.
+            cameraData.FindProperty("orthographicSize").floatValue = 105f;
+            cameraData.FindProperty("distance").floatValue = 480f;
             cameraData.FindProperty("navigationEnabled").boolValue = true;
-            cameraData.FindProperty("initialFocus").vector2Value = new Vector2(0.5f, 0.44f);
+            cameraData.FindProperty("initialFocus").vector2Value = new Vector2(AvenueX / (GridWidth * CellSize), PlazaZ / (GridDepth * CellSize));
             cameraData.FindProperty("minZoom").floatValue = 20f;
-            cameraData.FindProperty("maxZoom").floatValue = 180f;
+            cameraData.FindProperty("maxZoom").floatValue = 320f;
             cameraData.ApplyModifiedPropertiesWithoutUndo();
 
             ConstructionWorld world = FindAll<ConstructionWorld>(game)[0];
@@ -318,7 +351,21 @@ namespace ProjectNeo.Editor
             Transform ground = geometry.Find("Ground");
             ground.localScale = new Vector3(width, 1f, depth);
             ground.localPosition = new Vector3(width * 0.5f, -0.5f, depth * 0.5f);
-            ApplyCourtyard(geometry);
+            // 지면 상자는 걷는 바닥(충돌)만 맡고 보이지 않는다. 겉은 풀밭 조각이 맵 밖까지 덮는다(SIEGE-36: 녹색 판을 치운다).
+            // 프로토타입과 같이 쓰는 ConstructionGround 머티리얼은 그대로 두고 Game 씬의 렌더러만 끈다.
+            ground.GetComponent<Renderer>().enabled = false;
+            // 건설 격자선은 건설 화면에서만 보인다.
+            Transform gridLines = world.transform.Find("GridLines");
+            if (gridLines != null)
+            {
+                var phaseView = FindAll<GamePhaseView>(game)[0];
+                phaseView.ConfigureBuildGrid(gridLines.gameObject);
+                gridLines.gameObject.SetActive(false);
+                EditorUtility.SetDirty(phaseView);
+            }
+            GameCourtyardArtSetup.Plan courtyard = ApplyCourtyard(geometry);
+            GameTownSetup.Apply(game, world, courtyard);
+            ApplySpawnCells();
 
             var orbit = FindAll<ConstructionCameraController>(game)[0];
             orbit.Configure(world, cameraSettings);
@@ -327,12 +374,20 @@ namespace ProjectNeo.Editor
             buildCamera.orthographicSize = cameraSettings.OrthographicSize;
             buildCamera.farClipPlane = 1000f;
             buildCamera.transform.rotation = Quaternion.Euler(cameraSettings.Pitch, cameraSettings.InitialYaw, 0f);
-            buildCamera.transform.position = world.transform.TransformPoint(new Vector3(width * 0.5f, 0f, depth * 0.44f))
+            buildCamera.transform.position = world.transform.TransformPoint(new Vector3(AvenueX, 0f, PlazaZ))
                 - buildCamera.transform.forward * cameraSettings.Distance;
-            FindAll<FirstPersonCamera>(game)[0].GetComponent<Camera>().farClipPlane = 1000f;
+            var firstPerson = FindAll<FirstPersonCamera>(game)[0].GetComponent<Camera>();
+            firstPerson.farClipPlane = 1000f;
+            // 1인칭에서 내 팔·몸(SIEGE-36 플레이어 모델)이 카메라 가까이에 있어도 잘리지 않게 한다.
+            firstPerson.nearClipPlane = 0.05f;
 
-            // 부대는 북쪽 계단 두 곳 아래와 집결지, 플레이어는 안뜰 남쪽 큰길에서 북쪽을 본다(지면 기준 m).
-            Vector3[] squadPoints = { new Vector3(101.25f, 0f, 160f), new Vector3(146.25f, 0f, 160f), new Vector3(123.75f, 0f, 150f) };
+            // 부대는 북쪽 계단 두 곳 앞(계단 발치에서 남쪽 5.5m)과 성문 안 집결지, 플레이어는 안뜰 남쪽 큰길에서 북쪽을 본다(지면 기준 m).
+            float stairFoot = (WallNorth - 1) * CellSize - 5.5f;
+            Vector3[] squadPoints =
+            {
+                new Vector3(16.5f * CellSize, 0f, stairFoot), new Vector3(30.5f * CellSize, 0f, stairFoot),
+                new Vector3(AvenueX, 0f, WallNorth * CellSize - 22.5f)
+            };
             foreach (GameObject root in game.GetRootGameObjects())
             {
                 for (int squad = 0; squad < squadPoints.Length; squad++)
@@ -341,7 +396,7 @@ namespace ProjectNeo.Editor
                             Place(root.transform, origin + squadPoints[squad]
                                 + new Vector3((i % 2 - 0.5f) * 1.1f, 0f, -(i / 2) * 1.1f), 0f);
                 if (root.name == "Player")
-                    Place(root.transform, origin + new Vector3(123.75f, 0f, 105f), 0f);
+                    Place(root.transform, origin + new Vector3(AvenueX, 0f, (WallSouth + 1) * CellSize + 15f), 0f);
             }
 
             AddNavigationHelp(FindAll<ConstructionHud>(game)[0]);
@@ -416,22 +471,22 @@ namespace ProjectNeo.Editor
             EditorUtility.SetDirty(hud);
         }
 
-        // 안뜰(x 82.5~165m, z 90~172.5m, 지면 기준) 배치(SIEGE-18). 큰길은 성문 가운데(x 123.75m)를 따라간다.
-        // 북쪽 계단 칸(x 97.5~105, 142.5~150 / z 165~172.5)과 남쪽 계단 칸(x 120~127.5 / z 90~97.5) 앞은 비워 둔다.
+        // 안뜰(x 82.5~262.5m, z 90~270m, 지면 기준) 시설(SIEGE-36). 여기 자리와 크기는 처음 만들 때의 임시 상자다.
+        // 최종 자리·방향·겉모습·충돌 상자는 GameCourtyardArtSetup.Buildings가 정한다(길과 광장을 보게 제각각 돌린다).
         static readonly (string name, Vector3 position, Vector3 size, string sign)[] Facilities =
         {
-            ("Tavern", new Vector3(97.5f, 0f, 113.5f), new Vector3(15f, 7f, 12f), "주점"),
-            ("Shop", new Vector3(97.5f, 0f, 150.5f), new Vector3(12f, 6f, 12f), "상점"),
-            ("Training", new Vector3(97.5f, 0f, 97f), new Vector3(15f, 5f, 9f), "훈련장"),
-            ("Smithy", new Vector3(150f, 0f, 113.5f), new Vector3(15f, 7f, 12f), "대장간"),
-            ("Construction", new Vector3(150f, 0f, 150.5f), new Vector3(12f, 6f, 12f), "건설"),
+            ("Tavern", new Vector3(130f, 0f, 166f), new Vector3(18f, 12f, 18f), "주점"),
+            ("Shop", new Vector3(124f, 0f, 224f), new Vector3(11f, 10f, 12f), "상점"),
+            ("Training", new Vector3(116f, 0f, 123f), new Vector3(18f, 10f, 11f), "훈련장"),
+            ("Smithy", new Vector3(226f, 0f, 164f), new Vector3(16f, 10f, 13f), "대장간"),
+            ("Construction", new Vector3(230f, 0f, 226f), new Vector3(13f, 12f, 13f), "건설"),
         };
 
         /// <summary>
-        /// 안뜰 길·집결지·시설을 놓는다. 이미 있는 것은 자리와 크기만 바꿔 다른 설정 메뉴가 붙인 부품(시설 기능, 상호작용)을 지키고,
-        /// 없는 것만 새로 만든다.
+        /// 안뜰 시설을 놓고 겉모습(바닥·건물 모델·조형물)을 입힌다. 이미 있는 시설은 자리만 바꿔 다른 설정 메뉴가 붙인 부품
+        /// (시설 기능, 상호작용)을 지키고, 없는 것만 새로 만든다. SIEGE-18의 흙길·집결지 상자는 돌 바닥으로 바뀌어 지운다.
         /// </summary>
-        static void ApplyCourtyard(Transform geometry)
+        static GameCourtyardArtSetup.Plan ApplyCourtyard(Transform geometry)
         {
             Transform layout = geometry.Find("CourtyardLayout");
             if (layout == null)
@@ -439,26 +494,43 @@ namespace ProjectNeo.Editor
                 layout = new GameObject("CourtyardLayout").transform;
                 layout.SetParent(geometry, false);
             }
-            Material road = CombatPrototypeSetup.MaterialAsset("CourtyardRoad", new Color(0.43f, 0.39f, 0.31f));
             Material plaster = CombatPrototypeSetup.MaterialAsset("FacilityPlaster", new Color(0.73f, 0.65f, 0.48f));
             Material roof = CombatPrototypeSetup.MaterialAsset("FacilityRoof", new Color(0.28f, 0.32f, 0.43f));
-            Material plaza = CombatPrototypeSetup.MaterialAsset("MusterGround", new Color(0.3f, 0.35f, 0.25f));
-            PlaceDecoration(layout, "MainAvenue", new Vector3(123.75f, 0.035f, 131.25f), new Vector3(9f, 0.04f, 82.5f), road);
-            PlaceDecoration(layout, "CrossAvenue", new Vector3(123.75f, 0.035f, 131.25f), new Vector3(82.5f, 0.04f, 6f), road);
-            PlaceDecoration(layout, "MusterGround", new Vector3(123.75f, 0.03f, 154.5f), new Vector3(40f, 0.04f, 24f), plaza);
+            foreach (string old in new[] { "MainAvenue", "CrossAvenue", "MusterGround" })
+            {
+                Transform existing = layout.Find(old);
+                if (existing != null) UnityEngine.Object.DestroyImmediate(existing.gameObject);
+            }
 
             foreach ((string name, Vector3 position, Vector3 size, string sign) in Facilities)
                 PlaceFacility(layout, name, position, size, plaster, roof, sign);
             PlaceFacility(layout, HeroHallSetup.BuildingName, HeroHallSetup.BuildingPosition, HeroHallSetup.BuildingSize, plaster, roof,
                 HeroHallSetup.DisplayName);
+            return GameCourtyardArtSetup.Apply(geometry);
         }
 
-        static void PlaceDecoration(Transform parent, string name, Vector3 position, Vector3 scale, Material material)
+        /// <summary>
+        /// 적 출현 칸을 새 북쪽 외벽에 맞춘다(SIEGE-36). 가운데는 <see cref="SpawnCell"/>, 좌우는 StageSetup과 같은 간격이다.
+        /// 스테이지 편성은 그대로 두고 출현 칸만 바꾼다.
+        /// </summary>
+        static void ApplySpawnCells()
         {
-            Transform existing = parent.Find(name);
-            if (existing == null) { Decoration(parent, name, position, scale, material); return; }
-            existing.localPosition = position;
-            existing.localScale = scale;
+            var battle = AssetDatabase.LoadAssetAtPath<GameBattleSettings>(Data + "/Battle.asset");
+            if (battle != null) SetVector2(battle, "spawnCell", SpawnCell);
+            (string asset, float offset)[] points = { ("SpawnLeft", -StageSetup.SideOffsetCells), ("SpawnCenter", 0f), ("SpawnRight", StageSetup.SideOffsetCells) };
+            foreach ((string asset, float offset) in points)
+            {
+                var point = AssetDatabase.LoadAssetAtPath<ProjectNeo.Stages.SpawnPointDefinition>(StageSetup.Folder + "/" + asset + ".asset");
+                if (point != null) SetVector2(point, "cell", SpawnCell + Vector2.right * offset);
+            }
+        }
+
+        static void SetVector2(UnityEngine.Object target, string property, Vector2 value)
+        {
+            var data = new SerializedObject(target);
+            data.FindProperty(property).vector2Value = value;
+            data.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(target);
         }
 
         // 시설 크기는 그대로라 자리만 옮긴다(충돌·외형은 루트 기준).

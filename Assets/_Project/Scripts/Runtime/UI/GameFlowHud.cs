@@ -242,7 +242,7 @@ namespace ProjectNeo.UI
                 ? $"{interaction.CloseKey} 닫기"
                 : shortHints ? string.Empty
                 : interaction.Target != null
-                    ? $"{interaction.InteractKey} · {interaction.Target.Prompt}"
+                    ? $"{interaction.InteractKey} · {interaction.TargetPrompt}"
                     : $"WASD 이동 - {interaction.InteractKey} 상호작용 - {interaction.EquipmentKey} 장비 - {interaction.OrganizationKey} 부대 - {interaction.EnemyPreviewKey} 적 정보"
                         + (battle != null && battle.PerkWindow != null ? $" - {battle.PerkWindow.KeyText} 특성" : string.Empty);
             if (shortHints && phaseView.IsExplorationView && interaction.Target != null)
@@ -251,9 +251,9 @@ namespace ProjectNeo.UI
                 {
                     ShowContextKey(true);
                     contextKey.text = interaction.InteractKey;
-                    contextPrompt.text = interaction.Target.Prompt;
+                    contextPrompt.text = interaction.TargetPrompt;
                 }
-                else contextPrompt.text = PrepHudText.ContextPrompt(interaction.InteractKey, interaction.Target.Prompt);
+                else contextPrompt.text = PrepHudText.ContextPrompt(interaction.InteractKey, interaction.TargetPrompt);
             }
             if (phaseView.IsExplorationView && battle != null)
             {

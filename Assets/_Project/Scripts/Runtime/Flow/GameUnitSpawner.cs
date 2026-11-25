@@ -22,7 +22,7 @@ namespace ProjectNeo.Flow
         [SerializeField] ConstructionWorld world;
         [SerializeField] UnitAISettings aiSettings;
         [SerializeField] FallSettings fallSettings;
-        [Tooltip("시설 건물 중심에서 유닛이 나타나는 곳까지의 거리(m).")]
+        [Tooltip("시설 건물 정면 바깥면(충돌 상자 끝)에서 유닛이 나타나는 곳까지의 거리(m). 정면은 시설 루트의 앞(+z) 방향이다.")]
         [SerializeField, Min(0f)] float facilityFrontDistance = 6f;
         [Tooltip("나타날 곳을 걸을 수 있는 지점으로 붙일 때 찾는 반경(m).")]
         [SerializeField, Min(0.1f)] float navigationSnapDistance = 4f;
@@ -80,7 +80,7 @@ namespace ProjectNeo.Flow
             if (unit == null) return null;
 
             Vector3 toward = origin + (station != null ? station.transform.forward : Vector3.forward);
-            Vector3 spawnPoint = SlotNear(FrontOf(origin, toward));
+            Vector3 spawnPoint = SlotNear(FrontOf(origin, toward, station));
             Place(unit, spawnPoint, spawnPoint + (toward - origin));
             unit.name = definition.Id + "_Recruit" + (++spawned);
             // 켜야 능력치·체력이 생긴다. 훈련·퍽을 붙인 뒤 보관 병사로 숨긴다.
@@ -110,7 +110,7 @@ namespace ProjectNeo.Flow
             Vector3 origin = stations.TryGetValue(FacilityType.Tavern, out FacilityStation station) ? station.transform.position
                 : battle.transform.position;
             Vector3 toward = origin + (station != null ? station.transform.forward : Vector3.forward);
-            Vector3 spawnPoint = FrontOf(origin, toward);
+            Vector3 spawnPoint = FrontOf(origin, toward, station);
             check = battle.RunLink.TryHire(hero, captainOf, def => CreateHero(def, spawnPoint, toward),
                 out UnitCombatAI unit, out Vector3 gather, out bool hasGather);
             if (unit == null) return null;
@@ -128,11 +128,11 @@ namespace ProjectNeo.Flow
         public UnitCombatAI SpawnRestoredSoldier(SoldierDefinition definition, Vector3? gather)
         {
             if (definition == null || definition.UnitPrefab == null) return null;
-            Vector3 origin = RestoreOrigin(FacilityType.TrainingGround, out Vector3 toward);
+            Vector3 origin = RestoreOrigin(FacilityType.TrainingGround, out Vector3 toward, out FacilityStation station);
             UnitCombatAI unit = Create(definition, origin);
             if (unit == null) return null;
             spawned++;
-            Vector3 point = SlotNear(gather ?? FrontOf(origin, toward));
+            Vector3 point = SlotNear(gather ?? FrontOf(origin, toward, station));
             Place(unit, point, point + (toward - origin));
             unit.name = definition.Id + "_Restored" + spawned;
             unit.gameObject.SetActive(true);
@@ -149,9 +149,9 @@ namespace ProjectNeo.Flow
         public UnitCombatAI SpawnRestoredHero(HeroDefinition hero, Vector3? gather)
         {
             if (hero == null || hero.UnitPrefab == null) return null;
-            Vector3 origin = RestoreOrigin(FacilityType.Tavern, out Vector3 toward);
+            Vector3 origin = RestoreOrigin(FacilityType.Tavern, out Vector3 toward, out FacilityStation station);
             spawned++;
-            Vector3 point = SlotNear(gather ?? FrontOf(origin, toward));
+            Vector3 point = SlotNear(gather ?? FrontOf(origin, toward, station));
             UnitCombatAI unit = CreateHero(hero, point, point + (toward - origin));
             if (unit == null) return null;
             unit.name = hero.Id + "_RestoredHero" + spawned;
@@ -159,9 +159,9 @@ namespace ProjectNeo.Flow
             return unit;
         }
 
-        Vector3 RestoreOrigin(FacilityType facility, out Vector3 toward)
+        Vector3 RestoreOrigin(FacilityType facility, out Vector3 toward, out FacilityStation station)
         {
-            bool found = stations.TryGetValue(facility, out FacilityStation station);
+            bool found = stations.TryGetValue(facility, out station);
             Vector3 origin = found ? station.transform.position : transform.position;
             toward = origin + (found ? station.transform.forward : Vector3.forward);
             return origin;
@@ -221,12 +221,22 @@ namespace ProjectNeo.Flow
             return unit;
         }
 
-        Vector3 FrontOf(Vector3 building, Vector3 toward)
+        // 건물 정면 바깥면에서 facilityFrontDistance 앞. 건물이 커도(SIEGE-36 모델 크기 충돌 상자) 건물 안에 나타나지 않는다.
+        Vector3 FrontOf(Vector3 building, Vector3 toward, FacilityStation station)
         {
             Vector3 direction = toward - building;
             direction.y = 0f;
             if (direction.sqrMagnitude < 0.01f) direction = Vector3.forward;
-            Vector3 candidate = building + direction.normalized * facilityFrontDistance;
+            direction.Normalize();
+            float reach = facilityFrontDistance;
+            // 건물이 비스듬히 돌아 있어도(SIEGE-36) 건물 축 기준 상자 크기로 잰다. 세계 축 경계 상자로 재면 너무 멀어진다.
+            if (station != null && station.TryGetComponent(out BoxCollider box) && box.enabled)
+            {
+                Vector3 local = station.transform.InverseTransformDirection(direction);
+                Vector3 half = Vector3.Scale(box.size, station.transform.lossyScale) * 0.5f;
+                reach += Mathf.Abs(local.x) * half.x + Mathf.Abs(local.z) * half.z;
+            }
+            Vector3 candidate = building + direction * reach;
             return NavMesh.SamplePosition(candidate, out NavMeshHit hit, navigationSnapDistance, NavMesh.AllAreas)
                 ? hit.position : candidate;
         }

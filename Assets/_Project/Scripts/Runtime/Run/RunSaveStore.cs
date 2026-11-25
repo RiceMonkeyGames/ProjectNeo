@@ -37,10 +37,13 @@ namespace ProjectNeo.Run
     /// </summary>
     public sealed class RunSaveStore
     {
-        /// <summary>2: Game 격자가 7.5m 칸으로 바뀌었다(SIEGE-18). 성 조각 칸 좌표가 3m 칸 기준인 1판은 읽지 않는다.</summary>
-        public const int CurrentVersion = 2;
+        /// <summary>
+        /// 2: Game 격자가 7.5m 칸으로 바뀌었다(SIEGE-18). 성 조각 칸 좌표가 3m 칸 기준인 1판은 읽지 않는다.
+        /// 3: 기본 성이 26칸 고리로 넓어졌다(SIEGE-36). 13칸 성 좌표인 2판은 읽지 않는다(사용자 결정 2026-11-25: 옮기지 않고 새로 시작).
+        /// </summary>
+        public const int CurrentVersion = 3;
         /// <summary>읽을 수 있는 가장 오래된 버전.</summary>
-        public const int MinimumVersion = 2;
+        public const int MinimumVersion = 3;
 
         public string Directory { get; }
         /// <summary>마지막 저장·읽기에서 생긴 파일 오류. 없으면 빈 문자열.</summary>

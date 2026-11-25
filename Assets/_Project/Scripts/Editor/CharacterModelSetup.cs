@@ -100,6 +100,28 @@ namespace ProjectNeo.Editor
             AssetDatabase.SaveAssets();
         }
 
+        const string PlayerPrefab = "Assets/_Project/Prefabs/CombatPrototype/Player.prefab";
+        const string PlayerModel = "Assets/ThirdParty/PolygonKnights/Prefabs/Characters/Character_Knight_01_Blue.prefab";
+        // 플레이어 모델 키(m). 충돌 몸체(2m)보다 작게 해 눈(키의 약 92%)이 1인칭 눈높이(1.6m + 웅크림 없음)와 맞게 한다.
+        const float PlayerModelHeight = 1.78f;
+
+        /// <summary>
+        /// 플레이어(지휘관)에 PolygonKnights 기사 모델과 칼을 붙인다(SIEGE-36, 사용자 결정 2026-11-25).
+        /// 근접 아군과 같은 남성·근접 애니메이터와 동작 프로필을 그대로 쓴다(이미 있는 에셋만 읽고 새로 만들지 않는다).
+        /// 1인칭에서 몸이 보이는 처리는 FirstPersonCamera가 맡는다.
+        /// </summary>
+        [MenuItem("ProjectNeo/Setup/Apply Player Model (SIEGE-36)")]
+        public static void ApplyPlayerModel()
+        {
+            var controller = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(AnimationFolder + "/AC_Unit_Ground_Masc_Melee.controller")
+                ?? throw new InvalidOperationException("Run Apply Character Models first (missing AC_Unit_Ground_Masc_Melee).");
+            var profile = AssetDatabase.LoadAssetAtPath<CharacterAnimationProfile>(AnimationFolder + "/CAP_Unit_Ground_Masc_Melee.asset")
+                ?? throw new InvalidOperationException("Run Apply Character Models first (missing CAP_Unit_Ground_Masc_Melee).");
+            ApplyTo(PlayerPrefab, PlayerModel, Body.Masculine, Sword, Style.Melee, controller, profile, new Dictionary<Material, Material>(),
+                PlayerModelHeight);
+            AssetDatabase.SaveAssets();
+        }
+
         // ── 컨트롤러 ────────────────────────────────────────────
 
         static (RuntimeAnimatorController, CharacterAnimationProfile) BuildSet(Body body, Style style, AvatarMask mask, string measureModel)
@@ -473,7 +495,7 @@ namespace ProjectNeo.Editor
         // ── 프리팹 ──────────────────────────────────────────────
 
         static void ApplyTo(string unitPath, string modelPath, Body motion, Weapon weapon, Style style, RuntimeAnimatorController controller,
-            CharacterAnimationProfile profile, Dictionary<Material, Material> converted)
+            CharacterAnimationProfile profile, Dictionary<Material, Material> converted, float modelHeight = 0f)
         {
             var modelAsset = AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
             if (modelAsset == null) throw new InvalidOperationException("Missing model " + modelPath + " (init the ThirdParty submodule).");
@@ -501,7 +523,7 @@ namespace ProjectNeo.Editor
                 model.localRotation = Quaternion.identity;
                 foreach (var collider in instance.GetComponentsInChildren<Collider>(true)) UnityEngine.Object.DestroyImmediate(collider);
                 ConvertMaterials(instance, converted);
-                FitHeight(model, actor.Profile.Height);
+                FitHeight(model, modelHeight > 0f ? modelHeight : actor.Profile.Height);
 
                 var body = visual.Find("Body");
                 if (body != null && body.TryGetComponent(out Renderer bodyRenderer)) bodyRenderer.enabled = false;

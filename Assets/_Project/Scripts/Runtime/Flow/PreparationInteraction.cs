@@ -157,10 +157,17 @@ namespace ProjectNeo.Flow
             if (Physics.Raycast(playerCamera.transform.position, playerCamera.transform.forward,
                 out RaycastHit hit, settings.Distance, ~0, QueryTriggerInteraction.Ignore))
             {
-                var station = hit.collider.GetComponentInParent<PreparationStation>();
+                // SIEGE-36: NPC가 맡은 시설은 그 NPC를 바라볼 때만 연다. 건물 충돌체는 대상이 아니다.
+                var npc = hit.collider.GetComponentInParent<StationNpc>();
+                var station = npc != null ? npc.Station : hit.collider.GetComponentInParent<PreparationStation>();
+                if (npc == null && station != null && station.Npc != null) station = null;
                 if (station != null && !(station is BattleStartStation) && station.PhaseView == phaseView) Target = station;
             }
         }
+
+        /// <summary>안내 줄 글: NPC가 맡은 시설이면 "이름에게 말 걸기 - 시설 사용", 아니면 시설 안내 그대로.</summary>
+        public string TargetPrompt => Target == null ? string.Empty
+            : Target.Npc != null ? $"{Target.Npc.DisplayName}에게 말 걸기 - {Target.Prompt}" : Target.Prompt;
 
         public bool TryInteract()
         {

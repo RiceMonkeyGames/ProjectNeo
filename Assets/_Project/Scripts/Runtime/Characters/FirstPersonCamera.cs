@@ -32,14 +32,40 @@ namespace ProjectNeo.Characters
             player = target.GetComponent<PlayerInputController>();
             pitch = settings.InitialPitch;
             Transform visual = target.Find("Visual");
-            bodyRenderers = visual != null ? visual.GetComponentsInChildren<Renderer>(true) : new Renderer[0];
+            Renderer[] all = visual != null ? visual.GetComponentsInChildren<Renderer>(true) : new Renderer[0];
+            // SIEGE-36: 캐릭터 모델(Animator 아래)이 있으면 1인칭에서도 몸·팔·다리·무기가 보인다. 임시 몸체·체력 막대 같은
+            // 나머지 표시만 숨긴다. 모델이 없으면 예전처럼 몸 전체를 그림자만 남긴다.
+            bool hasModel = false;
+            foreach (Renderer renderer in all) hasModel |= renderer.GetComponentInParent<Animator>(true) != null;
+            var hidden = new System.Collections.Generic.List<Renderer>();
+            foreach (Renderer renderer in all)
+                if (!hasModel || renderer.GetComponentInParent<Animator>(true) == null) hidden.Add(renderer);
+            bodyRenderers = hidden.ToArray();
+            hideCompletely = hasModel;
+            // 모델의 머리·투구가 시야를 가리지 않게, 머리 없는 복사본을 화면에 그리고 원래 모델은 그림자만 그린다.
+            if (hasModel && visual != null) firstPersonBody = FirstPersonBody.Attach(visual.GetComponentInChildren<Animator>(true));
             originalShadows = new ShadowCastingMode[bodyRenderers.Length];
-            for (int i = 0; i < bodyRenderers.Length; i++) originalShadows[i] = bodyRenderers[i].shadowCastingMode;
+            originalForceOff = new bool[bodyRenderers.Length];
+            for (int i = 0; i < bodyRenderers.Length; i++)
+            {
+                originalShadows[i] = bodyRenderers[i].shadowCastingMode;
+                originalForceOff[i] = bodyRenderers[i].forceRenderingOff;
+            }
         }
+
+        bool hideCompletely;
+        bool[] originalForceOff;
+        FirstPersonBody firstPersonBody;
 
         void OnEnable()
         {
-            foreach (Renderer body in bodyRenderers) if (body != null) body.shadowCastingMode = ShadowCastingMode.ShadowsOnly;
+            foreach (Renderer body in bodyRenderers)
+            {
+                if (body == null) continue;
+                if (hideCompletely) body.forceRenderingOff = true;
+                else body.shadowCastingMode = ShadowCastingMode.ShadowsOnly;
+            }
+            if (firstPersonBody != null) firstPersonBody.SetFirstPerson(true);
             eyeHeight = startEyeHeight = targetEyeHeight = DesiredEyeHeight;
             transitionElapsed = settings.CrouchViewTransitionSeconds;
             Follow(0f);
@@ -48,7 +74,12 @@ namespace ProjectNeo.Characters
         void OnDisable()
         {
             for (int i = 0; i < bodyRenderers.Length; i++)
-                if (bodyRenderers[i] != null) bodyRenderers[i].shadowCastingMode = originalShadows[i];
+            {
+                if (bodyRenderers[i] == null) continue;
+                bodyRenderers[i].shadowCastingMode = originalShadows[i];
+                bodyRenderers[i].forceRenderingOff = originalForceOff[i];
+            }
+            if (firstPersonBody != null) firstPersonBody.SetFirstPerson(false);
         }
 
         public override void Look(Vector2 delta)
@@ -74,7 +105,9 @@ namespace ProjectNeo.Characters
                 float progress = duration > 0f ? Mathf.Clamp01(transitionElapsed / duration) : 1f;
                 eyeHeight = Mathf.Lerp(startEyeHeight, targetEyeHeight, Mathf.SmoothStep(0f, 1f, progress));
                 // Smooth only posture height; walking, falls and teleports follow the target directly.
-                transform.SetPositionAndRotation(target.position + Vector3.up * eyeHeight,
+                // 얼굴 앞으로 조금 내밀어 내 모델의 머리 안쪽이 보이지 않게 한다(SIEGE-36).
+                Vector3 forward = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward * settings.CameraForwardOffset;
+                transform.SetPositionAndRotation(target.position + Vector3.up * eyeHeight + forward,
                     Quaternion.Euler(pitch, yaw, 0f));
             }
         }
