@@ -1,9 +1,9 @@
 ---
 id: PREP-11
 title: Artisan Workforce System (Rules, Time Contention, Hiring & UI)
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: SeongminHwang
+branch: feature/prep-11
 area: PREP
 depends_on: []
 created: 2026-11-25
