@@ -18,6 +18,8 @@ namespace ProjectNeo.Run
 
         /// <summary>시계가 앞으로 갔다. 인자는 이번에 흐른 시간이다(SIEGE-08 작업 진행이 듣는다).</summary>
         public event Action<float> Advanced;
+        /// <summary>시계가 앞으로 갔다. 흐른 시간과 그 행동이 쓴 장인 수를 함께 알린다(PREP-11). <see cref="Advanced"/>보다 먼저 난다.</summary>
+        public event Action<PrepClockStep> Stepped;
         /// <summary>새 준비로 예산이 다시 찼다.</summary>
         public event Action Reset;
 
@@ -27,11 +29,13 @@ namespace ProjectNeo.Run
         public bool CanSpend(float hours) => hours <= 0f || hours <= Remaining + Epsilon;
 
         /// <summary>시간을 쓰고 시계를 보낸다. 모자라면 아무것도 바꾸지 않고 false다. 0 이하는 아무 일 없이 true다.</summary>
-        public bool TrySpend(float hours)
+        /// <param name="occupiedArtisans">이 행동을 하느라 그동안 건설·수리에서 빠지는 장인 수(PREP-11).</param>
+        public bool TrySpend(float hours, int occupiedArtisans = 0)
         {
             if (hours <= 0f) return true;
             if (!CanSpend(hours)) return false;
             Used = Math.Min(Budget, Used + hours);
+            Stepped?.Invoke(new PrepClockStep(hours, occupiedArtisans));
             Advanced?.Invoke(hours);
             return true;
         }

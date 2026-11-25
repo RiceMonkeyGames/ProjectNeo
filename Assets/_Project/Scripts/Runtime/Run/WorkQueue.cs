@@ -4,7 +4,8 @@ using System.Collections.Generic;
 namespace ProjectNeo.Run
 {
     /// <summary>
-    /// 작업 주문 목록과 작업대(Q-53, SIEGE-08). 작업대 수만큼 앞에서부터 동시에 짓고, 하나가 끝나면 남은 시간은 다음 주문으로 간다.
+    /// 작업 주문 목록과 장인 자리(Q-53, SIEGE-08, PREP-11). <see cref="Crews"/>는 장인 수이고, 그만큼 앞에서부터 동시에 짓는다.
+    /// 하나가 끝나면 남은 시간은 다음 주문으로 간다. 목록 순서가 우선순위이며 플레이어가 바꿀 수 있다.
     /// 준비 시계가 간 시간만큼 <see cref="Advance"/>로 진행한다. 씬을 모른다.
     /// </summary>
     public sealed class WorkQueue
@@ -66,12 +67,76 @@ namespace ProjectNeo.Run
 
         public void RemoveCompleted() => orders.RemoveAll(order => order.IsComplete);
 
+        // ── 장인 자리와 우선순위(PREP-11) ─────────────────────────────────────
+
         /// <summary>
-        /// 시간을 흘려 주문을 진행한다. 매 순간 끝나지 않은 앞쪽 주문 <see cref="Crews"/>개가 같은 속도로 진행되고,
-        /// 하나가 끝나면 그 작업대는 다음 주문을 맡는다. 진행할 주문이 없으면 남은 시간은 버린다.
+        /// 이 주문이 장인 자리를 맡고 있는가. 끝나지 않은 주문 중 앞에서 <see cref="Crews"/>개가 자리를 맡고 나머지는 대기다.
+        /// 끝난 주문이나 목록에 없는 주문은 false.
         /// </summary>
-        public void Advance(float hours)
+        public bool IsAssigned(WorkOrder order)
         {
+            if (order == null || order.IsComplete) return false;
+            int rank = 0;
+            foreach (WorkOrder entry in orders)
+            {
+                if (entry.IsComplete) continue;
+                if (entry == order) return rank < Crews;
+                rank++;
+            }
+            return false;
+        }
+
+        /// <summary>장인 자리를 맡은 주문 수.</summary>
+        public int AssignedCount => Math.Min(Crews, PendingCount);
+        /// <summary>자리가 없어 기다리는 주문 수.</summary>
+        public int WaitingCount => Math.Max(0, PendingCount - Crews);
+
+        /// <summary>끝나지 않은 바로 앞 주문과 자리를 바꾼다. 맨 앞이거나 끝난 주문이면 false.</summary>
+        public bool MoveUp(WorkOrder order) => Swap(order, -1);
+
+        /// <summary>끝나지 않은 바로 뒤 주문과 자리를 바꾼다. 맨 뒤이거나 끝난 주문이면 false.</summary>
+        public bool MoveDown(WorkOrder order) => Swap(order, +1);
+
+        /// <summary>주문을 맨 앞으로 옮긴다. 이미 맨 앞(끝난 주문 제외)이거나 끝난 주문이면 false.</summary>
+        public bool MoveToFront(WorkOrder order)
+        {
+            int index = orders.IndexOf(order);
+            if (index < 0 || order.IsComplete) return false;
+            int first = orders.FindIndex(entry => !entry.IsComplete);
+            if (first == index) return false;
+            orders.RemoveAt(index);
+            orders.Insert(first, order);
+            return true;
+        }
+
+        bool Swap(WorkOrder order, int direction)
+        {
+            int index = orders.IndexOf(order);
+            if (index < 0 || order.IsComplete) return false;
+            for (int other = index + direction; other >= 0 && other < orders.Count; other += direction)
+            {
+                if (orders[other].IsComplete) continue;
+                orders[index] = orders[other];
+                orders[other] = order;
+                return true;
+            }
+            return false;
+        }
+
+        // ── 진행 ─────────────────────────────────────────────
+
+        /// <summary>모든 장인이 건설·수리를 하며 시간을 흘린다(기다리기·승급).</summary>
+        public void Advance(float hours) => Advance(hours, Crews);
+
+        /// <summary>
+        /// 시간을 흘려 주문을 진행한다. 매 순간 끝나지 않은 앞쪽 주문 min(<see cref="Crews"/>, <paramref name="availableArtisans"/>)개가
+        /// 같은 속도로 진행되고, 하나가 끝나면 그 장인은 다음 주문을 맡는다. 대장간·시설 강화로 장인이 빠지면 자리를 맡은 주문 중
+        /// 뒤쪽이 이번 걸음에 쉰다(PREP-11). 진행할 주문이나 장인이 없으면 남은 시간은 버린다.
+        /// </summary>
+        public void Advance(float hours, int availableArtisans)
+        {
+            int workers = Math.Min(Crews, Math.Max(0, availableArtisans));
+            if (workers == 0) return;
             float left = Math.Max(0f, hours);
             var touched = new List<WorkOrder>();
             while (left > PrepClock.Epsilon)
@@ -81,7 +146,7 @@ namespace ProjectNeo.Run
                 {
                     if (order.IsComplete) continue;
                     active.Add(order);
-                    if (active.Count >= Crews) break;
+                    if (active.Count >= workers) break;
                 }
                 if (active.Count == 0) break;
                 float step = left;

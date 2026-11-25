@@ -78,6 +78,7 @@ namespace ProjectNeo.Run
             snapshot.prepTime.preparation = ClockPreparation;
             snapshot.prepTime.budget = Clock.Budget;
             snapshot.prepTime.used = Clock.Used;
+            snapshot.hiredArtisans = HiredArtisans;
             snapshot.perks.AddRange(PerkIds());
             snapshot.score = CaptureScore();
 
@@ -242,6 +243,7 @@ namespace ProjectNeo.Run
             state.SetupEquipmentUpgrades(options.EquipmentUpgrades);
             state.SetupPrepTime(options.PrepTime);
             state.RestorePrepClock(snapshot.prepTime);
+            state.RestoreArtisans(snapshot.hiredArtisans);
             state.SetupAscension(options.Ascension, snapshot.ascensionLevel);
             state.SetupHeroPromotion(options.HeroPromotion);
             if (snapshot.gold > 0) state.Wallet.AddGold(snapshot.gold);

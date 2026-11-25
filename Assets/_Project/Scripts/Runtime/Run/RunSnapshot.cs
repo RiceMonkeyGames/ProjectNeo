@@ -32,6 +32,8 @@ namespace ProjectNeo.Run
         public CastleRecord castle = new CastleRecord();
         /// <summary>준비 시계(PREP-06). 예전 저장에는 없어서 기본값(-1)이면 다음 준비에서 예산을 새로 채운다.</summary>
         public PrepTimeRecord prepTime = new PrepTimeRecord();
+        /// <summary>이번 런에서 고용한 장인 수(PREP-11). 예전 저장에는 없어 0(시작 장인만)으로 읽힌다.</summary>
+        public int hiredArtisans;
         /// <summary>이번 런에서 찍은 퍽 id(META-02). 예전 저장에는 없어서 비어 있다.</summary>
         public List<string> perks = new List<string>();
         /// <summary>런 점수 누적 수(META-04).</summary>

@@ -219,6 +219,34 @@ namespace ProjectNeo.Editor
                 clock.ConfigureHourglassLayout(number, segment, HoursPerSegment);
                 EditorUtility.SetDirty(clock);
             }
+            ArtisanLabel(hud);
+        }
+
+        // PREP-11 artisan count ("장인 3/4") at the right end of the clock number row, above the hour segments.
+        internal const string ArtisanName = "Artisans";
+
+        internal static void ArtisanLabel(GameFlowHud hud)
+        {
+            var line = (RectTransform)hud.transform.Find(PrepHudSetup.BarName + "/" + "PrepClock");
+            if (line == null) line = FindDeep(hud.transform, "PrepClock") as RectTransform;
+            var clock = hud.GetComponent<PrepClockHud>();
+            if (line == null || clock == null) return;
+            Transform existing = line.Find(ArtisanName);
+            if (existing != null) UnityEngine.Object.DestroyImmediate(existing.gameObject);
+            float right = HourglassSize + 8f;
+            var label = FW.NewLabel(line, ArtisanName, "장인 2/3", FW.Noto, 16f, FW.Cream, TextAlignmentOptions.BottomRight);
+            label.textWrappingMode = TextWrappingModes.NoWrap;
+            label.raycastTarget = false;
+            FW.Place(label.rectTransform, Vector2.zero, new Vector2(right, 2f + ClockGauge + 2f), new Vector2(InnerWidth - right, 24f), Vector2.zero);
+            clock.ConfigureArtisans(label);
+            EditorUtility.SetDirty(clock);
+        }
+
+        static Transform FindDeep(Transform root, string name)
+        {
+            foreach (Transform child in root.GetComponentsInChildren<Transform>(true))
+                if (child.name == name) return child;
+            return null;
         }
 
         // Enemy preview (user 2026-11-22): titled "적 정보", one row per enemy kind with an empty portrait frame (art comes

@@ -15,6 +15,9 @@ namespace ProjectNeo.UI
         // 보루보다 비싸고 강한 2×2 망루(SIEGE-14 시험). 비어 있으면 버튼이 아무것도 고르지 않는다.
         [SerializeField] BuildPieceDefinition tower;
         [SerializeField] TMP_Text selection;
+        public const string PickPieceHint = "지을 조각을 고르세요";
+        /// <summary>고른 조각이 없을 때 상태 띠 글. 작업 탭(PREP-11)은 주문 고르기 안내로 바꾼다.</summary>
+        public string IdleHint { get; set; } = PickPieceHint;
         [SerializeField] TMP_Text status;
         [SerializeField] TMP_Text unitHealth;
         // 시험 화면에서 고를 수성 무기 목록. 무기 종류가 늘면 에셋과 버튼만 추가한다.
@@ -69,7 +72,7 @@ namespace ProjectNeo.UI
                 }
                 selection.text = placement.SelectedWeapon.DisplayName + "\n" + issue;
             }
-            else if (placement.Selected == null) selection.text = "지을 조각을 고르세요";
+            else if (placement.Selected == null) selection.text = IdleHint;
             else
             {
                 string issue;

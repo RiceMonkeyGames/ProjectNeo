@@ -13,7 +13,7 @@ created: 2026-11-25
 
 ## Scope & Completion Criteria
 
-Registered 2026-11-25 by the user as the visual follow-up to [PREP-11](PREP-11.md) (design in [PrepEconomyMeta](../design/PrepEconomyMeta.md), [Decisions-Resolved](../plan/Decisions-Resolved.md)). Brings the abstract artisan headcount to life in the `Game` courtyard by building on the `SIEGE-36` `Town` resident system (`TownDirector`, `TownResident`, `TownRules`, `TownSettings`).
+Registered 2026-11-25 by the user as the visual follow-up to [PREP-11](../history/PREP/PREP-11.md) (design in [PrepEconomyMeta](../design/PrepEconomyMeta.md), [Decisions-Resolved](../plan/Decisions-Resolved.md)). Brings the abstract artisan headcount to life in the `Game` courtyard by building on the `SIEGE-36` `Town` resident system (`TownDirector`, `TownResident`, `TownRules`, `TownSettings`).
 
 ### Scope
 

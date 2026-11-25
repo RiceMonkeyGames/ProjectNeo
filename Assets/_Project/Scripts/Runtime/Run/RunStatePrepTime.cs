@@ -38,11 +38,12 @@ namespace ProjectNeo.Run
         }
 
         /// <summary>준비 시간을 쓴다. 전투 대기 중이거나 모자라면 false이고 바뀌는 것이 없다. 시간 설정이 없으면 true다.</summary>
-        public bool TrySpendPrepTime(float hours)
+        /// <param name="occupiedArtisans">이 행동이 그동안 쓰는 장인 수(PREP-11). 대장간·시설 강화는 1, 기다리기·승급은 0.</param>
+        public bool TrySpendPrepTime(float hours, int occupiedArtisans = 0)
         {
             if (PrepTime == null) return true;
             if (HasPendingBattle || !HasPrepTime(hours)) return false;
-            if (!Clock.TrySpend(hours)) return false;
+            if (!Clock.TrySpend(hours, occupiedArtisans)) return false;
             if (hours > 0f) Changed?.Invoke();
             return true;
         }
@@ -55,6 +56,8 @@ namespace ProjectNeo.Run
 
         float CraftHours => PrepTime != null ? PrepTime.CraftHours : 0f;
         float UpgradeHours => PrepTime != null ? PrepTime.UpgradeHours : 0f;
+        /// <summary>시설 한 단계를 올리는 준비 시간(PREP-11). 시간 설정이 없으면 0.</summary>
+        public float FacilityUpgradeHours => PrepTime != null ? PrepTime.FacilityUpgradeHours : 0f;
 
         void RestorePrepClock(PrepTimeRecord record)
         {

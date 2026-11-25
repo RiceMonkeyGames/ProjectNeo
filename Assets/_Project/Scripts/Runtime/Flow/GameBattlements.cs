@@ -100,8 +100,9 @@ namespace ProjectNeo.Flow
             else
             {
                 Cost cost = defense.NextUpgradeCost;
-                text = $"흉벽 강화 · {cost.gold}골드";
-                interactable = InPreparation && state.Wallet.CanAfford(cost);
+                // 시설 강화라 준비 시간이 들고 장인 1명이 일한다(PREP-11). 도구 칸이 좁아 시간만 붙인다.
+                text = $"흉벽 강화 · {cost.gold}골드" + GameFacilities.WorkTime(state, state.FacilityUpgradeHours, 0);
+                interactable = InPreparation && state.CheckUpgradeFacility(FacilityType.Defense) == FacilityUpgradeCheck.Ok;
             }
             if (upgradeLabel != null && upgradeLabel.text != text) upgradeLabel.text = text;
             if (upgradeButton.interactable != interactable) upgradeButton.interactable = interactable;
