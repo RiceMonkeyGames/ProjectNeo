@@ -2,6 +2,7 @@ using System;
 using ProjectNeo.Walls;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 
 namespace ProjectNeo.Siege
 {
@@ -51,7 +52,9 @@ namespace ProjectNeo.Siege
         [SerializeField] WeaponCost[] weaponCosts = new WeaponCost[0];
 
         [Header("사다리")]
+        // 1층(성벽 한 층) 사다리를 세우는 시간과, 1층을 넘는 층마다 더하는 시간(SIEGE-21: 3/4.5/6초).
         [SerializeField, Min(0.01f)] float ladderRaiseSeconds = 3f;
+        [SerializeField, Min(0f)] float ladderRaiseSecondsPerExtraStorey = 1.5f;
         // 눕는 전체 회전 속도. 균형점을 넘은 뒤 자동으로 넘어가는 속도와 밀기 취소 시 복귀 속도다.
         [SerializeField, Min(0.01f)] float ladderPushSeconds = 2f;
         // 혼자, 탑승자 없는 사다리를 균형점까지 밀며 버텨야 하는 시간(SIEGE-05).
@@ -61,7 +64,8 @@ namespace ProjectNeo.Siege
         // 함께 미는 아군 2명, 3명 이상일 때 밀기 속도 보너스(0.5 = 50% 빠름). 3명 이상은 상한이다.
         [SerializeField, Min(0f)] float ladderTwoPusherBonus = 0.5f;
         [SerializeField, Min(0f)] float ladderThreePlusPusherBonus = 0.75f;
-        [SerializeField, Min(0.01f)] float ladderClimbSeconds = 2.5f;
+        // 성벽 한 층마다 오르는 시간(SIEGE-21: 5m 2.5초, 10m 5초, 15m 7.5초).
+        [SerializeField, Min(0.01f), FormerlySerializedAs("ladderClimbSeconds")] float ladderClimbSecondsPerStorey = 2.5f;
         [SerializeField, Min(0.05f)] float ladderTapSeconds = 0.25f;
         // 사다리 밑에서 세우기·오르기를 시작할 수 있는 거리.
         [SerializeField, Min(0.1f)] float ladderUseRadius = 3.5f;
@@ -70,8 +74,10 @@ namespace ProjectNeo.Siege
         [SerializeField, Min(0.1f)] float ladderBlockRadius = 3f;
         // 성벽 위에 있다고 보는 높이 차이.
         [SerializeField, Min(0.1f)] float ladderHeightTolerance = 1f;
-        // 성벽 바깥면에서 사다리 밑까지, 성벽 가장자리에서 올라선 자리까지의 거리.
+        // 성벽 바깥면에서 사다리 밑까지의 최소 거리와, 성벽 가장자리에서 올라선 자리까지의 거리.
         [SerializeField, Min(0.1f)] float ladderBaseOffset = 1.2f;
+        // 세운 사다리가 땅과 이루는 각도. 발은 높이에 맞춰 이 각도가 되도록 성벽에서 뗀다(SIEGE-21).
+        [SerializeField, Range(45f, 89f)] float ladderLeanDegrees = 75f;
         [SerializeField, Min(0.1f)] float ladderTopInset = 1f;
         // 사다리를 고를 때 이미 몰린 인원 한 명을 몇 미터로 칠지.
         [SerializeField, Min(0f)] float ladderCrowdPenalty = 4f;
@@ -187,7 +193,11 @@ namespace ProjectNeo.Siege
         public float LadderThreePlusPusherBonus => ladderThreePlusPusherBonus;
         public LadderPushTuning CreateLadderPushTuning() => new LadderPushTuning(ladderPushHoldSeconds,
             ladderOccupiedPushMultiplier, ladderTwoPusherBonus, ladderThreePlusPusherBonus);
-        public float LadderClimbSeconds => ladderClimbSeconds;
+        /// <summary>1층을 넘는 층마다 더하는 세우기 시간. 사다리 하나의 실제 시간은 <see cref="SiegeLadder.RaiseSeconds"/>.</summary>
+        public float LadderRaiseSecondsPerExtraStorey => ladderRaiseSecondsPerExtraStorey;
+        /// <summary>한 층마다 오르는 시간. 사다리 하나의 실제 시간은 <see cref="SiegeLadder.ClimbSeconds"/>.</summary>
+        public float LadderClimbSecondsPerStorey => ladderClimbSecondsPerStorey;
+        public float LadderLeanDegrees => ladderLeanDegrees;
         public float LadderTapSeconds => ladderTapSeconds;
         public float LadderUseRadius => ladderUseRadius;
         public float LadderPushRadius => ladderPushRadius;

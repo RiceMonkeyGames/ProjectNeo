@@ -239,7 +239,7 @@ namespace ProjectNeo.Siege
             if (ladder == null || !ladder.isActiveAndEnabled || !ladder.HasWall || ladder.State.Phase != LadderPhase.Up)
             { Drop(); return; }
             if (ladder.State.PushProgress > 0f) { FollowLadderTilt(); return; }
-            progress = Mathf.Clamp01(progress + Mathf.Clamp(direction, -1f, 1f) * Time.deltaTime / ladder.Settings.LadderClimbSeconds);
+            progress = Mathf.Clamp01(progress + Mathf.Clamp(direction, -1f, 1f) * Time.deltaTime / ladder.ClimbSeconds);
             transform.position = Position(progress);
             if ((direction > 0f && progress >= 1f) || (direction < 0f && progress <= 0f)) Finish();
         }

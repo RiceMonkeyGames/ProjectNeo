@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Linq;
 using NUnit.Framework;
 using ProjectNeo.Combat;
@@ -320,7 +320,7 @@ namespace ProjectNeo.Tests
             Assert.IsTrue(ladder.HasWall);
             var state = ladder.State;
             state.Tick(0.1f, true, false, false);
-            state.Tick(ladder.Settings.LadderRaiseSeconds, true, false, false);
+            state.Tick(ladder.RaiseSeconds, true, false, false);
             // 적은 발의 한 점이 아니라 사용 반경에 들어온 시점에 등반을 시작한다.
             CharacterActor enemy = PlaceStillEnemy(SiegeAttackerRole.Ladder,
                 ladder.BasePoint + ladder.OutwardWorld * ladder.Settings.LadderUseRadius * 0.7f);
@@ -358,7 +358,7 @@ namespace ProjectNeo.Tests
             var state = ladder.State;
             Assert.IsTrue(ladder.HasWall);
             state.Tick(0.1f, true, false, false);
-            state.Tick(ladder.Settings.LadderRaiseSeconds, true, false, false);
+            state.Tick(ladder.RaiseSeconds, true, false, false);
             CharacterActor enemy = PlaceStillEnemy(SiegeAttackerRole.Ladder, ladder.BasePoint);
             var brain = enemy.GetComponent<SiegeAttackerBrain>();
             var fall = enemy.GetComponent<UnitFallController>();
@@ -410,7 +410,7 @@ namespace ProjectNeo.Tests
             SiegeLadder ladder = ladders[0];
             var state = ladder.State;
             state.Tick(0.1f, true, false, false);
-            state.Tick(ladder.Settings.LadderRaiseSeconds, true, false, false);
+            state.Tick(ladder.RaiseSeconds, true, false, false);
             CharacterActor enemy = PlaceStillEnemy(SiegeAttackerRole.Ladder, ladder.BasePoint);
             var brain = enemy.GetComponent<SiegeAttackerBrain>();
             var fall = enemy.GetComponent<UnitFallController>();
@@ -458,7 +458,7 @@ namespace ProjectNeo.Tests
             Assert.IsTrue(ladder.HasWall);
             unit.GetComponent<NavMeshAgent>().Warp(ladder.BasePoint);
             var state = ladder.State;
-            float raiseSeconds = ladder.Settings.LadderRaiseSeconds;
+            float raiseSeconds = ladder.RaiseSeconds;
 
             state.Tick(0.1f, true, false, false);
             state.Tick(raiseSeconds * state.BalancePoint * 0.5f, true, false, false);
@@ -519,7 +519,7 @@ namespace ProjectNeo.Tests
             UnitCombatAI unit = IsolateSharedLadder();
             SiegeLadder ladder = ladders[0];
             ladder.State.Tick(0.1f, true, false, false);
-            ladder.State.Tick(ladder.Settings.LadderRaiseSeconds, true, false, false);
+            ladder.State.Tick(ladder.RaiseSeconds, true, false, false);
             var agent = unit.GetComponent<NavMeshAgent>();
             Assert.IsTrue(agent.Warp(ladder.BasePoint));
             unit.SetDirective(UnitDirective.Move, ladder.TopPoint);
@@ -561,7 +561,7 @@ namespace ProjectNeo.Tests
             second.GetComponent<NavMeshAgent>().Warp(ladder.TopPoint);
             var enemy = PlaceStillEnemy(SiegeAttackerRole.Ladder, ladder.BasePoint);
             ladder.State.Tick(0.1f, true, false, false);
-            ladder.State.Tick(ladder.Settings.LadderRaiseSeconds, true, false, false);
+            ladder.State.Tick(ladder.RaiseSeconds, true, false, false);
             Assert.IsTrue(ladder.TryEnter(first.Actor));
             Assert.IsFalse(ladder.TryEnter(second.Actor));
             Assert.IsFalse(ladder.TryEnter(enemy));
@@ -621,7 +621,7 @@ namespace ProjectNeo.Tests
                 Cursor.lockState = CursorLockMode.Locked;
                 // 자동 안착 중 누른 짧은 F가, 안착 직후 해제됐다고 탑승으로 바뀌면 안 된다.
                 ladder.State.Tick(0.1f, true, false, false);
-                ladder.State.Tick(ladder.Settings.LadderRaiseSeconds - Time.captureDeltaTime * 1.5f, true, false, false);
+                ladder.State.Tick(ladder.RaiseSeconds - Time.captureDeltaTime * 1.5f, true, false, false);
                 Assert.IsTrue(ladder.State.IsSettling);
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.F)); yield return null;
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState()); yield return null;
@@ -675,7 +675,7 @@ namespace ProjectNeo.Tests
                 defender.GetComponent<NavMeshAgent>().Warp(ladder.TopPoint);
                 waiting.GetComponent<NavMeshAgent>().Warp(ladder.BasePoint);
                 ladder.State.Tick(0.1f, true, false, false);
-                ladder.State.Tick(ladder.Settings.LadderRaiseSeconds, true, false, false);
+                ladder.State.Tick(ladder.RaiseSeconds, true, false, false);
                 var enemy = PlaceStillEnemy(SiegeAttackerRole.Ladder, ladder.BasePoint);
                 Assert.IsTrue(ladder.TryEnter(enemy));
                 Assert.IsFalse(ladder.TryEnter(waiting.Actor));
@@ -823,7 +823,7 @@ namespace ProjectNeo.Tests
             SiegeLadder ladder = ladders[0];
             var state = ladder.State;
             state.Tick(0.1f, true, false, false);
-            state.Tick(ladder.Settings.LadderRaiseSeconds, true, false, false);
+            state.Tick(ladder.RaiseSeconds, true, false, false);
             Assert.AreEqual(LadderPhase.Up, state.Phase);
 
             // 성벽 위에서 사다리를 미는 아군 1명과, 원거리 경직도를 가진 적 공격자 1명 배치
@@ -1104,7 +1104,7 @@ namespace ProjectNeo.Tests
         static void RaiseLadder(SiegeLadder ladder)
         {
             ladder.State.Tick(0.1f, true, false, false);
-            ladder.State.Tick(ladder.Settings.LadderRaiseSeconds, true, false, false);
+            ladder.State.Tick(ladder.RaiseSeconds, true, false, false);
             Assert.AreEqual(LadderPhase.Up, ladder.State.Phase);
         }
 

@@ -11,8 +11,9 @@ namespace ProjectNeo.Siege
     /// </summary>
     public sealed class SiegeLadderState
     {
-        readonly float raiseSeconds;
+        float raiseSeconds;
         readonly float pushSeconds;
+        public float RaiseSeconds => raiseSeconds;
         readonly LadderPushTuning pushTuning;
         bool returning, committed;
         public float BalancePoint { get; private set; }
@@ -59,6 +60,11 @@ namespace ProjectNeo.Siege
             if (span <= 0f) return 1f / pushSeconds;
             return span / Math.Max(0.0001f, PushToBalanceSeconds(pushers));
         }
+
+        /// <summary>
+        /// 세우기 전체 시간을 바꾼다(성벽 층수가 바뀔 때, SIEGE-21). 진행 비율은 그대로 두므로 세우는 중이면 남은 비율이 새 속도로 이어진다.
+        /// </summary>
+        public void ConfigureRaiseSeconds(float seconds) => raiseSeconds = Math.Max(0.01f, seconds);
 
         /// <summary>누운 자세에서 성벽에 기댄 자세까지 회전 중 수직을 지나는 비율.</summary>
         public void ConfigureBalancePoint(float raisedFraction)
