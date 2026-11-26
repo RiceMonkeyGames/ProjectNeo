@@ -1,9 +1,9 @@
 ---
 id: COMBAT-15
 title: Walkway Width & Formations on 5m Walls
-status: Waiting
-assignee: youngho
-branch:
+status: In Progress
+assignee: SeongminHwang
+branch: feature/combat-15
 area: COMBAT
 depends_on: [SIEGE-18]
 created: 2026-11-23
