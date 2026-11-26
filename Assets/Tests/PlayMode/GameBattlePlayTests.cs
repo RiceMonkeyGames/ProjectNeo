@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Linq;
 using NUnit.Framework;
 using ProjectNeo.Characters;
@@ -403,17 +403,31 @@ namespace ProjectNeo.Tests
             // 양옆이 모두 1층인 사다리 칸을 고른다. 모서리 탑·성문탑(2층) 바로 옆 칸을 올리면 그 사이 칸이 골짜기가 된다(SIEGE-36).
             SiegeLadder ladder = battle.Ladders.OrderBy(l => l.Cell.x).ElementAt(2);
             var wall = world.Structures.First(piece => piece.Placement.Definition.Kind == BuildPieceKind.Wall).Placement.Definition;
-            Assert.IsTrue(world.TryPlace(wall, ladder.Cell, 0, out _));
-            Assert.IsTrue(world.TryPlace(wall, ladder.Cell, 0, out _));
+            SiegeSettings siege = battle.Settings.Siege;
+            // 5m·10m·15m 성벽마다 사다리가 받침 높이까지 닿고, 75도로 기대며, 층수만큼 세우기·오르기가 길어진다(SIEGE-21).
+            for (int storey = 1; storey <= 3; storey++)
+            {
+                if (storey > 1) Assert.IsTrue(world.TryPlace(wall, ladder.Cell, 0, out _));
+                Assert.IsTrue(ladder.HasWall);
+                Assert.AreEqual(wall.Height * storey, ladder.WallHeight, 0.001f);
+                Assert.AreEqual(storey, ladder.Storeys);
+                Assert.AreEqual(siege.LadderClimbSecondsPerStorey * storey, ladder.ClimbSeconds, 0.001f);
+                Assert.AreEqual(siege.LadderRaiseSeconds + siege.LadderRaiseSecondsPerExtraStorey * (storey - 1),
+                    ladder.RaiseSeconds, 0.001f);
+                Vector3 lean = ladder.EdgePoint - ladder.BasePoint;
+                Assert.GreaterOrEqual(ladder.EdgePoint.y, wall.Height * storey - 0.001f, "사다리 끝은 성벽 위(받침)까지 닿아야 한다.");
+                Assert.AreEqual(siege.LadderLeanDegrees, Vector3.Angle(new Vector3(lean.x, 0f, lean.z), lean), 0.5f);
+                Assert.IsTrue(world.IsLadderLane(world.Layout.WorldToCell(world.LocalPoint(ladder.BasePoint))),
+                    "사다리 발은 사다리 자리(보루·탑 금지) 칸 안에 있어야 한다.");
+            }
             yield return Navigation();
-            Assert.IsTrue(ladder.HasWall);
-            Assert.AreEqual(wall.Height * 3f, ladder.WallHeight);
             Assert.IsTrue(battle.TryStartBattle());
             ladder.State.Tick(0.1f, true, false, false);
-            ladder.State.Tick(battle.Settings.Siege.LadderRaiseSeconds, true, false, false);
+            ladder.State.Tick(ladder.RaiseSeconds, true, false, false);
+            Assert.AreEqual(LadderPhase.Up, ladder.State.Phase);
             var climber = battle.Enemies.First(enemy => enemy.Role == SiegeAttackerRole.Ladder);
             Assert.IsTrue(climber.GetComponent<NavMeshAgent>().Warp(ladder.BasePoint));
-            for (int i = 0; i < 600 && climber.transform.position.y < wall.Height * 3f - 0.2f; i++) yield return null;
+            for (int i = 0; i < 1200 && climber.transform.position.y < wall.Height * 3f - 0.2f; i++) yield return null;
             Assert.Greater(climber.transform.position.y, wall.Height * 3f - 0.2f);
         }
 

@@ -115,7 +115,14 @@ namespace ProjectNeo.Siege
                 if (supportId != 0 && (supportId != placement.Id || !Mathf.Approximately(wallHeight, height)))
                     State?.Topple();
                 supportId = placement.Id;
-                wallHeight = height;
+                if (!Mathf.Approximately(wallHeight, height) || storeys == 0)
+                {
+                    wallHeight = height;
+                    // 층수에 따라 세우기·오르기 시간이 정해진다(SIEGE-21). 한 층 높이는 그 칸 성벽 조각의 높이다.
+                    storeys = LadderScaleRules.Storeys(height, placement.Definition.Height);
+                    State?.ConfigureRaiseSeconds(LadderScaleRules.RaiseSeconds(storeys,
+                        settings.LadderRaiseSeconds, settings.LadderRaiseSecondsPerExtraStorey));
+                }
                 // 무게중심이 발 바로 위에 오는 실제 수직 각도를 규칙에 전달한다.
                 float angle = Vector3.Angle(OutwardWorld, EdgePoint - BasePoint);
                 State?.ConfigureBalancePoint(angle > 0f ? Mathf.Clamp01(90f / angle) : 1f);
@@ -124,12 +131,21 @@ namespace ProjectNeo.Siege
         }
 
         public float WallHeight => wallHeight;
+        // 마지막으로 본 받침 성벽의 층수. 0이면 아직 보지 않았다.
+        int storeys;
+        /// <summary>받침 성벽의 층수(최소 1). <see cref="HasWall"/>을 읽을 때 갱신된다.</summary>
+        public int Storeys => Mathf.Max(1, storeys);
+        /// <summary>이 사다리를 바닥부터 위쪽 끝까지 오르는 시간: 층당 시간 × 층수(SIEGE-21).</summary>
+        public float ClimbSeconds => LadderScaleRules.ClimbSeconds(Storeys, settings.LadderClimbSecondsPerStorey);
+        /// <summary>이 사다리를 끝까지 세우는 시간: 기본 시간 + 추가 층마다 더하는 시간(SIEGE-21).</summary>
+        public float RaiseSeconds => State != null ? State.RaiseSeconds
+            : LadderScaleRules.RaiseSeconds(Storeys, settings.LadderRaiseSeconds, settings.LadderRaiseSecondsPerExtraStorey);
         public void ResetBattle()
         {
             State.Topple();
             traffic.Clear(); sharedRaiser = null;
             ClearAiPushHandles();
-            crowd.Clear(); raiser = null; climber = null; supportId = 0; PlayerCanPush = false;
+            crowd.Clear(); raiser = null; climber = null; supportId = 0; storeys = 0; PlayerCanPush = false;
             hostileAtTop = false;
             LadderDefenseDirector.Release(this);
         }
@@ -149,13 +165,22 @@ namespace ProjectNeo.Siege
             return world.transform.TransformPoint(center + new Vector3(outward.x, 0f, outward.y) * fromCenter);
         }
 
-        /// <summary>적이 사다리를 세우고 오르기 시작하는 땅 위의 자리.</summary>
-        public Vector3 BasePoint => Point(world.Grid.CellSize * 0.5f + settings.LadderBaseOffset, 0f);
+        /// <summary>
+        /// 적이 사다리를 세우고 오르기 시작하는 땅 위의 자리. 위쪽 끝 높이에 맞춰 정한 기울기가 되도록 성벽에서 떼며,
+        /// 최소 거리는 <see cref="SiegeSettings.LadderBaseOffset"/>이다(SIEGE-21).
+        /// </summary>
+        public Vector3 BasePoint => Point(world.Grid.CellSize * 0.5f + FootDistance, 0f);
+
+        // 성벽 바깥면에서 위쪽 끝까지의 수평 거리.
+        const float EdgeOffset = 0.35f;
+
+        float FootDistance => Mathf.Max(settings.LadderBaseOffset,
+            EdgeOffset + LadderScaleRules.FootRun(wallHeight + SillHeight, settings.LadderLeanDegrees));
         /// <summary>
         /// 사다리 위쪽 끝. 성벽 바깥면 바로 앞이며, 성가퀴가 있으면 면 가운데 빈틈의 받침 높이에 걸린다(SIEGE-10).
         /// 다 오른 유닛은 받침을 넘어 <see cref="TopPoint"/>로 내려선다.
         /// </summary>
-        public Vector3 EdgePoint => Point(world.Grid.CellSize * 0.5f + 0.35f, wallHeight + SillHeight);
+        public Vector3 EdgePoint => Point(world.Grid.CellSize * 0.5f + EdgeOffset, wallHeight + SillHeight);
 
         float SillHeight
         {

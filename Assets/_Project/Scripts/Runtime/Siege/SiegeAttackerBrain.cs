@@ -717,7 +717,7 @@ namespace ProjectNeo.Siege
         {
             if (ladder == null) { Drop(); return; }
             if (ladder.State.PushProgress > 0f) { FollowLadderTilt(); return; }
-            climbProgress += Time.deltaTime / settings.LadderClimbSeconds;
+            climbProgress += Time.deltaTime / ladder.ClimbSeconds;
             FollowLadderTilt();
             Face(-ladder.OutwardWorld);
             if (climbProgress < 1f) return;

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -216,7 +216,7 @@ namespace ProjectNeo.Tests
             foreach (UnitCombatAI member in Allies())
                 if (member != pusher) member.enabled = false;
             ladder.State.Tick(0.1f, true, false, false);
-            ladder.State.Tick(ladder.Settings.LadderRaiseSeconds, true, false, false);
+            ladder.State.Tick(ladder.RaiseSeconds, true, false, false);
             Assert.AreEqual(LadderPhase.Up, ladder.State.Phase);
             Assert.IsTrue(pusher.GetComponent<NavMeshAgent>().Warp(ladder.TopPoint));
             pusher.enabled = false;
