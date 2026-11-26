@@ -20,8 +20,8 @@ namespace ProjectNeo.Editor
     {
         public const string BastionPath = ConstructionPrototypeSetup.Data + "/Bastion.asset";
         const string CostsPath = "Assets/_Project/Data/GameFlow/Build/BuildCosts.asset";
-        // 임시 값(2026-11-22). 플레이 시험 뒤 조정한다.
-        public const float Height = 3f;
+        // 임시 값(2026-11-22). 플레이 시험 뒤 조정한다. 높이는 7.5m 격자의 한 층(SIEGE-23).
+        public const float Height = Grid75Migration.Storey;
         public const float MaxHealth = 150f;
         public const int Gold = 25;
         public const float AutoAimHalfAngle = 90f;

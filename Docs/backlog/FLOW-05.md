@@ -1,6 +1,6 @@
 ---
 id: FLOW-05
-title: Saved Run Migration for the 5m Castle Grid
+title: Saved Runs on the 7.5m Castle Grid
 status: Waiting
 assignee: youngho
 branch:
@@ -9,13 +9,15 @@ depends_on: [SIEGE-18]
 created: 2026-11-23
 ---
 
-# FLOW-05 - Saved Run Migration for the 5m Castle Grid
+# FLOW-05 - Saved Runs on the 7.5m Castle Grid
 
 ## Scope & Completion Criteria
 
-Registered 2026-11-23 from the team decision to move the Game to the 5m castle kit ([Decisions-Resolved](../plan/Decisions-Resolved.md)); source: [SIEGE-14](../history/SIEGE/SIEGE-14.md) breakage list item 2.
+Registered 2026-11-23 from the team decision to move the Game to the 5m castle kit ([Decisions-Resolved](../plan/Decisions-Resolved.md)); source: [SIEGE-14](../history/SIEGE/SIEGE-14.md) breakage list item 2. Rescoped 2026-11-26 (user) to the 7.5m Game grid.
 
-- Saved runs store castle cells per slot (FLOW-02, META-10 migration rules). Decide between migrating 3m castle layouts onto the 5m grid and resetting old castles with a refund, then implement it in `RunSaveMigration` with EditMode tests.
-- Save the kit-specific state that the spike keeps only in memory if the design needs it across battles: breach and rubble cells, gate portcullis state.
+Already settled: old saves are dropped, not migrated. `SIEGE-18` (7.5m grid) made version 1 (3m cells) unreadable, and `SIEGE-36` (26-cell ring) made version 2 unreadable (user decision 2026-11-25).
 
-Done when old saves load without errors into the 5m Game and the chosen migration is covered by tests.
+- Remaining: decide with the user whether the kit-specific state that the Game keeps only in memory must survive between battles and save loads (breach and rubble cells, gate portcullis state), and save it in the run if so.
+- If nothing needs saving, close this task as superseded.
+
+Done when the user's choice is recorded in the design docs and, if state is saved, it reloads correctly with EditMode tests.

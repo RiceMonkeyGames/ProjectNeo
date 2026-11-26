@@ -13,9 +13,9 @@ created: 2026-11-23
 
 ## Scope & Completion Criteria
 
-Registered 2026-11-23 from the team decision to move the Game to the 5m castle kit ([Decisions-Resolved](../plan/Decisions-Resolved.md)); source: [SIEGE-14](../history/SIEGE/SIEGE-14.md) breakage list item 17 (enemy side). Follow-up of [SIEGE-15](../history/SIEGE/SIEGE-15.md), which was merged before the kit decision.
+Registered 2026-11-23 from the team decision to move the Game to the 5m castle kit ([Decisions-Resolved](../plan/Decisions-Resolved.md)); source: [SIEGE-14](../history/SIEGE/SIEGE-14.md) breakage list item 17 (enemy side). Follow-up of [SIEGE-15](../history/SIEGE/SIEGE-15.md), which was merged before the kit decision. Rescoped 2026-11-26 (user) to the 7.5m cells with 5m storeys of [SIEGE-35](../history/SIEGE/SIEGE-35.md) and [SIEGE-18](../history/SIEGE/SIEGE-18.md).
 
-- Enemy archer positioning (the SIEGE-15 wall-normal / radial approach) on 5m kit walls and around 2x2 towers that jut out of the wall line; towers are protruding outworks like bastions.
+- Enemy archer positioning (the SIEGE-15 wall-normal / radial approach) on 7.5m kit walls and around 2x2 (15m) towers that jut out of the wall line; towers are protruding outworks like bastions.
 - Target choice: whether Wall Breakers attack a tower's bottom tier, how enemies treat tower roof occupants and roof cannons, and attacking stairs that stay in a breach and block it (weaker than walls).
 - Interior stair rooms at steps up to three-storey walls (`SIEGE-27`, decided 2026-11-23 under Q-59, widened the same day to 2↔3 steps) and tower storey rooms (`SIEGE-29`): they are part of the NavMesh, so enemies who reach the walls walk through them like allies; decide whether enemies treat a room (its doors or the cell) as a target.
 - Coordinate with the teammate who owns enemy AI (SIEGE-15, SIEGE-16, SIEGE-17) before starting.
