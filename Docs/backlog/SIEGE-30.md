@@ -1,9 +1,9 @@
 ---
 id: SIEGE-30
 title: Collapse Look for Towers, Bastions & Three-Storey Breaches
-status: Waiting
+status: In Progress
 assignee: youngho
-branch:
+branch: feature/siege-30
 area: SIEGE
 depends_on: [SIEGE-29]
 created: 2026-11-23
