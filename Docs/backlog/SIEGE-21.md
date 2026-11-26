@@ -1,9 +1,9 @@
 ---
 id: SIEGE-21
 title: Siege Ladders for 5m Walls
-status: Waiting
-assignee: youngho
-branch:
+status: In Progress
+assignee: SeongminHwang
+branch: feature/siege-21
 area: SIEGE
 depends_on: [SIEGE-18]
 created: 2026-11-23
