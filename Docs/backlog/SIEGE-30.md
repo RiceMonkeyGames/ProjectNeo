@@ -1,7 +1,7 @@
 ---
 id: SIEGE-30
 title: Collapse Look for Towers, Bastions & Three-Storey Breaches
-status: Waiting for Prerequisite
+status: Waiting
 assignee: youngho
 branch:
 area: SIEGE

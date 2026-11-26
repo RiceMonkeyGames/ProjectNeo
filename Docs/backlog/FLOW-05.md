@@ -1,7 +1,7 @@
 ---
 id: FLOW-05
 title: Saved Run Migration for the 5m Castle Grid
-status: Waiting for Prerequisite
+status: Waiting
 assignee: youngho
 branch:
 area: FLOW

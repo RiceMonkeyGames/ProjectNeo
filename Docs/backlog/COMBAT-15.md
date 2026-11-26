@@ -1,7 +1,7 @@
 ---
 id: COMBAT-15
 title: Walkway Width & Formations on 5m Walls
-status: Waiting for Prerequisite
+status: Waiting
 assignee: youngho
 branch:
 area: COMBAT

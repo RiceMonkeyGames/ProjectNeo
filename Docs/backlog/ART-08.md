@@ -1,7 +1,7 @@
 ---
 id: ART-08
 title: Outer Decorations for Three-Storey Walls
-status: Waiting for Prerequisite
+status: Waiting
 assignee: youngho
 branch:
 area: ART

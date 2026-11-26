@@ -1,7 +1,7 @@
 ---
 id: SIEGE-20
 title: Kit Battlements, Cover Heights & Crenel Positions
-status: Waiting for Prerequisite
+status: Waiting
 assignee: youngho
 branch:
 area: SIEGE

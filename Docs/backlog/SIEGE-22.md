@@ -1,7 +1,7 @@
 ---
 id: SIEGE-22
 title: Main Gate & Gatehouse on the 5m Grid
-status: Waiting for Prerequisite
+status: Waiting
 assignee: youngho
 branch:
 area: SIEGE

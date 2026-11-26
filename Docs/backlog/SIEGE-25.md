@@ -1,7 +1,7 @@
 ---
 id: SIEGE-25
 title: Piece Balance Pass for the 5m Grid
-status: Waiting for Prerequisite
+status: Waiting
 assignee: youngho
 branch:
 area: SIEGE

@@ -1,7 +1,7 @@
 ---
 id: ART-09
 title: Artisan Courtyard NPCs & Worksite Visuals
-status: Waiting for Prerequisite
+status: Waiting
 assignee: Unassigned
 branch:
 area: ART

@@ -1,7 +1,7 @@
 ---
 id: SIEGE-23
 title: Bastions on the 5m Grid
-status: Waiting for Prerequisite
+status: Waiting
 assignee: youngho
 branch:
 area: SIEGE
