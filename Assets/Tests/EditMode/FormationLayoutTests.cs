@@ -39,6 +39,21 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
+        public void GameWallTop_RanksFollowTheWiderWalkway()
+        {
+            // COMBAT-15: Game 7.5m 성벽 통로(SIEGE-18)는 걸을 수 있는 깊이가 약 5.8m(Play 측정).
+            // 줄 수 상한은 통로 폭을 그대로 따른다(사용자 결정 2026-11-26: 성벽 위 줄 수를 따로 막지 않음).
+            const float depth = 5.8f;
+            Assert.AreEqual(6, FormationLayout.MaxRanks(1.1f, depth), "line");
+            Assert.AreEqual(7, FormationLayout.MaxRanks(0.9f, depth), "close");
+            Assert.AreEqual(3, FormationLayout.MaxRanks(2.5f, depth), "loose");
+            Assert.AreEqual(new Vector2Int(2, 6), FormationLayout.Shape(12, 2, 1.1f, depth), "default two files: six ranks still fit");
+            Assert.AreEqual(new Vector2Int(4, 5), FormationLayout.Shape(20, 2, 1.1f, depth), "ten ranks requested -> widened to five");
+            Assert.AreEqual(new Vector2Int(4, 3), FormationLayout.Shape(12, 2, 2.5f, depth), "loose: three ranks, four wide");
+            Assert.AreEqual(new Vector2Int(12, 1), FormationLayout.Shape(12, 12, 1.1f, depth), "a dragged wide line stays one rank");
+        }
+
+        [Test]
         public void CenterOffset_FrontLineStaysOnTheDrawnLine_UnlessBlocked()
         {
             // 3줄, 간격 1 → 깊이 2. 앞줄 기준이면 가운데가 1m 뒤.

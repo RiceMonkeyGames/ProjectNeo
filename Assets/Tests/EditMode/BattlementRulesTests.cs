@@ -238,6 +238,33 @@ namespace ProjectNeo.Tests
                 new Vector2Int(1, 1), 0.4f)), "diagonal axis is not measured");
         }
 
+        [Test]
+        public void WalkwayWidth_OnGameCells_IsTheCellMinusItsBattlements()
+        {
+            // COMBAT-15: Game 칸 7.5m(SIEGE-18). 고리 성벽은 바깥 성가퀴 하나만 빠져 7.1m, 트인 성벽은 양쪽이 빠져 6.7m.
+            grid = Track(BuildGridDefinition.Create(7, 7, 7.5f, 3));
+            layout = new BuildLayout(grid);
+            Ring();
+            Assert.AreEqual(7.1f, Walkway(3, 5, Vector2Int.up), 1e-4f);
+            Assert.AreEqual(7.1f, Walkway(1, 3, Vector2Int.left), 1e-4f);
+            Assert.AreEqual(5 * 7.5f - 0.8f, Walkway(3, 5, Vector2Int.right), 1e-4f, "along the wall the whole row counts");
+
+            layout = new BuildLayout(grid);
+            Place(wall, 2, 3); Place(wall, 3, 3); Place(wall, 4, 3);
+            Assert.AreEqual(6.7f, Walkway(3, 3, Vector2Int.up), 1e-4f);
+        }
+
+        [Test]
+        public void CrenelCenters_OnGameCells_FiveCrenelsAtEvenSpacing_ContinuingIntoTheNextCell()
+        {
+            // COMBAT-15: 7.5m 면에는 가운데(3.75m)부터 1.5m마다 빈틈 다섯. 끝 빈틈에서 이웃 칸 첫 빈틈까지도 1.5m다.
+            var settings = Track(BattlementSettings.Create());
+            var centers = new List<float>();
+            BattlementRules.CrenelCenters(BattlementStyle.Crenellated, settings, 7.5f, centers);
+            CollectionAssert.AreEqual(new[] { 0.75f, 2.25f, 3.75f, 5.25f, 6.75f }, centers);
+            Assert.AreEqual(1.5f, 7.5f - centers[centers.Count - 1] + centers[0], 1e-4f, "the gap across the cell joint");
+        }
+
         static void AssertSegment(BattlementSegment segment, float start, float end, float height)
         {
             Assert.AreEqual(start, segment.Start, 1e-4f);
