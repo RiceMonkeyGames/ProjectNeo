@@ -20,5 +20,10 @@ Last Updated: 2026-11-20 21:07:07 (KST)
 | Q-14 | Release platforms, distribution channels, launch dates, scale | M4 scope, M7 delivery | Undecided. Focus on core completion criteria first. |
 | Q-15 | Supported input devices, settings, languages, accessibility | M2 framework, M5 UI | Undecided. Avoid arbitrary additions. |
 | Q-61 | M4 content scale (hero/enemy/item/stage counts, target play time) | M4 production tasks | Undecided. Registered 2026-11-18 from Milestones. |
+| Q-80 | Player direct combat expansion (guard/parry, directional melee, player bow, right-click input conflict) | Combat expansion tasks | Undecided. Registered 2026-11-26. |
+| Q-81 | Combat consumables expansion, quick slots & hero/AI use | Consumables follow-up | Undecided. Registered 2026-11-26 from OpenQuestions. |
+| Q-82 | Hero passive traits, enemy archetypes/morale, prisoner rescue rewards & deferred morale/merge rules | M4 unit/economy tasks | Undecided. Registered 2026-11-26. |
+| Q-83 | Audio asset sourcing, BGM layering & voice bark scope | AUDIO-02, AUDIO-03 | Undecided. Registered 2026-11-26. |
+| Q-84 | VFX art style, pack sourcing & mass-battle particle budget | ART-10 | Undecided. Registered 2026-11-26. |
 
 Q-41 shared ladder interaction rules were approved on 2026-11-13 and moved to [Decisions-Resolved](Decisions-Resolved.md). The user subsequently confirmed shared-code edits and tap F boarding / hold F toppling. Runtime implementation is tracked as SIEGE-04.
