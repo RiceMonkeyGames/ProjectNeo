@@ -1,9 +1,9 @@
 ---
 id: SIEGE-23
 title: Bastions on the 5m Grid
-status: Waiting
+status: In Progress
 assignee: youngho
-branch:
+branch: feature/siege-23
 area: SIEGE
 depends_on: [SIEGE-18]
 created: 2026-11-23
