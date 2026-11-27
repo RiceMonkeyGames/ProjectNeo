@@ -15,14 +15,37 @@ namespace ProjectNeo.Stages
         /// <summary>보스 무리면 그 보스(SIEGE-09). 보스 무리는 언제나 1마리이고 숨기지 않는다.</summary>
         public BossDefinition Boss { get; }
         public bool IsBoss => Boss != null;
+        /// <summary>일반 적 무리의 적 종류(CONTENT-04). 프리팹만으로 만든 예전 무리는 null.</summary>
+        public EnemyDefinition Enemy { get; }
+
+        /// <summary>
+        /// 처치·퇴각 집계와 미리보기가 쓰는 적 종류 ID. 보스면 보스 ID, 적 종류가 있으면 그 ID,
+        /// 프리팹만 있으면 프리팹 이름이다.
+        /// </summary>
+        public string EnemyId => Boss != null ? Boss.Id : Enemy != null ? Enemy.Id : Prefab != null ? Prefab.name : string.Empty;
+
+        /// <summary>프리팹만으로 만드는 예전 방식의 무리. 적 종류가 없어 이름은 프리팹 이름에서 만든다.</summary>
         public EncounterGroup(GameObject prefab, int count, Vector2 cell, bool hidden = false)
-        { Prefab = prefab; Count = count; Cell = cell; Hidden = hidden; Boss = null; }
+            : this(prefab, null, count, cell, hidden) { }
+
+        /// <summary>적 종류로 만드는 무리. 프리팹은 적 종류에서 읽는다.</summary>
+        public EncounterGroup(EnemyDefinition enemy, int count, Vector2 cell, bool hidden = false)
+            : this(enemy != null ? enemy.Prefab : null, enemy, count, cell, hidden) { }
+
+        EncounterGroup(GameObject prefab, EnemyDefinition enemy, int count, Vector2 cell, bool hidden)
+        { Prefab = prefab; Enemy = enemy; Count = count; Cell = cell; Hidden = hidden; Boss = null; }
 
         /// <summary>보스 한 마리 무리. 바탕 프리팹은 보스 정의에서 읽는다.</summary>
         public static EncounterGroup ForBoss(BossDefinition boss, Vector2 cell) => new EncounterGroup(boss, cell);
 
         EncounterGroup(BossDefinition boss, Vector2 cell)
-        { Prefab = boss != null ? boss.BasePrefab : null; Count = 1; Cell = cell; Hidden = false; Boss = boss; }
+        {
+            Prefab = boss != null ? boss.BasePrefab : null; Enemy = boss != null ? boss.BaseEnemy : null;
+            Count = 1; Cell = cell; Hidden = false; Boss = boss;
+        }
+
+        /// <summary>적 수만 바꾼 같은 무리.</summary>
+        public EncounterGroup WithCount(int count) => new EncounterGroup(Prefab, Enemy, count, Cell, Hidden);
     }
 
     public sealed class EncounterWave
@@ -73,7 +96,7 @@ namespace ProjectNeo.Stages
                     // 보스는 승천 적 수 증가에도 한 마리다.
                     if (group.IsBoss) { groups.Add(group); continue; }
                     int scaled = count(group.Count);
-                    if (scaled > 0) groups.Add(new EncounterGroup(group.Prefab, scaled, group.Cell, group.Hidden));
+                    if (scaled > 0) groups.Add(group.WithCount(scaled));
                 }
                 if (groups.Count > 0) waves.Add(new EncounterWave(wave.StartSeconds, groups));
             }
@@ -98,9 +121,13 @@ namespace ProjectNeo.Stages
                     var groups = new List<EncounterGroup>();
                     if (wave.groups != null)
                         foreach (StageWaveGroup group in wave.groups)
-                            if (group.enemyPrefab != null && group.count > 0)
-                                groups.Add(new EncounterGroup(group.enemyPrefab, group.count,
-                                    group.spawnPoint != null ? group.spawnPoint.Cell : defaultCell, group.hidden));
+                        {
+                            if (group.Prefab == null || group.count <= 0) continue;
+                            Vector2 cell = group.spawnPoint != null ? group.spawnPoint.Cell : defaultCell;
+                            groups.Add(group.enemy != null
+                                ? new EncounterGroup(group.enemy, group.count, cell, group.hidden)
+                                : new EncounterGroup(group.enemyPrefab, group.count, cell, group.hidden));
+                        }
                     // 보스는 그 웨이브의 마지막 무리로 둔다(SIEGE-09). 바탕 프리팹이 없으면 뺀다.
                     if (wave.boss != null && wave.boss.BasePrefab != null)
                         groups.Add(EncounterGroup.ForBoss(wave.boss,
@@ -110,14 +137,21 @@ namespace ProjectNeo.Stages
             return new EncounterPlan(waves);
         }
 
-        /// <summary>예전 방식의 단일 적 목록을 전투 시작과 함께 나오는 웨이브 하나로 감싼다.</summary>
-        public static EncounterPlan FromGroups(IReadOnlyList<SiegeUnitGroup> enemies, Vector2 cell)
+        /// <summary>
+        /// 예전 방식의 단일 적 목록을 전투 시작과 함께 나오는 웨이브 하나로 감싼다.
+        /// 적 목록이 있으면 프리팹으로 적 종류를 찾아 붙이고(CONTENT-04), 못 찾으면 프리팹만으로 둔다.
+        /// </summary>
+        public static EncounterPlan FromGroups(IReadOnlyList<SiegeUnitGroup> enemies, Vector2 cell, EnemyCatalog catalog = null)
         {
             var groups = new List<EncounterGroup>();
             if (enemies != null)
                 foreach (SiegeUnitGroup group in enemies)
-                    if (group.unitPrefab != null && group.count > 0)
-                        groups.Add(new EncounterGroup(group.unitPrefab, group.count, cell));
+                {
+                    if (group.unitPrefab == null || group.count <= 0) continue;
+                    EnemyDefinition enemy = catalog != null ? catalog.FindByPrefab(group.unitPrefab) : null;
+                    groups.Add(enemy != null ? new EncounterGroup(enemy, group.count, cell)
+                        : new EncounterGroup(group.unitPrefab, group.count, cell));
+                }
             return new EncounterPlan(groups.Count > 0 ? new[] { new EncounterWave(0f, groups) } : new EncounterWave[0]);
         }
     }

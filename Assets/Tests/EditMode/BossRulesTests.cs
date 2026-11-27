@@ -22,6 +22,7 @@ namespace ProjectNeo.Tests
 
         readonly List<Object> created = new List<Object>();
         GameObject basePrefab;
+        EnemyDefinition baseEnemy;
 
         T Track<T>(T value) where T : Object { created.Add(value); return value; }
 
@@ -30,6 +31,7 @@ namespace ProjectNeo.Tests
         {
             basePrefab = Track(new GameObject("enemy_ladder"));
             basePrefab.SetActive(false);
+            baseEnemy = Track(EnemyDefinition.Create("enemy_ladder", "Ladder", EnemyRole.GroundLadder, basePrefab));
         }
 
         [TearDown]
@@ -41,7 +43,7 @@ namespace ProjectNeo.Tests
 
         BossDefinition Boss(BossRole role = BossRole.Siege, float health = 400f, float attack = 21f, float defense = 4f,
             float range = 0f, float speed = 1f, float structure = 1f, int gold = 0, params BossMaterialReward[] materials) =>
-            Track(BossDefinition.Create("boss_test", "Test Boss", role, basePrefab, 1.5f, health, attack, defense, range,
+            Track(BossDefinition.Create("boss_test", "Test Boss", role, baseEnemy, 1.5f, health, attack, defense, range,
                 speed, structure, gold, materials));
 
         static StatSheet MeleeStats()
@@ -158,7 +160,7 @@ namespace ProjectNeo.Tests
 
         StageDefinition StageWithBoss(BossDefinition boss, bool hiddenWave = false)
         {
-            var groups = new[] { new StageWaveGroup { enemyPrefab = basePrefab, count = 4, hidden = hiddenWave } };
+            var groups = new[] { new StageWaveGroup { enemy = baseEnemy, count = 4, hidden = hiddenWave } };
             return Track(StageDefinition.Create("Stage",
                 new StageWave { startSeconds = 0f, groups = groups },
                 new StageWave { startSeconds = 30f, groups = groups, boss = boss }));
@@ -211,7 +213,7 @@ namespace ProjectNeo.Tests
             MaterialDefinition hide = Track(MaterialDefinition.Create("hide"));
             MaterialDefinition bone = Track(MaterialDefinition.Create("bone"));
             StageRewardTable table = Track(StageRewardTable.Create(50, 10,
-                new[] { new KillReward("enemy_ladder", 3, bone, 1) }, 0f, 0, new WeightedEntry<ItemDefinition>[0], 0, 0, 1, 1));
+                Track(EnemyCatalog.Create(Track(EnemyDefinition.Create("enemy_ladder", "Ladder", EnemyRole.GroundLadder, basePrefab, 3, new EnemyMaterialDrop(bone, 1))))), 0f, 0, new WeightedEntry<ItemDefinition>[0], 0, 0, 1, 1));
             BossDefinition boss = Boss(gold: 30, materials: new BossMaterialReward(hide, 2));
 
             var result = new BattleResult(1, BattleOutcome.Victory, BattleEndReason.EnemiesDefeated);

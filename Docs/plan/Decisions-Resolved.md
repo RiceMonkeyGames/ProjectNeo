@@ -224,6 +224,8 @@ Construction return-hint input (QA-build-zoom-ui-hover, 2026-11-14): User reques
 
 ## Detailed Decision Records
 
+- **CONTENT-04 enemy definitions (2026-11-27, user)**: Four choices, all the recommended option. (1) Stage wave groups gain an `EnemyDefinition` field and Stage01-07 are migrated through the Editor API; the old `enemyPrefab` stays as a fallback used only when the definition is empty, and prefab-only lists (old single enemy list, prototype scenes) are resolved through an `EnemyCatalog` by prefab, so the teammate's `SiegeSettings` side is untouched. (2) Kill gold and materials move from `StageRewardTable` into each definition with unchanged values; the table references the catalog. (3) Definition ids keep the current prefab names (`enemy_ladder`, ...), so kill and retreat tally keys do not change. (4) `BossDefinition.basePrefab` is replaced by `baseEnemy`; boss stats and behavior are unchanged. Rules: [MoraleAndWave](../design/MoraleAndWave.md).
+
 - **PREP-10 promotion details (2026-11-20, user)**: New facility `Hero Hall` (`FacilityType.HeroHall = 5`) instead of reusing `TrainingGround`, which is the barracks. Fixed EXP on victory for surviving deployed heroes (100; 200/400 needed for grades 2/3); promotion costs gold (100g/250g) plus 1 prep hour; each grade above 1 adds +15% max HP and attack. Values in data. Rules: [PrepEconomyMeta](../design/PrepEconomyMeta.md).
 
 - **PREP-01 integration (2026-11-14)**: User resumed after PREP-03 merge. Confirmed prototype materials = crafting materials × target upgrade level; item data owns the per-step requirements. Equipped items must be unequipped to the stash before upgrading.

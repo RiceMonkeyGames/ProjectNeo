@@ -49,7 +49,9 @@ namespace ProjectNeo.Tests
                     Assert.IsNotEmpty(wave.groups, at + "wave " + (w + 1) + " is empty");
                     foreach (StageWaveGroup group in wave.groups)
                     {
-                        Assert.IsNotNull(group.enemyPrefab, at + "wave " + (w + 1) + " group without an enemy prefab");
+                        Assert.IsNotNull(group.enemy, at + "wave " + (w + 1) + " group without an enemy definition (CONTENT-04)");
+                        Assert.IsNotNull(group.Prefab, at + "wave " + (w + 1) + " group enemy without a prefab");
+                        Assert.IsNull(group.enemyPrefab, at + "wave " + (w + 1) + " keeps a stale fallback prefab");
                         Assert.Greater(group.count, 0, at + "wave " + (w + 1) + " group without enemies");
                         Assert.IsNotNull(group.spawnPoint, at + "wave " + (w + 1) + " group without a spawn point");
                     }
@@ -71,6 +73,7 @@ namespace ProjectNeo.Tests
                     Assert.IsNull(stage.Waves[w].boss, at + "only the last wave holds the boss");
                 BossDefinition boss = stage.Waves[stage.Waves.Count - 1].boss;
                 Assert.IsNotNull(boss, at + "the last wave needs a boss (run ProjectNeo/Setup/Create Stage Bosses)");
+                Assert.IsNotNull(boss.BaseEnemy, at + "boss without a base enemy (CONTENT-04)");
                 Assert.IsNotNull(boss.BasePrefab, at + "boss without a base prefab");
                 Assert.IsFalse(boss.BasePrefab.activeSelf, at + "boss base prefab must be inactive");
                 Assert.IsTrue(boss.Id.StartsWith("boss_"), at + "boss ids must not clash with enemy prefab names");

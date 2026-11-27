@@ -15,12 +15,13 @@ MonoBehaviour:
   id: boss_sky_hunter
   displayName: "\uD558\uB298 \uC0AC\uB0E5\uAFBC"
   role: 1
-  basePrefab: {fileID: 7517096732457025389, guid: a4246cb22c7768840aae61bb4b280916, type: 3}
+  baseEnemy: {fileID: 11400000, guid: c3fbea75fe466ab429ec35994302e221, type: 2}
   visualScale: 1.5
   maxHealth: 600
   attack: 28
   defense: 4
   attackRange: 0
+  aimSpread: 0
   moveSpeedMultiplier: 1
   structureDamageMultiplier: 1
   heroPreference: 3

@@ -15,7 +15,7 @@ namespace ProjectNeo.Flow
         public readonly struct Spawned
         {
             public SiegeAttacker Attacker { get; }
-            /// <summary>적 종류 ID. 지금은 적 프리팹 이름을 쓴다.</summary>
+            /// <summary>적 종류 ID(EncounterGroup.EnemyId): 보스 ID, 적 종류 ID, 적 종류가 없으면 프리팹 이름.</summary>
             public string EnemyId { get; }
             /// <summary>웨이브 안에서 이 적이 속한 무리 번호(EncounterWave.Groups 순서).</summary>
             public int GroupIndex { get; }
@@ -83,9 +83,9 @@ namespace ProjectNeo.Flow
                     if (group.IsBoss)
                     {
                         unit.name = group.Boss.Id + "_" + (spawnedCount - 1);
-                        result.Add(new Spawned(brain, group.Boss.Id, groupIndex, unit.AddComponent<BossUnit>()));
+                        result.Add(new Spawned(brain, group.EnemyId, groupIndex, unit.AddComponent<BossUnit>()));
                     }
-                    else result.Add(new Spawned(brain, group.Prefab.name, groupIndex));
+                    else result.Add(new Spawned(brain, group.EnemyId, groupIndex));
                 }
                 rows[group.Cell] = row + (group.Count + settings.Columns - 1) / settings.Columns;
             }

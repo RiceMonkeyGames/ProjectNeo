@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 23d292c554ccb4a4e89be70ed23e946a, type: 3}
+  m_Name: enemy_wall_breaker
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Stages.EnemyDefinition
+  id: enemy_wall_breaker
+  displayName: "\uC131\uBCBD \uD30C\uAD34\uBCD1"
+  role: 2
+  prefab: {fileID: 3276109497482159700, guid: def97a7de831ff349a9a555089d5b0ef, type: 3}
+  affectedByMorale: 0
+  killGold: 0
+  materialDrops: []

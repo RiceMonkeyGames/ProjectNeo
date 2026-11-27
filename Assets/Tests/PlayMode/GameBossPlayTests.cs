@@ -56,6 +56,14 @@ namespace ProjectNeo.Tests
         GameObject Prefab(SiegeAttackerRole role) => battle.Settings.Enemies
             .First(group => group.unitPrefab != null && group.unitPrefab.GetComponent<SiegeAttacker>().Role == role).unitPrefab;
 
+        // 바탕 적 종류(CONTENT-04). Game 씬 전투 설정의 적 종류 목록에서 프리팹으로 찾는다.
+        EnemyDefinition Definition(GameObject prefab)
+        {
+            EnemyDefinition found = battle.Settings.EnemyCatalog != null ? battle.Settings.EnemyCatalog.FindByPrefab(prefab) : null;
+            Assert.IsNotNull(found, "전투 설정의 적 종류 목록에 " + prefab.name + "이 있어야 한다.");
+            return found;
+        }
+
         static void Kill(CharacterActor actor) => actor.ReceiveDamage(actor.Health.Current + 1f);
 
         [UnityTest]
@@ -63,7 +71,7 @@ namespace ProjectNeo.Tests
         {
             GameObject ladder = Prefab(SiegeAttackerRole.Ladder);
             trophy = MaterialDefinition.Create("boss_test_trophy");
-            boss = BossDefinition.Create("boss_test_captain", "Test Captain", BossRole.Commander, ladder, 1.6f,
+            boss = BossDefinition.Create("boss_test_captain", "Test Captain", BossRole.Commander, Definition(ladder), 1.6f,
                 600f, 21f, 5f, rewardGold: 77, rewardMaterials: new BossMaterialReward(trophy, 3)).WithAura(60f, 0.2f, 2f, 0.2f);
             Vector2 cell = battle.Settings.SpawnCell;
             var plan = new EncounterPlan(new[]
@@ -128,7 +136,7 @@ namespace ProjectNeo.Tests
         public IEnumerator 보스는_다른_적이_후퇴해도_물러나지_않는다()
         {
             GameObject archer = Prefab(SiegeAttackerRole.Archer);
-            boss = BossDefinition.Create("boss_test_marksman", "Test Marksman", BossRole.Artillery, archer, 1.4f, 350f, 26f, 2f, 22f);
+            boss = BossDefinition.Create("boss_test_marksman", "Test Marksman", BossRole.Artillery, Definition(archer), 1.4f, 350f, 26f, 2f, 22f);
             Vector2 cell = battle.Settings.SpawnCell;
             var plan = new EncounterPlan(new[]
             {

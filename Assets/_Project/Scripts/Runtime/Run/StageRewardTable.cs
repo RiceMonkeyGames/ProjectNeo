@@ -17,7 +17,8 @@ namespace ProjectNeo.Run
         [SerializeField, Min(0)] int goldPerStage = 10;
 
         [Header("처치 보상 (몬스터 재료)")]
-        [SerializeField] List<KillReward> killRewards = new List<KillReward>();
+        [Tooltip("적 종류 목록(CONTENT-04). 처치한 적 ID로 적 종류를 찾아 그 처치 골드·재료를 준다. 목록에 없는 적은 보상이 없다.")]
+        [SerializeField] Stages.EnemyCatalog enemies;
 
         [Header("완성품 아이템")]
         [SerializeField, Range(0f, 1f)] float itemChance = 0.5f;
@@ -60,7 +61,7 @@ namespace ProjectNeo.Run
 
         public int BaseGold => baseGold;
         public int GoldPerStage => goldPerStage;
-        public IReadOnlyList<KillReward> KillRewards => killRewards;
+        public Stages.EnemyCatalog Enemies => enemies;
         /// <summary>아이템 한 번 굴림이 성공할 확률.</summary>
         public float ItemChance => itemChance;
         /// <summary>아이템을 굴리는 횟수. 굴릴 때마다 확률로 하나를 풀에서 뽑는다(중복 가능).</summary>
@@ -76,14 +77,14 @@ namespace ProjectNeo.Run
             unlockPointsPerStageCleared * Mathf.Max(0, stagesCleared) + unlockPointsPerBossKilled * Mathf.Max(0, bossesKilled);
 
         /// <summary>코드에서 표를 만든다(테스트용).</summary>
-        public static StageRewardTable Create(int baseGold, int goldPerStage, KillReward[] killRewards = null,
+        public static StageRewardTable Create(int baseGold, int goldPerStage, Stages.EnemyCatalog enemies = null,
             float itemChance = 0f, int itemRolls = 1, WeightedEntry<ItemDefinition>[] itemPool = null,
             int commanderXp = 0, int commanderXpPerStage = 0, int unlockPointsPerStageCleared = 1, int unlockPointsPerBossKilled = 1)
         {
             var table = CreateInstance<StageRewardTable>();
             table.baseGold = Mathf.Max(0, baseGold);
             table.goldPerStage = Mathf.Max(0, goldPerStage);
-            table.killRewards = new List<KillReward>(killRewards ?? new KillReward[0]);
+            table.enemies = enemies;
             table.itemChance = Mathf.Clamp01(itemChance);
             table.itemRolls = Mathf.Max(0, itemRolls);
             table.itemPool = new List<WeightedEntry<ItemDefinition>>(itemPool ?? new WeightedEntry<ItemDefinition>[0]);

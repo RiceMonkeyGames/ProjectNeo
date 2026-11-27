@@ -15,12 +15,13 @@ MonoBehaviour:
   id: boss_war_captain
   displayName: "\uC804\uC7C1 \uB300\uC7A5"
   role: 2
-  basePrefab: {fileID: 1786433762328342860, guid: c378e8883465b87419682e8417179d72, type: 3}
+  baseEnemy: {fileID: 11400000, guid: b59820773b355ba448b981ab8e3ddd4d, type: 2}
   visualScale: 1.6
   maxHealth: 600
   attack: 21
   defense: 5
   attackRange: 0
+  aimSpread: 0
   moveSpeedMultiplier: 1
   structureDamageMultiplier: 1
   heroPreference: 3

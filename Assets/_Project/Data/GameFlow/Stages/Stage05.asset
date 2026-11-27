@@ -16,15 +16,18 @@ MonoBehaviour:
   waves:
   - startSeconds: 0
     groups:
-    - enemyPrefab: {fileID: 1786433762328342860, guid: c378e8883465b87419682e8417179d72, type: 3}
+    - enemy: {fileID: 11400000, guid: b59820773b355ba448b981ab8e3ddd4d, type: 2}
+      enemyPrefab: {fileID: 0}
       count: 8
       spawnPoint: {fileID: 11400000, guid: d13308c69f3255f49b5893f11abed6f2, type: 2}
       hidden: 0
-    - enemyPrefab: {fileID: 1594135828907872887, guid: 74ac65c8d1c47724d836fe77800d4b3a, type: 3}
+    - enemy: {fileID: 11400000, guid: 3eccb26d918b5eb42aa547a7cdbbd59f, type: 2}
+      enemyPrefab: {fileID: 0}
       count: 4
       spawnPoint: {fileID: 11400000, guid: 04246febd64dac14b84330f58742b68e, type: 2}
       hidden: 0
-    - enemyPrefab: {fileID: 1594135828907872887, guid: 74ac65c8d1c47724d836fe77800d4b3a, type: 3}
+    - enemy: {fileID: 11400000, guid: 3eccb26d918b5eb42aa547a7cdbbd59f, type: 2}
+      enemyPrefab: {fileID: 0}
       count: 4
       spawnPoint: {fileID: 11400000, guid: c2aeb97d7dde3624ab98da0ea541ed38, type: 2}
       hidden: 0
@@ -32,15 +35,18 @@ MonoBehaviour:
     bossSpawnPoint: {fileID: 0}
   - startSeconds: 30
     groups:
-    - enemyPrefab: {fileID: 3276109497482159700, guid: def97a7de831ff349a9a555089d5b0ef, type: 3}
+    - enemy: {fileID: 11400000, guid: d56239ab91bc91341a04cb4c6fb842e4, type: 2}
+      enemyPrefab: {fileID: 0}
       count: 3
       spawnPoint: {fileID: 11400000, guid: 04246febd64dac14b84330f58742b68e, type: 2}
       hidden: 0
-    - enemyPrefab: {fileID: 3276109497482159700, guid: def97a7de831ff349a9a555089d5b0ef, type: 3}
+    - enemy: {fileID: 11400000, guid: d56239ab91bc91341a04cb4c6fb842e4, type: 2}
+      enemyPrefab: {fileID: 0}
       count: 3
       spawnPoint: {fileID: 11400000, guid: c2aeb97d7dde3624ab98da0ea541ed38, type: 2}
       hidden: 0
-    - enemyPrefab: {fileID: 1594135828907872887, guid: 74ac65c8d1c47724d836fe77800d4b3a, type: 3}
+    - enemy: {fileID: 11400000, guid: 3eccb26d918b5eb42aa547a7cdbbd59f, type: 2}
+      enemyPrefab: {fileID: 0}
       count: 4
       spawnPoint: {fileID: 11400000, guid: d13308c69f3255f49b5893f11abed6f2, type: 2}
       hidden: 0
@@ -48,19 +54,23 @@ MonoBehaviour:
     bossSpawnPoint: {fileID: 0}
   - startSeconds: 65
     groups:
-    - enemyPrefab: {fileID: 3311207010470909413, guid: 6336293aee1c1264089c9649769650a6, type: 3}
+    - enemy: {fileID: 11400000, guid: b4dcdb2f5d216664280825a50b3332d4, type: 2}
+      enemyPrefab: {fileID: 0}
       count: 3
       spawnPoint: {fileID: 11400000, guid: d13308c69f3255f49b5893f11abed6f2, type: 2}
       hidden: 1
-    - enemyPrefab: {fileID: 7517096732457025389, guid: a4246cb22c7768840aae61bb4b280916, type: 3}
+    - enemy: {fileID: 11400000, guid: c3fbea75fe466ab429ec35994302e221, type: 2}
+      enemyPrefab: {fileID: 0}
       count: 4
       spawnPoint: {fileID: 11400000, guid: 04246febd64dac14b84330f58742b68e, type: 2}
       hidden: 0
-    - enemyPrefab: {fileID: 860056125526067893, guid: 3db756964b81efa49a8013686d1be302, type: 3}
+    - enemy: {fileID: 11400000, guid: 5ce8299285f28e54b8b21c90330b4d46, type: 2}
+      enemyPrefab: {fileID: 0}
       count: 2
       spawnPoint: {fileID: 11400000, guid: c2aeb97d7dde3624ab98da0ea541ed38, type: 2}
       hidden: 0
-    - enemyPrefab: {fileID: 1786433762328342860, guid: c378e8883465b87419682e8417179d72, type: 3}
+    - enemy: {fileID: 11400000, guid: b59820773b355ba448b981ab8e3ddd4d, type: 2}
+      enemyPrefab: {fileID: 0}
       count: 3
       spawnPoint: {fileID: 11400000, guid: c2aeb97d7dde3624ab98da0ea541ed38, type: 2}
       hidden: 0
