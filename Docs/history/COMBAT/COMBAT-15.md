@@ -84,5 +84,5 @@ Pending at completion. The user chose to finish first.
 
 ## Follow-ups
 
-- [SIEGE-20](../../backlog/SIEGE-20.md) (kit battlements, cover heights and crenel positions) may move the crenel stand points. Recheck ranged front ranks on wall tops after it lands.
+- [SIEGE-20](../SIEGE/SIEGE-20.md) (kit battlements, cover heights and crenel positions) may move the crenel stand points. Recheck ranged front ranks on wall tops after it lands.
 - Tower roofs from real `Tower` pieces arrive with [SIEGE-24](../SIEGE/SIEGE-24.md).
