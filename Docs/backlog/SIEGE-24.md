@@ -1,9 +1,9 @@
 ---
 id: SIEGE-24
 title: Towers in the Game
-status: Waiting for Prerequisite
+status: In Progress
 assignee: youngho
-branch:
+branch: feature/siege-24
 area: SIEGE
 depends_on: [SIEGE-19, SIEGE-23, SIEGE-29, SIEGE-30]
 created: 2026-11-23
