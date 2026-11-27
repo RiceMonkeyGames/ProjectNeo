@@ -1,9 +1,9 @@
 ---
 id: SIEGE-22
 title: Main Gate & Gatehouse on the 7.5m Grid
-status: Waiting
+status: In Progress
 assignee: youngho
-branch:
+branch: feature/siege-22
 area: SIEGE
 depends_on: [SIEGE-18]
 created: 2026-11-23
