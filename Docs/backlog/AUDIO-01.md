@@ -1,9 +1,9 @@
 ---
 id: AUDIO-01
 title: Audio System Foundation, Spatial SFX Pool & Mixer Buses
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: SeongminHwang
+branch: feature/audio-01
 area: AUDIO
 depends_on: []
 created: 2026-11-26
