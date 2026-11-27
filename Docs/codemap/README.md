@@ -14,4 +14,5 @@ Base runtime path: `Assets/_Project/Scripts/Runtime/`. Assembly: `ProjectNeo.Run
 | [WallsAndSiege.md](WallsAndSiege.md) | `Walls`, `Siege`, `SiegeHud`, `SiegeStatusHud` |
 | [FlowRunEconomy.md](FlowRunEconomy.md) | `Economy`, `Facilities`, `Flow`, `Run`, `Meta`, `Town`, `TitleScreen`, `GameFlowHud`, `RuntimeSystemFont` |
 | [EditorAndTests.md](EditorAndTests.md) | `Assets/_Project/Scripts/Editor/` setup/build scripts and `Assets/Tests/` EditMode/PlayMode suites |
+| [Audio.md](Audio.md) | `Assets/_Project/Scripts/Runtime/Audio/` mixer buses, volume settings, cue rules, pooled spatial SFX director and BGM crossfade (AUDIO-01) |
 | [ArtAssets.md](ArtAssets.md) | Third-party (`Assets/ThirdParty`) packs per role and every applied model, weapon, building piece, animation and UI asset |

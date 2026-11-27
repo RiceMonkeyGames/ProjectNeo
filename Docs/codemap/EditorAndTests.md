@@ -54,6 +54,7 @@ Last Updated: 2026-11-21 16:13:08 (KST)
 - `BarracksSetup.cs`: Menu `ProjectNeo/Setup/Configure Barracks Data`. Configures `Facility_TrainingGround.asset` and `allied_melee`/`allied_ranged` recruit costs/names.
 - `SiegePrototypeSetup.cs`: Menu `ProjectNeo/Setup/Create Siege Prototype`. Clones siege prototype scene.
 - `CharacterModelSetup.cs` (`ART-03`, `ART-04`): Menu `ProjectNeo/Setup/Apply Character Models`. Puts Synty models and hand weapons under unit prefab `Visual`, converts materials to URP copies, regenerates the four `AC_Unit_*` controllers, `AM_UpperBody` mask and `CAP_Unit_*` animation profiles (measures melee weapon contact from the right-hand speed peak), and configures `CharacterModelAnimator`. Re-runnable; rerun after any menu that regenerates unit prefabs. Details: [PrototypeScenes](PrototypeScenes.md).
+- `AudioSetup.cs` (`AUDIO-01`): Menu `ProjectNeo/Setup/Audio Foundation (AUDIO-01)`. Idempotently builds `Audio/ProjectNeoMixer.mixer` and `Resources/Audio/AudioDirectorConfig.asset` (internal mixer API by reflection). See [Audio](Audio.md).
 - `BuildScript.cs`: Windows standalone build script (`Builds/Windows/ProjectNeo.exe`).
 
 ## EditMode Tests (`Assets/Tests/EditMode/`)
@@ -100,6 +101,8 @@ Last Updated: 2026-11-21 16:13:08 (KST)
 - `RunUnitBindingTests.cs`: Scene entity to run ID binding, duplicate rejection, casualty tracking.
 - `RunRecruitTests.cs`: D-0b/Q-36 recruit squad choice (first free / chosen / auto new / cap / battle lock) and `BindNew`.
 - `BarracksRecruitTests.cs`: D-4/Q-37 barracks recruit rules and non-stacking level training bonus.
+- `AudioSettingsTests.cs` (`AUDIO-01`): volume-to-dB math, settings sanitize and JSON round trip, store defaults and broken-file handling.
+- `AudioPlaybackRulesTests.cs` (`AUDIO-01`): cue clip pick without repeats, jitter, cooldown gate, voice cap and priority/distance stealing.
 
 ## PlayMode Tests (`Assets/Tests/PlayMode/`)
 
@@ -133,4 +136,5 @@ Last Updated: 2026-11-21 16:13:08 (KST)
 - `GameCarryOverPlayTests.cs`: C-3 Game scene battle with deaths → next prep: dead leave scene squads (bodies stay), empty squad removed from run/scene/commander, captain-only squad kept, recruit into emptied squad and next battle input stay aligned.
 - `FocusIndependentInputScopeTests.cs`: Normal/exception restoration of InputSettings via `FocusIndependentInputScope`.
 - `SetupSmokePlayTests.cs`: Basic frame tick verification.
+- `AudioDirectorPlayTests.cs` (`AUDIO-01`): pooled playback and reclaim, cooldown/cap/distance, priority stealing, null no-ops, crossfade, mixer routing, no-mixer volume, `Title` -> `Game` -> `Title` with one `AudioListener`.
 - `UnitScaleBenchmark.cs` & `UnitAIQueryBenchmark.cs`: Explicit `[Explicit]` performance benchmarks (excluded from standard runs).
