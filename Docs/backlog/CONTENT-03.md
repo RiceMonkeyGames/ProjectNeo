@@ -1,9 +1,9 @@
 ---
 id: CONTENT-03
 title: Helmet & Accessory Prototype Equipment Set
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: SeongminHwang
+branch: feature/content-03
 area: CONTENT
 depends_on: []
 created: 2026-11-26
