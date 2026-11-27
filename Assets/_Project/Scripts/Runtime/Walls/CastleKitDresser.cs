@@ -87,8 +87,8 @@ namespace ProjectNeo.Walls
         bool enclosedReady;
         readonly HashSet<int> unfinished = new HashSet<int>();
         readonly Dictionary<Vector2Int, int> breaches = new Dictionary<Vector2Int, int>();
-        // 무너진 보루 칸. 돌무더기만 깔고 뒤의 성벽은 온전하게 둔다.
-        readonly HashSet<Vector2Int> rubble = new HashSet<Vector2Int>();
+        // 무너진 보루·망루 칸 → 무너지기 전 윗면 높이. 돌무더기·밑동과 맞붙은 성벽 면의 찢긴 흔적을 둔다(SIEGE-30).
+        readonly Dictionary<Vector2Int, float> rubble = new Dictionary<Vector2Int, float>();
         // 무너진 성벽 칸 → 무너지기 전 윗면 높이. 그 칸을 향한 계단 방 문을 트인 문으로 남긴다(SIEGE-27).
         readonly Dictionary<Vector2Int, float> fallenTops = new Dictionary<Vector2Int, float>();
         readonly Dictionary<Vector2Int, StairRoom> rooms = new Dictionary<Vector2Int, StairRoom>();
@@ -103,7 +103,7 @@ namespace ProjectNeo.Walls
 
         public IReadOnlyList<CastleKitPlacement> Placements => placements;
         public IReadOnlyDictionary<Vector2Int, int> Breaches => breaches;
-        public IReadOnlyCollection<Vector2Int> Rubble => rubble;
+        public IReadOnlyCollection<Vector2Int> Rubble => rubble.Keys;
         public IReadOnlyDictionary<Vector2Int, StairRoom> Rooms => rooms;
         public Transform Container => container;
         /// <summary>이 칸을 꾸민 킷 조각들의 부모. 꾸미지 않은 칸이면 null(UI-13 해체 미리보기가 잠깐 숨긴다).</summary>
@@ -158,11 +158,11 @@ namespace ProjectNeo.Walls
                 for (int z = 0; z < placement.Size.y; z++)
                 {
                     Vector2Int cell = placement.Cell + new Vector2Int(x, z);
-                    // 보루는 성벽 바깥에 덧붙은 조각이라 성벽 틈(V자)이 아니라 돌무더기만 남긴다.
-                    if (bastion) { rubble.Add(cell); continue; }
-                    breaches[cell] = breaches.TryGetValue(cell, out int level) ? Mathf.Min(level, placement.Level) : placement.Level;
                     // 위층부터 함께 무너지므로 가장 높은 층의 윗면이 무너지기 전 통로 높이다.
                     float top = placement.Elevation + placement.Definition.Height;
+                    // 보루·망루는 성벽 바깥에 덧붙은 조각이라 성벽 틈(V자)이 아니라 돌무더기·밑동과 성벽 면의 찢긴 흔적을 남긴다(SIEGE-30).
+                    if (bastion) { rubble[cell] = rubble.TryGetValue(cell, out float was) ? Mathf.Max(was, top) : top; continue; }
+                    breaches[cell] = breaches.TryGetValue(cell, out int level) ? Mathf.Min(level, placement.Level) : placement.Level;
                     fallenTops[cell] = fallenTops.TryGetValue(cell, out float known) ? Mathf.Max(known, top) : top;
                 }
             dirty = true;
@@ -323,7 +323,7 @@ namespace ProjectNeo.Walls
                 if (world.Layout.At(entry.Key, entry.Value) != null) stale.Add(entry.Key);
             foreach (Vector2Int cell in stale) breaches.Remove(cell);
             stale.Clear();
-            foreach (Vector2Int cell in rubble) if (world.Layout.Top(cell) != null) stale.Add(cell);
+            foreach (Vector2Int cell in rubble.Keys) if (world.Layout.Top(cell) != null) stale.Add(cell);
             foreach (Vector2Int cell in stale) rubble.Remove(cell);
             stale.Clear();
             foreach (KeyValuePair<Vector2Int, float> entry in fallenTops)

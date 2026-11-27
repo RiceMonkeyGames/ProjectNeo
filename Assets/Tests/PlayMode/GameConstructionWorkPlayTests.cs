@@ -192,6 +192,22 @@ namespace ProjectNeo.Tests
         }
 
         [UnityTest]
+        public IEnumerator 전투에서_무너진_보루_자리에_다시_보루를_지을_수_있다()
+        {
+            yield return null;
+            BuildPieceDefinition bastion = BastionTestSupport.Definition(SceneManager.GetActiveScene());
+            Assert.IsTrue(BastionTestSupport.TryFindSpot(world, bastion, out Vector2Int cell), "성벽 앞에 보루 자리가 있어야 한다.");
+            Assert.IsTrue(world.TryPlace(bastion, cell, 0, out PlacedStructure piece));
+            // 바깥 판정을 한 번 세어 둔다(보루가 선 칸은 바깥이 아니다). 결과는 위층 쌓기 판정이라 보지 않는다.
+            world.CheckPlacement(bastion, cell, 0);
+            world.Collapse(piece);
+            Assert.AreEqual(0, world.Layout.ColumnHeight(cell));
+            Assert.AreEqual(PlacementIssue.None, world.CheckPlacement(bastion, cell, 0),
+                "무너진 보루 칸은 다시 성 바깥이라 그 자리에 다시 지을 수 있다(SIEGE-30).");
+            Assert.IsTrue(world.TryPlace(bastion, cell, 0, out _));
+        }
+
+        [UnityTest]
         public IEnumerator 다_짓지_못한_대포는_전투에서_쏘지_않고_다음_준비에_끝까지_수리하면_완성된다()
         {
             yield return null;
