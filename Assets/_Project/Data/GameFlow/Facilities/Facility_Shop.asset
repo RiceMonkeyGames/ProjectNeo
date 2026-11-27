@@ -30,6 +30,12 @@ MonoBehaviour:
       weight: 1
     - item: {fileID: 11400000, guid: 460dfb0830ad07e44b81096701286eeb, type: 2}
       weight: 1
+    - item: {fileID: 11400000, guid: 98b17c8eb31fff34c9ed4304087884ae, type: 2}
+      weight: 1
+    - item: {fileID: 11400000, guid: dfe27cb750f528c43b0273081e67a4fa, type: 2}
+      weight: 1
+    - item: {fileID: 11400000, guid: 082e3b12ec8522a4da594a6c632810ec, type: 2}
+      weight: 1
     heroPool: []
     recipes: []
     battlementStyle: 0
@@ -52,6 +58,18 @@ MonoBehaviour:
     - item: {fileID: 11400000, guid: 67d0133c1953fa84c81f67a15984ec45, type: 2}
       weight: 1
     - item: {fileID: 11400000, guid: b916f3e660b272b4791179bd0f5b8dc5, type: 2}
+      weight: 0.5
+    - item: {fileID: 11400000, guid: 98b17c8eb31fff34c9ed4304087884ae, type: 2}
+      weight: 1
+    - item: {fileID: 11400000, guid: dfe27cb750f528c43b0273081e67a4fa, type: 2}
+      weight: 1
+    - item: {fileID: 11400000, guid: 082e3b12ec8522a4da594a6c632810ec, type: 2}
+      weight: 1
+    - item: {fileID: 11400000, guid: a64799ddbc804734fa2bc77fe71916ea, type: 2}
+      weight: 1
+    - item: {fileID: 11400000, guid: dcf18fd91a10f424794c094265b721d3, type: 2}
+      weight: 0.5
+    - item: {fileID: 11400000, guid: 5edde29677c9e19449caa3cc625a6470, type: 2}
       weight: 0.5
     heroPool: []
     recipes: []
@@ -76,6 +94,18 @@ MonoBehaviour:
       weight: 1.5
     - item: {fileID: 11400000, guid: b916f3e660b272b4791179bd0f5b8dc5, type: 2}
       weight: 1.5
+    - item: {fileID: 11400000, guid: 98b17c8eb31fff34c9ed4304087884ae, type: 2}
+      weight: 0.5
+    - item: {fileID: 11400000, guid: dfe27cb750f528c43b0273081e67a4fa, type: 2}
+      weight: 0.5
+    - item: {fileID: 11400000, guid: 082e3b12ec8522a4da594a6c632810ec, type: 2}
+      weight: 0.5
+    - item: {fileID: 11400000, guid: a64799ddbc804734fa2bc77fe71916ea, type: 2}
+      weight: 1.5
+    - item: {fileID: 11400000, guid: dcf18fd91a10f424794c094265b721d3, type: 2}
+      weight: 1
+    - item: {fileID: 11400000, guid: 5edde29677c9e19449caa3cc625a6470, type: 2}
+      weight: 1
     heroPool: []
     recipes: []
     battlementStyle: 0

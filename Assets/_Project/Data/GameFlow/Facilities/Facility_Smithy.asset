@@ -40,6 +40,26 @@ MonoBehaviour:
         materials:
         - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
           amount: 3
+    - item: {fileID: 11400000, guid: 98b17c8eb31fff34c9ed4304087884ae, type: 2}
+      cost:
+        gold: 20
+        materials:
+        - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+          amount: 2
+    - item: {fileID: 11400000, guid: dfe27cb750f528c43b0273081e67a4fa, type: 2}
+      cost:
+        gold: 20
+        materials:
+        - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+          amount: 1
+        - material: {fileID: 11400000, guid: 983096480f690a248a516a89f583ca4f, type: 2}
+          amount: 1
+    - item: {fileID: 11400000, guid: 082e3b12ec8522a4da594a6c632810ec, type: 2}
+      cost:
+        gold: 20
+        materials:
+        - material: {fileID: 11400000, guid: d8a422bc2c200bc4098f7e97952c696e, type: 2}
+          amount: 2
     battlementStyle: 0
   - upgradeCost:
       gold: 60
@@ -75,6 +95,50 @@ MonoBehaviour:
           amount: 4
         - material: {fileID: 11400000, guid: d8a422bc2c200bc4098f7e97952c696e, type: 2}
           amount: 2
+    - item: {fileID: 11400000, guid: 98b17c8eb31fff34c9ed4304087884ae, type: 2}
+      cost:
+        gold: 20
+        materials:
+        - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+          amount: 2
+    - item: {fileID: 11400000, guid: dfe27cb750f528c43b0273081e67a4fa, type: 2}
+      cost:
+        gold: 20
+        materials:
+        - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+          amount: 1
+        - material: {fileID: 11400000, guid: 983096480f690a248a516a89f583ca4f, type: 2}
+          amount: 1
+    - item: {fileID: 11400000, guid: 082e3b12ec8522a4da594a6c632810ec, type: 2}
+      cost:
+        gold: 20
+        materials:
+        - material: {fileID: 11400000, guid: d8a422bc2c200bc4098f7e97952c696e, type: 2}
+          amount: 2
+    - item: {fileID: 11400000, guid: a64799ddbc804734fa2bc77fe71916ea, type: 2}
+      cost:
+        gold: 45
+        materials:
+        - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+          amount: 2
+        - material: {fileID: 11400000, guid: d8a422bc2c200bc4098f7e97952c696e, type: 2}
+          amount: 3
+    - item: {fileID: 11400000, guid: dcf18fd91a10f424794c094265b721d3, type: 2}
+      cost:
+        gold: 50
+        materials:
+        - material: {fileID: 11400000, guid: d8a422bc2c200bc4098f7e97952c696e, type: 2}
+          amount: 2
+        - material: {fileID: 11400000, guid: 983096480f690a248a516a89f583ca4f, type: 2}
+          amount: 3
+    - item: {fileID: 11400000, guid: 5edde29677c9e19449caa3cc625a6470, type: 2}
+      cost:
+        gold: 55
+        materials:
+        - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+          amount: 3
+        - material: {fileID: 11400000, guid: d8a422bc2c200bc4098f7e97952c696e, type: 2}
+          amount: 3
     battlementStyle: 0
   - upgradeCost:
       gold: 120
@@ -118,5 +182,49 @@ MonoBehaviour:
           amount: 4
         - material: {fileID: 11400000, guid: 983096480f690a248a516a89f583ca4f, type: 2}
           amount: 2
+    - item: {fileID: 11400000, guid: 98b17c8eb31fff34c9ed4304087884ae, type: 2}
+      cost:
+        gold: 20
+        materials:
+        - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+          amount: 2
+    - item: {fileID: 11400000, guid: dfe27cb750f528c43b0273081e67a4fa, type: 2}
+      cost:
+        gold: 20
+        materials:
+        - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+          amount: 1
+        - material: {fileID: 11400000, guid: 983096480f690a248a516a89f583ca4f, type: 2}
+          amount: 1
+    - item: {fileID: 11400000, guid: 082e3b12ec8522a4da594a6c632810ec, type: 2}
+      cost:
+        gold: 20
+        materials:
+        - material: {fileID: 11400000, guid: d8a422bc2c200bc4098f7e97952c696e, type: 2}
+          amount: 2
+    - item: {fileID: 11400000, guid: a64799ddbc804734fa2bc77fe71916ea, type: 2}
+      cost:
+        gold: 45
+        materials:
+        - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+          amount: 2
+        - material: {fileID: 11400000, guid: d8a422bc2c200bc4098f7e97952c696e, type: 2}
+          amount: 3
+    - item: {fileID: 11400000, guid: dcf18fd91a10f424794c094265b721d3, type: 2}
+      cost:
+        gold: 50
+        materials:
+        - material: {fileID: 11400000, guid: d8a422bc2c200bc4098f7e97952c696e, type: 2}
+          amount: 2
+        - material: {fileID: 11400000, guid: 983096480f690a248a516a89f583ca4f, type: 2}
+          amount: 3
+    - item: {fileID: 11400000, guid: 5edde29677c9e19449caa3cc625a6470, type: 2}
+      cost:
+        gold: 55
+        materials:
+        - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+          amount: 3
+        - material: {fileID: 11400000, guid: d8a422bc2c200bc4098f7e97952c696e, type: 2}
+          amount: 3
     battlementStyle: 0
   displayName: "\uB300\uC7A5\uAC04"

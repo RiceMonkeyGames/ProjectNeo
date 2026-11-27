@@ -235,8 +235,9 @@ namespace ProjectNeo.Tests
             var state = GameSession.Flow.Run.State;
             Assert.IsTrue(Station(FacilityType.Smithy).Interact());
             var recipes = state.CraftableRecipes();
-            Assert.AreEqual(3, recipes.Count, "대장간 1레벨 레시피 수");
-            Assert.AreEqual(3, facilities.OfferRows);
+            // CONTENT-03: 1레벨 레시피는 나무 방패·철검·가죽 갑옷에 가죽 모자·여행자의 부적·철반지가 더해져 6개다.
+            Assert.AreEqual(6, recipes.Count, "대장간 1레벨 레시피 수");
+            Assert.AreEqual(6, facilities.OfferRows);
             StringAssert.Contains("제작", facilities.OfferHeaderText);
             Assert.AreEqual(0, facilities.InventoryRows, "팔 장비가 없으면 타일이 없다.");
 
@@ -250,7 +251,7 @@ namespace ProjectNeo.Tests
             Assert.IsTrue(facilities.TryCraft(0));
             Assert.AreEqual(gold - shield.cost.gold, state.Wallet.Gold);
             Assert.AreEqual(1, state.Inventory.CountOf(shield.item));
-            Assert.AreEqual(3, facilities.OfferRows, "고정 레시피라 만든 뒤에도 남는다.");
+            Assert.AreEqual(6, facilities.OfferRows, "고정 레시피라 만든 뒤에도 남는다.");
             Assert.AreEqual(1, facilities.InventoryRows);
             StringAssert.Contains("제작", facilities.BodyText);
 
@@ -456,7 +457,8 @@ namespace ProjectNeo.Tests
 
             // 한도 초과(레벨 1: 최대 1개) 거부
             Assert.IsFalse(facilities.TryToggleLock(0));
-            StringAssert.Contains("최대 1개", facilities.BodyText);
+            // 거부 안내 줄. 뒤에 붙는 상세는 매물에 따라 달라 이 줄만 본다(CONTENT-03에서 매물이 늘어 드러남).
+            StringAssert.Contains("잠금 한도: 1개", facilities.BodyText);
 
             // 리롤 후 잠긴 매물은 유지
             Assert.IsTrue(facilities.TryReroll());

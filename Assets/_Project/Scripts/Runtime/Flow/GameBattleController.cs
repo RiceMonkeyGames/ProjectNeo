@@ -288,6 +288,9 @@ namespace ProjectNeo.Flow
                     RunLink.State.SetupPrepTime(build.StartConfig.PrepTime);
                     // 영웅 등급 수치(PREP-10)도 첫 저장 전에 붙인다.
                     RunLink.State.SetupHeroPromotion(build.StartConfig.HeroPromotion);
+                    // 등급 보너스(플레이어는 최고 등급)가 체력이 만들어진 뒤 최대 체력을 올리므로, 새 런의 첫 준비는 여기서
+                    // 가득 채운다. 전에는 플레이어가 100 / 130으로 시작했다(CONTENT-03에서 발견).
+                    if (!RunLink.WasRestored && RunLink.State.BattlesFought == 0) RunLink.RestoreAllHealth();
                     RunLink.State.BeginPreparationClockIfNeeded();
                 }
                 // 되살린 런의 작업 주문을 다시 넣고 미완성 무기 표시를 맞춘다(SIEGE-08). 되살린 주문은 한 번만 쓴다.

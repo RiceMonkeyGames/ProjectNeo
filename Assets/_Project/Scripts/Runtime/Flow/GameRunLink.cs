@@ -264,6 +264,35 @@ namespace ProjectNeo.Flow
         }
 
         /// <summary>
+        /// 런 규칙(<see cref="RunState.TryEquip"/>)으로 장비를 끼운다. 투구 등으로 최대 체력이 늘면, 체력이 가득 찼던 씬 유닛은
+        /// 늘어난 최대 체력까지 채운다(CONTENT-03). 줄어들면 Health가 현재 체력을 최대 체력에 맞춘다.
+        /// </summary>
+        public bool TryEquip(RunHero hero, ProjectNeo.Economy.ItemInstance item) =>
+            KeepingFullHealth(hero, () => binding.State.TryEquip(hero, item));
+
+        /// <summary>런 규칙(<see cref="RunState.TryUnequip"/>)으로 장비를 벗긴다. 체력이 가득 찼던 씬 유닛은 가득 찬 채로 둔다.</summary>
+        public bool TryUnequip(RunHero hero, ProjectNeo.Economy.ItemInstance item) =>
+            KeepingFullHealth(hero, () => binding.State.TryUnequip(hero, item));
+
+        /// <summary>런의 살아 있는 씬 유닛을 모두 최대 체력까지 채운다. 새 런의 첫 준비에서 시작 능력치를 다 붙인 뒤에 부른다.</summary>
+        public void RestoreAllHealth()
+        {
+            if (binding == null) return;
+            foreach (CharacterActor actor in binding.ObjectsInRun())
+                if (actor != null && actor.Health != null && !actor.Health.IsDead) actor.Health.RestoreFull();
+        }
+
+        bool KeepingFullHealth(RunHero hero, System.Func<bool> change)
+        {
+            if (binding == null || hero == null) return false;
+            CharacterActor actor = binding.ObjectOf(hero.Id);
+            bool wasFull = actor != null && actor.Health != null && !actor.Health.IsDead && actor.Health.Current >= actor.Health.Maximum;
+            if (!change()) return false;
+            if (wasFull) actor.Health.RestoreFull();
+            return true;
+        }
+
+        /// <summary>
         /// 대기 영웅(대장이 아닌 고용 영웅)의 씬 유닛을 켜거나 끈다(Q-48). 전투 시작 때 끄고 준비로 돌아오면 켠다.
         /// 나중에 대장 없는 부대로 내보낼 때는 이 목록에서 빼면 된다.
         /// </summary>

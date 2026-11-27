@@ -24,6 +24,7 @@ MonoBehaviour:
       kind: 3
       targetId: 
       amount: 50
+    icon: {fileID: 0}
   - id: bonus_potions_2
     displayName: "\uC2DC\uC791 \uD68C\uBCF5\uC57D x2"
     cost: 2
@@ -34,6 +35,7 @@ MonoBehaviour:
       kind: 5
       targetId: item_potion
       amount: 2
+    icon: {fileID: 0}
   - id: bonus_grunts_2
     displayName: "\uC2DC\uC791 \uC7A1\uC878 +2"
     cost: 3
@@ -44,6 +46,7 @@ MonoBehaviour:
       kind: 4
       targetId: 
       amount: 2
+    icon: {fileID: 0}
   - id: bonus_gold_100
     displayName: "\uC2DC\uC791 \uACE8\uB4DC +100"
     cost: 5
@@ -54,3 +57,5 @@ MonoBehaviour:
       kind: 3
       targetId: 
       amount: 100
+    icon: {fileID: 0}
+  drawCost: 1

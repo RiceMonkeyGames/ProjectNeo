@@ -452,6 +452,13 @@ namespace ProjectNeo.Editor
             { "item_wood_shield", EquipmentSlot.Offhand },
             { "item_leather_armor", EquipmentSlot.Armor },
             { "item_chain_armor", EquipmentSlot.Armor },
+            // CONTENT-03 helmets and accessories.
+            { HelmetAccessorySetup.LeatherCap, EquipmentSlot.Helmet },
+            { HelmetAccessorySetup.IronHelm, EquipmentSlot.Helmet },
+            { HelmetAccessorySetup.TravelerCharm, EquipmentSlot.Accessory },
+            { HelmetAccessorySetup.IronRing, EquipmentSlot.Accessory },
+            { HelmetAccessorySetup.MarksmanClasp, EquipmentSlot.Accessory },
+            { HelmetAccessorySetup.WarBannerCharm, EquipmentSlot.Accessory },
         };
 
         // Prototype gear icons from the team's packs (user pick of option B, 2026-11-23). Only fills an empty icon, so an
@@ -464,6 +471,13 @@ namespace ProjectNeo.Editor
             { "item_leather_armor", "ICON_SM_PickUp_Armor_01" },
             { "item_chain_armor", "ICON_SM_PickUp_Armor_02" },
             { "item_potion", "ICON_FantasyWarrior_Inventory_Potions01_Clean" },
+            // CONTENT-03 placeholder icons until helmet/accessory art lands.
+            { HelmetAccessorySetup.LeatherCap, "ICON_FantasyWarrior_Inventory_Helmets01_Clean" },
+            { HelmetAccessorySetup.IronHelm, "ICON_SM_Char_Attach_Helmet_01" },
+            { HelmetAccessorySetup.TravelerCharm, "ICON_FantasyWarrior_Inventory_Necklaces01_Clean" },
+            { HelmetAccessorySetup.IronRing, "ICON_FantasyWarrior_Inventory_Rings01_Clean" },
+            { HelmetAccessorySetup.MarksmanClasp, "ICON_FantasyWarrior_Inventory_Arrows01_Clean" },
+            { HelmetAccessorySetup.WarBannerCharm, "ICON_FantasyWarrior_Map_Flag01_Clean" },
         };
 
         // Sample skill icons from the team's packs (UI-07, 2026-11-23). Skills without one show their name's first letters.

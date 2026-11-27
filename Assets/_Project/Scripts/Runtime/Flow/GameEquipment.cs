@@ -278,7 +278,7 @@ namespace ProjectNeo.Flow
             if (!IsOpen || index < 0 || index >= gear.Count) return false;
             ItemInstance item = gear[index];
             ItemInstance replaced = SelectedHero.Character.EquippedIn(item.Definition.Slot);
-            bool equipped = state.TryEquip(SelectedHero, item);
+            bool equipped = battle.RunLink.TryEquip(SelectedHero, item);
             Message = !equipped ? "이 영웅은 장비를 낄 수 없습니다."
                 : replaced != null ? $"{item.Definition.DisplayName} 장착 ({replaced.Definition.DisplayName} 해제)"
                 : $"{item.Definition.DisplayName} 장착";
@@ -289,11 +289,10 @@ namespace ProjectNeo.Flow
         /// <summary>착용 중인 장비의 index번째를 벗긴다.</summary>
         public bool TryUnequip(int index)
         {
-            RunState state = State;
             RunHero hero = SelectedHero;
             if (!IsOpen || hero == null || index < 0 || index >= hero.Character.Equipment.Count) return false;
             ItemInstance item = hero.Character.Equipment[index];
-            bool removed = state.TryUnequip(hero, item);
+            bool removed = battle.RunLink.TryUnequip(hero, item);
             if (removed) Message = $"{item.Definition.DisplayName} 해제";
             Rebuild();
             return removed;

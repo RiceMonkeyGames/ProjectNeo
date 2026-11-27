@@ -14,10 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Run.RunContentCatalog
   items:
   - {fileID: 11400000, guid: 67d0133c1953fa84c81f67a15984ec45, type: 2}
+  - {fileID: 11400000, guid: a64799ddbc804734fa2bc77fe71916ea, type: 2}
+  - {fileID: 11400000, guid: 082e3b12ec8522a4da594a6c632810ec, type: 2}
   - {fileID: 11400000, guid: f199196ca1dd9d8458335b9110821698, type: 2}
   - {fileID: 11400000, guid: 460dfb0830ad07e44b81096701286eeb, type: 2}
+  - {fileID: 11400000, guid: 98b17c8eb31fff34c9ed4304087884ae, type: 2}
+  - {fileID: 11400000, guid: dcf18fd91a10f424794c094265b721d3, type: 2}
   - {fileID: 11400000, guid: 933d722ec8cf9574fa5b174621ec4fa5, type: 2}
   - {fileID: 11400000, guid: b916f3e660b272b4791179bd0f5b8dc5, type: 2}
+  - {fileID: 11400000, guid: dfe27cb750f528c43b0273081e67a4fa, type: 2}
+  - {fileID: 11400000, guid: 5edde29677c9e19449caa3cc625a6470, type: 2}
   - {fileID: 11400000, guid: 82f91b232b8d1fc4fb04fbebf5e77a88, type: 2}
   materials:
   - {fileID: 11400000, guid: d8a422bc2c200bc4098f7e97952c696e, type: 2}
