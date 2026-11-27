@@ -85,6 +85,13 @@ namespace ProjectNeo.Walls
         public float RoomSlabThickness => roomSlabThickness;
         public float RoomRampThickness => roomRampThickness;
 
+        // 무너진 보루·망루 자리(SIEGE-30, 모듈 기준 m): 밑동 부서진 벽판의 기준 높이(면 끝마다 들쭉날쭉하게 0.6~1.3배)와
+        // 밑동 충돌 상자 높이. 맞붙은 성벽 쪽 잔해는 무너진 성벽 V자 반쪽과 같은 모양이다(BreachHalfWidth).
+        [SerializeField, Min(0.2f)] float stumpHeight = 1.6f;
+        [SerializeField, Min(0.1f)] float stumpColliderHeight = 1f;
+        public float StumpHeight => stumpHeight;
+        public float StumpColliderHeight => stumpColliderHeight;
+
         public GameObject Prefab(CastleKitPiece piece)
         {
             int index = (int)piece;

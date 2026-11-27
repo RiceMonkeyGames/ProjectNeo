@@ -34,7 +34,7 @@ namespace ProjectNeo.Walls
             }
             if (keyboard.kKey.wasPressedThisFrame)
             {
-                PlacedStructure target = Aimed();
+                PlacedStructure target = Aimed(Camera.main, hits);
                 if (target != null) world.Collapse(target);
             }
         }
@@ -46,11 +46,12 @@ namespace ProjectNeo.Walls
             return null;
         }
 
-        // 화면 가운데에서 가장 가까운 성벽·보루·계단·망루(성문 제외).
-        PlacedStructure Aimed()
+        /// <summary>
+        /// 화면 가운데에서 가장 가까운 성벽·보루·계단·망루(성문 제외). 시험 키 전용(Game의 <c>GameDevKeys</c> F11도 쓴다, SIEGE-30).
+        /// </summary>
+        public static PlacedStructure Aimed(Camera view, RaycastHit[] hits)
         {
-            Camera view = Camera.main;
-            if (view == null) return null;
+            if (view == null || hits == null) return null;
             Ray ray = view.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
             int count = Physics.RaycastNonAlloc(ray, hits, 200f, ~0, QueryTriggerInteraction.Ignore);
             PlacedStructure found = null;

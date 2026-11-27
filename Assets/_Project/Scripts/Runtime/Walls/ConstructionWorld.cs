@@ -119,11 +119,13 @@ namespace ProjectNeo.Walls
                         if (structures.TryGetValue(Layout.At(cell + new Vector2Int(x, z), level - 1).Id, out PlacedStructure below)
                             && below != null && below.IsUnderConstruction) return PlacementIssue.UnfinishedSupport;
             }
-            // 보루 규칙(SIEGE-11). 성 바깥 판정은 준비 중 직접 바꾼 배치가 바뀔 때만 다시 센다(성가퀴와 같은 기준).
-            if (outsideRevision != LayoutRevision)
+            // 보루 규칙(SIEGE-11). 성 바깥 판정은 배치가 바뀔 때만 다시 센다. 전투 중 무너짐도 센다:
+            // 세지 않으면 무너진 보루·망루 칸이 계속 안쪽으로 남아 그 자리에 다시 짓지 못한다(SIEGE-30).
+            if (outsideRevision != LayoutRevision || outsideCollapses != collapseCount)
             {
                 BattlementRules.CollectOutside(Layout, grid, outsideCells);
                 outsideRevision = LayoutRevision;
+                outsideCollapses = collapseCount;
             }
             PlacementIssue outwork = BastionRules.Check(Layout, grid, outsideCells, ladderLanes.Keys, definition, cell, rotation, level, elevation);
             if (outwork != PlacementIssue.None) return outwork;
@@ -133,6 +135,8 @@ namespace ProjectNeo.Walls
 
         readonly HashSet<Vector2Int> outsideCells = new HashSet<Vector2Int>();
         int outsideRevision = -1;
+        // 전투 중 무너짐 횟수. LayoutRevision은 무너짐으로 오르지 않으므로(성가퀴 기준) 배치 검사의 바깥 판정만 따로 센다.
+        int collapseCount, outsideCollapses;
         // 칸마다 그 칸에 선 사다리 수. 사다리는 씬에 고정되어 있고 준비 중에도 꺼진 채 남아 있다.
         readonly Dictionary<Vector2Int, int> ladderLanes = new Dictionary<Vector2Int, int>();
 
@@ -396,6 +400,7 @@ namespace ProjectNeo.Walls
                     if (weapon.Support == body && body.TryGetMountPose(weapon.Mount.MountId, out Pose pose))
                         SetMountPose(weapon.transform, weapon.Definition, RotateMountPose(pose, weapon.Mount.Rotation));
             }
+            collapseCount++;
             rebuildPending = true;
             Changed?.Invoke();
         }

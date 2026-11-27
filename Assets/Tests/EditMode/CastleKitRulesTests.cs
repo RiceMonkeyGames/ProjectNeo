@@ -14,7 +14,7 @@ namespace ProjectNeo.Tests
         readonly HashSet<Vector2Int> outside = new HashSet<Vector2Int>();
         readonly HashSet<int> unfinished = new HashSet<int>();
         readonly Dictionary<Vector2Int, int> breaches = new Dictionary<Vector2Int, int>();
-        readonly HashSet<Vector2Int> rubble = new HashSet<Vector2Int>();
+        readonly Dictionary<Vector2Int, float> rubble = new Dictionary<Vector2Int, float>();
         readonly List<CastleKitPlacement> parts = new List<CastleKitPlacement>();
         BuildGridDefinition grid;
         BuildPieceDefinition wall;
@@ -100,6 +100,20 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
+        public void ThreeStoreyCollapse_StretchesOneVHalfPerSide_WithNoStackedEndPieces()
+        {
+            for (int i = 0; i < 3; i++) { Place(wall, 4, 3); Place(wall, 6, 3); }
+            breaches[new Vector2Int(5, 3)] = 0;
+            Collect();
+            // 사용자 결정(SIEGE-30): 층마다 끝 조각을 쌓지 않고 한 층 반쪽을 세 층 높이로 늘린다.
+            Assert.AreEqual(4, Of(CastleKitPiece.BrokenTop).Count());
+            Assert.IsTrue(Of(CastleKitPiece.BrokenTop).Concat(Of(CastleKitPiece.RubbleTop))
+                .All(p => Mathf.Approximately(p.ScaleY, 3f) && Mathf.Approximately(p.Position.y, 0f)));
+            CollectionAssert.IsEmpty(parts.Where(p => p.Piece == CastleKitPiece.BrokenMiddle || p.Piece == CastleKitPiece.BrokenBottom
+                || p.Piece == CastleKitPiece.RubbleMiddle || p.Piece == CastleKitPiece.RubbleBottom));
+        }
+
+        [Test]
         public void StairsBehindACollapsedWall_StayAndGetTheRubbleSectionOnTheirEnd()
         {
             var stairs = Track(BuildPieceDefinition.Create(BuildPieceKind.Stairs, "stairs", Vector2Int.one, Cell));
@@ -122,16 +136,54 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
-        public void CollapsedBastion_LeavesOnlyRubble_AndTheWallBehindStaysWhole()
+        public void CollapsedBastion_LeavesRubbleAStumpAndAScar_WhileTheWallKeepsItsPanels()
         {
             Place(wall, 5, 3);
             var bastionCell = new Vector2Int(5, 4);
-            rubble.Add(bastionCell);
+            rubble[bastionCell] = Cell;
             Collect();
-            Assert.AreEqual(4, Panels(new Vector2Int(5, 3)), "the wall face toward the fallen bastion keeps its panel");
-            CollectionAssert.IsEmpty(Of(CastleKitPiece.RubbleTop), "no broken-wall section against the wall");
-            CollectionAssert.IsEmpty(Of(CastleKitPiece.BrokenTop));
+            Assert.AreEqual(4, Panels(new Vector2Int(5, 3)), "the wall itself keeps every panel (look only, HP unchanged)");
+            Assert.IsTrue(parts.Where(p => p.Piece == CastleKitPiece.RubbleTop || p.Piece == CastleKitPiece.BrokenTop
+                || p.Piece == CastleKitPiece.RubblePile || p.Piece == CastleKitPiece.RoomCollider).All(p => p.Cell == bastionCell),
+                "stump and scar belong to the fallen cell, so a rebuild there clears them");
             Assert.AreEqual(bastionCell, Of(CastleKitPiece.RubblePile).Single().Cell);
+            // 성벽 쪽(남쪽)에 무너진 성벽 V자와 같은 가파른 반쪽: 단면 하나(모델 +x가 성벽에서 칸 안 +z를 본다)와 부서진 벽판 둘.
+            CastleKitPlacement section = Of(CastleKitPiece.RubbleTop).Single();
+            Assert.AreEqual(-90f, Mathf.DeltaAngle(0f, section.Yaw), 1f);
+            Assert.AreEqual(4 * Cell, section.Position.z, 0.5f, "starts at the wall face");
+            Assert.AreEqual(1f, section.ScaleY, 1e-4f, "from the fallen top (one storey) down to the ground");
+            CastleKitPlacement[] broken = Of(CastleKitPiece.BrokenTop).ToArray();
+            Assert.AreEqual(2, broken.Count(p => Mathf.Approximately(p.ScaleY, 1f)), "the steep half's two broken panels");
+            // 드러난 세 면(동·북·서)에는 낮은 밑동 반쪽 둘씩.
+            Assert.AreEqual(6, broken.Count(p => p.ScaleY * Cell <= settings.StumpHeight * 1.3f + 1e-3f), "low stump halves");
+            Assert.AreEqual(8, broken.Length);
+            Assert.IsTrue(Of(CastleKitPiece.RoomCollider).Any(p => Mathf.Abs(p.Position.y - settings.StumpColliderHeight * 0.5f) < 1e-4f
+                && Mathf.Abs(p.StretchX - (Cell - 0.6f)) < 1e-3f), "stump collider sits on the ground");
+            // 같은 높이 보루가 맞붙어 있던 북쪽 면에는 성가퀴가 서지 않는다. 나머지 바깥 면(동·남·서)은 그대로.
+            Assert.AreEqual(3, Of(CastleKitPiece.Battlement).Count(p => p.Cell == new Vector2Int(5, 3)));
+            Assert.IsFalse(Of(CastleKitPiece.Battlement).Any(p => p.Cell == new Vector2Int(5, 3)
+                && Mathf.Abs(Mathf.DeltaAngle(p.Yaw, CastleKitRules.FaceYaw(0))) < 1f), "no battlement facing the fallen bastion (north)");
+        }
+
+        [Test]
+        public void LowerFallenBastion_KeepsTheBattlementThatStoodAboveIt()
+        {
+            Place(wall, 5, 3); Place(wall, 5, 3);
+            rubble[new Vector2Int(5, 4)] = Cell;
+            Collect();
+            Assert.AreEqual(4, Of(CastleKitPiece.Battlement).Count(p => p.Cell == new Vector2Int(5, 3)), "the wall stood a storey above the bastion");
+            Assert.AreEqual(1f, Of(CastleKitPiece.RubbleTop).Single().ScaleY, 1e-4f, "the ruin reaches only the bastion's top");
+        }
+
+        [Test]
+        public void FallenTower_SkipsTheFacesBetweenItsOwnCells()
+        {
+            for (int x = 4; x <= 5; x++) for (int z = 4; z <= 5; z++) rubble[new Vector2Int(x, z)] = 2 * Cell;
+            Collect();
+            // 2×2 둘레 면 8개마다 반쪽 둘. 안쪽 맞붙은 면에는 두지 않는다.
+            Assert.AreEqual(16, Of(CastleKitPiece.BrokenTop).Count());
+            Assert.AreEqual(4, Of(CastleKitPiece.RoomCollider).Count());
+            CollectionAssert.IsEmpty(Of(CastleKitPiece.RubbleTop), "no wall to scar");
         }
 
         [Test]
@@ -139,9 +191,11 @@ namespace ProjectNeo.Tests
         {
             Place(wall, 5, 3);
             Place(wall, 5, 4);
-            rubble.Add(new Vector2Int(5, 4));
+            rubble[new Vector2Int(5, 4)] = Cell;
             Collect();
             CollectionAssert.IsEmpty(Of(CastleKitPiece.RubblePile));
+            CollectionAssert.IsEmpty(Of(CastleKitPiece.BrokenTop));
+            CollectionAssert.IsEmpty(Of(CastleKitPiece.RubbleTop));
         }
 
         [Test]
