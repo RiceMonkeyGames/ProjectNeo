@@ -1,0 +1,98 @@
+# Synty/InterfaceFantasyWarriorHUD
+
+> Generated 2026-11-27 from `Assets/ThirdParty/Synty/InterfaceFantasyWarriorHUD` prefab paths (names only). Parent: [AssetCatalog](../AssetCatalog.md). Filter: none.
+
+
+## Prefabs/ActionBar
+
+`HUD_FantasyWarrior_ARPGBar01` `HUD_FantasyWarrior_ARPGBar02` `HUD_FantasyWarrior_ARPGBar03` `HUD_FantasyWarrior_ARPGBar04` `HUD_FantasyWarrior_ARPGBar05` `HUD_FantasyWarrior_HotBar01` `HUD_FantasyWarrior_HotBar04` `HUD_FantasyWarrior_HotBar05` `HUD_FantasyWarrior_Hotbar02` `HUD_FantasyWarrior_Hotbar03` 
+## Prefabs/ActionBar/_Parts
+
+`Button_FantasyWarrior_ActionBar_Item01` `Button_FantasyWarrior_ActionBar_Item02` `Button_FantasyWarrior_ActionBar_Item03` `Button_FantasyWarrior_HotBar_Item01` `Button_FantasyWarrior_HotBar_Item02` `Button_FantasyWarrior_HotBar_Item03` `Button_FantasyWarrior_HotBar_Item04` `Button_FantasyWarrior_HotBar_Item05` `HUD_FantasyWarrior_ActionBar_CooldownItem01` `HUD_FantasyWarrior_Container01` `HUD_FantasyWarrior_Container02` `HUD_FantasyWarrior_Container03` `HUD_FantasyWarrior_PlayerLevel01` `HUD_FantasyWarrior_PlayerLevel02` `HUD_FantasyWarrior_PlayerLevel03` `Input_FantasyWarrior_Hotkey01` 
+## Prefabs/Compass
+
+`HUD_FantasyWarrior_Compass01` `HUD_FantasyWarrior_Compass02` `HUD_FantasyWarrior_Compass03` 
+## Prefabs/Compass/_Parts
+
+`HUD_Compass_FantasyWarrior_Bar01` `HUD_Compass_FantasyWarrior_BarCluster01` `HUD_Compass_FantasyWarrior_Content01` `HUD_Compass_FantasyWarrior_Content02` `HUD_Compass_FantasyWarrior_Content03` `HUD_Compass_FantasyWarrior_PointCardinal01` `HUD_Compass_FantasyWarrior_PointOrdinal01` 
+## Prefabs/FullscreenFX
+
+`FX_FantasyWarrior_DamageDirection01` `FX_FantasyWarrior_DamageDirection02` `FX_FantasyWarrior_DamageVignette01` `FX_FantasyWarrior_HealVignette01` `FX_FantasyWarrior_HealVignette02` `FX_FantasyWarrior_PoisonVignette01` 
+## Prefabs/FullscreenOverlays
+
+`HUD_FantasyWarrior_Background_Dark` `HUD_FantasyWarrior_Vignette` `Overlay_FantasyWarrior_FadeToBlack` `Overlay_FantasyWarrior_FadeToBlack_Fast` 
+## Prefabs/Input_Interactions
+
+`HUD_FantasyWarrior_Interact_ContextSensitive01` `HUD_FantasyWarrior_Interact_ContextSensitive02` `HUD_FantasyWarrior_Interact_ContextSensitive03` `HUD_FantasyWarrior_ItemPickupInfo01` `HUD_FantasyWarrior_ItemPickupInfo02` `HUD_FantasyWarrior_ItemPickupInfo03` `HUD_FantasyWarrior_ItemPickupInfo04` `HUD_FantasyWarrior_Stat_Base01` `HUD_FantasyWarrior_Stat_Base02` 
+## Prefabs/Input_Interactions/_Parts
+
+`Input_FantasyWarrior_Button01` `Input_FantasyWarrior_Ket01` `Input_FantasyWarrior_Key02` `Input_FantasyWarrior_KeyButton01` `Input_FantasyWarrior_KeyButton02` 
+## Prefabs/Log
+
+`HUD_FantasyWarrior_ChatLog01` `HUD_FantasyWarrior_EventLog01` 
+## Prefabs/Log/_Parts
+
+`HUD_FantasyWarrior_ChatLog_Header01` `HUD_FantasyWarrior_ChatLog_Item01` `HUD_FantasyWarrior_EventLog_Item01` `HUD_FantasyWarrior_EventLog_Item01_Background01` `HUD_FantasyWarrior_EventLog_Item01_Background02` `HUD_FantasyWarrior_EventLog_Item01_Currency01` `HUD_FantasyWarrior_EventLog_Item01_Kill01` `HUD_FantasyWarrior_EventLog_Item01_MapUpdate01` `HUD_FantasyWarrior_EventLog_Item01_Objective01` 
+## Prefabs/Map_Compass_Icons
+
+`Map_FantasyWarrior_Icon` `Map_FantasyWarrior_Icon_Ally01` `Map_FantasyWarrior_Icon_Dragon01` `Map_FantasyWarrior_Icon_Enemy01` `Map_FantasyWarrior_Icon_Fishing01` `Map_FantasyWarrior_Icon_Flag01` `Map_FantasyWarrior_Icon_Forage01` `Map_FantasyWarrior_Icon_Healing01` `Map_FantasyWarrior_Icon_Home01` `Map_FantasyWarrior_Icon_Horse01` `Map_FantasyWarrior_Icon_Key01` `Map_FantasyWarrior_Icon_Lightning01` `Map_FantasyWarrior_Icon_Lock01` `Map_FantasyWarrior_Icon_Magic01` `Map_FantasyWarrior_Icon_Message01` `Map_FantasyWarrior_Icon_Monster01` `Map_FantasyWarrior_Icon_Neutral01` `Map_FantasyWarrior_Icon_Objective01` `Map_FantasyWarrior_Icon_Player01` `Map_FantasyWarrior_Icon_Quest01` `Map_FantasyWarrior_Icon_ShopWeapons01` `Map_FantasyWarrior_Icon_Skull01` `Map_FantasyWarrior_Icon_Star01` `Map_FantasyWarrior_Icon_Target01` `Map_FantasyWarrior_Icon_Tavern01` `Map_FantasyWarrior_Icon_Treasure01` `Map_FantasyWarrior_Icon_Unknown01` 
+## Prefabs/Minimap
+
+`HUD_FantasyWarrior_Minimap_Box01` `HUD_FantasyWarrior_Minimap_Box02` `HUD_FantasyWarrior_Minimap_Box03` `HUD_FantasyWarrior_Minimap_Dial01` `HUD_FantasyWarrior_Minimap_Dial02` `HUD_FantasyWarrior_Minimap_Dial03` `HUD_FantasyWarrior_Minimap_Dial04` `HUD_FantasyWarrior_Minimap_Dial05` `HUD_FantasyWarrior_Minimap_Diamond01` `HUD_FantasyWarrior_Minimap_Diamond02` 
+## Prefabs/Minimap/_Parts
+
+`HUD_FantasyWarrior_Minimap_Contents01` 
+## Prefabs/NPC_HealthBars_EnemyData
+
+`HUD_FantasyWarrior_Event_BossBar01` `HUD_FantasyWarrior_Event_BossBar02` `HUD_FantasyWarrior_WorldSpace_DamageToaster01` `HUD_FantasyWarrior_WorldSpace_EnemyInfo01` `HUD_FantasyWarrior_WorldSpace_NameAlly01` `HUD_FantasyWarrior_WorldSpace_NameEnemy01` `HUD_FantasyWarrior_WorldSpace_ReviveIndicator01` 
+## Prefabs/NPC_HealthBars_EnemyData/_Parts
+
+`HUD_FantasyWarrior_EnemyHealthBar01` `HUD_FantasyWarrior_EnemyInfo_Level01` 
+## Prefabs/Objectives_Story_Location
+
+`HUD_FantasyWarrior_Event_DialogueBox01` `HUD_FantasyWarrior_Event_DialogueBox02` `HUD_FantasyWarrior_Event_DialogueBox03` `HUD_FantasyWarrior_Event_DialogueChoices01` `HUD_FantasyWarrior_Event_DialogueChoices02` `HUD_FantasyWarrior_Event_NewLocation01` `HUD_FantasyWarrior_Event_NewLocation02` `HUD_FantasyWarrior_Event_QuestComplete01` `HUD_FantasyWarrior_Objectives01` `HUD_FantasyWarrior_Objectives02` `HUD_FantasyWarrior_WorldSpace_Objective01` `HUD_FantasyWarrior_WorldSpace_Objective02` `HUD_FantasyWarrior_WorldSpace_Objective03` `Screen_FantasyWarrior_ChapterTitle01` 
+## Prefabs/Objectives_Story_Location/_Parts
+
+`HUD_FantasyWarrior_Button_DialogueResponse01` `HUD_FantasyWarrior_Button_DialogueResponse02` `HUD_FantasyWarrior_Objective_Header01` `HUD_FantasyWarrior_Objective_Header02` `HUD_FantasyWarrior_Objective_Header03` `HUD_FantasyWarrior_Objective_Icon01` `HUD_FantasyWarrior_Objective_Item01` `HUD_FantasyWarrior_Objective_Item02` 
+## Prefabs/Player_Health_Equipment
+
+`HUD_FantasyWarrior_CurrentWeapon01` `HUD_FantasyWarrior_CurrentWeapon02` `HUD_FantasyWarrior_CurrentWeapon03` `HUD_FantasyWarrior_CurrentWeapon04` `HUD_FantasyWarrior_CurrentWeapon05` `HUD_FantasyWarrior_CurrentWeapon06` `HUD_FantasyWarrior_HealthBar01` `HUD_FantasyWarrior_HealthBar02` `HUD_FantasyWarrior_HealthBar03` `HUD_FantasyWarrior_HealthBar04` `HUD_FantasyWarrior_HealthContainer01` `HUD_FantasyWarrior_HealthContainer02` `HUD_FantasyWarrior_HealthStats01` `HUD_FantasyWarrior_HealthStats02` `HUD_FantasyWarrior_HealthStats03` `HUD_FantasyWarrior_HealthStats04` `HUD_FantasyWarrior_HeartsBar01` `HUD_FantasyWarrior_HeartsBar02` `HUD_FantasyWarrior_HeartsBar03` `HUD_FantasyWarrior_HeartsBar04` `HUD_FantasyWarrior_StatsList01` `HUD_FantasyWarrior_StatsList02` `HUD_FantasyWarrior_StatsList03` `HUD_FantasyWarrior_StatsList_Item01` `HUD_FantasyWarrior_StatsList_Item02` `HUD_FantasyWarrior_StatsList_Item03` `HUD_FantasyWarrior_StatsList_Item04` `HUD_FantasyWarrior_StatsList_Item05` `HUD_FantasyWarrior_XPLog01` 
+## Prefabs/Player_Health_Equipment/_Parts
+
+`HUD_FantasyWarrior_HPBar01` `HUD_FantasyWarrior_StatBox01` `HUD_FantasyWarrior_StatBox01_Danger01` `HUD_FantasyWarrior_Stat_Dial01` `HUD_FantasyWarrior_ToggleBullet01` `HUD_FantasyWarrior_ToggleBullet02` `HUD_FantasyWarrior_ToggleBullet03` `HUD_FantasyWarrior_XPBar01` `HUD_FantasyWarrior_XPBar02` `HUD_FantasyWarrior_XPLog_Item01` `Toggle_Heart01` `Toggle_Heart02` `Toggle_Heart03` `Toggle_Heart04` 
+## Prefabs/Popups_Notifications
+
+`HUD_FantasyWarrior_Event_LevelUp01` `HUD_FantasyWarrior_Tooltip01` 
+## Prefabs/Portraits
+
+`HUD_FantasyWarrior_CharacterPortrait01` `HUD_FantasyWarrior_CharacterPortrait02` `HUD_FantasyWarrior_CharacterPortrait03` `HUD_FantasyWarrior_CharacterPortrait04` `HUD_FantasyWarrior_CharacterPortrait05` `HUD_FantasyWarrior_Companion_Portrait01` `HUD_FantasyWarrior_Companion_Portrait02` `HUD_FantasyWarrior_Companions01` `HUD_FantasyWarrior_Companions02` `HUD_FantasyWarrior_Companions03` 
+## Prefabs/Portraits/_Parts
+
+`HUD_FantasyWarrior_PortraitContents01` `HUD_FantasyWarrior_PortraitContents02` 
+## Prefabs/Reticles_Crosshairs
+
+`HUD_FantasyWarrior_Reticle_Blunderbuss01` `HUD_FantasyWarrior_Reticle_Bow01` `HUD_FantasyWarrior_Reticle_Bracket01` `HUD_FantasyWarrior_Reticle_Bracket02` `HUD_FantasyWarrior_Reticle_Crosshair01` `HUD_FantasyWarrior_Reticle_Crosshair02` `HUD_FantasyWarrior_Reticle_Crosshair03` `HUD_FantasyWarrior_Reticle_Crosshair04` `HUD_FantasyWarrior_Reticle_Crosshair05` `HUD_FantasyWarrior_Reticle_Crosshair06` `HUD_FantasyWarrior_Reticle_Dot01` `HUD_FantasyWarrior_Reticle_Ring01` `HUD_FantasyWarrior_Reticle_Ring02` `HUD_FantasyWarrior_Reticle_RingTriangular01` `HUD_FantasyWarrior_Reticle_RingTriangular02` `HUD_FantasyWarrior_Reticle_Spyglass01` 
+## Prefabs/Subtitles
+
+`HUD_FantasyWarrior_Subtitles01` `HUD_FantasyWarrior_Subtitles02` 
+## Prefabs/System
+
+`HUD_FantasyWarrior_Event_IconSavingLoading01` `HUD_FantasyWarrior_Event_Loading01` `HUD_FantasyWarrior_Event_Saving01` 
+## Prefabs/Timed
+
+`HUD_FantasyWarrior_Countdown_Timer01` `HUD_FantasyWarrior_Event_TimeUp01` `HUD_FantasyWarrior_GameTime01` `HUD_FantasyWarrior_GameTime02` `HUD_FantasyWarrior_TimedAction01` 
+## Prefabs/WeaponWheel_WeaponCross
+
+`HUD_FantasyWarrior_WeaponCross01` `HUD_FantasyWarrior_WeaponCross_Diamond01` `HUD_FantasyWarrior_WeaponCross_Diamond02` `HUD_FantasyWarrior_WeaponWheel01` `HUD_FantasyWarrior_WeaponWheel02` `HUD_FantasyWarrior_WeaponWheel03` 
+## Prefabs/WeaponWheel_WeaponCross/_Parts
+
+`Button_FantasyWarrior_WeaponWheel_Item01` `Button_FantasyWarrior_WeaponWheel_Item02` `HUD_FantasyWarrior_WeaponCross_Charges01` `HUD_FantasyWarrior_WeaponCross_Item01` `HUD_FantasyWarrior_WeaponCross_Item02` `HUD_FantasyWarrior_WeaponCross_Item03` 
+## Prefabs/_CommonComponents
+
+`Button_FantasyWarrior_Simple01` `Button_FantasyWarrior_WorldSpace_Item01` `Dial_FantasyWarrior_Simple01` `Label_FantasyWarrior_Body` `Label_FantasyWarrior_Header` `Label_FantasyWarrior_SemiBold` `Label_FantasyWarrior_ShrinkToSize` `Label_FantasyWarrior_SizeToContent` `Slider_FantasyWarrior_Horizontal` `Slider_FantasyWarrior_Vertical` 
+## Prefabs/_PreMadeHUDs
+
+`Screen_FantasyWarrior_HUD_ARPG01` `Screen_FantasyWarrior_HUD_Adventure01` `Screen_FantasyWarrior_HUD_Adventure02` `Screen_FantasyWarrior_HUD_Survival01` 
+## Samples/Prefabs
+
+`Navigation_FantasyWarrior_Overlay01` 

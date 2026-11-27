@@ -5,13 +5,15 @@ status: Waiting
 assignee: youngho
 branch:
 area: SIEGE
-depends_on: [SIEGE-18]
+depends_on: [SIEGE-18, SIEGE-40]
 created: 2026-11-23
 ---
 
 # SIEGE-25 - Piece Balance Pass for the 7.5m Grid
 
 ## Scope & Completion Criteria
+
+**Rescoped 2026-11-27 (user, basin map decision): balance against the new cell size (`SIEGE-38`) and the single north wall (`SIEGE-40`) instead of the 7.5m ring. Start after both.**
 
 Registered 2026-11-23 from the team decision to move the Game to the 5m castle kit ([Decisions-Resolved](../plan/Decisions-Resolved.md)); source: [SIEGE-14](../history/SIEGE/SIEGE-14.md) breakage list items 8 and 10. Rescoped 2026-11-26 (user) to the 7.5m cells with 5m storeys of [SIEGE-35](../history/SIEGE/SIEGE-35.md) and [SIEGE-18](../history/SIEGE/SIEGE-18.md).
 

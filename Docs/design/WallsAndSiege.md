@@ -6,6 +6,13 @@ Last Updated: 2026-11-21 16:53:10 (KST)
 
 ## Castle Walls & Construction
 
+- **Basin map, north wall grid and free inner castle (user, 2026-11-27, team agreed; supersedes the ring-castle parts of *Map scale standard* below, implementation `SIEGE-40`, `SIEGE-38`, `SIEGE-39`)**:
+  - *Map*: the castle sits in a basin closed by impassable mountains on the west, east and south. Only the north side is open, and it is closed by the defended castle wall. Enemies come only from the north (for now; flying or mountain-crossing enemies are not planned).
+  - *Wall grid*: the build grid covers only the north wall band (the wall line and the ground just in front of and behind it). The whole-map grid and the 26-cell wall ring are retired. Wall construction, stacking, stairs, towers, gate, breaches and repairs keep their rules but only inside this band.
+  - *Inner castle*: inside the basin there is no grid. The inner castle (buildings and its own walls) is placed freely by position and rotation. The first version places the castle from the Synty demo scene as it is. Inner castle walls are not part of the north wall grid rules.
+  - *Wall modules*: modular wall pieces use **uniform scale only** (no stretching along the face). All pieces fit one base unit measured from the Synty castle kit pieces, and the north wall grid cell equals that unit (or a whole multiple). This replaces the SIEGE-35 1.5× stretch look; the 7.5m cell size is re-decided in `SIEGE-38`.
+  - *Old saves*: run saves on the old grid are dropped, not migrated (same rule as earlier grid changes).
+
 - **One-cell stairs (approved 2026-11-13, Q-42; SIEGE-03 Done; user accepted stair feel)**: Stairs occupy 1×1 grid cell (3×3m) and ascend one full tier (3m), replacing the former 1×2 footprint. The placeholder remains a continuous ramp. All four rotations support player and unit ascent/descent, including stairs stacked on walls. Existing scene placements retain their high landing positions. No stacking on stairs; existing construction costs are retained. [Implementation and verification](../history/SIEGE/SIEGE-03.md).
 - **Battle start (approved 2026-11-13, Q-40)**: Player moves to the desired position during preparation and starts battle there. Battle start must not require returning to the gate banner or automatically relocate the player. FLOW-01 input approved: hold B continuously for 1 second in preparation exploration; show key hint and hold progress. Release or leave exploration to cancel; construction/facility/equipment panels block starting. Preserve position and view, and start only once. The old gate-banner F trigger is retired.
 

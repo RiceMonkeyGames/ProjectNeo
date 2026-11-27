@@ -5,13 +5,15 @@ status: Pending Decision
 assignee: youngho
 branch:
 area: SIEGE
-depends_on: [SIEGE-18, SIEGE-24]
+depends_on: [SIEGE-18, SIEGE-24, SIEGE-38]
 created: 2026-11-23
 ---
 
 # SIEGE-28 - Castle Wall Tier Upgrades
 
 ## Scope & Completion Criteria
+
+**Note 2026-11-27 (user, basin map decision): tiers now apply to the north wall band only; storey height may change with the `SIEGE-38` module unit.**
 
 Registered 2026-11-23 by the user (follow-up of [Q-59](../history/Q/Q-59.md)); not started. Direction decided by the user: Castle wall tiers in [WallsAndSiege](../design/WallsAndSiege.md) and [Decisions-Resolved](../plan/Decisions-Resolved.md).
 

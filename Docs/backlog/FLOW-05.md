@@ -5,13 +5,15 @@ status: Waiting
 assignee: youngho
 branch:
 area: FLOW
-depends_on: [SIEGE-18]
+depends_on: [SIEGE-18, SIEGE-39]
 created: 2026-11-23
 ---
 
 # FLOW-05 - Saved Runs on the 7.5m Castle Grid
 
 ## Scope & Completion Criteria
+
+**Note 2026-11-27 (user, basin map decision): the run save format changes again (north wall band grid in `SIEGE-40`, free-placed inner castle in `SIEGE-39`); old saves dropped. Decide the saved state on the new format.**
 
 Registered 2026-11-23 from the team decision to move the Game to the 5m castle kit ([Decisions-Resolved](../plan/Decisions-Resolved.md)); source: [SIEGE-14](../history/SIEGE/SIEGE-14.md) breakage list item 2. Rescoped 2026-11-26 (user) to the 7.5m Game grid.
 

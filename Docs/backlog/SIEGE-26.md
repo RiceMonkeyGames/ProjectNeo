@@ -5,13 +5,15 @@ status: Waiting for Prerequisite
 assignee: youngho
 branch:
 area: SIEGE
-depends_on: [SIEGE-24]
+depends_on: [SIEGE-24, SIEGE-40]
 created: 2026-11-23
 ---
 
 # SIEGE-26 - Enemy AI on Kit Walls, Towers & Blocking Stairs
 
 ## Scope & Completion Criteria
+
+**Rescoped 2026-11-27 (user, basin map decision): enemies come only from the north and attack only the north wall band (`SIEGE-40`); radial approach around a ring no longer applies.**
 
 Registered 2026-11-23 from the team decision to move the Game to the 5m castle kit ([Decisions-Resolved](../plan/Decisions-Resolved.md)); source: [SIEGE-14](../history/SIEGE/SIEGE-14.md) breakage list item 17 (enemy side). Follow-up of [SIEGE-15](../history/SIEGE/SIEGE-15.md), which was merged before the kit decision. Rescoped 2026-11-26 (user) to the 7.5m cells with 5m storeys of [SIEGE-35](../history/SIEGE/SIEGE-35.md) and [SIEGE-18](../history/SIEGE/SIEGE-18.md).
 

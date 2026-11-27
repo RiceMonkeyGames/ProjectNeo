@@ -5,13 +5,15 @@ status: Waiting
 assignee: Unassigned
 branch:
 area: ART
-depends_on: []
+depends_on: [SIEGE-40]
 created: 2026-11-26
 ---
 
 # ART-13 — Outer Battlefield & Environment Art Pass
 
 ## Scope & Completion Criteria
+
+**Rescoped 2026-11-27 (user, basin map decision): the perimeter becomes impassable mountains closing the basin on the west, east and south (`SIEGE-40` makes the blocking terrain; this task does the art pass on it) and the northern approach; sizes from `SIEGE-36` below are out of date.**
 
 Upgrade the northern enemy approach, perimeter terrain, and scene atmosphere beyond the initial `SIEGE-36` placeholder backdrop using approved environment packs (`PolygonFantasyKingdom`, `PolygonNature`, `PolygonNatureBiomes`; [ArtAssets](../codemap/ArtAssets.md), [Milestones](../plan/Milestones.md)).
 

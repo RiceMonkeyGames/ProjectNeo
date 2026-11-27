@@ -17,7 +17,7 @@ Shared workflow skills: Claude Code uses `/brief`, `/claim`, `/verify`, `/finish
 | Compile / EditMode & PlayMode tests / Windows build | [workflow/UnityCLI.md](workflow/UnityCLI.md) (or `/verify` / `Tools/Agent/unity-verify.ps1`) |
 | Coding rules / art-swap decoupling rules | [workflow/Principles.md](workflow/Principles.md) |
 | Find scripts, assets, or tests for a system | [codemap/README.md](codemap/README.md) → target module leaf |
-| Pick or check third-party art (models, weapons, buildings, animation, UI) | [codemap/ArtAssets.md](codemap/ArtAssets.md) |
+| Pick or check third-party art (models, weapons, buildings, animation, UI) | [codemap/ArtAssets.md](codemap/ArtAssets.md) (applied) → [codemap/AssetCatalog.md](codemap/AssetCatalog.md) (all usable medieval fantasy assets) |
 | Manual verification controls & scenes | [codemap/Scenes.md](codemap/Scenes.md) (or [codemap/PrototypeScenes.md](codemap/PrototypeScenes.md)) |
 | Check pending or past design decisions | [plan/Decisions-Pending.md](plan/Decisions-Pending.md) / [plan/Decisions-Resolved.md](plan/Decisions-Resolved.md) |
 | Check game rules (combat / siege / morale / prep / meta) | [design/README.md](design/README.md) → target design leaf |

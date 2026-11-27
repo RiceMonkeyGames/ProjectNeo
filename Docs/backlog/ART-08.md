@@ -5,13 +5,15 @@ status: Waiting
 assignee: youngho
 branch:
 area: ART
-depends_on: [SIEGE-18, SIEGE-27]
+depends_on: [SIEGE-18, SIEGE-27, SIEGE-38]
 created: 2026-11-23
 ---
 
 # ART-08 - Outer Decorations for Three-Storey Walls
 
 ## Scope & Completion Criteria
+
+**Rescoped 2026-11-27 (user, basin map decision): stretching is retired (`SIEGE-38`), so decorations keep uniform scale; the stretch question below is settled.**
 
 Registered 2026-11-23 from [Q-59](../history/Q/Q-59.md): walls may reach three storeys, and three-storey walls get decorations such as banners on their outer face. Start after the storey work (`SIEGE-18` storey limits, `SIEGE-27` interior stair rooms).
 
