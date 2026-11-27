@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
+using ProjectNeo.Combat;
 using ProjectNeo.Walls;
 using UnityEngine;
 
@@ -263,6 +265,87 @@ namespace ProjectNeo.Tests
             BattlementRules.CrenelCenters(BattlementStyle.Crenellated, settings, 7.5f, centers);
             CollectionAssert.AreEqual(new[] { 0.75f, 2.25f, 3.75f, 5.25f, 6.75f }, centers);
             Assert.AreEqual(1.5f, 7.5f - centers[centers.Count - 1] + centers[0], 1e-4f, "the gap across the cell joint");
+        }
+
+        // SIEGE-20: Game 킷 흉벽 값(7.5m 칸에서 1.5배로 늘어남). Lv1은 1.6배 Battlements_01을 0.992m 묻은 낮은 돌,
+        // Lv2는 약 1.4배 Battlements_03(바깥으로 0.45m 내밈)이다.
+        BattlementSettings KitSettings() => Track(BattlementSettings.Create(parapetHeight: 1.216f, merlonHeight: 2.25f,
+            merlonWidth: 1.26f, crenelWidth: 1.24f, merlonAtMiddle: true, parapetGapSill: 0.224f, crenellatedOutset: 0.45f));
+
+        [Test]
+        public void KitParapet_LowStonesOnTheSamePattern_LadderOnTheGapSill()
+        {
+            var settings = KitSettings();
+            var segments = new List<BattlementSegment>();
+            BattlementRules.Segments(BattlementStyle.Parapet, settings, 7.5f, segments);
+            AssertSegment(segments[0], 0f, 7.5f, 0.224f);
+            var stones = segments.Skip(1).ToList();
+            Assert.AreEqual(3, stones.Count, "Lv1 난간도 성가퀴와 같은 자리에 낮은 돌 셋이다.");
+            AssertSegment(stones[1], 3.75f - 0.63f, 3.75f + 0.63f, 1.216f);
+            Assert.AreEqual(0.224f, BattlementRules.SillHeight(BattlementStyle.Parapet, settings), 1e-4f, "사다리는 낮은 빈틈 받침에 걸린다.");
+            Assert.AreEqual(1.216f, BattlementRules.SillHeight(BattlementStyle.Crenellated, settings), 1e-4f);
+            Assert.AreEqual(0f, BattlementRules.SillHeight(BattlementStyle.None, settings));
+            Assert.AreEqual(0f, BattlementRules.Outset(BattlementStyle.Parapet, settings), "난간(묻은 01)은 성벽 위에 그대로 선다.");
+            Assert.AreEqual(0.45f, BattlementRules.Outset(BattlementStyle.Crenellated, settings), 1e-4f, "성가퀴(03)는 바깥으로 내민다.");
+            var centers = new List<float>();
+            BattlementRules.CrenelCenters(BattlementStyle.Parapet, settings, 7.5f, centers);
+            Assert.IsEmpty(centers, "빈틈 사격 자리는 성가퀴(Lv2)에만 있다.");
+
+            // 빈틈 받침이 없으면 예전처럼 이어진 난간 한 덩어리다.
+            BattlementRules.Segments(BattlementStyle.Parapet, Track(BattlementSettings.Create()), 7.5f, segments);
+            Assert.AreEqual(1, segments.Count);
+            Assert.AreEqual(1.1f, segments[0].Height, 1e-4f);
+        }
+
+        [Test]
+        public void KitPattern_MerlonAtTheMiddle_ThreePerGameEdge()
+        {
+            var settings = KitSettings();
+            var segments = new List<BattlementSegment>();
+            BattlementRules.Segments(BattlementStyle.Crenellated, settings, 7.5f, segments);
+            AssertSegment(segments[0], 0f, 7.5f, 1.216f);
+            var merlons = segments.Skip(1).ToList();
+            Assert.AreEqual(3, merlons.Count, "킷 모듈 하나를 늘린 면에는 솟은 부분이 셋이다.");
+            AssertSegment(merlons[0], 1.25f - 0.63f, 1.25f + 0.63f, 2.25f);
+            AssertSegment(merlons[1], 3.75f - 0.63f, 3.75f + 0.63f, 2.25f);
+            AssertSegment(merlons[2], 6.25f - 0.63f, 6.25f + 0.63f, 2.25f);
+
+            var centers = new List<float>();
+            BattlementRules.CrenelCenters(BattlementStyle.Crenellated, settings, 7.5f, centers);
+            CollectionAssert.AreEqual(new[] { 0f, 2.5f, 5f, 7.5f }, centers, "양 끝은 이웃 칸과 이어지는 반쪽 빈틈이다.");
+        }
+
+        [Test]
+        public void LadderCrenelOffset_KitPattern_NearestCrenelOnTheStartSide()
+        {
+            Assert.AreEqual(-1.25f, BattlementRules.LadderCrenelOffset(KitSettings(), 7.5f), 1e-4f);
+            Assert.AreEqual(0f, BattlementRules.LadderCrenelOffset(Track(BattlementSettings.Create()), 7.5f), 1e-4f,
+                "가운데가 빈틈인 무늬는 가운데에 건다.");
+            Assert.AreEqual(0f, BattlementRules.LadderCrenelOffset(null, 7.5f), 1e-4f);
+            Assert.AreEqual(0f, BattlementRules.LadderCrenelOffset(KitSettings(), 2f), 1e-4f, "한 주기보다 짧은 면은 가운데에 건다.");
+
+            // 사다리 자리(면 가운데 − 1.25m)는 빈틈 가운데이며, 사다리 폭(0.7m) 안에 솟은 부분이 없다.
+            var segments = new List<BattlementSegment>();
+            BattlementRules.Segments(BattlementStyle.Crenellated, KitSettings(), 7.5f, segments);
+            float ladder = 3.75f - 1.25f;
+            foreach (BattlementSegment merlon in segments.Skip(1))
+                Assert.IsTrue(merlon.End <= ladder - 0.35f || merlon.Start >= ladder + 0.35f);
+        }
+
+        [Test]
+        public void KitSill_HidesCrouchedArcher_ExposesStandingArcher()
+        {
+            // COMBAT-10 웅크려 장전은 1.216m 받침에서도 그대로 성립한다.
+            var profile = CombatProfile.Create(attackKind: AttackKind.Projectile);
+            try
+            {
+                var settings = KitSettings();
+                float crouched = profile.Height * profile.CrouchHeightRatio;
+                Assert.LessOrEqual(crouched * profile.UpperAimRatio, settings.ParapetHeight);
+                Assert.Greater(profile.Height * profile.UpperAimRatio, settings.ParapetHeight);
+                Assert.GreaterOrEqual(settings.MerlonHeight, profile.Height, "선 유닛도 솟은 부분 뒤에 다 가려진다.");
+            }
+            finally { Object.DestroyImmediate(profile); }
         }
 
         static void AssertSegment(BattlementSegment segment, float start, float end, float height)

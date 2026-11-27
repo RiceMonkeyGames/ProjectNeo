@@ -81,7 +81,7 @@ namespace ProjectNeo.Walls
 
         /// <summary>
         /// 그 칸 맨 위 조각의 그 면에 지금 성가퀴가 서 있으면 받침(난간) 높이, 아니면 0. 사다리 꼭대기가 이 높이에 걸린다.
-        /// 사다리는 면 가운데에 걸리고, 면 가운데는 늘 빈틈이라 솟은 부분에 부딪히지 않는다.
+        /// 사다리는 빈틈(<see cref="LadderCrenelOffset"/>)에 걸리므로 솟은 부분에 부딪히지 않는다.
         /// </summary>
         public float SillHeightAt(Vector2Int cell, Vector2Int outward)
         {
@@ -89,8 +89,15 @@ namespace ProjectNeo.Walls
             int face = BattlementRules.DirectionIndex(outward);
             BuildPlacement top = world.Layout.Top(cell);
             if (face < 0 || top == null || !byPlacement.TryGetValue(top.Id, out Built entry) || entry.Root == null) return 0f;
-            return (FacesAt(cell) & (1 << face)) != 0 ? settings.ParapetHeight : 0f;
+            return (FacesAt(cell) & (1 << face)) != 0 ? BattlementRules.SillHeight(StyleFor(top, face), settings) : 0f;
         }
+
+        /// <summary>
+        /// 사다리가 걸리는 빈틈이 면 가운데에서 떨어진 거리(m, 면을 따라 격자 +x 또는 +z 쪽이 +). 성가퀴 유무와 모양에 상관없이
+        /// 무늬로만 정한다(<see cref="BattlementRules.LadderCrenelOffset"/>, SIEGE-20).
+        /// </summary>
+        public float LadderCrenelOffset =>
+            world == null || world.Grid == null ? 0f : BattlementRules.LadderCrenelOffset(settings, world.Grid.CellSize);
 
         /// <summary>그 칸의 맨 위 조각에 성가퀴가 서는 면(비트). 검증용.</summary>
         public int FacesAt(Vector2Int cell)
@@ -120,7 +127,8 @@ namespace ProjectNeo.Walls
             Vector2Int step = Mathf.Abs(axis.x) >= Mathf.Abs(axis.z)
                 ? new Vector2Int(axis.x > 0f ? 1 : -1, 0) : new Vector2Int(0, axis.z > 0f ? 1 : -1);
             EnsureOutside();
-            float thickness = style == BattlementStyle.None || settings == null ? 0f : settings.Thickness;
+            float thickness = style == BattlementStyle.None || settings == null ? 0f
+                : Mathf.Max(0f, settings.Thickness - BattlementRules.Outset(style, settings));
             return BattlementRules.WalkwayWidth(world.Layout, world.Grid, outside, cell, step, thickness);
         }
 
@@ -140,7 +148,7 @@ namespace ProjectNeo.Walls
             EnsureOutside();
             float size = world.Grid.CellSize;
             float thickness = Mathf.Min(settings.Thickness, size * 0.5f);
-            float inset = thickness + CrenelStandOffset;
+            float inset = thickness + CrenelStandOffset - BattlementRules.Outset(BattlementStyle.Crenellated, settings);
             Vector3 local = world.LocalPoint(center);
             Vector2Int middle = world.Layout.WorldToCell(local);
             int reach = Mathf.CeilToInt(radius / size) + 1;
@@ -341,6 +349,17 @@ namespace ProjectNeo.Walls
         BattlementStyle StyleFor(BuildPlacement placement, int face) =>
             (GunPortFaces(placement) & (1 << face)) != 0 ? BattlementStyle.Parapet : style;
 
+        /// <summary>
+        /// 그 칸 맨 위 조각의 그 면이 지금 성가퀴(Lv2)인지. 난간(Lv1)이거나 포구 면이면 false다.
+        /// 성 킷 흉벽이 면마다 Battlements_03(성가퀴)과 묻은 Battlements_01(난간·포구)을 고를 때 쓴다(SIEGE-20).
+        /// </summary>
+        public bool IsCrenellatedFace(Vector2Int cell, int face)
+        {
+            if (style != BattlementStyle.Crenellated || world == null || world.Layout == null) return false;
+            BuildPlacement top = world.Layout.Top(cell);
+            return top != null && face >= 0 && face < 4 && StyleFor(top, face) == BattlementStyle.Crenellated;
+        }
+
         /// <summary>그 칸 맨 위 조각의 성가퀴 면 가운데 하나라도 수성 무기 때문에 포구(받침만)로 서 있는지. 검증용.</summary>
         public bool IsGunPortAt(Vector2Int cell)
         {
@@ -376,31 +395,34 @@ namespace ProjectNeo.Walls
                     for (int face = 0; face < 4; face++)
                     {
                         if ((faces & (1 << face)) == 0) continue;
-                        BattlementRules.Segments(StyleFor(placement, face), settings, size, segments);
+                        BattlementStyle faceStyle = StyleFor(placement, face);
+                        BattlementRules.Segments(faceStyle, settings, size, segments);
                         foreach (BattlementSegment segment in segments)
-                            AddSegment(root.transform, material, cell, face, segment, size, surface, thickness, entry);
+                            AddSegment(root.transform, material, cell, face, faceStyle, segment, size, surface, thickness, entry);
                     }
                 }
             return root;
         }
 
-        void AddSegment(Transform root, Material material, Vector2Int cell, int face, BattlementSegment segment,
+        void AddSegment(Transform root, Material material, Vector2Int cell, int face, BattlementStyle faceStyle, BattlementSegment segment,
             float size, float surface, float thickness, Built entry)
         {
             float minX = cell.x * size, minZ = cell.y * size;
             float along = segment.Start + segment.Length * 0.5f;
+            // 덩어리 가운데가 칸 가장자리에서 안쪽으로 들어간 거리. 성가퀴는 킷처럼 바깥으로 내민다(SIEGE-20).
+            float depth = thickness * 0.5f - BattlementRules.Outset(faceStyle, settings);
             Vector3 local; Vector3 dimensions;
             switch (face)
             {
-                case 0: local = new Vector3(minX + along, 0f, minZ + size - thickness * 0.5f); dimensions = new Vector3(segment.Length, 0f, thickness); break;
-                case 1: local = new Vector3(minX + size - thickness * 0.5f, 0f, minZ + along); dimensions = new Vector3(thickness, 0f, segment.Length); break;
-                case 2: local = new Vector3(minX + along, 0f, minZ + thickness * 0.5f); dimensions = new Vector3(segment.Length, 0f, thickness); break;
-                default: local = new Vector3(minX + thickness * 0.5f, 0f, minZ + along); dimensions = new Vector3(thickness, 0f, segment.Length); break;
+                case 0: local = new Vector3(minX + along, 0f, minZ + size - depth); dimensions = new Vector3(segment.Length, 0f, thickness); break;
+                case 1: local = new Vector3(minX + size - depth, 0f, minZ + along); dimensions = new Vector3(thickness, 0f, segment.Length); break;
+                case 2: local = new Vector3(minX + along, 0f, minZ + depth); dimensions = new Vector3(segment.Length, 0f, thickness); break;
+                default: local = new Vector3(minX + depth, 0f, minZ + along); dimensions = new Vector3(thickness, 0f, segment.Length); break;
             }
             local.y = surface + segment.Height * 0.5f;
             dimensions.y = segment.Height;
 
-            var part = new GameObject(segment.Height > settings.ParapetHeight + 0.001f ? "Merlon" : "Parapet");
+            var part = new GameObject(segment.Height > BattlementRules.SillHeight(faceStyle, settings) + 0.001f ? "Merlon" : "Parapet");
             part.transform.SetParent(root, false);
             part.transform.SetPositionAndRotation(world.transform.TransformPoint(local), world.transform.rotation);
             part.transform.localScale = Vector3.one;

@@ -162,7 +162,19 @@ namespace ProjectNeo.Siege
         {
             float size = world.Grid.CellSize;
             var center = new Vector3((cell.x + 0.5f) * size, height, (cell.y + 0.5f) * size);
-            return world.transform.TransformPoint(center + new Vector3(outward.x, 0f, outward.y) * fromCenter);
+            // 킷 흉벽은 면 가운데가 솟은 돌이라 가장 가까운 빈틈으로 면을 따라 옮긴다(SIEGE-20).
+            float along = CrenelOffset;
+            Vector3 side = outward.x != 0 ? new Vector3(0f, 0f, along) : new Vector3(along, 0f, 0f);
+            return world.transform.TransformPoint(center + side + new Vector3(outward.x, 0f, outward.y) * fromCenter);
+        }
+
+        float CrenelOffset
+        {
+            get
+            {
+                if (battlements == null && world != null) battlements = world.GetComponent<CastleBattlements>();
+                return battlements != null ? battlements.LadderCrenelOffset : 0f;
+            }
         }
 
         /// <summary>
@@ -177,7 +189,7 @@ namespace ProjectNeo.Siege
         float FootDistance => Mathf.Max(settings.LadderBaseOffset,
             EdgeOffset + LadderScaleRules.FootRun(wallHeight + SillHeight, settings.LadderLeanDegrees));
         /// <summary>
-        /// 사다리 위쪽 끝. 성벽 바깥면 바로 앞이며, 성가퀴가 있으면 면 가운데 빈틈의 받침 높이에 걸린다(SIEGE-10).
+        /// 사다리 위쪽 끝. 성벽 바깥면 바로 앞이며, 성가퀴가 있으면 빈틈의 받침 높이에 걸린다(SIEGE-10, 빈틈 자리는 SIEGE-20).
         /// 다 오른 유닛은 받침을 넘어 <see cref="TopPoint"/>로 내려선다.
         /// </summary>
         public Vector3 EdgePoint => Point(world.Grid.CellSize * 0.5f + EdgeOffset, wallHeight + SillHeight);

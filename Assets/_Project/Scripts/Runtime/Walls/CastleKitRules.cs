@@ -21,6 +21,7 @@ namespace ProjectNeo.Walls
         static readonly Dictionary<Vector3Int, (Vector2Int owner, Vector3 point)> caps = new Dictionary<Vector3Int, (Vector2Int, Vector3)>();
         static float module = 5f;
         static CastleKitLook look;
+        static System.Func<Vector2Int, int, bool> crenellated;
         static readonly HashSet<Vector2Int> columns = new HashSet<Vector2Int>();
         static readonly Dictionary<Vector2Int, StairRoom> roomCells = new Dictionary<Vector2Int, StairRoom>();
         static readonly List<Rect> areas = new List<Rect>();
@@ -40,13 +41,16 @@ namespace ProjectNeo.Walls
         /// <param name="fallenTops">무너진 칸 → 무너지기 전 윗면 높이. 그 칸을 향한 계단 방 문을 트인 문으로 남긴다(SIEGE-27).</param>
         /// <param name="rooms">있으면 계단 방 칸(<see cref="StairRoomRules"/>)을 담아 준다(충돌 상자를 끄는 쪽이 쓴다).</param>
         /// <param name="kitLook">칸이 모듈보다 넓을 때 면을 덮는 방식(SIEGE-35).</param>
+        /// <param name="crenellatedFace">칸·면(0 북, 1 동, 2 남, 3 서)이 성가퀴(Lv2)면 true. 그 면에는 <see cref="CastleKitPiece.Crenellation"/>을,
+        /// 아니면(Lv1 난간·포구) <see cref="CastleKitPiece.Battlement"/>을 놓는다(SIEGE-20). 없으면 늘 <see cref="CastleKitPiece.Battlement"/>이다.</param>
         public static void Collect(BuildLayout layout, BuildGridDefinition grid, ICollection<Vector2Int> outside,
             ICollection<int> unfinished, IReadOnlyDictionary<Vector2Int, int> breaches, CastleKitSettings settings,
             List<CastleKitPlacement> result, IReadOnlyDictionary<Vector2Int, float> rubble = null,
             IReadOnlyDictionary<Vector2Int, float> fallenTops = null, IDictionary<Vector2Int, StairRoom> rooms = null,
-            CastleKitLook kitLook = CastleKitLook.Stretch)
+            CastleKitLook kitLook = CastleKitLook.Stretch, System.Func<Vector2Int, int, bool> crenellatedFace = null)
         {
             look = kitLook;
+            crenellated = crenellatedFace;
             if (settings != null) module = settings.ModuleSize;
             result.Clear();
             pillars.Clear();
@@ -89,10 +93,19 @@ namespace ProjectNeo.Walls
                 result.Add(new CastleKitPlacement(CastleKitPiece.BattlementCap, entry.Value.owner, entry.Value.point, 0f));
         }
 
+        // 면 하나의 흉벽 조각: 성가퀴(Lv2) 면이면 Battlements_03, 아니면(Lv1 난간·포구) Battlements_01(SIEGE-20).
+        static CastleKitPiece TopPiece(Vector2Int cell, int face, bool half)
+        {
+            bool high = crenellated != null && crenellated(cell, face);
+            if (high) return half ? CastleKitPiece.CrenellationHalf : CastleKitPiece.Crenellation;
+            return half ? CastleKitPiece.BattlementHalf : CastleKitPiece.Battlement;
+        }
+
         // 칸이 모듈보다 넓은지(면을 늘리거나 짜야 하는지).
         static bool Wide(float size) => size - module > HeightTolerance;
 
         static bool IsHalf(CastleKitPiece piece) => piece == CastleKitPiece.PanelHalf || piece == CastleKitPiece.BattlementHalf
+            || piece == CastleKitPiece.CrenellationHalf
             || piece == CastleKitPiece.RoomPanelHalf || piece == CastleKitPiece.FloorHalf;
 
         /// <summary>
@@ -437,7 +450,7 @@ namespace ProjectNeo.Walls
                     && fallen >= top - HeightTolerance) continue;
                 FaceEnds(cell, face, size, out Vector3 start, out Vector3 end);
                 Claim(caps, start, end, placement.Level, cell, top);
-                FacePieces(CastleKitPiece.Battlement, CastleKitPiece.BattlementHalf, cell, face, size, top, result,
+                FacePieces(TopPiece(cell, face, false), TopPiece(cell, face, true), cell, face, size, top, result,
                     joints: caps, level: placement.Level);
             }
             if (placement.Definition.Kind == BuildPieceKind.Wall) AddCornerTurrets(layout, grid, outside, placement, cell, size, top, result);
@@ -803,7 +816,7 @@ namespace ProjectNeo.Walls
                         Vector3 outward = new Vector3(d.x, 0f, d.y) * settings.TowerOverhang;
                         // 받침은 반 모듈 모델이 없어 짜맞춤에서도 같은 모델을 줄여 채운다.
                         FacePieces(CastleKitPiece.TowerCorbel, CastleKitPiece.TowerCorbel, cell, face, size, top, result, offset: outward);
-                        FacePieces(CastleKitPiece.Battlement, CastleKitPiece.BattlementHalf, cell, face, size, top, result, offset: outward);
+                        FacePieces(TopPiece(cell, face, false), TopPiece(cell, face, true), cell, face, size, top, result, offset: outward);
                     }
                 }
             // 네 모서리: 면 f와 시계 방향 다음 면 사이 모서리의 받침은 FaceYaw(f)로 돌리면 바깥을 본다.

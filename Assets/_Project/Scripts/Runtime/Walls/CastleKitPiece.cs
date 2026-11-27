@@ -81,5 +81,12 @@ namespace ProjectNeo.Walls
         RoomPanelHalf = 32,
         /// <summary>성 바깥 모서리 윗부분의 내닫이 망루(Wall_Tower_M_01, 외형 전용, SIEGE-19).</summary>
         CornerTurret = 33,
+        /// <summary>
+        /// 성가퀴(Lv2) 면의 흉벽(Battlements_03: 바깥으로 내민 솟은 돌과 받침돌). Lv1 난간 면은 <see cref="Battlement"/>을
+        /// 성벽에 묻어 낮은 돌만 남긴다(SIEGE-20, 사용자 결정 2026-11-27).
+        /// </summary>
+        Crenellation = 34,
+        /// <summary>성가퀴(Lv2) 면의 반쪽 흉벽(Battlements_03_Half).</summary>
+        CrenellationHalf = 35,
     }
 }

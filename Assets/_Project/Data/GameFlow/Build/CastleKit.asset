@@ -47,6 +47,8 @@ MonoBehaviour:
   - {fileID: 4570207006342321440, guid: 8e312c304c678114bb31c8d329e44371, type: 3}
   - {fileID: 930152469887259263, guid: da483b77eb8902d45a222d1447654021, type: 3}
   - {fileID: 4584015027441295085, guid: 0c29ff92f64cff241bd1b18696d4e5db, type: 3}
+  - {fileID: 8119440668285145918, guid: 5c5b869e1c54bc74ab48c8ebcf513bc9, type: 3}
+  - {fileID: 4309553011817653158, guid: 6d1a841fedd38274e8dd1132e71d5055, type: 3}
   moduleSize: 5
   accentSpacingCells: 2
   stairWidth: 2.16
@@ -56,6 +58,9 @@ MonoBehaviour:
   towerOverhang: 0.5
   towerCapOffset: 0.3
   towerCapScale: 1.2
+  battlementHeightScale: 1.6
+  battlementDrop: 0.992
+  crenellationHeightScale: 1.3977011
   roomWallInset: 0.31
   roomLandingDepth: 2
   roomSlabThickness: 0.2
@@ -66,3 +71,5 @@ MonoBehaviour:
   stairPostFar: {x: 0.07, y: -1.97}
   roomPostHeight: 2.5
   roomPostThickness: 0.95
+  stumpHeight: 1.6
+  stumpColliderHeight: 1
