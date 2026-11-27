@@ -66,6 +66,9 @@ namespace ProjectNeo.Editor
             (CastleKitPiece.BrokenMiddle, "SM_Bld_Castle_DestroyedWall_Middle_01", Body.None),
             (CastleKitPiece.BrokenBottom, "SM_Bld_Castle_DestroyedWall_Bottom_01", Body.None),
             (CastleKitPiece.BattlementHalf, "SM_Bld_Castle_Battlements_01_Half", Body.None),
+            // 성가퀴(Lv2) 면의 흉벽(SIEGE-20). Game은 충돌체를 떼고 CastleBattlements가 판정을 맡는다.
+            (CastleKitPiece.Crenellation, "SM_Bld_Castle_Battlements_03", Body.Exact),
+            (CastleKitPiece.CrenellationHalf, "SM_Bld_Castle_Battlements_03_Half", Body.None),
             (CastleKitPiece.CornerStairs, "SM_Bld_Stairs_Wood_Corner_01", Body.Solid),
             (CastleKitPiece.FloorHalf, "SM_Bld_Castle_Floor_Wood_03", Body.None),
             // 망루(데모 탑): 맨윗층은 조각 상자 대신 이 벽판들이 충돌을 맡는다(방 안으로 걸어 들어간다).

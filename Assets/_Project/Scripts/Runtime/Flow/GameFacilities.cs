@@ -962,7 +962,7 @@ namespace ProjectNeo.Flow
 
         static string DescribeBattlement(BattlementStyle style) => style switch
         {
-            BattlementStyle.Parapet => "낮은 난간 (다리를 가림)",
+            BattlementStyle.Parapet => "낮은 흉벽 (돌 뒤에 웅크리면 숨음, 사이는 트임)",
             BattlementStyle.Crenellated => "총안 흉벽 (돌출부가 화살과 시야를 막음)",
             _ => "none",
         };

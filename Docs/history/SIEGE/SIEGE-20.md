@@ -1,0 +1,27 @@
+# SIEGE-20 | 2026-11-27 | SIEGE - Kit Battlements, Cover Heights & Crenel Positions
+
+> Purpose: Verification & completion log. | Parent: [history/README](../README.md)
+
+### 2026-11-27: SIEGE-20 - Kit Battlements, Cover Heights & Crenel Positions
+
+- **Assignee**: `youngho` | **Branch**: `feature/siege-20` | **Claim commit**: `d43c890` | **Work commit**: `0ea0f5a`
+- **Origin**: registered 2026-11-23 from the move of the Game to the castle kit; source [SIEGE-14](SIEGE-14.md) breakage list item 4. Rescoped 2026-11-26 to the 7.5m cells with 5m storeys of [SIEGE-35](SIEGE-35.md) and [SIEGE-18](SIEGE-18.md). Since [SIEGE-19](SIEGE-19.md) the kit battlements were visual only, always showed `Battlements_01` crenels (also at Lv1), and did not match the rule boxes (kit sill 0.76m and merlon 1.38m against 1.1m and 2.2m).
+- **Measurement (raycast on the kit models, 5m module)**: `Battlements_01` has a 0.76m sill and 1.38m merlons, three 0.84m merlons on a 5/3m period with a merlon at the module middle. `Battlements_03` has the same pattern with a 0.87m sill and 1.61m merlons, and stands 0.10–0.66m outside the face line with corbels below. No kit piece gives a flat low parapet at cover height (`Battlements_02` is 0.44m, `Battlements_06` about 1.0m).
+- **Decisions (user, 2026-11-27; recorded in [Decisions-Resolved](../../plan/Decisions-Resolved.md))**:
+  - Option B: the kit is made to match the cover heights by scaling only the battlement pieces vertically; walls and walkways keep their size. Cover height 1.216m.
+  - The kit look follows the battlement level. Lv1 parapet: 1.6x `Battlements_01` sunk 0.992m into the wall (low stones 1.216m, gap sills 0.224m). Lv2 crenellations: `Battlements_03` at about 1.4x (1.216m sill, 2.25m merlons). Gun-port faces keep the Lv1 look. Choice made from Play Mode captures of both looks.
+  - Ladders hang at the kit crenel 1.25m from the face middle toward the start side. Ladder carriers that bring their own ladders are split out to `SIEGE-37` (on `develop`).
+- **Open for the combat owner**: the enemy archer side-step (3m × 3) was not retuned. A defender directly behind a 1.26m kit merlon is hidden from every side-step spot, and the archer drops that target after two blocked searches.
+- **Implementation**:
+  - `BattlementSettings`: `merlonAtMiddle` (kit pattern phase), `parapetGapSill` (Lv1 low stones on the same pattern), `crenellatedOutset` (Lv2 rule boxes moved 0.45m outward). `BattlementRules`: phased `Segments`/`CrenelCenters`, `SillHeight`, `Outset`, `LadderCrenelOffset`. `CastleBattlements`: per-face sill for the ladder hook, outset boxes, crenel stand inset, walkway width, `IsCrenellatedFace`, `LadderCrenelOffset`. `SiegeLadder` offsets base, edge and top points to the crenel.
+  - Kit: new `CastleKitPiece.Crenellation` (34) and `CrenellationHalf` (35) prefabs from `Battlements_03`. `CastleKitRules.Collect` takes a per-face `crenellatedFace` choice; `CastleKitDresser` asks `CastleBattlements`, sinks Lv1 pieces by `CastleKitSettings.battlementDrop`, scales Lv2 pieces by `crenellationHeightScale`, and redresses when the style changes or the castle changes (mounts included).
+  - Menu `ProjectNeo/Setup/Apply Kit Battlement Cover (SIEGE-20)` (`GameCastleKitSetup.ApplyBattlementCover`) writes `Data/GameFlow/Build/Battlements.asset` (1.216 / gap 0.224 / merlon 2.25 / 1.26m merlons / 1.24m crenels / outset 0.45) and `CastleKit.asset` (1.6x, drop 0.992, 1.398x), and builds missing kit prefabs. The Defense facility text for Lv1 is now `낮은 흉벽 (돌 뒤에 웅크리면 숨음, 사이는 트임)`.
+  - Docs: [design/WallsAndSiege](../../design/WallsAndSiege.md) kit battlement note and Lv1 parapet style, [design/Combat](../../design/Combat.md) sill value.
+- **Verification**:
+  - Code rules: `VIOLATIONS=0`. Compile passed.
+  - EditMode 1023/1023, including new tests for the kit pattern, the Lv1 low-stone segments, sill and outset per style, the ladder crenel offset, crouched cover at 1.216m and per-face kit piece choice.
+  - PlayMode 385/394; the 9 failures (eye height 2, one-cell ground stairs 2, HUD/text 5) also fail on the unchanged code and match the SIEGE-22 baseline. `GameBattlementPlayTests` 7/7 (Lv1 low stones and gap-sill ladder hook, Lv2 merlons clear of the ladder, kit pieces swap on the Defense upgrade, gun-port face with low stones only, archers blocked behind kit merlons and seeing through crenels).
+  - Play Mode captures in `Game.unity` (agent): Lv1 shows the sunk low stones from the walkway and outside; after the Defense upgrade the walls show `Battlements_03` standing out past the wall.
+  - Manual play (user): not yet done.
+- **Manual verification**: play `Assets/_Project/Scenes/Game.unity`. On a wall top check the low stones and gaps (Lv1); upgrade the Defense facility and check that every outer face switches to the taller jutting crenellations with no invisible wall on the walkway; in battle the ladder top rests in a gap (Lv1) or on the jutting sill (Lv2) and climbers step over; at Lv2 a bastion cannon turns only its facing face back to low stones. Stop Play Mode to reset; no scene file changes.
+- **Known limits**: corner cap pillars (`BattlementCap`) are not sunk at Lv1 and keep the 1.6x scale at Lv2. Tower roof battlements also follow the level, but their rule boxes do not include the tower overhang. `WalkwayWidth` uses the castle-wide style for the outset, so a Lv2 gun-port face counts slightly more walkway than it has.

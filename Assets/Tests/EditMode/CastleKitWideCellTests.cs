@@ -47,6 +47,24 @@ namespace ProjectNeo.Tests
         IEnumerable<CastleKitPlacement> Of(CastleKitPiece piece) => parts.Where(p => p.Piece == piece);
 
         [Test]
+        public void BattlementPieces_FollowTheCrenellatedFaces()
+        {
+            Place(wall, 2, 2);
+            BattlementRules.CollectOutside(layout, grid, outside);
+            CastleKitRules.Collect(layout, grid, outside, new HashSet<int>(), new Dictionary<Vector2Int, int>(), settings, parts);
+            Assert.AreEqual(4, Of(CastleKitPiece.Battlement).Count(), "without a battlement rule every face is Battlements_01");
+            Assert.AreEqual(0, Of(CastleKitPiece.Crenellation).Count());
+
+            // SIEGE-20: crenellated (Lv2) faces take Battlements_03, the rest (Lv1 parapet, gun ports) keep Battlements_01.
+            CastleKitRules.Collect(layout, grid, outside, new HashSet<int>(), new Dictionary<Vector2Int, int>(), settings, parts,
+                crenellatedFace: (cell, face) => face != 0);
+            Assert.AreEqual(3, Of(CastleKitPiece.Crenellation).Count());
+            CastleKitPlacement low = Of(CastleKitPiece.Battlement).Single();
+            Assert.AreEqual(CastleKitRules.FaceYaw(0), low.Yaw, 1e-3f, "the north face stays Battlements_01");
+            Assert.IsTrue(Of(CastleKitPiece.Crenellation).All(p => Mathf.Approximately(p.StretchX, 1.5f)), "stretched like the other faces");
+        }
+
+        [Test]
         public void Stretch_WidensFacesAndFloorsOnly_StoreysStayModuleHigh()
         {
             Place(wall, 2, 2);

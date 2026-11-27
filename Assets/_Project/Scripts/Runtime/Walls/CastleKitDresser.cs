@@ -189,8 +189,21 @@ namespace ProjectNeo.Walls
 
         static int State(PlacedStructure structure) => (structure.IsUnderConstruction ? 1 : 0) | (structure.IsDoorOpen ? 2 : 0);
 
+        CastleBattlements battlements;
+        BattlementStyle seenStyle = BattlementStyle.None;
+        CastleBattlements Battlements
+        {
+            get
+            {
+                if (battlements == null && world != null) battlements = world.GetComponent<CastleBattlements>();
+                return battlements;
+            }
+        }
+
         void Update()
         {
+            // 방어 시설 업그레이드로 성가퀴 단계가 바뀌면 흉벽 조각을 바꿔 단다(SIEGE-20).
+            if (!dirty && Battlements != null && battlements.Style != seenStyle) dirty = true;
             if (!dirty)
                 foreach (KeyValuePair<PlacedStructure, int> entry in watched)
                     if (entry.Key == null || State(entry.Key) != entry.Value) { dirty = true; break; }
@@ -299,7 +312,11 @@ namespace ProjectNeo.Walls
                 watched[structure] = State(structure);
                 if (structure.IsUnderConstruction) unfinished.Add(structure.Placement.Id);
             }
-            CastleKitRules.Collect(world.Layout, world.Grid, outside, unfinished, breaches, settings, placements, rubble, fallenTops, rooms, look);
+            // 흉벽 조각은 성가퀴 단계와 포구를 따른다(SIEGE-20). 성가퀴 규칙이 없는 시험 씬은 늘 Battlements_01이다.
+            CastleBattlements cover = Battlements;
+            seenStyle = cover != null ? cover.Style : BattlementStyle.None;
+            CastleKitRules.Collect(world.Layout, world.Grid, outside, unfinished, breaches, settings, placements, rubble, fallenTops, rooms, look,
+                cover != null ? cover.IsCrenellatedFace : (System.Func<Vector2Int, int, bool>)null);
             Group();
 
             bool navigation = false;
@@ -546,7 +563,13 @@ namespace ProjectNeo.Walls
                 bool ruin = placement.Piece == CastleKitPiece.BrokenTop || placement.Piece == CastleKitPiece.RubbleTop;
                 float stretchX = ruin ? settings.BreachHalfWidth : stretch;
                 float uniform = placement.Piece == CastleKitPiece.TowerCap ? settings.TowerCapScale : 1f;
-                piece.transform.localScale = uniform * new Vector3(stretchX * placement.StretchX, placement.ScaleY,
+                // 흉벽만 세로로 키워 엄폐 규칙 높이에 맞춘다(SIEGE-20). 벽판·통로는 그대로다.
+                // Lv1 흉벽(Battlements_01)은 성벽 속으로 내려 낮은 돌만 남기고, Lv2 성가퀴(Battlements_03)는 제 배율로 세운다.
+                bool high = placement.Piece == CastleKitPiece.Crenellation || placement.Piece == CastleKitPiece.CrenellationHalf;
+                bool low = placement.Piece == CastleKitPiece.Battlement || placement.Piece == CastleKitPiece.BattlementHalf;
+                float rise = high ? settings.CrenellationHeightScale : IsBattlement(placement.Piece) ? settings.BattlementHeightScale : 1f;
+                if (low) piece.transform.localPosition -= new Vector3(0f, settings.BattlementDrop, 0f);
+                piece.transform.localScale = uniform * new Vector3(stretchX * placement.StretchX, rise * placement.ScaleY,
                     (placement.MirrorZ ? -1f : 1f) * stretch * placement.StretchZ);
                 if (!battlementColliders && IsBattlement(placement.Piece)) StripCollision(piece);
                 hasColliders |= piece.GetComponentInChildren<Collider>(true) != null;
@@ -565,7 +588,8 @@ namespace ProjectNeo.Walls
         }
 
         static bool IsBattlement(CastleKitPiece piece) =>
-            piece == CastleKitPiece.Battlement || piece == CastleKitPiece.BattlementCap || piece == CastleKitPiece.BattlementHalf;
+            piece == CastleKitPiece.Battlement || piece == CastleKitPiece.BattlementCap || piece == CastleKitPiece.BattlementHalf
+            || piece == CastleKitPiece.Crenellation || piece == CastleKitPiece.CrenellationHalf;
 
         // 외형 전용으로 만든다. 같은 프레임의 길찾기 수집·충돌에서 빠지도록 바로 지운다(엄폐가 충돌체를 요구하므로 엄폐부터).
         static void StripCollision(GameObject piece)

@@ -9,7 +9,7 @@ namespace ProjectNeo.Walls
     [CreateAssetMenu(menuName = "ProjectNeo/Construction/Castle Kit Settings")]
     public sealed class CastleKitSettings : ScriptableObject
     {
-        const int PieceCount = 34;
+        const int PieceCount = 36;
 
         [SerializeField] GameObject[] prefabs = new GameObject[PieceCount];
         // 킷 한 칸(벽판 폭·층 높이). 조각 높이·두께와 모듈 기준 m 값은 늘 이 크기 그대로다(층 높이 = 모듈).
@@ -38,6 +38,16 @@ namespace ProjectNeo.Walls
         [SerializeField, Min(0f)] float towerOverhang = 0.5f;
         [SerializeField, Min(0f)] float towerCapOffset = 0.3f;
         [SerializeField, Min(0.1f)] float towerCapScale = 1.2f;
+        // Lv1 흉벽 조각(Battlements_01·반쪽·모서리 머리)만 키우는 세로 배율. 벽판과 통로는 그대로다(SIEGE-20).
+        [SerializeField, Min(0.1f)] float battlementHeightScale = 1f;
+        // Lv1 흉벽(Battlements_01·반쪽)을 성벽 속으로 내리는 깊이(m, 배율 적용 뒤). Game은 1.6배 흉벽을 0.992m 묻어
+        // 솟은 돌 꼭대기를 1.216m, 빈틈 받침을 0.224m로 둔다(사용자 결정 2026-11-27). 모서리 머리는 내리지 않는다.
+        [SerializeField, Min(0f)] float battlementDrop;
+        // Lv2 성가퀴 조각(Battlements_03·반쪽)의 세로 배율. Game은 약 1.4배로 받침 0.87m를 1.216m에 맞춘다(SIEGE-20).
+        [SerializeField, Min(0.1f)] float crenellationHeightScale = 1f;
+        public float BattlementHeightScale => battlementHeightScale;
+        public float BattlementDrop => battlementDrop;
+        public float CrenellationHeightScale => crenellationHeightScale;
         public float TowerOverhang => towerOverhang;
         public float TowerCapOffset => towerCapOffset;
         public float TowerCapScale => towerCapScale;
@@ -98,12 +108,23 @@ namespace ProjectNeo.Walls
             return prefabs != null && index >= 0 && index < prefabs.Length ? prefabs[index] : null;
         }
 
-        public static CastleKitSettings Create(float moduleSize = 5f, int accentSpacingCells = 2)
+        public static CastleKitSettings Create(float moduleSize = 5f, int accentSpacingCells = 2, float battlementHeightScale = 1f)
         {
             var value = CreateInstance<CastleKitSettings>();
             value.moduleSize = Mathf.Max(0.1f, moduleSize);
             value.accentSpacingCells = Mathf.Max(1, accentSpacingCells);
+            value.battlementHeightScale = Mathf.Max(0.1f, battlementHeightScale);
             return value;
+        }
+
+        /// <summary>흉벽 세로 배율을 바꾼다(에디터 설정 메뉴, SIEGE-20).</summary>
+        public void SetBattlementHeightScale(float value) => battlementHeightScale = Mathf.Max(0.1f, value);
+
+        /// <summary>Lv1 흉벽 묻는 깊이와 Lv2 성가퀴 세로 배율을 바꾼다(에디터 설정 메뉴, SIEGE-20).</summary>
+        public void SetBattlementLevels(float drop, float crenellationScale)
+        {
+            battlementDrop = Mathf.Max(0f, drop);
+            crenellationHeightScale = Mathf.Max(0.1f, crenellationScale);
         }
 
         /// <summary>에디터 설정 메뉴가 조각 프리팹을 채운다.</summary>

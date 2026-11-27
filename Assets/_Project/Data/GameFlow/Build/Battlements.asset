@@ -13,9 +13,12 @@ MonoBehaviour:
   m_Name: Battlements
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Walls.BattlementSettings
   thickness: 0.4
-  parapetHeight: 1.1
-  merlonHeight: 2.2
-  merlonWidth: 0.75
-  crenelWidth: 0.75
+  parapetHeight: 1.216
+  merlonHeight: 2.250299
+  merlonWidth: 1.26
+  crenelWidth: 1.24
+  merlonAtMiddle: 1
+  parapetGapSill: 0.22399998
+  crenellatedOutset: 0.45
   material: {fileID: 2100000, guid: 9be37df60cdbe8343a3e1412619384bf, type: 2}
   textureTileMeters: 3.0471153
