@@ -1,9 +1,9 @@
 ---
 id: CONTENT-04
 title: EnemyDefinition Data Asset Refactor
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: SeongminHwang
+branch: feature/content-04
 area: CONTENT
 depends_on: []
 created: 2026-11-26
