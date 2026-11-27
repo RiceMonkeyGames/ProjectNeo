@@ -376,28 +376,11 @@ namespace ProjectNeo.Editor
             CombatPrototypeSetup.EnsureFolder(CastleWallArtSetup.MaterialFolder);
             string path = CastleWallArtSetup.MaterialFolder + "/" + source.name + "_URP.mat";
             var material = AssetDatabase.LoadAssetAtPath<Material>(path);
-            if (material == null)
-            {
-                material = new Material(Shader.Find("Universal Render Pipeline/Lit")) { name = source.name + "_URP" };
-                Texture texture = source.HasProperty("_BaseMap") ? source.GetTexture("_BaseMap") : null;
-                if (texture == null && source.HasProperty("_MainTex")) texture = source.GetTexture("_MainTex");
-                Color color = source.HasProperty("_BaseColor") ? source.GetColor("_BaseColor")
-                    : source.HasProperty("_Color") ? source.GetColor("_Color") : Color.white;
-                material.SetTexture("_BaseMap", texture);
-                material.SetColor("_BaseColor", color);
-                material.SetFloat("_Smoothness", source.HasProperty("_Smoothness") ? source.GetFloat("_Smoothness") : 0.1f);
-                material.SetFloat("_Metallic", 0f);
-                // 노멀 맵도 원본 그대로(같은 UV·같은 타일링이라 기본 텍스처와 어긋나지 않는다).
-                Texture normal = source.HasProperty("_BumpMap") ? source.GetTexture("_BumpMap") : null;
-                if (normal != null)
-                {
-                    material.SetTexture("_BumpMap", normal);
-                    material.SetFloat("_BumpScale", source.HasProperty("_BumpScale") ? source.GetFloat("_BumpScale") : 1f);
-                    material.EnableKeyword("_NORMALMAP");
-                }
-                material.enableInstancing = true;
-                AssetDatabase.CreateAsset(material, path);
-            }
+            bool created = material == null;
+            if (created) material = new Material(Shader.Find("Universal Render Pipeline/Lit")) { name = source.name + "_URP" };
+            // 텍스처·색과 노멀·발광·금속·차폐 맵을 원본 그대로 옮긴다(이미 있는 복사본도 다시 채운다).
+            UrpMaterialCopy.CopyFrom(source, material);
+            if (created) AssetDatabase.CreateAsset(material, path);
             converted[source] = material;
             return material;
         }

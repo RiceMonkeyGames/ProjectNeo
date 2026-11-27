@@ -926,8 +926,8 @@ namespace ProjectNeo.Tests
         public IEnumerator ClosedWalls_FarSortieAlly_DoesNotPullSiegeEnemies_ButLeashDoes()
         {
             yield return CloseWalls();
-            // 성 밖, 적의 사다리·성문 행군 길에서 멀리 떨어진 곳(7.5m 칸 판 기준, SIEGE-18에서 3m 판의 (20, 12)를 2.5배로).
-            Vector3 far = FieldPoint(50f, 30f);
+            // 성 밖, 적의 사다리·성문 행군 길에서 멀리 떨어진 곳(5m 칸 판 기준, SIEGE-38에서 7.5m 판의 (50, 30)을 2/3로).
+            Vector3 far = FieldPoint(33f, 20f);
             CharacterActor sortie = PlaceStillAlly(far);
             director.StartBattle();
             SiegeAttackerBrain[] brains = director.Enemies.OfType<SiegeAttackerBrain>().ToArray();

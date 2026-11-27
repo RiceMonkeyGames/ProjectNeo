@@ -24,3 +24,15 @@ MonoBehaviour:
   targetsSiegeWeapons: 1
   hoverSeparation: 1.2
   roofProbeDistance: 6
+  decisionStaggerBuckets: 4
+  groundProbeInterval: 0.1
+  groundProbeMoveTolerance: 0.25
+  shelterCacheSeconds: 0.5
+  shelterMoveTolerance: 0.25
+  enableAiLod: 1
+  lod0Distance: 25
+  lod1Distance: 60
+  lodEvaluationInterval: 0.5
+  targetLockSeconds: 1.5
+  retargetDistanceMargin: 2
+  sightlineRecheckInterval: 0.25

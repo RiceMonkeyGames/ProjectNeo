@@ -52,12 +52,12 @@ namespace ProjectNeo.Editor
             GameObject enemyMelee = Required<GameObject>(Units + "hostile_melee.prefab");
             GameObject enemyRanged = Required<GameObject>(Units + "hostile_ranged.prefab");
             CombatPrototypeSetup.EnsureFolder(Data);
-            // SIEGE-18: 7.5m 칸, 5m 층.
-            var grid = CombatPrototypeSetup.Save(BuildGridDefinition.Create(16, 20, Grid75Migration.Cell, 3), Data + "/Grid.asset");
+            // SIEGE-38: 5m 칸, 5m 층(킷 원래 크기).
+            var grid = CombatPrototypeSetup.Save(BuildGridDefinition.Create(16, 20, Grid5Migration.Cell, 3), Data + "/Grid.asset");
             // 성문 파괴병이 바로 뚫지 못하도록 이 시험의 성문은 체력을 따로 둔다.
             var gate = CombatPrototypeSetup.Save(BuildPieceDefinition.Create(BuildPieceKind.Gate, "메인 성문",
-                Vector2Int.one, Grid75Migration.Storey, 600f, gatePrefab), Data + "/Gate.asset");
-            Grid75Migration.ConfigureGate(gate);
+                Vector2Int.one, Grid5Migration.Storey, 600f, gatePrefab), Data + "/Gate.asset");
+            Grid5Migration.ConfigureGate(gate);
             var settings = CombatPrototypeSetup.Save(SiegeSettings.Create(40,
                 new[] { new PieceCost { piece = wall, cost = 2 }, new PieceCost { piece = stairs, cost = 3 } },
                 new[] { new WeaponCost { weapon = cannon, cost = 6 } }), Data + "/Siege.asset");

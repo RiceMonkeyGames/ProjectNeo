@@ -653,11 +653,8 @@ namespace ProjectNeo.Editor
             bool created = material == null;
             if (created) material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
             material.name = source.name + "_URP";
-            if (source.HasProperty("_MainTex")) material.SetTexture("_BaseMap", source.GetTexture("_MainTex"));
-            material.SetColor("_BaseColor", source.HasProperty("_Color") ? source.GetColor("_Color") : Color.white);
-            material.SetFloat("_Smoothness", 0.1f);
-            material.SetFloat("_Metallic", 0f);
-            material.enableInstancing = true;
+            // 텍스처·색과 노멀·발광·금속·차폐 맵을 원본 그대로 옮긴다.
+            UrpMaterialCopy.CopyFrom(source, material);
             if (created) AssetDatabase.CreateAsset(material, path);
             else EditorUtility.SetDirty(material);
             converted[source] = material;

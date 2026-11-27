@@ -18,6 +18,7 @@ MonoBehaviour:
   height: 5
   maxHealth: 150
   maxStorey: 3
+  initialTiers: 1
   prefab: {fileID: 2958240156693826740, guid: 80e7b54c0b6a05447986c57118e0debb, type: 3}
   mountPoints:
   - id: top

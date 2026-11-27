@@ -33,12 +33,13 @@ namespace ProjectNeo.Editor
             if (AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath) != null) throw new InvalidOperationException("ConstructionPrototype already exists.");
             if (TMP_Settings.instance == null) throw new InvalidOperationException("Import TMP essentials before setup.");
             CombatPrototypeSetup.EnsureFolder(Data); CombatPrototypeSetup.EnsureFolder(Prefabs);
-            // SIEGE-18: 7.5m 칸, 5m 층(Game과 같은 격자). 조각 값은 Grid75Migration.ConfigurePieces가 정한다.
-            var grid = CombatPrototypeSetup.Save(BuildGridDefinition.Create(16, 14, Grid75Migration.Cell), Data + "/Grid.asset");
+            // SIEGE-38: 5m 칸, 5m 층(킷 원래 크기). 조각 값은 Grid5Migration.ConfigurePieces가 정한다.
+            var grid = CombatPrototypeSetup.Save(BuildGridDefinition.Create(16, 14, Grid5Migration.Cell), Data + "/Grid.asset");
             var fall = CombatPrototypeSetup.Save(FallSettings.Create(), Data + "/Fall.asset");
             Grid75Migration.ConfigureFall(fall);
             var cameraSettings = CombatPrototypeSetup.Save(BuildCameraSettings.Create(), Data + "/Camera.asset");
             Grid75Migration.WidenCamera(cameraSettings);
+            Grid5Migration.ScaleCamera(cameraSettings);
             Material stone = CombatPrototypeSetup.MaterialAsset("ConstructionStone", new Color(0.58f, 0.66f, 0.75f));
             Material gateMaterial = CombatPrototypeSetup.MaterialAsset("ConstructionGate", new Color(0.63f, 0.44f, 0.24f));
             Material groundMaterial = CombatPrototypeSetup.MaterialAsset("ConstructionGround", new Color(0.23f, 0.34f, 0.26f));
@@ -53,7 +54,7 @@ namespace ProjectNeo.Editor
                 prefab: PiecePrefab("Stairs", BuildPieceKind.Stairs, stone)), Data + "/Stairs.asset");
             var gate = CombatPrototypeSetup.Save(BuildPieceDefinition.Create(BuildPieceKind.Gate, "메인 성문", new Vector2Int(2, 1),
                 maxHealth: 300f, prefab: PiecePrefab("MainGate", BuildPieceKind.Gate, gateMaterial)), Data + "/Gate.asset");
-            Grid75Migration.ConfigurePieces();
+            Grid5Migration.ConfigurePieces();
 
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             RenderSettings.ambientLight = new Color(0.7f, 0.75f, 0.85f);
