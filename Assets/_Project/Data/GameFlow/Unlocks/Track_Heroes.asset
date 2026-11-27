@@ -24,6 +24,7 @@ MonoBehaviour:
       kind: 0
       targetId: hero_swordsman
       amount: 1
+    icon: {fileID: 0}
   - id: hero_archer
     displayName: "\uC6A9\uBCD1 \uAD81\uC218"
     cost: 0
@@ -34,6 +35,7 @@ MonoBehaviour:
       kind: 0
       targetId: hero_archer
       amount: 1
+    icon: {fileID: 0}
   - id: hero_knight
     displayName: "\uAE30\uC0AC"
     cost: 2
@@ -44,6 +46,7 @@ MonoBehaviour:
       kind: 0
       targetId: hero_knight
       amount: 1
+    icon: {fileID: 0}
   - id: hero_paladin
     displayName: "\uC131\uAE30\uC0AC"
     cost: 3
@@ -54,3 +57,5 @@ MonoBehaviour:
       kind: 0
       targetId: hero_paladin
       amount: 1
+    icon: {fileID: 0}
+  drawCost: 1

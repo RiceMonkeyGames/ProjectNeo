@@ -24,6 +24,7 @@ MonoBehaviour:
       kind: 1
       targetId: item_wood_shield
       amount: 1
+    icon: {fileID: 0}
   - id: recipe_iron_sword
     displayName: "\uCCA0\uAC80"
     cost: 0
@@ -34,6 +35,7 @@ MonoBehaviour:
       kind: 1
       targetId: item_iron_sword
       amount: 1
+    icon: {fileID: 0}
   - id: recipe_leather_armor
     displayName: "\uAC00\uC8FD \uAC11\uC637"
     cost: 0
@@ -44,16 +46,51 @@ MonoBehaviour:
       kind: 1
       targetId: item_leather_armor
       amount: 1
+    icon: {fileID: 0}
+  - id: recipe_leather_cap
+    displayName: "\uAC00\uC8FD \uBAA8\uC790"
+    cost: 0
+    prerequisiteIds:
+    - recipe_leather_armor
+    openedByDefault: 1
+    payload:
+      kind: 1
+      targetId: item_leather_cap
+      amount: 1
+    icon: {fileID: 0}
+  - id: recipe_traveler_charm
+    displayName: "\uC5EC\uD589\uC790\uC758 \uBD80\uC801"
+    cost: 0
+    prerequisiteIds:
+    - recipe_leather_cap
+    openedByDefault: 1
+    payload:
+      kind: 1
+      targetId: item_traveler_charm
+      amount: 1
+    icon: {fileID: 0}
+  - id: recipe_iron_ring
+    displayName: "\uCCA0\uBC18\uC9C0"
+    cost: 0
+    prerequisiteIds:
+    - recipe_traveler_charm
+    openedByDefault: 1
+    payload:
+      kind: 1
+      targetId: item_iron_ring
+      amount: 1
+    icon: {fileID: 0}
   - id: recipe_chain_armor
     displayName: "\uC0AC\uC2AC \uAC11\uC637"
     cost: 1
     prerequisiteIds:
-    - recipe_leather_armor
+    - recipe_iron_ring
     openedByDefault: 0
     payload:
       kind: 1
       targetId: item_chain_armor
       amount: 1
+    icon: {fileID: 0}
   - id: recipe_steel_sword
     displayName: "\uAC15\uCCA0\uAC80"
     cost: 2
@@ -64,3 +101,38 @@ MonoBehaviour:
       kind: 1
       targetId: item_steel_sword
       amount: 1
+    icon: {fileID: 0}
+  - id: recipe_iron_helm
+    displayName: "\uCCA0\uD22C\uAD6C"
+    cost: 2
+    prerequisiteIds:
+    - recipe_steel_sword
+    openedByDefault: 0
+    payload:
+      kind: 1
+      targetId: item_iron_helm
+      amount: 1
+    icon: {fileID: 0}
+  - id: recipe_marksman_clasp
+    displayName: "\uBA85\uC0AC\uC218\uC758 \uAC78\uC1E0"
+    cost: 3
+    prerequisiteIds:
+    - recipe_iron_helm
+    openedByDefault: 0
+    payload:
+      kind: 1
+      targetId: item_marksman_clasp
+      amount: 1
+    icon: {fileID: 0}
+  - id: recipe_war_banner_charm
+    displayName: "\uC804\uD22C \uAE43\uBC1C \uBD80\uC801"
+    cost: 3
+    prerequisiteIds:
+    - recipe_marksman_clasp
+    openedByDefault: 0
+    payload:
+      kind: 1
+      targetId: item_war_banner_charm
+      amount: 1
+    icon: {fileID: 0}
+  drawCost: 1

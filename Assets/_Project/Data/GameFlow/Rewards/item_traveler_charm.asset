@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c133cf13bd59d5a47837f9c46c408a91, type: 3}
+  m_Name: item_traveler_charm
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Economy.ItemDefinition
+  id: item_traveler_charm
+  displayName: "\uC5EC\uD589\uC790\uC758 \uBD80\uC801"
+  kind: 0
+  price:
+    gold: 30
+    materials: []
+  unlockedByDefault: 1
+  equipModifiers:
+  - stat: 4
+    kind: 1
+    value: 0.1
+  useHealRatio: 0.35
+  upgradeMaterials:
+  - materials:
+    - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+      amount: 1
+    - material: {fileID: 11400000, guid: 983096480f690a248a516a89f583ca4f, type: 2}
+      amount: 1
+  - materials:
+    - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+      amount: 2
+    - material: {fileID: 11400000, guid: 983096480f690a248a516a89f583ca4f, type: 2}
+      amount: 2
+  - materials:
+    - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+      amount: 3
+    - material: {fileID: 11400000, guid: 983096480f690a248a516a89f583ca4f, type: 2}
+      amount: 3
+  - materials:
+    - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+      amount: 4
+    - material: {fileID: 11400000, guid: 983096480f690a248a516a89f583ca4f, type: 2}
+      amount: 4
+  - materials:
+    - material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
+      amount: 5
+    - material: {fileID: 11400000, guid: 983096480f690a248a516a89f583ca4f, type: 2}
+      amount: 5
+  icon: {fileID: 21300000, guid: 62b53687ee21b3b499d8c9dfbf5871fe, type: 3}
+  slot: 3

@@ -23,6 +23,8 @@ namespace ProjectNeo.Editor
         public static void Apply()
         {
             CombatPrototypeSetup.EnsureFolder(Folder);
+            // CONTENT-03 items must exist before the tracks name them.
+            HelmetAccessorySetup.CreateItems();
 
             UnlockTrackDefinition heroes = SaveOver(UnlockTrackDefinition.CreateStraight(UnlockTrackCategory.Heroes, "영웅",
                 HeroEntry("hero_swordsman", 0, true),
@@ -34,16 +36,29 @@ namespace ProjectNeo.Editor
                 ItemEntry("recipe_", UnlockPayloadKind.EquipmentRecipe, "item_wood_shield", 0, true),
                 ItemEntry("recipe_", UnlockPayloadKind.EquipmentRecipe, "item_iron_sword", 0, true),
                 ItemEntry("recipe_", UnlockPayloadKind.EquipmentRecipe, "item_leather_armor", 0, true),
+                // CONTENT-03 (user 2026-11-27): tier 1 open by default, tier 2 appended after Steel Sword.
+                ItemEntry("recipe_", UnlockPayloadKind.EquipmentRecipe, HelmetAccessorySetup.LeatherCap, 0, true),
+                ItemEntry("recipe_", UnlockPayloadKind.EquipmentRecipe, HelmetAccessorySetup.TravelerCharm, 0, true),
+                ItemEntry("recipe_", UnlockPayloadKind.EquipmentRecipe, HelmetAccessorySetup.IronRing, 0, true),
                 ItemEntry("recipe_", UnlockPayloadKind.EquipmentRecipe, "item_chain_armor", 1, false),
-                ItemEntry("recipe_", UnlockPayloadKind.EquipmentRecipe, "item_steel_sword", 2, false)), Folder + "/Track_EquipmentRecipes.asset");
+                ItemEntry("recipe_", UnlockPayloadKind.EquipmentRecipe, "item_steel_sword", 2, false),
+                ItemEntry("recipe_", UnlockPayloadKind.EquipmentRecipe, HelmetAccessorySetup.IronHelm, 2, false),
+                ItemEntry("recipe_", UnlockPayloadKind.EquipmentRecipe, HelmetAccessorySetup.MarksmanClasp, 3, false),
+                ItemEntry("recipe_", UnlockPayloadKind.EquipmentRecipe, HelmetAccessorySetup.WarBannerCharm, 3, false)), Folder + "/Track_EquipmentRecipes.asset");
 
             UnlockTrackDefinition shop = SaveOver(UnlockTrackDefinition.CreateStraight(UnlockTrackCategory.ShopItems, "상점 물품",
                 ItemEntry("shop_", UnlockPayloadKind.ShopItem, "item_potion", 0, true),
                 ItemEntry("shop_", UnlockPayloadKind.ShopItem, "item_wood_shield", 0, true),
                 ItemEntry("shop_", UnlockPayloadKind.ShopItem, "item_iron_sword", 0, true),
                 ItemEntry("shop_", UnlockPayloadKind.ShopItem, "item_leather_armor", 0, true),
+                ItemEntry("shop_", UnlockPayloadKind.ShopItem, HelmetAccessorySetup.LeatherCap, 0, true),
+                ItemEntry("shop_", UnlockPayloadKind.ShopItem, HelmetAccessorySetup.TravelerCharm, 0, true),
+                ItemEntry("shop_", UnlockPayloadKind.ShopItem, HelmetAccessorySetup.IronRing, 0, true),
                 ItemEntry("shop_", UnlockPayloadKind.ShopItem, "item_chain_armor", 1, false),
-                ItemEntry("shop_", UnlockPayloadKind.ShopItem, "item_steel_sword", 2, false)), Folder + "/Track_ShopItems.asset");
+                ItemEntry("shop_", UnlockPayloadKind.ShopItem, "item_steel_sword", 2, false),
+                ItemEntry("shop_", UnlockPayloadKind.ShopItem, HelmetAccessorySetup.IronHelm, 2, false),
+                ItemEntry("shop_", UnlockPayloadKind.ShopItem, HelmetAccessorySetup.MarksmanClasp, 3, false),
+                ItemEntry("shop_", UnlockPayloadKind.ShopItem, HelmetAccessorySetup.WarBannerCharm, 3, false)), Folder + "/Track_ShopItems.asset");
 
             UnlockTrackDefinition bonuses = SaveOver(UnlockTrackDefinition.CreateStraight(UnlockTrackCategory.StartingBonuses, "시작 보너스",
                 UnlockEntry.Create("bonus_gold_50", 1, UnlockPayload.StartingGold(50), displayName: "시작 골드 +50"),
@@ -94,7 +109,9 @@ namespace ProjectNeo.Editor
         {
             var existing = AssetDatabase.LoadAssetAtPath<T>(path);
             if (existing == null) { AssetDatabase.CreateAsset(value, path); return value; }
+            // CopySerialized also copies the new instance's empty name; name the asset after its file again (CONTENT-03).
             EditorUtility.CopySerialized(value, existing);
+            existing.name = System.IO.Path.GetFileNameWithoutExtension(path);
             Object.DestroyImmediate(value);
             EditorUtility.SetDirty(existing);
             return existing;

@@ -46,6 +46,7 @@ namespace ProjectNeo.Editor
             CreateData();
             CreateShopData();
             CreateSmithyData();
+            HelmetAccessorySetup.CreateData();
             EquipmentUpgradeSetup.Apply();
             AssetDatabase.SaveAssets();
             // 씬을 연 뒤 만든 에셋은 경로로 다시 불러와 연결한다(C-4 GameRewardSetup과 같은 주의).
@@ -282,7 +283,7 @@ namespace ProjectNeo.Editor
             public RectTransform offers, inventory;
         }
 
-        static void SetModifiers(ItemDefinition item, params StatModifier[] modifiers)
+        internal static void SetModifiers(ItemDefinition item, params StatModifier[] modifiers)
         {
             var data = new SerializedObject(item);
             SerializedProperty list = data.FindProperty("equipModifiers");
