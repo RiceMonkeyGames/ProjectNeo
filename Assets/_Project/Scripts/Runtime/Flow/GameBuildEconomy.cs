@@ -64,6 +64,7 @@ namespace ProjectNeo.Flow
         void OnEnable()
         {
             flow.PhaseChanged += OnPhaseChanged;
+            if (world != null) world.PieceReplacing += OnPieceReplacing;
             if (placement == null) return;
             placement.ConfirmGate = CanConfirm;
             placement.PiecePlaced += OnPiecePlaced;
@@ -74,6 +75,7 @@ namespace ProjectNeo.Flow
         {
             hover.Clear();
             flow.PhaseChanged -= OnPhaseChanged;
+            if (world != null) world.PieceReplacing -= OnPieceReplacing;
             if (placement == null) return;
             if (placement.ConfirmGate == (System.Func<bool>)CanConfirm) placement.ConfirmGate = null;
             placement.PiecePlaced -= OnPiecePlaced;
@@ -123,10 +125,13 @@ namespace ProjectNeo.Flow
 
         bool CanConfirm()
         {
+            // 이번 놓기에서 바꿔 끼운 성벽 환불 안내는 놓기마다 새로 센다.
+            replacedRefund = replacedCount = 0;
             BuildEconomy current = EnsureEconomy();
             if (current == null || placement == null) return true;
+            // 한 번에 여러 조각이 쌓이면(망루 2층 등) 그 수만큼 낸다(SIEGE-24, 층마다 비용).
             bool affordable = placement.SelectedWeapon != null ? current.CanAfford(placement.SelectedWeapon)
-                : placement.Selected == null || current.CanAfford(placement.Selected);
+                : placement.Selected == null || current.CanAfford(placement.Selected, placement.PreviewCount);
             if (!affordable) Message = "골드가 부족합니다.";
             return affordable;
         }
@@ -140,6 +145,19 @@ namespace ProjectNeo.Flow
             // 준비 시간이 켜져 있으면 바로 완성하지 않고 작업 주문으로 짓는다(SIEGE-08).
             if (Preparing) work?.OrderPiece(body);
         }
+
+        // 망루가 성벽 줄 칸을 바꿔 끼우면(SIEGE-24) 없어지는 성벽 층마다 철거처럼 환불하고 걸린 작업 주문을 지운다.
+        void OnPieceReplacing(PlacedStructure wall)
+        {
+            BuildEconomy current = EnsureEconomy();
+            if (current == null || wall == null || wall.Placement == null) return;
+            int gold = current.RefundPiece(wall.Placement.Definition, wall.Placement.Id) + (work != null ? work.Cancel(wall) : 0);
+            replacedRefund += gold;
+            replacedCount++;
+            Message = $"성벽 {replacedCount}층을 망루로 바꿈 - {replacedRefund}골드 환불";
+        }
+
+        int replacedRefund, replacedCount;
 
         void OnWeaponMounted(PlacedSiegeWeapon weapon)
         {
@@ -170,6 +188,9 @@ namespace ProjectNeo.Flow
         {
             BuildEconomy current = EnsureEconomy();
             if (!Preparing || current == null || structure == null) return false;
+            // 망루는 맨 위층부터 해체한다. 처음 층 수만 남았으면 그 층 모두를 한 번에(SIEGE-24).
+            List<PlacedStructure> group = DismantleGroup(structure);
+            if (group.Count > 0) structure = group[0];
             foreach (PlacedSiegeWeapon weapon in world.Weapons)
             {
                 if (weapon.Support != structure) continue;
@@ -184,6 +205,7 @@ namespace ProjectNeo.Flow
             }
             BuildPlacement placed = structure.Placement;
             if (placed.IsFixed) { Message = "성문은 해체할 수 없습니다."; return false; }
+            if (group.Count > 1) return DismantleTiers(current, group);
             BuildPieceDefinition piece = placed.Definition;
             int id = placed.Id;
             if (!world.TryDismantle(structure))
@@ -194,6 +216,25 @@ namespace ProjectNeo.Flow
             // 짓는 중인 조각은 이번 준비에 지은 것이라 환불이 전액이다. 수리 주문이었으면 남은 몫을 더 돌려준다.
             int gold = current.RefundPiece(piece, id) + (work != null ? work.Cancel(structure) : 0);
             Message = $"{piece.DisplayName} 해체 - {gold}골드 환불";
+            return true;
+        }
+
+        // 망루의 처음 층들을 위층부터 한 번에 해체하고 층마다 환불한다(SIEGE-24). 맨 위층을 뺄 수 없으면 아무것도 하지 않는다.
+        bool DismantleTiers(BuildEconomy current, List<PlacedStructure> tiers)
+        {
+            string name = tiers[0].Placement.Definition.DisplayName;
+            int gold = 0, removed = 0;
+            foreach (PlacedStructure tier in tiers)
+            {
+                BuildPieceDefinition piece = tier.Placement.Definition;
+                int id = tier.Placement.Id;
+                if (!world.TryDismantle(tier)) break;
+                gold += current.RefundPiece(piece, id) + (work != null ? work.Cancel(tier) : 0);
+                removed++;
+            }
+            if (removed == 0) { Message = "해체할 수 없습니다: 위에 조각이나 유닛이 있습니다."; return false; }
+            Message = removed == tiers.Count ? $"{name} {removed}층 해체 - {gold}골드 환불"
+                : $"{name} {removed}층만 해체 - {gold}골드 환불 (남은 층 위나 안에 유닛이 있습니다)";
             return true;
         }
 
@@ -274,12 +315,18 @@ namespace ProjectNeo.Flow
             Vector2 pointer = Mouse.current.position.ReadValue();
             // UI-13: 해체 중에는 가리킨 조각(위에 무기가 있으면 무기)을 지을 수 없는 자리의 미리보기처럼 붉게 보여 준다.
             PlacedStructure hovered = OverUI(pointer) ? null : PickStructure(pointer);
-            GameObject target = DismantleTarget(hovered, out GameObject prefab);
+            // 망루(SIEGE-24)는 해체될 층들(더 쌓은 층은 맨 위 한 층, 처음 층 수만 남았으면 그 층 모두)을 함께 보인다.
+            List<PlacedStructure> group = DismantleGroup(hovered);
+            PlacedStructure top = group.Count > 0 ? group[0] : null;
+            GameObject target = DismantleTarget(top, out GameObject prefab);
             if (target != hover.Target)
             {
-                // 조각이면 그 칸의 성 킷 모델을 잠깐 숨기고 같은 칸 다른 층은 임시 외형으로 대신 보인다(킷이 칸 전체를 그린다).
-                bool piece = hovered != null && target == hovered.gameObject;
-                hover.Show(target, prefab, placement.ViewSettings, piece ? KitCell(hovered) : null, piece ? StandIns(hovered) : null);
+                // 조각이면 그 칸들의 성 킷 모델을 잠깐 숨기고 같은 칸 다른 층은 임시 외형으로 대신 보인다(킷이 칸 전체를 그린다).
+                bool piece = top != null && target == top.gameObject;
+                var stack = new List<GameObject>();
+                if (piece) for (int i = group.Count - 1; i >= 0; i--) stack.Add(group[i].gameObject);
+                hover.Show(target, prefab, placement.ViewSettings, piece ? KitCells(top) : null, piece ? StandIns(top, group) : null,
+                    piece ? stack : null);
             }
             if (!Mouse.current.leftButton.wasPressedThisFrame || OverUI(pointer)) return;
             if (hovered == null) Message = "해체할 조각을 클릭하세요.";
@@ -292,21 +339,48 @@ namespace ProjectNeo.Flow
 
         CastleKitDresser kit;
 
-        GameObject KitCell(PlacedStructure structure)
+        // 조각이 차지한 모든 칸의 성 킷 모델(2×2 망루는 네 칸, SIEGE-24).
+        IEnumerable<GameObject> KitCells(PlacedStructure structure)
         {
             if (kit == null) kit = FindAnyObjectByType<CastleKitDresser>();
-            return kit != null ? kit.CellRoot(structure.Placement.Cell) : null;
+            if (kit == null) yield break;
+            BuildPlacement placed = structure.Placement;
+            for (int x = 0; x < placed.Size.x; x++)
+                for (int z = 0; z < placed.Size.y; z++)
+                {
+                    GameObject root = kit.CellRoot(placed.Cell + new Vector2Int(x, z));
+                    if (root != null) yield return root;
+                }
         }
 
-        IEnumerable<Renderer> StandIns(PlacedStructure structure)
+        IEnumerable<Renderer> StandIns(PlacedStructure structure, List<PlacedStructure> group)
         {
             foreach (PlacedStructure other in world.Structures)
             {
-                if (other == null || other == structure || other.Placement == null || other.Placement.Cell != structure.Placement.Cell) continue;
+                if (other == null || other == structure || group.Contains(other) || other.Placement == null
+                    || other.Placement.Cell != structure.Placement.Cell) continue;
                 Transform visual = other.transform.Find("Visual");
                 if (visual == null) continue;
                 foreach (Renderer renderer in visual.GetComponentsInChildren<Renderer>(true)) yield return renderer;
             }
+        }
+
+        /// <summary>
+        /// 그 조각을 가리켜 해체하면 함께 없어질 조각들(위층부터). 보통은 그 조각 하나다. 망루(SIEGE-24, 사용자 결정 2026-11-27)는
+        /// 어느 층을 가리켜도 맨 위층부터: 처음 쌓은 층 수(2층)보다 높으면 맨 위 한 층, 처음 층 수만 남았으면 그 층 모두를 한 번에 해체한다.
+        /// </summary>
+        public List<PlacedStructure> DismantleGroup(PlacedStructure structure)
+        {
+            var group = new List<PlacedStructure>();
+            if (structure == null || structure.Placement == null) return group;
+            BuildPlacement placed = structure.Placement;
+            if (placed.Definition.Kind != BuildPieceKind.Tower) { group.Add(structure); return group; }
+            foreach (PlacedStructure tier in world.Structures)
+                if (tier != null && tier.Placement != null && tier.Placement.Definition.Kind == BuildPieceKind.Tower
+                    && tier.Placement.Cell == placed.Cell) group.Add(tier);
+            group.Sort((a, b) => b.Placement.Level.CompareTo(a.Placement.Level));
+            if (group.Count > placed.Definition.InitialTiers) group.RemoveRange(1, group.Count - 1);
+            return group;
         }
 
         // 해체하면 먼저 사라지는 것: 조각 위 무기, 없으면 조각. 미리보기를 만들 프리팹도 함께 돌려준다.

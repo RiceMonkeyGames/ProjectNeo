@@ -30,7 +30,7 @@ Recorded in [Combat](../../design/Combat.md) (Formations & drag placement) and [
 - 2×2 two-storey corner towers ([SIEGE-36](../SIEGE/SIEGE-36.md), stacked wall pieces):
   - The roof walkway is 14.6m both ways.
   - Line and Loose squads of 12 and 24 stand on the roof with no overlap and no slot off the roof level.
-  - There are no `Tower` pieces in the Game layout yet ([SIEGE-24](../../backlog/SIEGE-24.md)).
+  - There are no `Tower` pieces in the Game layout yet ([SIEGE-24](../SIEGE/SIEGE-24.md)).
 - Crenel slots on a 7.5m edge:
   - Five crenels at 0.75 to 6.75m.
   - Both edge ends are half merlons.
@@ -85,4 +85,4 @@ Pending at completion. The user chose to finish first.
 ## Follow-ups
 
 - [SIEGE-20](../../backlog/SIEGE-20.md) (kit battlements, cover heights and crenel positions) may move the crenel stand points. Recheck ranged front ranks on wall tops after it lands.
-- Tower roofs from real `Tower` pieces arrive with [SIEGE-24](../../backlog/SIEGE-24.md).
+- Tower roofs from real `Tower` pieces arrive with [SIEGE-24](../SIEGE/SIEGE-24.md).

@@ -189,6 +189,8 @@ namespace ProjectNeo.Flow
             var orders = new List<WorkOrder>(queue.Orders);
             queue.Clear();
             BuildEconomy economy = build != null ? build.Economy : null;
+            // 쌓인 조각(망루 층, SIEGE-24)이 함께 0%면 위층부터 없애야 아래층도 없앨 수 있다(덮인 조각은 없애지 않는다).
+            orders.Sort((a, b) => LevelOf(b).CompareTo(LevelOf(a)));
             foreach (WorkOrder order in orders)
             {
                 if (!targets.TryGetValue((order.Target, order.Key), out Component target) || target == null) continue;
@@ -206,6 +208,14 @@ namespace ProjectNeo.Flow
             RefreshUnfinishedViews();
         }
 
+        // 주문 대상 조각의 층(무기·수리는 -1). 정렬은 안정적이지 않아도 된다(같은 층끼리는 서로 덮지 않는다).
+        int LevelOf(WorkOrder order) =>
+            order.Target == WorkTarget.Piece && targets.TryGetValue((order.Target, order.Key), out Component target)
+            && target is PlacedStructure piece && piece != null && piece.Placement != null ? piece.Placement.Level : -1;
+
+        // 0%인데 위에 진행된 조각이 얹혀 없앨 수 없을 때 남길 최소 진행률(체력 비율).
+        const float CoveredMinimumProgress = 0.05f;
+
         void FinishBuild(WorkOrder order, Component target, BuildEconomy economy)
         {
             float progress = order.Progress;
@@ -216,8 +226,9 @@ namespace ProjectNeo.Flow
                     BuildPieceDefinition definition = piece.Placement.Definition;
                     int id = piece.Placement.Id;
                     HideView(piece);
-                    if (world.RemoveUnbuilt(piece)) economy?.RefundPiece(definition, id);
-                    return;
+                    if (world.RemoveUnbuilt(piece)) { economy?.RefundPiece(definition, id); return; }
+                    // 위층을 먼저 지어 덮여 있으면 없애지 않고 최소 체력으로 세운다(받침이 사라지면 위층이 떠 있게 된다).
+                    progress = CoveredMinimumProgress;
                 }
                 piece.Health.TakeDamage(piece.Health.Maximum * (1f - progress));
                 piece.SetUnderConstruction(false);

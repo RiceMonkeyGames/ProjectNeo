@@ -45647,6 +45647,7 @@ GameObject:
   - component: {fileID: 340332245}
   - component: {fileID: 340332246}
   - component: {fileID: 340332247}
+  - component: {fileID: 340332248}
   m_Layer: 0
   m_Name: ConstructionWorld
   m_TagString: Untagged
@@ -46269,6 +46270,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Flow.GameDevKeys
   goldStep: 1000
+--- !u!114 &340332248
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 340332241}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31b561b5648b6b14c85edcb11e311673, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Walls.TowerOccupantBuff
+  world: {fileID: 340332242}
+  interval: 0.25
+  tolerance: 0.6
 --- !u!1 &340983998
 GameObject:
   m_ObjectHideFlags: 0
@@ -252701,7 +252717,7 @@ MonoBehaviour:
   wall: {fileID: 11400000, guid: c1c038f7a168fe347bc9a0582b3d05bf, type: 2}
   stairs: {fileID: 11400000, guid: 9bec35695a6f5a848b88ce14e4da5884, type: 2}
   bastion: {fileID: 11400000, guid: dc1e88579bbb29f428e498188dcd48e4, type: 2}
-  tower: {fileID: 0}
+  tower: {fileID: 11400000, guid: 72553e8ad3c32cc4e98b0a6426f8d9f3, type: 2}
   selection: {fileID: 388641068}
   status: {fileID: 693633686}
   unitHealth: {fileID: 2034948907}

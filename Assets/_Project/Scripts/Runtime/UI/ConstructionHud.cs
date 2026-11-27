@@ -12,7 +12,7 @@ namespace ProjectNeo.UI
         [SerializeField] BuildPieceDefinition stairs;
         // 수성 무기를 놓는 보루(SIEGE-11). 비어 있으면 버튼이 아무것도 고르지 않는다.
         [SerializeField] BuildPieceDefinition bastion;
-        // 보루보다 비싸고 강한 2×2 망루(SIEGE-14 시험). 비어 있으면 버튼이 아무것도 고르지 않는다.
+        // 보루보다 비싸고 강한 2×2 망루(SIEGE-14, Game 통합 SIEGE-24). 비어 있으면 버튼이 아무것도 고르지 않는다.
         [SerializeField] BuildPieceDefinition tower;
         [SerializeField] TMP_Text selection;
         public const string PickPieceHint = "지을 조각을 고르세요";
@@ -89,13 +89,15 @@ namespace ProjectNeo.UI
                     case PlacementIssue.LadderLane: issue = "사다리가 서는 자리입니다"; break;
                     case PlacementIssue.BastionStack: issue = "보루 위에는 보루만 쌓습니다"; break;
                     case PlacementIssue.Valley: issue = "양옆보다 낮은 골짜기(2층-1층-2층)가 됩니다"; break;
-                    case PlacementIssue.TowerNeedsWall: issue = "망루는 성 바깥에서 성벽에 붙여 짓습니다"; break;
+                    case PlacementIssue.TowerNeedsWall: issue = "망루는 성벽 줄 두 칸을 바꿔 바깥쪽으로 내밀어 짓습니다"; break;
                     case PlacementIssue.TowerStack: issue = "망루 위에는 아무것도 쌓을 수 없습니다"; break;
                     case PlacementIssue.StairsGroundOnly: issue = "계단은 땅 위에만 놓습니다. 성벽 위 계단은 자동으로 생깁니다"; break;
                     case PlacementIssue.StoreyCap: issue = "이 조각은 더 높이 쌓을 수 없습니다"; break;
                     default: issue = "위치를 고르세요"; break;
                 }
                 string floor = placement.PreviewLevel > 0 ? " · " + (placement.PreviewLevel + 1) + "층" : "";
+                // 한 번에 여러 층을 쌓으면(새 망루 2층, SIEGE-24) 층 수를 알린다. 비용은 층마다 낸다.
+                if (placement.PreviewCount > 1) floor += " · " + placement.PreviewCount + "층 한 번에";
                 selection.text = placement.Selected.DisplayName + " · " + placement.Rotation * 90 + "°" + floor + "\n" + issue;
                 if (placement.IsPreviewVisible && placement.StairNeedsConnection) selection.text += "\n계단이 아직 성벽과 이어지지 않았습니다";
                 if (placement.IsPreviewVisible && placement.BastionNeedsConnection)

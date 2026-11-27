@@ -26,19 +26,24 @@ namespace ProjectNeo.Walls
 
         /// <summary>
         /// <paramref name="next"/>를 붉은 미리보기로 바꿔 보인다. 같은 대상이면 아무 일도 하지 않는다. null이면 지운다.
-        /// <paramref name="kitCell"/>은 숨길 킷 칸(없으면 null), <paramref name="standIns"/>는 그동안 켜 둘 같은 칸 다른 층의 외형이다.
+        /// <paramref name="kitCells"/>는 숨길 킷 칸들(여러 칸 조각은 모든 칸, 망루 SIEGE-24), <paramref name="standIns"/>는 그동안 켜 둘
+        /// 같은 칸 다른 층의 외형이다. <paramref name="stack"/>이 있으면(아래층부터, 함께 해체되는 층들) 미리보기를 맨 아래층 자리에서
+        /// 그 층 수만큼 높게 그리고 모든 층을 숨긴다.
         /// </summary>
-        public void Show(GameObject next, GameObject prefab, PlacementViewSettings view, GameObject kitCell = null,
-            IEnumerable<Renderer> standIns = null)
+        public void Show(GameObject next, GameObject prefab, PlacementViewSettings view, IEnumerable<GameObject> kitCells = null,
+            IEnumerable<Renderer> standIns = null, IReadOnlyList<GameObject> stack = null)
         {
             if (next == target) return;
             Clear();
             if (next == null || prefab == null || view == null || view.GhostMaterial == null) return;
             target = next;
-            ghost = Object.Instantiate(prefab, next.transform.parent);
+            GameObject bottom = stack != null && stack.Count > 0 && stack[0] != null ? stack[0] : next;
+            ghost = Object.Instantiate(prefab, bottom.transform.parent);
             ghost.name = "DismantlePreview";
-            ghost.transform.SetLocalPositionAndRotation(next.transform.localPosition, next.transform.localRotation);
-            ghost.transform.localScale = next.transform.localScale;
+            ghost.transform.SetLocalPositionAndRotation(bottom.transform.localPosition, bottom.transform.localRotation);
+            Vector3 scale = bottom.transform.localScale;
+            if (stack != null && stack.Count > 1) scale.y *= stack.Count;
+            ghost.transform.localScale = scale;
             foreach (Collider collider in ghost.GetComponentsInChildren<Collider>()) collider.enabled = false;
             foreach (MonoBehaviour behaviour in ghost.GetComponentsInChildren<MonoBehaviour>()) behaviour.enabled = false;
             block ??= new MaterialPropertyBlock();
@@ -54,7 +59,8 @@ namespace ProjectNeo.Walls
                 renderer.SetPropertyBlock(block);
             }
             Hide(next);
-            if (kitCell != null) Hide(kitCell);
+            if (stack != null) foreach (GameObject tier in stack) if (tier != null && tier != next) Hide(tier);
+            if (kitCells != null) foreach (GameObject kitCell in kitCells) if (kitCell != null) Hide(kitCell);
             if (standIns != null)
                 foreach (Renderer renderer in standIns)
                 {

@@ -42,6 +42,8 @@ namespace ProjectNeo.Run
         }
 
         public bool CanAfford(BuildPieceDefinition piece) => Wallet.Gold >= table.CostOf(piece);
+        /// <summary>같은 조각 <paramref name="count"/>개를 한 번에 놓을 골드가 있는지(망루 층, 골짜기 메우기, SIEGE-24).</summary>
+        public bool CanAfford(BuildPieceDefinition piece, int count) => Wallet.Gold >= table.CostOf(piece) * Math.Max(1, count);
         public bool CanAfford(SiegeWeaponDefinition weapon) => Wallet.Gold >= table.CostOf(weapon);
 
         /// <summary>지은 조각의 비용을 낸다. 모자라면 아무것도 내지 않고 false.</summary>

@@ -104,6 +104,13 @@ namespace ProjectNeo.Walls
         public PlacementIssue CheckPlacement(BuildPieceDefinition definition, Vector2Int cell, int rotation,
             out int level, out float elevation)
         {
+            // 망루를 새로 놓는 자리는 성벽 줄 안이다(SIEGE-24): 안쪽 줄 성벽을 바꿔 끼우고 땅부터 쌓는다.
+            if (IsNewTower(definition, cell, rotation))
+            {
+                level = 0; elevation = 0f;
+                RefreshOutside();
+                return TowerRules.CheckInLine(Layout, grid, outsideCells, ladderLanes.Keys, definition, cell, rotation);
+            }
             PlacementIssue issue = Layout.Check(definition, cell, rotation, false, out level, out elevation);
             if (issue != PlacementIssue.None) return issue;
             if (level > 0)
@@ -119,19 +126,83 @@ namespace ProjectNeo.Walls
                         if (structures.TryGetValue(Layout.At(cell + new Vector2Int(x, z), level - 1).Id, out PlacedStructure below)
                             && below != null && below.IsUnderConstruction) return PlacementIssue.UnfinishedSupport;
             }
-            // 보루 규칙(SIEGE-11). 성 바깥 판정은 배치가 바뀔 때만 다시 센다. 전투 중 무너짐도 센다:
-            // 세지 않으면 무너진 보루·망루 칸이 계속 안쪽으로 남아 그 자리에 다시 짓지 못한다(SIEGE-30).
-            if (outsideRevision != LayoutRevision || outsideCollapses != collapseCount)
-            {
-                BattlementRules.CollectOutside(Layout, grid, outsideCells);
-                outsideRevision = LayoutRevision;
-                outsideCollapses = collapseCount;
-            }
+            RefreshOutside();
             PlacementIssue outwork = BastionRules.Check(Layout, grid, outsideCells, ladderLanes.Keys, definition, cell, rotation, level, elevation);
             if (outwork != PlacementIssue.None) return outwork;
-            // 망루 규칙(SIEGE-14): 보루처럼 바깥에 성벽과 맞닿게, 위에는 망루 층만.
+            // 망루 쌓기 규칙(SIEGE-14): 망루 위에는 망루 층만, 망루 층은 망루 위에만.
             return TowerRules.Check(Layout, grid, outsideCells, ladderLanes.Keys, definition, cell, rotation, level, elevation);
         }
+
+        // 보루·망루 규칙의 성 바깥 판정. 배치가 바뀔 때만 다시 센다. 전투 중 무너짐도 센다:
+        // 세지 않으면 무너진 보루·망루 칸이 계속 안쪽으로 남아 그 자리에 다시 짓지 못한다(SIEGE-30).
+        void RefreshOutside()
+        {
+            if (outsideRevision == LayoutRevision && outsideCollapses == collapseCount) return;
+            BattlementRules.CollectOutside(Layout, grid, outsideCells);
+            outsideRevision = LayoutRevision;
+            outsideCollapses = collapseCount;
+        }
+
+        // 망루를 새로 놓는지(이미 놓인 망루 맨 윗면 위에 쌓는 것이 아니면).
+        bool IsNewTower(BuildPieceDefinition definition, Vector2Int cell, int rotation) =>
+            definition != null && definition.Kind == BuildPieceKind.Tower && Layout != null
+            && !TowerRules.IsStackOnTower(Layout, cell, BuildLayout.RotatedSize(definition.Footprint, rotation));
+
+        /// <summary>
+        /// 그 자리에 놓으면 한 번에 쌓일 조각 수. 놓을 수 없으면 0. 망루는 새로 놓을 때 처음 층 수(2), 위에 쌓을 때 1(SIEGE-24),
+        /// 그 밖에는 골짜기를 메우는 수(SIEGE-14, 보통 1). 비용은 조각마다 낸다.
+        /// </summary>
+        public int PlacementCount(BuildPieceDefinition definition, Vector2Int cell, int rotation)
+        {
+            if (CheckPlacement(definition, cell, rotation, out int level, out _) != PlacementIssue.None) return 0;
+            if (definition.Kind == BuildPieceKind.Tower) return TowerRules.Tiers(grid, definition, level);
+            return Mathf.Max(1, Layout.ValleyFill(definition, cell, rotation));
+        }
+
+        /// <summary>
+        /// 망루를 그 자리에 새로 놓을 때 바꿔 끼워 없어질 성벽 조각(위층부터). 망루가 아니거나 놓을 수 없으면 비운다(SIEGE-24).
+        /// </summary>
+        public void CollectReplaced(BuildPieceDefinition definition, Vector2Int cell, int rotation, List<BuildPlacement> replaced)
+        {
+            replaced.Clear();
+            if (!IsNewTower(definition, cell, rotation)) return;
+            RefreshOutside();
+            if (TowerRules.CheckInLine(Layout, grid, outsideCells, ladderLanes.Keys, definition, cell, rotation, replaced) != PlacementIssue.None)
+                replaced.Clear();
+        }
+
+        /// <summary>
+        /// 가리킨 곳(성 좌표)에 둘 조각의 앵커 칸(왼쪽 아래). 한 칸 조각은 가리킨 칸 그대로다. 망루(SIEGE-24)는 가리킨 칸이 망루 위면
+        /// 그 망루 앵커(한 층 더 쌓기), 아니면 가리킨 칸을 덮는 자리 가운데 성벽 줄에 놓을 수 있는 것에서 가운데가 가리킨 곳에 가장 가까운 것.
+        /// 놓을 수 있는 자리가 없으면 가리킨 칸이다.
+        /// </summary>
+        public Vector2Int SnapAnchor(BuildPieceDefinition definition, Vector3 localPoint, int rotation)
+        {
+            Vector2Int pointed = Layout.WorldToCell(localPoint);
+            if (definition == null || definition.Kind != BuildPieceKind.Tower) return pointed;
+            BuildPlacement top = Layout.Top(pointed);
+            if (top != null && top.Definition.Kind == BuildPieceKind.Tower) return top.Cell;
+            Vector2Int size = BuildLayout.RotatedSize(definition.Footprint, rotation);
+            RefreshOutside();
+            Vector2Int best = pointed;
+            float nearest = float.PositiveInfinity;
+            for (int x = 0; x < size.x; x++)
+                for (int z = 0; z < size.y; z++)
+                {
+                    Vector2Int anchor = pointed - new Vector2Int(x, z);
+                    if (TowerRules.CheckInLine(Layout, grid, outsideCells, ladderLanes.Keys, definition, anchor, rotation) != PlacementIssue.None) continue;
+                    Vector3 center = Layout.Center(anchor, size);
+                    float distance = new Vector2(center.x - localPoint.x, center.z - localPoint.z).sqrMagnitude;
+                    if (distance >= nearest) continue;
+                    nearest = distance;
+                    best = anchor;
+                }
+            return best;
+        }
+
+        /// <summary>망루가 바꿔 끼우는 성벽 조각을 없애기 직전에 알린다(SIEGE-24, 환불·작업 주문 정리). 아직 배치에 있다.</summary>
+        public event Action<PlacedStructure> PieceReplacing;
+        readonly List<BuildPlacement> replacedScratch = new List<BuildPlacement>();
 
         readonly HashSet<Vector2Int> outsideCells = new HashSet<Vector2Int>();
         int outsideRevision = -1;
@@ -155,22 +226,31 @@ namespace ProjectNeo.Walls
 
         public bool IsLadderLane(Vector2Int cell) => ladderLanes.ContainsKey(cell);
 
+        /// <summary>놓고 맨 위 조각을 돌려준다. 한 번에 여러 조각이 쌓이면 <see cref="TryPlace(BuildPieceDefinition, Vector2Int, int, List{PlacedStructure})"/>.</summary>
         public bool TryPlace(BuildPieceDefinition definition, Vector2Int cell, int rotation, out PlacedStructure body)
         {
-            body = null;
-            if (CheckPlacement(definition, cell, rotation) != PlacementIssue.None) return false;
-            // 골짜기 규칙(SIEGE-14): 골짜기가 될 자리면 양옆 높이까지 한 번에 쌓는다. 규칙을 쓰지 않으면 늘 1개.
-            int count = Mathf.Max(1, Layout.ValleyFill(definition, cell, rotation));
-            // 망루(SIEGE-14)는 맞닿은 가장 높은 성벽보다 한 층 높게 한 번에 쌓는다.
-            if (definition.Kind == BuildPieceKind.Tower)
-            {
-                CheckPlacement(definition, cell, rotation, out int level, out _);
-                count = TowerRules.Tiers(Layout, grid, definition, cell, rotation, level);
-            }
+            var placed = new List<PlacedStructure>();
+            bool ok = TryPlace(definition, cell, rotation, placed);
+            body = ok ? placed[placed.Count - 1] : null;
+            return ok;
+        }
+
+        /// <summary>
+        /// 놓은 조각을 아래층부터 <paramref name="placed"/>에 담는다. 골짜기 규칙(SIEGE-14)이면 양옆 높이까지, 새 망루(SIEGE-24)면
+        /// 안쪽 줄 성벽을 바꿔 끼운 뒤 처음 층 수만큼 한 번에 쌓는다.
+        /// </summary>
+        public bool TryPlace(BuildPieceDefinition definition, Vector2Int cell, int rotation, List<PlacedStructure> placed)
+        {
+            placed.Clear();
+            int count = PlacementCount(definition, cell, rotation);
+            if (count == 0) return false;
+            if (IsNewTower(definition, cell, rotation)) ReplaceWalls(definition, cell, rotation);
+            PlacedStructure body = null;
             for (int i = 0; i < count; i++)
             {
                 if (!Layout.TryPlace(definition, cell, rotation, out var stacked)) break;
                 body = CreateBody(stacked);
+                placed.Add(body);
                 if (i < count - 1) LiftOverlappingUnits(body);
             }
             if (body == null) return false;
@@ -179,6 +259,22 @@ namespace ProjectNeo.Walls
             LiftOverlappingUnits(body);
             Changed?.Invoke();
             return true;
+        }
+
+        // 새 망루 자리의 안쪽 줄 성벽을 위층부터 없앤다(SIEGE-24). 무너짐이 아니라 철거처럼 알리지 않고, 바꿔 끼움 알림만 보낸다.
+        void ReplaceWalls(BuildPieceDefinition definition, Vector2Int cell, int rotation)
+        {
+            CollectReplaced(definition, cell, rotation, replacedScratch);
+            foreach (BuildPlacement wall in replacedScratch)
+            {
+                if (!structures.TryGetValue(wall.Id, out PlacedStructure body)) { Layout.Remove(wall.Id); continue; }
+                PieceReplacing?.Invoke(body);
+                foreach (MountedWeapon mount in Mounts.RemoveSupportedBy(wall.Id))
+                    Discard(weapons[mount.Id], SiegeWeaponRemoval.Dismantled);
+                Layout.Remove(wall.Id);
+                RemoveBody(body);
+            }
+            replacedScratch.Clear();
         }
 
         /// <summary>

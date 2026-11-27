@@ -7,7 +7,7 @@ namespace ProjectNeo.Walls
     /// 3층 성벽으로 오르는 계단 방 규칙(SIEGE-27, Q-59, 사용자 결정 2026-11-23). 씬을 알지 않는다.
     /// <list type="bullet">
     /// <item>성벽은 실제처럼 속이 꽉 차 있고, 계단이 있는 칸만 계단 방이다(사용자 결정 2026-11-23, 절충안).
-    /// 맞붙은 3층 이상 성벽 칸 무리마다, 1층·2층 통로(성벽·보루·성문 맨 위, 망루 제외)와 맞닿은 칸 가운데 줄 끝 칸(무리 안 이웃이 하나 이하)이
+    /// 맞붙은 3층 이상 성벽 칸 무리마다, 더 낮은 통로(성벽·보루·성문 맨 위, 성벽보다 낮은 망루 지붕 SIEGE-24)와 맞닿은 칸 가운데 줄 끝 칸(무리 안 이웃이 하나 이하)이
     /// 계단 방이다. 그런 끝 칸이 없으면 맞닿은 칸 가운데 가장 앞선 칸(x, 다음 z). 나머지 칸은 꽉 찬 채로 두고 꼭대기 통로로만 잇는다.</item>
     /// <item>방 층: 그 칸에 맞닿은 가장 낮은 통로 바닥 높이의 층부터 맨 윗층까지. 그 아래층은 꽉 찬 채로 둔다.</item>
     /// <item>문: 층마다, 그 층 바닥과 같은 높이의 통로와 맞닿은 면. 무너진 이웃(<c>fallenTops</c>: 칸 → 무너지기 전 윗면 높이)도
@@ -198,13 +198,16 @@ namespace ProjectNeo.Walls
             return true;
         }
 
-        // 그 칸 맨 위가 통로(성벽·보루·성문, 다 지음)면 윗면 높이, 아니면 -1. 망루는 자기 방 문으로 잇는다.
+        // 그 칸 맨 위가 통로(성벽·보루·성문·망루 지붕, 다 지음)면 윗면 높이, 아니면 -1.
+        // 성벽보다 높은 망루는 자기 방 문으로 잇고(지붕이 이 칸보다 높아 문 자리가 되지 않는다), 성벽보다 낮은 망루 지붕은
+        // 이 칸 계단 방의 문으로 내려가 잇는다(SIEGE-24, 사용자 결정 2026-11-27).
         static float Walkway(BuildLayout layout, ICollection<int> unfinished, Vector2Int cell)
         {
             BuildPlacement top = layout.Top(cell);
             if (top == null || (unfinished != null && unfinished.Contains(top.Id))) return -1f;
             BuildPieceKind kind = top.Definition.Kind;
-            if (kind != BuildPieceKind.Wall && kind != BuildPieceKind.Bastion && kind != BuildPieceKind.Gate) return -1f;
+            if (kind != BuildPieceKind.Wall && kind != BuildPieceKind.Bastion && kind != BuildPieceKind.Gate
+                && kind != BuildPieceKind.Tower) return -1f;
             return top.Elevation + top.Definition.Height;
         }
 

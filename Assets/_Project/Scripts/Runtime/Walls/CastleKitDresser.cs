@@ -153,19 +153,38 @@ namespace ProjectNeo.Walls
         {
             BuildPlacement placement = structure != null ? structure.Placement : null;
             if (placement == null || !CastleKitRules.IsWallLike(placement.Definition.Kind)) return;
-            bool bastion = placement.Definition.Kind == BuildPieceKind.Bastion || placement.Definition.Kind == BuildPieceKind.Tower;
+            bool tower = placement.Definition.Kind == BuildPieceKind.Tower;
+            bool bastion = placement.Definition.Kind == BuildPieceKind.Bastion || tower;
             for (int x = 0; x < placement.Size.x; x++)
                 for (int z = 0; z < placement.Size.y; z++)
                 {
                     Vector2Int cell = placement.Cell + new Vector2Int(x, z);
                     // 위층부터 함께 무너지므로 가장 높은 층의 윗면이 무너지기 전 통로 높이다.
                     float top = placement.Elevation + placement.Definition.Height;
-                    // 보루·망루는 성벽 바깥에 덧붙은 조각이라 성벽 틈(V자)이 아니라 돌무더기·밑동과 성벽 면의 찢긴 흔적을 남긴다(SIEGE-30).
-                    if (bastion) { rubble[cell] = rubble.TryGetValue(cell, out float was) ? Mathf.Max(was, top) : top; continue; }
+                    // 보루와 망루의 바깥으로 내민 칸은 성벽 틈(V자)이 아니라 돌무더기·밑동과 성벽 면의 찢긴 흔적을 남긴다(SIEGE-30).
+                    // 성벽 줄 안의 망루 칸(성벽과 줄로 이어진 칸, SIEGE-24)은 무너진 성벽처럼 V자 틈이 되어 성벽 줄에 돌파구가 난다.
+                    if (bastion && !(tower && OnWallLine(placement, cell)))
+                    { rubble[cell] = rubble.TryGetValue(cell, out float was) ? Mathf.Max(was, top) : top; continue; }
                     breaches[cell] = breaches.TryGetValue(cell, out int level) ? Mathf.Min(level, placement.Level) : placement.Level;
                     fallenTops[cell] = fallenTops.TryGetValue(cell, out float known) ? Mathf.Max(known, top) : top;
                 }
             dirty = true;
+        }
+
+        // 망루 칸이 성벽 줄 위인지: 망루 밖 네 이웃 가운데 맨 위가 성벽·성문인 칸이 있다(SIEGE-24, 바꿔 끼운 두 칸).
+        bool OnWallLine(BuildPlacement placement, Vector2Int cell)
+        {
+            BuildLayout layout = world != null ? world.Layout : null;
+            if (layout == null) return false;
+            foreach (Vector2Int direction in BattlementRules.Directions)
+            {
+                Vector2Int next = cell + direction;
+                if (next.x >= placement.Cell.x && next.x < placement.Cell.x + placement.Size.x
+                    && next.y >= placement.Cell.y && next.y < placement.Cell.y + placement.Size.y) continue;
+                BuildPlacement top = layout.Top(next);
+                if (top != null && (top.Definition.Kind == BuildPieceKind.Wall || top.Definition.Kind == BuildPieceKind.Gate)) return true;
+            }
+            return false;
         }
 
         static int State(PlacedStructure structure) => (structure.IsUnderConstruction ? 1 : 0) | (structure.IsDoorOpen ? 2 : 0);
