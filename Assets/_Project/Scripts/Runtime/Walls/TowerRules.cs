@@ -4,15 +4,20 @@ using UnityEngine;
 namespace ProjectNeo.Walls
 {
     /// <summary>
-    /// 망루 규칙(SIEGE-14, 사용자 결정 2026-11-23). 씬을 알지 않는다.
-    /// 망루는 보루처럼 성 바깥 빈 칸에 성벽과 맞닿게 짓고(2×2), 놓으면 맞닿은 가장 높은 성벽보다 한 층 높게 층을 한 번에 쌓는다.
-    /// 망루 위에는 망루 층만, 망루 층은 망루 위에만 쌓는다. 맨 윗층은 통로 높이의 방이고(문·내부 계단), 지붕에 아군 원거리 유닛이 선다.
+    /// 망루 규칙(SIEGE-14, 사용자 결정 2026-11-23; 성벽 줄 안 배치 SIEGE-24, 사용자 결정 2026-11-27). 씬을 알지 않는다.
+    /// 망루(2×2)는 성벽 줄 안에 짓는다: 한쪽 줄 두 칸은 지금 성벽 칸(모든 층이 성벽)이고 놓을 때 그 성벽을 통째로 바꿔 끼우며,
+    /// 다른 줄 두 칸은 성 바깥 빈 칸으로 바깥쪽에 내민다(<see cref="CheckInLine"/>). 새로 놓으면 정의의 처음 층 수(망루 2층)를
+    /// 한 번에 쌓고, 그 위는 한 층씩 더 쌓는다(격자 층 한도까지). 망루 위에는 망루 층만, 망루 층은 망루 위에만 쌓는다.
+    /// 통로와 닿은 층부터 방이고(문·내부 계단), 지붕에 아군 원거리 유닛이 선다.
     /// </summary>
     public static class TowerRules
     {
         const float HeightTolerance = 0.01f;
 
-        /// <summary><see cref="BuildLayout.Check"/>와 보루 규칙을 통과한 뒤에 부른다.</summary>
+        /// <summary>
+        /// <see cref="BuildLayout.Check"/>와 보루 규칙을 통과한 뒤에 부른다(쌓기 규칙). 망루를 새로 놓는 자리(땅, 0층)는
+        /// <see cref="CheckInLine"/>이 맡으므로 여기서는 늘 <see cref="PlacementIssue.TowerNeedsWall"/>이다.
+        /// </summary>
         public static PlacementIssue Check(BuildLayout layout, BuildGridDefinition grid, ICollection<Vector2Int> outside,
             ICollection<Vector2Int> ladderLanes, BuildPieceDefinition definition, Vector2Int cell, int rotation,
             int level, float elevation)
@@ -27,32 +32,123 @@ namespace ProjectNeo.Walls
                     BuildPlacement below = level > 0 ? layout.At(key, level - 1) : null;
                     bool onTower = below != null && below.Definition.Kind == BuildPieceKind.Tower;
                     if (level > 0 && tower != onTower) return PlacementIssue.TowerStack;
-                    if (!tower) continue;
-                    if (ladderLanes != null && ladderLanes.Contains(key)) return PlacementIssue.LadderLane;
-                    if (level == 0 && (outside == null || !outside.Contains(key))) return PlacementIssue.TowerNeedsWall;
                 }
-            if (!tower || level > 0) return PlacementIssue.None;
-            return BastionRules.TouchesWall(layout, grid, cell, size, level, elevation) ? PlacementIssue.None : PlacementIssue.TowerNeedsWall;
+            return tower && level == 0 ? PlacementIssue.TowerNeedsWall : PlacementIssue.None;
+        }
+
+        /// <summary>그 자리(앵커 칸·크기)가 이미 놓인 망루 하나의 맨 윗면 전체인지(그 위에 한 층 더 쌓는 자리).</summary>
+        public static bool IsStackOnTower(BuildLayout layout, Vector2Int cell, Vector2Int size)
+        {
+            if (layout == null) return false;
+            BuildPlacement first = layout.Top(cell);
+            if (first == null || first.Definition.Kind != BuildPieceKind.Tower || first.Cell != cell || first.Size != size) return false;
+            for (int x = 0; x < size.x; x++)
+                for (int z = 0; z < size.y; z++)
+                    if (layout.Top(cell + new Vector2Int(x, z)) != first) return false;
+            return true;
         }
 
         /// <summary>
-        /// 망루를 그 자리에 놓을 때 한 번에 쌓을 층 수. 맞닿은 성벽·성문 칸 가운데 가장 높은 칸보다 한 층 높게(격자 층 한도까지).
-        /// 망루가 아니면 1. 이미 그 높이 이상이면 1(한 층씩 더 올린다).
+        /// 망루를 새로 놓는 자리 검사(SIEGE-24). 네 방향 가운데 한 방향을 바깥으로 보고, 그 반대쪽 줄(안쪽 줄)의 칸이 모두
+        /// 고정되지 않은 성벽만 쌓인 칸이고, 바깥쪽 줄의 칸이 모두 성 바깥 빈 칸(사다리 자리 아님)이며, 안쪽 줄의 안쪽 이웃이 성 바깥이 아니면
+        /// (성벽 줄이 안뜰을 두르고 있으면) 놓을 수 있다. <paramref name="replaced"/>가 있으면 바꿔 끼울 성벽 조각을 위층부터 담는다.
+        /// 땅 계단이 안쪽 줄 성벽에 기대어 있으면 놓지 않는다(계단이 오를 곳을 잃는다).
         /// </summary>
-        public static int Tiers(BuildLayout layout, BuildGridDefinition grid, BuildPieceDefinition definition, Vector2Int cell,
-            int rotation, int level)
+        public static PlacementIssue CheckInLine(BuildLayout layout, BuildGridDefinition grid, ICollection<Vector2Int> outside,
+            ICollection<Vector2Int> ladderLanes, BuildPieceDefinition definition, Vector2Int cell, int rotation,
+            List<BuildPlacement> replaced = null)
         {
-            if (layout == null || definition == null || definition.Kind != BuildPieceKind.Tower) return 1;
+            replaced?.Clear();
+            if (layout == null || grid == null || definition == null) return PlacementIssue.NoPiece;
             Vector2Int size = BuildLayout.RotatedSize(definition.Footprint, rotation);
-            int tallest = 0;
-            ForEachNeighbour(grid, cell, size, (inside, next, face) =>
+            if (cell.x < 0 || cell.y < 0 || cell.x + size.x > grid.Width || cell.y + size.y > grid.Depth) return PlacementIssue.OutsideGrid;
+            if (outside == null) return PlacementIssue.TowerNeedsWall;
+            PlacementIssue best = PlacementIssue.TowerNeedsWall;
+            // 미리보기마다 여러 번 부르므로 목록을 다시 쓴다(메인 스레드 전용).
+            List<Vector2Int> inner = innerScratch;
+            for (int face = 0; face < 4; face++)
             {
-                BuildPlacement top = layout.Top(next);
-                if (top != null && (top.Definition.Kind == BuildPieceKind.Wall || top.Definition.Kind == BuildPieceKind.Gate))
-                    tallest = Mathf.Max(tallest, layout.ColumnHeight(next));
-            });
-            int target = Mathf.Min(tallest + 1, grid != null ? grid.MaxLevels : tallest + 1);
-            return Mathf.Max(1, target - level);
+                Vector2Int outward = BattlementRules.Directions[face];
+                // 바깥 방향으로 두 줄 이상이어야 안쪽 줄과 바깥쪽 줄로 나뉜다.
+                if ((outward.x != 0 ? size.x : size.y) < 2) continue;
+                inner.Clear();
+                bool fits = true, lane = false;
+                for (int x = 0; x < size.x && fits; x++)
+                    for (int z = 0; z < size.y && fits; z++)
+                    {
+                        Vector2Int key = cell + new Vector2Int(x, z);
+                        if (Inside(cell, size, key + outward))
+                        {
+                            // 바깥쪽 줄이 아닌 칸(안쪽 줄 이외의 가운데 줄 포함)은 바깥 쪽 줄 판정에서 뺀다.
+                            if (!Inside(cell, size, key - outward)) { inner.Add(key); fits = WallColumn(layout, key); }
+                            else fits = false;
+                            continue;
+                        }
+                        // 바깥쪽 줄: 성 바깥 빈 칸.
+                        if (layout.ColumnHeight(key) != 0 || layout.IsGateCell(key) || outside == null || !outside.Contains(key)) fits = false;
+                        else if (ladderLanes != null && ladderLanes.Contains(key)) lane = true;
+                    }
+                if (!fits || inner.Count == 0) continue;
+                // 안쪽 줄의 안쪽 이웃이 성 바깥이면 성벽 줄이 아니다(혼자 선 성벽).
+                foreach (Vector2Int key in inner)
+                {
+                    Vector2Int behind = key - outward;
+                    if (behind.x < 0 || behind.y < 0 || behind.x >= grid.Width || behind.y >= grid.Depth || outside.Contains(behind)) fits = false;
+                }
+                if (!fits) continue;
+                if (lane) { best = PlacementIssue.LadderLane; continue; }
+                if (StairLeansOn(layout, inner)) { best = PlacementIssue.Occupied; continue; }
+                if (replaced != null)
+                {
+                    foreach (Vector2Int key in inner)
+                        for (int level = layout.ColumnHeight(key) - 1; level >= 0; level--) replaced.Add(layout.At(key, level));
+                    replaced.Sort((a, b) => b.Level.CompareTo(a.Level));
+                }
+                return PlacementIssue.None;
+            }
+            return best;
+        }
+
+        static readonly List<Vector2Int> innerScratch = new List<Vector2Int>();
+
+        static bool Inside(Vector2Int cell, Vector2Int size, Vector2Int key) =>
+            key.x >= cell.x && key.x < cell.x + size.x && key.y >= cell.y && key.y < cell.y + size.y;
+
+        // 그 칸이 한 층 이상이고 모든 층이 고정되지 않은 성벽인지(바꿔 끼울 수 있는 성벽 칸).
+        static bool WallColumn(BuildLayout layout, Vector2Int cell)
+        {
+            int height = layout.ColumnHeight(cell);
+            if (height == 0 || layout.IsGateCell(cell)) return false;
+            for (int level = 0; level < height; level++)
+            {
+                BuildPlacement piece = layout.At(cell, level);
+                if (piece == null || piece.Definition.Kind != BuildPieceKind.Wall || piece.IsFixed) return false;
+            }
+            return true;
+        }
+
+        // 땅 계단의 높은 쪽이 그 칸들 가운데 하나에 기대어 있는지.
+        static bool StairLeansOn(BuildLayout layout, List<Vector2Int> cells)
+        {
+            foreach (BuildPlacement placement in layout.Placements)
+            {
+                if (placement.Definition.Kind != BuildPieceKind.Stairs) continue;
+                foreach (Vector2Int landing in BuildLayout.Landings(placement.Definition.Footprint, placement.Cell, placement.Rotation))
+                    if (cells.Contains(landing)) return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// 그 자리에 놓을 때 한 번에 쌓을 층 수. 망루를 새로 놓으면(0층) 정의의 처음 층 수(망루 2층, SIEGE-24)를 격자 층 한도까지,
+        /// 망루 위에 쌓으면 한 층. 망루가 아니면 1. 성벽 등급으로 망루 높이를 정하는 규칙(SIEGE-28)은 여기를 바꾼다.
+        /// </summary>
+        public static int Tiers(BuildGridDefinition grid, BuildPieceDefinition definition, int level)
+        {
+            if (definition == null || definition.Kind != BuildPieceKind.Tower || level > 0) return 1;
+            int limit = grid != null ? grid.MaxLevels : definition.InitialTiers;
+            if (definition.MaxStorey > 0) limit = Mathf.Min(limit, definition.MaxStorey);
+            return Mathf.Clamp(definition.InitialTiers, 1, Mathf.Max(1, limit - level));
         }
 
         /// <summary>망루 한 층 방의 짜임(SIEGE-29). <see cref="HasRoom"/>이 거짓이면 방 없이 꽉 찬 층이다(통로와 이어지는 면이 없다).</summary>

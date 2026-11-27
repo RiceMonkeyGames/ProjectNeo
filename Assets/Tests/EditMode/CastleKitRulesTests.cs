@@ -234,6 +234,23 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(5, Of(CastleKitPiece.RoomLink).Count(), "NavMesh links: a top link per room storey, a foot link above the first");
         }
 
+        // SIEGE-24 (user report 2026-11-27): a tower room storey beside a taller wall at the same storey showed an empty face.
+        [Test]
+        public void TowerRoomStorey_BesideATallerWall_GetsAnInnerWallOnThatFace()
+        {
+            var tower = Track(BuildPieceDefinition.Create(BuildPieceKind.Tower, "tower", new Vector2Int(2, 2), Cell, 400f));
+            Place(wall, 3, 4);
+            Place(wall, 6, 4); Place(wall, 6, 4);
+            for (int tier = 0; tier < 2; tier++) Place(tower, 4, 4);
+            Collect();
+            float east = CastleKitRules.FaceYaw(1);
+            Assert.IsTrue(Of(CastleKitPiece.TowerPanel).Any(p => p.Cell == new Vector2Int(5, 4) && Mathf.Abs(p.Position.y - Cell) < 1e-3f
+                && Mathf.Abs(Mathf.DeltaAngle(p.Yaw, east)) < 1f), "the 5m room is closed against the two-storey wall to the east");
+            Assert.IsFalse(Of(CastleKitPiece.TowerPanel).Concat(Of(CastleKitPiece.TowerDoor)).Concat(Of(CastleKitPiece.TowerArrowslit))
+                .Any(p => p.Cell == new Vector2Int(4, 4) && Mathf.Abs(p.Position.y - Cell) < 1e-3f && Mathf.Abs(Mathf.DeltaAngle(p.Yaw, east)) < 1f),
+                "no panel on the face between the tower's own cells");
+        }
+
         [Test]
         public void TowerPillars_StandOnlyAtItsFourCorners()
         {

@@ -161,7 +161,7 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
-        public void NoRoom_ForOneTwoSteps_UnfinishedStoreys_OrTowerNeighbours()
+        public void NoRoom_ForOneTwoSteps_UnfinishedStoreys_OrATowerAsTallAsTheWall()
         {
             Row(1, 2);
             Assert.IsFalse(HasRoom(4), "a two-storey wall keeps the outside stairs");
@@ -174,9 +174,20 @@ namespace ProjectNeo.Tests
             Assert.IsFalse(HasRoom(4), "an unfinished storey");
             unfinished.Clear();
             layout = new BuildLayout(grid);
+            for (int s = 0; s < 3; s++) Assert.IsTrue(layout.TryPlace(tower, new Vector2Int(3, 3), 0, out _));
+            for (int s = 0; s < 3; s++) Assert.IsTrue(layout.TryPlace(wall, new Vector2Int(4, 3), 0, out _));
+            Assert.IsFalse(HasRoom(4), "a tower roof level with the walkway joins it directly");
+        }
+
+        // SIEGE-24 (user, 2026-11-27): a tower roof lower than a three-storey wall is reached through the wall's stair room.
+        [Test]
+        public void LowerTowerRoofBesideAThreeStoreyWall_GetsADoorAtTheRoofHeight()
+        {
             Assert.IsTrue(layout.TryPlace(tower, new Vector2Int(3, 3), 0, out _));
             for (int s = 0; s < 3; s++) Assert.IsTrue(layout.TryPlace(wall, new Vector2Int(4, 3), 0, out _));
-            Assert.IsFalse(HasRoom(4), "towers connect through their own rooms");
+            StairRoom room = Room(4);
+            Assert.AreEqual(1, room.BaseLevel, "rooms from the 5m tower roof up");
+            Assert.IsTrue(room.HasDoor(1, West), "a door west onto the tower roof");
         }
 
         [Test]

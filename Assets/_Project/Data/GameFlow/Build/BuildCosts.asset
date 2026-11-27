@@ -19,6 +19,8 @@ MonoBehaviour:
     gold: 15
   - piece: {fileID: 11400000, guid: dc1e88579bbb29f428e498188dcd48e4, type: 2}
     gold: 25
+  - piece: {fileID: 11400000, guid: 72553e8ad3c32cc4e98b0a6426f8d9f3, type: 2}
+    gold: 60
   weapons:
   - weapon: {fileID: 11400000, guid: dcd5362db7ff6a84db2f93ac232125a8, type: 2}
     gold: 30

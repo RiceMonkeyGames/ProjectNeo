@@ -707,7 +707,18 @@ namespace ProjectNeo.Walls
                     Vector2Int cell = placement.Cell + new Vector2Int(x, z);
                     for (int face = 0; face < 4; face++)
                     {
-                        if (Covered(layout, unfinished, breaches, cell + BattlementRules.Directions[face], placement.Level)) continue;
+                        Vector2Int next = cell + BattlementRules.Directions[face];
+                        if (Covered(layout, unfinished, breaches, next, placement.Level))
+                        {
+                            // 방 층이 같은 층 이웃(성벽 등)과 맞붙은 면에는 안벽을 둔다(SIEGE-24, 사용자 보고 2026-11-27: 2층 성벽과 맞닿은 망루 방 면이 비었다).
+                            // 이웃은 이 면을 덮였다고 보고 벽판을 두지 않는다. 이웃이 계단 방이면 그쪽이 안벽을 두고, 이웃도 망루 방이면 앞선 칸만 둔다.
+                            BuildPlacement neighbour = layout.At(next, placement.Level);
+                            if (room.HasRoom && neighbour != null && neighbour != placement
+                                && !(roomCells.TryGetValue(next, out StairRoom beside) && beside.Contains(placement.Level))
+                                && (neighbour.Definition.Kind != BuildPieceKind.Tower || Before(cell, next)))
+                                FacePieces(CastleKitPiece.TowerPanel, CastleKitPiece.RoomPanelHalf, cell, face, size, y, result);
+                            continue;
+                        }
                         CastleKitPiece piece = CastleKitPiece.Panel;
                         if (room.HasRoom)
                         {

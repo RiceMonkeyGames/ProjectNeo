@@ -6,7 +6,10 @@ using UnityEngine;
 
 namespace ProjectNeo.Tests
 {
-    /// <summary>SIEGE-14 망루 규칙: 바깥에 성벽과 맞닿게, 한 층 높게 자동 적층, 위에는 망루 층만, 맨윗층 방 짜임, 지붕 위 판정.</summary>
+    /// <summary>
+    /// 망루 규칙: 성벽 줄 안 배치·바꿔 끼울 성벽·처음 층 수(SIEGE-24), 위에는 망루 층만, 층별 방 짜임(SIEGE-14, SIEGE-29),
+    /// 낮은 망루 지붕으로 내려가는 성벽 계단 방(SIEGE-24), 지붕 위 판정.
+    /// </summary>
     public class TowerRulesTests
     {
         const float Cell = 5f;
@@ -51,28 +54,100 @@ namespace ProjectNeo.Tests
             for (int i = 0; i < tiers; i++) Assert.IsTrue(layout.TryPlace(tower, cell, 0, out _));
         }
 
-        [Test]
-        public void Tower_GoesOutsideAgainstAWall()
+        // 닫힌 성벽 고리(x 2~7, z 2~7). 북쪽 줄은 z 7, 그 바깥(z 8~)이 성 바깥이다.
+        void Ring(int storeys = 1)
         {
-            Walls(1, 3, 4, 5, 6);
-            Assert.AreEqual(PlacementIssue.None, Check(tower, new Vector2Int(4, 4)));
-            Assert.AreEqual(PlacementIssue.TowerNeedsWall, Check(tower, new Vector2Int(8, 8)), "not touching any wall");
+            for (int s = 0; s < storeys; s++)
+            {
+                for (int x = 2; x <= 7; x++)
+                {
+                    Assert.IsTrue(layout.TryPlace(wall, new Vector2Int(x, 2), 0, out _));
+                    Assert.IsTrue(layout.TryPlace(wall, new Vector2Int(x, 7), 0, out _));
+                }
+                for (int z = 3; z <= 6; z++)
+                {
+                    Assert.IsTrue(layout.TryPlace(wall, new Vector2Int(2, z), 0, out _));
+                    Assert.IsTrue(layout.TryPlace(wall, new Vector2Int(7, z), 0, out _));
+                }
+            }
+        }
+
+        PlacementIssue InLine(Vector2Int cell, List<BuildPlacement> replaced = null, ICollection<Vector2Int> lanes = null)
+        {
+            BattlementRules.CollectOutside(layout, grid, outside);
+            return TowerRules.CheckInLine(layout, grid, outside, lanes, tower, cell, 0, replaced);
+        }
+
+        // SIEGE-24: the tower replaces two wall-line cells and sticks out two cells outward.
+        [Test]
+        public void Tower_GoesInTheWallLine_ReplacingTwoWallCells_AndStickingOutward()
+        {
+            Ring(3);
+            var replaced = new List<BuildPlacement>();
+            Assert.AreEqual(PlacementIssue.None, InLine(new Vector2Int(4, 7), replaced), "north wall row z 7 + outside row z 8");
+            Assert.AreEqual(6, replaced.Count, "both three-storey wall columns go");
+            for (int i = 0; i < replaced.Count; i++)
+            {
+                Assert.AreEqual(BuildPieceKind.Wall, replaced[i].Definition.Kind);
+                Assert.IsTrue(replaced[i].Cell == new Vector2Int(4, 7) || replaced[i].Cell == new Vector2Int(5, 7));
+                if (i > 0) Assert.GreaterOrEqual(replaced[i - 1].Level, replaced[i].Level, "top storey first");
+            }
+            Assert.AreEqual(PlacementIssue.None, InLine(new Vector2Int(7, 4)), "east wall, sticking out east");
+            Assert.AreEqual(PlacementIssue.None, InLine(new Vector2Int(3, 1)), "south wall, sticking out south");
         }
 
         [Test]
-        public void Tower_IsNotBuiltInsideTheCourtyard()
+        public void Tower_DoesNotStickIntoTheCourtyard_OrStandAwayFromTheWall()
         {
+            Ring();
+            Assert.AreEqual(PlacementIssue.TowerNeedsWall, InLine(new Vector2Int(4, 6)), "wall row z 7 + courtyard row z 6");
+            Assert.AreEqual(PlacementIssue.TowerNeedsWall, InLine(new Vector2Int(4, 4)), "inside the courtyard");
+            Assert.AreEqual(PlacementIssue.TowerNeedsWall, InLine(new Vector2Int(4, 9)), "outside, not on the wall line");
+            Assert.AreEqual(PlacementIssue.TowerNeedsWall, InLine(new Vector2Int(1, 7)), "only one wall cell under it");
+        }
+
+        [Test]
+        public void Tower_IsNotPlacedOnALadderLane_OrWhereAGroundStairLeansOnTheWall()
+        {
+            Ring();
+            Assert.AreEqual(PlacementIssue.LadderLane, InLine(new Vector2Int(4, 7), null, new HashSet<Vector2Int> { new Vector2Int(5, 8) }));
+            var stairs = Track(BuildPieceDefinition.Create(BuildPieceKind.Stairs, "stairs", Vector2Int.one, Cell));
+            // 계단 (4, 6)이 북쪽(회전 0)으로 올라 (4, 7) 성벽에 닿는다.
+            Assert.IsTrue(layout.TryPlace(stairs, new Vector2Int(4, 6), 0, out _));
+            Assert.AreEqual(PlacementIssue.Occupied, InLine(new Vector2Int(4, 7)), "the stair would lose its landing");
+            Assert.AreEqual(PlacementIssue.None, InLine(new Vector2Int(5, 7)), "but the next pair of cells is fine");
+        }
+
+        [Test]
+        public void Tower_DoesNotReplaceAFixedGateColumn()
+        {
+            Ring();
+            var gate = Track(BuildPieceDefinition.Create(BuildPieceKind.Gate, "gate", Vector2Int.one, Cell));
+            var fresh = new BuildLayout(grid);
             for (int x = 2; x <= 7; x++)
             {
-                Assert.IsTrue(layout.TryPlace(wall, new Vector2Int(x, 2), 0, out _));
-                Assert.IsTrue(layout.TryPlace(wall, new Vector2Int(x, 7), 0, out _));
+                if (x == 4) Assert.IsTrue(fresh.TryPlace(gate, new Vector2Int(x, 7), 0, out _, true));
+                else Assert.IsTrue(fresh.TryPlace(wall, new Vector2Int(x, 7), 0, out _));
+                Assert.IsTrue(fresh.TryPlace(wall, new Vector2Int(x, 2), 0, out _));
             }
             for (int z = 3; z <= 6; z++)
             {
-                Assert.IsTrue(layout.TryPlace(wall, new Vector2Int(2, z), 0, out _));
-                Assert.IsTrue(layout.TryPlace(wall, new Vector2Int(7, z), 0, out _));
+                Assert.IsTrue(fresh.TryPlace(wall, new Vector2Int(2, z), 0, out _));
+                Assert.IsTrue(fresh.TryPlace(wall, new Vector2Int(7, z), 0, out _));
             }
-            Assert.AreEqual(PlacementIssue.TowerNeedsWall, Check(tower, new Vector2Int(3, 3)));
+            layout = fresh;
+            Assert.AreEqual(PlacementIssue.TowerNeedsWall, InLine(new Vector2Int(4, 7)));
+            Assert.AreEqual(PlacementIssue.None, InLine(new Vector2Int(5, 7)));
+        }
+
+        [Test]
+        public void IsStackOnTower_OnlyOnTheWholeRoofOfOneTower()
+        {
+            Walls(1, 3, 4, 5, 6);
+            PlaceTower(new Vector2Int(4, 4), 2);
+            Assert.IsTrue(TowerRules.IsStackOnTower(layout, new Vector2Int(4, 4), new Vector2Int(2, 2)));
+            Assert.IsFalse(TowerRules.IsStackOnTower(layout, new Vector2Int(5, 4), new Vector2Int(2, 2)), "half on the roof");
+            Assert.IsFalse(TowerRules.IsStackOnTower(layout, new Vector2Int(3, 3), new Vector2Int(2, 2)), "walls, not a tower");
         }
 
         [Test]
@@ -87,16 +162,40 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(PlacementIssue.TowerStack, Check(tower, new Vector2Int(8, 8)), "a tower tier does not sit on walls");
         }
 
+        // SIEGE-24: a new tower always gets its initial tiers (2); later tiers go on one at a time.
         [Test]
-        public void Tiers_StackOneStoreyAboveTheTallestTouchingWall_UpToTheGridLimit()
+        public void Tiers_NewTowerGetsItsInitialTiers_StackingAddsOne_CappedByTheGrid()
         {
-            Walls(1, 3, 4, 5, 6);
-            Assert.AreEqual(2, TowerRules.Tiers(layout, grid, tower, new Vector2Int(4, 4), 0, 0));
-            Walls(1, 4);
-            Assert.AreEqual(3, TowerRules.Tiers(layout, grid, tower, new Vector2Int(4, 4), 0, 0), "the taller wall wins");
-            Walls(1, 4);
-            Assert.AreEqual(3, TowerRules.Tiers(layout, grid, tower, new Vector2Int(4, 4), 0, 0), "capped at the grid's three levels");
-            Assert.AreEqual(1, TowerRules.Tiers(layout, grid, wall, new Vector2Int(4, 4), 0, 0), "other pieces stack once");
+            tower.SetInitialTiers(2);
+            Assert.AreEqual(2, TowerRules.Tiers(grid, tower, 0));
+            Assert.AreEqual(1, TowerRules.Tiers(grid, tower, 2), "stacking on a tower adds one tier");
+            tower.SetInitialTiers(4);
+            Assert.AreEqual(3, TowerRules.Tiers(grid, tower, 0), "capped at the grid's three levels");
+            Assert.AreEqual(1, TowerRules.Tiers(grid, wall, 0), "other pieces stack once");
+        }
+
+        // SIEGE-24: 3-storey walls beside a 2-tier tower lead down to its roof through a stair room in the touching wall cell.
+        [Test]
+        public void ThreeStoreyWallBesideALowerTowerRoof_GetsAStairRoomWithADoorAtTheRoof()
+        {
+            Walls(3, 2, 3, 6, 7);
+            PlaceTower(new Vector2Int(4, 3), 2);
+            Assert.IsTrue(StairRoomRules.TryGet(layout, null, null, new Vector2Int(3, 3), out StairRoom west), "west wall cell beside the tower");
+            Assert.AreEqual(2, west.BaseLevel, "room from the 10m roof up");
+            Assert.IsTrue(west.HasDoor(2, 1), "a door east onto the tower roof");
+            Assert.IsTrue(StairRoomRules.TryGet(layout, null, null, new Vector2Int(6, 3), out StairRoom east), "east wall cell beside the tower");
+            Assert.IsTrue(east.HasDoor(2, 3), "a door west onto the tower roof");
+            Assert.IsFalse(StairRoomRules.TryGet(layout, null, null, new Vector2Int(2, 3), out _), "the far cell stays solid");
+        }
+
+        [Test]
+        public void WallLevelWithTheTowerRoof_NeedsNoStairRoom()
+        {
+            grid = Track(BuildGridDefinition.Create(12, 12, Cell, 4));
+            layout = new BuildLayout(grid);
+            Walls(3, 2, 3, 6, 7);
+            PlaceTower(new Vector2Int(4, 3), 3);
+            Assert.IsFalse(StairRoomRules.TryGet(layout, null, null, new Vector2Int(3, 3), out _), "the walkway runs straight onto the roof");
         }
 
         [Test]

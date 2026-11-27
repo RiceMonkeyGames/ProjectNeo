@@ -46,10 +46,12 @@ namespace ProjectNeo.Siege
             placement.ConfirmGate = CanAffordSelection;
             placement.PiecePlaced += OnPiecePlaced;
             placement.WeaponMounted += OnWeaponMounted;
+            if (world != null) world.PieceReplacing += OnPieceReplacing;
         }
 
         void OnDestroy()
         {
+            if (world != null) world.PieceReplacing -= OnPieceReplacing;
             if (placement == null) return;
             placement.ConfirmGate = null;
             placement.PiecePlaced -= OnPiecePlaced;
@@ -57,7 +59,15 @@ namespace ProjectNeo.Siege
         }
 
         int SelectionCost => placement.SelectedWeapon != null ? settings.CostOf(placement.SelectedWeapon)
-            : placement.Selected != null ? settings.CostOf(placement.Selected) : 0;
+            : placement.Selected != null ? settings.CostOf(placement.Selected) * Mathf.Max(1, placement.PreviewCount) : 0;
+
+        // 망루가 성벽 줄 칸을 바꿔 끼우면(SIEGE-24) 이 준비에 낸 그 성벽 값을 돌려준다(처음부터 있던 성벽은 값이 없다).
+        void OnPieceReplacing(PlacedStructure wall)
+        {
+            if (wall == null || wall.Placement == null || !pieceCosts.TryGetValue(wall.Placement.Id, out int cost)) return;
+            Budget.Refund(cost);
+            pieceCosts.Remove(wall.Placement.Id);
+        }
 
         bool CanAffordSelection()
         {

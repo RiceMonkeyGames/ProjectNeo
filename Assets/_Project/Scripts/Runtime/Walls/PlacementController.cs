@@ -15,6 +15,7 @@ namespace ProjectNeo.Walls
         MaterialPropertyBlock properties;
         readonly List<RaycastResult> uiHits = new List<RaycastResult>();
         readonly RaycastHit[] rayHits = new RaycastHit[32];
+        readonly List<PlacedStructure> placedScratch = new List<PlacedStructure>();
         CursorLockMode previousLock;
         bool previousVisible;
         public BuildPieceDefinition Selected { get; private set; }
@@ -112,13 +113,23 @@ namespace ProjectNeo.Walls
         public void UpdatePreview(Vector3 worldPosition)
         {
             if (Selected == null || ghost == null) return;
-            PreviewCell = world.Layout.WorldToCell(world.LocalPoint(worldPosition));
+            PreviewCell = world.SnapAnchor(Selected, world.LocalPoint(worldPosition), Rotation);
             Issue = world.CheckPlacement(Selected, PreviewCell, Rotation, out int level, out float elevation);
             PreviewLevel = level; PreviewElevation = elevation;
+            PreviewCount = Issue == PlacementIssue.None ? world.PlacementCount(Selected, PreviewCell, Rotation) : 1;
             world.SetPose(ghost.transform, Selected, PreviewCell, Rotation, elevation);
+            // 한 번에 여러 층이 쌓이면(망루 2층, SIEGE-24) 미리보기도 그 높이로 늘린다.
+            if (PreviewCount > 1)
+            {
+                Vector3 scale = ghost.transform.localScale;
+                ghost.transform.localScale = new Vector3(scale.x, scale.y * PreviewCount, scale.z);
+            }
             Tint(Issue == PlacementIssue.None);
             ghost.SetActive(true);
         }
+
+        /// <summary>지금 미리보기 자리에 놓으면 한 번에 쌓일 조각 수(비용은 조각마다 낸다). 놓을 수 없으면 1.</summary>
+        public int PreviewCount { get; private set; } = 1;
 
         /// <summary>가리킨 조각에서 가장 가까운 설치 지점에 미리보기를 둔다. 조각이 없으면 가리킨 곳에 설치 불가로 표시한다.</summary>
         public void UpdateWeaponPreview(PlacedStructure support, Vector3 worldPosition)
@@ -151,8 +162,10 @@ namespace ProjectNeo.Walls
                 return mounted;
             }
             if (Selected == null) return false;
-            bool placed = world.TryPlace(Selected, PreviewCell, Rotation, out PlacedStructure body);
-            if (placed) PiecePlaced?.Invoke(body);
+            // 한 번에 여러 조각이 쌓이면(골짜기 메우기, 망루 층) 아래층부터 하나씩 알린다. 비용·작업 주문은 조각마다다(SIEGE-24).
+            bool placed = world.TryPlace(Selected, PreviewCell, Rotation, placedScratch);
+            if (placed) foreach (PlacedStructure body in placedScratch) PiecePlaced?.Invoke(body);
+            placedScratch.Clear();
             Issue = world.CheckPlacement(Selected, PreviewCell, Rotation);
             Tint(Issue == PlacementIssue.None);
             return placed;
