@@ -1,9 +1,9 @@
 ---
 id: SIEGE-20
 title: Kit Battlements, Cover Heights & Crenel Positions
-status: Waiting
+status: In Progress
 assignee: youngho
-branch:
+branch: feature/siege-20
 area: SIEGE
 depends_on: [SIEGE-19]
 created: 2026-11-23
