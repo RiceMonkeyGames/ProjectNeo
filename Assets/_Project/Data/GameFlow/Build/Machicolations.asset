@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Walls.MachicolationSettings
   standInset: 0.85
   standRadius: 0.6
-  shaftWidth: 3
+  shaftWidth: 7.5
   shaftInward: 1.2
   shaftOutward: 2
-  searchRadius: 12
-  overhangDepth: 0.6
-  overhangHeight: 0.5
-  overhangWidth: 2.4
-  material: {fileID: 0}
+  searchRadius: 15
+  overhangDepth: 0.9
+  overhangHeight: 0.8
+  overhangWidth: 4.3
+  material: {fileID: 2100000, guid: 9be37df60cdbe8343a3e1412619384bf, type: 2}
   holeMaterial: {fileID: 2100000, guid: 9ce35696644c9e1418349c2158766b67, type: 2}
   attacks:
   - {fileID: 11400000, guid: f0600fc140cd7254c9520f87ac6bf0c5, type: 2}

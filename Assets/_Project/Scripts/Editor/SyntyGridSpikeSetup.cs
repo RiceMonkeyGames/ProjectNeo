@@ -119,8 +119,10 @@ namespace ProjectNeo.Editor
             // 적이 부수고 들어올 수 있게 약하게 둔다. 적이 계단을 공격 대상으로 고르는 규칙은 Game 통합 때 팀원과 맞춘다.
             Replace(BuildPieceDefinition.Create(BuildPieceKind.Stairs, "계단", Vector2Int.one, Storey, StairsHealth,
                 StairsPrefab()), Data + "/Stairs.asset");
+            // 7.5m 칸은 킷 성문 틀에 맞춘 성문(SIEGE-22), 5m 칸은 옛 성문.
             Replace(BuildPieceDefinition.Create(BuildPieceKind.Gate, "메인 성문", Vector2Int.one, Storey, 300f,
-                Required<GameObject>("Assets/_Project/Prefabs/ConstructionPrototype/MainGate.prefab")), Data + "/Gate.asset");
+                Mathf.Approximately(Cell, Grid75Migration.Cell) ? KitGateSetup.Prefab()
+                    : Required<GameObject>("Assets/_Project/Prefabs/ConstructionPrototype/MainGate.prefab")), Data + "/Gate.asset");
             // 보루(SIEGE-11)도 한 칸. 프리팹·설치 자리(윗면 가운데)는 3m 보루와 같다.
             BuildPieceDefinition source = BastionSetup.CreateBastion();
             Replace(BuildPieceDefinition.Create(BuildPieceKind.Bastion, "보루", Vector2Int.one, Storey, BastionSetup.MaxHealth,

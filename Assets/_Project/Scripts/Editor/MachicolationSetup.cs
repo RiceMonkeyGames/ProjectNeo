@@ -65,11 +65,41 @@ namespace ProjectNeo.Editor
                 AssetDatabase.CreateAsset(settings, SettingsPath);
             }
             settings.SetAttacks(new MachicolationAttack[] { arrow });
-            // 몸체 재질은 비워 두어 받치는 성문의 재질을 쓴다.
-            settings.SetMaterials(null, hole);
+            // 몸체 재질은 킷 벽판 돌 재질(SIEGE-22, Game 성문은 킷으로 꾸민다). 킷이 없으면 비워 두어 받치는 성문의 재질을 쓴다.
+            settings.SetMaterials(KitStone(), hole);
+            ApplySizes(settings);
             EditorUtility.SetDirty(settings);
             AssetDatabase.SaveAssets();
             return settings;
+        }
+
+        /// <summary>7.5m 칸·5m 층 치수(SIEGE-22). 이미 있는 에셋도 이 값으로 맞춘다.</summary>
+        [MenuItem("ProjectNeo/Setup/Resize Machicolations For 7.5m Cells (SIEGE-22)")]
+        public static void Resize()
+        {
+            CreateAssets();
+        }
+
+        static void ApplySizes(MachicolationSettings settings)
+        {
+            var data = new SerializedObject(settings);
+            data.FindProperty("standInset").floatValue = 0.85f;
+            data.FindProperty("standRadius").floatValue = 0.6f;
+            data.FindProperty("shaftWidth").floatValue = 7.5f;
+            data.FindProperty("shaftInward").floatValue = 1.2f;
+            data.FindProperty("shaftOutward").floatValue = 2f;
+            data.FindProperty("searchRadius").floatValue = 15f;
+            data.FindProperty("overhangDepth").floatValue = 0.9f;
+            data.FindProperty("overhangHeight").floatValue = 0.8f;
+            data.FindProperty("overhangWidth").floatValue = 4.3f;
+            data.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        static Material KitStone()
+        {
+            var panel = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/CastleKit/Panel.prefab");
+            Renderer renderer = panel != null ? panel.GetComponentInChildren<Renderer>() : null;
+            return renderer != null ? renderer.sharedMaterial : null;
         }
     }
 }

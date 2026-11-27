@@ -96,6 +96,8 @@ namespace ProjectNeo.Editor
             Configure(gate, Storey, gate.MaxHealth, GateMaxStorey);
             var data = new SerializedObject(gate);
             data.FindProperty("footprint").vector2IntValue = Vector2Int.one;
+            // 킷 성문 틀에 맞춘 7.5m 성문(SIEGE-22).
+            data.FindProperty("prefab").objectReferenceValue = KitGateSetup.Prefab();
             data.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(gate);
         }

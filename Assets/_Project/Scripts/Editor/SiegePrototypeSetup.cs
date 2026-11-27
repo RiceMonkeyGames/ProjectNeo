@@ -47,7 +47,7 @@ namespace ProjectNeo.Editor
             var stairs = Required<BuildPieceDefinition>(Construction + "Stairs.asset");
             var cannon = Required<SiegeWeaponDefinition>(Construction + "Cannon.asset");
             var fall = Required<FallSettings>(Construction + "Fall.asset");
-            var gatePrefab = Required<GameObject>("Assets/_Project/Prefabs/ConstructionPrototype/MainGate.prefab");
+            var gatePrefab = KitGateSetup.Prefab();
             var projectile = Required<GameObject>(Units + "StraightProjectile.prefab");
             GameObject enemyMelee = Required<GameObject>(Units + "hostile_melee.prefab");
             GameObject enemyRanged = Required<GameObject>(Units + "hostile_ranged.prefab");
