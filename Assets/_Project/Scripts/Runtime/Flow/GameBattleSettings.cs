@@ -12,6 +12,8 @@ namespace ProjectNeo.Flow
         [SerializeField] SiegeUnitGroup[] enemies = new SiegeUnitGroup[0];
         [Tooltip("스테이지별 웨이브 편성(B-7.1). 비우면 위의 단일 적 목록을 쓴다.")]
         [SerializeField] ProjectNeo.Stages.StageCatalog stages;
+        [Tooltip("적 종류 목록(CONTENT-04). 단일 적 목록의 프리팹에서 적 종류(이름·ID)를 찾는다. 비우면 프리팹 이름을 쓴다.")]
+        [SerializeField] ProjectNeo.Stages.EnemyCatalog enemyCatalog;
         [Tooltip("나올 웨이브가 남아 있어도 공성 수단을 잃은 적이 후퇴할지(Q-52). 기본은 후퇴하지 않고 다음 웨이브와 합류한다.")]
         [SerializeField] bool retreatWhileWavesPending;
         [Tooltip("기본 스폰 칸. 스폰 지점을 지정하지 않은 무리와 단일 적 목록이 쓴다.")]
@@ -67,6 +69,9 @@ namespace ProjectNeo.Flow
         public ProjectNeo.Run.RunContentCatalog RunContent => runContent;
         public void ConfigureRunContent(ProjectNeo.Run.RunContentCatalog catalog) => runContent = catalog;
         public ProjectNeo.Stages.StageCatalog Stages => stages;
+        public ProjectNeo.Stages.EnemyCatalog EnemyCatalog => enemyCatalog;
+        /// <summary>적 종류 목록을 바꾼다(에디터 설정·테스트용).</summary>
+        public void ConfigureEnemyCatalog(ProjectNeo.Stages.EnemyCatalog catalog) => enemyCatalog = catalog;
         public bool RetreatWhileWavesPending => retreatWhileWavesPending;
         /// <summary>스테이지 편성과 웨이브 중 후퇴 여부를 바꾼다(에디터 설정·테스트용).</summary>
         public void ConfigureStages(ProjectNeo.Stages.StageCatalog catalog, bool retreatWhilePending = false)

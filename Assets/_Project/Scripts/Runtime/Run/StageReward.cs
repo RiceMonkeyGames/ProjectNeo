@@ -59,15 +59,18 @@ namespace ProjectNeo.Run
             int stageBonus = Math.Max(0, stageNumber - 1);
             reward.AddGold(table.BaseGold + table.GoldPerStage * stageBonus);
 
-            foreach (KeyValuePair<string, int> kill in result.EnemiesKilled)
-                foreach (KillReward rule in table.KillRewards)
+            // 처치 보상은 적 종류(EnemyDefinition, CONTENT-04)에서 읽는다.
+            if (table.Enemies != null)
+                foreach (KeyValuePair<string, int> kill in result.EnemiesKilled)
                 {
-                    if (rule.enemyId != kill.Key) continue;
-                    reward.AddGold(rule.goldPerKill * kill.Value);
-                    reward.AddMaterial(rule.material, rule.materialPerKill * kill.Value);
+                    Stages.EnemyDefinition enemy = table.Enemies.Find(kill.Key);
+                    if (enemy == null) continue;
+                    reward.AddGold(enemy.KillGold * kill.Value);
+                    foreach (Stages.EnemyMaterialDrop drop in enemy.MaterialDrops)
+                        reward.AddMaterial(drop.material, drop.amountPerKill * kill.Value);
                 }
 
-            // 보스 처치 보상(SIEGE-09). 보스 ID는 처치 보상 표에 없어 일반 처치 골드는 받지 않는다.
+            // 보스 처치 보상(SIEGE-09). 보스 ID는 적 종류 목록에 없어 일반 처치 골드는 받지 않는다.
             foreach (Stages.BossDefinition boss in result.BossesKilled)
             {
                 if (boss == null) continue;

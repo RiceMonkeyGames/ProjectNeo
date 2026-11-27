@@ -554,7 +554,7 @@ namespace ProjectNeo.Flow
 
         /// <summary>전투 설정의 단일 적 목록을 전투 시작과 함께 나오는 웨이브 하나로 만든 편성.</summary>
         public static EncounterPlan SingleWaveEncounter(GameBattleSettings config, int stageNumber = 1) =>
-            EncounterPlan.FromGroups(config.Enemies, config.SpawnCell);
+            EncounterPlan.FromGroups(config.Enemies, config.SpawnCell, config.EnemyCatalog);
 
         /// <summary>준비 단계에서 적을 지우고 지금 편성으로 다시 만든다. 준비 단계가 아니면 아무것도 하지 않는다.</summary>
         public bool RebuildEncounter()

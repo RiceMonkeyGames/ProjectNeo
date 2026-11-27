@@ -16,7 +16,6 @@ namespace ProjectNeo.Editor
         public const string Folder = "Assets/_Project/Data/GameFlow/Stages";
         public const string CatalogPath = Folder + "/StageCatalog.asset";
         const string BattlePath = "Assets/_Project/Data/GameFlow/Battle.asset";
-        const string Prefabs = "Assets/_Project/Prefabs/SiegePrototype/";
         // 가운데 스폰 칸에서 좌우 지점까지의 거리(칸). SIEGE-36: 성 폭이 두 배(195m)라 90m, 좌우 지점이 북쪽 외벽 양끝 앞에 온다.
         internal const float SideOffsetCells = 12f;
 
@@ -32,8 +31,10 @@ namespace ProjectNeo.Editor
             SpawnPointDefinition mid = Point("가운데", "SpawnCenter", center);
             SpawnPointDefinition right = Point("오른쪽", "SpawnRight", center + Vector2.right * SideOffsetCells);
 
-            GameObject ladder = Enemy("enemy_ladder"), gate = Enemy("enemy_gate_breaker"), archer = Enemy("enemy_archer");
-            GameObject wall = Enemy("enemy_wall_breaker"), flyer = Enemy("enemy_flyer"), highFlyer = Enemy("enemy_flyer_high_archer");
+            // 적 종류(CONTENT-04)로 편성한다. 없으면 먼저 만든다.
+            EnemySetup.CreateData();
+            EnemyDefinition ladder = EnemySetup.Load("enemy_ladder"), gate = EnemySetup.Load("enemy_gate_breaker"), archer = EnemySetup.Load("enemy_archer");
+            EnemyDefinition wall = EnemySetup.Load("enemy_wall_breaker"), flyer = EnemySetup.Load("enemy_flyer"), highFlyer = EnemySetup.Load("enemy_flyer_high_archer");
 
             // 1~3: B-7.1 편성(2026-11-16 승인).
             StageDefinition stage1 = Stage(1,
@@ -108,17 +109,10 @@ namespace ProjectNeo.Editor
         static SpawnPointDefinition Point(string displayName, string file, Vector2 cell) =>
             CombatPrototypeSetup.Save(SpawnPointDefinition.Create(displayName, cell), Folder + "/" + file + ".asset");
 
-        static GameObject Enemy(string name)
-        {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Prefabs + name + ".prefab");
-            if (prefab == null) throw new System.InvalidOperationException("Missing enemy prefab: " + name);
-            return prefab;
-        }
-
         static StageWave Wave(float startSeconds, params StageWaveGroup[] groups) =>
             new StageWave { startSeconds = startSeconds, groups = groups };
 
-        static StageWaveGroup Group(GameObject prefab, int count, SpawnPointDefinition point, bool hidden = false) =>
-            new StageWaveGroup { enemyPrefab = prefab, count = count, spawnPoint = point, hidden = hidden };
+        static StageWaveGroup Group(EnemyDefinition enemy, int count, SpawnPointDefinition point, bool hidden = false) =>
+            new StageWaveGroup { enemy = enemy, count = count, spawnPoint = point, hidden = hidden };
     }
 }

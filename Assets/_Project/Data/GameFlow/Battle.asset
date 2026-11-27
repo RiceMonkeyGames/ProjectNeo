@@ -21,6 +21,7 @@ MonoBehaviour:
   - unitPrefab: {fileID: 1594135828907872887, guid: 74ac65c8d1c47724d836fe77800d4b3a, type: 3}
     count: 4
   stages: {fileID: 11400000, guid: 557b8627ce19b34459d05845d341a04d, type: 2}
+  enemyCatalog: {fileID: 11400000, guid: 9060b4fffc2fc234b841612a16a48da3, type: 2}
   retreatWhileWavesPending: 0
   spawnCell: {x: 23, y: 49}
   outward: {x: 0, y: 1}

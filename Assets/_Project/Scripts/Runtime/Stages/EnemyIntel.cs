@@ -29,7 +29,10 @@ namespace ProjectNeo.Stages
             }
         }
 
-        /// <summary>편성의 웨이브 순서, 그 안의 무리 순서로 무리 번호를 매긴다. 종류 ID는 프리팹 이름이다.</summary>
+        /// <summary>
+        /// 편성의 웨이브 순서, 그 안의 무리 순서로 무리 번호를 매긴다. 종류 ID와 이름은 적 종류(EnemyDefinition, CONTENT-04)에서,
+        /// 적 종류 없이 프리팹만 있는 무리는 프리팹 이름에서 읽는다.
+        /// </summary>
         public static EnemyIntel FromPlan(EncounterPlan plan)
         {
             var list = new List<EnemyIntelGroup>();
@@ -43,8 +46,9 @@ namespace ProjectNeo.Stages
                             list.Add(new EnemyIntelGroup(group.Boss.Id, BossLabel(group.Boss), group.Count, false));
                             continue;
                         }
-                        string id = group.Prefab != null ? group.Prefab.name : string.Empty;
-                        list.Add(new EnemyIntelGroup(id, DisplayName(id), group.Count, group.Hidden));
+                        string id = group.EnemyId;
+                        string name = group.Enemy != null ? group.Enemy.DisplayName : DisplayName(id);
+                        list.Add(new EnemyIntelGroup(id, name, group.Count, group.Hidden));
                     }
             return new EnemyIntel(list);
         }
@@ -155,24 +159,15 @@ namespace ProjectNeo.Stages
         /// <summary>적 목록에 보일 보스 이름. 예: "Boss: Gate Crusher".</summary>
         public static string BossLabel(BossDefinition boss) => "보스: " + (boss != null ? boss.DisplayName : "알 수 없음");
 
-        /// <summary>알려진 적 프리팹의 한글 이름 (UI-04). 없는 이름은 프리팹 이름을 다듬어 쓴다.</summary>
-        static readonly Dictionary<string, string> KnownNames = new Dictionary<string, string>(System.StringComparer.OrdinalIgnoreCase)
-        {
-            { "ladder", "사다리병" },
-            { "archer", "궁수" },
-            { "gate_breaker", "성문 파괴병" },
-            { "wall_breaker", "성벽 파괴병" },
-            { "flyer", "비행병" },
-            { "flyer_high_archer", "고공 비행 궁수" },
-        };
-
-        /// <summary>프리팹 이름을 보여 줄 이름으로 바꾼다. 예: "enemy_gate_breaker" → "성문 파괴병", "Mystery_unit" → "Mystery Unit".</summary>
+        /// <summary>
+        /// 적 종류가 없는 무리의 예비 이름: 프리팹 이름을 다듬는다. 예: "enemy_gate_breaker" → "Gate Breaker".
+        /// 보여 줄 이름은 적 종류(EnemyDefinition.DisplayName)에 두며(CONTENT-04), 이 함수는 프로토타입·시험용 무리만 쓴다.
+        /// </summary>
         public static string DisplayName(string prefabName)
         {
             if (string.IsNullOrEmpty(prefabName)) return "알 수 없음";
             string name = prefabName;
             if (name.StartsWith("enemy_", System.StringComparison.OrdinalIgnoreCase)) name = name.Substring(6);
-            if (KnownNames.TryGetValue(name, out string known)) return known;
             string[] words = name.Replace('-', '_').Split(new[] { '_', ' ' }, System.StringSplitOptions.RemoveEmptyEntries);
             if (words.Length == 0) return prefabName;
             for (int i = 0; i < words.Length; i++)

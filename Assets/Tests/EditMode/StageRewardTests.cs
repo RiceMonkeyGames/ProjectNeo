@@ -6,6 +6,7 @@ using ProjectNeo.Economy;
 using ProjectNeo.Flow;
 using ProjectNeo.Run;
 using ProjectNeo.Squads;
+using ProjectNeo.Stages;
 
 namespace ProjectNeo.Tests
 {
@@ -33,8 +34,11 @@ namespace ProjectNeo.Tests
             hide = MaterialDefinition.Create("hide");
             sword = ItemDefinition.Create("sword", ItemKind.Equipment, new Cost(40));
             potion = ItemDefinition.Create("potion", ItemKind.Consumable, new Cost(10));
+            // 처치 보상은 적 종류(CONTENT-04)에 있다.
             table = StageRewardTable.Create(50, 10,
-                new[] { new KillReward("enemy_ladder", 3, bone, 1), new KillReward("enemy_gate_breaker", 5, hide, 2) },
+                EnemyCatalog.Create(
+                    EnemyDefinition.Create("enemy_ladder", "Ladder", EnemyRole.GroundLadder, null, 3, new EnemyMaterialDrop(bone, 1)),
+                    EnemyDefinition.Create("enemy_gate_breaker", "Gate Breaker", EnemyRole.GateBreaker, null, 5, new EnemyMaterialDrop(hide, 2))),
                 0.6f, 1,
                 new[] { new WeightedEntry<ItemDefinition>(sword, 1f), new WeightedEntry<ItemDefinition>(potion, 3f) },
                 40, 10, 1, 2);
@@ -71,6 +75,24 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(0, reward.Items.Count, "0.99는 확률 0.6을 넘어 아이템이 없다.");
             Assert.AreEqual(3, reward.StageNumber);
             Assert.AreEqual(1, reward.BattleNumber);
+        }
+
+        [Test]
+        public void 적_종류의_재료_여러_줄은_처치_수만큼_모두_쌓이고_목록이_없으면_처치_보상이_없다()
+        {
+            var feather = MaterialDefinition.Create("feather");
+            var mixed = StageRewardTable.Create(0, 0, EnemyCatalog.Create(EnemyDefinition.Create("enemy_flyer", "Flyer",
+                EnemyRole.Flyer, null, 2, new EnemyMaterialDrop(feather, 3), new EnemyMaterialDrop(bone, 1))));
+            var result = new BattleResult(1, BattleOutcome.Victory, BattleEndReason.EnemiesDefeated);
+            result.AddKill("enemy_flyer", 2);
+            StageReward reward = StageReward.Roll(mixed, 1, result, new FixedRandom(0.99f));
+            Assert.AreEqual(2 * 2, reward.Gold);
+            Assert.AreEqual(6, reward.Materials[feather]);
+            Assert.AreEqual(2, reward.Materials[bone]);
+
+            StageReward none = StageReward.Roll(StageRewardTable.Create(0, 0), 1, result, new FixedRandom(0.99f));
+            Assert.AreEqual(0, none.Gold);
+            Assert.AreEqual(0, none.Materials.Count);
         }
 
         [Test]

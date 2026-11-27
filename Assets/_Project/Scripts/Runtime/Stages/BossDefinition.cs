@@ -14,8 +14,8 @@ namespace ProjectNeo.Stages
         [SerializeField] string id = "boss";
         [SerializeField] string displayName = "보스";
         [SerializeField] BossRole role = BossRole.Siege;
-        [Tooltip("바탕이 되는 기존 적 프리팹. SiegeAttacker가 있고 비활성 상태여야 한다.")]
-        [SerializeField] GameObject basePrefab;
+        [Tooltip("바탕이 되는 일반 적 종류(CONTENT-04). 그 적의 프리팹(SiegeAttacker가 있고 비활성)을 바탕으로 만든다.")]
+        [SerializeField] EnemyDefinition baseEnemy;
         [Tooltip("겉모습(Visual 자식) 크기 배율. 충돌·길찾기 크기는 바꾸지 않는다.")]
         [SerializeField, Min(0.1f)] float visualScale = 1.5f;
 
@@ -50,7 +50,9 @@ namespace ProjectNeo.Stages
         public string Id => id;
         public string DisplayName => displayName;
         public BossRole Role => role;
-        public GameObject BasePrefab => basePrefab;
+        public EnemyDefinition BaseEnemy => baseEnemy;
+        /// <summary>바탕 적의 프리팹. 바탕 적이 없으면 null.</summary>
+        public GameObject BasePrefab => baseEnemy != null ? baseEnemy.Prefab : null;
         public float VisualScale => visualScale;
         public float MaxHealth => maxHealth;
         public float Attack => attack;
@@ -71,14 +73,14 @@ namespace ProjectNeo.Stages
         /// <summary>지휘형이고 반경이 있으면 강화를 건다.</summary>
         public bool HasAura => role == BossRole.Commander && auraRadius > 0f;
 
-        public static BossDefinition Create(string id, string displayName, BossRole role, GameObject basePrefab,
+        public static BossDefinition Create(string id, string displayName, BossRole role, EnemyDefinition baseEnemy,
             float visualScale, float maxHealth, float attack, float defense, float attackRange = 0f,
             float moveSpeedMultiplier = 1f, float structureDamageMultiplier = 1f, int rewardGold = 0,
             params BossMaterialReward[] rewardMaterials)
         {
             var boss = CreateInstance<BossDefinition>();
             boss.name = id;
-            boss.id = id; boss.displayName = displayName; boss.role = role; boss.basePrefab = basePrefab;
+            boss.id = id; boss.displayName = displayName; boss.role = role; boss.baseEnemy = baseEnemy;
             boss.visualScale = Mathf.Max(0.1f, visualScale);
             boss.maxHealth = Mathf.Max(0f, maxHealth); boss.attack = Mathf.Max(0f, attack);
             boss.defense = Mathf.Max(0f, defense); boss.attackRange = Mathf.Max(0f, attackRange);

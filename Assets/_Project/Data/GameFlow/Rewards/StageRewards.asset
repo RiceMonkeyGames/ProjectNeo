@@ -14,19 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Run.StageRewardTable
   baseGold: 50
   goldPerStage: 10
-  killRewards:
-  - enemyId: enemy_ladder
-    goldPerKill: 3
-    material: {fileID: 11400000, guid: d8a422bc2c200bc4098f7e97952c696e, type: 2}
-    materialPerKill: 1
-  - enemyId: enemy_gate_breaker
-    goldPerKill: 5
-    material: {fileID: 11400000, guid: cdd41863a6a8f3948aa7d84955344348, type: 2}
-    materialPerKill: 2
-  - enemyId: enemy_archer
-    goldPerKill: 3
-    material: {fileID: 11400000, guid: 983096480f690a248a516a89f583ca4f, type: 2}
-    materialPerKill: 1
+  enemies: {fileID: 11400000, guid: 9060b4fffc2fc234b841612a16a48da3, type: 2}
   itemChance: 0.6
   itemRolls: 1
   itemPool:

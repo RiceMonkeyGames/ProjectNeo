@@ -15,12 +15,13 @@ MonoBehaviour:
   id: boss_gate_crusher
   displayName: "\uC131\uBB38 \uBD84\uC1C4\uC790"
   role: 0
-  basePrefab: {fileID: 3311207010470909413, guid: 6336293aee1c1264089c9649769650a6, type: 3}
+  baseEnemy: {fileID: 11400000, guid: b4dcdb2f5d216664280825a50b3332d4, type: 2}
   visualScale: 1.5
   maxHealth: 400
   attack: 21
   defense: 4
   attackRange: 0
+  aimSpread: 0
   moveSpeedMultiplier: 1
   structureDamageMultiplier: 2
   heroPreference: 3

@@ -13,15 +13,16 @@ namespace ProjectNeo.Editor
     public static class BossSetup
     {
         public const string Folder = StageSetup.Folder + "/Bosses";
-        const string Prefabs = "Assets/_Project/Prefabs/SiegePrototype/";
         const string Materials = "Assets/_Project/Data/GameFlow/Rewards/";
 
         [MenuItem("ProjectNeo/Setup/Create Stage Bosses (SIEGE-09)")]
         public static void Apply()
         {
             CombatPrototypeSetup.EnsureFolder(Folder);
-            GameObject ladder = Enemy("enemy_ladder"), gate = Enemy("enemy_gate_breaker"), archer = Enemy("enemy_archer");
-            GameObject wall = Enemy("enemy_wall_breaker"), flyer = Enemy("enemy_flyer");
+            // 바탕 적은 적 종류(CONTENT-04)로 정한다. 없으면 먼저 만든다.
+            EnemySetup.CreateData();
+            EnemyDefinition ladder = EnemySetup.Load("enemy_ladder"), gate = EnemySetup.Load("enemy_gate_breaker"), archer = EnemySetup.Load("enemy_archer");
+            EnemyDefinition wall = EnemySetup.Load("enemy_wall_breaker"), flyer = EnemySetup.Load("enemy_flyer");
             MaterialDefinition bone = Material("mat_bone"), hide = Material("mat_hide"), feather = Material("mat_feather");
 
             BossDefinition[] bosses =
@@ -72,13 +73,6 @@ namespace ProjectNeo.Editor
 
         static BossMaterialReward[] Reward(MaterialDefinition material, int amount) => new[] { Pair(material, amount) };
         static BossMaterialReward Pair(MaterialDefinition material, int amount) => new BossMaterialReward(material, amount);
-
-        static GameObject Enemy(string name)
-        {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Prefabs + name + ".prefab");
-            if (prefab == null) throw new System.InvalidOperationException("Missing enemy prefab: " + name);
-            return prefab;
-        }
 
         static MaterialDefinition Material(string name)
         {
