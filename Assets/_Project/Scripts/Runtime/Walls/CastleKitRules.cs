@@ -47,10 +47,13 @@ namespace ProjectNeo.Walls
             ICollection<int> unfinished, IReadOnlyDictionary<Vector2Int, int> breaches, CastleKitSettings settings,
             List<CastleKitPlacement> result, IReadOnlyDictionary<Vector2Int, float> rubble = null,
             IReadOnlyDictionary<Vector2Int, float> fallenTops = null, IDictionary<Vector2Int, StairRoom> rooms = null,
-            CastleKitLook kitLook = CastleKitLook.Stretch, System.Func<Vector2Int, int, bool> crenellatedFace = null)
+            CastleKitLook kitLook = CastleKitLook.Stretch, System.Func<Vector2Int, int, bool> crenellatedFace = null,
+            int closedSideCells = 0)
         {
             look = kitLook;
             crenellated = crenellatedFace;
+            closedSides = Mathf.Max(0, closedSideCells);
+            closedGrid = grid;
             if (settings != null) module = settings.ModuleSize;
             result.Clear();
             pillars.Clear();
@@ -92,6 +95,13 @@ namespace ProjectNeo.Walls
             foreach (KeyValuePair<Vector3Int, (Vector2Int owner, Vector3 point)> entry in caps)
                 result.Add(new CastleKitPlacement(CastleKitPiece.BattlementCap, entry.Value.owner, entry.Value.point, 0f));
         }
+
+        static int closedSides;
+        static BuildGridDefinition closedGrid;
+
+        // 격자 동·서 끝 칸이 막혀 있을 때(CastleKitDresser.closedSideCells) 그 칸이나 격자 밖을 향한 면인지. 그 면에는 꾸밈을 두지 않는다(SIEGE-40).
+        static bool ClosedSide(Vector2Int next) =>
+            closedSides > 0 && closedGrid != null && (next.x < closedSides || next.x >= closedGrid.Width - closedSides);
 
         // 면 하나의 흉벽 조각: 성가퀴(Lv2) 면이면 Battlements_03, 아니면(Lv1 난간·포구) Battlements_01(SIEGE-20).
         static CastleKitPiece TopPiece(Vector2Int cell, int face, bool half)
@@ -207,6 +217,7 @@ namespace ProjectNeo.Walls
             for (int face = 0; face < 4; face++)
             {
                 Vector2Int next = cell + BattlementRules.Directions[face];
+                if (ClosedSide(next)) continue;
                 // 무너진 칸을 향한 면도 비운다. 그 칸에 놓이는 V자 잔해가 이 면을 덮고, 이 칸은 온전하게 남는다.
                 if (Covered(layout, unfinished, breaches, next, placement.Level))
                 {
@@ -443,6 +454,7 @@ namespace ProjectNeo.Walls
                 if ((faces & (1 << face)) == 0) continue;
                 // 무너진 칸을 향한 면에는 흉벽을 세우지 않는다(그 칸의 V자 잔해가 이어진다).
                 Vector2Int next = cell + BattlementRules.Directions[face];
+                if (ClosedSide(next)) continue;
                 if (breaches != null && breaches.ContainsKey(next)) continue;
                 // 이 높이까지 맞붙어 있던 보루·망루가 무너진 면도 세우지 않는다(그 칸의 가파른 잔해가 이어진다, SIEGE-30).
                 // 보루가 낮아 원래 성가퀴가 서 있던 면은 그대로 둔다.
@@ -470,6 +482,7 @@ namespace ProjectNeo.Walls
             {
                 int next = (face + 1) % 4;
                 Vector2Int a = BattlementRules.Directions[face], b = BattlementRules.Directions[next];
+                if (ClosedSide(cell + a) || ClosedSide(cell + b)) continue;
                 if (!OpenOutside(layout, grid, outside, cell + a, placement.Level) || !OpenOutside(layout, grid, outside, cell + b, placement.Level)) continue;
                 Vector2 corner = (new Vector2(cell.x + 0.5f, cell.y + 0.5f) + 0.5f * (Vector2)(a + b)) * size;
                 result.Add(new CastleKitPlacement(CastleKitPiece.CornerTurret, cell, new Vector3(corner.x, top - CornerTurretDrop, corner.y),

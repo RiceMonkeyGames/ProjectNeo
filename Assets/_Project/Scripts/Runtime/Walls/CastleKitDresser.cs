@@ -31,6 +31,9 @@ namespace ProjectNeo.Walls
         // 칸마다 킷 조각을 정적 배칭으로 묶는다(SIEGE-19). 쇠창살·문짝이 움직이는 성문 칸은 묶지 않는다.
         // 측정(Game 성 48칸, 렌더러 약 420개, 재질 2종): 성 전체 시점 카메라 렌더 CPU 약 1.29ms → 킷 없을 때와 오차 안(1.05~1.31ms).
         [SerializeField] bool staticBatching = true;
+        // 격자 동·서 끝 몇 칸을 다른 구조물(분지 성벽 양 끝 원형 탑 등)이 차지한다. 0보다 크면 그 칸(격자 밖 포함)을 향한 동·서 면에는
+        // 벽판·흉벽·모서리 망루를 두지 않는다(그 자리의 탑 안으로 파고들지 않게, SIEGE-40). 남·북 면은 그대로다.
+        [SerializeField, Min(0)] int closedSideCells;
 
         /// <summary>흉벽 킷 조각이 충돌체·엄폐를 가지는지(SIEGE-19).</summary>
         public bool BattlementColliders => battlementColliders;
@@ -316,7 +319,7 @@ namespace ProjectNeo.Walls
             CastleBattlements cover = Battlements;
             seenStyle = cover != null ? cover.Style : BattlementStyle.None;
             CastleKitRules.Collect(world.Layout, world.Grid, outside, unfinished, breaches, settings, placements, rubble, fallenTops, rooms, look,
-                cover != null ? cover.IsCrenellatedFace : (System.Func<Vector2Int, int, bool>)null);
+                cover != null ? cover.IsCrenellatedFace : (System.Func<Vector2Int, int, bool>)null, closedSideCells);
             Group();
 
             bool navigation = false;
