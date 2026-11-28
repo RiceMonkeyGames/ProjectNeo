@@ -1,9 +1,9 @@
 ---
 id: SIEGE-37
 title: Ladder Carriers Bring and Raise Their Own Ladders
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: SeongminHwang
+branch: feature/siege-37
 area: SIEGE
 depends_on: [SIEGE-20, SIEGE-40]
 created: 2026-11-27
