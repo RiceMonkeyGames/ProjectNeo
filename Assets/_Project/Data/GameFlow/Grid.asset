@@ -12,9 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 134ff2c368c1f9f49a7ad846da441d1f, type: 3}
   m_Name: Grid
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Walls.BuildGridDefinition
-  width: 46
-  depth: 53
-  cellSize: 7.5
+  width: 42
+  depth: 12
+  cellSize: 5
   maxLevels: 4
   forbidValleys: 1
   groundStairsOnly: 1
+  castleBehindSouthEdge: 1
+  blockedSideCells: 1

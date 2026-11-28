@@ -62,11 +62,11 @@ MonoBehaviour:
   battlementDrop: 0.992
   crenellationHeightScale: 1.3977011
   roomWallInset: 0.31
-  roomLandingDepth: 2
+  roomLandingDepth: 1
   roomSlabThickness: 0.2
   roomRampThickness: 0.15
   roomHoleOverhang: 0.6
-  roomFlightWidth: 2.16
+  roomFlightWidth: 1.46
   stairPostNear: {x: 0.05, y: 0.06}
   stairPostFar: {x: 0.07, y: -1.97}
   roomPostHeight: 2.5

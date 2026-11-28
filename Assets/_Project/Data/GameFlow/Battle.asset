@@ -23,7 +23,7 @@ MonoBehaviour:
   stages: {fileID: 11400000, guid: 557b8627ce19b34459d05845d341a04d, type: 2}
   enemyCatalog: {fileID: 11400000, guid: 9060b4fffc2fc234b841612a16a48da3, type: 2}
   retreatWhileWavesPending: 0
-  spawnCell: {x: 23, y: 49}
+  spawnCell: {x: 29, y: 19}
   outward: {x: 0, y: 1}
   columns: 10
   spacing: 2.5

@@ -23,6 +23,13 @@ Registered 2026-11-27 from the basin map decision ([Decisions-Resolved](../plan/
 
 Open before start (ask the user): north wall length and band depth, basin size, gate position, whether the run-start wall has towers.
 
+**Progress 2026-11-28 (`feature/siege-40`, user checked it in play):**
+- Rules: `BuildGridDefinition.castleBehindSouthEdge` / `blockedSideCells`, used by `BattlementRules`, `CastleFootprint`, `GamePrepPlacement`, `BuildLayout`, `TowerRules`; tests `NorthWallBasinRulesTests`.
+- Game scene rebuilt by menu `ProjectNeo/Setup/Apply Basin To Game Scene (SIEGE-40)` (`Editor/GameBasinSetup`): world reconfigured in place (references kept), basin environment moved under `Geometry`, ring courtyard art, citizens and the battle start flag removed, facilities attached to the user's demo houses with NPCs at the user's door spots (`NpcSpots`), spawn cell (29, 19), build camera, ladders.
+- Player: ground stick and 0.15s jump grace for uneven ground (`PlayerInputController`).
+- Run save version 4 (old saves dropped).
+- Left for follow-ups: citizens on the demo paths, ladders by carriers (`SIEGE-37`), minimap (`UI-14`), kit module audit (`SIEGE-41`), Game lighting/fog vs the demo look, NavMesh bake time over the whole town.
+
 **Scope (user, 2026-11-28)**: done together with [SIEGE-39](SIEGE-39.md) — the Game uses the basin draft (demo town and keep) as its world, with facilities, NPCs and citizens re-placed in the demo town. Squad deployment in preparation: the wall and everything south of it.
 
 **Layout draft settled with the user (2026-11-28, on `feature/siege-38`, scene `Assets/_Project/Scenes/Preview/FantasyKingdomBasin.unity`)** — the Game layout should copy it:

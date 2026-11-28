@@ -92,7 +92,13 @@ namespace ProjectNeo.Editor
             }
             controller.Configure(world, settings, center, player, falling, ladders.ToArray());
             EditorUtility.SetDirty(controller);
-            ConfigureStartStation(world, view, controller, gateCell);
+            // 분지(SIEGE-40)에는 전투 시작 깃발을 두지 않는다(사용자 2026-11-28). 전투 시작은 B 길게 누르기(Q-40)다.
+            if (world.Grid != null && world.Grid.CastleBehindSouthEdge)
+            {
+                Transform stale = world.transform.Find("Geometry/BattleStartStation");
+                if (stale != null) UnityEngine.Object.DestroyImmediate(stale.gameObject);
+            }
+            else ConfigureStartStation(world, view, controller, gateCell);
             ConfigureHudLayout(scene);
         }
 
