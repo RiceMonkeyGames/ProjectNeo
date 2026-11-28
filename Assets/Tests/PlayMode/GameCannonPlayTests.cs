@@ -53,7 +53,9 @@ namespace ProjectNeo.Tests
                 new Vector3(battle.Settings.Outward.x, 0f, battle.Settings.Outward.y)).normalized;
             PlacedStructure support = BastionTestSupport.PlaceInFrontOfOutermostWall(world,
                 BastionTestSupport.Definition(SceneManager.GetActiveScene()), battle.Settings.Outward,
-                wall => !world.Layout.IsCovered(wall.Placement));
+                // 분지 성벽은 210m로 길고 대포 사거리는 60m다. 적이 오는 출현 칸(성문 줄) 가까운 성벽 앞에 짓는다.
+                wall => !world.Layout.IsCovered(wall.Placement)
+                    && Mathf.Abs(wall.Placement.Cell.x - battle.Settings.SpawnCell.x) <= 4f);
             Assert.AreEqual(MountIssue.None, world.CheckMount(cannon, support, "top"));
             Assert.IsTrue(support.TryGetMountPose("top", out Pose top));
             int rotation = Enumerable.Range(0, 4).OrderByDescending(r =>

@@ -158,6 +158,8 @@ namespace ProjectNeo.Editor
                 log.Add("moved " + name);
             }
             log.Add("nav-excluded unreadable colliders x" + ExcludeUnreadableNavSources(geometry));
+            log.Add(BuildApproachBridge(world.transform, geometry));
+            log.Add(SealBasinEast(world.transform, geometry));
             // 데모 씬의 해는 끈다(Game의 Sun 하나만 둔다).
             foreach (Light light in geometry.GetComponentsInChildren<Light>(true))
                 if (light.type == LightType.Directional) light.gameObject.SetActive(false);
@@ -309,6 +311,147 @@ namespace ProjectNeo.Editor
             }
             return count;
         }
+
+        [MenuItem("ProjectNeo/Setup/Build Approach Bridge And East Seal In Game Scene (BUG-approach-navmesh-gap)")]
+        public static string ApplyApproachBridge()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode) throw new InvalidOperationException("Stop Play Mode first.");
+            EditorSceneManager.SaveOpenScenes();
+            Scene game = EditorSceneManager.OpenScene(GameFlowSetup.GamePath, OpenSceneMode.Single);
+            ConstructionWorld world = Find<ConstructionWorld>(game);
+            Transform geometry = world.transform.Find("Geometry");
+            string result = BuildApproachBridge(world.transform, geometry) + "\n" + SealBasinEast(world.transform, geometry);
+            EditorSceneManager.MarkSceneDirty(game);
+            EditorSceneManager.SaveScene(game);
+            AssetDatabase.SaveAssets();
+            return result;
+        }
+
+        /// <summary>
+        /// BUG-approach-navmesh-gap: 숨은 평평한 건설 판(Ground)은 건설 줄(12칸)까지만 깔리고, 그 북쪽 들판 조각(ApproachGround)은
+        /// 가까운 것일수록 충돌체가 꺼져 있어 적 출현 들판과 건설 줄 사이에 충돌면이 없다(길찾기 메시가 둘로 갈린다).
+        /// 건설 줄 북쪽 끝에서 <see cref="BridgeLength"/>m 북쪽까지, 보이는 들판 높이를 따라가는 숨은 충돌 전용 메시를 깐다.
+        /// 건설 줄 끝에서는 건설 판 높이에서 시작해 <see cref="BridgeBlend"/>m 동안 보이는 땅 높이로 부드럽게 이어진다.
+        /// 건설 줄과 들판 조각의 충돌체 설정은 바꾸지 않는다. 다시 실행해도 같은 결과다(메시 에셋 GUID 유지).
+        /// </summary>
+        public static string BuildApproachBridge(Transform worldRoot, Transform geometry)
+        {
+            const string bridgeName = "ApproachBridge";
+            Transform old = geometry.Find(bridgeName);
+            if (old != null) Object.DestroyImmediate(old.gameObject);
+            var bridge = new GameObject(bridgeName);
+            bridge.transform.SetParent(geometry, false);
+            Transform slab = geometry.Find("Ground");
+            if (slab != null) bridge.layer = slab.gameObject.layer;
+
+            // 보이는 땅 높이: 들판 조각의 꺼진 충돌체를 잠깐 켜고 위에서 쏘아 가장 높은 면을 잰 뒤 되돌린다.
+            var approach = geometry.Cast<Transform>().Where(t => t.name == "ApproachGround").ToList();
+            var colliders = approach.SelectMany(t => t.GetComponentsInChildren<MeshCollider>(true)).ToList();
+            var wasEnabled = colliders.Select(c => c.enabled).ToList();
+            var approachSet = new HashSet<Collider>(colliders);
+            var collisionSet = new HashSet<Collider>(colliders.Where(c => c.enabled));
+            int columns = Mathf.RoundToInt(Width * Cell / BridgeStep) + 1, rows = Mathf.RoundToInt(BridgeLength / BridgeStep) + 1;
+            float bandEdge = Depth * Cell;
+            var vertices = new Vector3[columns * rows];
+            int misses = 0;
+            try
+            {
+                foreach (MeshCollider collider in colliders) collider.enabled = true;
+                Physics.SyncTransforms();
+                for (int row = 0; row < rows; row++)
+                    for (int column = 0; column < columns; column++)
+                    {
+                        float x = column * BridgeStep, z = bandEdge + row * BridgeStep;
+                        Vector3 top = worldRoot.TransformPoint(new Vector3(x, 0f, z));
+                        float best = float.NegativeInfinity, collision = float.NegativeInfinity;
+                        foreach (RaycastHit hit in Physics.RaycastAll(top + Vector3.up * 200f, Vector3.down, 400f, ~0, QueryTriggerInteraction.Ignore))
+                        {
+                            if (approachSet.Contains(hit.collider)) best = Mathf.Max(best, hit.point.y);
+                            if (collisionSet.Contains(hit.collider)) collision = Mathf.Max(collision, hit.point.y);
+                        }
+                        // 원래 충돌체가 켜진 들판 조각은 보이는 땅보다 최대 3m쯤 낮은 곳이 있다. 다리가 그보다 너무 높으면
+                        // 그 사이에 걸을 수 있는 빈 층(따로 떨어진 길찾기 섬)이 남는다. 에이전트 키보다 낮은 틈만 남겨 메시에서 빠지게 한다.
+                        if (!float.IsNegativeInfinity(collision)) best = Mathf.Min(best, collision + BridgeMaxAboveCollision);
+                        float visible = 0f;
+                        if (float.IsNegativeInfinity(best)) misses++;
+                        else visible = worldRoot.InverseTransformPoint(new Vector3(top.x, best, top.z)).y;
+                        float blend = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(row * BridgeStep / BridgeBlend));
+                        Vector3 local = new Vector3(x, Mathf.Lerp(0f, visible, blend), z);
+                        vertices[row * columns + column] = bridge.transform.InverseTransformPoint(worldRoot.TransformPoint(local));
+                    }
+            }
+            finally
+            {
+                for (int i = 0; i < colliders.Count; i++) colliders[i].enabled = wasEnabled[i];
+                Physics.SyncTransforms();
+            }
+
+            var triangles = new List<int>((columns - 1) * (rows - 1) * 6);
+            for (int row = 0; row < rows - 1; row++)
+                for (int column = 0; column < columns - 1; column++)
+                {
+                    int a = row * columns + column, b = a + columns, c = b + 1, d = a + 1;
+                    // 위(+y)를 보는 면: (a, b, c), (a, c, d). a=(x,z), b=(x,z+1), c=(x+1,z+1), d=(x+1,z).
+                    triangles.AddRange(new[] { a, b, c, a, c, d });
+                }
+            Mesh mesh = AssetDatabase.LoadAssetAtPath<Mesh>(BridgeMeshPath);
+            bool created = mesh == null;
+            if (created) mesh = new Mesh();
+            mesh.Clear();
+            mesh.name = bridgeName;
+            mesh.vertices = vertices;
+            mesh.triangles = triangles.ToArray();
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            if (created) AssetDatabase.CreateAsset(mesh, BridgeMeshPath);
+            else EditorUtility.SetDirty(mesh);
+            bridge.AddComponent<MeshCollider>().sharedMesh = mesh;
+            EditorUtility.SetDirty(bridge);
+            return "approach bridge " + columns + "x" + rows + " verts, ground misses=" + misses;
+        }
+
+        /// <summary>
+        /// BUG-approach-navmesh-gap: 동쪽 끝 탑 바깥은 데모 산(<c>SM_Generic_Mountains_Grass_01</c>)이 낮고 완만해서 걸어 넘을 수 있다.
+        /// 들판과 성벽 앞이 이어지자 적의 길이 성벽을 거치지 않고 그 언덕으로 분지 안에 들어갔다(분지는 북쪽 성벽으로만 열린다, SIEGE-40).
+        /// 성벽 줄을 동쪽 끝 탑에서 <see cref="EastSealLength"/>m 더 이어 주는 숨은 높은 막이를 둔다(충돌 전용, 보이지 않는다).
+        /// 서쪽은 산이 가팔라 이미 막혀 있다(2026-11-28 확인). 다시 실행해도 같은 결과다.
+        /// </summary>
+        public static string SealBasinEast(Transform worldRoot, Transform geometry)
+        {
+            const string sealName = "BasinSealEast";
+            Transform old = geometry.Find(sealName);
+            if (old != null) Object.DestroyImmediate(old.gameObject);
+            // 끝 탑 동쪽 면에서 조금 겹치게 시작한다. 탑이 없으면 격자 동쪽 끝.
+            float start = Width * Cell;
+            Transform tower = geometry.Find("EndTowers/Tower_East");
+            Collider[] parts = tower != null ? tower.GetComponentsInChildren<Collider>() : new Collider[0];
+            if (parts.Length > 0)
+            {
+                Bounds bounds = parts[0].bounds;
+                foreach (Collider part in parts) bounds.Encapsulate(part.bounds);
+                start = worldRoot.InverseTransformPoint(bounds.max).x - 0.5f;
+            }
+            var seal = new GameObject(sealName);
+            seal.transform.SetParent(geometry, false);
+            seal.transform.position = worldRoot.position;
+            seal.transform.rotation = worldRoot.rotation;
+            Transform slab = geometry.Find("Ground");
+            if (slab != null) seal.layer = slab.gameObject.layer;
+            var box = seal.AddComponent<BoxCollider>();
+            // 성벽 줄(0번 줄) 두께 안, 산을 넘을 수 없을 만큼 높게.
+            box.center = new Vector3(start + EastSealLength * 0.5f, 50f, Cell * 0.5f);
+            box.size = new Vector3(EastSealLength, 200f, Cell);
+            EditorUtility.SetDirty(seal);
+            return "basin east seal from local x " + start.ToString("0.0") + " length " + EastSealLength;
+        }
+
+        // 200m에서 막히는 것을 확인했다(150m는 그 너머 언덕으로 돌아 들어간다). 여유를 둔다.
+        const float EastSealLength = 240f;
+
+        const string BridgeMeshPath = Data + "/ApproachBridge.asset";
+        // 건설 줄 북쪽 끝부터 이 길이만큼 덮는다(적 출현 칸은 90m 북쪽, 들판 충돌체는 그 너머까지 이어진다).
+        // BridgeMaxAboveCollision: 길찾기 에이전트 키(2m)보다 작아야 다리 밑 빈 층이 메시에서 빠진다.
+        const float BridgeLength = 70f, BridgeStep = 2.5f, BridgeBlend = 10f, BridgeMaxAboveCollision = 1.5f;
 
         static void PlaceFacilitiesAtHouses(Scene game, Transform geometry, Transform layout, Transform worldRoot, Vector3 gateInside, List<string> log)
         {

@@ -366,6 +366,40 @@ namespace ProjectNeo.Tests
             Assert.AreEqual("Title", SceneManager.GetActiveScene().name);
         }
 
+        // BUG-approach-navmesh-gap: 출현 들판(건설 줄 밖)에서 성문 앞·성벽 양끝 앞까지 걸어서 닿고,
+        // 성 안(성벽 남쪽)으로는 성문·성벽을 거치지 않고 돌아 들어갈 수 없다(분지는 북쪽 성벽으로만 열린다).
+        [UnityTest]
+        public IEnumerator 출현_들판에서_성벽_앞까지_길이_이어지고_성_안으로는_돌아_들어갈_수_없다()
+        {
+            yield return Navigation();
+            float cell = world.Grid.CellSize;
+            int width = world.Grid.Width;
+            Vector3 Sample(float x, float z)
+            {
+                Assert.IsTrue(NavMesh.SamplePosition(world.transform.TransformPoint(new Vector3(x, 0f, z)),
+                    out NavMeshHit hit, 6f, NavMesh.AllAreas), "길찾기 메시가 있어야 한다: " + x + ", " + z);
+                return hit.position;
+            }
+            var path = new NavMeshPath();
+            Vector2 spawn = battle.Settings.SpawnCell;
+            float[] spawnX = { (spawn.x - 12f) * cell, spawn.x * cell, (spawn.x + 12f) * cell };
+            float[] wallFrontX = { 2f * cell, (spawn.x + 0.5f) * cell, (width - 2f) * cell };
+            foreach (float sx in spawnX)
+            {
+                Vector3 from = Sample(sx, spawn.y * cell);
+                foreach (float wx in wallFrontX)
+                {
+                    Assert.IsTrue(NavMesh.CalculatePath(from, Sample(wx, cell * 1.4f), NavMesh.AllAreas, path));
+                    Assert.AreEqual(NavMeshPathStatus.PathComplete, path.status, "출현 들판 " + sx + " → 성벽 앞 " + wx);
+                }
+                foreach (float ix in new[] { 4f * cell, (spawn.x + 0.5f) * cell, (width - 4f) * cell })
+                {
+                    NavMesh.CalculatePath(from, Sample(ix, -3f * cell), NavMesh.AllAreas, path);
+                    Assert.AreNotEqual(NavMeshPathStatus.PathComplete, path.status, "성 안 " + ix + "로 돌아 들어가는 길이 없어야 한다.");
+                }
+            }
+        }
+
         [UnityTest]
         public IEnumerator 공성병이_없고_진입로가_없으면_남은_궁수가_퇴각하고_승리한다()
         {
@@ -508,7 +542,7 @@ namespace ProjectNeo.Tests
             Assert.IsFalse(ladder.HasWall, "들고 가는 사다리는 아직 성벽에 걸리지 않았다.");
             float carryingSpeed = carrier.Actor.Stats.GetValue(ProjectNeo.Stats.StatType.MoveSpeed);
 
-            // 분지 스폰 들판은 아직 성벽 앞과 길찾기 메시가 이어지지 않아(기존 문제) 성벽 앞 들판에서 시작한다.
+            // 90m 걷는 시간을 줄이려고 성벽 앞 들판에서 시작한다(출현 들판과 성벽 앞은 이어져 있다, BUG-approach-navmesh-gap).
             Assert.IsTrue(carrier.GetComponent<NavMeshAgent>().Warp(InFrontOfTheWall()), "성벽 앞 들판에 길찾기 메시가 있어야 한다.");
             // 고른 자리 가까이로 옮기면 사다리를 그 빈틈에 내려놓는다.
             LadderSlot slot = default;
