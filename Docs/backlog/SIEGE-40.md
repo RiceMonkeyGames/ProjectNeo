@@ -1,9 +1,9 @@
 ---
 id: SIEGE-40
 title: Basin Map & North Wall Build Grid
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: 신용준
+branch: feature/siege-40
 area: SIEGE
 depends_on: [SIEGE-38]
 created: 2026-11-27
