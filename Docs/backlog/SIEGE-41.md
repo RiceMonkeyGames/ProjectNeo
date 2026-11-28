@@ -2,7 +2,7 @@
 id: SIEGE-41
 title: Castle Kit Module Audit
 status: Waiting
-assignee: 신용준
+assignee: Unassigned
 branch:
 area: SIEGE
 depends_on: [SIEGE-38]
