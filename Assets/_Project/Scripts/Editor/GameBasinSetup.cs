@@ -157,6 +157,7 @@ namespace ProjectNeo.Editor
                 source.SetParent(geometry, true);
                 log.Add("moved " + name);
             }
+            log.Add("nav-excluded unreadable colliders x" + ExcludeUnreadableNavSources(geometry));
             // 데모 씬의 해는 끈다(Game의 Sun 하나만 둔다).
             foreach (Light light in geometry.GetComponentsInChildren<Light>(true))
                 if (light.type == LightType.Directional) light.gameObject.SetActive(false);
@@ -262,6 +263,51 @@ namespace ProjectNeo.Editor
             int renderers = game.GetRootGameObjects().Sum(root => root.GetComponentsInChildren<Renderer>(true).Length);
             log.Add("Game renderers=" + renderers);
             return string.Join("\n", log);
+        }
+
+        [MenuItem("ProjectNeo/Setup/Exclude Unreadable NavMesh Sources In Game Scene (BUG-curtain-navmesh-read)")]
+        public static string ApplyNavSourceExclusion()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode) throw new InvalidOperationException("Stop Play Mode first.");
+            EditorSceneManager.SaveOpenScenes();
+            Scene game = EditorSceneManager.OpenScene(GameFlowSetup.GamePath, OpenSceneMode.Single);
+            Transform geometry = Find<ConstructionWorld>(game).transform.Find("Geometry");
+            int count = ExcludeUnreadableNavSources(geometry);
+            EditorSceneManager.MarkSceneDirty(game);
+            EditorSceneManager.SaveScene(game);
+            return "nav-excluded unreadable colliders x" + count;
+        }
+
+        /// <summary>
+        /// BUG-curtain-navmesh-read: 실행 중 NavMesh 굽기(<see cref="ConstructionWorld"/>, 물리 충돌체 수집)는 MeshCollider의
+        /// 메시를 읽는다. Read/Write가 꺼진 라이선스 메시(커튼·그림 같은 꾸밈)는 오류를 내고 플레이어 빌드에서는 빠진다.
+        /// 첫 굽기는 <c>ConstructionWorld.Awake</c>에서 돌아 다른 오브젝트의 NavMeshModifier가 아직 켜지기 전이므로 제외 표시로는 막을 수 없다.
+        /// 그래서 그 MeshCollider는 끄고, 메시 경계에 맞춘 BoxCollider로 바꾼다(원래 켜져 있던 것만 켠다).
+        /// 에셋 가져오기 설정(서브모듈)은 건드리지 않는다. 다시 실행해도 같은 결과다.
+        /// </summary>
+        public static int ExcludeUnreadableNavSources(Transform geometry)
+        {
+            int count = 0;
+            foreach (MeshCollider collider in geometry.GetComponentsInChildren<MeshCollider>(true))
+            {
+                if (collider.sharedMesh == null || collider.sharedMesh.isReadable) continue;
+                GameObject owner = collider.gameObject;
+                bool wasEnabled = collider.enabled;
+                if (owner.TryGetComponent(out Unity.AI.Navigation.NavMeshModifier modifier)) Object.DestroyImmediate(modifier);
+                if (!owner.TryGetComponent(out BoxCollider box))
+                {
+                    box = owner.AddComponent<BoxCollider>();
+                    box.center = collider.sharedMesh.bounds.center;
+                    box.size = collider.sharedMesh.bounds.size;
+                    box.isTrigger = collider.isTrigger;
+                    box.sharedMaterial = collider.sharedMaterial;
+                    box.enabled = wasEnabled;
+                }
+                collider.enabled = false;
+                EditorUtility.SetDirty(owner);
+                count++;
+            }
+            return count;
         }
 
         static void PlaceFacilitiesAtHouses(Scene game, Transform geometry, Transform layout, Transform worldRoot, Vector3 gateInside, List<string> log)

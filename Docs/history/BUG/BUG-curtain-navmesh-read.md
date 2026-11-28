@@ -1,0 +1,17 @@
+# BUG-curtain-navmesh-read | 2026-11-28 | SIEGE - Game Scene PlayMode Tests Fail on Unreadable Curtain Mesh in Runtime NavMesh Build
+
+> Purpose: Verification & completion log. | Parent: [history/README](../README.md)
+
+### 2026-11-28: BUG-curtain-navmesh-read - Unreadable Decor Mesh Colliders in the Runtime NavMesh Build
+
+- **Assignee**: `SeongminHwang` | **Branch**: `fix/bug-curtain-navmesh-read` | **Claim commit**: `90ae31d`
+- **Cause**: the Game scene `NavMeshSurface` (`ConstructionWorld/Geometry`, `CollectObjects.Children`, `PhysicsColliders`) reads `MeshCollider` meshes. The basin demo town (`SIEGE-40`) brought 60 Synty decor colliders with Read/Write disabled (6 enabled convex `SM_Prop_Curtain_Large_04` in `DemoWorld/Castle_Interior_Dressing`, 54 disabled painting/frame colliders). In Play Mode the builder logs `RuntimeNavMeshBuilder: Source mesh ... does not allow read access`, which fails every PlayMode test that loads `Game` in `SetUp`; a player build would drop these sources.
+- **Rejected approach**: a `NavMeshModifier` with `ignoreFromBuild` does not work here. The first bake runs in `ConstructionWorld.Awake`, before other scene objects are enabled, so `NavMeshSurface.CollectSources` drops the modifiers (`isActiveAndEnabled` is still false).
+- **Fix** (`Editor/GameBasinSetup.ExcludeUnreadableNavSources`, run by `Apply()` and by menu `ProjectNeo/Setup/Exclude Unreadable NavMesh Sources In Game Scene (BUG-curtain-navmesh-read)`): every `MeshCollider` under `Geometry` whose mesh is not readable is disabled and gets a `BoxCollider` fitted to the mesh bounds (same trigger flag and physics material; enabled only if the mesh collider was enabled). Idempotent. Licensed meshes in `Assets/ThirdParty` are untouched. Applied once to `Game.unity` (60 colliders).
+- **Test fix**: `GameFacilityPlayTests.상점을_바라보고_F로_열고_Esc로_닫으며_전투_중에는_열리지_않는다` placed the player at `y = 0`; the basin shop NPC stands at `y = -16.4`, so the player now uses the NPC height. This failure was hidden behind the `SetUp` error.
+- **Verification**:
+  - Unity compile passed. EditMode 1056/1056 passed.
+  - PlayMode `GameTavernPlayTests` 2/2 and `GameFacilityPlayTests` 13/13 passed.
+  - Full PlayMode suite 344/396 with no `RuntimeNavMeshBuilder` errors. The 52 failures are not from this fix: 25 sit in the classes already failing before `SIEGE-40` (`CombatPrototypePlayTests`, `GameBattlePlayTests`, `GameEnemyIntelPlayTests`, `GameOrganizationPlayTests`, `PrepHudPlayTests`, `StackedConstructionPlayTests`, `WallCommandPlayTests`; 9 failures at `PREP-12`), and 27 are Game scene tests still written for the pre-basin ring layout (`GameBattlementPlayTests` 7.5m ring counts, `GameTownPlayTests` eight citizens, `GameTowerPlayTests`, `GameBuildEconomyPlayTests` / `GameConstructionWorkPlayTests` / `GameArtisanWorkTabPlayTests` empty cells, `GameFlowPlayTests` grid values, and others), previously masked by the `SetUp` error. A before/after comparison was not possible because the error stopped those tests in `SetUp`.
+  - Standalone build not verified: `BuildScript.BuildWindows` fails on 18 compile errors from `Assets/ThirdParty/Synty/SidekickCharacters/Scripts/Editor/` (editor-only scripts compiled into the player), unrelated to this task.
+- **Known follow-ups**: update the stale Game scene PlayMode tests for the basin layout (coordinate with the `SIEGE-40` owner); fix the Sidekick editor scripts in the player build (third-party submodule task); re-check the standalone build log for NavMesh source warnings afterwards.

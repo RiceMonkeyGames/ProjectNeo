@@ -377,8 +377,9 @@ namespace ProjectNeo.Tests
             {
                 // SIEGE-36: 상점 앞 NPC(상인)를 바라보고 F를 누른다.
                 Assert.IsNotNull(shop.Npc, "상점에는 NPC가 있다.");
+                // 분지 씬(SIEGE-40)은 땅 높이가 곳곳 다르다. NPC가 선 높이에 플레이어를 둔다.
                 Vector3 near = shop.Npc.transform.position + shop.Npc.transform.forward * 2.2f;
-                near.y = 0f;
+                near.y = shop.Npc.transform.position.y;
                 motor.enabled = false; player.transform.position = near; motor.enabled = true;
                 yield return null;
                 Cursor.lockState = CursorLockMode.Locked;
