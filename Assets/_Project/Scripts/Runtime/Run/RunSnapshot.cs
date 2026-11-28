@@ -136,7 +136,13 @@ namespace ProjectNeo.Run
     public sealed class TavernRecord
     {
         public int stockedFor = -1;
+        /// <summary>이번 준비 매물을 뽑은 주점 레벨(PREP-12). 예전 저장에는 없어 -1(현재 레벨)로 읽힌다.</summary>
+        public int stockedLevel = -1;
+        /// <summary>이번 준비의 주점 리롤 횟수(PREP-12). 예전 저장에는 없어 0으로 읽힌다.</summary>
+        public int rerolls;
         public List<string> offers = new List<string>();
+        /// <summary>offers와 같은 순번의 잠금(PREP-12). 예전 저장에는 없어 모두 풀린 채로 읽힌다.</summary>
+        public List<bool> locked = new List<bool>();
     }
 
     [Serializable]

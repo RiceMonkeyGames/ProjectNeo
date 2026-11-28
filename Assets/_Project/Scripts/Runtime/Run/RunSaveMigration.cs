@@ -218,6 +218,8 @@ namespace ProjectNeo.Run
                 if (!missing) return;
                 Note("tavern offers contained removed heroes; the tavern restocks");
                 tavern.offers.Clear();
+                tavern.locked?.Clear();
+                tavern.rerolls = 0;
                 tavern.stockedFor = -1;
             }
 

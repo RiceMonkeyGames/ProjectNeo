@@ -224,8 +224,9 @@ namespace ProjectNeo.Tests
             facilities.Close();
             yield return null;
 
-            Assert.IsTrue(Station(FacilityType.Tavern).Interact());
-            Assert.IsFalse(facilities.IsRerollVisible, "상점이 아니면 리롤 버튼을 숨긴다.");
+            // PREP-12: 주점도 리롤 버튼을 쓴다(값은 GameTavernPlayTests). 그 밖의 시설은 숨긴다.
+            Assert.IsTrue(Station(FacilityType.HeroHall).Interact());
+            Assert.IsFalse(facilities.IsRerollVisible, "상점·주점이 아니면 리롤 버튼을 숨긴다.");
             Assert.IsFalse(facilities.TryReroll());
         }
 

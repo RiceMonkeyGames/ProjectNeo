@@ -6,6 +6,5 @@ Last Updated: 2026-11-19 21:09:01 (KST)
 
 - Specific perk varieties and scouting perk categorization (tree structure decided in Q-72; contents with META-09).
 - Combat/building tuning values (fall damage coefficients, etc.).
-- Tavern gold re-roll costs and locking slots (Shop rules decided as Q-46, 2026-11-13).
 - Combat consumable follow-ups (PREP-04): quick slots once more consumables exist, hero/AI use. (Skill rules, manual hero skill input, and default consumable key are decided under Q-11/Q-72/Q-73.)
 - Cannon fire-ready audio and on-cannon VFX follow-up to SIEGE-07. (UI overhaul direction UI-05–UI-08 and Q-11 battle HUD/command keys are resolved.)

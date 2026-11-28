@@ -130,6 +130,7 @@ namespace ProjectNeo.Run
         public void SetupShop(EconomyConfig config)
         {
             if (Shop != null || config == null) return;
+            economy = config;
             Shop = new ItemShop(config);
             Shop.Changed += () => Changed?.Invoke();
             ApplyShopPerks();
@@ -225,7 +226,12 @@ namespace ProjectNeo.Run
             return Shop.TryToggleLock(index, ShopMaxLocked);
         }
 
+        // 거래 수치(상점·주점 리롤 골드). SetupShop이 정한다.
+        EconomyConfig economy;
+
         readonly List<HeroDefinition> tavernOffers = new List<HeroDefinition>();
+        // tavernOffers와 같은 순번의 잠금(PREP-12).
+        readonly List<bool> tavernLocked = new List<bool>();
 
         /// <summary>이번 준비의 주점 영웅 매물(D-3). 고용하면 빠진다.</summary>
         public IReadOnlyList<HeroDefinition> TavernOffers => tavernOffers;
@@ -237,18 +243,133 @@ namespace ProjectNeo.Run
 
         /// <summary>
         /// 이번 준비의 주점 매물을 아직 뽑지 않았으면 주점 시설의 현재 레벨 영웅 풀에서 매물 수만큼 뽑는다(D-3, Q-34).
-        /// 이 런에 이미 있거나 영구 사망한 영웅, isAvailable(해금)을 통과하지 못한 영웅은 빼고, 같은 시드면 같은 매물이다.
+        /// 잠긴 매물(PREP-12)은 남기고 빈 자리만 뽑는다. 이 런에 이미 있거나 영구 사망한 영웅,
+        /// isAvailable(해금)을 통과하지 못한 영웅은 빼고, 같은 시드면 같은 매물이다.
         /// 뽑았으면 true. 시설 업그레이드는 다음 준비의 매물부터 반영된다.
         /// </summary>
         public bool RestockTavernIfNeeded(Func<HeroDefinition, bool> isAvailable = null)
         {
             FacilityState tavern = Facility(FacilityType.Tavern);
             if (tavern == null || TavernStockedFor == BattlesFought) return false;
-            tavernOffers.Clear();
-            tavernOffers.AddRange(Core.WeightedPool.Roll(tavern.Current.heroPool, tavern.Current.offerCount,
-                new Core.SeededRandom(TavernSeedFor(BattlesFought)),
-                hero => !InRunOrFallen(hero) && (isAvailable == null || isAvailable(hero))));
             TavernStockedFor = BattlesFought;
+            TavernStockedLevel = tavern.Level;
+            TavernRerolls = 0;
+            RollTavern(tavern.Current, new Core.SeededRandom(TavernSeedFor(BattlesFought)), isAvailable);
+            return true;
+        }
+
+        // 잠긴 매물은 앞에 남기고 나머지 칸(매물 수 - 잠긴 수)을 풀에서 새로 뽑는다. 새 매물은 잠긴 영웅과 겹칠 수 있다(PREP-12).
+        void RollTavern(FacilityLevel level, Core.IRandomSource random, Func<HeroDefinition, bool> isAvailable)
+        {
+            var kept = new List<HeroDefinition>();
+            for (int i = 0; i < tavernOffers.Count; i++)
+                if (IsTavernLocked(i) && tavernOffers[i] != null) kept.Add(tavernOffers[i]);
+            tavernOffers.Clear();
+            tavernLocked.Clear();
+            foreach (HeroDefinition hero in kept)
+            {
+                tavernOffers.Add(hero);
+                tavernLocked.Add(true);
+            }
+            int toRoll = Math.Max(0, level.offerCount - kept.Count);
+            if (toRoll > 0)
+                foreach (HeroDefinition hero in Core.WeightedPool.Roll(level.heroPool, toRoll, random,
+                    hero => !InRunOrFallen(hero) && (isAvailable == null || isAvailable(hero))))
+                {
+                    tavernOffers.Add(hero);
+                    tavernLocked.Add(false);
+                }
+            Changed?.Invoke();
+        }
+
+        /// <summary>이번 준비의 매물을 뽑은 주점 레벨. 리롤도 이 레벨의 풀을 쓴다(업그레이드는 다음 준비부터). 모르면 -1(현재 레벨을 쓴다).</summary>
+        public int TavernStockedLevel { get; private set; } = -1;
+        /// <summary>이번 준비 단계에서 주점을 리롤한 횟수(PREP-12). 준비마다 매물을 새로 뽑을 때 0으로 돌아간다.</summary>
+        public int TavernRerolls { get; private set; }
+        /// <summary>다음 주점 리롤의 골드(PREP-12). 리롤할 때마다 오르고 준비마다 처음 값으로 돌아간다. 거래 설정이 없으면 0.</summary>
+        public int TavernRerollCost => economy != null ? economy.GetTavernRerollCost(TavernRerolls) : 0;
+
+        /// <summary>주점 리롤 시드. 같은 런·같은 준비·같은 리롤 순번이면 같다. 준비 매물 시드와 겹치지 않게 섞는다.</summary>
+        public int TavernRerollSeedFor(int preparation, int reroll) =>
+            unchecked(TavernSeedFor(preparation) * 1000033 + (reroll + 1) * 104723);
+
+        /// <summary>index번째 주점 매물이 잠겨 있는지(PREP-12).</summary>
+        public bool IsTavernLocked(int index) => index >= 0 && index < tavernLocked.Count && tavernLocked[index];
+
+        /// <summary>잠긴 주점 매물 수(PREP-12).</summary>
+        public int TavernLockedCount
+        {
+            get
+            {
+                int count = 0;
+                foreach (bool isLocked in tavernLocked) if (isLocked) count++;
+                return count;
+            }
+        }
+
+        /// <summary>현재 주점 레벨에 따른 최대 잠금 수(PREP-12, 상점과 같이 레벨 1이면 1개). 업그레이드 직후부터 바로 늘어난다.</summary>
+        public int TavernMaxLocked
+        {
+            get
+            {
+                FacilityState tavern = Facility(FacilityType.Tavern);
+                return tavern != null ? tavern.Level + 1 : 0;
+            }
+        }
+
+        bool IsTavernStocked => Facility(FacilityType.Tavern) != null && TavernStockedFor == BattlesFought;
+
+        FacilityLevel TavernRerollLevel()
+        {
+            FacilityState tavern = Facility(FacilityType.Tavern);
+            IReadOnlyList<FacilityLevel> levels = tavern.Definition.Levels;
+            int level = TavernStockedLevel >= 0 ? TavernStockedLevel : tavern.Level;
+            return levels[Math.Min(level, levels.Count - 1)];
+        }
+
+        /// <summary>
+        /// 지금 주점을 리롤할 수 있는지(PREP-12). 전투 대기 → 이번 준비 매물을 뽑았는지 → 빈 칸 → 골드 순으로
+        /// 처음 걸린 이유를 돌려준다. 런을 바꾸지 않는다.
+        /// </summary>
+        public TavernRerollCheck CheckTavernReroll()
+        {
+            if (HasPendingBattle) return TavernRerollCheck.BattlePending;
+            if (economy == null || !IsTavernStocked) return TavernRerollCheck.NotStocked;
+            if (TavernLockedCount >= TavernRerollLevel().offerCount) return TavernRerollCheck.NoOpenSlot;
+            if (!Wallet.CanAfford(new Cost(TavernRerollCost))) return TavernRerollCheck.NotEnoughFunds;
+            return TavernRerollCheck.Ok;
+        }
+
+        /// <summary>
+        /// 골드를 내고 이번 준비의 주점 매물을 새로 뽑는다(PREP-12, 상점 Q-46과 같은 규칙). 잠긴 매물은 남기고
+        /// 이미 고용한 칸까지 매물 수만큼 다시 채운다. 이번 준비 매물을 뽑은 레벨의 풀을 쓰고, 같은 시드·같은 리롤 순번이면 같은 매물이다.
+        /// <see cref="CheckTavernReroll"/>이 Ok가 아니면 false이고 런은 바뀌지 않는다.
+        /// </summary>
+        public bool TryRerollTavern(Func<HeroDefinition, bool> isAvailable = null)
+        {
+            if (CheckTavernReroll() != TavernRerollCheck.Ok) return false;
+            FacilityLevel level = TavernRerollLevel();
+            if (!Wallet.TrySpend(new Cost(TavernRerollCost))) return false;
+            int reroll = TavernRerolls++;
+            RollTavern(level, new Core.SeededRandom(TavernRerollSeedFor(BattlesFought, reroll)), isAvailable);
+            return true;
+        }
+
+        /// <summary>index번째 주점 매물의 잠금을 토글할 수 있는지 확인한다(PREP-12). 런을 바꾸지 않는다.</summary>
+        public TavernLockCheck CheckTavernLock(int index)
+        {
+            if (HasPendingBattle) return TavernLockCheck.BattlePending;
+            if (!IsTavernStocked) return TavernLockCheck.NotStocked;
+            if (index < 0 || index >= tavernOffers.Count) return TavernLockCheck.InvalidSlot;
+            if (!IsTavernLocked(index) && TavernLockedCount >= TavernMaxLocked) return TavernLockCheck.LimitReached;
+            return TavernLockCheck.Ok;
+        }
+
+        /// <summary>index번째 주점 매물의 잠금을 무료로 토글한다(PREP-12). <see cref="CheckTavernLock"/>이 Ok가 아니면 false.</summary>
+        public bool TryToggleTavernLock(int index)
+        {
+            if (CheckTavernLock(index) != TavernLockCheck.Ok) return false;
+            tavernLocked[index] = !tavernLocked[index];
             Changed?.Invoke();
             return true;
         }
@@ -284,7 +405,13 @@ namespace ProjectNeo.Run
             if (character != null && character.Definition != hero)
                 throw new ArgumentException("캐릭터가 고용할 영웅의 것이 아니다.", nameof(character));
             if (!Wallet.TrySpend(hero.HireCost)) return null;
-            tavernOffers.Remove(hero);
+            // 리롤로 같은 영웅이 두 칸에 있을 수 있다(PREP-12). 고용하면 모두 빼고 잠금도 함께 지운다.
+            for (int i = tavernOffers.Count - 1; i >= 0; i--)
+            {
+                if (tavernOffers[i] != hero) continue;
+                tavernOffers.RemoveAt(i);
+                if (i < tavernLocked.Count) tavernLocked.RemoveAt(i);
+            }
             RunHero hired = AddHero(character ?? new Character(hero));
             if (captainOf != null) captainOf.Leader = hired;
             Changed?.Invoke();

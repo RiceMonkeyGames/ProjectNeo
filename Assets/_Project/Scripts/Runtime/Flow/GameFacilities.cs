@@ -77,10 +77,14 @@ namespace ProjectNeo.Flow
         /// <summary>상세 칸 제목(고른 타일의 이름이나 시설 용도).</summary>
         public string DetailTitleText => window != null && window.detailTitle != null ? window.detailTitle.text : string.Empty;
         public string UpgradeText => window != null && window.upgradeLabel != null ? window.upgradeLabel.text : string.Empty;
-        /// <summary>리롤 버튼 글자(상점). 버튼이 없으면 빈 글자.</summary>
+        /// <summary>리롤 버튼 글자(상점·주점). 버튼이 없으면 빈 글자.</summary>
         public string RerollText => window != null && window.rerollLabel != null ? window.rerollLabel.text : string.Empty;
-        /// <summary>리롤 버튼이 지금 보이는지(상점 팝업에서만 보인다).</summary>
+        /// <summary>리롤 버튼이 지금 보이는지(상점·주점 팝업에서만 보인다).</summary>
         public bool IsRerollVisible => window != null && window.rerollButton != null && window.rerollButton.gameObject.activeSelf;
+        /// <summary>리롤 버튼을 누를 수 있는지(주점은 골드가 모자라거나 모든 칸이 잠기면 꺼진다, PREP-12).</summary>
+        public bool IsRerollInteractable => IsRerollVisible && window.rerollButton.interactable;
+        public int TavernMaxLocked => State != null ? State.TavernMaxLocked : 0;
+        public int TavernLockedCount => State != null ? State.TavernLockedCount : 0;
         /// <summary>매물 쪽 타일 수(상점 매물, 주점 영웅, 병영 병사, 대장간 제작법, 영웅의 전당 영웅).</summary>
         public int OfferRows => offerEntries.Count;
         /// <summary>보관함 쪽 타일 수(상점: 보관함 전체, 대장간: 장비). 다른 시설은 0.</summary>
@@ -97,8 +101,10 @@ namespace ProjectNeo.Flow
         /// <summary>상세 칸의 둘째 단추(상점 잠금, 대장간 판매). 쓰지 않으면 숨겨진다.</summary>
         public UnityEngine.UI.Button SecondButton => window != null ? window.secondaryButton : null;
         public string SecondText => window != null && window.secondaryLabel != null ? window.secondaryLabel.text : string.Empty;
-        /// <summary>index번째 상점 매물이 잠겨 있는지(PREP-03).</summary>
-        public bool IsOfferLocked(int index) => State?.Shop != null && State.Shop.IsLocked(index);
+        /// <summary>열린 시설(상점 PREP-03, 주점 PREP-12)의 index번째 매물이 잠겨 있는지.</summary>
+        public bool IsOfferLocked(int index) => OpenFacility == FacilityType.Tavern
+            ? State != null && State.IsTavernLocked(index)
+            : State?.Shop != null && State.Shop.IsLocked(index);
         public int ShopMaxLocked => State != null ? State.ShopMaxLocked : 0;
         public int ShopLockedCount => State?.Shop != null ? State.Shop.LockedCount : 0;
 
@@ -349,10 +355,11 @@ namespace ProjectNeo.Flow
             _ => "고용하지 못했습니다.",
         };
 
-        /// <summary>골드를 내고 상점 매물을 새로 뽑는다(PREP-02). 리롤 버튼이 부른다.</summary>
+        /// <summary>골드를 내고 열린 시설의 매물을 새로 뽑는다(상점 PREP-02, 주점 PREP-12). 리롤 버튼이 부른다.</summary>
         public bool TryReroll()
         {
             RunState state = State;
+            if (OpenFacility == FacilityType.Tavern) return TryRerollTavern(state);
             if (OpenFacility != FacilityType.Shop || state?.Shop == null || flow.Phase != GamePhase.Preparation) return false;
             int cost = state.ShopRerollCost;
             ShopRerollCheck check = state.CheckShopReroll();
@@ -364,6 +371,25 @@ namespace ProjectNeo.Flow
 
         public void TryRerollFromButton() => TryReroll();
 
+        bool TryRerollTavern(RunState state)
+        {
+            if (state == null || flow.Phase != GamePhase.Preparation) return false;
+            int cost = state.TavernRerollCost;
+            TavernRerollCheck check = state.CheckTavernReroll();
+            bool rerolled = check == TavernRerollCheck.Ok && state.TryRerollTavern(IsHeroAvailable);
+            Message = rerolled ? $"영웅 목록 리롤 · {cost}골드" : "리롤: " + Reason(check, cost);
+            if (rerolled) selected = -1;
+            return Done(rerolled);
+        }
+
+        static string Reason(TavernRerollCheck check, int cost) => check switch
+        {
+            TavernRerollCheck.BattlePending => "전투 중에는 리롤할 수 없습니다.",
+            TavernRerollCheck.NoOpenSlot => "모든 칸이 잠겨 있습니다.",
+            TavernRerollCheck.NotEnoughFunds => $"자금 부족: {cost}골드",
+            _ => "지금은 리롤할 수 없습니다.",
+        };
+
         static string Reason(ShopRerollCheck check, int cost) => check switch
         {
             ShopRerollCheck.BattlePending => "전투 중에는 리롤할 수 없습니다.",
@@ -371,10 +397,11 @@ namespace ProjectNeo.Flow
             _ => "지금은 리롤할 수 없습니다.",
         };
 
-        /// <summary>상점 매물의 index번째 잠금을 토글한다(PREP-03). 매물 상세의 잠금 단추가 부른다.</summary>
+        /// <summary>열린 시설 매물의 index번째 잠금을 토글한다(상점 PREP-03, 주점 PREP-12). 매물 상세의 잠금 단추가 부른다.</summary>
         public bool TryToggleLock(int index)
         {
             RunState state = State;
+            if (OpenFacility == FacilityType.Tavern) return TryToggleTavernLock(state, index);
             if (OpenFacility != FacilityType.Shop || state?.Shop == null || flow.Phase != GamePhase.Preparation) return false;
             if (index < 0 || index >= state.Shop.Stock.Count) return false;
             bool wasLocked = state.Shop.IsLocked(index);
@@ -384,6 +411,25 @@ namespace ProjectNeo.Flow
             Message = toggled
                 ? (wasLocked ? $"{item.DisplayName} 잠금 해제" : $"{item.DisplayName} 잠금 (최대 {state.ShopMaxLocked}개)")
                 : Reason(check, state.ShopMaxLocked);
+            return Done(toggled);
+        }
+
+        bool TryToggleTavernLock(RunState state, int index)
+        {
+            if (state == null || flow.Phase != GamePhase.Preparation) return false;
+            if (index < 0 || index >= state.TavernOffers.Count) return false;
+            bool wasLocked = state.IsTavernLocked(index);
+            TavernLockCheck check = state.CheckTavernLock(index);
+            bool toggled = check == TavernLockCheck.Ok && state.TryToggleTavernLock(index);
+            HeroDefinition hero = state.TavernOffers[index];
+            Message = toggled
+                ? (wasLocked ? $"{hero.DisplayName} 잠금 해제" : $"{hero.DisplayName} 잠금 (최대 {state.TavernMaxLocked}명)")
+                : check switch
+                {
+                    TavernLockCheck.BattlePending => "전투 중에는 잠금을 바꿀 수 없습니다.",
+                    TavernLockCheck.LimitReached => $"잠금 한도: {state.TavernMaxLocked}명.",
+                    _ => "지금은 잠금을 바꿀 수 없습니다.",
+                };
             return Done(toggled);
         }
 
@@ -665,9 +711,16 @@ namespace ProjectNeo.Flow
 
             ShowDetail(SelectedEntry, facility, state);
             if (window.notice != null) window.notice.text = Message;
-            if (window.rerollButton != null) window.rerollButton.gameObject.SetActive(type == FacilityType.Shop && state.Shop != null);
-            if (type == FacilityType.Shop && state.Shop != null && window.rerollLabel != null)
-                window.rerollLabel.text = $"리롤 · {state.ShopRerollCost}골드";
+            bool tavern = type == FacilityType.Tavern;
+            bool rerolls = (type == FacilityType.Shop && state.Shop != null) || tavern;
+            if (window.rerollButton != null)
+            {
+                window.rerollButton.gameObject.SetActive(rerolls);
+                // 주점(PREP-12): 골드가 모자라거나 모든 칸이 잠겼으면 누를 수 없다.
+                window.rerollButton.interactable = !tavern || state.CheckTavernReroll() == TavernRerollCheck.Ok;
+            }
+            if (rerolls && window.rerollLabel != null)
+                window.rerollLabel.text = $"리롤 · {(tavern ? state.TavernRerollCost : state.ShopRerollCost)}골드";
         }
 
         void FillGrid(RectTransform grid, List<Entry> entries, bool showing)
@@ -760,7 +813,7 @@ namespace ProjectNeo.Flow
             FacilityType.Shop => $"매물은 준비마다 바뀝니다.\n잠근 매물은 리롤해도 남습니다 (최대 {state.ShopMaxLocked}개).",
             FacilityType.TrainingGround => DescribeTraining(facility) + $"\n보관 병사 {state.StoredSoldiers.Count}명",
             FacilityType.Smithy => DescribeSmithy(facility),
-            FacilityType.Tavern => DescribeTavern(facility),
+            FacilityType.Tavern => DescribeTavern(facility) + $"\n잠근 영웅은 리롤해도 남습니다 (최대 {state.TavernMaxLocked}명).",
             FacilityType.HeroHall => DescribeHeroHall(state),
             FacilityType.Defense => DescribeDefense(facility),
             _ => Purpose(type) + "\n시설 기능과 업그레이드 효과는 나중에 추가됩니다.",
@@ -805,12 +858,15 @@ namespace ProjectNeo.Flow
             {
                 int index = i;
                 HeroDefinition hero = offers[i];
+                bool locked = state.IsTavernLocked(index);
                 offerEntries.Add(new Entry
                 {
                     Name = hero.DisplayName, Sub = $"{hero.Tier}티어 · {Gold(hero.HireCost)}", Price = Gold(hero.HireCost),
+                    Tag = locked ? "잠금" : null,
                     Stats = hero.BaseStats, Detail = DescribeSkills(hero),
                     Dim = state.Wallet.Gold < hero.HireCost.gold,
                     Action = "고용", OnAction = () => TryHire(index),
+                    Second = locked ? "잠금 해제" : "잠금", OnSecond = () => TryToggleLock(index),
                 });
             }
         }

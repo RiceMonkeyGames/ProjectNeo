@@ -93,8 +93,14 @@ namespace ProjectNeo.Run
                     snapshot.shop.locked.Add(Shop.IsLocked(i));
                 }
             snapshot.tavern.stockedFor = TavernStockedFor;
-            foreach (HeroDefinition offer in tavernOffers)
-                if (offer != null) snapshot.tavern.offers.Add(offer.Id);
+            snapshot.tavern.stockedLevel = TavernStockedLevel;
+            snapshot.tavern.rerolls = TavernRerolls;
+            for (int i = 0; i < tavernOffers.Count; i++)
+            {
+                if (tavernOffers[i] == null) continue;
+                snapshot.tavern.offers.Add(tavernOffers[i].Id);
+                snapshot.tavern.locked.Add(IsTavernLocked(i));
+            }
 
             foreach (CastlePieceState piece in Castle.Pieces)
                 snapshot.castle.pieces.Add(new CastlePieceRecord
@@ -320,8 +326,18 @@ namespace ProjectNeo.Run
                 state.ShopRerolls = Math.Max(0, shop.rerolls);
             }
             TavernRecord tavern = snapshot.tavern ?? new TavernRecord();
-            foreach (string id in tavern.offers ?? new List<string>()) state.tavernOffers.Add(content.Hero(id));
+            List<string> offerIds = tavern.offers ?? new List<string>();
+            for (int i = 0; i < offerIds.Count; i++)
+            {
+                HeroDefinition offer = content.Hero(offerIds[i]);
+                if (offer == null) continue;
+                state.tavernOffers.Add(offer);
+                // PREP-12 전 저장에는 잠금이 없어 모두 풀린 채로 읽는다.
+                state.tavernLocked.Add(tavern.locked != null && i < tavern.locked.Count && tavern.locked[i]);
+            }
             state.TavernStockedFor = tavern.stockedFor;
+            state.TavernStockedLevel = tavern.stockedLevel;
+            state.TavernRerolls = Math.Max(0, tavern.rerolls);
 
             var pieces = new List<CastlePieceState>();
             foreach (CastlePieceRecord piece in snapshot.castle.pieces ?? new List<CastlePieceRecord>())

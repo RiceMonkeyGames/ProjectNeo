@@ -253,6 +253,39 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
+        public void CaptureThenRestore_KeepsTavernLocksAndRerolls_AndOldSavesStayUnlocked()
+        {
+            RunState run = RichRun();
+            Assert.IsTrue(run.TryToggleTavernLock(0));
+            Assert.IsTrue(run.TryRerollTavern());
+            Assert.AreEqual(2, run.TavernOffers.Count);
+
+            string json = Json(run.Capture(1, content));
+            RunState restored = RunState.Restore(JsonUtility.FromJson<RunSnapshot>(json), content, options, out string error);
+            Assert.IsNotNull(restored, error);
+            CollectionAssert.AreEqual(run.TavernOffers, restored.TavernOffers);
+            Assert.IsTrue(restored.IsTavernLocked(0));
+            Assert.IsFalse(restored.IsTavernLocked(1));
+            Assert.AreEqual(1, restored.TavernRerolls);
+            Assert.AreEqual(20, restored.TavernRerollCost, "the second re-roll of this preparation");
+            Assert.AreEqual(run.TavernStockedLevel, restored.TavernStockedLevel);
+
+            // PREP-12 전 저장: 주점 기록에 잠금·리롤·뽑은 레벨이 없다.
+            var oldTavern = JsonUtility.FromJson<TavernRecord>("{\"stockedFor\":0,\"offers\":[\"archer\"]}");
+            Assert.AreEqual(-1, oldTavern.stockedLevel);
+            Assert.AreEqual(0, oldTavern.rerolls);
+            RunSnapshot old = JsonUtility.FromJson<RunSnapshot>(json);
+            old.tavern.locked = null;
+            old.tavern.rerolls = 0;
+            old.tavern.stockedLevel = -1;
+            RunState fromOld = RunState.Restore(old, content, options, out error);
+            Assert.IsNotNull(fromOld, error);
+            Assert.AreEqual(0, fromOld.TavernLockedCount, "old saves load with every offer unlocked");
+            Assert.AreEqual(10, fromOld.TavernRerollCost);
+            Assert.IsTrue(fromOld.TryRerollTavern(), "a missing stocked level falls back to the current tavern level");
+        }
+
+        [Test]
         public void RunSavedBeforeStocking_RollsTheSameShopAfterRestore()
         {
             RunConfig config = Track(RunConfig.Create(squadConfig, playerHero, 100, null, new[] { shop }))
