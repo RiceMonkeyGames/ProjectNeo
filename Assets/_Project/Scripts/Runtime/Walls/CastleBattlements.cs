@@ -99,6 +99,15 @@ namespace ProjectNeo.Walls
         public float LadderCrenelOffset =>
             world == null || world.Grid == null ? 0f : BattlementRules.LadderCrenelOffset(settings, world.Grid.CellSize);
 
+        /// <summary>
+        /// 운반병이 사다리를 걸 수 있는 한 면의 빈틈 자리 전부(면 가운데에서 잰 거리, <see cref="LadderCrenelOffset"/>과 같은 방향, SIEGE-37).
+        /// </summary>
+        public void LadderCrenelOffsets(List<float> result)
+        {
+            if (world == null || world.Grid == null) { result.Clear(); result.Add(0f); return; }
+            BattlementRules.LadderCrenelOffsets(settings, world.Grid.CellSize, result);
+        }
+
         /// <summary>그 칸의 맨 위 조각에 성가퀴가 서는 면(비트). 검증용.</summary>
         public int FacesAt(Vector2Int cell)
         {

@@ -142,7 +142,6 @@ namespace ProjectNeo.UI
                     case PlacementIssue.ReservedGate: issue = "성문 자리입니다"; break;
                     case PlacementIssue.UnitInTheWay: issue = "유닛과 겹칩니다"; break;
                     case PlacementIssue.BastionNeedsWall: issue = "보루는 성 바깥에서 성벽에 붙여 짓습니다"; break;
-                    case PlacementIssue.LadderLane: issue = "사다리가 서는 자리입니다"; break;
                     case PlacementIssue.BastionStack: issue = "보루 위에는 보루만 쌓습니다"; break;
                     default: issue = "위치를 고르세요"; break;
                 }

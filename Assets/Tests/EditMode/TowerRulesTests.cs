@@ -45,8 +45,8 @@ namespace ProjectNeo.Tests
             PlacementIssue issue = layout.Check(piece, cell, 0, false, out int level, out float elevation);
             if (issue != PlacementIssue.None) return issue;
             BattlementRules.CollectOutside(layout, grid, outside);
-            issue = BastionRules.Check(layout, grid, outside, null, piece, cell, 0, level, elevation);
-            return issue != PlacementIssue.None ? issue : TowerRules.Check(layout, grid, outside, null, piece, cell, 0, level, elevation);
+            issue = BastionRules.Check(layout, grid, outside, piece, cell, 0, level, elevation);
+            return issue != PlacementIssue.None ? issue : TowerRules.Check(layout, grid, outside, piece, cell, 0, level, elevation);
         }
 
         void PlaceTower(Vector2Int cell, int tiers)
@@ -72,10 +72,10 @@ namespace ProjectNeo.Tests
             }
         }
 
-        PlacementIssue InLine(Vector2Int cell, List<BuildPlacement> replaced = null, ICollection<Vector2Int> lanes = null)
+        PlacementIssue InLine(Vector2Int cell, List<BuildPlacement> replaced = null)
         {
             BattlementRules.CollectOutside(layout, grid, outside);
-            return TowerRules.CheckInLine(layout, grid, outside, lanes, tower, cell, 0, replaced);
+            return TowerRules.CheckInLine(layout, grid, outside, tower, cell, 0, replaced);
         }
 
         // SIEGE-24: the tower replaces two wall-line cells and sticks out two cells outward.
@@ -107,10 +107,9 @@ namespace ProjectNeo.Tests
         }
 
         [Test]
-        public void Tower_IsNotPlacedOnALadderLane_OrWhereAGroundStairLeansOnTheWall()
+        public void Tower_IsNotPlacedWhereAGroundStairLeansOnTheWall()
         {
             Ring();
-            Assert.AreEqual(PlacementIssue.LadderLane, InLine(new Vector2Int(4, 7), null, new HashSet<Vector2Int> { new Vector2Int(5, 8) }));
             var stairs = Track(BuildPieceDefinition.Create(BuildPieceKind.Stairs, "stairs", Vector2Int.one, Cell));
             // 계단 (4, 6)이 북쪽(회전 0)으로 올라 (4, 7) 성벽에 닿는다.
             Assert.IsTrue(layout.TryPlace(stairs, new Vector2Int(4, 6), 0, out _));

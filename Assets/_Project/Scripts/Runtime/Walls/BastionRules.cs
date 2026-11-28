@@ -6,17 +6,16 @@ namespace ProjectNeo.Walls
     /// <summary>
     /// 보루 배치 규칙(SIEGE-11, 사용자 결정 2026-11-22). 씬을 알지 않는다. <see cref="BuildLayout.Check"/>를 통과한 뒤에 부른다.
     /// 보루는 성 바깥 빈 칸에, 네 옆 중 하나가 같은 층·같은 높이의 성벽 조각과 맞닿게 짓는다. 보루 위에는 보루만 쌓고
-    /// 보루는 보루 위에만 쌓는다. 쌓은 층도 그 층에서 성벽과 맞닿아야 한다. 사다리가 서는 칸에는 짓지 않는다.
+    /// 보루는 보루 위에만 쌓는다. 쌓은 층도 그 층에서 성벽과 맞닿아야 한다. 사다리 자리는 막지 않는다(SIEGE-37).
     /// </summary>
     public static class BastionRules
     {
         const float HeightTolerance = 0.01f;
 
         /// <param name="outside">격자 가장자리에서 빈 칸만 따라 닿는 칸(<see cref="BattlementRules.CollectOutside"/>).</param>
-        /// <param name="ladderLanes">사다리가 서는 칸. 없으면 null.</param>
         /// <param name="level">놓일 층(<see cref="BuildLayout.Check"/>가 돌려준 값).</param>
         public static PlacementIssue Check(BuildLayout layout, BuildGridDefinition grid, ICollection<Vector2Int> outside,
-            ICollection<Vector2Int> ladderLanes, BuildPieceDefinition definition, Vector2Int cell, int rotation,
+            BuildPieceDefinition definition, Vector2Int cell, int rotation,
             int level, float elevation)
         {
             if (layout == null || definition == null) return PlacementIssue.None;
@@ -30,7 +29,6 @@ namespace ProjectNeo.Walls
                     bool onBastion = below != null && below.Definition.Kind == BuildPieceKind.Bastion;
                     if (level > 0 && bastion != onBastion) return PlacementIssue.BastionStack;
                     if (!bastion) continue;
-                    if (ladderLanes != null && ladderLanes.Contains(key)) return PlacementIssue.LadderLane;
                     if (level == 0 && (outside == null || !outside.Contains(key))) return PlacementIssue.BastionNeedsWall;
                 }
             if (!bastion) return PlacementIssue.None;

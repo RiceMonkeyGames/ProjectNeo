@@ -11,7 +11,6 @@ namespace ProjectNeo.Tests
         const int North = 1 << 0, East = 1 << 1, South = 1 << 2, West = 1 << 3;
         readonly List<Object> assets = new List<Object>();
         readonly HashSet<Vector2Int> outside = new HashSet<Vector2Int>();
-        readonly HashSet<Vector2Int> lanes = new HashSet<Vector2Int>();
         BuildGridDefinition grid;
         BuildPieceDefinition wall;
         BuildPieceDefinition bastion;
@@ -28,7 +27,6 @@ namespace ProjectNeo.Tests
                 new BuildMountPoint("top", Vector3.up)));
             cannon = Track(SiegeWeaponDefinition.Create("cannon", "cannon", Vector3.one));
             layout = new BuildLayout(grid);
-            lanes.Clear();
         }
 
         [TearDown]
@@ -53,7 +51,7 @@ namespace ProjectNeo.Tests
             PlacementIssue issue = layout.Check(piece, cell, 0, false, out int level, out float elevation);
             if (issue != PlacementIssue.None) return issue;
             BattlementRules.CollectOutside(layout, grid, outside);
-            return BastionRules.Check(layout, grid, outside, lanes, piece, cell, 0, level, elevation);
+            return BastionRules.Check(layout, grid, outside, piece, cell, 0, level, elevation);
         }
 
         [Test]
@@ -81,12 +79,12 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(PlacementIssue.BastionNeedsWall, Check(bastion, 4, 8));
         }
 
+        // SIEGE-37: 사다리 자리가 없어져 운반 사다리가 서던 칸에도 보루를 짓는다.
         [Test]
-        public void Bastion_OnLadderLane_IsRejected()
+        public void Bastion_InFrontOfAnyWallCell_IsAllowed_NoLadderLanes()
         {
             Ring();
-            lanes.Add(new Vector2Int(4, 7));
-            Assert.AreEqual(PlacementIssue.LadderLane, Check(bastion, 4, 7));
+            Assert.AreEqual(PlacementIssue.None, Check(bastion, 4, 7));
             Assert.AreEqual(PlacementIssue.None, Check(bastion, 3, 7));
         }
 

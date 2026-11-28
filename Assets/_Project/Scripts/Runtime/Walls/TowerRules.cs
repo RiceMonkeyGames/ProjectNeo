@@ -19,7 +19,7 @@ namespace ProjectNeo.Walls
         /// <see cref="CheckInLine"/>이 맡으므로 여기서는 늘 <see cref="PlacementIssue.TowerNeedsWall"/>이다.
         /// </summary>
         public static PlacementIssue Check(BuildLayout layout, BuildGridDefinition grid, ICollection<Vector2Int> outside,
-            ICollection<Vector2Int> ladderLanes, BuildPieceDefinition definition, Vector2Int cell, int rotation,
+            BuildPieceDefinition definition, Vector2Int cell, int rotation,
             int level, float elevation)
         {
             if (layout == null || definition == null) return PlacementIssue.None;
@@ -50,12 +50,12 @@ namespace ProjectNeo.Walls
 
         /// <summary>
         /// 망루를 새로 놓는 자리 검사(SIEGE-24). 네 방향 가운데 한 방향을 바깥으로 보고, 그 반대쪽 줄(안쪽 줄)의 칸이 모두
-        /// 고정되지 않은 성벽만 쌓인 칸이고, 바깥쪽 줄의 칸이 모두 성 바깥 빈 칸(사다리 자리 아님)이며, 안쪽 줄의 안쪽 이웃이 성 바깥이 아니면
+        /// 고정되지 않은 성벽만 쌓인 칸이고, 바깥쪽 줄의 칸이 모두 성 바깥 빈 칸이며, 안쪽 줄의 안쪽 이웃이 성 바깥이 아니면
         /// (성벽 줄이 안뜰을 두르고 있으면) 놓을 수 있다. <paramref name="replaced"/>가 있으면 바꿔 끼울 성벽 조각을 위층부터 담는다.
         /// 땅 계단이 안쪽 줄 성벽에 기대어 있으면 놓지 않는다(계단이 오를 곳을 잃는다).
         /// </summary>
         public static PlacementIssue CheckInLine(BuildLayout layout, BuildGridDefinition grid, ICollection<Vector2Int> outside,
-            ICollection<Vector2Int> ladderLanes, BuildPieceDefinition definition, Vector2Int cell, int rotation,
+            BuildPieceDefinition definition, Vector2Int cell, int rotation,
             List<BuildPlacement> replaced = null)
         {
             replaced?.Clear();
@@ -73,7 +73,7 @@ namespace ProjectNeo.Walls
                 // 바깥 방향으로 두 줄 이상이어야 안쪽 줄과 바깥쪽 줄로 나뉜다.
                 if ((outward.x != 0 ? size.x : size.y) < 2) continue;
                 inner.Clear();
-                bool fits = true, lane = false;
+                bool fits = true;
                 for (int x = 0; x < size.x && fits; x++)
                     for (int z = 0; z < size.y && fits; z++)
                     {
@@ -87,7 +87,6 @@ namespace ProjectNeo.Walls
                         }
                         // 바깥쪽 줄: 성 바깥 빈 칸.
                         if (layout.ColumnHeight(key) != 0 || layout.IsGateCell(key) || outside == null || !outside.Contains(key)) fits = false;
-                        else if (ladderLanes != null && ladderLanes.Contains(key)) lane = true;
                     }
                 if (!fits || inner.Count == 0) continue;
                 // 안쪽 줄의 안쪽 이웃이 성 바깥이면 성벽 줄이 아니다(혼자 선 성벽).
@@ -97,7 +96,6 @@ namespace ProjectNeo.Walls
                     if (behind.x < 0 || behind.y < 0 || behind.x >= grid.Width || behind.y >= grid.Depth || outside.Contains(behind)) fits = false;
                 }
                 if (!fits) continue;
-                if (lane) { best = PlacementIssue.LadderLane; continue; }
                 if (StairLeansOn(layout, inner)) { best = PlacementIssue.Occupied; continue; }
                 if (replaced != null)
                 {

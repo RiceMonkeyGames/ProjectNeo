@@ -106,8 +106,14 @@ namespace ProjectNeo.Tests
         public IEnumerator Ladders_RestOnTheCrenelSill_AndThePatternContinues()
         {
             yield return null;
-            SiegeLadder ladder = battle.Ladders.First(l => l.HasWall);
-            PlacedStructure wall = world.Structures.First(p => world.Layout.Top(ladder.Cell) == p.Placement);
+            // 운반병이 건 것처럼 원본 사다리를 북쪽 성벽 기본 빈틈에 건다(SIEGE-37: 전투 전에 깔아 둔 사다리가 없다).
+            PlacedStructure wall = NorthWallWithoutLadder();
+            SiegeLadder ladder = Object.Instantiate(battle.LadderTemplate, battle.LadderTemplate.transform.parent);
+            ladder.gameObject.SetActive(true);
+            Assert.IsTrue(ladder.State.TryLift());
+            Assert.IsTrue(ladder.PlaceAt(new LadderSlot(wall.Placement.Cell, battle.Settings.Outward,
+                battlements.LadderCrenelOffset, Vector3.zero, Vector3.zero)));
+            Assert.IsTrue(ladder.HasWall);
             float top = world.transform.TransformPoint(new Vector3(0f, wall.Placement.Elevation + wall.Placement.Definition.Height, 0f)).y;
             Transform root = Battlement(wall);
             Assert.IsNotNull(root, "사다리 칸도 다른 칸과 똑같이 성가퀴가 선다.");
