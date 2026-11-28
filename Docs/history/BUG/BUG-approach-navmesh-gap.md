@@ -1,0 +1,24 @@
+# BUG-approach-navmesh-gap | 2026-11-28 | SIEGE - Basin Spawn Field Cut Off From the North Wall in the NavMesh
+
+> Purpose: Verification & completion log. | Parent: [history/README](../README.md)
+
+### 2026-11-28: BUG-approach-navmesh-gap - Approach Bridge and East Basin Seal
+
+- **Assignee**: `SeongminHwang` | **Branch**: `fix/bug-approach-navmesh-gap` | **Claim commit**: `035c2c0`
+- **Cause 1 (gap)**: in the basin `Game` scene (`SIEGE-40`) the hidden flat build slab (`ConstructionWorld/Geometry/Ground`) covers only the 12-row band (world z 118.6 to 178.6). The near `ApproachGround` pieces (`SM_Generic_Ground_*`) have their MeshColliders disabled (already so in the basin draft scene), and the far field's enabled colliders start around z 188 to 226. Nothing collides in between, so the spawn field was a separate NavMesh island. `CalculatePath` from the spawn to the wall front or the gate front was `PathPartial`, ending near (-11.5, -18.4, 209.5).
+- **Cause 2 (exposed by the fix)**: once the gap was closed, paths ran around the east end tower over the low demo hill `SM_Generic_Mountains_Grass_01 (7)` (2 to 5m high) into the basin. Ladder, gate and cannon enemies then saw the allies inside as reachable and switched to assault. The west end is closed by steep mountains.
+- **Fix** (`Editor/GameBasinSetup`, run by `Apply()` and by menu `ProjectNeo/Setup/Build Approach Bridge And East Seal In Game Scene (BUG-approach-navmesh-gap)`; idempotent):
+  - `BuildApproachBridge`: hidden collision-only `MeshCollider` `Geometry/ApproachBridge` (mesh asset `Assets/_Project/Data/GameFlow/ApproachBridge.asset`, 85×29 vertices, 2.5m step). It covers the grid width from the band's north edge 70m north. Heights follow the highest `ApproachGround` surface (disabled colliders are switched on briefly to measure it). The bridge starts at the build plane and blends into that surface over 10m. Where an enabled field collider lies below, the bridge stays at most 1.5m above it, so no walkable layer with agent clearance (2m) is left underneath. The band and the field pieces' collider settings are unchanged.
+  - `SealBasinEast`: hidden `BoxCollider` `Geometry/BasinSealEast` continuing the wall row (5m thick, 200m tall) 240m east from the east end tower. Play Mode trials: 150m still leaks around the hill, 200m seals it.
+- **Tests**: new `GameBattlePlayTests.출현_들판에서_성벽_앞까지_길이_이어지고_성_안으로는_돌아_들어갈_수_없다` (three spawn points to three wall fronts `PathComplete`; three points inside the basin not `PathComplete`). `GameCannonPlayTests.MountFacingOutward` now builds its bastion within 4 cells of the spawn column; on the 210m basin wall the first wall cell was 140m from the gate, beyond the 60m cannon range. The stale "spawn field not connected" comment in the ladder carry test is updated.
+- **Verification** (Play Mode path checks in `Game` with the walls built):
+  - Spawn (cell 29, 19) to the gate front and to the far west wall front: `PathComplete`. Spawn to points inside the basin: `PathPartial`, stopping at the wall.
+  - Edit-mode sweep of the approach field (3m lattice): 1432 of 1518 points reach the gate. The other 84 sit at z 225 to 238 near x -115 to -105 and -49 to -19. There, two enabled field colliders are stacked more than 2m apart, which was already so before this fix. Only the north rows of a very large left-spawn group (row 8 and beyond) could reach them.
+  - Before/after on the same branch (scene reverted for the baseline):
+    - `GameBattlePlayTests`: 9 failures before, 6 after. Now passing: stage-2 approach after a broken gate, gate breaker entry, open-gate no-retreat. Remaining 6: archer retreat (separate cause, see below); `기존_깃발은...` NRE because `SIEGE-40` removed `BattleStartStation`; four deploy/HUD tests unrelated to approach.
+    - `GameWavePlayTests` 4/4 (2 failures before). `GameBossPlayTests` 2/2 (1 before). `GameCannonPlayTests` 2/2 (1 before).
+  - Full suite: compile passed, EditMode 1061/1061, PlayMode 355/399 (new test included). The 44 failures are the 51 pre-existing failures recorded at [SIEGE-37](../SIEGE/SIEGE-37.md) minus the 7 approach failures fixed here (Battle 3, Wave 2, Boss 1, Cannon 1). They are layout, HUD, camera and ally-side tests (`StackedConstructionPlayTests` 9, `GameFlowPlayTests` 4, `GameTowerPlayTests` 4, and others). No per-test baseline of the full suite was taken on this branch.
+- **Known follow-ups**:
+  - Archer retreat target: `SiegeAttackerBrain.TryGetRetreatPoint` sends retreating enemies to the grid's north edge (local z 60 minus margin). The basin spawn is 35m beyond that edge, so a retreating archer walks toward the wall (`공성병이_없고_진입로가_없으면_남은_궁수가_퇴각하고_승리한다` fails, as before this fix). Enemy AI area.
+  - The `기존_깃발은...` test still looks for the removed battle start flag (`SIEGE-40` test update).
+  - Stacked field colliders (cause of the 84 islands) and the duplicated `ApproachGround` root under `Geometry`.
