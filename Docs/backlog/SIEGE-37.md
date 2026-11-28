@@ -5,13 +5,15 @@ status: Waiting
 assignee: Unassigned
 branch:
 area: SIEGE
-depends_on: [SIEGE-20]
+depends_on: [SIEGE-20, SIEGE-40]
 created: 2026-11-27
 ---
 
 # SIEGE-37 - Ladder Carriers Bring and Raise Their Own Ladders
 
 ## Scope & Completion Criteria
+
+**Note 2026-11-28 (user, basin map):** the user confirmed this direction for the basin Game: ladders are brought by monsters instead of being laid in advance. On the basin north wall (`SIEGE-40`) `GameBattleSetup` still lays fixed ladders every 2 cells along the single wall row (cells 4–36); this task removes them. The wall row is the grid's innermost row with `BuildGridDefinition.castleBehindSouthEdge`, so carriers raise ladders against its north face only.
 
 Registered 2026-11-27 by the user during [SIEGE-20](SIEGE-20.md) ([Decisions-Resolved](../plan/Decisions-Resolved.md), "Kit battlement cover rule"). Today the Editor setup (`GameBattleSetup`) lays ladders on the ground every 2 cells along the north wall before battle, and ladder enemies pick one from that fixed list and raise it. This task replaces that with ladder carriers who bring their own ladder and raise it at a free kit crenel.
 
