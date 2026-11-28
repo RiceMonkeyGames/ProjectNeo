@@ -101,7 +101,7 @@ namespace ProjectNeo.Siege
             flyer = flyerSettings; settings = siegeSettings; outward = outwardDirection;
         }
 
-        public override void Bind(ConstructionWorld owner, SiegeLadder[] ladderSpots, Vector2Int outwardDirection,
+        public override void Bind(ConstructionWorld owner, System.Collections.Generic.IReadOnlyList<SiegeLadder> ladderSpots, Vector2Int outwardDirection,
             SiegeSettings battleSettings = null)
         {
             // 사다리는 쓰지 않는다.

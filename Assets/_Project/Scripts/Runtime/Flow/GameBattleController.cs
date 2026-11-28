@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using ProjectNeo.Combat;
 using ProjectNeo.Core;
@@ -22,7 +22,8 @@ namespace ProjectNeo.Flow
         [SerializeField] SquadCommandCenter commander;
         [SerializeField] CharacterActor player;
         [SerializeField] FallSettings fallSettings;
-        [SerializeField] SiegeLadder[] ladders = new SiegeLadder[0];
+        // 사다리 적이 들고 나올 사다리의 꺼진 원본(SIEGE-37). 전투마다 적 수만큼 복제한다.
+        [SerializeField] SiegeLadder ladderTemplate;
         readonly List<SiegeAttacker> enemies = new List<SiegeAttacker>();
         readonly Dictionary<Behaviour, bool> frozen = new Dictionary<Behaviour, bool>();
         readonly List<Behaviour> freezeOrder = new List<Behaviour>();
@@ -85,7 +86,10 @@ namespace ProjectNeo.Flow
                 return null;
             }
         }
-        public IReadOnlyList<SiegeLadder> Ladders => ladders;
+        /// <summary>이번 편성의 사다리(SIEGE-37): 운반 중·떨어짐·성벽에 걸림을 모두 포함한다.</summary>
+        public IReadOnlyList<SiegeLadder> Ladders => spawner != null ? spawner.Ladders : (IReadOnlyList<SiegeLadder>)System.Array.Empty<SiegeLadder>();
+        /// <summary>사다리 적이 들고 나올 사다리의 꺼진 원본(SIEGE-37).</summary>
+        public SiegeLadder LadderTemplate => ladderTemplate;
         /// <summary>런 데이터 연결(C-1~2). 씬 유닛의 런 번호와 이번 전투 입력을 읽을 때 쓴다.</summary>
         public GameRunLink RunLink => runLink ??= CreateRunLink();
 
@@ -171,8 +175,8 @@ namespace ProjectNeo.Flow
         }
 
         public void Configure(ConstructionWorld castle, GameBattleSettings config, SquadCommandCenter center,
-            CharacterActor playerActor, FallSettings falling, SiegeLadder[] ladderSpots)
-        { world = castle; settings = config; commander = center; player = playerActor; fallSettings = falling; ladders = ladderSpots; }
+            CharacterActor playerActor, FallSettings falling, SiegeLadder carriedLadderTemplate)
+        { world = castle; settings = config; commander = center; player = playerActor; fallSettings = falling; ladderTemplate = carriedLadderTemplate; }
 
         void Awake()
         {
@@ -299,7 +303,7 @@ namespace ProjectNeo.Flow
                     build.Work.OnPreparation(RunLink.Restorer != null ? RunLink.Restorer.RestoredWork : null);
                     RunLink.Restorer?.RestoredWork.Clear();
                 }
-                foreach (SiegeLadder ladder in ladders) { ladder.ResetBattle(); ladder.enabled = false; }
+                // 지난 전투의 사다리는 적과 함께 지우고 새 편성에서 다시 만든다(SIEGE-37).
                 SetCannonsArmed(false);
                 StartCoroutine(RestoreWhenReady());
                 SpawnEnemies();
@@ -314,7 +318,7 @@ namespace ProjectNeo.Flow
                 // 남은 작업 주문을 정리한다: 0%는 없애고 환불, 나머지는 진행률만큼 체력(SIEGE-08). 성 기록 전에 한다.
                 GetComponent<GameBuildEconomy>()?.Work?.FinishForBattle();
                 RunLink.OnBattleStart();
-                foreach (SiegeLadder ladder in ladders) ladder.enabled = true;
+                foreach (SiegeLadder ladder in Ladders) if (ladder != null) ladder.enabled = true;
                 schedule?.Reset();
                 ReleaseDueWaves(0f);
                 SetCannonsArmed(true);
@@ -467,7 +471,7 @@ namespace ProjectNeo.Flow
         {
             plan = BuildPlan();
             schedule = new WaveSchedule(plan.Timings());
-            spawner ??= new BattleEnemySpawner(world, settings, fallSettings, ladders, enemyRoot, this);
+            spawner ??= new BattleEnemySpawner(world, settings, fallSettings, ladderTemplate, enemyRoot, this);
             spawner.ResetNumbering();
             intel = EnemyIntel.FromPlan(plan);
             foreach (EncounterWave wave in plan.Waves)
@@ -573,6 +577,8 @@ namespace ProjectNeo.Flow
             foreach (SiegeAttacker enemy in enemies)
                 if (enemy != null) { enemy.gameObject.SetActive(false); Destroy(enemy.gameObject); }
             enemies.Clear();
+            spawner?.ClearLadders();
+            SiegeAttackerBrain.ResetSlotCatalog();
             enemyIds.Clear();
             bosses.Clear();
             waveUnits.Clear(); unreleased.Clear();
@@ -609,7 +615,7 @@ namespace ProjectNeo.Flow
             FreezeActor(player, true);
             foreach (var squad in commander.Squads)
                 foreach (UnitCombatAI member in squad.Members) if (member != null) FreezeActor(member.Actor, true);
-            foreach (SiegeLadder ladder in ladders) ladder.enabled = false;
+            foreach (SiegeLadder ladder in Ladders) if (ladder != null) ladder.enabled = false;
             foreach (CombatProjectile shot in Object.FindObjectsByType<CombatProjectile>())
                 if (shot.gameObject.scene == gameObject.scene) { shot.enabled = false; Destroy(shot.gameObject); }
             SetCannonsArmed(false);

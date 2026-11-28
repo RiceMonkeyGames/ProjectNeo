@@ -69,7 +69,9 @@ namespace ProjectNeo.Tests
 
             Assert.IsTrue(battle.TryStartBattle());
             yield return null;
-            SiegeAttacker released = battle.Enemies.First(enemy => enemy != null && enemy.gameObject.activeSelf);
+            // 사다리를 든 적은 운반 중 느리게 걸으므로(SIEGE-37) 빈손인 적으로 이동 속도 규칙을 본다.
+            SiegeAttacker released = battle.Enemies.First(enemy => enemy != null && enemy.gameObject.activeSelf
+                && !(enemy is SiegeAttackerBrain brain && brain.IsCarryingLadder));
             StatSheet stats = released.Actor.Stats;
             Assert.AreEqual(stats.GetBase(StatType.MaxHealth) * 1.15f, stats.GetValue(StatType.MaxHealth), 0.01f, "적 체력 +15%");
             Assert.AreEqual(stats.GetBase(StatType.Attack) * 1.15f, stats.GetValue(StatType.Attack), 0.01f, "적 공격력 +15%");

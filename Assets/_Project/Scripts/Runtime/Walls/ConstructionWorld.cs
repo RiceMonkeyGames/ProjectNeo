@@ -130,7 +130,7 @@ namespace ProjectNeo.Walls
             {
                 level = 0; elevation = 0f;
                 RefreshOutside();
-                return TowerRules.CheckInLine(Layout, grid, outsideCells, ladderLanes.Keys, definition, cell, rotation);
+                return TowerRules.CheckInLine(Layout, grid, outsideCells, definition, cell, rotation);
             }
             PlacementIssue issue = Layout.Check(definition, cell, rotation, false, out level, out elevation);
             if (issue != PlacementIssue.None) return issue;
@@ -148,10 +148,10 @@ namespace ProjectNeo.Walls
                             && below != null && below.IsUnderConstruction) return PlacementIssue.UnfinishedSupport;
             }
             RefreshOutside();
-            PlacementIssue outwork = BastionRules.Check(Layout, grid, outsideCells, ladderLanes.Keys, definition, cell, rotation, level, elevation);
+            PlacementIssue outwork = BastionRules.Check(Layout, grid, outsideCells, definition, cell, rotation, level, elevation);
             if (outwork != PlacementIssue.None) return outwork;
             // 망루 쌓기 규칙(SIEGE-14): 망루 위에는 망루 층만, 망루 층은 망루 위에만.
-            return TowerRules.Check(Layout, grid, outsideCells, ladderLanes.Keys, definition, cell, rotation, level, elevation);
+            return TowerRules.Check(Layout, grid, outsideCells, definition, cell, rotation, level, elevation);
         }
 
         // 보루·망루 규칙의 성 바깥 판정. 배치가 바뀔 때만 다시 센다. 전투 중 무너짐도 센다:
@@ -188,7 +188,7 @@ namespace ProjectNeo.Walls
             replaced.Clear();
             if (!IsNewTower(definition, cell, rotation)) return;
             RefreshOutside();
-            if (TowerRules.CheckInLine(Layout, grid, outsideCells, ladderLanes.Keys, definition, cell, rotation, replaced) != PlacementIssue.None)
+            if (TowerRules.CheckInLine(Layout, grid, outsideCells, definition, cell, rotation, replaced) != PlacementIssue.None)
                 replaced.Clear();
         }
 
@@ -211,7 +211,7 @@ namespace ProjectNeo.Walls
                 for (int z = 0; z < size.y; z++)
                 {
                     Vector2Int anchor = pointed - new Vector2Int(x, z);
-                    if (TowerRules.CheckInLine(Layout, grid, outsideCells, ladderLanes.Keys, definition, anchor, rotation) != PlacementIssue.None) continue;
+                    if (TowerRules.CheckInLine(Layout, grid, outsideCells, definition, anchor, rotation) != PlacementIssue.None) continue;
                     Vector3 center = Layout.Center(anchor, size);
                     float distance = new Vector2(center.x - localPoint.x, center.z - localPoint.z).sqrMagnitude;
                     if (distance >= nearest) continue;
@@ -229,23 +229,7 @@ namespace ProjectNeo.Walls
         int outsideRevision = -1;
         // 전투 중 무너짐 횟수. LayoutRevision은 무너짐으로 오르지 않으므로(성가퀴 기준) 배치 검사의 바깥 판정만 따로 센다.
         int collapseCount, outsideCollapses;
-        // 칸마다 그 칸에 선 사다리 수. 사다리는 씬에 고정되어 있고 준비 중에도 꺼진 채 남아 있다.
-        readonly Dictionary<Vector2Int, int> ladderLanes = new Dictionary<Vector2Int, int>();
-
-        /// <summary>사다리가 서는 칸(사다리 자리 칸의 바로 바깥)을 알린다. 그 칸에는 보루를 짓지 않는다(SIEGE-11).</summary>
-        public void ReserveLadderLane(Vector2Int cell)
-        {
-            ladderLanes.TryGetValue(cell, out int count);
-            ladderLanes[cell] = count + 1;
-        }
-
-        public void ReleaseLadderLane(Vector2Int cell)
-        {
-            if (!ladderLanes.TryGetValue(cell, out int count)) return;
-            if (count <= 1) ladderLanes.Remove(cell); else ladderLanes[cell] = count - 1;
-        }
-
-        public bool IsLadderLane(Vector2Int cell) => ladderLanes.ContainsKey(cell);
+        // 사다리 자리는 보루·탑 자리를 막지 않는다(SIEGE-37, 사용자 2026-11-28). 사다리 적이 전투 중에 빈 빈틈을 골라 건다.
 
         /// <summary>놓고 맨 위 조각을 돌려준다. 한 번에 여러 조각이 쌓이면 <see cref="TryPlace(BuildPieceDefinition, Vector2Int, int, List{PlacedStructure})"/>.</summary>
         public bool TryPlace(BuildPieceDefinition definition, Vector2Int cell, int rotation, out PlacedStructure body)

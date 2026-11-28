@@ -31,7 +31,7 @@ namespace ProjectNeo.Siege
         public abstract bool IsMidAction { get; }
 
         /// <summary>프리팹으로 만든 적을 씬의 성과 사다리에 연결한다. 활성화하기 전에 부른다.</summary>
-        public abstract void Bind(ConstructionWorld owner, SiegeLadder[] ladderSpots, Vector2Int outwardDirection,
+        public abstract void Bind(ConstructionWorld owner, System.Collections.Generic.IReadOnlyList<SiegeLadder> ladderSpots, Vector2Int outwardDirection,
             SiegeSettings battleSettings = null);
 
         /// <summary>판 바깥으로 스스로 물러나 떠난다(Q-30).</summary>

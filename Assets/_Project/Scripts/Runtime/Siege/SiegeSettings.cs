@@ -160,6 +160,20 @@ namespace ProjectNeo.Siege
         public float ArcherBlockedAvoidSeconds => archerBlockedAvoidSeconds;
         public float LadderRaisedBonus => ladderRaisedBonus;
         public float LadderDefenderPenalty => ladderDefenderPenalty;
+        // 사다리 운반(SIEGE-37, 임시 값): 들고 가는 동안의 이동 속도 배율, 같은 면에서 두 사다리 위쪽 끝 사이의 최소 거리,
+        // 이 거리(m) 안의 다른 사다리 하나마다 더하는 거리(몰림), 떨어진 사다리를 주우러 가는 거리, 외형의 사다리 길이.
+        [SerializeField, Range(0.1f, 1f)] float ladderCarrySpeedMultiplier = 0.7f;
+        [SerializeField, Min(0.5f)] float ladderSlotSpacing = 3f;
+        [SerializeField, Min(0f)] float ladderSlotCrowdRadius = 9f;
+        [SerializeField, Min(0f)] float ladderSlotCrowdPenalty = 6f;
+        [SerializeField, Min(0f)] float ladderPickupRadius = 12f;
+        [SerializeField, Min(1f)] float carriedLadderLength = 6.5f;
+        public float LadderCarrySpeedMultiplier => ladderCarrySpeedMultiplier;
+        public float LadderSlotSpacing => ladderSlotSpacing;
+        public float LadderSlotCrowdRadius => ladderSlotCrowdRadius;
+        public float LadderSlotCrowdPenalty => ladderSlotCrowdPenalty;
+        public float LadderPickupRadius => ladderPickupRadius;
+        public float CarriedLadderLength => carriedLadderLength;
         public float AssaultLeashRadius => assaultLeashRadius;
         public float AssaultLeashReleaseRadius => Mathf.Max(assaultLeashRadius, assaultLeashReleaseRadius);
         public float ArcherBreachAdvanceDelay => archerBreachAdvanceDelay;

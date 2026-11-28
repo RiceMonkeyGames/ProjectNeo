@@ -28,20 +28,45 @@ namespace ProjectNeo.Flow
         readonly ConstructionWorld world;
         readonly GameBattleSettings settings;
         readonly FallSettings fallSettings;
-        readonly SiegeLadder[] ladders;
+        readonly SiegeLadder ladderTemplate;
+        // 이번 전투의 사다리(SIEGE-37). 사다리 적마다 하나씩 꺼진 채 만들어 그 적에게 넘긴다. 모든 적이 이 목록을 함께 본다.
+        readonly List<SiegeLadder> ladders = new List<SiegeLadder>();
         readonly Transform parent;
         readonly Object logContext;
         int spawnedCount;
 
+        /// <param name="ladderTemplate">사다리 적이 들고 나올 사다리의 꺼진 원본. 없으면 사다리 적이 빈손으로 나온다.</param>
         public BattleEnemySpawner(ConstructionWorld world, GameBattleSettings settings, FallSettings fallSettings,
-            SiegeLadder[] ladders, Transform parent, Object logContext = null)
+            SiegeLadder ladderTemplate, Transform parent, Object logContext = null)
         {
             this.world = world; this.settings = settings; this.fallSettings = fallSettings;
-            this.ladders = ladders; this.parent = parent; this.logContext = logContext;
+            this.ladderTemplate = ladderTemplate; this.parent = parent; this.logContext = logContext;
         }
+
+        /// <summary>이번 전투의 사다리. 운반 중·떨어짐·성벽에 걸림을 모두 포함한다.</summary>
+        public IReadOnlyList<SiegeLadder> Ladders => ladders;
 
         /// <summary>새 전투의 이름 번호를 0부터 다시 센다.</summary>
         public void ResetNumbering() => spawnedCount = 0;
+
+        /// <summary>지난 편성의 사다리를 모두 없앤다. 적을 지울 때 함께 부른다.</summary>
+        public void ClearLadders()
+        {
+            foreach (SiegeLadder ladder in ladders)
+                if (ladder != null) { ladder.gameObject.SetActive(false); Object.Destroy(ladder.gameObject); }
+            ladders.Clear();
+        }
+
+        SiegeLadder CreateLadder(string owner)
+        {
+            if (ladderTemplate == null) return null;
+            if (ladderTemplate.gameObject.activeSelf)
+            { Debug.LogError("Battle ladder template must be inactive: " + ladderTemplate.name, logContext); return null; }
+            SiegeLadder ladder = Object.Instantiate(ladderTemplate, ladderTemplate.transform.parent);
+            ladder.name = "Ladder_" + owner;
+            ladders.Add(ladder);
+            return ladder;
+        }
 
         /// <summary>
         /// 웨이브의 무리들을 각자의 스폰 칸에 줄지어 만든다. 같은 칸을 쓰는 무리는 바깥쪽으로 줄을 이어 선다.
@@ -79,6 +104,12 @@ namespace ProjectNeo.Flow
                         fall.Configure(world, fallSettings);
                     }
                     brain.Bind(world, ladders, settings.Outward, settings.Siege);
+                    // 사다리 적은 저마다 사다리 하나를 들고 나온다(SIEGE-37, 사용자 2026-11-28).
+                    if (brain is SiegeAttackerBrain siegeBrain && siegeBrain.Role == SiegeAttackerRole.Ladder)
+                    {
+                        SiegeLadder carried = CreateLadder(unit.name);
+                        if (carried != null) siegeBrain.GiveLadder(carried);
+                    }
                     // 보스(SIEGE-09)는 보스 부품을 붙이고 보스 ID로 센다. 정의 연결은 전투가 웨이브를 다 만든 뒤 한다.
                     if (group.IsBoss)
                     {

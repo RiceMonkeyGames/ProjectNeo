@@ -69,13 +69,18 @@ namespace ProjectNeo.Tests
             Assert.IsFalse(Object.FindObjectsByType<CombatProjectile>().Any(shot => shot.gameObject.scene == scene), at + "화살이 남으면 안 된다.");
             Assert.IsFalse(Object.FindObjectsByType<CannonShell>().Any(shell => shell.gameObject.scene == scene), at + "대포탄이 남으면 안 된다.");
 
+            // SIEGE-37: 사다리는 사다리 적마다 하나씩 새로 만들어 숨겨 두고, 지난 전투의 사다리는 남지 않는다.
+            Assert.AreEqual(battle.Enemies.Count(enemy => enemy.Role == SiegeAttackerRole.Ladder), battle.Ladders.Count,
+                at + "사다리 적마다 사다리 하나");
             foreach (SiegeLadder ladder in battle.Ladders)
             {
-                Assert.IsFalse(ladder.enabled, at + "사다리는 준비 중 꺼져 있다.");
+                Assert.IsFalse(ladder.gameObject.activeSelf, at + "사다리는 전투 전까지 숨어 있다.");
                 Assert.IsNull(ladder.Occupant, at + "사다리 점유자");
                 Assert.AreEqual(0, ladder.Waiting.Count, at + "사다리 대기열");
                 Assert.AreEqual(0, ladder.Crowd, at + "사다리 주변 인원");
             }
+            Assert.AreEqual(battle.Ladders.Count + 1, Object.FindAnyObjectByType<ProjectNeo.Walls.ConstructionWorld>().GetComponentsInChildren<SiegeLadder>(true).Length,
+                at + "지난 전투의 사다리 오브젝트가 남으면 안 된다(원본 하나 + 이번 편성).");
             Assert.IsFalse(battle.Morale.BattleActive, at + "사기 전투 상태가 끝나 있어야 한다.");
         }
 

@@ -332,6 +332,24 @@ namespace ProjectNeo.Tests
                 Assert.IsTrue(merlon.End <= ladder - 0.35f || merlon.Start >= ladder + 0.35f);
         }
 
+        // SIEGE-37: 운반병은 면 안에 온전히 들어가는 빈틈이면 어디에나 사다리를 건다. 양 끝의 반쪽 빈틈은 빠진다.
+        [Test]
+        public void LadderCrenelOffsets_ListEveryWholeCrenel_OnTheFace()
+        {
+            var offsets = new List<float>();
+            BattlementRules.LadderCrenelOffsets(KitSettings(), 7.5f, offsets);
+            CollectionAssert.AreEqual(new[] { -1.25f, 1.25f }, offsets, "킷 무늬 7.5m 면: 가운데 양옆 빈틈 둘.");
+            Assert.Contains(BattlementRules.LadderCrenelOffset(KitSettings(), 7.5f), offsets, "기본 빈틈도 목록에 있다.");
+
+            BattlementRules.LadderCrenelOffsets(Track(BattlementSettings.Create()), 7.5f, offsets);
+            CollectionAssert.AreEqual(new[] { -3f, -1.5f, 0f, 1.5f, 3f }, offsets, "가운데가 빈틈인 1.5m 주기: 다섯 빈틈.");
+
+            BattlementRules.LadderCrenelOffsets(KitSettings(), 2f, offsets);
+            CollectionAssert.AreEqual(new[] { 0f }, offsets, "온전한 빈틈이 없는 짧은 면은 가운데 하나.");
+            BattlementRules.LadderCrenelOffsets(null, 7.5f, offsets);
+            CollectionAssert.AreEqual(new[] { 0f }, offsets);
+        }
+
         [Test]
         public void KitSill_HidesCrouchedArcher_ExposesStandingArcher()
         {

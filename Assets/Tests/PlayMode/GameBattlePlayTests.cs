@@ -397,38 +397,162 @@ namespace ProjectNeo.Tests
             Assert.AreEqual(GamePhase.Battle, GameSession.Flow.Phase);
         }
 
+        // 북쪽 성벽 바깥 면의 사다리 자리 중, 칸과 양옆 두 칸이 모두 1층인 칸의 자리(SIEGE-37).
+        // 모서리 탑·성문탑(2층) 바로 옆 칸을 올리면 그 사이 칸이 골짜기가 된다(SIEGE-36).
+        LadderSlot FlatNorthSlot()
+        {
+            var catalog = new LadderSlotCatalog();
+            catalog.Refresh(world, battle.Settings.Siege, battle.Settings.Outward);
+            bool Flat(Vector2Int cell)
+            {
+                for (int dx = -2; dx <= 2; dx++)
+                    if (world.Layout.ColumnHeight(cell + new Vector2Int(dx, 0)) != 1) return false;
+                return true;
+            }
+            var slots = catalog.Slots.Where(s => s.Outward == battle.Settings.Outward && Flat(s.Cell))
+                .OrderBy(s => s.Cell.x).ThenBy(s => s.Offset).ToList();
+            Assert.IsNotEmpty(slots, "북쪽 성벽에 운반 사다리를 걸 빈틈 자리가 있어야 한다.");
+            return slots[slots.Count / 2];
+        }
+
+        string CarrierReport(SiegeAttackerBrain carrier)
+        {
+            var catalog = new LadderSlotCatalog();
+            catalog.Refresh(world, battle.Settings.Siege, battle.Settings.Outward);
+            var agent = carrier.GetComponent<NavMeshAgent>();
+            var path = new NavMeshPath();
+            int reachable = catalog.Slots.Count(s => agent.isOnNavMesh && agent.CalculatePath(s.BasePoint, path) && path.status == NavMeshPathStatus.PathComplete);
+            object mode = typeof(SiegeAttackerBrain).GetField("mode", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(carrier);
+            LadderSlot near = catalog.Slots.OrderBy(s => (s.BasePoint - carrier.transform.position).sqrMagnitude).First();
+            agent.CalculatePath(near.BasePoint, path);
+            string end = path.corners.Length > 0 ? path.corners[path.corners.Length - 1].ToString() : "none";
+            var gate = world.Structures.First(p => p.Placement.Definition.Kind == BuildPieceKind.Gate).transform.position;
+            var gatePath = new NavMeshPath();
+            agent.CalculatePath(gate + world.transform.forward * 8f, gatePath);
+            return $"near={near.BasePoint} status={path.status} end={end} corners={path.corners.Length} gate={gate} gateStatus={gatePath.status} gateEnd={(gatePath.corners.Length > 0 ? gatePath.corners[gatePath.corners.Length - 1].ToString() : "none")} slots={catalog.Slots.Count} reachable={reachable} onMesh={agent.isOnNavMesh} pos={carrier.transform.position} mode={mode} rebuilding={world.IsRebuilding || world.RebuildPending} directive={carrier.GetComponent<UnitCombatAI>().Directive}";
+        }
+
+        // 북쪽 성벽 가운데 자리 밑에서 바깥으로 12m 나간 들판(길찾기 메시 위).
+        Vector3 InFrontOfTheWall()
+        {
+            LadderSlot slot = FlatNorthSlot();
+            Vector3 outward = world.transform.TransformDirection(new Vector3(slot.Outward.x, 0f, slot.Outward.y));
+            Assert.IsTrue(NavMesh.SamplePosition(slot.BasePoint + outward * 12f, out NavMeshHit hit, 4f, NavMesh.AllAreas));
+            return hit.position;
+        }
+
+        SiegeLadder PlacedLadderClone(LadderSlot slot)
+        {
+            Assert.IsNotNull(battle.LadderTemplate, "Game 전투에 운반 사다리 원본이 있어야 한다(SIEGE-37).");
+            SiegeLadder ladder = Object.Instantiate(battle.LadderTemplate, battle.LadderTemplate.transform.parent);
+            ladder.gameObject.SetActive(true);
+            Assert.IsTrue(ladder.State.TryLift());
+            Assert.IsTrue(ladder.PlaceAt(slot));
+            return ladder;
+        }
+
         [UnityTest]
         public IEnumerator 사다리는_삼층_성벽_맨_위까지_연결되어_적이_오른다()
         {
-            // 양옆이 모두 1층인 사다리 칸을 고른다. 모서리 탑·성문탑(2층) 바로 옆 칸을 올리면 그 사이 칸이 골짜기가 된다(SIEGE-36).
-            SiegeLadder ladder = battle.Ladders.OrderBy(l => l.Cell.x).ElementAt(2);
+            yield return Navigation();
+            LadderSlot slot = FlatNorthSlot();
+            SiegeLadder probe = PlacedLadderClone(slot);
             var wall = world.Structures.First(piece => piece.Placement.Definition.Kind == BuildPieceKind.Wall).Placement.Definition;
             SiegeSettings siege = battle.Settings.Siege;
             // 5m·10m·15m 성벽마다 사다리가 받침 높이까지 닿고, 75도로 기대며, 층수만큼 세우기·오르기가 길어진다(SIEGE-21).
             for (int storey = 1; storey <= 3; storey++)
             {
-                if (storey > 1) Assert.IsTrue(world.TryPlace(wall, ladder.Cell, 0, out _));
-                Assert.IsTrue(ladder.HasWall);
-                Assert.AreEqual(wall.Height * storey, ladder.WallHeight, 0.001f);
-                Assert.AreEqual(storey, ladder.Storeys);
-                Assert.AreEqual(siege.LadderClimbSecondsPerStorey * storey, ladder.ClimbSeconds, 0.001f);
+                if (storey > 1) Assert.IsTrue(world.TryPlace(wall, slot.Cell, 0, out _));
+                Assert.IsTrue(probe.HasWall);
+                Assert.AreEqual(wall.Height * storey, probe.WallHeight, 0.001f);
+                Assert.AreEqual(storey, probe.Storeys);
+                Assert.AreEqual(siege.LadderClimbSecondsPerStorey * storey, probe.ClimbSeconds, 0.001f);
                 Assert.AreEqual(siege.LadderRaiseSeconds + siege.LadderRaiseSecondsPerExtraStorey * (storey - 1),
-                    ladder.RaiseSeconds, 0.001f);
-                Vector3 lean = ladder.EdgePoint - ladder.BasePoint;
-                Assert.GreaterOrEqual(ladder.EdgePoint.y, wall.Height * storey - 0.001f, "사다리 끝은 성벽 위(받침)까지 닿아야 한다.");
+                    probe.RaiseSeconds, 0.001f);
+                Vector3 lean = probe.EdgePoint - probe.BasePoint;
+                Assert.GreaterOrEqual(probe.EdgePoint.y - world.transform.position.y, wall.Height * storey - 0.001f, "사다리 끝은 성벽 위(받침)까지 닿아야 한다.");
                 Assert.AreEqual(siege.LadderLeanDegrees, Vector3.Angle(new Vector3(lean.x, 0f, lean.z), lean), 0.5f);
-                Assert.IsTrue(world.IsLadderLane(world.Layout.WorldToCell(world.LocalPoint(ladder.BasePoint))),
-                    "사다리 발은 사다리 자리(보루·탑 금지) 칸 안에 있어야 한다.");
             }
+            Object.Destroy(probe.gameObject);
             yield return Navigation();
             Assert.IsTrue(battle.TryStartBattle());
+            yield return null;
+            // 운반병이 들고 온 사다리를 그 자리에 걸고 세우면, 그 운반병이 3층 꼭대기까지 오른다.
+            var climber = battle.Enemies.OfType<SiegeAttackerBrain>().First(enemy => enemy.gameObject.activeSelf && enemy.IsCarryingLadder);
+            SiegeLadder ladder = climber.CarriedLadder;
+            Assert.IsTrue(ladder.PlaceAt(slot));
+            Assert.IsTrue(ladder.HasWall);
+            Assert.AreEqual(3, ladder.Storeys);
             ladder.State.Tick(0.1f, true, false, false);
             ladder.State.Tick(ladder.RaiseSeconds, true, false, false);
             Assert.AreEqual(LadderPhase.Up, ladder.State.Phase);
-            var climber = battle.Enemies.First(enemy => enemy.Role == SiegeAttackerRole.Ladder);
             Assert.IsTrue(climber.GetComponent<NavMeshAgent>().Warp(ladder.BasePoint));
-            for (int i = 0; i < 1200 && climber.transform.position.y < wall.Height * 3f - 0.2f; i++) yield return null;
-            Assert.Greater(climber.transform.position.y, wall.Height * 3f - 0.2f);
+            float ground = world.transform.position.y;
+            for (int i = 0; i < 1200 && climber.transform.position.y - ground < wall.Height * 3f - 0.2f; i++) yield return null;
+            Assert.Greater(climber.transform.position.y - ground, wall.Height * 3f - 0.2f);
+        }
+
+        [UnityTest]
+        public IEnumerator 사다리_적은_저마다_사다리를_들고_나와_느리게_걸어_빈틈에_건다()
+        {
+            int ladderEnemies = battle.Enemies.Count(enemy => enemy.Role == SiegeAttackerRole.Ladder);
+            Assert.Greater(ladderEnemies, 0);
+            Assert.AreEqual(ladderEnemies, battle.Ladders.Count, "사다리 적마다 사다리 하나(SIEGE-37).");
+            Assert.IsTrue(battle.Ladders.All(l => !l.gameObject.activeSelf), "전투 전에는 사다리를 깔아 두지 않는다.");
+            yield return Navigation();
+            Assert.IsTrue(battle.TryStartBattle());
+            yield return null; yield return null;
+            var carrier = battle.Enemies.OfType<SiegeAttackerBrain>().First(enemy => enemy.gameObject.activeSelf && enemy.IsCarryingLadder);
+            SiegeLadder ladder = carrier.CarriedLadder;
+            Assert.IsTrue(ladder.gameObject.activeSelf && ladder.IsLoose && ladder.Carrier == carrier);
+            Assert.IsFalse(ladder.HasWall, "들고 가는 사다리는 아직 성벽에 걸리지 않았다.");
+            float carryingSpeed = carrier.Actor.Stats.GetValue(ProjectNeo.Stats.StatType.MoveSpeed);
+
+            // 분지 스폰 들판은 아직 성벽 앞과 길찾기 메시가 이어지지 않아(기존 문제) 성벽 앞 들판에서 시작한다.
+            Assert.IsTrue(carrier.GetComponent<NavMeshAgent>().Warp(InFrontOfTheWall()), "성벽 앞 들판에 길찾기 메시가 있어야 한다.");
+            // 고른 자리 가까이로 옮기면 사다리를 그 빈틈에 내려놓는다.
+            LadderSlot slot = default;
+            for (int i = 0; i < 120 && !carrier.TryGetCarrySlot(out slot); i++) yield return null;
+            Assert.IsTrue(carrier.TryGetCarrySlot(out slot), "운반병이 걸 자리를 골라야 한다. " + CarrierReport(carrier));
+            Assert.AreEqual(battle.Settings.Outward, slot.Outward, "분지 성벽은 북쪽 바깥 면에만 건다.");
+            Assert.AreEqual(BuildPieceKind.Wall, world.Layout.Top(slot.Cell).Definition.Kind);
+            Assert.IsTrue(carrier.GetComponent<NavMeshAgent>().Warp(slot.BasePoint));
+            for (int i = 0; i < 120 && ladder.IsLoose; i++) yield return null;
+            Assert.IsFalse(ladder.IsLoose, "자리에 닿으면 사다리를 내려놓는다.");
+            Assert.IsTrue(ladder.HasWall);
+            Assert.AreEqual(slot.Cell, ladder.Cell);
+            float walkingSpeed = carrier.Actor.Stats.GetValue(ProjectNeo.Stats.StatType.MoveSpeed);
+            Assert.AreEqual(battle.Settings.Siege.LadderCarrySpeedMultiplier, carryingSpeed / walkingSpeed, 0.02f,
+                "들고 가는 동안 0.7배로 걷고, 내려놓으면 제 속도로 돌아온다.");
+            for (int i = 0; i < 300 && ladder.State.Phase == LadderPhase.Down; i++) yield return null;
+            Assert.AreNotEqual(LadderPhase.Down, ladder.State.Phase, "내려놓은 운반병이 바로 세우기 시작한다.");
+        }
+
+        [UnityTest]
+        public IEnumerator 운반병이_죽으면_사다리가_떨어지고_다른_사다리_적이_주워_든다()
+        {
+            yield return Navigation();
+            Assert.IsTrue(battle.TryStartBattle());
+            yield return null; yield return null;
+            var carriers = battle.Enemies.OfType<SiegeAttackerBrain>()
+                .Where(enemy => enemy.gameObject.activeSelf && enemy.IsCarryingLadder).Take(2).ToList();
+            Assert.AreEqual(2, carriers.Count, "첫 웨이브에 사다리 적이 둘 이상 있어야 한다.");
+            SiegeLadder dropped = carriers[0].CarriedLadder;
+            Kill(carriers[0].Actor);
+            yield return null;
+            Assert.IsTrue(dropped.IsLoose, "떨어진 사다리는 아직 성벽에 걸리지 않았다.");
+            Assert.IsNull(dropped.Carrier);
+            Assert.IsTrue(dropped.IsFreeToPickUp(carriers[1]));
+
+            // 다른 사다리 적이 자기 사다리를 내려놓은 뒤 가까이 있으면 떨어진 사다리를 주워 든다.
+            SiegeAttackerBrain picker = carriers[1];
+            SiegeLadder own = picker.CarriedLadder;
+            Assert.IsTrue(own.PlaceAt(FlatNorthSlot()));
+            Assert.IsTrue(picker.GetComponent<NavMeshAgent>().Warp(dropped.LoosePosition));
+            for (int i = 0; i < 300 && dropped.Carrier != picker; i++) yield return null;
+            Assert.AreEqual(picker, dropped.Carrier, "가까운 사다리 적이 떨어진 사다리를 주워 든다.");
+            Assert.IsTrue(picker.IsCarryingLadder);
+            Assert.AreEqual(dropped, picker.CarriedLadder);
         }
 
         [UnityTest]

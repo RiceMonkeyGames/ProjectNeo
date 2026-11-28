@@ -8,7 +8,8 @@ using UnityEngine.InputSystem;
 namespace ProjectNeo.Siege
 {
     /// <summary>
-    /// 맵에 고정된 사다리 자리 하나. 그 칸에 성벽이 있을 때만 쓸 수 있다.
+    /// 사다리 하나. 프로토타입 씬에서는 맵에 고정된 자리에 놓이고, Game 전투에서는 사다리 적이 들고 와서
+    /// 고른 빈틈 자리에 내려놓는다(SIEGE-37, <see cref="IsLoose"/>). 그 칸에 성벽이 있을 때만 쓸 수 있다.
     /// 적이 밑에서 세우고 한 명씩 오르며, 성벽 위의 아군이 밀어 쓰러뜨린다. 외형은 Visual 자식이 맡는다.
     /// </summary>
     [DefaultExecutionOrder(-60)]
@@ -75,11 +76,99 @@ namespace ProjectNeo.Siege
             State.Toppled += OnToppled;
             State.ClimberDislodged += OnClimberDislodged;
             push = settings.PushLadder.Clone();
-            // 꺼진 채(준비 단계) 있어도 자리는 막는다. 사다리가 서는 칸에는 보루를 짓지 않는다(SIEGE-11).
-            if (world != null) { reservedLane = cell + outward; world.ReserveLadderLane(reservedLane.Value); }
+            // 사다리 자리는 더 이상 보루·탑 자리를 막지 않는다(SIEGE-37, 사용자 2026-11-28).
         }
 
-        Vector2Int? reservedLane;
+        // ── 운반(SIEGE-37) ─────────────────────────────────
+        // 걸 자리를 따로 고른 사다리의 빈틈 거리. 없으면 무늬로 정한 기본 빈틈(CrenelOffset)을 쓴다.
+        bool hasSlotOffset;
+        float slotOffset;
+        SiegeAttackerBrain carrier;
+        SiegeAttackerBrain fetcher;
+        bool hasClaim;
+        LadderSlot claimedSlot;
+        Vector3 loosePosition;
+        Vector3 looseForward = Vector3.forward;
+        // 운반병이 사다리를 어깨에 메는 높이(외형).
+        const float CarryHeight = 1.3f;
+        const float GroundLift = 0.08f;
+
+        /// <summary>아직 성벽 자리에 걸리지 않은 사다리인지: 운반 중이거나 운반병이 죽어 떨어져 있다.</summary>
+        public bool IsLoose => State != null && State.Phase == LadderPhase.Carried;
+        /// <summary>지금 들고 가는 운반병. 없으면 null.</summary>
+        public SiegeAttackerBrain Carrier => carrier;
+        /// <summary>떨어진 사다리가 놓인 자리, 또는 운반 중이면 운반병의 자리.</summary>
+        public Vector3 LoosePosition => loosePosition;
+        /// <summary>운반병이 가는 중인 자리를 다른 운반병이 고르지 않도록 맡아 둔 자리.</summary>
+        public bool TryGetClaimedSlot(out LadderSlot slot) { slot = claimedSlot; return IsLoose && hasClaim; }
+
+        /// <summary>떨어진 채 아무도 들거나 주우러 가지 않는 사다리인지. <paramref name="asker"/>가 주우러 가는 중이면 그 유닛에게는 비어 있다.</summary>
+        public bool IsFreeToPickUp(SiegeAttackerBrain asker) => IsLoose && carrier == null
+            && (fetcher == null || fetcher == asker || !fetcher.isActiveAndEnabled || fetcher.Actor == null || !Alive(fetcher.Actor));
+
+        /// <summary>떨어진 사다리를 주우러 간다고 맡는다. 이미 다른 유닛이 맡았으면 실패한다.</summary>
+        public bool TryClaimPickup(SiegeAttackerBrain unit)
+        {
+            if (unit == null || !IsFreeToPickUp(unit)) return false;
+            fetcher = unit;
+            return true;
+        }
+
+        public void ReleasePickup(SiegeAttackerBrain unit) { if (fetcher == unit) fetcher = null; }
+
+        /// <summary>운반병이 사다리를 든다(생성 직후 또는 떨어진 사다리를 주웠을 때).</summary>
+        public bool Lift(SiegeAttackerBrain unit)
+        {
+            if (unit == null || State == null || !State.TryLift()) return false;
+            carrier = unit;
+            fetcher = null;
+            hasClaim = false;
+            TrackCarrier();
+            return true;
+        }
+
+        /// <summary>운반병이 죽어 사다리를 그 자리에 떨어뜨린다. 다른 사다리 적이 주울 수 있다.</summary>
+        public void DropLoose(SiegeAttackerBrain unit)
+        {
+            if (carrier != unit || unit == null) return;
+            TrackCarrier();
+            carrier = null;
+            hasClaim = false;
+        }
+
+        public void Claim(LadderSlot slot) { claimedSlot = slot; hasClaim = true; }
+        public void ClearClaim() => hasClaim = false;
+
+        /// <summary>운반한 사다리를 고른 빈틈 자리에 내려놓는다. 이후 바닥에 놓인 사다리로 세우기를 기다린다.</summary>
+        public bool PlaceAt(LadderSlot slot)
+        {
+            if (!IsLoose) return false;
+            cell = slot.Cell; outward = slot.Outward;
+            hasSlotOffset = true; slotOffset = slot.Offset;
+            supportId = 0; storeys = 0;
+            carrier = null; fetcher = null; hasClaim = false;
+            return State.TryPlace();
+        }
+
+        void TrackCarrier()
+        {
+            if (carrier == null) return;
+            loosePosition = carrier.transform.position;
+            Vector3 forward = carrier.transform.forward;
+            forward.y = 0f;
+            if (forward.sqrMagnitude > 0.0001f) looseForward = forward.normalized;
+        }
+
+        /// <summary>운반 중이거나 떨어진 사다리의 외형 자세: 한쪽 끝과 놓인 방향(수평).</summary>
+        public bool TryGetLoosePose(out Vector3 foot, out Vector3 direction)
+        {
+            direction = looseForward;
+            float half = (settings != null ? settings.CarriedLadderLength : 6f) * 0.5f;
+            foot = loosePosition + Vector3.up * (carrier != null ? CarryHeight : GroundLift) - looseForward * half;
+            return IsLoose;
+        }
+
+        public float LooseLength => settings != null ? settings.CarriedLadderLength : 6f;
 
         void OnEnable() { push.Enable(); active.Add(this); }
         void OnDisable()
@@ -94,8 +183,6 @@ namespace ProjectNeo.Siege
         }
         void OnDestroy()
         {
-            if (reservedLane.HasValue && world != null) world.ReleaseLadderLane(reservedLane.Value);
-            reservedLane = null;
             ClearAiPushHandles();
             if (State != null)
             {
@@ -109,6 +196,8 @@ namespace ProjectNeo.Siege
         {
             get
             {
+                // 운반 중이거나 떨어져 놓인 사다리는 아직 어느 성벽에도 걸리지 않았다(SIEGE-37).
+                if (State == null || State.Phase == LadderPhase.Carried) return false;
                 BuildPlacement placement = world.Layout != null ? world.Layout.Top(cell) : null;
                 if (placement == null || placement.Definition.Kind != BuildPieceKind.Wall) return false;
                 float height = placement.Elevation + placement.Definition.Height;
@@ -142,6 +231,7 @@ namespace ProjectNeo.Siege
             : LadderScaleRules.RaiseSeconds(Storeys, settings.LadderRaiseSeconds, settings.LadderRaiseSecondsPerExtraStorey);
         public void ResetBattle()
         {
+            if (State == null) return;
             State.Topple();
             traffic.Clear(); sharedRaiser = null;
             ClearAiPushHandles();
@@ -158,14 +248,36 @@ namespace ProjectNeo.Siege
         }
         public Vector3 OutwardWorld => world.transform.TransformDirection(new Vector3(outward.x, 0f, outward.y)).normalized;
 
-        Vector3 Point(float fromCenter, float height)
+        // 킷 흉벽은 면 가운데가 솟은 돌이라 가장 가까운 빈틈으로 면을 따라 옮긴다(SIEGE-20).
+        // 운반병이 건 사다리는 고른 빈틈 자리를 쓴다(SIEGE-37).
+        Vector3 Point(float fromCenter, float height) => SlotPoint(world, cell, outward,
+            hasSlotOffset ? slotOffset : CrenelOffset, fromCenter, height);
+
+        static Vector3 SlotPoint(ConstructionWorld owner, Vector2Int slotCell, Vector2Int slotOutward, float along,
+            float fromCenter, float height)
         {
-            float size = world.Grid.CellSize;
-            var center = new Vector3((cell.x + 0.5f) * size, height, (cell.y + 0.5f) * size);
-            // 킷 흉벽은 면 가운데가 솟은 돌이라 가장 가까운 빈틈으로 면을 따라 옮긴다(SIEGE-20).
-            float along = CrenelOffset;
-            Vector3 side = outward.x != 0 ? new Vector3(0f, 0f, along) : new Vector3(along, 0f, 0f);
-            return world.transform.TransformPoint(center + side + new Vector3(outward.x, 0f, outward.y) * fromCenter);
+            float size = owner.Grid.CellSize;
+            var center = new Vector3((slotCell.x + 0.5f) * size, height, (slotCell.y + 0.5f) * size);
+            Vector3 side = slotOutward.x != 0 ? new Vector3(0f, 0f, along) : new Vector3(along, 0f, 0f);
+            return owner.transform.TransformPoint(center + side + new Vector3(slotOutward.x, 0f, slotOutward.y) * fromCenter);
+        }
+
+        /// <summary>
+        /// 그 칸·면·빈틈 자리에 사다리를 걸면 생길 사다리 밑과 위쪽 끝 자리(SIEGE-37). 맨 위 조각이 성벽이 아니면 false.
+        /// 서 있는 사다리의 <see cref="BasePoint"/>·<see cref="TopPoint"/>와 같은 식이다.
+        /// </summary>
+        public static bool TryDescribeSlot(ConstructionWorld owner, SiegeSettings siegeSettings, CastleBattlements castleBattlements,
+            Vector2Int slotCell, Vector2Int slotOutward, float offset, out Vector3 basePoint, out Vector3 topPoint)
+        {
+            basePoint = topPoint = default;
+            BuildPlacement placement = owner != null && owner.Layout != null ? owner.Layout.Top(slotCell) : null;
+            if (placement == null || placement.Definition.Kind != BuildPieceKind.Wall || siegeSettings == null) return false;
+            float wallTop = placement.Elevation + placement.Definition.Height;
+            float sill = castleBattlements != null ? castleBattlements.SillHeightAt(slotCell, slotOutward) : 0f;
+            float half = owner.Grid.CellSize * 0.5f;
+            basePoint = SlotPoint(owner, slotCell, slotOutward, offset, half + FootDistanceFor(siegeSettings, wallTop + sill), 0f);
+            topPoint = SlotPoint(owner, slotCell, slotOutward, offset, half - siegeSettings.LadderTopInset, wallTop);
+            return true;
         }
 
         float CrenelOffset
@@ -186,8 +298,10 @@ namespace ProjectNeo.Siege
         // 성벽 바깥면에서 위쪽 끝까지의 수평 거리.
         const float EdgeOffset = 0.35f;
 
-        float FootDistance => Mathf.Max(settings.LadderBaseOffset,
-            EdgeOffset + LadderScaleRules.FootRun(wallHeight + SillHeight, settings.LadderLeanDegrees));
+        float FootDistance => FootDistanceFor(settings, wallHeight + SillHeight);
+
+        static float FootDistanceFor(SiegeSettings siegeSettings, float topHeight) => Mathf.Max(siegeSettings.LadderBaseOffset,
+            EdgeOffset + LadderScaleRules.FootRun(topHeight, siegeSettings.LadderLeanDegrees));
         /// <summary>
         /// 사다리 위쪽 끝. 성벽 바깥면 바로 앞이며, 성가퀴가 있으면 빈틈의 받침 높이에 걸린다(SIEGE-10, 빈틈 자리는 SIEGE-20).
         /// 다 오른 유닛은 받침을 넘어 <see cref="TopPoint"/>로 내려선다.
@@ -365,6 +479,13 @@ namespace ProjectNeo.Siege
             PlayerCanPush = false;
             TickAiPushHandles(Time.deltaTime);
             CleanTraffic();
+            if (IsLoose)
+            {
+                // 운반병이 없어졌으면(풀로 돌아감 등) 마지막 자리에 떨어진 것으로 본다.
+                if (carrier != null && (!carrier.isActiveAndEnabled || !Alive(carrier.Actor))) carrier = null;
+                TrackCarrier();
+                return;
+            }
             if (!HasWall)
             {
                 // 받치던 성벽이 사라지면 사다리도 쓰러지고 오르던 유닛은 떨어진다.

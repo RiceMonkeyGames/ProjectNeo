@@ -20,10 +20,57 @@ namespace ProjectNeo.Editor
         const string Data = "Assets/_Project/Data/GameFlow";
         // 왼쪽 위 부대 목록 높이(기준 1280×720). PREP-09: 부대 10줄 + 지휘 알림·사기 알림 2줄이 최소 글자(14)로 들어가는 높이.
         internal const float SquadListHeight = 236f;
-        // 사다리 자리 간격(칸). 7.5m 칸에서 15m로 3m 칸 시절(5칸)과 같은 거리다(사용자 결정 2026-11-23, SIEGE-18).
-        internal const int LadderSpacing = 2;
-        // 북쪽 줄 양끝에서 사다리를 놓지 않는 칸 수. SIEGE-36: 모서리 2×2 탑과 그 옆 성벽 위 계단 칸을 피한다.
-        internal const int LadderEndMargin = 3;
+        /// <summary>
+        /// Game 씬의 사다리만 바꾼다(SIEGE-37): 깔아 둔 사다리를 지우고 운반 사다리 원본을 전투에 연결한다.
+        /// 전투·공성 데이터 자산은 다시 만들지 않는다.
+        /// </summary>
+        [MenuItem("ProjectNeo/Setup/Replace Game Ladders With Carried Template")]
+        public static void ApplyCarriedLadders()
+        {
+            if (EditorSceneManager.GetActiveScene().isDirty) throw new InvalidOperationException("Save the active scene first.");
+            Scene scene = EditorSceneManager.OpenScene(GameFlowSetup.GamePath, OpenSceneMode.Single);
+            var world = Find<ConstructionWorld>(scene);
+            var controller = Find<GameBattleController>(scene);
+            SiegeLadder template = ReplaceLadders(world, controller.Settings.Siege, controller.Settings.Outward);
+            var data = new SerializedObject(controller);
+            data.FindProperty("ladderTemplate").objectReferenceValue = template;
+            data.ApplyModifiedPropertiesWithoutUndo();
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+        }
+
+        // 전투 전에 깔아 두는 사다리는 없다. 사다리 적이 이 꺼진 원본의 복제를 들고 나와 빈틈에 건다(SIEGE-37).
+        static SiegeLadder ReplaceLadders(ConstructionWorld world, SiegeSettings siege, Vector2Int outward)
+        {
+            Transform old = world.transform.Find("GameLadders");
+            if (old != null) UnityEngine.Object.DestroyImmediate(old.gameObject);
+            var ladderRoot = new GameObject("GameLadders").transform;
+            ladderRoot.SetParent(world.transform, false);
+            return CreateLadderTemplate(ladderRoot, world, siege, outward);
+        }
+
+        /// <summary>
+        /// 사다리 적이 들고 나올 사다리의 꺼진 원본(SIEGE-37). 외형은 임시 나무 막대(충돌체 없음)다.
+        /// 칸·방향은 운반병이 걸 자리를 고를 때 정해진다.
+        /// </summary>
+        internal static SiegeLadder CreateLadderTemplate(Transform parent, ConstructionWorld world, SiegeSettings siege,
+            Vector2Int outward)
+        {
+            var root = new GameObject("LadderTemplate");
+            root.SetActive(false);
+            root.transform.SetParent(parent, false);
+            var ladder = root.AddComponent<SiegeLadder>();
+            ladder.Configure(world, siege, Vector2Int.zero, outward);
+            var visual = new GameObject("Visual").transform;
+            visual.SetParent(root.transform, false);
+            var wood = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Art/Placeholder/SiegeLadder.mat");
+            GameObject rails = CombatPrototypeSetup.Box("Rails", Vector3.zero, Vector3.one, wood);
+            UnityEngine.Object.DestroyImmediate(rails.GetComponent<Collider>());
+            rails.transform.SetParent(visual, false);
+            visual.gameObject.AddComponent<PlaceholderLadderView>().Configure(ladder, rails.transform);
+            return ladder;
+        }
+
         [MenuItem("ProjectNeo/Setup/Connect Battle To Game Scene")]
         public static void Apply()
         {
@@ -53,44 +100,21 @@ namespace ProjectNeo.Editor
             interaction.ConfigureBattle(controller);
             EditorUtility.SetDirty(interaction);
 
-            // 초기 외벽 줄에서 사다리 자리를 찾으므로 이전 프로토타입의 좌표에 의존하지 않는다.
+            // 초기 성 조각에서 성문 칸을 찾으므로 이전 프로토타입의 좌표에 의존하지 않는다.
             var worldData = new SerializedObject(world);
             var seeds = worldData.FindProperty("initialPieces");
-            int north = -1, west = int.MaxValue, east = -1;
-            Vector2Int gateCell = default, gateSize = Vector2Int.one;
+            bool hasWall = false;
+            Vector2Int gateCell = default;
             for (int i = 0; i < seeds.arraySize; i++)
             {
                 var seed = seeds.GetArrayElementAtIndex(i);
                 var piece = (BuildPieceDefinition)seed.FindPropertyRelative("definition").objectReferenceValue;
-                Vector2Int cell = seed.FindPropertyRelative("cell").vector2IntValue;
-                if (piece.Kind == BuildPieceKind.Gate) { gateCell = cell; gateSize = piece.Footprint; }
-                if (piece.Kind != BuildPieceKind.Wall) continue;
-                north = Mathf.Max(north, cell.y); west = Mathf.Min(west, cell.x); east = Mathf.Max(east, cell.x);
+                if (piece.Kind == BuildPieceKind.Gate) gateCell = seed.FindPropertyRelative("cell").vector2IntValue;
+                hasWall |= piece.Kind == BuildPieceKind.Wall;
             }
-            if (north < 0) throw new InvalidOperationException("Castle walls are missing.");
-            Transform old = world.transform.Find("GameLadders");
-            if (old != null) UnityEngine.Object.DestroyImmediate(old.gameObject);
-            var ladderRoot = new GameObject("GameLadders").transform;
-            ladderRoot.SetParent(world.transform, false);
-            var ladders = new List<SiegeLadder>();
-            var wood = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Art/Placeholder/SiegeLadder.mat");
-            // 사다리는 북쪽 줄을 따라 LadderSpacing칸(7.5m 칸에서 15m)마다, 성문 칸은 건너뛴다(SIEGE-18).
-            for (int x = west + LadderEndMargin; x <= east - LadderEndMargin; x += LadderSpacing)
-            {
-                if (x >= gateCell.x && x < gateCell.x + gateSize.x) continue;
-                var root = new GameObject("Ladder_" + x);
-                root.transform.SetParent(ladderRoot, false);
-                var ladder = root.AddComponent<SiegeLadder>();
-                ladder.Configure(world, siege, new Vector2Int(x, north), settings.Outward);
-                var visual = new GameObject("Visual").transform;
-                visual.SetParent(root.transform, false);
-                GameObject rails = CombatPrototypeSetup.Box("Rails", Vector3.zero, Vector3.one, wood);
-                UnityEngine.Object.DestroyImmediate(rails.GetComponent<Collider>());
-                rails.transform.SetParent(visual, false);
-                visual.gameObject.AddComponent<PlaceholderLadderView>().Configure(ladder, rails.transform);
-                ladders.Add(ladder);
-            }
-            controller.Configure(world, settings, center, player, falling, ladders.ToArray());
+            if (!hasWall) throw new InvalidOperationException("Castle walls are missing.");
+            SiegeLadder template = ReplaceLadders(world, siege, settings.Outward);
+            controller.Configure(world, settings, center, player, falling, template);
             EditorUtility.SetDirty(controller);
             // 분지(SIEGE-40)에는 전투 시작 깃발을 두지 않는다(사용자 2026-11-28). 전투 시작은 B 길게 누르기(Q-40)다.
             if (world.Grid != null && world.Grid.CastleBehindSouthEdge)

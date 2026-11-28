@@ -24,12 +24,15 @@ namespace ProjectNeo.Siege
     [RequireComponent(typeof(UnitCombatAI), typeof(CharacterActor), typeof(NavMeshAgent))]
     public sealed class SiegeAttackerBrain : SiegeAttacker, IAnimationCueSource, ITargetThreatSource
     {
-        enum Mode { Deciding, Assault, ToLadder, Raising, Climbing, Falling, ToGate, Shooting, Retreating, ToWall, ToCannon }
+        enum Mode { Deciding, Assault, ToLadder, Raising, Climbing, Falling, ToGate, Shooting, Retreating, ToWall, ToCannon, Carrying, ToPickup }
 
         [SerializeField] SiegeAttackerRole role;
         [SerializeField] ConstructionWorld world;
         [SerializeField] SiegeSettings settings;
         [SerializeField] SiegeLadder[] ladders = new SiegeLadder[0];
+        // 전투가 넘겨 준 사다리 목록(SIEGE-37). 운반병이 사다리를 들고 나오면 목록이 늘어난다. 없으면 직렬화한 고정 사다리를 쓴다.
+        System.Collections.Generic.IReadOnlyList<SiegeLadder> liveLadders;
+        System.Collections.Generic.IReadOnlyList<SiegeLadder> Ladders => liveLadders ?? ladders;
         // 성 바깥을 향하는 격자 방향. 성문 앞과 사격 위치를 잡을 때 쓴다.
         [SerializeField] Vector2Int outward = new Vector2Int(0, 1);
         UnitCombatAI ai;
@@ -65,6 +68,7 @@ namespace ProjectNeo.Siege
             nextAttackerStagger = 0;
             ReachabilityCache.Invalidate();
             footprintWorld = null;
+            slotCatalog.Invalidate();
         }
         SiegeLadder ladder;
         // 사다리 고르기(SIEGE-17): 후보별 점수·확인 여부, 막혀서 포기한 시각, 길찾기로 닿는지와 그 결과를 구한 길찾기 판.
@@ -139,14 +143,15 @@ namespace ProjectNeo.Siege
             SiegeLadder[] ladderSpots, Vector2Int outwardDirection)
         {
             role = attackerRole; world = owner; settings = siegeSettings; ladders = ladderSpots; outward = outwardDirection;
+            liveLadders = null;
             ladderScores = null;
         }
 
         /// <summary>프리팹으로 만든 적을 씬의 성과 사다리에 연결한다. 활성화하기 전에 부른다.</summary>
-        public override void Bind(ConstructionWorld owner, SiegeLadder[] ladderSpots, Vector2Int outwardDirection,
-            SiegeSettings battleSettings = null)
+        public override void Bind(ConstructionWorld owner, System.Collections.Generic.IReadOnlyList<SiegeLadder> ladderSpots,
+            Vector2Int outwardDirection, SiegeSettings battleSettings = null)
         {
-            world = owner; ladders = ladderSpots; outward = outwardDirection;
+            world = owner; liveLadders = ladderSpots ?? new SiegeLadder[0]; outward = outwardDirection;
             ladderScores = null;
             if (battleSettings != null) settings = battleSettings;
             GetComponent<WallBreakerAttack>()?.Bind(owner);
@@ -168,6 +173,7 @@ namespace ProjectNeo.Siege
         {
             Actor.Died += OnDied;
             Actor.HitReceivedFrom += OnHitReceived;
+            TakeUpCarriedLadder();
         }
 
         void OnDisable()
@@ -175,6 +181,10 @@ namespace ProjectNeo.Siege
             Actor.Died -= OnDied;
             Actor.HitReceivedFrom -= OnHitReceived;
             ai?.SetHoldChaseSuppressed(false);
+            ReleasePickup();
+            // 판에서 빠지면(물러나 사라짐) 들고 있던 사다리도 함께 사라진다. 얼리기만 하면 그대로 둔다.
+            if (carried != null && !gameObject.activeInHierarchy && carried.Carrier == this)
+                carried.gameObject.SetActive(false);
             LeaveLadder();
             wallBreaker?.Clear();
             cannon = null;
@@ -217,6 +227,11 @@ namespace ProjectNeo.Siege
             else if (mode == Mode.ToCannon) StrikeCannon();
             else if (mode == Mode.ToWall) wallBreaker?.Tick();
             else if (mode == Mode.Raising && ladder != null) Face(-ladder.OutwardWorld);
+            // 운반병이 고른 자리나 떨어진 사다리에 닿으면 판단 주기를 기다리지 않고 내려놓거나 줍는다(SIEGE-37).
+            else if (mode == Mode.Carrying && hasCarrySlot
+                && FlatDistance(transform.position, carrySlot.BasePoint) <= settings.LadderUseRadius) think = 0f;
+            else if (mode == Mode.ToPickup && pickup != null
+                && FlatDistance(transform.position, pickup.LoosePosition) <= settings.LadderUseRadius) think = 0f;
         }
 
         // 길찾기 메시가 바뀌거나(성문·성벽 파괴) 사다리가 서거나 쓰러지면 판단 주기를 기다리지 않고 다시 판단한다(SIEGE-15).
@@ -244,11 +259,19 @@ namespace ProjectNeo.Siege
         {
             // 지형을 반영하는 동안에는 길 판단이 틀릴 수 있으므로 하던 일을 계속한다.
             if (world.IsRebuilding || world.RebuildPending) return;
+            // 사다리를 든 운반병은 싸우지 않고 고른 자리로 간다. 맞아도 계속 걷고, 죽을 때만 사다리를 떨어뜨린다(SIEGE-37).
+            if (carried != null)
+            {
+                ai.SetRetaliationSuppressed(true);
+                DecideCarry();
+                return;
+            }
             if (EvaluateAssault(out CharacterActor nearest, out bool viaLeash))
             {
                 leashAssault = viaLeash;
                 if (mode != Mode.Assault)
                 {
+                    ReleasePickup();
                     LeaveLadder();
                     gate = null;
                     cannon = null;
@@ -493,10 +516,11 @@ namespace ProjectNeo.Siege
 
         int CurrentLadderMask()
         {
-            if (ladders == null) return 0;
+            var list = Ladders;
+            if (list == null) return 0;
             int mask = 0;
-            for (int i = 0; i < ladders.Length && i < 31; i++)
-                if (ladders[i] != null && ladders[i].HasWall && ladders[i].State.Phase == LadderPhase.Up)
+            for (int i = 0; i < list.Count && i < 31; i++)
+                if (list[i] != null && list[i].HasWall && list[i].State.Phase == LadderPhase.Up)
                     mask |= 1 << i;
             return mask;
         }
@@ -570,6 +594,8 @@ namespace ProjectNeo.Siege
             float now = Time.time;
             // 붙들던 사다리가 쓰러졌으면 놓고 처음부터 다시 고른다(SIEGE-17). 밑에 몰려 있던 인원이 다른 사다리로 흩어진다.
             if (ladder != null && ladder.State.ToppleCount != seenToppleCount) LeaveLadder();
+            // 가까이 떨어진 사다리가 있으면 먼저 주워 든다(SIEGE-37).
+            if (DecidePickup()) return;
             SiegeLadder best = ChooseLadder(now);
             if (best == null)
             {
@@ -598,7 +624,7 @@ namespace ProjectNeo.Siege
             ladderStall.Observe(now, distance, advanced);
             if (ladderStall.IsStalled(now, settings.LadderStallSeconds))
             {
-                int index = System.Array.IndexOf(ladders, ladder);
+                int index = IndexOfLadder(ladder);
                 if (index >= 0 && ladderAvoidUntil != null) ladderAvoidUntil[index] = now + settings.LadderAvoidSeconds;
                 LeaveLadder();
                 think = 0f;
@@ -637,12 +663,13 @@ namespace ProjectNeo.Siege
         /// </summary>
         SiegeLadder ChooseLadder(float now)
         {
-            if (ladders == null || ladders.Length == 0) return null;
+            var list = Ladders;
+            if (list == null || list.Count == 0) return null;
             EnsureLadderBuffers();
-            int count = ladders.Length;
+            int count = list.Count;
             for (int i = 0; i < count; i++)
             {
-                SiegeLadder candidate = ladders[i];
+                SiegeLadder candidate = list[i];
                 ladderChecked[i] = false;
                 if (candidate == null || !candidate.HasWall) { ladderScores[i] = float.PositiveInfinity; continue; }
                 bool current = candidate == ladder;
@@ -657,21 +684,32 @@ namespace ProjectNeo.Siege
             while ((index = LadderChoiceRules.NextBest(ladderScores, ladderChecked, count)) >= 0)
             {
                 ladderChecked[index] = true;
-                if (IsLadderReachable(index, key)) return ladders[index];
+                if (IsLadderReachable(index, key)) return list[index];
             }
             return null;
         }
 
+        // 운반병이 사다리를 들고 나오면 목록이 늘어난다(SIEGE-37). 사다리는 전투 중에 목록에서 빠지지 않으므로
+        // 번호가 바뀌지 않고, 늘어난 만큼만 새 칸을 붙이고 기존 기록(피하는 시각·닿는지)은 그대로 둔다.
         void EnsureLadderBuffers()
         {
-            int count = ladders.Length;
+            int count = Ladders.Count;
             if (ladderScores != null && ladderScores.Length == count) return;
-            ladderScores = new float[count];
-            ladderChecked = new bool[count];
-            ladderAvoidUntil = new float[count];
-            ladderReachKeys = new int[count];
-            ladderReachable = new bool[count];
-            for (int i = 0; i < count; i++) ladderReachKeys[i] = int.MinValue;
+            int kept = ladderScores != null ? Mathf.Min(ladderScores.Length, count) : 0;
+            System.Array.Resize(ref ladderScores, count);
+            System.Array.Resize(ref ladderChecked, count);
+            System.Array.Resize(ref ladderAvoidUntil, count);
+            System.Array.Resize(ref ladderReachKeys, count);
+            System.Array.Resize(ref ladderReachable, count);
+            for (int i = kept; i < count; i++) { ladderReachKeys[i] = int.MinValue; ladderAvoidUntil[i] = 0f; }
+        }
+
+        int IndexOfLadder(SiegeLadder target)
+        {
+            var list = Ladders;
+            if (list == null || target == null) return -1;
+            for (int i = 0; i < list.Count; i++) if (list[i] == target) return i;
+            return -1;
         }
 
         // 길찾기 메시가 바뀌거나 땅·성벽 위를 오가면 닿는지 다시 구한다. 그 밖에는 사다리마다 한 번만 구한다.
@@ -680,7 +718,7 @@ namespace ProjectNeo.Siege
         bool IsLadderReachable(int index, int key)
         {
             if (ladderReachKeys[index] == key) return ladderReachable[index];
-            SiegeLadder candidate = ladders[index];
+            SiegeLadder candidate = Ladders[index];
             bool reachable = false;
             Vector3 basePoint = candidate.BasePoint, topPoint = candidate.TopPoint;
             if (NavMesh.SamplePosition(basePoint, out NavMeshHit foot, settings.LadderUseRadius, agent.areaMask)
@@ -780,6 +818,252 @@ namespace ProjectNeo.Siege
             if (ladder != null) ladder.Leave(this);
             ladder = null;
             ladderStall.Stop();
+        }
+
+        // ── 사다리 운반(SIEGE-37) ───────────────────────────────
+
+        // 들고 가는 사다리, 주우러 가는 떨어진 사다리, 가는 중인 걸 자리.
+        SiegeLadder carried;
+        SiegeLadder pickup;
+        LadderSlot carrySlot;
+        bool hasCarrySlot;
+        readonly object carrySpeedSource = new object();
+        static readonly LadderSlotCatalog slotCatalog = new LadderSlotCatalog();
+        static readonly System.Collections.Generic.List<Vector3> takenTops = new System.Collections.Generic.List<Vector3>();
+        static float[] slotScores = new float[0];
+        static bool[] slotChecked = new bool[0];
+        // 걸 자리를 고를 때 길찾기로 확인하는 상위 후보 수.
+        const int SlotPathChecks = 4;
+
+        /// <summary>지금 사다리를 들고 가는지(SIEGE-37). 검증과 외형용.</summary>
+        public bool IsCarryingLadder => carried != null;
+        /// <summary>들고 가는 사다리. 없으면 null.</summary>
+        public SiegeLadder CarriedLadder => carried;
+        /// <summary>운반병이 가는 중인 걸 자리. 고른 자리가 없으면 false.</summary>
+        public bool TryGetCarrySlot(out LadderSlot slot) { slot = carrySlot; return carried != null && hasCarrySlot; }
+
+        /// <summary>
+        /// 이 적이 들고 나올 사다리를 넘긴다(전투가 적을 만들 때, 활성화하기 전). 적이 판에 나오면 사다리도 함께 나온다.
+        /// </summary>
+        public void GiveLadder(SiegeLadder ladderToCarry)
+        {
+            carried = ladderToCarry;
+            hasCarrySlot = false;
+        }
+
+        public static void ResetSlotCatalog() => slotCatalog.Invalidate();
+
+        void TakeUpCarriedLadder()
+        {
+            if (carried == null) return;
+            if (carried.Carrier != this)
+            {
+                if (!carried.gameObject.activeSelf) carried.gameObject.SetActive(true);
+                if (!carried.Lift(this)) { carried = null; return; }
+            }
+            ApplyCarrySpeed(true);
+        }
+
+        bool carrySpeedApplied;
+
+        void ApplyCarrySpeed(bool carrying)
+        {
+            carrySpeedApplied = false;
+            if (Actor == null || Actor.Stats == null) return;
+            Actor.Stats.RemoveModifiersFrom(carrySpeedSource);
+            if (!carrying) return;
+            carrySpeedApplied = true;
+            if (settings != null && settings.LadderCarrySpeedMultiplier < 1f)
+                Actor.Stats.AddModifier(ProjectNeo.Stats.StatModifier.Percent(StatType.MoveSpeed,
+                    settings.LadderCarrySpeedMultiplier - 1f), carrySpeedSource);
+        }
+
+        void StopCarrying()
+        {
+            if (carried != null) carried.ClearClaim();
+            carried = null;
+            hasCarrySlot = false;
+            ApplyCarrySpeed(false);
+        }
+
+        void DecideCarry()
+        {
+            if (!carried.IsLoose || carried.Carrier != this) { StopCarrying(); mode = Mode.Deciding; think = 0f; return; }
+            // 활성화 순서상 능력치가 늦게 만들어질 수 있어 판단마다 느린 걸음을 다시 건다(같은 출처라 겹치지 않는다).
+            if (!carrySpeedApplied) ApplyCarrySpeed(true);
+            mode = Mode.Carrying;
+            if (!TryChooseSlot(out LadderSlot slot))
+            {
+                // 걸 자리가 없으면(모두 찼거나 닿지 않음) 든 채로 기다린다. 자리가 나면 다음 판단에서 간다.
+                carried.ClearClaim();
+                hasCarrySlot = false;
+                if (ai.Directive != UnitDirective.Hold) ai.SetDirective(UnitDirective.Hold);
+                return;
+            }
+            if (!hasCarrySlot || !slot.SameAs(carrySlot))
+            {
+                carrySlot = slot;
+                hasCarrySlot = true;
+                carried.Claim(slot);
+                ai.SetDirective(UnitDirective.Move, slot.BasePoint);
+            }
+            if (FlatDistance(transform.position, slot.BasePoint) > settings.LadderUseRadius)
+            {
+                if (ai.Directive != UnitDirective.Move) ai.SetDirective(UnitDirective.Move, slot.BasePoint);
+                return;
+            }
+            // 자리에 닿았다: 사다리를 성벽 쪽에 내려놓고, 바로 그 사다리를 세우러 간다.
+            SiegeLadder placed = carried;
+            StopCarrying();
+            if (!placed.PlaceAt(slot)) { mode = Mode.Deciding; think = 0f; return; }
+            LeaveLadder();
+            ladder = placed;
+            ladder.Join(this);
+            seenToppleCount = ladder.State.ToppleCount;
+            lastRaiseProgress = ladder.State.RaiseProgress;
+            ladderStall.Reset(Time.time, FlatDistance(transform.position, ladder.BasePoint));
+            mode = Mode.ToLadder;
+            think = 0f;
+        }
+
+        /// <summary>
+        /// 비어 있는 빈틈 자리 중 점수(거리·근처 사다리 수·위쪽 끝 수비병)가 좋은 순서로, 걸어서 닿는 첫 자리.
+        /// 상위 후보가 모두 끝까지 닿지 않으면 가장 좋은 빈 자리. 다른 사다리(서 있거나 다른 운반병이 고른 자리)와 너무 가까운 자리는 뺀다.
+        /// </summary>
+        bool TryChooseSlot(out LadderSlot chosen)
+        {
+            chosen = default;
+            slotCatalog.Refresh(world, settings, outward);
+            var slots = slotCatalog.Slots;
+            int count = slots.Count;
+            if (count == 0) return false;
+            CollectTakenTops();
+            if (slotScores.Length < count) { slotScores = new float[count]; slotChecked = new bool[count]; }
+            Vector3 here = transform.position;
+            for (int i = 0; i < count; i++)
+            {
+                LadderSlot slot = slots[i];
+                slotChecked[i] = false;
+                if (!LadderSlotRules.IsFree(slot.TopPoint, takenTops, settings.LadderSlotSpacing))
+                {
+                    slotScores[i] = float.PositiveInfinity;
+                    continue;
+                }
+                slotScores[i] = LadderSlotRules.Score(FlatDistance(here, slot.BasePoint),
+                    LadderSlotRules.CountNearby(slot.TopPoint, takenTops, settings.LadderSlotCrowdRadius),
+                    DefendersNear(slot.TopPoint), hasCarrySlot && slot.SameAs(carrySlot),
+                    settings.LadderSlotCrowdPenalty, settings.LadderDefenderPenalty);
+            }
+            int fallback = -1;
+            for (int checks = 0; checks < SlotPathChecks; checks++)
+            {
+                int index = LadderChoiceRules.NextBest(slotScores, slotChecked, count);
+                if (index < 0) break;
+                if (fallback < 0) fallback = index;
+                slotChecked[index] = true;
+                UnitCombatAI.Scheduler.RecordPathQuery(Time.frameCount);
+                if (agent.CalculatePath(slots[index].BasePoint, path) && path.status == NavMeshPathStatus.PathComplete)
+                {
+                    chosen = slots[index];
+                    return true;
+                }
+            }
+            // 끝까지 닿는 자리가 없어도 가장 좋은 빈 자리 쪽으로 갈 수 있는 데까지 간다(전에 사다리가 없을 때 성문 쪽으로 가던 것처럼).
+            // 가까워지면 다음 판단에서 다시 고른다.
+            if (fallback < 0) return false;
+            chosen = slots[fallback];
+            return true;
+        }
+
+        void CollectTakenTops()
+        {
+            takenTops.Clear();
+            var list = Ladders;
+            if (list == null) return;
+            for (int i = 0; i < list.Count; i++)
+            {
+                SiegeLadder other = list[i];
+                if (other == null || other == carried) continue;
+                if (other.HasWall) takenTops.Add(other.TopPoint);
+                else if (other.TryGetClaimedSlot(out LadderSlot claimed)) takenTops.Add(claimed.TopPoint);
+            }
+        }
+
+        int DefendersNear(Vector3 top)
+        {
+            CombatSpatialIndex.QueryTeam(CombatTeam.Allied, top, settings.LadderBlockRadius, spatialCandidates);
+            int count = 0;
+            for (int i = 0; i < spatialCandidates.Count; i++)
+            {
+                CharacterActor defender = spatialCandidates[i];
+                if (defender == null || defender.Health == null || defender.Health.IsDead) continue;
+                if (Mathf.Abs(defender.transform.position.y - top.y) <= settings.LadderHeightTolerance) count++;
+            }
+            return count;
+        }
+
+        /// <summary>
+        /// 떨어진 사다리를 주우러 가거나 줍는다. 그 일을 하는 중이면 true. 이미 사다리 밑에 있거나 세우는·오르는 중이면 줍지 않는다.
+        /// </summary>
+        bool DecidePickup()
+        {
+            if (mode == Mode.Raising || mode == Mode.Climbing) return false;
+            if (pickup != null && !pickup.IsFreeToPickUp(this)) ReleasePickup();
+            if (pickup == null)
+            {
+                if (ladder != null && FlatDistance(transform.position, ladder.BasePoint) <= settings.LadderUseRadius) return false;
+                SiegeLadder found = NearestLooseLadder();
+                if (found == null || !found.TryClaimPickup(this)) return false;
+                LeaveLadder();
+                pickup = found;
+                mode = Mode.ToPickup;
+                ai.SetDirective(UnitDirective.Move, PickupPoint(pickup));
+                return true;
+            }
+            if (FlatDistance(transform.position, pickup.LoosePosition) > settings.LadderUseRadius)
+            {
+                mode = Mode.ToPickup;
+                if (ai.Directive != UnitDirective.Move) ai.SetDirective(UnitDirective.Move, PickupPoint(pickup));
+                return true;
+            }
+            SiegeLadder lifted = pickup;
+            pickup = null;
+            if (!lifted.Lift(this)) { lifted.ReleasePickup(this); return false; }
+            carried = lifted;
+            hasCarrySlot = false;
+            ApplyCarrySpeed(true);
+            DecideCarry();
+            return true;
+        }
+
+        SiegeLadder NearestLooseLadder()
+        {
+            var list = Ladders;
+            if (list == null) return null;
+            SiegeLadder best = null;
+            float bestDistance = settings.LadderPickupRadius * settings.LadderPickupRadius;
+            Vector3 here = transform.position;
+            for (int i = 0; i < list.Count; i++)
+            {
+                SiegeLadder candidate = list[i];
+                if (candidate == null || !candidate.isActiveAndEnabled || !candidate.IsFreeToPickUp(this)) continue;
+                Vector3 offset = candidate.LoosePosition - here;
+                offset.y = 0f;
+                float distance = offset.sqrMagnitude;
+                if (distance > bestDistance) continue;
+                bestDistance = distance;
+                best = candidate;
+            }
+            return best;
+        }
+
+        static Vector3 PickupPoint(SiegeLadder loose) =>
+            NavMesh.SamplePosition(loose.LoosePosition, out NavMeshHit hit, 2f, NavMesh.AllAreas) ? hit.position : loose.LoosePosition;
+
+        void ReleasePickup()
+        {
+            if (pickup != null) pickup.ReleasePickup(this);
+            pickup = null;
         }
 
         // ── 성문 ────────────────────────────────────────────────
@@ -929,6 +1213,7 @@ namespace ProjectNeo.Siege
         {
             if (mode != Mode.Retreating)
             {
+                ReleasePickup();
                 LeaveLadder();
                 gate = null;
                 cannon = null;
@@ -1218,6 +1503,10 @@ namespace ProjectNeo.Siege
         void OnDied()
         {
             bool climbing = mode == Mode.Climbing;
+            // 든 사다리는 죽은 자리에 떨어진다. 다른 사다리 적이 주워 갈 수 있다(SIEGE-37).
+            if (carried != null) carried.DropLoose(this);
+            StopCarrying();
+            ReleasePickup();
             LeaveLadder();
             mode = Mode.Deciding;
             // 오르다 죽으면 그 자리에 떠 있지 않고 떨어진다.

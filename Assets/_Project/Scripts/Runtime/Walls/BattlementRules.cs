@@ -219,5 +219,28 @@ namespace ProjectNeo.Walls
             if (edgeLength * 0.5f - offset < settings.CrenelWidth * 0.5f - 1e-4f) return 0f;
             return -offset;
         }
+
+        /// <summary>
+        /// 운반병이 사다리를 걸 수 있는 빈틈 가운데 자리 전부(면 가운데에서 잰 거리, 면 시작 → 끝 방향이 +, SIEGE-37).
+        /// 빈틈 전체가 면 안에 들어가는 것만 넣으므로 양 끝의 반쪽 빈틈은 빠진다. 무늬는
+        /// <see cref="LadderCrenelOffset"/>과 같고, 면이 한 주기보다 짧거나 설정이 없으면 가운데(0) 하나다.
+        /// </summary>
+        public static void LadderCrenelOffsets(BattlementSettings settings, float edgeLength, List<float> result)
+        {
+            result.Clear();
+            if (edgeLength <= 0f) return;
+            if (settings == null) { result.Add(0f); return; }
+            float period = settings.MerlonWidth + settings.CrenelWidth;
+            float halfCrenel = settings.CrenelWidth * 0.5f;
+            float phase = CrenelPhase(settings);
+            float middle = edgeLength * 0.5f;
+            int reach = Mathf.CeilToInt(middle / Mathf.Max(0.01f, period)) + 1;
+            for (int k = -reach; k <= reach; k++)
+            {
+                float offset = period * (k + phase);
+                if (Mathf.Abs(offset) + halfCrenel <= middle + 1e-4f) result.Add(offset);
+            }
+            if (result.Count == 0) result.Add(0f);
+        }
     }
 }

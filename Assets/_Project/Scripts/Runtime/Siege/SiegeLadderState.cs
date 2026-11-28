@@ -2,12 +2,16 @@ using System;
 
 namespace ProjectNeo.Siege
 {
-    public enum LadderPhase { Down = 0, Raising = 1, Up = 2 }
+    /// <summary>
+    /// 사다리 단계. <see cref="Carried"/>는 성벽 자리에 아직 놓이지 않은 사다리다: 운반병이 들고 가거나,
+    /// 운반병이 죽어 떨어진 자리에 놓여 있다(SIEGE-37). 자리에 놓이면 <see cref="Down"/>부터 기존 규칙을 따른다.
+    /// </summary>
+    public enum LadderPhase { Down = 0, Raising = 1, Up = 2, Carried = 3 }
 
     /// <summary>
-    /// 사다리 하나의 상태 규칙. 바닥에 놓임 → 세우는 중 → 세워짐. 세워진 사다리는 한 번에 한 명만 오르고,
+    /// 사다리 하나의 상태 규칙. (운반 →) 바닥에 놓임 → 세우는 중 → 세워짐. 세워진 사다리는 한 번에 한 명만 오르고,
     /// 밀어내면 다시 바닥에 놓인다. 수직 균형점 전의 취소는 복귀하고, 넘긴 뒤에는 자동으로 안착한다.
-    /// 씬과 외형은 알지 않는다.
+    /// 운반 중인 사다리는 세우기·밀기·쓰러짐의 영향을 받지 않는다(SIEGE-37). 씬과 외형은 알지 않는다.
     /// </summary>
     public sealed class SiegeLadderState
     {
@@ -80,7 +84,7 @@ namespace ProjectNeo.Siege
         public void Tick(float deltaTime, bool raiserPresent, int pusherCount, bool pushBlocked)
         {
             bool pusherPresent = pusherCount > 0;
-            if (deltaTime <= 0f || float.IsNaN(deltaTime)) return;
+            if (deltaTime <= 0f || float.IsNaN(deltaTime) || Phase == LadderPhase.Carried) return;
             switch (Phase)
             {
                 case LadderPhase.Down:
@@ -127,6 +131,27 @@ namespace ProjectNeo.Siege
             }
         }
 
+        /// <summary>
+        /// 바닥에 놓인 사다리를 들어 운반 단계로 바꾼다(SIEGE-37). 세우는 중·세워짐·탑승 중이면 실패한다.
+        /// </summary>
+        public bool TryLift()
+        {
+            if (Phase == LadderPhase.Carried) return true;
+            if (Phase != LadderPhase.Down || HasClimber || IsSettling) return false;
+            Phase = LadderPhase.Carried;
+            RaiseProgress = 0f;
+            PushProgress = 0f;
+            return true;
+        }
+
+        /// <summary>운반하던 사다리를 성벽 자리에 내려놓는다(SIEGE-37). 이후 바닥에 놓인 사다리 규칙을 따른다.</summary>
+        public bool TryPlace()
+        {
+            if (Phase != LadderPhase.Carried) return false;
+            Phase = LadderPhase.Down;
+            return true;
+        }
+
         public bool TryBeginClimb()
         {
             if (!CanBoard || HasClimber) return false;
@@ -139,7 +164,7 @@ namespace ProjectNeo.Siege
         /// <summary>세워졌거나 세우는 중인 사다리를 바닥으로 돌린다. 성벽이 사라졌을 때도 쓴다.</summary>
         public void Topple()
         {
-            if (Phase == LadderPhase.Down && !HasClimber) return;
+            if (Phase == LadderPhase.Carried || (Phase == LadderPhase.Down && !HasClimber)) return;
             bool hadClimber = HasClimber;
             Phase = LadderPhase.Down;
             RaiseProgress = 0f;

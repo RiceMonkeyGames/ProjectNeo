@@ -11,8 +11,7 @@ namespace ProjectNeo.Walls
         UnfinishedSupport = 8,
         /// <summary>보루는 성 바깥 빈 칸에, 같은 층·같은 높이의 성벽에 붙여 지어야 한다(SIEGE-11).</summary>
         BastionNeedsWall = 9,
-        /// <summary>사다리가 서는 칸이다(SIEGE-11).</summary>
-        LadderLane = 10,
+        // 10은 사다리 자리(SIEGE-11)였다. 사다리 자리가 없어져(SIEGE-37) 비워 둔다.
         /// <summary>보루 위에는 보루만, 보루는 보루 위에만 쌓는다(SIEGE-11).</summary>
         BastionStack = 11,
         /// <summary>이웃 성벽이 앞뒤보다 낮은 골짜기(2층-1층-2층)가 된다(SIEGE-14, <see cref="BuildGridDefinition.ForbidValleys"/>).</summary>
