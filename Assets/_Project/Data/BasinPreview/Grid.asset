@@ -18,3 +18,5 @@ MonoBehaviour:
   maxLevels: 4
   forbidValleys: 1
   groundStairsOnly: 1
+  castleBehindSouthEdge: 1
+  blockedSideCells: 1

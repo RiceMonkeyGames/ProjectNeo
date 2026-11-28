@@ -23,6 +23,8 @@ Registered 2026-11-27 from the basin map decision ([Decisions-Resolved](../plan/
 
 Open before start (ask the user): north wall length and band depth, basin size, gate position, whether the run-start wall has towers.
 
+**Scope (user, 2026-11-28)**: done together with [SIEGE-39](SIEGE-39.md) — the Game uses the basin draft (demo town and keep) as its world, with facilities, NPCs and citizens re-placed in the demo town. Squad deployment in preparation: the wall and everything south of it.
+
 **Layout draft settled with the user (2026-11-28, on `feature/siege-38`, scene `Assets/_Project/Scenes/Preview/FantasyKingdomBasin.unity`)** — the Game layout should copy it:
 - Basin: the Synty `PolygonFantasyKingdom` demo town and keep, rotated -90° under `DemoWorld` so the enemy side is +z; town walls and everything outside them removed by hand.
 - Grid `NorthWallGrid`: 42 × 12 cells of 5m at (-125, -17.73, 118.64), 4 levels (`Data/BasinPreview/Grid.asset`). The wall row is the innermost row (z 118.6–123.6); the other 11 rows face the enemy.
