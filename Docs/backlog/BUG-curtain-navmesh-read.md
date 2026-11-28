@@ -1,9 +1,9 @@
 ---
 id: BUG-curtain-navmesh-read
 title: Game Scene PlayMode Tests Fail on Unreadable Curtain Mesh in Runtime NavMesh Build
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: SeongminHwang
+branch: fix/bug-curtain-navmesh-read
 area: SIEGE
 depends_on: [SIEGE-40]
 created: 2026-11-28
