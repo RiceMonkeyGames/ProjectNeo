@@ -1,9 +1,9 @@
 ---
 id: PREP-12
 title: Tavern Hero Re-roll & Offer Lock
-status: Waiting
-assignee: Unassigned
-branch:
+status: In Progress
+assignee: SeongminHwang
+branch: feature/prep-12
 area: PREP
 depends_on: []
 created: 2026-11-26
