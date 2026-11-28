@@ -18,6 +18,8 @@ namespace ProjectNeo.Characters
         InputAction crouch;
         InputAction sprint;
         InputAction jump;
+        const float GroundStickSpeed = 4f, JumpGraceSeconds = 0.15f;
+        float lastGroundedTime = float.NegativeInfinity;
         CharacterController motor;
         CharacterActor actor;
         float verticalSpeed;
@@ -61,7 +63,9 @@ namespace ProjectNeo.Characters
         public bool TryJump()
         {
             if (actor.Health == null || actor.Health.IsDead) return false;
-            if (!PlayerLocomotionRules.CanJump(motor.isGrounded, IsCrouching, movementSuspended, IsJumping)) return false;
+            // 땅에서 막 떨어진 짧은 순간(턱·내리막)에도 점프를 받는다.
+            bool grounded = motor.isGrounded || Time.time - lastGroundedTime <= JumpGraceSeconds;
+            if (!PlayerLocomotionRules.CanJump(grounded, IsCrouching, movementSuspended, IsJumping)) return false;
             verticalSpeed = PlayerLocomotionRules.JumpSpeed(settings.JumpHeight, settings.Gravity);
             if (verticalSpeed <= 0f) return false;
             takeoffVelocity = lastHorizontalVelocity;
@@ -144,7 +148,10 @@ namespace ProjectNeo.Characters
             transform.rotation = Quaternion.Euler(0f, yaw, 0f);
             Vector2 clamped = Vector2.ClampMagnitude(input, 1f);
             Vector3 horizontal = transform.rotation * new Vector3(clamped.x, 0f, clamped.y);
-            if (motor.isGrounded && verticalSpeed < 0f) { verticalSpeed = 0f; IsJumping = false; }
+            // 땅에 있으면 아래로 살짝 눌러 붙인다. 0으로 두면 울퉁불퉁한 땅·내리막(분지 데모 마을, SIEGE-40)에서 발이 떠
+            // isGrounded가 깜빡이고 점프가 막힌다.
+            if (motor.isGrounded && verticalSpeed < 0f) { verticalSpeed = -GroundStickSpeed; IsJumping = false; }
+            if (motor.isGrounded) lastGroundedTime = Time.time;
             verticalSpeed -= settings.Gravity * deltaTime;
             float multiplier = PlayerLocomotionRules.SpeedMultiplier(IsCrouching, IsSprinting, settings);
             Vector3 desired = horizontal * actor.Character.Stats.GetValue(StatType.MoveSpeed) * multiplier;

@@ -71,14 +71,16 @@ namespace ProjectNeo.Siege
 
         /// <summary>성 범위 안(테두리 칸 포함)인지. 돌파구 대상 아군인지 볼 때 쓴다.</summary>
         public bool IsWithinCastle(Vector2Int cell) =>
-            HasCastle && cell.x >= min.x && cell.x <= max.x && cell.y >= min.y && cell.y <= max.y;
+            HasCastle && (BattlementRules.IsBehindSouthEdge(grid, cell)
+                || cell.x >= min.x && cell.x <= max.x && cell.y >= min.y && cell.y <= max.y);
 
         /// <summary>
         /// 성 범위의 테두리 칸(격자 끝까지 늘린 쪽은 빼고)을 뺀 안쪽인지. 공격자가 이미 성 안에 들어왔는지 볼 때 쓴다.
         /// 성문 앞이나 성벽 틈 칸에 선 공격자는 아직 안으로 보지 않는다.
         /// </summary>
         public bool IsInsideCastle(Vector2Int cell) =>
-            IsWithinCastle(cell)
+            HasCastle && BattlementRules.IsBehindSouthEdge(grid, cell)
+            || IsWithinCastle(cell)
             && (openMinX || cell.x > min.x) && (openMaxX || cell.x < max.x)
             && (openMinZ || cell.y > min.y) && (openMaxZ || cell.y < max.y);
 

@@ -237,8 +237,8 @@ Transform:
   m_GameObject: {fileID: 10384145}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 60, y: -0.5, z: 75}
-  m_LocalScale: {x: 120, y: 1, z: 150}
+  m_LocalPosition: {x: 40, y: -0.5, z: 50}
+  m_LocalScale: {x: 80, y: 1, z: 100}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 771676910}
@@ -1648,7 +1648,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Siege.SiegeDirector
   world: {fileID: 340332242}
-  settings: {fileID: 11400000, guid: 029b3716fb5b3e2428487392e68c6cec, type: 2}
+  settings: {fileID: 11400000, guid: e2035f2953266544cb7893eeff94a62b, type: 2}
   prep: {fileID: 1557732694}
   center: {fileID: 1621472877}
   constructionCamera: {fileID: 1228117743}
@@ -1667,17 +1667,17 @@ MonoBehaviour:
   - {fileID: 1812605431}
   outward: {x: 0, y: 1}
   allySpawnPoints:
-  - {x: 45, y: 5, z: -11.25}
-  - {x: 22.5, y: 0, z: -32.5}
-  - {x: 0, y: 0, z: -45}
-  - {x: 0, y: 0, z: -57.5}
+  - {x: 30, y: 5, z: -7.5}
+  - {x: 15, y: 0, z: -21.666668}
+  - {x: 0, y: 0, z: -30}
+  - {x: 0, y: 0, z: -38.333336}
   allyColumns: 5
   allySpacing: 1.1
   allyExtraColumns: 4
   allyExtraSpacing: 8
   allyExtraRowSpacing: 4.5
   enemyEdgeMargin: 1.5
-  enemySpawnPoint: {x: 0, y: 0, z: 55}
+  enemySpawnPoint: {x: 0, y: 0, z: 36.666668}
   enemyColumns: 10
   enemySpacing: 2
   enemyRowSpacing: 2.5
@@ -1994,7 +1994,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4015695415154591638, guid: 174b1cb885419454d99bddaa975789ce, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -33.75
+      value: -22.5
       objectReference: {fileID: 0}
     - target: {fileID: 4015695415154591638, guid: 174b1cb885419454d99bddaa975789ce, type: 3}
       propertyPath: m_LocalRotation.w
@@ -2519,7 +2519,7 @@ Transform:
   m_GameObject: {fileID: 340332241}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -60, y: 0, z: -75}
+  m_LocalPosition: {x: -40, y: 0, z: -50}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -4299,7 +4299,7 @@ MonoBehaviour:
   director: {fileID: 260709370}
   prep: {fileID: 1557732694}
   placement: {fileID: 1466512374}
-  settings: {fileID: 11400000, guid: 029b3716fb5b3e2428487392e68c6cec, type: 2}
+  settings: {fileID: 11400000, guid: e2035f2953266544cb7893eeff94a62b, type: 2}
   wall: {fileID: 11400000, guid: c1c038f7a168fe347bc9a0582b3d05bf, type: 2}
   stairs: {fileID: 11400000, guid: 9bec35695a6f5a848b88ce14e4da5884, type: 2}
   bastion: {fileID: 11400000, guid: dc1e88579bbb29f428e498188dcd48e4, type: 2}
@@ -5983,7 +5983,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 65
+  orthographic size: 43.333336
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
@@ -6016,7 +6016,7 @@ Transform:
   m_GameObject: {fileID: 1228117742}
   serializedVersion: 2
   m_LocalRotation: {x: 0.23911761, y: 0.36964384, z: -0.09904577, w: 0.8923991}
-  m_LocalPosition: {x: -107.16518, y: 87.49999, z: -107.16517}
+  m_LocalPosition: {x: -71.44346, y: 58.333332, z: -71.44345}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6110,7 +6110,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Siege.SiegeLadder
   world: {fileID: 340332242}
-  settings: {fileID: 11400000, guid: 029b3716fb5b3e2428487392e68c6cec, type: 2}
+  settings: {fileID: 11400000, guid: e2035f2953266544cb7893eeff94a62b, type: 2}
   cell: {x: 6, y: 8}
   outward: {x: 0, y: 1}
 --- !u!4 &1266921733
@@ -7220,7 +7220,7 @@ MonoBehaviour:
   view: {fileID: 1228117743}
   placement: {fileID: 1466512374}
   center: {fileID: 1621472877}
-  settings: {fileID: 11400000, guid: 029b3716fb5b3e2428487392e68c6cec, type: 2}
+  settings: {fileID: 11400000, guid: e2035f2953266544cb7893eeff94a62b, type: 2}
   squadFacing: 0
 --- !u!4 &1557732695
 Transform:
@@ -8385,7 +8385,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Siege.SiegeLadder
   world: {fileID: 340332242}
-  settings: {fileID: 11400000, guid: 029b3716fb5b3e2428487392e68c6cec, type: 2}
+  settings: {fileID: 11400000, guid: e2035f2953266544cb7893eeff94a62b, type: 2}
   cell: {x: 11, y: 8}
   outward: {x: 0, y: 1}
 --- !u!4 &1812605432
@@ -8726,7 +8726,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Siege.SiegeLadder
   world: {fileID: 340332242}
-  settings: {fileID: 11400000, guid: 029b3716fb5b3e2428487392e68c6cec, type: 2}
+  settings: {fileID: 11400000, guid: e2035f2953266544cb7893eeff94a62b, type: 2}
   cell: {x: 1, y: 8}
   outward: {x: 0, y: 1}
 --- !u!4 &2110500718

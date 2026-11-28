@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Run.BuildCostTable
   pieces:
   - piece: {fileID: 11400000, guid: c1c038f7a168fe347bc9a0582b3d05bf, type: 2}
-    gold: 15
+    gold: 10
   - piece: {fileID: 11400000, guid: 9bec35695a6f5a848b88ce14e4da5884, type: 2}
     gold: 15
   - piece: {fileID: 11400000, guid: dc1e88579bbb29f428e498188dcd48e4, type: 2}

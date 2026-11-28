@@ -19,6 +19,6 @@ MonoBehaviour:
   maxHealth: 600
   maxStorey: 1
   initialTiers: 1
-  prefab: {fileID: 1171873151636035731, guid: 5888c3fa78aed674db683a42e47a7041, type: 3}
+  prefab: {fileID: 2373823086468363160, guid: 35ed320b8c224a545bff92672879cbbb, type: 3}
   mountPoints: []
   occupantModifiers: []

@@ -46,24 +46,38 @@ MonoBehaviour:
   - weapon: {fileID: 11400000, guid: dcd5362db7ff6a84db2f93ac232125a8, type: 2}
     cost: 6
   ladderRaiseSeconds: 3
+  ladderRaiseSecondsPerExtraStorey: 1.5
   ladderPushSeconds: 2
   ladderPushHoldSeconds: 3
   ladderOccupiedPushMultiplier: 1.5
   ladderTwoPusherBonus: 0.5
   ladderThreePlusPusherBonus: 0.75
-  ladderClimbSeconds: 2.5
+  ladderClimbSecondsPerStorey: 2.5
   ladderTapSeconds: 0.25
   ladderUseRadius: 3.5
   ladderPushRadius: 2.5
   ladderBlockRadius: 3
   ladderHeightTolerance: 1
   ladderBaseOffset: 1.2
+  ladderLeanDegrees: 75
   ladderTopInset: 1
   ladderCrowdPenalty: 4
   ladderFallClearance: 0.55
   ladderFallOutwardSpeed: 3.5
   ladderPushPoise: 10
   ladderPushInterruptCooldown: 0.3
+  ladderStallSeconds: 6
+  ladderAvoidSeconds: 10
+  ladderAvoidPenalty: 30
+  ladderDefenseRadius: 12
+  ladderDefenseMaxPushers: 3
+  ladderPushSpotSpacing: 0.8
+  ladderChokepointClimbFraction: 0.5
+  ladderChokepointRadius: 2.5
+  ladderChokepointSlots: 5
+  ladderDefenseInterval: 0.5
+  ladderDefenseRejectSeconds: 3
+  ladderDefenseStickiness: 1.5
   attackerDecisionInterval: 0.5
   gateStandOffset: -0.3
   gateSpread: 3
@@ -79,6 +93,12 @@ MonoBehaviour:
   assaultLeashReleaseRadius: 12
   archerBreachAdvanceDelay: 8
   archerCrouchTolerance: 4
+  archerCoverPriorityFactor: 0.5
+  archerCoverRadius: 4
+  archerBlockedSearchLimit: 2
+  archerBlockedAvoidSeconds: 15
+  ladderRaisedBonus: 8
+  ladderDefenderPenalty: 6
   retreatEdgeMargin: 1.5
   retreatTimeout: 20
   pushLadder:

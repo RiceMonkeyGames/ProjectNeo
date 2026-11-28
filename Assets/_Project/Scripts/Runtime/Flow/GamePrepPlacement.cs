@@ -19,6 +19,8 @@ namespace ProjectNeo.Flow
     public sealed class GamePrepPlacement : MonoBehaviour
     {
         public const string OutsideMessage = "성 밖에는 부대를 배치할 수 없습니다.";
+        // 분지(SIEGE-40) 지도 표식에서 성 안 구역을 성벽 뒤로 그릴 깊이(m). 판정에는 쓰지 않는다.
+        const float InteriorMapDepth = 250f;
 
         GamePhaseView phaseView;
         SquadCommandInput commandInput;
@@ -122,6 +124,8 @@ namespace ProjectNeo.Flow
             if (world == null) return true;
             if (!TryInteriorRect(out Rect rect)) return true;
             Vector3 local = world.LocalPoint(point);
+            // 북쪽 성벽 한 줄의 분지(SIEGE-40): 성벽 바깥면보다 남쪽이면 성벽 위를 포함해 모두 성 안(사용자 결정 2026-11-28).
+            if (world.Grid != null && world.Grid.CastleBehindSouthEdge) return local.z <= rect.yMax;
             return CastleInteriorRules.Contains(rect, new Vector2(local.x, local.z));
         }
 
@@ -131,6 +135,9 @@ namespace ProjectNeo.Flow
         public bool TryGetInteriorCorners(Vector3[] corners)
         {
             if (world == null || corners == null || corners.Length < 4 || !TryInteriorRect(out Rect rect)) return false;
+            // 분지(SIEGE-40)는 성벽 뒤가 모두 성 안이다. 지도 표식은 격자 폭으로, 성벽 뒤 InteriorMapDepth까지 그린다.
+            if (world.Grid != null && world.Grid.CastleBehindSouthEdge)
+                rect = Rect.MinMaxRect(0f, rect.yMax - InteriorMapDepth, world.Grid.Width * world.Grid.CellSize, rect.yMax);
             Transform root = world.transform;
             corners[0] = root.TransformPoint(new Vector3(rect.xMin, 0f, rect.yMin));
             corners[1] = root.TransformPoint(new Vector3(rect.xMin, 0f, rect.yMax));

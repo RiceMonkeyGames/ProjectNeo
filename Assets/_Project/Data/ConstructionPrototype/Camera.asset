@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Walls.BuildCameraSettings
   pitch: 30
   initialYaw: 45
-  orthographicSize: 50
-  distance: 112.5
+  orthographicSize: 33.333336
+  distance: 75
   rotationStep: 90
   transitionDuration: 0.3
   navigationEnabled: 0
   initialFocus: {x: 0.5, y: 0.5}
   dragSensitivity: 1
   zoomFraction: 0.15
-  minZoom: 50
-  maxZoom: 350
+  minZoom: 33.333336
+  maxZoom: 233.33334
   minimumGridLinePixels: 1.5

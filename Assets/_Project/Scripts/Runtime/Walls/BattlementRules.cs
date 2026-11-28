@@ -42,6 +42,8 @@ namespace ProjectNeo.Walls
                 for (int z = 0; z < grid.Depth; z++)
                 {
                     if (x != 0 && z != 0 && x != grid.Width - 1 && z != grid.Depth - 1) continue;
+                    // 성이 남쪽 가장자리 너머에 있으면(SIEGE-40) 남쪽 가장자리만 맞닿은 칸에서는 바깥이 시작되지 않는다.
+                    if (grid.CastleBehindSouthEdge && z == 0 && x != 0 && x != grid.Width - 1) continue;
                     var cell = new Vector2Int(x, z);
                     if (IsOpen(layout, alwaysInside, cell) && outside.Add(cell)) open.Enqueue(cell);
                 }
@@ -77,9 +79,13 @@ namespace ProjectNeo.Walls
                 }
         }
 
-        /// <summary>격자 밖이거나 바깥에 속한 칸인지.</summary>
+        /// <summary>격자 밖이거나 바깥에 속한 칸인지. 성이 남쪽 가장자리 너머에 있으면 격자 남쪽 밖은 성 안이다(SIEGE-40).</summary>
         public static bool IsOutside(BuildGridDefinition grid, ICollection<Vector2Int> outside, Vector2Int cell) =>
-            !InGrid(grid, cell) || outside.Contains(cell);
+            InGrid(grid, cell) ? outside.Contains(cell) : !IsBehindSouthEdge(grid, cell);
+
+        /// <summary>성이 남쪽 가장자리 너머에 있는 격자에서 격자 남쪽 밖(성 안) 칸인지.</summary>
+        public static bool IsBehindSouthEdge(BuildGridDefinition grid, Vector2Int cell) =>
+            grid != null && grid.CastleBehindSouthEdge && cell.y < 0;
 
         /// <summary>
         /// 그 칸에서 성가퀴를 세울 면을 비트로 돌려준다(비트 i = <see cref="Directions"/>[i]).

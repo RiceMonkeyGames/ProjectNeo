@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ProjectNeo.Runtime::ProjectNeo.Walls.BuildGridDefinition
   width: 16
   depth: 14
-  cellSize: 7.5
+  cellSize: 5
   maxLevels: 1
   forbidValleys: 0
   groundStairsOnly: 0

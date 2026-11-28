@@ -121,6 +121,8 @@ namespace ProjectNeo.Walls
             Vector2Int size = RotatedSize(definition.Footprint, rotation);
             if (cell.x < 0 || cell.y < 0 || cell.x + size.x > grid.Width || cell.y + size.y > grid.Depth)
                 return PlacementIssue.OutsideGrid;
+            // 막힌 동·서 끝 칸(분지 성벽 끝 탑 자리, SIEGE-40)도 격자 밖처럼 거절한다.
+            if (!grid.IsBuildable(cell) || !grid.IsBuildable(cell + size - Vector2Int.one)) return PlacementIssue.OutsideGrid;
             if (definition.Kind == BuildPieceKind.Gate && (!fixedGate || gateRegistered)) return PlacementIssue.ReservedGate;
             int common = -1;
             float commonElevation = 0f;

@@ -16,8 +16,9 @@ MonoBehaviour:
   displayName: "\uC131\uBCBD"
   footprint: {x: 1, y: 1}
   height: 5
-  maxHealth: 150
+  maxHealth: 100
   maxStorey: 3
+  initialTiers: 1
   prefab: {fileID: 2063767235405788365, guid: dd88b6b831cc0fd40be673a4acface0b, type: 3}
   mountPoints: []
   occupantModifiers: []

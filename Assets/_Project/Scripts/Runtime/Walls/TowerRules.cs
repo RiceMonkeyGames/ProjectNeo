@@ -62,6 +62,7 @@ namespace ProjectNeo.Walls
             if (layout == null || grid == null || definition == null) return PlacementIssue.NoPiece;
             Vector2Int size = BuildLayout.RotatedSize(definition.Footprint, rotation);
             if (cell.x < 0 || cell.y < 0 || cell.x + size.x > grid.Width || cell.y + size.y > grid.Depth) return PlacementIssue.OutsideGrid;
+            if (!grid.IsBuildable(cell) || !grid.IsBuildable(cell + size - Vector2Int.one)) return PlacementIssue.OutsideGrid;
             if (outside == null) return PlacementIssue.TowerNeedsWall;
             PlacementIssue best = PlacementIssue.TowerNeedsWall;
             // 미리보기마다 여러 번 부르므로 목록을 다시 쓴다(메인 스레드 전용).

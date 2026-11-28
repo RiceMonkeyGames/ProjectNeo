@@ -62,6 +62,36 @@ namespace ProjectNeo.Walls
 
         void Awake()
         {
+            BuildInitialPieces();
+            // 성가퀴는 첫 길찾기 메시에 함께 담는다. 따로 만들면 시작하자마자 메시를 한 번 더 만들게 된다(SIEGE-10).
+            var battlements = GetComponent<CastleBattlements>();
+            if (battlements != null) battlements.BuildBeforeNavigation(this);
+            // 성 킷 꾸밈(기둥·계단·계단 방 충돌체)도 첫 메시에 담는다(SIEGE-19).
+            var kit = GetComponent<CastleKitDresser>();
+            if (kit != null) kit.BuildBeforeNavigation(this);
+            Physics.SyncTransforms();
+            surface.BuildNavMesh();
+            NavigationRevision = 1;
+        }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// 에디터 미리보기(SIEGE-40 분지 배치): Play하지 않고 런 시작 배치와 킷 꾸밈만 만든다. 길찾기 메시는 만들지 않는다.
+        /// 미리보기 전용 복사본에서만 부른다(<c>ConstructionEditPreview</c>).
+        /// </summary>
+        public void BuildEditPreview()
+        {
+            // 에디터에서는 Awake가 돌지 않아도 같은 복사본에 두 번 불릴 수 있다(스크립트 다시 읽기 직후 등). 이전 목록을 비우고 새로 만든다.
+            structures.Clear();
+            weapons.Clear();
+            BuildInitialPieces();
+            var kit = GetComponent<CastleKitDresser>();
+            if (kit != null) kit.BuildBeforeNavigation(this);
+        }
+#endif
+
+        void BuildInitialPieces()
+        {
             Layout = new BuildLayout(grid);
             Mounts = new MountLayout(Layout);
             // 수성 무기는 Geometry 밖에 둔다. 길찾기 수집 대상이 아니므로 설치해도 NavMesh가 바뀌지 않는다.
@@ -74,15 +104,6 @@ namespace ProjectNeo.Walls
                         CreateBody(placement);
                     else Debug.LogError("Invalid initial construction layout.", this);
                 }
-            // 성가퀴는 첫 길찾기 메시에 함께 담는다. 따로 만들면 시작하자마자 메시를 한 번 더 만들게 된다(SIEGE-10).
-            var battlements = GetComponent<CastleBattlements>();
-            if (battlements != null) battlements.BuildBeforeNavigation(this);
-            // 성 킷 꾸밈(기둥·계단·계단 방 충돌체)도 첫 메시에 담는다(SIEGE-19).
-            var kit = GetComponent<CastleKitDresser>();
-            if (kit != null) kit.BuildBeforeNavigation(this);
-            Physics.SyncTransforms();
-            surface.BuildNavMesh();
-            NavigationRevision = 1;
         }
 
         public Vector3 LocalPoint(Vector3 world) => transform.InverseTransformPoint(world);
